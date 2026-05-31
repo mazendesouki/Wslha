@@ -3,106 +3,679 @@ import Layout from '../components/layout.astro';
 ---
 
 <style>
-.steps {
-  background: var(--light);
-  display: grid;
-  gap: 2rem;
-  grid-template-columns: min(90vw, 250px);
-  justify-content: center;
-  margin-top: 3rem;
-  padding: 5rem 5vw;
-  width: 100vw;
-}
-
-@media (min-width: 550px) {
-  .steps {
-    grid-template-columns: repeat(2, min(calc(50% - 1rem), 250px));
+  /* ── HERO ── */
+  .hero {
+    background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 50%, #bbf7d0 100%);
+    padding: 5rem 1.5rem 4rem;
+    position: relative;
+    overflow: hidden;
   }
-}
 
-@media (min-width: 1050px) {
-  .steps {
-    grid-template-columns: repeat(4, min(calc(25% - 1.5rem), 250px));
+  .hero::before {
+    content: '';
+    position: absolute;
+    top: -80px; left: -80px;
+    width: 400px; height: 400px;
+    background: radial-gradient(circle, rgba(22,163,74,0.12) 0%, transparent 70%);
+    border-radius: 50%;
   }
-}
 
-.step {
-  background: var(--white);
-  border: 1px solid var(--lightBorder);
-  border-radius: var(--card-radius);
-  display: flex;
-  flex-direction: column;
-  font-size: 0.75rem;
-  padding: 1rem 1.5rem 1.5rem;
-  text-align: left;
-  box-shadow: 0 2px 4px rgb(14 30 37 / 12%);
-}
+  .hero-inner {
+    max-width: 1100px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 3rem;
+    align-items: center;
+  }
 
-.stepHeading {
-  font-size: 1rem;
-  font-weight: 600;
-  margin: 0;
-}
+  @media (max-width: 768px) {
+    .hero-inner { grid-template-columns: 1fr; text-align: center; }
+    .hero-actions { justify-content: center; }
+  }
 
+  .hero-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    background: rgba(22,163,74,0.12);
+    color: #15803d;
+    font-weight: 700;
+    font-size: 0.85rem;
+    padding: 0.35rem 1rem;
+    border-radius: 100px;
+    margin-bottom: 1.25rem;
+  }
 
+  .hero-title {
+    font-size: clamp(2rem, 5vw, 3.2rem);
+    font-weight: 900;
+    line-height: 1.2;
+    color: #1a1a2e;
+    margin-bottom: 1.25rem;
+  }
+
+  .hero-title span { color: #16a34a; }
+
+  .hero-desc {
+    font-size: 1.1rem;
+    color: #475569;
+    line-height: 1.8;
+    margin-bottom: 2rem;
+    max-width: 480px;
+  }
+
+  .hero-actions {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+
+  .hero-visual {
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .hero-card {
+    background: #fff;
+    border-radius: 20px;
+    padding: 2rem;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.12);
+    width: 100%;
+    max-width: 340px;
+    position: relative;
+  }
+
+  .track-form-label {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.5rem;
+  }
+
+  .track-input-wrap {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .track-input {
+    flex: 1;
+    padding: 0.75rem 1rem;
+    border: 2px solid #e2e8f0;
+    border-radius: 10px;
+    font-family: 'Cairo', sans-serif;
+    font-size: 0.95rem;
+    outline: none;
+    transition: border-color 0.2s;
+    direction: rtl;
+  }
+
+  .track-input:focus { border-color: #16a34a; }
+
+  .track-btn {
+    background: #16a34a;
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    padding: 0.75rem 1.25rem;
+    font-family: 'Cairo', sans-serif;
+    font-weight: 700;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.2s;
+  }
+  .track-btn:hover { background: #15803d; }
+
+  .shipment-status {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .status-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem;
+    border-radius: 10px;
+    background: #f8fafc;
+    font-size: 0.875rem;
+  }
+
+  .status-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .status-dot.done { background: #16a34a; }
+  .status-dot.active { background: #f59e0b; box-shadow: 0 0 0 3px rgba(245,158,11,0.25); }
+  .status-dot.pending { background: #e2e8f0; }
+
+  .status-text { font-weight: 600; }
+  .status-time { margin-right: auto; color: #94a3b8; font-size: 0.8rem; }
+
+  /* ── STATS ── */
+  .stats {
+    background: #16a34a;
+    padding: 3rem 1.5rem;
+  }
+
+  .stats-grid {
+    max-width: 1100px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 2rem;
+    text-align: center;
+  }
+
+  @media (max-width: 768px) {
+    .stats-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+
+  .stat-num {
+    font-size: 2.5rem;
+    font-weight: 900;
+    color: #fff;
+    line-height: 1;
+    margin-bottom: 0.35rem;
+  }
+
+  .stat-label {
+    color: rgba(255,255,255,0.8);
+    font-size: 0.9rem;
+    font-weight: 600;
+  }
+
+  /* ── SERVICES ── */
+  .services { background: #f8fafc; }
+
+  .services-grid {
+    max-width: 1100px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+  }
+
+  @media (max-width: 900px) {
+    .services-grid { grid-template-columns: 1fr 1fr; }
+  }
+
+  @media (max-width: 600px) {
+    .services-grid { grid-template-columns: 1fr; }
+  }
+
+  .service-card {
+    background: #fff;
+    border-radius: 16px;
+    padding: 2rem;
+    border: 1px solid #e2e8f0;
+    transition: all 0.3s;
+    cursor: pointer;
+  }
+
+  .service-card:hover {
+    border-color: #16a34a;
+    box-shadow: 0 8px 30px rgba(22,163,74,0.12);
+    transform: translateY(-3px);
+  }
+
+  .service-icon {
+    width: 52px; height: 52px;
+    border-radius: 14px;
+    background: #f0fdf4;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .service-title {
+    font-size: 1.1rem;
+    font-weight: 800;
+    margin-bottom: 0.5rem;
+  }
+
+  .service-desc {
+    font-size: 0.875rem;
+    color: #64748b;
+    line-height: 1.7;
+  }
+
+  /* ── HOW IT WORKS ── */
+  .how { background: #fff; }
+
+  .how-steps {
+    max-width: 900px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+    position: relative;
+  }
+
+  @media (max-width: 768px) {
+    .how-steps { grid-template-columns: 1fr 1fr; }
+  }
+
+  .how-steps::before {
+    content: '';
+    position: absolute;
+    top: 28px;
+    right: 12.5%;
+    left: 12.5%;
+    height: 2px;
+    background: linear-gradient(to left, #16a34a, #bbf7d0);
+  }
+
+  @media (max-width: 768px) {
+    .how-steps::before { display: none; }
+  }
+
+  .how-step {
+    text-align: center;
+    padding: 1rem;
+    position: relative;
+  }
+
+  .how-num {
+    width: 56px; height: 56px;
+    border-radius: 50%;
+    background: #16a34a;
+    color: #fff;
+    font-size: 1.25rem;
+    font-weight: 900;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1rem;
+    position: relative;
+    z-index: 1;
+    box-shadow: 0 4px 15px rgba(22,163,74,0.35);
+  }
+
+  .how-step-title {
+    font-size: 0.95rem;
+    font-weight: 800;
+    margin-bottom: 0.4rem;
+  }
+
+  .how-step-desc {
+    font-size: 0.8rem;
+    color: #64748b;
+    line-height: 1.6;
+  }
+
+  /* ── WHY US ── */
+  .why { background: #f0fdf4; }
+
+  .why-grid {
+    max-width: 1100px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4rem;
+    align-items: center;
+  }
+
+  @media (max-width: 768px) {
+    .why-grid { grid-template-columns: 1fr; }
+  }
+
+  .why-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+  }
+
+  .why-item {
+    display: flex;
+    gap: 1rem;
+    align-items: flex-start;
+  }
+
+  .why-icon {
+    width: 44px; height: 44px;
+    border-radius: 12px;
+    background: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    flex-shrink: 0;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+  }
+
+  .why-item-title {
+    font-weight: 800;
+    margin-bottom: 0.2rem;
+  }
+
+  .why-item-desc {
+    font-size: 0.875rem;
+    color: #64748b;
+  }
+
+  .why-visual {
+    background: #fff;
+    border-radius: 20px;
+    padding: 2rem;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.08);
+  }
+
+  .map-placeholder {
+    background: linear-gradient(135deg, #f0fdf4, #dcfce7);
+    border-radius: 14px;
+    height: 250px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 3rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .delivery-info {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+
+  .delivery-stat {
+    text-align: center;
+    flex: 1;
+    padding: 1rem;
+    background: #f8fafc;
+    border-radius: 10px;
+  }
+
+  .delivery-stat-num {
+    font-size: 1.5rem;
+    font-weight: 900;
+    color: #16a34a;
+  }
+
+  .delivery-stat-label {
+    font-size: 0.75rem;
+    color: #64748b;
+    font-weight: 600;
+  }
+
+  /* ── CTA ── */
+  .cta-section {
+    background: linear-gradient(135deg, #15803d, #16a34a);
+    padding: 5rem 1.5rem;
+    text-align: center;
+  }
+
+  .cta-title {
+    font-size: 2.2rem;
+    font-weight: 900;
+    color: #fff;
+    margin-bottom: 1rem;
+  }
+
+  .cta-desc {
+    color: rgba(255,255,255,0.85);
+    font-size: 1.1rem;
+    margin-bottom: 2rem;
+  }
+
+  .cta-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .btn-white {
+    background: #fff;
+    color: #16a34a;
+    font-weight: 800;
+  }
+  .btn-white:hover { background: #f0fdf4; }
+
+  .btn-ghost {
+    background: transparent;
+    color: #fff;
+    border: 2px solid rgba(255,255,255,0.6);
+    font-weight: 700;
+  }
+  .btn-ghost:hover { border-color: #fff; background: rgba(255,255,255,0.1); }
 </style>
 
-<Layout
-  title="Netlify Feature Tour"
-  description="This is a small site to show the most powerful features of Netlify quickly!"
-  home
->
-  <main class="steps">
-    <section class="step">
-      <h2 class="stepHeading">Deploy Previews</h2>
-      <p>
-        Every pull request is automatically built in an
-        identical-to-production environment for
-        <strong>painless QA, feedback, and review.</strong>
-      </p>
-      <a href="/deploy-previews" class="button">
-        Learn more <span class="sr-only">about Deploy Previews</span>
-      </a>
-    </section>
+<Layout title="الرئيسية" description="وصّلها - خدمة التوصيل السريع والموثوق" page="home">
 
-    <section class="step">
-      <h2 class="stepHeading">Instant Rollbacks</h2>
-      <p>
-        Confidently ship to production with the knowledge that it’s a
-        one-click operation to roll back to a previous version of the site.
-        <strong>Instant disaster recovery!</strong>
-      </p>
-      <a href="/instant-rollbacks" class="button">
-        Learn more
-        <span class="sr-only">about Instant Rollbacks</span>
-      </a>
-    </section>
+  <!-- HERO -->
+  <section class="hero">
+    <div class="hero-inner">
+      <div>
+        <div class="hero-badge">
+          🚀 التوصيل خلال 24 ساعة
+        </div>
+        <h1 class="hero-title">
+          وصّل طلبك<br>
+          <span>بسرعة وأمان</span><br>
+          لأي مكان
+        </h1>
+        <p class="hero-desc">
+          منصة وصّلها توفر لك خدمة توصيل موثوقة وسريعة لجميع أنحاء المملكة.
+          تتبع شحنتك لحظة بلحظة واستلمها في أسرع وقت.
+        </p>
+        <div class="hero-actions">
+          <a href="/track" class="btn btn-primary">تتبع شحنتك ←</a>
+          <a href="/services" class="btn btn-outline">اعرف المزيد</a>
+        </div>
+      </div>
 
-    <section class="step">
-      <h2 class="stepHeading">Netlify Functions</h2>
-      <p>
-        <strong>Serverless functions are superpowers for web developers!</strong>
-        Securely handle server-like requirements at any scale with no
-        provisioning, scaling, or ops overhead.
-      </p>
-      <a href="/functions" class="button">
-      Learn more
-      <span class="sr-only">about Netlify Functions</span>
-      </a>
-    </section>
+      <div class="hero-visual">
+        <div class="hero-card">
+          <div class="track-form-label">تتبع شحنتك</div>
+          <div class="track-input-wrap">
+            <input
+              class="track-input"
+              type="text"
+              placeholder="رقم التتبع..."
+            />
+            <button class="track-btn">بحث</button>
+          </div>
 
-    <section class="step">
-      <h2 class="stepHeading">Netlify Forms</h2>
-      <p>
-        Handle user input with a single line of code. Netlify Forms allow
-        any HTML form to
-        <strong>
-            accept submissions, send notification emails, and trigger custom events.
-        </strong>
-      </p>
-      <a href="/netlify-forms" class="button">
-        Learn more <span class="sr-only">about Netlify Forms</span>
-      </a>
-    </section>
-  </main>
+          <div class="shipment-status">
+            <div class="status-item">
+              <div class="status-dot done"></div>
+              <span class="status-text">تم استلام الطلب</span>
+              <span class="status-time">10:00 ص</span>
+            </div>
+            <div class="status-item">
+              <div class="status-dot done"></div>
+              <span class="status-text">قيد التحضير</span>
+              <span class="status-time">11:30 ص</span>
+            </div>
+            <div class="status-item">
+              <div class="status-dot active"></div>
+              <span class="status-text">في الطريق إليك</span>
+              <span class="status-time">02:00 م</span>
+            </div>
+            <div class="status-item">
+              <div class="status-dot pending"></div>
+              <span class="status-text">تم التسليم</span>
+              <span class="status-time">—</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- STATS -->
+  <section class="stats">
+    <div class="stats-grid">
+      <div>
+        <div class="stat-num">+500K</div>
+        <div class="stat-label">شحنة مكتملة</div>
+      </div>
+      <div>
+        <div class="stat-num">98%</div>
+        <div class="stat-label">نسبة رضا العملاء</div>
+      </div>
+      <div>
+        <div class="stat-num">150+</div>
+        <div class="stat-label">مدينة نخدمها</div>
+      </div>
+      <div>
+        <div class="stat-num">24h</div>
+        <div class="stat-label">أقصى وقت توصيل</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SERVICES -->
+  <section class="section services">
+    <div style="max-width:1100px; margin:0 auto;">
+      <div class="badge">خدماتنا</div>
+      <h2 class="section-title">كل ما تحتاجه في مكان واحد</h2>
+      <p class="section-sub">نقدم مجموعة متكاملة من خدمات الشحن والتوصيل</p>
+
+      <div class="services-grid">
+        <div class="service-card">
+          <div class="service-icon">⚡</div>
+          <div class="service-title">التوصيل السريع</div>
+          <p class="service-desc">توصيل فوري خلال ساعات قليلة داخل المدينة لأهم طلباتك.</p>
+        </div>
+        <div class="service-card">
+          <div class="service-icon">📦</div>
+          <div class="service-title">الشحن الاقتصادي</div>
+          <p class="service-desc">وفّر على تكاليف الشحن مع خيار التوصيل الاقتصادي خلال 48 ساعة.</p>
+        </div>
+        <div class="service-card">
+          <div class="service-icon">🏢</div>
+          <div class="service-title">حلول الأعمال</div>
+          <p class="service-desc">باقات مخصصة للشركات والمتاجر الإلكترونية بأسعار تنافسية.</p>
+        </div>
+        <div class="service-card">
+          <div class="service-icon">🌡️</div>
+          <div class="service-title">الشحن المبرد</div>
+          <p class="service-desc">توصيل آمن للمنتجات الغذائية والأدوية بدرجات حرارة مضبوطة.</p>
+        </div>
+        <div class="service-card">
+          <div class="service-icon">↩️</div>
+          <div class="service-title">إدارة المرتجعات</div>
+          <p class="service-desc">نظام مرن لاستقبال وإدارة مرتجعات منتجاتك بكل سهولة.</p>
+        </div>
+        <div class="service-card">
+          <div class="service-icon">📡</div>
+          <div class="service-title">التتبع اللحظي</div>
+          <p class="service-desc">تابع شحنتك لحظة بلحظة على الخريطة مع إشعارات فورية.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- HOW IT WORKS -->
+  <section class="section how">
+    <div class="badge" style="display:block; text-align:center;">كيف تعمل؟</div>
+    <h2 class="section-title">أرسل شحنتك في 4 خطوات</h2>
+    <p class="section-sub">عملية بسيطة وسريعة من البداية للنهاية</p>
+
+    <div class="how-steps">
+      <div class="how-step">
+        <div class="how-num">١</div>
+        <div class="how-step-title">أنشئ طلبك</div>
+        <p class="how-step-desc">أدخل بيانات المرسل والمستلم بسهولة</p>
+      </div>
+      <div class="how-step">
+        <div class="how-num">٢</div>
+        <div class="how-step-title">اختر الخدمة</div>
+        <p class="how-step-desc">حدد نوع التوصيل المناسب لك</p>
+      </div>
+      <div class="how-step">
+        <div class="how-num">٣</div>
+        <div class="how-step-title">ادفع بأمان</div>
+        <p class="how-step-desc">طرق دفع متعددة وآمنة</p>
+      </div>
+      <div class="how-step">
+        <div class="how-num">٤</div>
+        <div class="how-step-title">تتبع شحنتك</div>
+        <p class="how-step-desc">راقب توصيلك لحظة بلحظة</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- WHY US -->
+  <section class="section why">
+    <div class="why-grid">
+      <div>
+        <div class="badge">لماذا وصّلها؟</div>
+        <h2 class="section-title" style="text-align:right; margin-bottom:2rem;">
+          الأفضل في خدمة<br>التوصيل
+        </h2>
+        <div class="why-list">
+          <div class="why-item">
+            <div class="why-icon">🔒</div>
+            <div>
+              <div class="why-item-title">أمان تام لشحنتك</div>
+              <p class="why-item-desc">تأمين كامل على جميع الشحنات مع ضمان التعويض عند الفقدان أو التلف.</p>
+            </div>
+          </div>
+          <div class="why-item">
+            <div class="why-icon">⏰</div>
+            <div>
+              <div class="why-item-title">التزام بالمواعيد</div>
+              <p class="why-item-desc">نضمن التوصيل في الوقت المحدد أو نعيد لك المبلغ كاملاً.</p>
+            </div>
+          </div>
+          <div class="why-item">
+            <div class="why-icon">📞</div>
+            <div>
+              <div class="why-item-title">دعم 24/7</div>
+              <p class="why-item-desc">فريق خدمة عملاء متاح على مدار الساعة للإجابة على استفساراتك.</p>
+            </div>
+          </div>
+          <div class="why-item">
+            <div class="why-icon">💰</div>
+            <div>
+              <div class="why-item-title">أسعار تنافسية</div>
+              <p class="why-item-desc">أقل الأسعار في السوق مع أعلى مستويات الجودة والخدمة.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="why-visual">
+        <div class="map-placeholder">🗺️</div>
+        <div class="delivery-info">
+          <div class="delivery-stat">
+            <div class="delivery-stat-num">2.4h</div>
+            <div class="delivery-stat-label">متوسط وقت التوصيل</div>
+          </div>
+          <div class="delivery-stat">
+            <div class="delivery-stat-num">150+</div>
+            <div class="delivery-stat-label">مدينة نخدمها</div>
+          </div>
+          <div class="delivery-stat">
+            <div class="delivery-stat-num">99%</div>
+            <div class="delivery-stat-label">شحنات سليمة</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="cta-section">
+    <h2 class="cta-title">ابدأ التوصيل اليوم</h2>
+    <p class="cta-desc">انضم لأكثر من 50,000 عميل يثقون في وصّلها يومياً</p>
+    <div class="cta-actions">
+      <a href="/track" class="btn btn-white">تتبع شحنة موجودة</a>
+      <a href="/contact" class="btn btn-ghost">تواصل معنا</a>
+    </div>
+  </section>
+
 </Layout>

@@ -1,215 +1,293 @@
 ---
-const { title, description, home = false } = Astro.props;
+const { title, description, page = '' } = Astro.props;
 ---
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
-  <link rel="preload" href="/fonts/PacaembuVar-subset.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="preload" href="/fonts/MulishVar-subset.woff2" as="font" type="font/woff2" crossorigin>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  
+  <meta name="description" content={description}>
+
   <link rel="icon" href="/favicon.ico" sizes="any">
   <link rel="icon" href="/icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="/apple-touch-icon.png">
   <link rel="manifest" href="/site.webmanifest" />
 
-  <meta name="msapplication-TileColor" content="#5cebdf" />
-  <meta name="theme-color" content="#ffffff" />
-  <title>{title}</title>
+  <meta name="theme-color" content="#16a34a" />
+  <title>{title} | وصّلها</title>
 
   <link rel="stylesheet" href="/global.css">
   <style is:global>
+    @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap');
 
     :root {
-    
-      --heading: var(--neutral-dark-900);
-      --text: var(--neutral-dark-900);
-      --text-muted: var(--neutral-dark-600);
-      --primary: var(--blue-700);
-      --primary-darker: var(--blue-800);
-      --highlight: var(--teal-300);
-      --button:var(--neutral-light-000);
-      --lightBorder: var(--neutral-light-200);
-      --light: var(--neutral-light-100);
-      --white: var(--neutral-light-000);
-      --card-radius: var(--border-radius-3);
-      --font-primary: Pacaembu, sans-serif;
-      --font-secondary: Mulish, sans-serif;
-
+      --primary: #16a34a;
+      --primary-dark: #15803d;
+      --primary-light: #bbf7d0;
+      --primary-bg: #f0fdf4;
+      --accent: #f59e0b;
+      --accent-dark: #d97706;
+      --text: #1a1a2e;
+      --text-muted: #64748b;
+      --bg: #ffffff;
+      --bg-soft: #f8fafc;
+      --border: #e2e8f0;
+      --shadow: 0 4px 24px rgba(0,0,0,0.07);
+      --shadow-md: 0 8px 32px rgba(0,0,0,0.12);
+      --radius: 12px;
+      --radius-lg: 20px;
     }
 
-    * {
-      box-sizing: border-box;
-    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
 
-    html,
-    body {
-
+    html, body {
+      font-family: 'Cairo', 'Segoe UI', sans-serif;
       color: var(--text);
-      font-family: var(--font-secondary);
-      font-size: 18px;
-      line-height: 1.45;
-      margin: 0;
-      padding: 0;
+      background: var(--bg);
+      font-size: 16px;
+      line-height: 1.6;
     }
 
     body {
       display: flex;
       flex-direction: column;
-      justify-content: center;
       min-height: 100vh;
-      padding: 5rem 0 4rem;
     }
 
-    h1, h2, h3 {
-      font-family: var(--font-primary);
-    }
+    a { color: inherit; text-decoration: none; }
 
-    a:link,
-    a:visited {
-      color: var(--text);
-      text-decoration: underline;
-      text-decoration-color: var(--text);
-      font-weight: 600;
-    }
-    a:hover,
-    a:focus {
-      text-decoration-color: var(--highlight);
-    }
+    img { max-width: 100%; display: block; }
 
-    main {
-      background: var(--light);
-      margin-bottom: 2rem;
-      margin-top: 3rem;
-      padding: 2rem max(5vw, 50vw - 60ch / 2);
-      width: 100vw;
-      border-style: none;
-    }
-
-    .sr-only:not(:focus):not(:active) {
-      clip: rect(0 0 0 0);
-      clip-path: inset(50%);
-      height: 1px;
-      overflow: hidden;
-      position: absolute;
-      white-space: nowrap;
-      width: 1px;
-    }
-
-    .button,
-    a.button {
-      background: var(--primary);
-      border-radius: 4px;
-      color: var(--white);
-      display: inline-block;
-      font-weight: 800;
-      padding: 0.5rem 1rem;
-      text-decoration: none;
-      width: max-content;
-      transition-duration: .2s;
-      text-decoration: none;
-      margin-top: auto;
-    }
-
-    a.button:hover,
-    a.button:focus,
-    .button:hover,
-    .button:focus {
-      background: var(--primary-darker);
-    }
-
-
-    .container,
-    .footer {
+    .container {
+      max-width: 1100px;
       margin: 0 auto;
-      text-align: center;
-      width: min(90vw, 900px);
+      padding: 0 1.5rem;
     }
 
-    .heading {
-      color: var(--heading);
-      font-size: 2.5rem;
-      margin: 0;
-      text-align: center;
+    /* ── NAV ── */
+    .nav {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(255,255,255,0.95);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--border);
     }
 
-    .footer {
+    .nav-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1rem 1.5rem;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    .nav-logo {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 1.5rem;
+      font-weight: 900;
+      color: var(--primary);
+    }
+
+    .nav-logo svg { width: 36px; height: 36px; }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+      list-style: none;
+    }
+
+    .nav-links a {
+      padding: 0.45rem 0.9rem;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 0.9rem;
       color: var(--text-muted);
-      font-size: 0.75rem;
-      margin-top: 4rem;
+      transition: all 0.2s;
     }
 
-    .footer a {
-      color: inherit;
+    .nav-links a:hover,
+    .nav-links a.active {
+      background: var(--primary-bg);
+      color: var(--primary);
+    }
+
+    .nav-cta {
+      background: var(--primary) !important;
+      color: #fff !important;
+      padding: 0.45rem 1.2rem !important;
+      border-radius: 8px;
+    }
+
+    .nav-cta:hover { background: var(--primary-dark) !important; }
+
+    /* ── BUTTONS ── */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.75rem 1.75rem;
+      border-radius: var(--radius);
+      font-family: 'Cairo', sans-serif;
+      font-weight: 700;
+      font-size: 1rem;
+      cursor: pointer;
+      border: none;
+      transition: all 0.2s;
       text-decoration: none;
     }
 
-    .footer a:focus,
-    .footer a:hover {
-      text-decoration: underline;
+    .btn-primary {
+      background: var(--primary);
+      color: #fff;
+    }
+    .btn-primary:hover { background: var(--primary-dark); transform: translateY(-1px); }
+
+    .btn-outline {
+      background: transparent;
+      color: var(--primary);
+      border: 2px solid var(--primary);
+    }
+    .btn-outline:hover { background: var(--primary-bg); }
+
+    .btn-accent {
+      background: var(--accent);
+      color: #fff;
+    }
+    .btn-accent:hover { background: var(--accent-dark); transform: translateY(-1px); }
+
+    /* ── FOOTER ── */
+    .footer {
+      margin-top: auto;
+      background: var(--text);
+      color: #cbd5e1;
+      padding: 3rem 1.5rem 1.5rem;
     }
 
-    .footer ul {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      justify-content: center;
-      list-style-type: none;
+    .footer-grid {
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr;
+      gap: 3rem;
+      max-width: 1100px;
+      margin: 0 auto 2rem;
     }
 
-    .footer li {
-      margin: 0 1em;
+    @media (max-width: 768px) {
+      .footer-grid { grid-template-columns: 1fr; gap: 2rem; }
+      .nav-links { display: none; }
     }
 
-    .heart {
+    .footer-brand { font-size: 1.5rem; font-weight: 900; color: #fff; margin-bottom: 0.75rem; }
+    .footer-desc { font-size: 0.9rem; line-height: 1.7; color: #94a3b8; }
+    .footer-col h4 { color: #fff; font-weight: 700; margin-bottom: 1rem; font-size: 0.95rem; }
+    .footer-col ul { list-style: none; display: flex; flex-direction: column; gap: 0.5rem; }
+    .footer-col a { color: #94a3b8; font-size: 0.875rem; transition: color 0.2s; }
+    .footer-col a:hover { color: var(--primary-light); }
+
+    .footer-bottom {
+      border-top: 1px solid #334155;
+      padding-top: 1.5rem;
+      text-align: center;
+      font-size: 0.8rem;
+      color: #64748b;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    /* ── UTILS ── */
+    .section { padding: 5rem 1.5rem; }
+    .section-title {
+      font-size: 2rem;
+      font-weight: 800;
+      text-align: center;
+      margin-bottom: 0.75rem;
+    }
+    .section-sub {
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 1.05rem;
+      margin-bottom: 3rem;
+    }
+
+    .badge {
       display: inline-block;
-      vertical-align: top;
-      width: 1.1rem;
+      background: var(--primary-bg);
+      color: var(--primary);
+      font-weight: 700;
+      font-size: 0.8rem;
+      padding: 0.3rem 0.9rem;
+      border-radius: 100px;
+      margin-bottom: 1rem;
     }
 
-    .heart img {
-      display: block;
-      width: 100%;
+    .sr-only {
+      position: absolute;
+      width: 1px; height: 1px;
+      overflow: hidden;
+      clip: rect(0 0 0 0);
     }
   </style>
 </head>
 <body>
-  <header class="container">
-    <h1 class="heading">{title}</h1>
 
-    <p class="description">{description}</p>
-
-    {home !== true && (
-      <p>
-        <a href="/">&larr; back to home</a>
-      </p>
-    )}
-  </header>
+  <nav class="nav">
+    <div class="nav-inner">
+      <a href="/" class="nav-logo">
+        <svg viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect width="36" height="36" rx="10" fill="#16a34a"/>
+          <path d="M8 22L13 10L18 18L23 14L28 22" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle cx="28" cy="25" r="3" fill="white"/>
+          <circle cx="13" cy="25" r="3" fill="white"/>
+        </svg>
+        وصّلها
+      </a>
+      <ul class="nav-links">
+        <li><a href="/" class={page === 'home' ? 'active' : ''}>الرئيسية</a></li>
+        <li><a href="/services" class={page === 'services' ? 'active' : ''}>خدماتنا</a></li>
+        <li><a href="/track" class={page === 'track' ? 'active' : ''}>تتبع الشحنة</a></li>
+        <li><a href="/contact" class={page === 'contact' ? 'active' : ''}>تواصل معنا</a></li>
+        <li><a href="/track" class="nav-cta">تتبع الآن</a></li>
+      </ul>
+    </div>
+  </nav>
 
   <slot />
 
   <footer class="footer">
-    <nav>
-      <ul>
-        <li>
-          <a class="footer-link" href="https://www.netlify.com/trust-center/">Trust Center</a>
-        </li>
-        <li>
-          <a class="footer-link" href="https://www.netlify.com/privacy/">Privacy</a>
-        </li>
-        <li>
-          <a class="footer-link" href="https://www.netlify.com/security/">Security</a>
-        </li>
-        <li>
-          <a class="footer-link" href="https://www.netlify.com/gdpr-ccpa/">GDPR/CCPA</a>
-        </li>
-        <li>
-          <a class="footer-link" href="mailto:fraud@netlify.com?subject=Abuse%20report&body=Please%20include%20the%20site%20URL%20and%20reason%20for%20your%20report%2C%20and%20we%20will%20reply%20promptly." target="_blank" rel="noopener noreferrer">Abuse</a>
-        </li>
-      </ul>
-    </nav>
+    <div class="footer-grid">
+      <div>
+        <div class="footer-brand">وصّلها</div>
+        <p class="footer-desc">
+          منصة التوصيل الأسرع والأكثر موثوقية في المنطقة.
+          نوصّل طلباتك بأمان وسرعة إلى أي مكان.
+        </p>
+      </div>
+      <div class="footer-col">
+        <h4>روابط سريعة</h4>
+        <ul>
+          <li><a href="/">الرئيسية</a></li>
+          <li><a href="/services">خدماتنا</a></li>
+          <li><a href="/track">تتبع الشحنة</a></li>
+          <li><a href="/contact">تواصل معنا</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>تواصل معنا</h4>
+        <ul>
+          <li><a href="tel:+966500000000">📞 920-000-000</a></li>
+          <li><a href="mailto:info@wslha.co">✉️ info@wslha.co</a></li>
+          <li><a href="#">💬 واتساب</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>© 2024 وصّلها. جميع الحقوق محفوظة.</p>
+    </div>
   </footer>
 
 </body>
