@@ -4,116 +4,163 @@ import Layout from '../components/layout.astro';
 
 <style>
   .page-hero {
-    background: linear-gradient(135deg, #f0fdf4, #dcfce7);
-    padding: 4rem 1.5rem 3rem;
+    background: #3B6EF8;
+    padding: 3.5rem 1.5rem 3rem;
     text-align: center;
+    color: #fff;
   }
-  .page-hero h1 { font-size: 2.5rem; font-weight: 900; margin-bottom: 0.75rem; }
-  .page-hero p { color: #64748b; font-size: 1.05rem; max-width: 550px; margin: 0 auto; }
+  .page-hero h1 { font-size: 2.2rem; font-weight: 900; margin-bottom: 0.6rem; }
+  .page-hero p { color: rgba(255,255,255,0.8); font-size: 1rem; max-width: 500px; margin: 0 auto; }
 
-  .services-section {
-    padding: 4rem 1.5rem;
-    max-width: 1100px;
-    margin: 0 auto;
-  }
-
-  .service-full-card {
+  /* LOCAL -->*/
+  .local-section {
+    padding: 5rem 1.5rem;
     background: #fff;
-    border-radius: 20px;
-    padding: 2.5rem;
-    border: 1px solid #e2e8f0;
-    margin-bottom: 1.5rem;
+  }
+
+  .split-grid {
+    max-width: 1280px;
+    margin: 0 auto;
     display: grid;
-    grid-template-columns: auto 1fr auto;
-    gap: 2rem;
+    grid-template-columns: 1fr 1fr;
+    gap: 5rem;
     align-items: center;
-    transition: all 0.3s;
   }
 
-  .service-full-card:hover {
-    border-color: #16a34a;
-    box-shadow: 0 8px 30px rgba(22,163,74,0.1);
+  @media (max-width: 768px) {
+    .split-grid { grid-template-columns: 1fr; gap: 3rem; }
   }
 
-  @media (max-width: 700px) {
-    .service-full-card {
-      grid-template-columns: 1fr;
-      text-align: center;
-    }
-    .service-big-icon { margin: 0 auto; }
-    .service-price-box { text-align: center; }
+  .split-label {
+    display: inline-block;
+    background: #EEF2FF;
+    color: #3B6EF8;
+    font-weight: 700;
+    font-size: 0.8rem;
+    padding: 0.3rem 0.9rem;
+    border-radius: 100px;
+    margin-bottom: 1rem;
   }
 
-  .service-big-icon {
-    width: 72px; height: 72px;
-    border-radius: 18px;
-    background: #f0fdf4;
+  .split-title {
+    font-size: 1.8rem;
+    font-weight: 900;
+    margin-bottom: 1rem;
+    line-height: 1.2;
+    color: #1A1A2E;
+  }
+
+  .split-desc {
+    color: #64748B;
+    line-height: 1.8;
+    margin-bottom: 1.5rem;
+    font-size: 0.95rem;
+  }
+
+  .feature-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
+    margin-bottom: 2rem;
+  }
+
+  .feature-list li {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    font-size: 0.9rem;
+    color: #374151;
+    font-weight: 600;
+  }
+
+  .feature-list li::before {
+    content: '✓';
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    background: #3B6EF8;
+    color: #fff;
+    font-size: 0.7rem;
+    font-weight: 900;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 2rem;
     flex-shrink: 0;
   }
 
-  .service-full-title {
-    font-size: 1.25rem;
-    font-weight: 900;
-    margin-bottom: 0.4rem;
-  }
-
-  .service-full-desc {
-    color: #64748b;
-    font-size: 0.9rem;
-    line-height: 1.7;
-    margin-bottom: 0.75rem;
-  }
-
-  .service-features {
+  .service-visual {
+    background: linear-gradient(135deg, #EEF2FF, #DBEAFE);
+    border-radius: 20px;
+    aspect-ratio: 4/3;
     display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
+    align-items: center;
+    justify-content: center;
+    font-size: 5rem;
+    position: relative;
+    overflow: hidden;
   }
 
-  .feature-tag {
-    background: #f0fdf4;
-    color: #15803d;
-    font-size: 0.78rem;
-    font-weight: 700;
-    padding: 0.25rem 0.75rem;
-    border-radius: 100px;
+  .service-badge-overlay {
+    position: absolute;
+    bottom: 1.5rem;
+    left: 1.5rem;
+    background: #fff;
+    border-radius: 12px;
+    padding: 0.85rem 1.25rem;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
   }
 
-  .service-price-box {
-    text-align: left;
-    flex-shrink: 0;
-  }
+  .sbo-num { font-size: 1.5rem; font-weight: 900; color: #3B6EF8; line-height: 1; }
+  .sbo-label { font-size: 0.75rem; color: #64748B; font-weight: 600; }
 
-  .price-from { font-size: 0.78rem; color: #94a3b8; font-weight: 600; }
-  .price-num { font-size: 1.75rem; font-weight: 900; color: #16a34a; line-height: 1; }
-  .price-unit { font-size: 0.8rem; color: #94a3b8; }
-
-  .price-btn {
-    display: block;
-    margin-top: 0.75rem;
-    padding: 0.6rem 1.25rem;
-    background: #16a34a;
-    color: #fff;
-    border-radius: 10px;
-    font-weight: 700;
-    font-size: 0.875rem;
-    text-align: center;
-    transition: background 0.2s;
-  }
-  .price-btn:hover { background: #15803d; }
-
-  /* Pricing table */
-  .pricing-section {
-    background: #f8fafc;
+  /* AIRPORT */
+  .airport-section {
+    background: #EEF2FF;
     padding: 5rem 1.5rem;
   }
 
+  /* PARTNERS */
+  .partners-section {
+    background: #fff;
+    padding: 5rem 1.5rem;
+  }
+
+  .partners-grid {
+    max-width: 1280px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+  }
+
+  @media (max-width: 700px) {
+    .partners-grid { grid-template-columns: 1fr 1fr; }
+  }
+
+  .partner-card {
+    background: #F8FAFC;
+    border-radius: 14px;
+    padding: 2rem 1rem;
+    text-align: center;
+    border: 1.5px solid #E2E8F0;
+    transition: all 0.2s;
+  }
+
+  .partner-card:hover {
+    border-color: #3B6EF8;
+    background: #EEF2FF;
+    transform: translateY(-2px);
+  }
+
+  .partner-icon { font-size: 2.5rem; margin-bottom: 0.75rem; }
+  .partner-name { font-weight: 800; font-size: 0.9rem; color: #1A1A2E; }
+  .partner-cat  { font-size: 0.75rem; color: #94A3B8; margin-top: 0.2rem; }
+
+  /* PRICING */
+  .pricing-section { background: #F8FAFC; padding: 5rem 1.5rem; }
+
   .pricing-grid {
-    max-width: 900px;
+    max-width: 960px;
     margin: 0 auto;
     display: grid;
     grid-template-columns: repeat(3, 1fr);
@@ -124,28 +171,28 @@ import Layout from '../components/layout.astro';
     .pricing-grid { grid-template-columns: 1fr; }
   }
 
-  .pricing-card {
+  .price-card {
     background: #fff;
-    border-radius: 20px;
+    border-radius: 18px;
     padding: 2rem;
-    border: 2px solid #e2e8f0;
+    border: 2px solid #E2E8F0;
     text-align: center;
     position: relative;
-    transition: all 0.3s;
+    transition: all 0.2s;
   }
 
-  .pricing-card.featured {
-    border-color: #16a34a;
+  .price-card.featured {
+    border-color: #3B6EF8;
     transform: scale(1.04);
+    box-shadow: 0 8px 40px rgba(59,110,248,0.15);
   }
 
-  .popular-badge {
+  .popular-tag {
     position: absolute;
-    top: -14px;
-    left: 50%;
+    top: -14px; left: 50%;
     transform: translateX(-50%);
-    background: #16a34a;
-    color: #fff;
+    background: #F5B800;
+    color: #1A1A2E;
     font-size: 0.75rem;
     font-weight: 800;
     padding: 0.3rem 1rem;
@@ -153,189 +200,219 @@ import Layout from '../components/layout.astro';
     white-space: nowrap;
   }
 
-  .plan-name { font-size: 1rem; font-weight: 800; color: #64748b; margin-bottom: 0.5rem; }
-  .plan-price { font-size: 2.5rem; font-weight: 900; color: #1a1a2e; line-height: 1; }
-  .plan-price span { font-size: 1rem; font-weight: 600; color: #94a3b8; }
+  .plan-name { font-weight: 800; color: #64748B; font-size: 0.9rem; margin-bottom: 0.5rem; }
+  .plan-price { font-size: 2.5rem; font-weight: 900; color: #1A1A2E; line-height: 1; }
+  .plan-price small { font-size: 1rem; font-weight: 600; color: #94A3B8; }
+  .plan-desc { font-size: 0.83rem; color: #94A3B8; margin: 0.75rem 0 1.5rem; }
 
-  .plan-desc { font-size: 0.85rem; color: #94a3b8; margin: 0.75rem 0 1.5rem; }
+  .plan-feats {
+    list-style: none;
+    text-align: right;
+    margin-bottom: 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+  }
 
-  .plan-features { list-style: none; text-align: right; margin-bottom: 2rem; display: flex; flex-direction: column; gap: 0.6rem; }
-  .plan-features li { font-size: 0.875rem; color: #374151; }
-  .plan-features li::before { content: '✓  '; color: #16a34a; font-weight: 800; }
+  .plan-feats li {
+    font-size: 0.85rem;
+    color: #374151;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .plan-feats li::before {
+    content: '✓';
+    color: #3B6EF8;
+    font-weight: 900;
+    font-size: 0.75rem;
+  }
 
   .plan-btn {
     display: block;
     width: 100%;
     padding: 0.85rem;
-    border-radius: 12px;
+    border-radius: 10px;
     font-family: 'Cairo', sans-serif;
     font-weight: 800;
-    font-size: 0.95rem;
+    font-size: 0.9rem;
     cursor: pointer;
     border: none;
-    transition: all 0.2s;
+    transition: all 0.18s;
   }
 
-  .plan-btn-primary { background: #16a34a; color: #fff; }
-  .plan-btn-primary:hover { background: #15803d; }
-  .plan-btn-outline { background: transparent; color: #16a34a; border: 2px solid #16a34a; }
-  .plan-btn-outline:hover { background: #f0fdf4; }
+  .plan-btn-blue { background: #3B6EF8; color: #fff; }
+  .plan-btn-blue:hover { background: #2952D9; }
+  .plan-btn-yellow { background: #F5B800; color: #1A1A2E; }
+  .plan-btn-yellow:hover { background: #D9A200; }
+  .plan-btn-outline { background: transparent; color: #3B6EF8; border: 2px solid #3B6EF8; }
+  .plan-btn-outline:hover { background: #EEF2FF; }
 </style>
 
-<Layout title="خدماتنا" description="اكتشف خدمات التوصيل المتنوعة التي تقدمها وصّلها" page="services">
+<Layout title="خدماتنا" description="اكتشف خدمات وصّلها - توصيل محلي وتوصيل مطار والمزيد" page="services">
 
   <section class="page-hero">
-    <div style="display:inline-block; background:rgba(22,163,74,0.12); color:#15803d; font-weight:700; font-size:0.8rem; padding:0.35rem 1rem; border-radius:100px; margin-bottom:1rem;">📦 خدماتنا</div>
+    <div style="display:inline-block; background:rgba(255,255,255,0.15); border:1px solid rgba(255,255,255,0.3); color:#fff; font-weight:700; font-size:0.8rem; padding:0.3rem 1rem; border-radius:100px; margin-bottom:1rem;">📦 خدماتنا</div>
     <h1>حلول التوصيل لكل احتياج</h1>
-    <p>من التوصيل السريع إلى حلول الأعمال، لدينا الخيار المناسب لك</p>
+    <p>من التوصيل المحلي إلى المطار، لدينا الحل المناسب لك</p>
   </section>
 
-  <div class="services-section">
-
-    <div class="service-full-card">
-      <div class="service-big-icon">⚡</div>
+  <!-- LOCAL -->
+  <section class="local-section" id="local">
+    <div class="split-grid">
       <div>
-        <div class="service-full-title">التوصيل السريع — في نفس اليوم</div>
-        <p class="service-full-desc">
-          توصيل فوري خلال 2-4 ساعات داخل المدينة. مثالي للطلبات العاجلة والمهمة.
-          سائق مخصص لشحنتك من باب لباب.
+        <span class="split-label">🛵 توصيل محلي</span>
+        <h2 class="split-title">من أي متجر<br>لباب بيتك</h2>
+        <p class="split-desc">
+          نوصّل طلباتك من المطاعم والمتاجر والصيدليات وأي مكان تريده،
+          مباشرة لبابك خلال 30 دقيقة فقط.
         </p>
-        <div class="service-features">
-          <span class="feature-tag">⏱ خلال 4 ساعات</span>
-          <span class="feature-tag">📍 تتبع فوري</span>
-          <span class="feature-tag">📞 سائق مخصص</span>
-          <span class="feature-tag">✅ ضمان مستوى الخدمة</span>
+        <ul class="feature-list">
+          <li>توصيل خلال 30 دقيقة</li>
+          <li>تتبع المندوب لحظة بلحظة</li>
+          <li>مئات المتاجر الشريكة</li>
+          <li>دفع عند الاستلام أو إلكتروني</li>
+          <li>خدمة 24 ساعة / 7 أيام</li>
+        </ul>
+        <a href="/contact" class="btn btn-yellow">🛵 اطلب الآن</a>
+      </div>
+      <div class="service-visual">
+        🛵
+        <div class="service-badge-overlay">
+          <div class="sbo-num">30</div>
+          <div class="sbo-label">دقيقة توصيل</div>
         </div>
       </div>
-      <div class="service-price-box">
-        <div class="price-from">يبدأ من</div>
-        <div class="price-num">25</div>
-        <div class="price-unit">ريال / شحنة</div>
-        <a href="/contact" class="price-btn">اطلب الآن</a>
-      </div>
     </div>
+  </section>
 
-    <div class="service-full-card">
-      <div class="service-big-icon">📦</div>
-      <div>
-        <div class="service-full-title">الشحن الاقتصادي — 24 إلى 48 ساعة</div>
-        <p class="service-full-desc">
-          الخيار الموفر للشحنات غير العاجلة. أسعار مناسبة مع ضمان وصول آمن لشحنتك
-          داخل وخارج المدينة.
-        </p>
-        <div class="service-features">
-          <span class="feature-tag">💰 أسعار مخفضة</span>
-          <span class="feature-tag">🌍 تغطية واسعة</span>
-          <span class="feature-tag">🔒 تأمين كامل</span>
-          <span class="feature-tag">📊 تقارير مفصلة</span>
+  <!-- AIRPORT -->
+  <section class="airport-section" id="airport">
+    <div class="split-grid">
+      <div class="service-visual">
+        ✈️
+        <div class="service-badge-overlay">
+          <div class="sbo-num">0</div>
+          <div class="sbo-label">تأخير مضمون</div>
         </div>
       </div>
-      <div class="service-price-box">
-        <div class="price-from">يبدأ من</div>
-        <div class="price-num">12</div>
-        <div class="price-unit">ريال / شحنة</div>
-        <a href="/contact" class="price-btn">اطلب الآن</a>
+      <div>
+        <span class="split-label" style="background:#fff; color:#3B6EF8;">✈️ توصيل المطار</span>
+        <h2 class="split-title">توصيل احترافي<br>من وإلى المطار</h2>
+        <p class="split-desc">
+          سائق مخصص في انتظارك في المطار في الوقت المحدد.
+          لا تأخير، لا قلق، فقط سفر مريح.
+        </p>
+        <ul class="feature-list">
+          <li>مراقبة رحلتك آلياً</li>
+          <li>سائق مرحباً في موعده</li>
+          <li>سيارات مريحة ونظيفة</li>
+          <li>أسعار ثابتة بدون مفاجآت</li>
+          <li>حجز مسبق سهل</li>
+        </ul>
+        <a href="/contact" class="btn btn-blue">✈️ احجز الآن</a>
       </div>
     </div>
+  </section>
 
-    <div class="service-full-card">
-      <div class="service-big-icon">🏢</div>
-      <div>
-        <div class="service-full-title">حلول الأعمال — للشركات والمتاجر</div>
-        <p class="service-full-desc">
-          باقات مخصصة للشركات والمتاجر الإلكترونية مع لوحة تحكم متكاملة، تقارير
-          تفصيلية، ومدير حساب مخصص لك.
-        </p>
-        <div class="service-features">
-          <span class="feature-tag">📊 لوحة تحكم</span>
-          <span class="feature-tag">🔗 API Integration</span>
-          <span class="feature-tag">👨‍💼 مدير حساب</span>
-          <span class="feature-tag">💳 فاتورة شهرية</span>
+  <!-- PARTNERS -->
+  <section class="partners-section" id="partners">
+    <div class="container">
+      <h2 class="section-title">المتاجر الشريكة</h2>
+      <p class="section-sub">اطلب من متاجرك المفضلة مباشرة</p>
+
+      <div class="partners-grid">
+        <div class="partner-card">
+          <div class="partner-icon">🍕</div>
+          <div class="partner-name">المطاعم</div>
+          <div class="partner-cat">طعام وشراب</div>
+        </div>
+        <div class="partner-card">
+          <div class="partner-icon">💊</div>
+          <div class="partner-name">الصيدليات</div>
+          <div class="partner-cat">أدوية وصحة</div>
+        </div>
+        <div class="partner-card">
+          <div class="partner-icon">🛒</div>
+          <div class="partner-name">السوبرماركت</div>
+          <div class="partner-cat">بقالة ومنزل</div>
+        </div>
+        <div class="partner-card">
+          <div class="partner-icon">☕</div>
+          <div class="partner-name">المقاهي</div>
+          <div class="partner-cat">مشروبات وحلويات</div>
+        </div>
+        <div class="partner-card">
+          <div class="partner-icon">👗</div>
+          <div class="partner-name">الملابس</div>
+          <div class="partner-cat">أزياء وأكسسوار</div>
+        </div>
+        <div class="partner-card">
+          <div class="partner-icon">📱</div>
+          <div class="partner-name">الإلكترونيات</div>
+          <div class="partner-cat">تقنية وكمبيوتر</div>
+        </div>
+        <div class="partner-card">
+          <div class="partner-icon">💐</div>
+          <div class="partner-name">الزهور</div>
+          <div class="partner-cat">هدايا وورود</div>
+        </div>
+        <div class="partner-card">
+          <div class="partner-icon">📦</div>
+          <div class="partner-name">متاجر أخرى</div>
+          <div class="partner-cat">وأكثر...</div>
         </div>
       </div>
-      <div class="service-price-box">
-        <div class="price-from">تواصل معنا</div>
-        <div class="price-num" style="font-size:1.2rem; margin: 0.5rem 0;">أسعار خاصة</div>
-        <div class="price-unit">حسب الحجم</div>
-        <a href="/contact" class="price-btn">تواصل معنا</a>
-      </div>
     </div>
-
-    <div class="service-full-card">
-      <div class="service-big-icon">🌡️</div>
-      <div>
-        <div class="service-full-title">الشحن المبرد — للمنتجات الحساسة</div>
-        <p class="service-full-desc">
-          توصيل متخصص للمنتجات الغذائية والأدوية والمواد الحساسة للحرارة بدرجات
-          حرارة مضبوطة طوال رحلة الشحن.
-        </p>
-        <div class="service-features">
-          <span class="feature-tag">🌡️ تحكم بالحرارة</span>
-          <span class="feature-tag">🍱 غذاء وأدوية</span>
-          <span class="feature-tag">📡 مراقبة مستمرة</span>
-          <span class="feature-tag">✅ شهادات الجودة</span>
-        </div>
-      </div>
-      <div class="service-price-box">
-        <div class="price-from">يبدأ من</div>
-        <div class="price-num">45</div>
-        <div class="price-unit">ريال / شحنة</div>
-        <a href="/contact" class="price-btn">اطلب الآن</a>
-      </div>
-    </div>
-
-  </div>
+  </section>
 
   <!-- PRICING -->
-  <section class="pricing-section">
-    <div style="max-width:900px; margin:0 auto;">
-      <div style="text-align:center; margin-bottom:3rem;">
-        <div style="display:inline-block; background:rgba(22,163,74,0.12); color:#15803d; font-weight:700; font-size:0.8rem; padding:0.35rem 1rem; border-radius:100px; margin-bottom:1rem;">باقات الأعمال</div>
-        <h2 class="section-title">اختر الباقة المناسبة</h2>
-        <p class="section-sub">باقات مرنة تناسب جميع أحجام الأعمال</p>
-      </div>
+  <section class="pricing-section" id="pricing">
+    <div class="container">
+      <h2 class="section-title">الأسعار</h2>
+      <p class="section-sub">أسعار شفافة وبدون رسوم خفية</p>
 
       <div class="pricing-grid">
-        <div class="pricing-card">
-          <div class="plan-name">الباقة الأساسية</div>
-          <div class="plan-price">99 <span>ريال/شهر</span></div>
-          <p class="plan-desc">مثالية للمتاجر الناشئة</p>
-          <ul class="plan-features">
-            <li>حتى 100 شحنة شهرياً</li>
-            <li>تتبع فوري</li>
-            <li>دعم عبر البريد</li>
-            <li>تقارير أساسية</li>
+        <div class="price-card">
+          <div class="plan-name">توصيل محلي</div>
+          <div class="plan-price">5 <small>د.ل</small></div>
+          <p class="plan-desc">داخل المدينة</p>
+          <ul class="plan-feats">
+            <li>توصيل خلال 30 دقيقة</li>
+            <li>تتبع لحظي</li>
+            <li>دفع نقدي أو إلكتروني</li>
+            <li>تأمين على الطلب</li>
           </ul>
-          <button class="plan-btn plan-btn-outline">ابدأ مجاناً</button>
+          <button class="plan-btn plan-btn-outline">اطلب الآن</button>
         </div>
 
-        <div class="pricing-card featured">
-          <div class="popular-badge">الأكثر طلباً</div>
-          <div class="plan-name">الباقة الاحترافية</div>
-          <div class="plan-price">299 <span>ريال/شهر</span></div>
-          <p class="plan-desc">للمتاجر المتنامية</p>
-          <ul class="plan-features">
-            <li>حتى 500 شحنة شهرياً</li>
-            <li>أولوية التوصيل</li>
-            <li>دعم 24/7</li>
-            <li>تقارير متقدمة</li>
-            <li>API مجاني</li>
+        <div class="price-card featured">
+          <div class="popular-tag">الأكثر طلباً</div>
+          <div class="plan-name">باقة شهرية</div>
+          <div class="plan-price">49 <small>د.ل/شهر</small></div>
+          <p class="plan-desc">للعملاء المنتظمين</p>
+          <ul class="plan-feats">
+            <li>20 طلب توصيل شهرياً</li>
+            <li>أولوية في التوصيل</li>
+            <li>خصم 20% على الطلبات الإضافية</li>
+            <li>دعم أولوية</li>
+            <li>تقارير شهرية</li>
           </ul>
-          <button class="plan-btn plan-btn-primary">اشترك الآن</button>
+          <button class="plan-btn plan-btn-yellow">اشترك الآن</button>
         </div>
 
-        <div class="pricing-card">
-          <div class="plan-name">باقة المؤسسات</div>
-          <div class="plan-price">999 <span>ريال/شهر</span></div>
-          <p class="plan-desc">للشركات الكبرى</p>
-          <ul class="plan-features">
-            <li>شحنات غير محدودة</li>
-            <li>مدير حساب مخصص</li>
-            <li>SLA مضمون</li>
-            <li>لوحة تحكم متقدمة</li>
-            <li>تكامل ERP</li>
+        <div class="price-card">
+          <div class="plan-name">توصيل مطار</div>
+          <div class="plan-price">30 <small>د.ل</small></div>
+          <p class="plan-desc">من/إلى المطار</p>
+          <ul class="plan-feats">
+            <li>سائق مخصص</li>
+            <li>مراقبة الرحلة آلياً</li>
+            <li>سيارة مريحة</li>
+            <li>سعر ثابت</li>
           </ul>
-          <button class="plan-btn plan-btn-outline">تواصل معنا</button>
+          <button class="plan-btn plan-btn-blue">احجز الآن</button>
         </div>
       </div>
     </div>

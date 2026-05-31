@@ -5,8 +5,9 @@ import Layout from '../components/layout.astro';
 <style>
   /* ── HERO ── */
   .hero {
-    background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 50%, #bbf7d0 100%);
-    padding: 5rem 1.5rem 4rem;
+    background: #3B6EF8;
+    padding: 4rem 1.5rem 4rem;
+    min-height: 540px;
     position: relative;
     overflow: hidden;
   }
@@ -14,14 +15,16 @@ import Layout from '../components/layout.astro';
   .hero::before {
     content: '';
     position: absolute;
-    top: -80px; left: -80px;
-    width: 400px; height: 400px;
-    background: radial-gradient(circle, rgba(22,163,74,0.12) 0%, transparent 70%);
-    border-radius: 50%;
+    inset: 0;
+    background:
+      radial-gradient(ellipse at 20% 50%, rgba(59,110,248,0.0) 0%, rgba(30,60,200,0.5) 100%),
+      linear-gradient(135deg, #3B6EF8 60%, #2952D9 100%);
   }
 
   .hero-inner {
-    max-width: 1100px;
+    position: relative;
+    z-index: 1;
+    max-width: 1280px;
     margin: 0 auto;
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -30,39 +33,45 @@ import Layout from '../components/layout.astro';
   }
 
   @media (max-width: 768px) {
-    .hero-inner { grid-template-columns: 1fr; text-align: center; }
-    .hero-actions { justify-content: center; }
+    .hero-inner { grid-template-columns: 1fr; }
+    .hero-visual { order: -1; }
   }
 
+  /* Right text side */
+  .hero-text { color: #fff; }
+
   .hero-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.4rem;
-    background: rgba(22,163,74,0.12);
-    color: #15803d;
+    display: inline-block;
+    background: rgba(255,255,255,0.15);
+    color: #fff;
     font-weight: 700;
     font-size: 0.85rem;
-    padding: 0.35rem 1rem;
+    padding: 0.35rem 1.1rem;
     border-radius: 100px;
-    margin-bottom: 1.25rem;
+    border: 1px solid rgba(255,255,255,0.3);
+    margin-bottom: 1.5rem;
   }
 
   .hero-title {
-    font-size: clamp(2rem, 5vw, 3.2rem);
+    font-size: clamp(3rem, 7vw, 5rem);
     font-weight: 900;
-    line-height: 1.2;
-    color: #1a1a2e;
+    line-height: 1.1;
     margin-bottom: 1.25rem;
   }
 
-  .hero-title span { color: #16a34a; }
+  .hero-subtitle {
+    font-size: 1.3rem;
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+    opacity: 0.95;
+  }
 
   .hero-desc {
-    font-size: 1.1rem;
-    color: #475569;
+    font-size: 0.95rem;
+    opacity: 0.8;
     line-height: 1.8;
-    margin-bottom: 2rem;
-    max-width: 480px;
+    margin-bottom: 2.5rem;
+    max-width: 420px;
   }
 
   .hero-actions {
@@ -71,133 +80,129 @@ import Layout from '../components/layout.astro';
     flex-wrap: wrap;
   }
 
+  /* Left image side */
   .hero-visual {
     position: relative;
-    display: flex;
-    justify-content: center;
-    align-items: center;
   }
 
-  .hero-card {
-    background: #fff;
-    border-radius: 20px;
-    padding: 2rem;
-    box-shadow: 0 20px 60px rgba(0,0,0,0.12);
-    width: 100%;
-    max-width: 340px;
+  .hero-img-wrap {
+    border-radius: 18px;
+    overflow: hidden;
     position: relative;
-  }
-
-  .track-form-label {
-    font-size: 0.8rem;
-    font-weight: 700;
-    color: #64748b;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    margin-bottom: 0.5rem;
-  }
-
-  .track-input-wrap {
-    display: flex;
-    gap: 0.5rem;
-    margin-bottom: 1.5rem;
-  }
-
-  .track-input {
-    flex: 1;
-    padding: 0.75rem 1rem;
-    border: 2px solid #e2e8f0;
-    border-radius: 10px;
-    font-family: 'Cairo', sans-serif;
-    font-size: 0.95rem;
-    outline: none;
-    transition: border-color 0.2s;
-    direction: rtl;
-  }
-
-  .track-input:focus { border-color: #16a34a; }
-
-  .track-btn {
-    background: #16a34a;
-    color: #fff;
-    border: none;
-    border-radius: 10px;
-    padding: 0.75rem 1.25rem;
-    font-family: 'Cairo', sans-serif;
-    font-weight: 700;
-    cursor: pointer;
-    white-space: nowrap;
-    transition: background 0.2s;
-  }
-  .track-btn:hover { background: #15803d; }
-
-  .shipment-status {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-  }
-
-  .status-item {
+    background: #2952D9;
+    aspect-ratio: 4/3;
     display: flex;
     align-items: center;
-    gap: 0.75rem;
-    padding: 0.75rem;
-    border-radius: 10px;
-    background: #f8fafc;
-    font-size: 0.875rem;
+    justify-content: center;
   }
 
-  .status-dot {
-    width: 10px; height: 10px;
+  .hero-img-placeholder {
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, #2952D9, #1e40af);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 6rem;
+  }
+
+  /* Yellow badge on image */
+  .img-badge {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    background: #F5B800;
+    color: #1A1A2E;
+    border-radius: 12px;
+    padding: 0.6rem 0.9rem;
+    text-align: center;
+    font-weight: 900;
+    box-shadow: 0 4px 15px rgba(245,184,0,0.4);
+  }
+
+  .img-badge-num { font-size: 2rem; line-height: 1; }
+  .img-badge-label { font-size: 0.7rem; font-weight: 700; }
+
+  /* Success card */
+  .success-card {
+    position: absolute;
+    bottom: -1rem;
+    left: -1rem;
+    background: #fff;
+    border-radius: 14px;
+    padding: 0.85rem 1.25rem;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+    min-width: 200px;
+  }
+
+  .success-icon {
+    width: 42px; height: 42px;
     border-radius: 50%;
+    border: 2px solid #22C55E;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
     flex-shrink: 0;
   }
 
-  .status-dot.done { background: #16a34a; }
-  .status-dot.active { background: #f59e0b; box-shadow: 0 0 0 3px rgba(245,158,11,0.25); }
-  .status-dot.pending { background: #e2e8f0; }
+  .success-title {
+    font-weight: 800;
+    font-size: 0.9rem;
+    color: #1A1A2E;
+    margin-bottom: 0.1rem;
+  }
 
-  .status-text { font-weight: 600; }
-  .status-time { margin-right: auto; color: #94a3b8; font-size: 0.8rem; }
+  .success-time {
+    font-size: 0.75rem;
+    color: #94A3B8;
+  }
 
   /* ── STATS ── */
   .stats {
-    background: #16a34a;
+    background: #fff;
     padding: 3rem 1.5rem;
+    border-bottom: 1px solid #E2E8F0;
   }
 
   .stats-grid {
-    max-width: 1100px;
+    max-width: 1280px;
     margin: 0 auto;
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: 2rem;
+    gap: 1rem;
     text-align: center;
   }
 
-  @media (max-width: 768px) {
+  @media (max-width: 600px) {
     .stats-grid { grid-template-columns: repeat(2, 1fr); }
   }
 
   .stat-num {
     font-size: 2.5rem;
     font-weight: 900;
-    color: #fff;
+    color: #3B6EF8;
     line-height: 1;
-    margin-bottom: 0.35rem;
+    margin-bottom: 0.4rem;
   }
 
   .stat-label {
-    color: rgba(255,255,255,0.8);
-    font-size: 0.9rem;
+    color: #64748B;
+    font-size: 0.875rem;
     font-weight: 600;
   }
 
   /* ── SERVICES ── */
-  .services { background: #f8fafc; }
+  .services-section {
+    background: #F8FAFC;
+    padding: 5rem 1.5rem;
+  }
 
   .services-grid {
-    max-width: 1100px;
+    max-width: 1280px;
     margin: 0 auto;
     display: grid;
     grid-template-columns: repeat(3, 1fr);
@@ -208,7 +213,7 @@ import Layout from '../components/layout.astro';
     .services-grid { grid-template-columns: 1fr 1fr; }
   }
 
-  @media (max-width: 600px) {
+  @media (max-width: 560px) {
     .services-grid { grid-template-columns: 1fr; }
   }
 
@@ -216,21 +221,22 @@ import Layout from '../components/layout.astro';
     background: #fff;
     border-radius: 16px;
     padding: 2rem;
-    border: 1px solid #e2e8f0;
-    transition: all 0.3s;
-    cursor: pointer;
+    border: 1.5px solid #E2E8F0;
+    transition: all 0.25s;
+    display: flex;
+    flex-direction: column;
   }
 
   .service-card:hover {
-    border-color: #16a34a;
-    box-shadow: 0 8px 30px rgba(22,163,74,0.12);
+    border-color: #3B6EF8;
+    box-shadow: 0 8px 30px rgba(59,110,248,0.12);
     transform: translateY(-3px);
   }
 
   .service-icon {
-    width: 52px; height: 52px;
+    width: 54px; height: 54px;
     border-radius: 14px;
-    background: #f0fdf4;
+    background: #EEF2FF;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -239,59 +245,67 @@ import Layout from '../components/layout.astro';
   }
 
   .service-title {
-    font-size: 1.1rem;
+    font-size: 1.05rem;
     font-weight: 800;
     margin-bottom: 0.5rem;
+    color: #1A1A2E;
   }
 
   .service-desc {
     font-size: 0.875rem;
-    color: #64748b;
+    color: #64748B;
     line-height: 1.7;
+    flex: 1;
+    margin-bottom: 1.25rem;
+  }
+
+  .service-link {
+    font-size: 0.875rem;
+    font-weight: 700;
+    color: #3B6EF8;
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
   }
 
   /* ── HOW IT WORKS ── */
-  .how { background: #fff; }
+  .how-section { background: #fff; padding: 5rem 1.5rem; }
 
-  .how-steps {
-    max-width: 900px;
+  .how-grid {
+    max-width: 1100px;
     margin: 0 auto;
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: 1rem;
+    gap: 1.5rem;
     position: relative;
   }
 
-  @media (max-width: 768px) {
-    .how-steps { grid-template-columns: 1fr 1fr; }
+  @media (max-width: 700px) {
+    .how-grid { grid-template-columns: 1fr 1fr; }
   }
 
-  .how-steps::before {
+  .how-grid::before {
     content: '';
     position: absolute;
-    top: 28px;
-    right: 12.5%;
-    left: 12.5%;
+    top: 27px;
+    right: 12%;
+    left: 12%;
     height: 2px;
-    background: linear-gradient(to left, #16a34a, #bbf7d0);
+    background: linear-gradient(to left, #3B6EF8, #EEF2FF);
   }
 
-  @media (max-width: 768px) {
-    .how-steps::before { display: none; }
+  @media (max-width: 700px) {
+    .how-grid::before { display: none; }
   }
 
-  .how-step {
-    text-align: center;
-    padding: 1rem;
-    position: relative;
-  }
+  .how-step { text-align: center; padding: 0.5rem; }
 
   .how-num {
-    width: 56px; height: 56px;
+    width: 54px; height: 54px;
     border-radius: 50%;
-    background: #16a34a;
+    background: #3B6EF8;
     color: #fff;
-    font-size: 1.25rem;
+    font-size: 1.2rem;
     font-weight: 900;
     display: flex;
     align-items: center;
@@ -299,121 +313,132 @@ import Layout from '../components/layout.astro';
     margin: 0 auto 1rem;
     position: relative;
     z-index: 1;
-    box-shadow: 0 4px 15px rgba(22,163,74,0.35);
+    box-shadow: 0 4px 16px rgba(59,110,248,0.35);
   }
 
   .how-step-title {
     font-size: 0.95rem;
     font-weight: 800;
     margin-bottom: 0.4rem;
+    color: #1A1A2E;
   }
 
   .how-step-desc {
     font-size: 0.8rem;
-    color: #64748b;
+    color: #64748B;
     line-height: 1.6;
   }
 
   /* ── WHY US ── */
-  .why { background: #f0fdf4; }
+  .why-section {
+    background: #EEF2FF;
+    padding: 5rem 1.5rem;
+  }
 
-  .why-grid {
-    max-width: 1100px;
+  .why-inner {
+    max-width: 1280px;
     margin: 0 auto;
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 4rem;
+    gap: 5rem;
     align-items: center;
   }
 
   @media (max-width: 768px) {
-    .why-grid { grid-template-columns: 1fr; }
+    .why-inner { grid-template-columns: 1fr; gap: 3rem; }
   }
 
-  .why-list {
-    display: flex;
-    flex-direction: column;
-    gap: 1.25rem;
-  }
+  .why-list { display: flex; flex-direction: column; gap: 1.25rem; }
 
   .why-item {
     display: flex;
     gap: 1rem;
     align-items: flex-start;
+    background: #fff;
+    padding: 1.25rem;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(59,110,248,0.06);
   }
 
   .why-icon {
     width: 44px; height: 44px;
-    border-radius: 12px;
-    background: #fff;
+    border-radius: 10px;
+    background: #EEF2FF;
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 1.2rem;
     flex-shrink: 0;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
   }
 
-  .why-item-title {
-    font-weight: 800;
-    margin-bottom: 0.2rem;
-  }
+  .why-title { font-weight: 800; margin-bottom: 0.2rem; font-size: 0.95rem; }
+  .why-desc { font-size: 0.85rem; color: #64748B; }
 
-  .why-item-desc {
-    font-size: 0.875rem;
-    color: #64748b;
-  }
-
-  .why-visual {
+  .why-visual-box {
     background: #fff;
     border-radius: 20px;
     padding: 2rem;
-    box-shadow: 0 8px 40px rgba(0,0,0,0.08);
+    box-shadow: 0 8px 40px rgba(59,110,248,0.1);
   }
 
-  .map-placeholder {
-    background: linear-gradient(135deg, #f0fdf4, #dcfce7);
+  .why-map {
+    background: linear-gradient(135deg, #EEF2FF, #DBEAFE);
     border-radius: 14px;
-    height: 250px;
+    height: 220px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 3rem;
+    font-size: 4rem;
     margin-bottom: 1.5rem;
   }
 
-  .delivery-info {
-    display: flex;
-    justify-content: space-between;
-    gap: 1rem;
+  .why-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.75rem;
   }
 
-  .delivery-stat {
+  .why-stat {
     text-align: center;
-    flex: 1;
-    padding: 1rem;
-    background: #f8fafc;
+    background: #F8FAFC;
     border-radius: 10px;
+    padding: 0.85rem 0.5rem;
   }
 
-  .delivery-stat-num {
-    font-size: 1.5rem;
+  .why-stat-num {
+    font-size: 1.4rem;
     font-weight: 900;
-    color: #16a34a;
+    color: #3B6EF8;
+    line-height: 1;
   }
 
-  .delivery-stat-label {
-    font-size: 0.75rem;
-    color: #64748b;
+  .why-stat-label {
+    font-size: 0.7rem;
+    color: #64748B;
     font-weight: 600;
+    margin-top: 0.25rem;
   }
 
   /* ── CTA ── */
   .cta-section {
-    background: linear-gradient(135deg, #15803d, #16a34a);
+    background: #3B6EF8;
     padding: 5rem 1.5rem;
     text-align: center;
+    position: relative;
+    overflow: hidden;
   }
+
+  .cta-section::before {
+    content: '';
+    position: absolute;
+    top: -100px; left: 50%;
+    transform: translateX(-50%);
+    width: 600px; height: 600px;
+    background: radial-gradient(circle, rgba(255,255,255,0.06) 0%, transparent 70%);
+    border-radius: 50%;
+  }
+
+  .cta-inner { position: relative; z-index: 1; }
 
   .cta-title {
     font-size: 2.2rem;
@@ -423,9 +448,9 @@ import Layout from '../components/layout.astro';
   }
 
   .cta-desc {
-    color: rgba(255,255,255,0.85);
-    font-size: 1.1rem;
-    margin-bottom: 2rem;
+    color: rgba(255,255,255,0.8);
+    font-size: 1rem;
+    margin-bottom: 2.5rem;
   }
 
   .cta-actions {
@@ -434,83 +459,55 @@ import Layout from '../components/layout.astro';
     justify-content: center;
     flex-wrap: wrap;
   }
-
-  .btn-white {
-    background: #fff;
-    color: #16a34a;
-    font-weight: 800;
-  }
-  .btn-white:hover { background: #f0fdf4; }
-
-  .btn-ghost {
-    background: transparent;
-    color: #fff;
-    border: 2px solid rgba(255,255,255,0.6);
-    font-weight: 700;
-  }
-  .btn-ghost:hover { border-color: #fff; background: rgba(255,255,255,0.1); }
 </style>
 
-<Layout title="الرئيسية" description="وصّلها - خدمة التوصيل السريع والموثوق" page="home">
+<Layout title="الرئيسية" description="وصّلها - خدمة توصيل سريعة وموثوقة محلياً ومن وإلى المطار" page="home">
 
   <!-- HERO -->
   <section class="hero">
     <div class="hero-inner">
-      <div>
-        <div class="hero-badge">
-          🚀 التوصيل خلال 24 ساعة
-        </div>
-        <h1 class="hero-title">
-          وصّل طلبك<br>
-          <span>بسرعة وأمان</span><br>
-          لأي مكان
-        </h1>
+
+      <!-- Right: Text -->
+      <div class="hero-text">
+        <div class="hero-badge">خدمة توصيل موثوقة</div>
+        <h1 class="hero-title">وصّلها</h1>
+        <p class="hero-subtitle">نوصّل طلباتك من أي متجر لباب بيتك</p>
         <p class="hero-desc">
-          منصة وصّلها توفر لك خدمة توصيل موثوقة وسريعة لجميع أنحاء المملكة.
-          تتبع شحنتك لحظة بلحظة واستلمها في أسرع وقت.
+          خدمة توصيل سريعة وموثوقة — توصيل محلي من المتاجر
+          وتوصيل من وإلى المطار
         </p>
         <div class="hero-actions">
-          <a href="/track" class="btn btn-primary">تتبع شحنتك ←</a>
-          <a href="/services" class="btn btn-outline">اعرف المزيد</a>
+          <a href="/services#local" class="btn btn-yellow">
+            🛵 اطلب توصيل محلي
+          </a>
+          <a href="/services#airport" class="btn btn-white">
+            ✈️ توصيل مطار
+          </a>
         </div>
       </div>
 
+      <!-- Left: Image -->
       <div class="hero-visual">
-        <div class="hero-card">
-          <div class="track-form-label">تتبع شحنتك</div>
-          <div class="track-input-wrap">
-            <input
-              class="track-input"
-              type="text"
-              placeholder="رقم التتبع..."
-            />
-            <button class="track-btn">بحث</button>
-          </div>
+        <div class="hero-img-wrap">
+          <div class="hero-img-placeholder">🚐</div>
 
-          <div class="shipment-status">
-            <div class="status-item">
-              <div class="status-dot done"></div>
-              <span class="status-text">تم استلام الطلب</span>
-              <span class="status-time">10:00 ص</span>
-            </div>
-            <div class="status-item">
-              <div class="status-dot done"></div>
-              <span class="status-text">قيد التحضير</span>
-              <span class="status-time">11:30 ص</span>
-            </div>
-            <div class="status-item">
-              <div class="status-dot active"></div>
-              <span class="status-text">في الطريق إليك</span>
-              <span class="status-time">02:00 م</span>
-            </div>
-            <div class="status-item">
-              <div class="status-dot pending"></div>
-              <span class="status-text">تم التسليم</span>
-              <span class="status-time">—</span>
-            </div>
+          <!-- Yellow "30 دقيقة" badge -->
+          <div class="img-badge">
+            <div class="img-badge-num">30</div>
+            <div class="img-badge-label">دقيقة توصيل</div>
+          </div>
+        </div>
+
+        <!-- Success card -->
+        <div class="success-card">
+          <div class="success-icon">✅</div>
+          <div>
+            <div class="success-title">تم التوصيل بنجاح</div>
+            <div class="success-time">منذ 5 دقائق</div>
           </div>
         </div>
       </div>
+
     </div>
   </section>
 
@@ -518,150 +515,158 @@ import Layout from '../components/layout.astro';
   <section class="stats">
     <div class="stats-grid">
       <div>
-        <div class="stat-num">+500K</div>
-        <div class="stat-label">شحنة مكتملة</div>
+        <div class="stat-num">30 د</div>
+        <div class="stat-label">متوسط التوصيل</div>
       </div>
       <div>
-        <div class="stat-num">98%</div>
-        <div class="stat-label">نسبة رضا العملاء</div>
+        <div class="stat-num">24/7</div>
+        <div class="stat-label">خدمة متاحة</div>
       </div>
       <div>
-        <div class="stat-num">150+</div>
-        <div class="stat-label">مدينة نخدمها</div>
+        <div class="stat-num">+2</div>
+        <div class="stat-label">منطقة تغطية</div>
       </div>
       <div>
-        <div class="stat-num">24h</div>
-        <div class="stat-label">أقصى وقت توصيل</div>
+        <div class="stat-num">+0</div>
+        <div class="stat-label">متجر شريك</div>
       </div>
     </div>
   </section>
 
   <!-- SERVICES -->
-  <section class="section services">
-    <div style="max-width:1100px; margin:0 auto;">
-      <div class="badge">خدماتنا</div>
-      <h2 class="section-title">كل ما تحتاجه في مكان واحد</h2>
-      <p class="section-sub">نقدم مجموعة متكاملة من خدمات الشحن والتوصيل</p>
+  <section class="services-section">
+    <div class="container">
+      <h2 class="section-title">خدماتنا</h2>
+      <p class="section-sub">نقدم مجموعة متكاملة من خدمات التوصيل لتلبية احتياجاتك</p>
 
       <div class="services-grid">
         <div class="service-card">
-          <div class="service-icon">⚡</div>
-          <div class="service-title">التوصيل السريع</div>
-          <p class="service-desc">توصيل فوري خلال ساعات قليلة داخل المدينة لأهم طلباتك.</p>
+          <div class="service-icon">🛵</div>
+          <div class="service-title">توصيل محلي</div>
+          <p class="service-desc">نوصّل طلباتك من أي متجر أو مطعم لباب بيتك خلال 30 دقيقة فقط.</p>
+          <a href="/services#local" class="service-link">اعرف المزيد ←</a>
         </div>
+
+        <div class="service-card">
+          <div class="service-icon">✈️</div>
+          <div class="service-title">توصيل المطار</div>
+          <p class="service-desc">خدمة توصيل احترافية من وإلى المطار في الوقت المحدد بدون تأخير.</p>
+          <a href="/services#airport" class="service-link">اعرف المزيد ←</a>
+        </div>
+
+        <div class="service-card">
+          <div class="service-icon">🏪</div>
+          <div class="service-title">المتاجر الشريكة</div>
+          <p class="service-desc">اطلب من مئات المتاجر الشريكة واستلم طلبك بأسرع وقت ممكن.</p>
+          <a href="/services#partners" class="service-link">اعرف المزيد ←</a>
+        </div>
+
         <div class="service-card">
           <div class="service-icon">📦</div>
-          <div class="service-title">الشحن الاقتصادي</div>
-          <p class="service-desc">وفّر على تكاليف الشحن مع خيار التوصيل الاقتصادي خلال 48 ساعة.</p>
+          <div class="service-title">شحن الطرود</div>
+          <p class="service-desc">أرسل طرودك وهداياك لأي مكان بأمان تام وتتبع لحظي.</p>
+          <a href="/track" class="service-link">اعرف المزيد ←</a>
         </div>
+
         <div class="service-card">
-          <div class="service-icon">🏢</div>
+          <div class="service-icon">🔄</div>
+          <div class="service-title">المرتجعات</div>
+          <p class="service-desc">نظام سهل ومرن لإعادة المنتجات للمتاجر بدون أي تعقيد.</p>
+          <a href="/services" class="service-link">اعرف المزيد ←</a>
+        </div>
+
+        <div class="service-card">
+          <div class="service-icon">📊</div>
           <div class="service-title">حلول الأعمال</div>
-          <p class="service-desc">باقات مخصصة للشركات والمتاجر الإلكترونية بأسعار تنافسية.</p>
-        </div>
-        <div class="service-card">
-          <div class="service-icon">🌡️</div>
-          <div class="service-title">الشحن المبرد</div>
-          <p class="service-desc">توصيل آمن للمنتجات الغذائية والأدوية بدرجات حرارة مضبوطة.</p>
-        </div>
-        <div class="service-card">
-          <div class="service-icon">↩️</div>
-          <div class="service-title">إدارة المرتجعات</div>
-          <p class="service-desc">نظام مرن لاستقبال وإدارة مرتجعات منتجاتك بكل سهولة.</p>
-        </div>
-        <div class="service-card">
-          <div class="service-icon">📡</div>
-          <div class="service-title">التتبع اللحظي</div>
-          <p class="service-desc">تابع شحنتك لحظة بلحظة على الخريطة مع إشعارات فورية.</p>
+          <p class="service-desc">لوحة تحكم متكاملة وباقات خاصة للشركات والمتاجر الإلكترونية.</p>
+          <a href="/contact" class="service-link">تواصل معنا ←</a>
         </div>
       </div>
     </div>
   </section>
 
   <!-- HOW IT WORKS -->
-  <section class="section how">
-    <div class="badge" style="display:block; text-align:center;">كيف تعمل؟</div>
-    <h2 class="section-title">أرسل شحنتك في 4 خطوات</h2>
-    <p class="section-sub">عملية بسيطة وسريعة من البداية للنهاية</p>
+  <section class="how-section">
+    <h2 class="section-title">كيف تعمل وصّلها؟</h2>
+    <p class="section-sub">أربع خطوات بسيطة وشحنتك في الطريق</p>
 
-    <div class="how-steps">
+    <div class="how-grid">
       <div class="how-step">
         <div class="how-num">١</div>
-        <div class="how-step-title">أنشئ طلبك</div>
-        <p class="how-step-desc">أدخل بيانات المرسل والمستلم بسهولة</p>
+        <div class="how-step-title">اختر المتجر</div>
+        <p class="how-step-desc">تصفح المتاجر الشريكة واختر ما تريد</p>
       </div>
       <div class="how-step">
         <div class="how-num">٢</div>
-        <div class="how-step-title">اختر الخدمة</div>
-        <p class="how-step-desc">حدد نوع التوصيل المناسب لك</p>
+        <div class="how-step-title">أضف طلبك</div>
+        <p class="how-step-desc">حدد المنتجات وأدخل عنوان التوصيل</p>
       </div>
       <div class="how-step">
         <div class="how-num">٣</div>
         <div class="how-step-title">ادفع بأمان</div>
-        <p class="how-step-desc">طرق دفع متعددة وآمنة</p>
+        <p class="how-step-desc">طرق دفع متعددة ومشفرة</p>
       </div>
       <div class="how-step">
         <div class="how-num">٤</div>
-        <div class="how-step-title">تتبع شحنتك</div>
-        <p class="how-step-desc">راقب توصيلك لحظة بلحظة</p>
+        <div class="how-step-title">استلم طلبك</div>
+        <p class="how-step-desc">المندوب عند بابك خلال 30 دقيقة</p>
       </div>
     </div>
   </section>
 
   <!-- WHY US -->
-  <section class="section why">
-    <div class="why-grid">
+  <section class="why-section">
+    <div class="why-inner">
       <div>
-        <div class="badge">لماذا وصّلها؟</div>
         <h2 class="section-title" style="text-align:right; margin-bottom:2rem;">
-          الأفضل في خدمة<br>التوصيل
+          لماذا تختار<br>وصّلها؟
         </h2>
         <div class="why-list">
           <div class="why-item">
+            <div class="why-icon">⚡</div>
+            <div>
+              <div class="why-title">توصيل فائق السرعة</div>
+              <p class="why-desc">متوسط وقت التوصيل 30 دقيقة فقط داخل المدينة.</p>
+            </div>
+          </div>
+          <div class="why-item">
+            <div class="why-icon">📡</div>
+            <div>
+              <div class="why-title">تتبع فوري للطلب</div>
+              <p class="why-desc">تابع موقع مندوبك لحظة بلحظة على الخريطة.</p>
+            </div>
+          </div>
+          <div class="why-item">
             <div class="why-icon">🔒</div>
             <div>
-              <div class="why-item-title">أمان تام لشحنتك</div>
-              <p class="why-item-desc">تأمين كامل على جميع الشحنات مع ضمان التعويض عند الفقدان أو التلف.</p>
+              <div class="why-title">أمان وضمان</div>
+              <p class="why-desc">شحناتك مؤمنة بالكامل مع ضمان الاسترداد عند أي مشكلة.</p>
             </div>
           </div>
           <div class="why-item">
-            <div class="why-icon">⏰</div>
+            <div class="why-icon">🕐</div>
             <div>
-              <div class="why-item-title">التزام بالمواعيد</div>
-              <p class="why-item-desc">نضمن التوصيل في الوقت المحدد أو نعيد لك المبلغ كاملاً.</p>
-            </div>
-          </div>
-          <div class="why-item">
-            <div class="why-icon">📞</div>
-            <div>
-              <div class="why-item-title">دعم 24/7</div>
-              <p class="why-item-desc">فريق خدمة عملاء متاح على مدار الساعة للإجابة على استفساراتك.</p>
-            </div>
-          </div>
-          <div class="why-item">
-            <div class="why-icon">💰</div>
-            <div>
-              <div class="why-item-title">أسعار تنافسية</div>
-              <p class="why-item-desc">أقل الأسعار في السوق مع أعلى مستويات الجودة والخدمة.</p>
+              <div class="why-title">خدمة 24/7</div>
+              <p class="why-desc">نحن هنا في أي وقت، ليل أو نهار، طوال الأسبوع.</p>
             </div>
           </div>
         </div>
       </div>
 
-      <div class="why-visual">
-        <div class="map-placeholder">🗺️</div>
-        <div class="delivery-info">
-          <div class="delivery-stat">
-            <div class="delivery-stat-num">2.4h</div>
-            <div class="delivery-stat-label">متوسط وقت التوصيل</div>
+      <div class="why-visual-box">
+        <div class="why-map">🗺️</div>
+        <div class="why-stats">
+          <div class="why-stat">
+            <div class="why-stat-num">30د</div>
+            <div class="why-stat-label">متوسط التوصيل</div>
           </div>
-          <div class="delivery-stat">
-            <div class="delivery-stat-num">150+</div>
-            <div class="delivery-stat-label">مدينة نخدمها</div>
+          <div class="why-stat">
+            <div class="why-stat-num">24/7</div>
+            <div class="why-stat-label">خدمة متاحة</div>
           </div>
-          <div class="delivery-stat">
-            <div class="delivery-stat-num">99%</div>
-            <div class="delivery-stat-label">شحنات سليمة</div>
+          <div class="why-stat">
+            <div class="why-stat-num">+2</div>
+            <div class="why-stat-label">منطقة تغطية</div>
           </div>
         </div>
       </div>
@@ -670,11 +675,13 @@ import Layout from '../components/layout.astro';
 
   <!-- CTA -->
   <section class="cta-section">
-    <h2 class="cta-title">ابدأ التوصيل اليوم</h2>
-    <p class="cta-desc">انضم لأكثر من 50,000 عميل يثقون في وصّلها يومياً</p>
-    <div class="cta-actions">
-      <a href="/track" class="btn btn-white">تتبع شحنة موجودة</a>
-      <a href="/contact" class="btn btn-ghost">تواصل معنا</a>
+    <div class="cta-inner">
+      <h2 class="cta-title">ابدأ التوصيل الآن</h2>
+      <p class="cta-desc">انضم لآلاف العملاء الذين يثقون في وصّلها يومياً</p>
+      <div class="cta-actions">
+        <a href="/services#local" class="btn btn-yellow">🛵 اطلب توصيل محلي</a>
+        <a href="/track" class="btn btn-white">📦 تتبع طلبك</a>
+      </div>
     </div>
   </section>
 
