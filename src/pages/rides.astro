@@ -1,0 +1,679 @@
+---
+import Layout from '../components/layout.astro';
+import PageHero from '../components/PageHero.astro';
+import { AREAS } from '../data/rides';
+---
+
+<style>
+  /* ── layout ── */
+  .rides-wrap {
+    max-width: 680px;
+    margin: 0 auto;
+    padding: var(--sp-10) var(--sp-6) var(--sp-20);
+  }
+
+  /* ── how-it-works strip ── */
+  .how-strip {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: var(--sp-4);
+    margin-bottom: var(--sp-10);
+  }
+  .how-step {
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-xl);
+    padding: var(--sp-5) var(--sp-4);
+    text-align: center;
+  }
+  .how-step__icon { font-size: 2rem; margin-bottom: var(--sp-2); }
+  .how-step__title { font-weight: var(--weight-black); font-size: var(--text-sm); color: var(--color-text); margin-bottom: 4px; }
+  .how-step__desc  { font-size: var(--text-xs); color: var(--color-text-faint); }
+
+  /* ── booking card ── */
+  .booking-card {
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-md);
+    overflow: hidden;
+  }
+
+  /* ── route selector ── */
+  .route-bar {
+    padding: var(--sp-6) var(--sp-6) 0;
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: var(--sp-3);
+    align-items: end;
+  }
+  .route-pick { display: flex; flex-direction: column; gap: var(--sp-2); }
+  .route-pick__label {
+    font-weight: var(--weight-black);
+    font-size: var(--text-sm);
+    color: var(--color-text-faint);
+    display: flex; align-items: center; gap: var(--sp-1);
+  }
+  .route-pick__dot {
+    width: 10px; height: 10px; border-radius: 50%;
+    display: inline-block;
+  }
+  .route-pick__dot--from { background: var(--color-primary); }
+  .route-pick__dot--to   { background: #ef4444; }
+  .route-pick__select {
+    width: 100%;
+    padding: var(--sp-3) var(--sp-4);
+    border: 2px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    font-family: var(--font-body); font-size: var(--text-base);
+    direction: rtl; background: var(--color-bg); color: var(--color-text);
+    outline: none; cursor: pointer;
+    transition: border-color var(--ease);
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: left 12px center;
+  }
+  .route-pick__select:focus { border-color: var(--color-primary); }
+  .route-pick__select--to:focus { border-color: #ef4444; }
+
+  .swap-btn {
+    width: 40px; height: 40px; border-radius: var(--radius-full);
+    background: var(--color-bg); border: 2px solid var(--color-border);
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    font-size: 1.1rem; transition: all var(--ease); color: var(--color-primary);
+    flex-shrink: 0; align-self: end; margin-bottom: 4px;
+  }
+  .swap-btn:hover { background: var(--color-primary-light); border-color: var(--color-primary); transform: rotate(180deg); }
+
+  /* ── route summary ── */
+  .route-summary {
+    margin: var(--sp-5) var(--sp-6) 0;
+    background: linear-gradient(135deg, #f0f9ff 0%, #eff6ff 100%);
+    border: 1px solid #bfdbfe;
+    border-radius: var(--radius-xl);
+    padding: var(--sp-4) var(--sp-5);
+    display: none;
+    gap: var(--sp-6);
+    align-items: center;
+    justify-content: center;
+  }
+  .route-summary.visible { display: flex; }
+  .route-summary__stat { text-align: center; }
+  .route-summary__val {
+    font-size: var(--text-xl);
+    font-weight: var(--weight-black);
+    color: var(--color-primary);
+    line-height: 1.1;
+  }
+  .route-summary__val--price { color: #16a34a; font-size: 1.6rem; }
+  .route-summary__key {
+    font-size: var(--text-xs);
+    color: var(--color-text-faint);
+    margin-top: 2px;
+  }
+  .route-summary__divider { width: 1px; height: 36px; background: #bfdbfe; flex-shrink: 0; }
+
+  /* route path visualization */
+  .route-path {
+    display: flex; align-items: center; gap: var(--sp-2);
+    background: #fff; border: 1px solid #bfdbfe;
+    border-radius: var(--radius-full);
+    padding: var(--sp-2) var(--sp-4);
+    font-size: var(--text-sm);
+    font-weight: var(--weight-bold);
+    color: var(--color-text);
+    flex-shrink: 0;
+    max-width: 220px;
+    overflow: hidden;
+  }
+  .route-path__from { color: var(--color-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .route-path__arrow { color: var(--color-text-faint); flex-shrink: 0; }
+  .route-path__to { color: #ef4444; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  /* ── booking form ── */
+  .form-section {
+    padding: var(--sp-6);
+    border-top: 1px solid var(--color-border);
+    margin-top: var(--sp-5);
+    display: none;
+  }
+  .form-section.visible { display: block; }
+  .form-section__title {
+    font-size: var(--text-base);
+    font-weight: var(--weight-black);
+    margin-bottom: var(--sp-5);
+    color: var(--color-text);
+  }
+
+  .field { margin-bottom: var(--sp-4); }
+  .field__label {
+    display: block; font-weight: var(--weight-bold);
+    font-size: var(--text-sm); margin-bottom: var(--sp-2); color: #374151;
+  }
+  .field__input, .field__select, .field__textarea {
+    width: 100%; padding: var(--sp-3) var(--sp-4);
+    border: 2px solid var(--color-border); border-radius: var(--radius);
+    font-family: var(--font-body); font-size: var(--text-base);
+    direction: rtl; background: var(--color-bg); color: var(--color-text);
+    outline: none; transition: border-color var(--ease);
+  }
+  .field__input:focus, .field__select:focus, .field__textarea:focus { border-color: var(--color-primary); }
+  .field__textarea { resize: vertical; min-height: 80px; }
+  .field__hint { font-size: var(--text-xs); color: var(--color-text-faint); margin-top: 4px; }
+
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-4); }
+
+  /* payment options */
+  .payment-opts { display: flex; flex-direction: column; gap: var(--sp-3); }
+  .payment-opt {
+    display: flex; align-items: center; gap: var(--sp-3);
+    border: 2px solid var(--color-border); border-radius: var(--radius-lg);
+    padding: var(--sp-3) var(--sp-4); cursor: pointer;
+    transition: all var(--ease);
+  }
+  .payment-opt:has(input:checked) { border-color: var(--color-primary); background: var(--color-primary-light); }
+  .payment-opt input { position: absolute; opacity: 0; width: 0; }
+  .payment-opt__icon { font-size: 1.4rem; flex-shrink: 0; }
+  .payment-opt__text { flex: 1; }
+  .payment-opt__name { font-weight: var(--weight-bold); font-size: var(--text-sm); }
+  .payment-opt__desc { font-size: var(--text-xs); color: var(--color-text-faint); }
+  .payment-opt__check {
+    width: 20px; height: 20px; border-radius: var(--radius-full);
+    border: 2px solid var(--color-border); flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    transition: all var(--ease);
+  }
+  .payment-opt:has(input:checked) .payment-opt__check {
+    background: var(--color-primary); border-color: var(--color-primary);
+  }
+  .payment-opt:has(input:checked) .payment-opt__check::after {
+    content: '✓'; color: #fff; font-size: 11px; font-weight: 900;
+  }
+
+  /* submit button */
+  .submit-btn {
+    width: 100%; padding: var(--sp-4); border-radius: var(--radius-lg);
+    background: var(--color-primary); color: #fff; font-family: var(--font-body);
+    font-size: var(--text-base); font-weight: var(--weight-black);
+    border: none; cursor: pointer; transition: all var(--ease);
+    margin-top: var(--sp-6);
+  }
+  .submit-btn:hover:not(:disabled) { background: var(--color-primary-dark); transform: translateY(-1px); box-shadow: var(--shadow-md); }
+  .submit-btn:disabled { opacity: .6; cursor: not-allowed; transform: none; }
+
+  /* ── error / success ── */
+  .alert {
+    padding: var(--sp-3) var(--sp-4);
+    border-radius: var(--radius);
+    font-size: var(--text-sm);
+    margin-bottom: var(--sp-4);
+    display: none;
+  }
+  .alert.visible { display: block; }
+  .alert--error { background: #fef2f2; border: 1px solid #fca5a5; color: #b91c1c; }
+
+  /* success card */
+  .success-card {
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-md);
+    padding: var(--sp-10) var(--sp-8);
+    text-align: center;
+    display: none;
+  }
+  .success-card.visible { display: block; }
+  .success-card__icon { font-size: 3.5rem; margin-bottom: var(--sp-4); }
+  .success-card__title { font-size: var(--text-2xl); font-weight: var(--weight-black); margin-bottom: var(--sp-2); }
+  .success-card__sub   { color: var(--color-text-faint); margin-bottom: var(--sp-6); }
+  .success-details {
+    background: #f9fafb; border: 1px solid var(--color-border);
+    border-radius: var(--radius-xl); padding: var(--sp-5);
+    text-align: right; margin-bottom: var(--sp-6);
+  }
+  .detail-row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: var(--sp-2) 0;
+    border-bottom: 1px solid var(--color-border);
+    font-size: var(--text-sm);
+  }
+  .detail-row:last-child { border-bottom: none; }
+  .detail-row__key { color: var(--color-text-faint); }
+  .detail-row__val { font-weight: var(--weight-bold); }
+  .detail-row__val--price { color: #16a34a; font-size: var(--text-base); }
+  .success-actions { display: flex; gap: var(--sp-3); justify-content: center; flex-wrap: wrap; }
+  .btn-outline {
+    padding: var(--sp-3) var(--sp-6); border: 2px solid var(--color-primary);
+    border-radius: var(--radius-lg); color: var(--color-primary);
+    font-family: var(--font-body); font-weight: var(--weight-bold);
+    font-size: var(--text-sm); cursor: pointer; background: transparent;
+    transition: all var(--ease); text-decoration: none; display: inline-flex; align-items: center; gap: var(--sp-2);
+  }
+  .btn-outline:hover { background: var(--color-primary-light); }
+  .btn-filled {
+    padding: var(--sp-3) var(--sp-6); background: var(--color-primary);
+    border-radius: var(--radius-lg); color: #fff;
+    font-family: var(--font-body); font-weight: var(--weight-bold);
+    font-size: var(--text-sm); cursor: pointer; border: none;
+    transition: all var(--ease); text-decoration: none; display: inline-flex; align-items: center; gap: var(--sp-2);
+  }
+  .btn-filled:hover { background: var(--color-primary-dark); }
+
+  /* ── fare guide ── */
+  .fare-section { margin-top: var(--sp-10); }
+  .fare-section__title { font-size: var(--text-xl); font-weight: var(--weight-black); margin-bottom: var(--sp-5); }
+  .fare-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-3); }
+  .fare-card {
+    background: var(--color-bg); border: 1px solid var(--color-border);
+    border-radius: var(--radius-xl); padding: var(--sp-4) var(--sp-5);
+    display: flex; align-items: center; gap: var(--sp-3);
+  }
+  .fare-card__route { flex: 1; font-size: var(--text-sm); }
+  .fare-card__from  { font-weight: var(--weight-black); color: var(--color-text); }
+  .fare-card__to    { color: var(--color-text-faint); font-size: var(--text-xs); }
+  .fare-card__price { font-weight: var(--weight-black); color: #16a34a; font-size: var(--text-base); white-space: nowrap; }
+
+  /* ── responsive ── */
+  @media (max-width: 640px) {
+    .how-strip { grid-template-columns: 1fr 1fr; }
+    .route-bar { grid-template-columns: 1fr; }
+    .swap-btn { order: 3; width: 36px; height: 36px; align-self: auto; margin: 0 auto; }
+    .route-summary { flex-direction: column; gap: var(--sp-3); }
+    .route-summary__divider { width: 80%; height: 1px; }
+    .form-row { grid-template-columns: 1fr; }
+    .fare-grid { grid-template-columns: 1fr; }
+    .route-path { max-width: 100%; }
+  }
+</style>
+
+<Layout title="مشاوير دمياط | وصّلها" page="rides">
+  <PageHero
+    title="مشاوير داخل دمياط 🚗"
+    subtitle="توصيلك لأي مكان في محافظة دمياط — أسعار شفافة بناءً على المسافة الفعلية"
+  />
+
+  <div class="rides-wrap">
+
+    <!-- How it works -->
+    <div class="how-strip">
+      <div class="how-step">
+        <div class="how-step__icon">📍</div>
+        <div class="how-step__title">اختر المناطق</div>
+        <div class="how-step__desc">من أين وإلى أين</div>
+      </div>
+      <div class="how-step">
+        <div class="how-step__icon">💰</div>
+        <div class="how-step__title">شوف السعر</div>
+        <div class="how-step__desc">محسوب فورًا</div>
+      </div>
+      <div class="how-step">
+        <div class="how-step__icon">📋</div>
+        <div class="how-step__title">أكمل بياناتك</div>
+        <div class="how-step__desc">اسمك ورقمك فقط</div>
+      </div>
+      <div class="how-step">
+        <div class="how-step__icon">🚗</div>
+        <div class="how-step__title">السائق في الطريق</div>
+        <div class="how-step__desc">يتواصل معك مباشرة</div>
+      </div>
+    </div>
+
+    <!-- Booking card -->
+    <div id="booking-card" class="booking-card">
+
+      <!-- Route bar -->
+      <div class="route-bar">
+        <div class="route-pick">
+          <span class="route-pick__label">
+            <span class="route-pick__dot route-pick__dot--from"></span>
+            من أين؟
+          </span>
+          <select id="from-area" class="route-pick__select">
+            <option value="">اختر منطقة الانطلاق</option>
+            {AREAS.map(a => (
+              <option value={a.id} data-lat={a.lat} data-lng={a.lng}>{a.name}</option>
+            ))}
+          </select>
+        </div>
+
+        <button id="swap-btn" class="swap-btn" title="تبديل الاتجاه" type="button">⇄</button>
+
+        <div class="route-pick">
+          <span class="route-pick__label">
+            <span class="route-pick__dot route-pick__dot--to"></span>
+            إلى أين؟
+          </span>
+          <select id="to-area" class="route-pick__select route-pick__select--to">
+            <option value="">اختر منطقة الوصول</option>
+            {AREAS.map(a => (
+              <option value={a.id} data-lat={a.lat} data-lng={a.lng}>{a.name}</option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      <!-- Route summary -->
+      <div id="route-summary" class="route-summary">
+        <div class="route-path">
+          <span id="path-from" class="route-path__from"></span>
+          <span class="route-path__arrow">←</span>
+          <span id="path-to" class="route-path__to"></span>
+        </div>
+        <div class="route-summary__divider"></div>
+        <div class="route-summary__stat">
+          <div id="summary-distance" class="route-summary__val"></div>
+          <div class="route-summary__key">المسافة</div>
+        </div>
+        <div class="route-summary__divider"></div>
+        <div class="route-summary__stat">
+          <div id="summary-eta" class="route-summary__val"></div>
+          <div class="route-summary__key">الوقت المقدر</div>
+        </div>
+        <div class="route-summary__divider"></div>
+        <div class="route-summary__stat">
+          <div id="summary-price" class="route-summary__val route-summary__val--price"></div>
+          <div class="route-summary__key">السعر</div>
+        </div>
+      </div>
+
+      <!-- Form section -->
+      <div id="form-section" class="form-section">
+        <div class="form-section__title">بيانات الرحلة</div>
+
+        <div id="alert-error" class="alert alert--error"></div>
+
+        <div class="form-row">
+          <div class="field">
+            <label class="field__label" for="r-name">الاسم الكامل</label>
+            <input id="r-name" type="text" class="field__input" placeholder="محمد أحمد" required />
+          </div>
+          <div class="field">
+            <label class="field__label" for="r-phone">رقم الجوال</label>
+            <input id="r-phone" type="tel" class="field__input" placeholder="010 1234 5678" required />
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="field">
+            <label class="field__label" for="r-passengers">عدد الركاب</label>
+            <select id="r-passengers" class="field__select">
+              <option value="1">1 راكب</option>
+              <option value="2">2 ركاب</option>
+              <option value="3">3 ركاب</option>
+              <option value="4">4 ركاب</option>
+              <option value="5">5 ركاب</option>
+              <option value="6">6 ركاب (ميني باص)</option>
+            </select>
+          </div>
+          <div class="field">
+            <label class="field__label" for="r-time">وقت الانطلاق</label>
+            <select id="r-time" class="field__select">
+              <option value="now">الآن فورًا</option>
+              <option value="15">بعد 15 دقيقة</option>
+              <option value="30">بعد 30 دقيقة</option>
+              <option value="60">بعد ساعة</option>
+              <option value="later">موعد محدد لاحقًا</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="field__label" for="r-notes">ملاحظات (اختياري)</label>
+          <textarea id="r-notes" class="field__textarea" placeholder="مثلاً: أمام مسجد الفتح، أو أي تفاصيل إضافية..."></textarea>
+        </div>
+
+        <div class="field">
+          <label class="field__label">طريقة الدفع</label>
+          <div class="payment-opts">
+            <label class="payment-opt">
+              <input type="radio" name="r-payment" value="cash" checked />
+              <span class="payment-opt__icon">💵</span>
+              <span class="payment-opt__text">
+                <span class="payment-opt__name">كاش عند الوصول</span>
+                <span class="payment-opt__desc">ادفع للسائق مباشرةً</span>
+              </span>
+              <span class="payment-opt__check"></span>
+            </label>
+            <label class="payment-opt">
+              <input type="radio" name="r-payment" value="vodafone" />
+              <span class="payment-opt__icon">📱</span>
+              <span class="payment-opt__text">
+                <span class="payment-opt__name">فودافون كاش / إنستاباي</span>
+                <span class="payment-opt__desc">تحويل إلكتروني قبل الرحلة</span>
+              </span>
+              <span class="payment-opt__check"></span>
+            </label>
+          </div>
+        </div>
+
+        <button id="confirm-btn" class="submit-btn" type="button">🚗 تأكيد الطلب</button>
+      </div>
+
+    </div><!-- /booking-card -->
+
+    <!-- Success card -->
+    <div id="success-card" class="success-card">
+      <div class="success-card__icon">✅</div>
+      <h2 class="success-card__title">تم تأكيد طلبك!</h2>
+      <p class="success-card__sub">سيتواصل معك السائق على رقمك خلال دقائق</p>
+      <div id="success-details" class="success-details"></div>
+      <div class="success-actions">
+        <a href="/orders" class="btn-outline">📋 طلباتي</a>
+        <button id="new-ride-btn" class="btn-filled" type="button">🚗 رحلة جديدة</button>
+      </div>
+    </div>
+
+    <!-- Fare guide -->
+    <div class="fare-section">
+      <h2 class="fare-section__title">دليل الأسعار التقريبية</h2>
+      <div class="fare-grid" id="fare-grid">
+        <!-- injected by script -->
+      </div>
+    </div>
+
+  </div><!-- /rides-wrap -->
+</Layout>
+
+<script define:vars={{ AREAS }}>
+  // ── Haversine ──
+  function haversineKm(lat1, lng1, lat2, lng2) {
+    const R = 6371;
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLng = (lng2 - lng1) * Math.PI / 180;
+    const a = Math.sin(dLat / 2) ** 2 +
+      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+      Math.sin(dLng / 2) ** 2;
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  }
+  function fareForDist(km) {
+    const road = km * 1.35;
+    return Math.ceil(Math.max(15 + road * 7, 20) / 5) * 5;
+  }
+  function etaMin(km) { return Math.ceil(km * 1.35 / 40 * 60); }
+
+  // ── DOM refs ──
+  const fromSel  = document.getElementById('from-area');
+  const toSel    = document.getElementById('to-area');
+  const swapBtn  = document.getElementById('swap-btn');
+  const summary  = document.getElementById('route-summary');
+  const formSec  = document.getElementById('form-section');
+  const bookCard = document.getElementById('booking-card');
+  const succCard = document.getElementById('success-card');
+
+  // ── area lookup ──
+  function areaById(id) { return AREAS.find(a => a.id === id); }
+  function selArea(sel) {
+    const opt = sel.options[sel.selectedIndex];
+    if (!opt || !opt.value) return null;
+    return { id: opt.value, name: opt.text, lat: parseFloat(opt.dataset.lat), lng: parseFloat(opt.dataset.lng) };
+  }
+
+  // ── update summary ──
+  function updateSummary() {
+    const from = selArea(fromSel);
+    const to   = selArea(toSel);
+    if (!from || !to || from.id === to.id) {
+      summary.classList.remove('visible');
+      formSec.classList.remove('visible');
+      return;
+    }
+    const km    = haversineKm(from.lat, from.lng, to.lat, to.lng);
+    const fare  = fareForDist(km);
+    const eta   = etaMin(km);
+    const road  = (km * 1.35).toFixed(1);
+
+    document.getElementById('path-from').textContent = from.name;
+    document.getElementById('path-to').textContent   = to.name;
+    document.getElementById('summary-distance').textContent = road + ' كم';
+    document.getElementById('summary-eta').textContent      = eta + ' دقيقة';
+    document.getElementById('summary-price').textContent    = fare + ' ج.م';
+
+    summary.classList.add('visible');
+    formSec.classList.add('visible');
+  }
+
+  fromSel.addEventListener('change', updateSummary);
+  toSel.addEventListener('change', updateSummary);
+
+  // ── swap ──
+  swapBtn.addEventListener('click', () => {
+    const fv = fromSel.value, tv = toSel.value;
+    fromSel.value = tv;
+    toSel.value   = fv;
+    updateSummary();
+  });
+
+  // ── phone validation ──
+  const EG = /^01[0125][0-9]{8}$/;
+  function normPhone(s) { return s.replace(/[\s\-()]/g, ''); }
+
+  // ── confirm ──
+  document.getElementById('confirm-btn').addEventListener('click', () => {
+    const from = selArea(fromSel);
+    const to   = selArea(toSel);
+    if (!from || !to) return;
+
+    const name     = document.getElementById('r-name').value.trim();
+    const phone    = normPhone(document.getElementById('r-phone').value.trim());
+    const pax      = document.getElementById('r-passengers').value;
+    const timing   = document.getElementById('r-time').value;
+    const notes    = document.getElementById('r-notes').value.trim();
+    const payment  = document.querySelector('input[name="r-payment"]:checked').value;
+    const errEl    = document.getElementById('alert-error');
+
+    errEl.classList.remove('visible');
+
+    if (!name) {
+      errEl.textContent = 'يرجى إدخال الاسم.';
+      errEl.classList.add('visible'); return;
+    }
+    if (!EG.test(phone)) {
+      errEl.textContent = 'يرجى إدخال رقم جوال مصري صحيح (11 رقمًا يبدأ بـ 010 أو 011 أو 012 أو 015).';
+      errEl.classList.add('visible'); return;
+    }
+
+    const km   = haversineKm(from.lat, from.lng, to.lat, to.lng);
+    const fare = fareForDist(km);
+    const eta  = etaMin(km);
+
+    const timingLabel = {
+      now: 'الآن فورًا', '15': 'بعد 15 دقيقة',
+      '30': 'بعد 30 دقيقة', '60': 'بعد ساعة', later: 'موعد لاحق'
+    }[timing] || timing;
+
+    const payLabel = { cash: 'كاش عند الوصول', vodafone: 'فودافون كاش / إنستاباي' }[payment];
+
+    const order = {
+      id: 'R' + Date.now(),
+      type: 'ride',
+      from: from.name,
+      to: to.name,
+      name, phone,
+      passengers: pax,
+      timing: timingLabel,
+      notes, payment: payLabel,
+      fare, eta,
+      distance: (km * 1.35).toFixed(1),
+      status: 'pending',
+      createdAt: new Date().toISOString(),
+    };
+
+    // save order
+    try {
+      const orders = JSON.parse(localStorage.getItem('wslha_orders') || '[]');
+      orders.unshift(order);
+      localStorage.setItem('wslha_orders', JSON.stringify(orders));
+    } catch {}
+
+    // show success
+    const rows = [
+      ['من',        from.name],
+      ['إلى',       to.name],
+      ['المسافة',   (km * 1.35).toFixed(1) + ' كم'],
+      ['الوقت المقدر', eta + ' دقيقة'],
+      ['الراكب',    name],
+      ['الجوال',    phone],
+      ['الركاب',    pax],
+      ['الانطلاق',  timingLabel],
+      ['الدفع',     payLabel],
+      ['السعر',     fare + ' ج.م', true],
+    ];
+    document.getElementById('success-details').innerHTML = rows.map(([k, v, price]) =>
+      `<div class="detail-row">
+        <span class="detail-row__key">${k}</span>
+        <span class="detail-row__val${price ? ' detail-row__val--price' : ''}">${v}</span>
+      </div>`
+    ).join('');
+
+    bookCard.style.display = 'none';
+    succCard.classList.add('visible');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+
+  // ── new ride ──
+  document.getElementById('new-ride-btn').addEventListener('click', () => {
+    fromSel.value = '';
+    toSel.value   = '';
+    document.getElementById('r-name').value  = '';
+    document.getElementById('r-phone').value = '';
+    document.getElementById('r-notes').value = '';
+    document.getElementById('r-passengers').value = '1';
+    document.getElementById('r-time').value = 'now';
+    document.querySelector('input[name="r-payment"][value="cash"]').checked = true;
+    summary.classList.remove('visible');
+    formSec.classList.remove('visible');
+    bookCard.style.display = '';
+    succCard.classList.remove('visible');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+
+  // ── fare guide ──
+  const SAMPLE_ROUTES = [
+    ['center', 'new-damietta'],
+    ['center', 'ras-el-bar'],
+    ['center', 'kafr-saad'],
+    ['center', 'faraskur'],
+    ['new-damietta', 'ras-el-bar'],
+    ['center', 'zarqa'],
+    ['center', 'el-saro'],
+    ['center', 'kafr-batikh'],
+  ];
+  const grid = document.getElementById('fare-grid');
+  SAMPLE_ROUTES.forEach(([fid, tid]) => {
+    const f = AREAS.find(a => a.id === fid);
+    const t = AREAS.find(a => a.id === tid);
+    if (!f || !t) return;
+    const km   = haversineKm(f.lat, f.lng, t.lat, t.lng);
+    const fare = fareForDist(km);
+    grid.insertAdjacentHTML('beforeend', `
+      <div class="fare-card">
+        <div class="fare-card__route">
+          <div class="fare-card__from">${f.name}</div>
+          <div class="fare-card__to">← ${t.name}</div>
+        </div>
+        <div class="fare-card__price">${fare} ج.م</div>
+      </div>
+    `);
+  });
+</script>
