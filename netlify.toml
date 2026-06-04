@@ -5,7 +5,27 @@
 [build.environment]
   NODE_VERSION = "18"
 
+# Disable Netlify Identity widget injection
+[context.production]
+  command = "npm run build"
+
+[context.deploy-preview]
+  command = "npm run build"
+
+# Cache control — force fresh content always
+[[headers]]
+  for = "/*"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+    X-Frame-Options = "SAMEORIGIN"
+
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+# SPA-style clean URLs
 [[redirects]]
   from   = "/*"
-  to     = "/index.html"
-  status = 200
+  to     = "/404.html"
+  status = 404
