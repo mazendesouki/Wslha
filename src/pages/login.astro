@@ -71,6 +71,7 @@ import PageHero from '../components/PageHero.astro';
     display: none;
   }
   .auth-error.is-visible { display: block; }
+  .auth-error a { color: inherit; font-weight: var(--weight-bold); text-decoration: underline; }
 
   /* Submit */
   .auth-submit {
@@ -131,6 +132,9 @@ import PageHero from '../components/PageHero.astro';
 </style>
 
 <script>
+  import { isEgyptianMobile, EG_PHONE_ERROR } from '../utils/phone';
+  import { verifyLogin } from '../utils/accounts';
+
   const form      = document.getElementById('login-form')   as HTMLFormElement;
   const errorBox  = document.getElementById('login-error')  as HTMLElement;
   const submitBtn = document.getElementById('login-submit') as HTMLButtonElement;
@@ -148,8 +152,19 @@ import PageHero from '../components/PageHero.astro';
     const phone = phoneInp.value.trim();
     const pass  = passInp.value;
 
-    if (!phone || pass.length < 4) {
-      errorBox.textContent = 'يرجى إدخال رقم جوال صحيح وكلمة مرور لا تقل عن 4 أحرف.';
+    if (!isEgyptianMobile(phone)) {
+      errorBox.textContent = EG_PHONE_ERROR;
+      errorBox.classList.add('is-visible');
+      submitBtn.disabled    = false;
+      submitBtn.textContent = 'دخول';
+      return;
+    }
+
+    const result = verifyLogin(phone, pass);
+    if (!result.ok) {
+      errorBox.innerHTML = result.reason === 'not_found'
+        ? 'هذا الرقم غير مسجّل لدينا. <a href="/register">أنشئ حساباً جديداً</a> أولاً.'
+        : 'كلمة المرور غير صحيحة. حاول مرة أخرى.';
       errorBox.classList.add('is-visible');
       submitBtn.disabled    = false;
       submitBtn.textContent = 'دخول';
@@ -157,7 +172,14 @@ import PageHero from '../components/PageHero.astro';
     }
 
     try {
-      const user = { name: phone, phone, loginAt: new Date().toISOString() };
+      const { account } = result;
+      const user = {
+        name: account.name,
+        phone: account.phone,
+        role: account.role,
+        city: account.city,
+        loginAt: new Date().toISOString(),
+      };
       localStorage.setItem('wslha_user', JSON.stringify(user));
     } catch { /* storage unavailable */ }
 
@@ -182,7 +204,7 @@ import PageHero from '../components/PageHero.astro';
 
         <div class="field">
           <label class="field__label" for="login-phone">رقم الجوال</label>
-          <input class="field__input" type="tel" id="login-phone" placeholder="010 0000 0000" required autocomplete="tel">
+          <input class="field__input" type="tel" id="login-phone" placeholder="010 1234 5678" inputmode="numeric" maxlength="11" pattern="01[0125][0-9]{8}" required autocomplete="tel">
         </div>
 
         <div class="field">

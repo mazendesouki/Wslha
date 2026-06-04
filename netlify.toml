@@ -1,5 +1,11 @@
 [build]
+  command = "echo 'Using pre-built dist — no build step needed'"
   publish = "dist"
+
+# Skip the leftover Next.js plugin (site is Astro, dist/ is pre-built)
+[build.environment]
+  NETLIFY_USE_YARN = "false"
+  NETLIFY_NEXT_PLUGIN_SKIP = "true"
 
 # Cache control
 [[headers]]

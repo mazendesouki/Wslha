@@ -79,6 +79,17 @@ const AREAS = ['دمياط الجديدة', 'دمياط', 'كفر سعد', 'فا
 
   .field__required { color: #DC2626; margin-right: 2px; }
 
+  .driver-error {
+    background: #FEE2E2;
+    color: #B91C1C;
+    border-radius: var(--radius);
+    padding: var(--sp-3) var(--sp-4);
+    font-size: var(--text-sm);
+    margin-bottom: var(--sp-4);
+    display: none;
+  }
+  .driver-error.is-visible { display: block; }
+
   .field__input,
   .field__select,
   .field__textarea {
@@ -154,24 +165,57 @@ const AREAS = ['دمياط الجديدة', 'دمياط', 'كفر سعد', 'فا
 </style>
 
 <script>
+  import { isEgyptianMobile, normalizeEgyptianPhone, EG_PHONE_ERROR } from '../utils/phone';
+  import { validatePassword } from '../utils/password';
+  import { addAccount } from '../utils/accounts';
+
   const form      = document.getElementById('driver-form')    as HTMLFormElement;
   const formWrap  = document.getElementById('driver-form-wrap') as HTMLElement;
   const success   = document.getElementById('driver-success') as HTMLElement;
   const submitBtn = document.getElementById('driver-submit')  as HTMLButtonElement;
+  const errorBox  = document.getElementById('driver-error')   as HTMLElement;
+
+  function fail(msg: string, focusId: string): void {
+    errorBox.innerHTML = msg;
+    errorBox.classList.add('is-visible');
+    (document.getElementById(focusId) as HTMLInputElement).focus();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
 
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
+
+    const name  = (document.getElementById('driver-name')  as HTMLInputElement).value;
+    const phone = (document.getElementById('driver-phone') as HTMLInputElement).value;
+    const pass  = (document.getElementById('driver-pass')  as HTMLInputElement).value;
+    const pass2 = (document.getElementById('driver-pass2') as HTMLInputElement).value;
+
+    if (!isEgyptianMobile(phone)) { fail(EG_PHONE_ERROR, 'driver-phone'); return; }
+    const pwResult = validatePassword(pass);
+    if (!pwResult.valid) { fail(pwResult.message, 'driver-pass'); return; }
+    if (pass !== pass2) { fail('كلمتا المرور غير متطابقتين.', 'driver-pass2'); return; }
+    errorBox.classList.remove('is-visible');
+
+    const created = addAccount({
+      name,
+      phone: normalizeEgyptianPhone(phone),
+      password: pass,
+      role: 'driver',
+      createdAt: new Date().toISOString(),
+    });
+    if (!created) {
+      fail('هذا الرقم مسجّل بالفعل. <a href="/login">سجّل الدخول</a> بدلاً من ذلك.', 'driver-phone');
+      return;
+    }
+
     submitBtn.disabled    = true;
     submitBtn.textContent = 'جاري إرسال الطلب...';
 
     await new Promise(r => setTimeout(r, 1000));
 
-    const name  = (document.getElementById('driver-name')  as HTMLInputElement).value;
-    const phone = (document.getElementById('driver-phone') as HTMLInputElement).value;
-
     try {
       const applications = JSON.parse(localStorage.getItem('wslha_driver_apps') || '[]');
-      applications.unshift({ name, phone, appliedAt: new Date().toISOString(), status: 'pending' });
+      applications.unshift({ name, phone: normalizeEgyptianPhone(phone), appliedAt: new Date().toISOString(), status: 'pending' });
       localStorage.setItem('wslha_driver_apps', JSON.stringify(applications));
     } catch { /* storage unavailable */ }
 
@@ -214,6 +258,7 @@ const AREAS = ['دمياط الجديدة', 'دمياط', 'كفر سعد', 'فا
     <div id="driver-form-wrap">
       <form class="driver-form" id="driver-form" novalidate>
         <h2 class="driver-form__title">📋 استمارة التسجيل</h2>
+        <div id="driver-error" class="driver-error" role="alert" aria-live="polite"></div>
 
         <!-- Personal info -->
         <p class="driver-form__section">👤 البيانات الشخصية</p>
@@ -228,7 +273,7 @@ const AREAS = ['دمياط الجديدة', 'دمياط', 'كفر سعد', 'فا
             <label class="field__label" for="driver-phone">
               رقم الجوال <span class="field__required">*</span>
             </label>
-            <input class="field__input" type="tel" id="driver-phone" placeholder="010 0000 0000" required autocomplete="tel">
+            <input class="field__input" type="tel" id="driver-phone" placeholder="010 1234 5678" inputmode="numeric" maxlength="11" pattern="01[0125][0-9]{8}" required autocomplete="tel">
           </div>
         </div>
         <div class="form-row">
@@ -239,6 +284,23 @@ const AREAS = ['دمياط الجديدة', 'دمياط', 'كفر سعد', 'فا
           <div class="field">
             <label class="field__label" for="driver-age">العمر</label>
             <input class="field__input" type="number" id="driver-age" placeholder="25" min="18" max="60">
+          </div>
+        </div>
+
+        <!-- Login credentials -->
+        <p class="driver-form__section">🔒 بيانات الدخول</p>
+        <div class="form-row">
+          <div class="field">
+            <label class="field__label" for="driver-pass">
+              كلمة المرور <span class="field__required">*</span>
+            </label>
+            <input class="field__input" type="password" id="driver-pass" placeholder="مثال: Ahmed1234" required autocomplete="new-password">
+          </div>
+          <div class="field">
+            <label class="field__label" for="driver-pass2">
+              تأكيد كلمة المرور <span class="field__required">*</span>
+            </label>
+            <input class="field__input" type="password" id="driver-pass2" placeholder="••••••••" required autocomplete="new-password">
           </div>
         </div>
 
