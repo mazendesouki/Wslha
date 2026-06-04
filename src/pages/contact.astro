@@ -194,6 +194,17 @@ const SUBJECTS = [
 
   .form-success.is-visible { display: block; }
 
+  .form-error {
+    display: none;
+    background: #FEE2E2;
+    color: #B91C1C;
+    border-radius: var(--radius);
+    padding: var(--sp-3) var(--sp-4);
+    font-size: var(--text-sm);
+    margin-bottom: var(--sp-4);
+  }
+  .form-error.is-visible { display: block; }
+
   @media (max-width: 768px) {
     .contact-wrap { grid-template-columns: 1fr; }
     .form-row     { grid-template-columns: 1fr; }
@@ -202,12 +213,25 @@ const SUBJECTS = [
 </style>
 
 <script>
+  import { isEgyptianMobile, EG_PHONE_ERROR } from '../utils/phone';
+
   const form    = document.getElementById('contact-form')  as HTMLFormElement;
   const submit  = form.querySelector('.form-submit')       as HTMLButtonElement;
   const success = document.getElementById('form-success') as HTMLElement;
+  const errorBox = document.getElementById('cf-error')     as HTMLElement;
 
   form.addEventListener('submit', async (e: Event) => {
     e.preventDefault();
+
+    const phone = (document.getElementById('cf-phone') as HTMLInputElement).value;
+    if (!isEgyptianMobile(phone)) {
+      errorBox.textContent = EG_PHONE_ERROR;
+      errorBox.classList.add('is-visible');
+      (document.getElementById('cf-phone') as HTMLInputElement).focus();
+      return;
+    }
+    errorBox.classList.remove('is-visible');
+
     submit.disabled = true;
     submit.textContent = 'جاري الإرسال...';
 
@@ -275,7 +299,7 @@ const SUBJECTS = [
           </div>
           <div class="field">
             <label class="field__label" for="cf-phone">رقم الجوال <span aria-hidden="true">*</span></label>
-            <input id="cf-phone" class="field__input" type="tel" placeholder="091 000 0000" required autocomplete="tel">
+            <input id="cf-phone" class="field__input" type="tel" placeholder="010 1234 5678" inputmode="numeric" maxlength="11" pattern="01[0125][0-9]{8}" required autocomplete="tel">
           </div>
         </div>
 
@@ -297,6 +321,7 @@ const SUBJECTS = [
           <textarea id="cf-message" class="field__textarea" placeholder="اكتب رسالتك هنا..." required></textarea>
         </div>
 
+        <div id="cf-error" class="form-error" role="alert" aria-live="polite"></div>
         <button type="submit" class="form-submit">إرسال الرسالة ←</button>
       </form>
 

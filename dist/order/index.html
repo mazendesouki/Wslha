@@ -40,8 +40,8 @@
 
   
 <link rel="stylesheet" href="/_astro/about.1b1989f6.css" />
-<link rel="stylesheet" href="/_astro/order.8434b038.css" />
-<link rel="stylesheet" href="/_astro/about.74625c24.css" /><script type="module" src="/_astro/hoisted.d54891ed.js"></script></head>
+<link rel="stylesheet" href="/_astro/order.8378eca9.css" />
+<link rel="stylesheet" href="/_astro/about.74625c24.css" /><script type="module" src="/_astro/hoisted.b0dff4c7.js"></script></head>
 
 <body>
   <header role="banner" class="astro-DMQPWCEC">
@@ -305,9 +305,10 @@
         </div>
         <div class="field astro-7QWNNFZY">
           <label class="field__label astro-7QWNNFZY" for="phone">رقم الجوال</label>
-          <input class="field__input astro-7QWNNFZY" type="tel" id="phone" placeholder="010 0000 0000" required autocomplete="tel">
+          <input class="field__input astro-7QWNNFZY" type="tel" id="phone" placeholder="010 1234 5678" inputmode="numeric" maxlength="11" pattern="01[0125][0-9]{8}" required autocomplete="tel">
         </div>
       </div>
+      <div id="order-error" class="order-error astro-7QWNNFZY" role="alert" aria-live="polite"></div>
       <div class="field astro-7QWNNFZY">
         <label class="field__label astro-7QWNNFZY" for="notes">ملاحظات إضافية (اختياري)</label>
         <input class="field__input astro-7QWNNFZY" type="text" id="notes" placeholder="مثال: اتصل قبل الوصول">

@@ -40,8 +40,8 @@
 
   
 <link rel="stylesheet" href="/_astro/about.1b1989f6.css" />
-<link rel="stylesheet" href="/_astro/driver.02439e4f.css" />
-<link rel="stylesheet" href="/_astro/about.74625c24.css" /><script type="module" src="/_astro/hoisted.01145c3d.js"></script></head>
+<link rel="stylesheet" href="/_astro/driver.ce36f184.css" />
+<link rel="stylesheet" href="/_astro/about.74625c24.css" /><script type="module" src="/_astro/hoisted.5b14c7f9.js"></script></head>
 
 <body>
   <header role="banner" class="astro-DMQPWCEC">
@@ -249,6 +249,7 @@
     <div id="driver-form-wrap" class="astro-RGUHVUHV">
       <form class="driver-form astro-RGUHVUHV" id="driver-form" novalidate>
         <h2 class="driver-form__title astro-RGUHVUHV">📋 استمارة التسجيل</h2>
+        <div id="driver-error" class="driver-error astro-RGUHVUHV" role="alert" aria-live="polite"></div>
 
         <!-- Personal info -->
         <p class="driver-form__section astro-RGUHVUHV">👤 البيانات الشخصية</p>
@@ -263,7 +264,7 @@
             <label class="field__label astro-RGUHVUHV" for="driver-phone">
               رقم الجوال <span class="field__required astro-RGUHVUHV">*</span>
             </label>
-            <input class="field__input astro-RGUHVUHV" type="tel" id="driver-phone" placeholder="010 0000 0000" required autocomplete="tel">
+            <input class="field__input astro-RGUHVUHV" type="tel" id="driver-phone" placeholder="010 1234 5678" inputmode="numeric" maxlength="11" pattern="01[0125][0-9]{8}" required autocomplete="tel">
           </div>
         </div>
         <div class="form-row astro-RGUHVUHV">

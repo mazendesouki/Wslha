@@ -40,8 +40,8 @@
 
   
 <link rel="stylesheet" href="/_astro/about.1b1989f6.css" />
-<link rel="stylesheet" href="/_astro/contact.5abdc07d.css" />
-<link rel="stylesheet" href="/_astro/about.74625c24.css" /><script type="module" src="/_astro/hoisted.1f5527d5.js"></script></head>
+<link rel="stylesheet" href="/_astro/contact.0e7c0160.css" />
+<link rel="stylesheet" href="/_astro/about.74625c24.css" /><script type="module" src="/_astro/hoisted.9d56f284.js"></script></head>
 
 <body>
   <header role="banner" class="astro-DMQPWCEC">
@@ -289,7 +289,7 @@
           </div>
           <div class="field astro-UW5KDBXL">
             <label class="field__label astro-UW5KDBXL" for="cf-phone">رقم الجوال <span aria-hidden="true" class="astro-UW5KDBXL">*</span></label>
-            <input id="cf-phone" class="field__input astro-UW5KDBXL" type="tel" placeholder="091 000 0000" required autocomplete="tel">
+            <input id="cf-phone" class="field__input astro-UW5KDBXL" type="tel" placeholder="010 1234 5678" inputmode="numeric" maxlength="11" pattern="01[0125][0-9]{8}" required autocomplete="tel">
           </div>
         </div>
 
@@ -311,6 +311,7 @@
           <textarea id="cf-message" class="field__textarea astro-UW5KDBXL" placeholder="اكتب رسالتك هنا..." required></textarea>
         </div>
 
+        <div id="cf-error" class="form-error astro-UW5KDBXL" role="alert" aria-live="polite"></div>
         <button type="submit" class="form-submit astro-UW5KDBXL">إرسال الرسالة ←</button>
       </form>
 
