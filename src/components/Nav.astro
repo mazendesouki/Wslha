@@ -1,0 +1,188 @@
+---
+import { NAV_LINKS } from '../data/nav';
+
+interface Props {
+  currentPage: string;
+}
+
+const { currentPage } = Astro.props;
+---
+
+<header role="banner">
+  <!-- Skip navigation for accessibility -->
+  <a class="skip-nav" href="#main-content">انتقل إلى المحتوى الرئيسي</a>
+
+  <nav class="nav" aria-label="التنقل الرئيسي">
+    <div class="nav__inner">
+
+      <!-- Logo -->
+      <a href="/" class="nav__logo" aria-label="وصّلها — الصفحة الرئيسية">
+        <span class="nav__logo-name" aria-hidden="true">وصّلها</span>
+        <span class="nav__logo-tagline">خدمة التوصيل المحلية</span>
+      </a>
+
+      <!-- Links -->
+      <ul class="nav__links" role="list">
+        {NAV_LINKS.map(link => (
+          <li>
+            <a
+              href={link.href}
+              class:list={['nav__link', { 'nav__link--active': currentPage === link.page }]}
+              aria-current={currentPage === link.page ? 'page' : undefined}
+            >
+              {link.label}
+            </a>
+          </li>
+        ))}
+      </ul>
+
+      <!-- Actions -->
+      <div class="nav__actions">
+        <span class="nav__user" aria-label="حساب المستخدم">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <circle cx="12" cy="8" r="4"/>
+            <path d="M20 21a8 8 0 10-16 0"/>
+          </svg>
+          mazendesouki
+        </span>
+        <a href="/contact" class="nav__cta">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.62 19.79 19.79 0 01.01 1A2 2 0 012 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.09 7.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 15v1.92z"/>
+          </svg>
+          اتصل بنا
+        </a>
+      </div>
+
+    </div>
+  </nav>
+</header>
+
+<style>
+  .skip-nav {
+    position: absolute;
+    top: -100%;
+    right: var(--sp-4);
+    background: var(--color-primary);
+    color: #fff;
+    padding: var(--sp-2) var(--sp-4);
+    border-radius: var(--radius);
+    font-weight: var(--weight-bold);
+    z-index: 9999;
+    transition: top var(--ease);
+  }
+
+  .skip-nav:focus { top: var(--sp-2); }
+
+  .nav {
+    position: sticky;
+    top: 0;
+    z-index: 200;
+    background: var(--color-bg);
+    border-bottom: 1px solid var(--color-border);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .nav__inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--sp-4);
+    padding: 0 var(--sp-6);
+    max-width: var(--container);
+    margin: 0 auto;
+    height: var(--nav-height);
+  }
+
+  /* Logo */
+  .nav__logo {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    line-height: 1.1;
+    flex-shrink: 0;
+  }
+
+  .nav__logo-name {
+    font-size: var(--text-2xl);
+    font-weight: var(--weight-black);
+    background: linear-gradient(135deg, var(--color-primary), #a855f7);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .nav__logo-tagline {
+    font-size: var(--text-xs);
+    color: var(--color-text-faint);
+    font-weight: var(--weight-semi);
+  }
+
+  /* Links */
+  .nav__links {
+    display: flex;
+    align-items: center;
+    list-style: none;
+    flex: 1;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 0;
+  }
+
+  .nav__link {
+    display: block;
+    padding: var(--sp-2) 0.65rem;
+    border-radius: var(--radius-sm);
+    font-size: var(--text-sm);
+    font-weight: var(--weight-semi);
+    color: var(--color-text);
+    transition: color var(--ease);
+    white-space: nowrap;
+  }
+
+  .nav__link:hover,
+  .nav__link--active {
+    color: var(--color-primary);
+  }
+
+  /* Actions */
+  .nav__actions {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-3);
+    flex-shrink: 0;
+  }
+
+  .nav__user {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-2);
+    background: var(--color-bg-soft);
+    border-radius: var(--radius);
+    padding: var(--sp-2) var(--sp-3);
+    font-size: var(--text-sm);
+    font-weight: var(--weight-bold);
+    color: var(--color-text);
+    user-select: none;
+  }
+
+  .nav__cta {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-2);
+    border: 1.5px solid var(--color-primary);
+    border-radius: var(--radius);
+    padding: var(--sp-2) var(--sp-4);
+    font-size: var(--text-sm);
+    font-weight: var(--weight-bold);
+    color: var(--color-primary);
+    transition: background var(--ease), color var(--ease);
+  }
+
+  .nav__cta:hover {
+    background: var(--color-primary-light);
+  }
+
+  @media (max-width: 900px) {
+    .nav__links { display: none; }
+  }
+</style>

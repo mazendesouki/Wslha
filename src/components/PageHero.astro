@@ -1,0 +1,60 @@
+---
+interface Props {
+  badge?: string;
+  title: string;
+  subtitle?: string;
+}
+
+const { badge, title, subtitle } = Astro.props;
+---
+
+<section class="page-hero" aria-labelledby="page-hero-title">
+  {badge && (
+    <span class="page-hero__badge" aria-label={badge}>{badge}</span>
+  )}
+  <h1 class="page-hero__title" id="page-hero-title">{title}</h1>
+  {subtitle && (
+    <p class="page-hero__subtitle">{subtitle}</p>
+  )}
+</section>
+
+<style>
+  .page-hero {
+    background: var(--color-primary);
+    padding: var(--sp-16) var(--sp-6) var(--sp-12);
+    text-align: center;
+    color: #fff;
+  }
+
+  .page-hero__badge {
+    display: inline-block;
+    background: rgba(255, 255, 255, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: #fff;
+    font-size: var(--text-xs);
+    font-weight: var(--weight-bold);
+    padding: var(--sp-1) var(--sp-4);
+    border-radius: var(--radius-full);
+    margin-bottom: var(--sp-4);
+  }
+
+  .page-hero__title {
+    font-size: var(--text-4xl);
+    font-weight: var(--weight-black);
+    margin-bottom: var(--sp-3);
+    line-height: 1.15;
+  }
+
+  .page-hero__subtitle {
+    color: rgba(255, 255, 255, 0.8);
+    font-size: var(--text-base);
+    max-width: 520px;
+    margin: 0 auto;
+    line-height: 1.7;
+  }
+
+  @media (max-width: 640px) {
+    .page-hero { padding: var(--sp-12) var(--sp-6) var(--sp-8); }
+    .page-hero__title { font-size: var(--text-3xl); }
+  }
+</style>

@@ -1,439 +1,164 @@
 ---
+import Nav from './Nav.astro';
+import Footer from './Footer.astro';
+
+interface Props {
+  title: string;
+  description: string;
+  page?: string;
+}
+
 const { title, description, page = '' } = Astro.props;
+const canonicalURL = new URL(Astro.url.pathname, Astro.site ?? 'https://wslha.co');
 ---
+
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8">
-  <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content={description}>
-  <link rel="icon" href="/favicon.ico" sizes="any">
-  <link rel="icon" href="/icon.svg" type="image/svg+xml">
-  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
-  <link rel="manifest" href="/site.webmanifest" />
-  <meta name="theme-color" content="#3B6EF8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+
+  <!-- SEO -->
   <title>{title} | وصّلها</title>
-  <link rel="stylesheet" href="/global.css">
+  <meta name="description" content={description}>
+  <link rel="canonical" href={canonicalURL}>
+
+  <!-- Open Graph -->
+  <meta property="og:title"       content={`${title} | وصّلها`}>
+  <meta property="og:description" content={description}>
+  <meta property="og:type"        content="website">
+  <meta property="og:url"         content={canonicalURL}>
+
+  <!-- Icons -->
+  <link rel="icon" href="/favicon.ico" sizes="any">
+  <link rel="icon" href="/icon.svg"    type="image/svg+xml">
+  <link rel="apple-touch-icon"    href="/apple-touch-icon.png">
+  <link rel="manifest"            href="/site.webmanifest">
+  <meta name="theme-color"        content="#3B6EF8">
+
+  <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+  <!-- Base styles -->
+  <link rel="stylesheet" href="/global.css">
+
   <style is:global>
-    :root {
-      --blue:      #3B6EF8;
-      --blue-dark: #2952D9;
-      --blue-light:#EEF2FF;
-      --blue-hero: #3B6EF8;
-      --yellow:    #F5B800;
-      --yellow-dark:#D9A200;
-      --text:      #1A1A2E;
-      --text-muted:#64748B;
-      --border:    #E2E8F0;
-      --bg:        #FFFFFF;
-      --bg-soft:   #F8FAFC;
-      --radius:    10px;
-      --radius-lg: 16px;
-    }
-
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-
-    html, body {
-      font-family: 'Cairo', 'Segoe UI', sans-serif;
-      color: var(--text);
-      background: var(--bg);
-      font-size: 16px;
-      line-height: 1.6;
-    }
-
-    body {
-      display: flex;
-      flex-direction: column;
-      min-height: 100vh;
-    }
-
-    a { color: inherit; text-decoration: none; }
-    img { max-width: 100%; display: block; }
-
-    /* ── NAV ── */
-    .nav {
-      position: sticky;
-      top: 0;
-      z-index: 200;
-      background: #fff;
-      border-bottom: 1px solid var(--border);
-      box-shadow: 0 1px 8px rgba(0,0,0,0.06);
-    }
-
-    .nav-inner {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 0 1.5rem;
-      max-width: 1280px;
+    /* ── Layout utilities ──────────────────────────────────── */
+    .container {
+      max-width: var(--container);
       margin: 0 auto;
-      height: 64px;
-      gap: 1rem;
+      padding: 0 var(--sp-6);
     }
 
-    /* Logo — right side */
-    .nav-logo {
-      display: flex;
-      flex-direction: column;
-      align-items: flex-end;
-      line-height: 1.1;
-      text-decoration: none;
-      flex-shrink: 0;
+    .section {
+      padding: var(--sp-20) var(--sp-6);
     }
 
-    .nav-logo-main {
-      font-size: 1.4rem;
-      font-weight: 900;
-      background: linear-gradient(135deg, #3B6EF8, #a855f7);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-    }
-
-    .nav-logo-sub {
-      font-size: 0.6rem;
-      color: var(--text-muted);
-      font-weight: 600;
-    }
-
-    /* Links — center */
-    .nav-links {
-      display: flex;
-      align-items: center;
-      gap: 0;
-      list-style: none;
-      flex: 1;
-      justify-content: center;
-      flex-wrap: wrap;
-    }
-
-    .nav-links a {
-      padding: 0.35rem 0.7rem;
-      border-radius: 6px;
-      font-size: 0.82rem;
-      font-weight: 600;
-      color: var(--text);
-      transition: all 0.15s;
-      white-space: nowrap;
-    }
-
-    .nav-links a:hover { color: var(--blue); }
-    .nav-links a.active { color: var(--blue); font-weight: 700; }
-
-    /* Actions — left side */
-    .nav-actions {
-      display: flex;
-      align-items: center;
-      gap: 0.6rem;
-      flex-shrink: 0;
-    }
-
-    .nav-user {
-      display: flex;
-      align-items: center;
-      gap: 0.4rem;
-      background: #F1F5F9;
-      border-radius: 8px;
-      padding: 0.35rem 0.75rem;
-      font-size: 0.82rem;
-      font-weight: 700;
-      color: var(--text);
-    }
-
-    .nav-call {
-      display: flex;
-      align-items: center;
-      gap: 0.4rem;
-      border: 1.5px solid var(--blue);
-      border-radius: 8px;
-      padding: 0.35rem 0.9rem;
-      font-size: 0.82rem;
-      font-weight: 700;
-      color: var(--blue);
-      transition: all 0.15s;
-    }
-
-    .nav-call:hover { background: var(--blue-light); }
-
-    @media (max-width: 900px) {
-      .nav-links { display: none; }
-    }
-
-    /* ── BUTTONS ── */
+    /* ── Button system ─────────────────────────────────────── */
     .btn {
       display: inline-flex;
       align-items: center;
-      gap: 0.5rem;
-      padding: 0.75rem 1.75rem;
+      gap: var(--sp-2);
+      padding: var(--sp-3) var(--sp-6);
       border-radius: var(--radius);
-      font-family: 'Cairo', sans-serif;
-      font-weight: 700;
-      font-size: 1rem;
-      cursor: pointer;
+      font-family: var(--font-body);
+      font-size: var(--text-base);
+      font-weight: var(--weight-bold);
       border: none;
-      transition: all 0.18s;
+      transition: background var(--ease), transform var(--ease), border-color var(--ease);
       text-decoration: none;
+      white-space: nowrap;
+      cursor: pointer;
+      line-height: 1;
+    }
+
+    .btn:focus-visible {
+      outline: 3px solid var(--color-accent);
+      outline-offset: 3px;
+    }
+
+    .btn--primary {
+      background: var(--color-primary);
+      color: #fff;
+    }
+    .btn--primary:hover { background: var(--color-primary-dark); transform: translateY(-1px); }
+
+    .btn--accent {
+      background: var(--color-accent);
+      color: var(--color-text);
+    }
+    .btn--accent:hover { background: var(--color-accent-dark); transform: translateY(-1px); }
+
+    .btn--white {
+      background: #fff;
+      color: var(--color-primary);
+      border: 2px solid #fff;
+    }
+    .btn--white:hover { background: var(--color-primary-light); border-color: var(--color-primary-light); }
+
+    .btn--outline {
+      background: transparent;
+      color: var(--color-primary);
+      border: 2px solid var(--color-primary);
+    }
+    .btn--outline:hover { background: var(--color-primary-light); }
+
+    /* ── Accessibility ─────────────────────────────────────── */
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip: rect(0 0 0 0);
       white-space: nowrap;
     }
 
-    .btn-yellow {
-      background: var(--yellow);
-      color: #1A1A2E;
-    }
-    .btn-yellow:hover { background: var(--yellow-dark); transform: translateY(-1px); }
-
-    .btn-white {
-      background: #fff;
-      color: var(--blue);
-      border: 2px solid #fff;
-    }
-    .btn-white:hover { background: var(--blue-light); border-color: var(--blue-light); }
-
-    .btn-blue {
-      background: var(--blue);
-      color: #fff;
-    }
-    .btn-blue:hover { background: var(--blue-dark); transform: translateY(-1px); }
-
-    .btn-outline-blue {
-      background: transparent;
-      color: var(--blue);
-      border: 2px solid var(--blue);
-    }
-    .btn-outline-blue:hover { background: var(--blue-light); }
-
-    /* ── FOOTER ── */
-    .footer {
-      margin-top: auto;
-      background: #0F172A;
-      color: #94A3B8;
-      padding: 3rem 1.5rem 1.5rem;
-    }
-
-    .footer-grid {
-      display: grid;
-      grid-template-columns: 1.8fr 1fr 1fr 1fr;
-      gap: 2.5rem;
-      max-width: 1280px;
-      margin: 0 auto 2.5rem;
-    }
-
-    @media (max-width: 900px) {
-      .footer-grid { grid-template-columns: 1fr 1fr; gap: 2rem; }
-    }
-
-    @media (max-width: 500px) {
-      .footer-grid { grid-template-columns: 1fr; }
-    }
-
-    .footer-brand-name {
-      font-size: 1.5rem;
-      font-weight: 900;
-      color: #fff;
-      margin-bottom: 0.5rem;
-    }
-
-    .footer-brand-desc {
-      font-size: 0.875rem;
-      line-height: 1.7;
-      color: #64748B;
-      margin-bottom: 1.25rem;
-    }
-
-    .footer-social {
-      display: flex;
-      gap: 0.6rem;
-    }
-
-    .footer-social a {
-      width: 36px; height: 36px;
-      border-radius: 8px;
-      background: #1E293B;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 0.9rem;
-      transition: background 0.15s;
-    }
-
-    .footer-social a:hover { background: var(--blue); }
-
-    .footer-col h4 {
-      color: #fff;
-      font-weight: 800;
-      margin-bottom: 1rem;
-      font-size: 0.9rem;
-    }
-
-    .footer-col ul { list-style: none; display: flex; flex-direction: column; gap: 0.5rem; }
-    .footer-col a { color: #64748B; font-size: 0.85rem; transition: color 0.15s; }
-    .footer-col a:hover { color: #fff; }
-
-    .footer-bottom {
-      border-top: 1px solid #1E293B;
-      padding-top: 1.5rem;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      font-size: 0.8rem;
-      max-width: 1280px;
-      margin: 0 auto;
-      flex-wrap: wrap;
-      gap: 0.5rem;
-    }
-
-    /* ── WHATSAPP FLOAT ── */
+    /* ── WhatsApp float ────────────────────────────────────── */
     .whatsapp-float {
       position: fixed;
-      bottom: 1.5rem;
-      right: 1.5rem;
-      width: 52px; height: 52px;
+      bottom: var(--sp-6);
+      right: var(--sp-6);
+      width: 52px;
+      height: 52px;
       background: #25D366;
-      border-radius: 50%;
+      border-radius: var(--radius-full);
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 1.4rem;
-      box-shadow: 0 4px 16px rgba(37,211,102,0.4);
+      font-size: var(--text-xl);
+      box-shadow: 0 4px 16px rgba(37, 211, 102, 0.4);
       z-index: 999;
-      transition: transform 0.2s;
+      transition: transform var(--ease);
     }
 
-    .whatsapp-float:hover { transform: scale(1.1); }
-
-    /* ── UTILS ── */
-    .container { max-width: 1280px; margin: 0 auto; padding: 0 1.5rem; }
-    .section { padding: 5rem 1.5rem; }
-
-    .section-title {
-      font-size: 1.9rem;
-      font-weight: 900;
-      text-align: center;
-      margin-bottom: 0.6rem;
-      color: var(--text);
-    }
-
-    .section-sub {
-      text-align: center;
-      color: var(--text-muted);
-      font-size: 1rem;
-      margin-bottom: 3rem;
-    }
-
-    .pill-badge {
-      display: inline-block;
-      background: rgba(255,255,255,0.18);
-      color: #fff;
-      font-weight: 700;
-      font-size: 0.82rem;
-      padding: 0.3rem 1rem;
-      border-radius: 100px;
-      border: 1px solid rgba(255,255,255,0.3);
-      margin-bottom: 1.5rem;
-    }
-
-    .sr-only {
-      position: absolute;
-      width: 1px; height: 1px;
-      overflow: hidden;
-      clip: rect(0 0 0 0);
+    .whatsapp-float:hover   { transform: scale(1.1); }
+    .whatsapp-float:focus-visible {
+      outline: 3px solid var(--color-accent);
+      outline-offset: 3px;
     }
   </style>
 </head>
+
 <body>
+  <Nav currentPage={page} />
 
-  <!-- NAV -->
-  <nav class="nav">
-    <div class="nav-inner">
-      <!-- Logo (right in RTL) -->
-      <a href="/" class="nav-logo">
-        <span class="nav-logo-main">وصّلها</span>
-        <span class="nav-logo-sub">خدمة التوصيل المحلية</span>
-      </a>
+  <main id="main-content" tabindex="-1">
+    <slot />
+  </main>
 
-      <!-- Links (center) -->
-      <ul class="nav-links">
-        <li><a href="/" class={page === 'home' ? 'active' : ''}>الرئيسية</a></li>
-        <li><a href="/services" class={page === 'services' ? 'active' : ''}>خدماتنا</a></li>
-        <li><a href="/services#partners" class={page === 'partners' ? 'active' : ''}>المتاجر الشريكة</a></li>
-        <li><a href="/services#local" class={page === 'local' ? 'active' : ''}>توصيل محلي</a></li>
-        <li><a href="/services#airport">توصيل المطار</a></li>
-        <li><a href="/services#pricing">الأسعار</a></li>
-        <li><a href="/track" class={page === 'track' ? 'active' : ''}>تتبع الطلب</a></li>
-        <li><a href="/contact" class={page === 'contact' ? 'active' : ''}>تواصل معنا</a></li>
-      </ul>
-
-      <!-- Actions (left in RTL = flex end) -->
-      <div class="nav-actions">
-        <div class="nav-user">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 10-16 0"/></svg>
-          mazendesouki
-        </div>
-        <a href="/contact" class="nav-call">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.62 19.79 19.79 0 01.01 1A2 2 0 012 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.09 7.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 15v1.92z"/></svg>
-          اتصل بنا
-        </a>
-      </div>
-    </div>
-  </nav>
-
-  <slot />
-
-  <!-- WhatsApp float -->
-  <a href="https://wa.me/966500000000" class="whatsapp-float" aria-label="تواصل عبر واتساب">
+  <a
+    href="https://wa.me/218910000000"
+    class="whatsapp-float"
+    aria-label="تواصل معنا عبر واتساب"
+    rel="noopener noreferrer"
+    target="_blank"
+  >
     💬
   </a>
 
-  <!-- FOOTER -->
-  <footer class="footer">
-    <div class="footer-grid">
-      <div>
-        <div class="footer-brand-name">وصّلها</div>
-        <p class="footer-brand-desc">
-          خدمة توصيل سريعة وموثوقة — توصيل محلي من المتاجر وتوصيل من وإلى المطار.
-        </p>
-        <div class="footer-social">
-          <a href="#" aria-label="تويتر">𝕏</a>
-          <a href="#" aria-label="انستغرام">📷</a>
-          <a href="#" aria-label="واتساب">💬</a>
-        </div>
-      </div>
-      <div class="footer-col">
-        <h4>روابط سريعة</h4>
-        <ul>
-          <li><a href="/">الرئيسية</a></li>
-          <li><a href="/services">خدماتنا</a></li>
-          <li><a href="/track">تتبع الطلب</a></li>
-          <li><a href="/contact">تواصل معنا</a></li>
-        </ul>
-      </div>
-      <div class="footer-col">
-        <h4>خدماتنا</h4>
-        <ul>
-          <li><a href="/services#local">توصيل محلي</a></li>
-          <li><a href="/services#airport">توصيل مطار</a></li>
-          <li><a href="/services#partners">المتاجر الشريكة</a></li>
-          <li><a href="/services#pricing">الأسعار</a></li>
-        </ul>
-      </div>
-      <div class="footer-col">
-        <h4>تواصل معنا</h4>
-        <ul>
-          <li><a href="tel:+966500000000">📞 920-000-000</a></li>
-          <li><a href="mailto:info@wslha.co">✉️ info@wslha.co</a></li>
-          <li><a href="#">💬 واتساب</a></li>
-        </ul>
-      </div>
-    </div>
-    <div class="footer-bottom">
-      <span>© 2024 وصّلها. جميع الحقوق محفوظة.</span>
-      <span>Wslha.co</span>
-    </div>
-  </footer>
-
+  <Footer />
 </body>
 </html>

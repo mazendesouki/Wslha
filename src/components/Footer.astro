@@ -1,0 +1,152 @@
+---
+import { FOOTER_LINKS } from '../data/nav';
+---
+
+<footer class="footer" role="contentinfo">
+  <div class="footer__grid">
+
+    <!-- Brand -->
+    <div class="footer__brand">
+      <p class="footer__name">وصّلها</p>
+      <p class="footer__desc">
+        خدمة توصيل سريعة وموثوقة — توصيل محلي من المتاجر
+        وتوصيل من وإلى المطار.
+      </p>
+      <nav aria-label="روابط التواصل الاجتماعي">
+        <ul class="footer__social" role="list">
+          <li><a href="#" aria-label="تويتر">𝕏</a></li>
+          <li><a href="#" aria-label="انستغرام">📷</a></li>
+          <li><a href="https://wa.me/218910000000" aria-label="واتساب">💬</a></li>
+        </ul>
+      </nav>
+    </div>
+
+    <!-- Quick links -->
+    <div class="footer__col">
+      <h2 class="footer__heading">روابط سريعة</h2>
+      <ul role="list">
+        {FOOTER_LINKS.quick.map(l => (
+          <li><a href={l.href}>{l.label}</a></li>
+        ))}
+      </ul>
+    </div>
+
+    <!-- Services -->
+    <div class="footer__col">
+      <h2 class="footer__heading">خدماتنا</h2>
+      <ul role="list">
+        {FOOTER_LINKS.services.map(l => (
+          <li><a href={l.href}>{l.label}</a></li>
+        ))}
+      </ul>
+    </div>
+
+    <!-- Contact -->
+    <div class="footer__col">
+      <h2 class="footer__heading">تواصل معنا</h2>
+      <ul role="list">
+        {FOOTER_LINKS.contact.map(l => (
+          <li><a href={l.href}>{l.label}</a></li>
+        ))}
+      </ul>
+    </div>
+
+  </div>
+
+  <div class="footer__bottom">
+    <span>© 2024 وصّلها. جميع الحقوق محفوظة.</span>
+    <span>Wslha.co</span>
+  </div>
+</footer>
+
+<style>
+  .footer {
+    margin-top: auto;
+    background: var(--color-dark-bg);
+    color: var(--color-text-muted);
+    padding: var(--sp-12) var(--sp-6) var(--sp-6);
+  }
+
+  .footer__grid {
+    display: grid;
+    grid-template-columns: 1.8fr 1fr 1fr 1fr;
+    gap: var(--sp-10);
+    max-width: var(--container);
+    margin: 0 auto var(--sp-10);
+  }
+
+  /* Brand column */
+  .footer__name {
+    font-size: var(--text-2xl);
+    font-weight: var(--weight-black);
+    color: #fff;
+    margin-bottom: var(--sp-2);
+  }
+
+  .footer__desc {
+    font-size: var(--text-sm);
+    line-height: 1.7;
+    color: #64748B;
+    margin-bottom: var(--sp-5);
+  }
+
+  .footer__social {
+    display: flex;
+    gap: var(--sp-2);
+    list-style: none;
+  }
+
+  .footer__social a {
+    width: 36px;
+    height: 36px;
+    border-radius: var(--radius);
+    background: var(--color-dark-border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: var(--text-sm);
+    transition: background var(--ease);
+  }
+
+  .footer__social a:hover { background: var(--color-primary); }
+
+  /* Link columns */
+  .footer__col ul { list-style: none; display: flex; flex-direction: column; gap: var(--sp-2); }
+
+  .footer__heading {
+    color: #fff;
+    font-size: var(--text-sm);
+    font-weight: var(--weight-bold);
+    margin-bottom: var(--sp-4);
+  }
+
+  .footer__col a {
+    color: #64748B;
+    font-size: var(--text-sm);
+    transition: color var(--ease);
+  }
+
+  .footer__col a:hover { color: #fff; }
+
+  /* Bottom bar */
+  .footer__bottom {
+    border-top: 1px solid var(--color-dark-border);
+    padding-top: var(--sp-6);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: var(--text-xs);
+    max-width: var(--container);
+    margin: 0 auto;
+    flex-wrap: wrap;
+    gap: var(--sp-2);
+  }
+
+  @media (max-width: 900px) {
+    .footer__grid { grid-template-columns: 1fr 1fr; gap: var(--sp-8); }
+  }
+
+  @media (max-width: 500px) {
+    .footer__grid { grid-template-columns: 1fr; }
+  }
+</style>
