@@ -50,6 +50,17 @@ const CITIES = ['دمياط الجديدة', 'دمياط', 'كفر سعد', 'ف�
     color: var(--color-text);
   }
 
+  .order-error {
+    background: #FEE2E2;
+    color: #B91C1C;
+    border-radius: var(--radius);
+    padding: var(--sp-3) var(--sp-4);
+    font-size: var(--text-sm);
+    margin-top: var(--sp-4);
+    display: none;
+  }
+  .order-error.is-visible { display: block; }
+
   .order-form__step-num {
     width: 26px;
     height: 26px;
@@ -284,12 +295,15 @@ const CITIES = ['دمياط الجديدة', 'دمياط', 'كفر سعد', 'ف�
 </style>
 
 <script>
+  import { isEgyptianMobile, normalizeEgyptianPhone, EG_PHONE_ERROR } from '../utils/phone';
+
   interface Rates { [key: string]: number; }
 
   const BASE_RATES: Rates = { local: 25, express: 45, airport: 150 };
   const CROSS_CITY_FEE = 20;
 
   const form      = document.getElementById('order-form')    as HTMLFormElement;
+  const orderError = document.getElementById('order-error')  as HTMLElement;
   const wrap      = document.getElementById('order-wrap')    as HTMLElement;
   const success   = document.getElementById('order-success') as HTMLElement;
   const successId = document.getElementById('success-id')    as HTMLElement;
@@ -342,6 +356,16 @@ const CITIES = ['دمياط الجديدة', 'دمياط', 'كفر سعد', 'ف�
 
   form.addEventListener('submit', async (e: Event) => {
     e.preventDefault();
+
+    const phoneVal = (document.getElementById('phone') as HTMLInputElement).value;
+    if (!isEgyptianMobile(phoneVal)) {
+      orderError.textContent = EG_PHONE_ERROR;
+      orderError.classList.add('is-visible');
+      (document.getElementById('phone') as HTMLInputElement).focus();
+      return;
+    }
+    orderError.classList.remove('is-visible');
+
     submitBtn.disabled = true;
     submitBtn.textContent = 'جاري التأكيد...';
 
@@ -369,7 +393,7 @@ const CITIES = ['دمياط الجديدة', 'دمياط', 'كفر سعد', 'ف�
       status:    'active',
       address,
       recipient,
-      phone,
+      phone: normalizeEgyptianPhone(phone),
       notes,
       createdAt: new Date().toISOString(),
     };
@@ -468,9 +492,10 @@ const CITIES = ['دمياط الجديدة', 'دمياط', 'كفر سعد', 'ف�
         </div>
         <div class="field">
           <label class="field__label" for="phone">رقم الجوال</label>
-          <input class="field__input" type="tel" id="phone" placeholder="010 0000 0000" required autocomplete="tel">
+          <input class="field__input" type="tel" id="phone" placeholder="010 1234 5678" inputmode="numeric" maxlength="11" pattern="01[0125][0-9]{8}" required autocomplete="tel">
         </div>
       </div>
+      <div id="order-error" class="order-error" role="alert" aria-live="polite"></div>
       <div class="field">
         <label class="field__label" for="notes">ملاحظات إضافية (اختياري)</label>
         <input class="field__input" type="text" id="notes" placeholder="مثال: اتصل قبل الوصول">

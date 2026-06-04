@@ -79,6 +79,17 @@ const AREAS = ['دمياط الجديدة', 'دمياط', 'كفر سعد', 'فا
 
   .field__required { color: #DC2626; margin-right: 2px; }
 
+  .driver-error {
+    background: #FEE2E2;
+    color: #B91C1C;
+    border-radius: var(--radius);
+    padding: var(--sp-3) var(--sp-4);
+    font-size: var(--text-sm);
+    margin-bottom: var(--sp-4);
+    display: none;
+  }
+  .driver-error.is-visible { display: block; }
+
   .field__input,
   .field__select,
   .field__textarea {
@@ -154,24 +165,36 @@ const AREAS = ['دمياط الجديدة', 'دمياط', 'كفر سعد', 'فا
 </style>
 
 <script>
+  import { isEgyptianMobile, normalizeEgyptianPhone, EG_PHONE_ERROR } from '../utils/phone';
+
   const form      = document.getElementById('driver-form')    as HTMLFormElement;
   const formWrap  = document.getElementById('driver-form-wrap') as HTMLElement;
   const success   = document.getElementById('driver-success') as HTMLElement;
   const submitBtn = document.getElementById('driver-submit')  as HTMLButtonElement;
+  const errorBox  = document.getElementById('driver-error')   as HTMLElement;
 
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
+
+    const name  = (document.getElementById('driver-name')  as HTMLInputElement).value;
+    const phone = (document.getElementById('driver-phone') as HTMLInputElement).value;
+
+    if (!isEgyptianMobile(phone)) {
+      errorBox.textContent = EG_PHONE_ERROR;
+      errorBox.classList.add('is-visible');
+      (document.getElementById('driver-phone') as HTMLInputElement).focus();
+      return;
+    }
+    errorBox.classList.remove('is-visible');
+
     submitBtn.disabled    = true;
     submitBtn.textContent = 'جاري إرسال الطلب...';
 
     await new Promise(r => setTimeout(r, 1000));
 
-    const name  = (document.getElementById('driver-name')  as HTMLInputElement).value;
-    const phone = (document.getElementById('driver-phone') as HTMLInputElement).value;
-
     try {
       const applications = JSON.parse(localStorage.getItem('wslha_driver_apps') || '[]');
-      applications.unshift({ name, phone, appliedAt: new Date().toISOString(), status: 'pending' });
+      applications.unshift({ name, phone: normalizeEgyptianPhone(phone), appliedAt: new Date().toISOString(), status: 'pending' });
       localStorage.setItem('wslha_driver_apps', JSON.stringify(applications));
     } catch { /* storage unavailable */ }
 
@@ -214,6 +237,7 @@ const AREAS = ['دمياط الجديدة', 'دمياط', 'كفر سعد', 'فا
     <div id="driver-form-wrap">
       <form class="driver-form" id="driver-form" novalidate>
         <h2 class="driver-form__title">📋 استمارة التسجيل</h2>
+        <div id="driver-error" class="driver-error" role="alert" aria-live="polite"></div>
 
         <!-- Personal info -->
         <p class="driver-form__section">👤 البيانات الشخصية</p>
@@ -228,7 +252,7 @@ const AREAS = ['دمياط الجديدة', 'دمياط', 'كفر سعد', 'فا
             <label class="field__label" for="driver-phone">
               رقم الجوال <span class="field__required">*</span>
             </label>
-            <input class="field__input" type="tel" id="driver-phone" placeholder="010 0000 0000" required autocomplete="tel">
+            <input class="field__input" type="tel" id="driver-phone" placeholder="010 1234 5678" inputmode="numeric" maxlength="11" pattern="01[0125][0-9]{8}" required autocomplete="tel">
           </div>
         </div>
         <div class="form-row">

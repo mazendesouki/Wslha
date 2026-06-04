@@ -134,6 +134,8 @@ const CITIES = ['دمياط الجديدة', 'دمياط', 'كفر سعد', 'ف�
 </style>
 
 <script>
+  import { isEgyptianMobile, normalizeEgyptianPhone, EG_PHONE_ERROR } from '../utils/phone';
+
   const form      = document.getElementById('register-form')   as HTMLFormElement;
   const errorBox  = document.getElementById('register-error')  as HTMLElement;
   const submitBtn = document.getElementById('register-submit') as HTMLButtonElement;
@@ -165,7 +167,7 @@ const CITIES = ['دمياط الجديدة', 'دمياط', 'كفر سعد', 'ف�
     const pass2 = pass2Inp.value;
 
     if (name.length < 2) { showError('يرجى إدخال الاسم بالكامل.'); return; }
-    if (phone.length < 8) { showError('يرجى إدخال رقم جوال صحيح.'); return; }
+    if (!isEgyptianMobile(phone)) { showError(EG_PHONE_ERROR); return; }
     if (!city) { showError('يرجى اختيار المدينة.'); return; }
     if (pass.length < 4) { showError('كلمة المرور يجب ألا تقل عن 4 أحرف.'); return; }
     if (pass !== pass2) { showError('كلمتا المرور غير متطابقتين.'); return; }
@@ -173,7 +175,7 @@ const CITIES = ['دمياط الجديدة', 'دمياط', 'كفر سعد', 'ف�
     try {
       const user = {
         name,
-        phone,
+        phone: normalizeEgyptianPhone(phone),
         city,
         role: 'customer',
         createdAt: new Date().toISOString(),
@@ -208,7 +210,7 @@ const CITIES = ['دمياط الجديدة', 'دمياط', 'كفر سعد', 'ف�
 
         <div class="field">
           <label class="field__label" for="reg-phone">رقم الجوال</label>
-          <input class="field__input" type="tel" id="reg-phone" placeholder="010 0000 0000" required autocomplete="tel">
+          <input class="field__input" type="tel" id="reg-phone" placeholder="010 1234 5678" inputmode="numeric" maxlength="11" pattern="01[0125][0-9]{8}" required autocomplete="tel">
         </div>
 
         <div class="field">
