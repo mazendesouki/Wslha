@@ -7,18 +7,19 @@ export interface NavLink {
 export const NAV_LINKS: NavLink[] = [
   { label: 'الرئيسية',       href: '/',                    page: 'home'     },
   { label: 'خدماتنا',        href: '/services',             page: 'services' },
-  { label: 'المتاجر الشريكة', href: '/services#partners',   page: 'partners' },
-  { label: 'توصيل محلي',     href: '/services#local',       page: 'local'    },
-  { label: 'توصيل المطار',   href: '/services#airport',     page: 'airport'  },
   { label: 'الأسعار',        href: '/services#pricing',     page: 'pricing'  },
+  { label: 'طلب توصيل',      href: '/order',                page: 'order'    },
+  { label: 'طلباتي',         href: '/orders',               page: 'orders'   },
   { label: 'تتبع الطلب',     href: '/track',                page: 'track'    },
+  { label: 'من نحن',         href: '/about',                page: 'about'    },
   { label: 'تواصل معنا',     href: '/contact',              page: 'contact'  },
 ];
 
 export const FOOTER_LINKS = {
   quick: [
     { label: 'الرئيسية',    href: '/'        },
-    { label: 'خدماتنا',     href: '/services' },
+    { label: 'من نحن',      href: '/about'    },
+    { label: 'طلب توصيل',   href: '/order'    },
     { label: 'تتبع الطلب',  href: '/track'    },
     { label: 'تواصل معنا',  href: '/contact'  },
   ],
