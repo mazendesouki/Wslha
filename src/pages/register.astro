@@ -154,6 +154,7 @@ const CITIES = ['دمياط الجديدة', 'دمياط', 'كفر سعد', 'ف�
 <script>
   import { isEgyptianMobile, normalizeEgyptianPhone, EG_PHONE_ERROR } from '../utils/phone';
   import { validatePassword } from '../utils/password';
+  import { addAccount } from '../utils/accounts';
 
   const form      = document.getElementById('register-form')   as HTMLFormElement;
   const errorBox  = document.getElementById('register-error')  as HTMLElement;
@@ -213,6 +214,20 @@ const CITIES = ['دمياط الجديدة', 'دمياط', 'كفر سعد', 'ف�
     const pwResult = validatePassword(pass);
     if (!pwResult.valid) { showError(pwResult.message); return; }
     if (pass !== pass2) { showError('كلمتا المرور غير متطابقتين.'); return; }
+
+    const created = addAccount({
+      name,
+      phone: normalizeEgyptianPhone(phone),
+      password: pass,
+      role: 'customer',
+      city,
+      createdAt: new Date().toISOString(),
+    });
+
+    if (!created) {
+      showError('هذا الرقم مسجّل بالفعل. يمكنك تسجيل الدخول مباشرة.');
+      return;
+    }
 
     try {
       const user = {

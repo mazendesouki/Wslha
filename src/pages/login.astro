@@ -71,6 +71,7 @@ import PageHero from '../components/PageHero.astro';
     display: none;
   }
   .auth-error.is-visible { display: block; }
+  .auth-error a { color: inherit; font-weight: var(--weight-bold); text-decoration: underline; }
 
   /* Submit */
   .auth-submit {
@@ -131,7 +132,8 @@ import PageHero from '../components/PageHero.astro';
 </style>
 
 <script>
-  import { isEgyptianMobile, normalizeEgyptianPhone, EG_PHONE_ERROR } from '../utils/phone';
+  import { isEgyptianMobile, EG_PHONE_ERROR } from '../utils/phone';
+  import { verifyLogin } from '../utils/accounts';
 
   const form      = document.getElementById('login-form')   as HTMLFormElement;
   const errorBox  = document.getElementById('login-error')  as HTMLElement;
@@ -158,8 +160,11 @@ import PageHero from '../components/PageHero.astro';
       return;
     }
 
-    if (pass.length < 8) {
-      errorBox.textContent = 'كلمة المرور يجب أن تكون 8 أحرف على الأقل.';
+    const result = verifyLogin(phone, pass);
+    if (!result.ok) {
+      errorBox.innerHTML = result.reason === 'not_found'
+        ? 'هذا الرقم غير مسجّل لدينا. <a href="/register">أنشئ حساباً جديداً</a> أولاً.'
+        : 'كلمة المرور غير صحيحة. حاول مرة أخرى.';
       errorBox.classList.add('is-visible');
       submitBtn.disabled    = false;
       submitBtn.textContent = 'دخول';
@@ -167,8 +172,14 @@ import PageHero from '../components/PageHero.astro';
     }
 
     try {
-      const normalized = normalizeEgyptianPhone(phone);
-      const user = { name: normalized, phone: normalized, loginAt: new Date().toISOString() };
+      const { account } = result;
+      const user = {
+        name: account.name,
+        phone: account.phone,
+        role: account.role,
+        city: account.city,
+        loginAt: new Date().toISOString(),
+      };
       localStorage.setItem('wslha_user', JSON.stringify(user));
     } catch { /* storage unavailable */ }
 
