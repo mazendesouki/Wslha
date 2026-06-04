@@ -1,0 +1,247 @@
+---
+import Layout from '../components/layout.astro';
+import PageHero from '../components/PageHero.astro';
+
+const CITIES = ['دمياط الجديدة', 'دمياط', 'كفر سعد', 'فارسكور', 'منية النصر', 'رأس البر', 'الزرقا'];
+---
+
+<style>
+  .auth-section {
+    padding: var(--sp-16) var(--sp-6) var(--sp-20);
+    display: flex;
+    justify-content: center;
+  }
+
+  .auth-card {
+    background: var(--color-bg);
+    border: 1.5px solid var(--color-border);
+    border-radius: var(--radius-2xl);
+    padding: var(--sp-10);
+    width: 100%;
+    max-width: 420px;
+    box-shadow: var(--shadow-md);
+  }
+
+  .auth-card__title {
+    font-size: var(--text-2xl);
+    font-weight: var(--weight-black);
+    margin-bottom: var(--sp-2);
+  }
+
+  .auth-card__sub {
+    font-size: var(--text-sm);
+    color: var(--color-text-muted);
+    margin-bottom: var(--sp-8);
+  }
+
+  /* Fields */
+  .field { margin-bottom: var(--sp-5); }
+
+  .field__label {
+    display: block;
+    font-weight: var(--weight-bold);
+    font-size: var(--text-sm);
+    margin-bottom: var(--sp-2);
+    color: var(--color-text);
+  }
+
+  .field__input,
+  .field__select {
+    width: 100%;
+    padding: var(--sp-3) var(--sp-4);
+    border: 2px solid var(--color-border);
+    border-radius: var(--radius);
+    font-family: var(--font-body);
+    font-size: var(--text-base);
+    outline: none;
+    transition: border-color var(--ease);
+    direction: rtl;
+    color: var(--color-text);
+    background: var(--color-bg);
+  }
+
+  .field__input:focus,
+  .field__select:focus { border-color: var(--color-primary); }
+  .field__input::placeholder { color: var(--color-text-faint); }
+
+  /* Error */
+  .auth-error {
+    background: #FEE2E2;
+    color: #B91C1C;
+    border-radius: var(--radius);
+    padding: var(--sp-3) var(--sp-4);
+    font-size: var(--text-sm);
+    margin-bottom: var(--sp-4);
+    display: none;
+  }
+  .auth-error.is-visible { display: block; }
+
+  /* Submit */
+  .auth-submit {
+    width: 100%;
+    padding: var(--sp-4);
+    background: var(--color-primary);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius);
+    font-family: var(--font-body);
+    font-weight: var(--weight-black);
+    font-size: var(--text-base);
+    cursor: pointer;
+    transition: background var(--ease), transform var(--ease);
+    margin-bottom: var(--sp-4);
+  }
+  .auth-submit:hover    { background: var(--color-primary-dark); transform: translateY(-1px); }
+  .auth-submit:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+  /* Divider */
+  .auth-divider {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-3);
+    margin: var(--sp-6) 0;
+    color: var(--color-text-faint);
+    font-size: var(--text-sm);
+  }
+  .auth-divider::before,
+  .auth-divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--color-border);
+  }
+
+  .auth-actions {
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-3);
+  }
+
+  .auth-actions .btn {
+    width: 100%;
+    justify-content: center;
+    text-align: center;
+  }
+
+  .auth-footer {
+    margin-top: var(--sp-6);
+    text-align: center;
+    font-size: var(--text-sm);
+    color: var(--color-text-muted);
+  }
+
+  .auth-footer a { color: var(--color-primary); font-weight: var(--weight-bold); }
+</style>
+
+<script>
+  const form      = document.getElementById('register-form')   as HTMLFormElement;
+  const errorBox  = document.getElementById('register-error')  as HTMLElement;
+  const submitBtn = document.getElementById('register-submit') as HTMLButtonElement;
+  const nameInp   = document.getElementById('reg-name')        as HTMLInputElement;
+  const phoneInp  = document.getElementById('reg-phone')       as HTMLInputElement;
+  const cityInp   = document.getElementById('reg-city')        as HTMLSelectElement;
+  const passInp   = document.getElementById('reg-pass')        as HTMLInputElement;
+  const pass2Inp  = document.getElementById('reg-pass2')       as HTMLInputElement;
+
+  function showError(msg: string): void {
+    errorBox.textContent = msg;
+    errorBox.classList.add('is-visible');
+    submitBtn.disabled    = false;
+    submitBtn.textContent = 'إنشاء الحساب ←';
+  }
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    errorBox.classList.remove('is-visible');
+    submitBtn.disabled    = true;
+    submitBtn.textContent = 'جاري إنشاء الحساب...';
+
+    await new Promise(r => setTimeout(r, 800));
+
+    const name  = nameInp.value.trim();
+    const phone = phoneInp.value.trim();
+    const city  = cityInp.value;
+    const pass  = passInp.value;
+    const pass2 = pass2Inp.value;
+
+    if (name.length < 2) { showError('يرجى إدخال الاسم بالكامل.'); return; }
+    if (phone.length < 8) { showError('يرجى إدخال رقم جوال صحيح.'); return; }
+    if (!city) { showError('يرجى اختيار المدينة.'); return; }
+    if (pass.length < 4) { showError('كلمة المرور يجب ألا تقل عن 4 أحرف.'); return; }
+    if (pass !== pass2) { showError('كلمتا المرور غير متطابقتين.'); return; }
+
+    try {
+      const user = {
+        name,
+        phone,
+        city,
+        role: 'customer',
+        createdAt: new Date().toISOString(),
+        loginAt: new Date().toISOString(),
+      };
+      localStorage.setItem('wslha_user', JSON.stringify(user));
+    } catch { /* storage unavailable */ }
+
+    window.location.href = '/orders';
+  });
+</script>
+
+<Layout title="حساب جديد" description="أنشئ حساب عميل جديد في وصّلها وابدأ بطلب التوصيل" page="register">
+  <PageHero
+    badge="✨ حساب جديد"
+    title="إنشاء حساب عميل"
+    subtitle="سجّل بياناتك لتبدأ بطلب التوصيل ومتابعة طلباتك"
+  />
+
+  <section class="auth-section">
+    <div class="auth-card">
+      <h2 class="auth-card__title">انضم إلى وصّلها</h2>
+      <p class="auth-card__sub">أنشئ حسابك في دقيقة واحدة</p>
+
+      <form id="register-form" novalidate>
+        <div id="register-error" class="auth-error" role="alert" aria-live="polite"></div>
+
+        <div class="field">
+          <label class="field__label" for="reg-name">الاسم بالكامل</label>
+          <input class="field__input" type="text" id="reg-name" placeholder="مثال: أحمد محمد" required autocomplete="name">
+        </div>
+
+        <div class="field">
+          <label class="field__label" for="reg-phone">رقم الجوال</label>
+          <input class="field__input" type="tel" id="reg-phone" placeholder="010 0000 0000" required autocomplete="tel">
+        </div>
+
+        <div class="field">
+          <label class="field__label" for="reg-city">المدينة</label>
+          <select class="field__select" id="reg-city" required>
+            <option value="">اختر مدينتك</option>
+            {CITIES.map(c => <option value={c}>{c}</option>)}
+          </select>
+        </div>
+
+        <div class="field">
+          <label class="field__label" for="reg-pass">كلمة المرور</label>
+          <input class="field__input" type="password" id="reg-pass" placeholder="••••••••" required autocomplete="new-password">
+        </div>
+
+        <div class="field">
+          <label class="field__label" for="reg-pass2">تأكيد كلمة المرور</label>
+          <input class="field__input" type="password" id="reg-pass2" placeholder="••••••••" required autocomplete="new-password">
+        </div>
+
+        <button type="submit" class="auth-submit" id="register-submit">إنشاء الحساب ←</button>
+      </form>
+
+      <div class="auth-divider"><span>أو</span></div>
+
+      <div class="auth-actions">
+        <a href="/login" class="btn btn--outline">لديك حساب؟ سجّل الدخول</a>
+        <a href="/driver" class="btn btn--accent">🚗 حساب سائق جديد</a>
+      </div>
+
+      <p class="auth-footer">
+        بإنشائك الحساب فأنت توافق على <a href="/about">شروط الخدمة</a>
+      </p>
+    </div>
+  </section>
+</Layout>
