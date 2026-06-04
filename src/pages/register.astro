@@ -131,10 +131,29 @@ const CITIES = ['دمياط الجديدة', 'دمياط', 'كفر سعد', 'ف�
   }
 
   .auth-footer a { color: var(--color-primary); font-weight: var(--weight-bold); }
+
+  /* Password rules checklist */
+  .pw-rules {
+    list-style: none;
+    margin: var(--sp-2) 0 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .pw-rule {
+    font-size: 0.78rem;
+    color: var(--color-text-muted);
+    transition: color 0.15s;
+    padding: 1px 0;
+  }
+  .pw-rule.ok  { color: #16a34a; }
+  .pw-rule.bad { color: #dc2626; }
 </style>
 
 <script>
   import { isEgyptianMobile, normalizeEgyptianPhone, EG_PHONE_ERROR } from '../utils/phone';
+  import { validatePassword } from '../utils/password';
 
   const form      = document.getElementById('register-form')   as HTMLFormElement;
   const errorBox  = document.getElementById('register-error')  as HTMLElement;
@@ -144,6 +163,28 @@ const CITIES = ['دمياط الجديدة', 'دمياط', 'كفر سعد', 'ف�
   const cityInp   = document.getElementById('reg-city')        as HTMLSelectElement;
   const passInp   = document.getElementById('reg-pass')        as HTMLInputElement;
   const pass2Inp  = document.getElementById('reg-pass2')       as HTMLInputElement;
+
+  // Live password rules checker
+  const ruleLen = document.getElementById('rule-len')!;
+  const ruleUp  = document.getElementById('rule-up')!;
+  const ruleLow = document.getElementById('rule-low')!;
+  const ruleDig = document.getElementById('rule-dig')!;
+  const ruleSym = document.getElementById('rule-sym')!;
+
+  function setRule(el: HTMLElement, ok: boolean): void {
+    const label = el.textContent!.replace(/^[✓✗] /, '');
+    el.textContent = (ok ? '✓ ' : '✗ ') + label;
+    el.className = 'pw-rule ' + (ok ? 'ok' : 'bad');
+  }
+
+  passInp.addEventListener('input', () => {
+    const v = passInp.value;
+    setRule(ruleLen, v.length >= 8);
+    setRule(ruleUp,  /[A-Z]/.test(v));
+    setRule(ruleLow, /[a-z]/.test(v));
+    setRule(ruleDig, /[0-9]/.test(v));
+    setRule(ruleSym, v.length > 0 && /^[A-Za-z0-9]+$/.test(v));
+  });
 
   function showError(msg: string): void {
     errorBox.textContent = msg;
@@ -169,7 +210,8 @@ const CITIES = ['دمياط الجديدة', 'دمياط', 'كفر سعد', 'ف�
     if (name.length < 2) { showError('يرجى إدخال الاسم بالكامل.'); return; }
     if (!isEgyptianMobile(phone)) { showError(EG_PHONE_ERROR); return; }
     if (!city) { showError('يرجى اختيار المدينة.'); return; }
-    if (pass.length < 4) { showError('كلمة المرور يجب ألا تقل عن 4 أحرف.'); return; }
+    const pwResult = validatePassword(pass);
+    if (!pwResult.valid) { showError(pwResult.message); return; }
     if (pass !== pass2) { showError('كلمتا المرور غير متطابقتين.'); return; }
 
     try {
@@ -223,7 +265,14 @@ const CITIES = ['دمياط الجديدة', 'دمياط', 'كفر سعد', 'ف�
 
         <div class="field">
           <label class="field__label" for="reg-pass">كلمة المرور</label>
-          <input class="field__input" type="password" id="reg-pass" placeholder="••••••••" required autocomplete="new-password">
+          <input class="field__input" type="password" id="reg-pass" placeholder="مثال: Ahmed1234" required autocomplete="new-password">
+          <ul class="pw-rules" id="pw-rules" aria-live="polite">
+            <li id="rule-len"  class="pw-rule">✗ 8 أحرف على الأقل</li>
+            <li id="rule-up"   class="pw-rule">✗ حرف كبير (A-Z)</li>
+            <li id="rule-low"  class="pw-rule">✗ حرف صغير (a-z)</li>
+            <li id="rule-dig"  class="pw-rule">✗ رقم واحد على الأقل</li>
+            <li id="rule-sym"  class="pw-rule">✗ بدون مسافات أو رموز</li>
+          </ul>
         </div>
 
         <div class="field">
