@@ -1,0 +1,315 @@
+---
+import Layout from '../components/layout.astro';
+import PageHero from '../components/PageHero.astro';
+
+interface ContactCard {
+  icon: string;
+  label: string;
+  value: string;
+  href: string;
+}
+
+const CONTACT_CARDS: ContactCard[] = [
+  { icon: '📞', label: 'اتصل بنا',           value: '920-000-000',       href: 'tel:+218910000000'      },
+  { icon: '💬', label: 'واتساب',              value: '+218 91 000 0000',  href: 'https://wa.me/218910000000' },
+  { icon: '✉️', label: 'البريد الإلكتروني',  value: 'info@wslha.co',     href: 'mailto:info@wslha.co'   },
+  { icon: '📍', label: 'الموقع',              value: 'طرابلس، ليبيا',    href: '#'                       },
+];
+
+interface WorkHours {
+  days: string;
+  hours: string;
+}
+
+const WORK_HOURS: WorkHours[] = [
+  { days: 'الأحد – الخميس', hours: '8 ص – 10 م'   },
+  { days: 'الجمعة',          hours: '2 م – 9 م'    },
+  { days: 'السبت',           hours: '9 ص – 9 م'    },
+  { days: 'دعم طارئ',       hours: '24 / 7'        },
+];
+
+const SUBJECTS = [
+  'استفسار عن طلب',
+  'طلب خدمة توصيل',
+  'شراكة تجارية',
+  'شكوى',
+  'أخرى',
+];
+---
+
+<style>
+  .contact-wrap {
+    padding: var(--sp-12) var(--sp-6) var(--sp-20);
+    max-width: 1100px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 1fr 1.6fr;
+    gap: var(--sp-12);
+    align-items: start;
+  }
+
+  /* Info column */
+  .contact-info { display: flex; flex-direction: column; gap: var(--sp-4); }
+
+  .contact-card {
+    background: var(--color-bg);
+    border: 1.5px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: var(--sp-5) var(--sp-6);
+    display: flex;
+    gap: var(--sp-4);
+    align-items: center;
+    transition: border-color var(--ease), box-shadow var(--ease);
+  }
+
+  .contact-card:hover {
+    border-color: var(--color-primary);
+    box-shadow: var(--shadow-primary);
+  }
+
+  .contact-card__icon {
+    width: 46px;
+    height: 46px;
+    border-radius: var(--radius);
+    background: var(--color-primary-light);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: var(--text-xl);
+    flex-shrink: 0;
+  }
+
+  .contact-card__label { font-size: var(--text-xs);  color: var(--color-text-faint); font-weight: var(--weight-bold); margin-bottom: 2px; }
+  .contact-card__value { font-weight: var(--weight-black); color: var(--color-primary); font-size: var(--text-sm); }
+
+  /* Hours */
+  .hours {
+    background: var(--color-primary-light);
+    border-radius: var(--radius-lg);
+    padding: var(--sp-5) var(--sp-6);
+    border: 1.5px solid #C7D7FD;
+  }
+
+  .hours__title {
+    font-weight: var(--weight-black);
+    font-size: var(--text-base);
+    margin-bottom: var(--sp-4);
+    color: var(--color-text);
+  }
+
+  .hours__row {
+    display: flex;
+    justify-content: space-between;
+    padding: var(--sp-2) 0;
+    border-bottom: 1px solid #DBEAFE;
+    font-size: var(--text-sm);
+  }
+
+  .hours__row:last-child { border-bottom: none; }
+  .hours__row strong    { color: var(--color-primary); font-weight: var(--weight-bold); }
+
+  /* Form column */
+  .form-box {
+    background: var(--color-bg);
+    border-radius: var(--radius-xl);
+    padding: var(--sp-10);
+    box-shadow: var(--shadow-md);
+    border: 1px solid var(--color-border);
+  }
+
+  .form-box__title    { font-size: var(--text-xl); font-weight: var(--weight-black); margin-bottom: var(--sp-1); color: var(--color-text); }
+  .form-box__subtitle { color: var(--color-text-muted); font-size: var(--text-sm); margin-bottom: var(--sp-8); }
+
+  .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--sp-4);
+  }
+
+  .field { margin-bottom: var(--sp-4); }
+
+  .field__label {
+    display: block;
+    font-weight: var(--weight-bold);
+    font-size: var(--text-sm);
+    margin-bottom: var(--sp-2);
+    color: #374151;
+  }
+
+  .field__input,
+  .field__select,
+  .field__textarea {
+    width: 100%;
+    padding: var(--sp-3) var(--sp-4);
+    border: 2px solid var(--color-border);
+    border-radius: var(--radius);
+    font-family: var(--font-body);
+    font-size: var(--text-base);
+    outline: none;
+    transition: border-color var(--ease);
+    direction: rtl;
+    color: var(--color-text);
+    background: var(--color-bg);
+  }
+
+  .field__input:focus,
+  .field__select:focus,
+  .field__textarea:focus { border-color: var(--color-primary); }
+
+  .field__input::placeholder,
+  .field__textarea::placeholder { color: var(--color-text-faint); }
+
+  .field__textarea { resize: vertical; min-height: 110px; }
+
+  .form-submit {
+    width: 100%;
+    padding: var(--sp-4);
+    background: var(--color-accent);
+    color: var(--color-text);
+    border: none;
+    border-radius: var(--radius);
+    font-family: var(--font-body);
+    font-weight: var(--weight-black);
+    font-size: var(--text-base);
+    cursor: pointer;
+    transition: background var(--ease), transform var(--ease);
+    margin-top: var(--sp-2);
+  }
+
+  .form-submit:hover          { background: var(--color-accent-dark); transform: translateY(-1px); }
+  .form-submit:focus-visible  { outline: 3px solid var(--color-primary); outline-offset: 3px; }
+  .form-submit:disabled       { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+  .form-success {
+    display: none;
+    background: var(--color-primary-light);
+    border: 1.5px solid #C7D7FD;
+    border-radius: var(--radius);
+    padding: var(--sp-4) var(--sp-5);
+    text-align: center;
+    color: var(--color-primary);
+    font-weight: var(--weight-bold);
+    margin-top: var(--sp-4);
+  }
+
+  .form-success.is-visible { display: block; }
+
+  @media (max-width: 768px) {
+    .contact-wrap { grid-template-columns: 1fr; }
+    .form-row     { grid-template-columns: 1fr; }
+    .form-box     { padding: var(--sp-6); }
+  }
+</style>
+
+<script>
+  const form    = document.getElementById('contact-form')  as HTMLFormElement;
+  const submit  = form.querySelector('.form-submit')       as HTMLButtonElement;
+  const success = document.getElementById('form-success') as HTMLElement;
+
+  form.addEventListener('submit', async (e: Event) => {
+    e.preventDefault();
+    submit.disabled = true;
+    submit.textContent = 'جاري الإرسال...';
+
+    // Simulate API call
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
+    form.reset();
+    submit.disabled = false;
+    submit.textContent = 'إرسال الرسالة ←';
+    success.classList.add('is-visible');
+    success.focus();
+  });
+</script>
+
+<Layout
+  title="تواصل معنا"
+  description="تواصل مع فريق وصّلها لأي استفسار أو دعم — نحن هنا 24/7"
+  page="contact"
+>
+  <PageHero
+    badge="📞 تواصل معنا"
+    title="نحن هنا لمساعدتك"
+    subtitle="فريق دعمنا متاح 24/7 للإجابة على جميع استفساراتك"
+  />
+
+  <div class="contact-wrap">
+
+    <!-- Info -->
+    <aside aria-label="معلومات التواصل">
+      <div class="contact-info">
+        {CONTACT_CARDS.map(card => (
+          <a href={card.href} class="contact-card" rel={card.href.startsWith('http') ? 'noopener noreferrer' : undefined}>
+            <div class="contact-card__icon" aria-hidden="true">{card.icon}</div>
+            <div>
+              <p class="contact-card__label">{card.label}</p>
+              <p class="contact-card__value">{card.value}</p>
+            </div>
+          </a>
+        ))}
+      </div>
+
+      <div class="hours" style="margin-top: var(--sp-4)">
+        <h2 class="hours__title">🕐 ساعات العمل</h2>
+        <dl>
+          {WORK_HOURS.map(h => (
+            <div class="hours__row">
+              <dt>{h.days}</dt>
+              <dd><strong>{h.hours}</strong></dd>
+            </div>
+          ))}
+        </dl>
+      </div>
+    </aside>
+
+    <!-- Form -->
+    <div class="form-box">
+      <h2 class="form-box__title">أرسل لنا رسالة</h2>
+      <p class="form-box__subtitle">سنرد عليك في أقرب وقت</p>
+
+      <form id="contact-form" novalidate>
+        <div class="form-row">
+          <div class="field">
+            <label class="field__label" for="cf-name">الاسم الكامل <span aria-hidden="true">*</span></label>
+            <input id="cf-name" class="field__input" type="text" placeholder="محمد أحمد" required autocomplete="name">
+          </div>
+          <div class="field">
+            <label class="field__label" for="cf-phone">رقم الجوال <span aria-hidden="true">*</span></label>
+            <input id="cf-phone" class="field__input" type="tel" placeholder="091 000 0000" required autocomplete="tel">
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="field__label" for="cf-email">البريد الإلكتروني</label>
+          <input id="cf-email" class="field__input" type="email" placeholder="example@email.com" autocomplete="email">
+        </div>
+
+        <div class="field">
+          <label class="field__label" for="cf-subject">الموضوع <span aria-hidden="true">*</span></label>
+          <select id="cf-subject" class="field__select" required>
+            <option value="" disabled selected>اختر الموضوع</option>
+            {SUBJECTS.map(s => <option value={s}>{s}</option>)}
+          </select>
+        </div>
+
+        <div class="field">
+          <label class="field__label" for="cf-message">رسالتك <span aria-hidden="true">*</span></label>
+          <textarea id="cf-message" class="field__textarea" placeholder="اكتب رسالتك هنا..." required></textarea>
+        </div>
+
+        <button type="submit" class="form-submit">إرسال الرسالة ←</button>
+      </form>
+
+      <div
+        id="form-success"
+        class="form-success"
+        role="alert"
+        aria-live="polite"
+        tabindex="-1"
+      >
+        ✅ تم إرسال رسالتك بنجاح! سنتواصل معك قريباً.
+      </div>
+    </div>
+
+  </div>
+</Layout>

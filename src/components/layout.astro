@@ -1,216 +1,167 @@
 ---
-const { title, description, home = false } = Astro.props;
+import Nav from './Nav.astro';
+import Footer from './Footer.astro';
+
+interface Props {
+  title: string;
+  description: string;
+  page?: string;
+}
+
+const { title, description, page = '' } = Astro.props;
+const canonicalURL = new URL(Astro.url.pathname, Astro.site ?? 'https://wslha.co');
 ---
+
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8">
-  <meta http-equiv="X-UA-Compatible" content="IE=edge">
-  <link rel="preload" href="/fonts/PacaembuVar-subset.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="preload" href="/fonts/MulishVar-subset.woff2" as="font" type="font/woff2" crossorigin>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+
+  <!-- SEO -->
+  <title>{title} | وصّلها</title>
+  <meta name="description" content={description}>
+  <link rel="canonical" href={canonicalURL}>
+
+  <!-- Open Graph -->
+  <meta property="og:title"       content={`${title} | وصّلها`}>
+  <meta property="og:description" content={description}>
+  <meta property="og:type"        content="website">
+  <meta property="og:url"         content={canonicalURL}>
+
+  <!-- Icons -->
   <link rel="icon" href="/favicon.ico" sizes="any">
-  <link rel="icon" href="/icon.svg" type="image/svg+xml">
-  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
-  <link rel="manifest" href="/site.webmanifest" />
+  <link rel="icon" href="/icon.svg"    type="image/svg+xml">
+  <link rel="apple-touch-icon"    href="/apple-touch-icon.png">
+  <link rel="manifest"            href="/site.webmanifest">
+  <meta name="theme-color"        content="#3B6EF8">
 
-  <meta name="msapplication-TileColor" content="#5cebdf" />
-  <meta name="theme-color" content="#ffffff" />
-  <title>{title}</title>
+  <!-- Disable Netlify Identity widget -->
+  <meta name="netlify-identity-widget" content="disabled">
 
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+  <!-- Base styles -->
   <link rel="stylesheet" href="/global.css">
+
   <style is:global>
-
-    :root {
-    
-      --heading: var(--neutral-dark-900);
-      --text: var(--neutral-dark-900);
-      --text-muted: var(--neutral-dark-600);
-      --primary: var(--blue-700);
-      --primary-darker: var(--blue-800);
-      --highlight: var(--teal-300);
-      --button:var(--neutral-light-000);
-      --lightBorder: var(--neutral-light-200);
-      --light: var(--neutral-light-100);
-      --white: var(--neutral-light-000);
-      --card-radius: var(--border-radius-3);
-      --font-primary: Pacaembu, sans-serif;
-      --font-secondary: Mulish, sans-serif;
-
+    /* ── Layout utilities ──────────────────────────────────── */
+    .container {
+      max-width: var(--container);
+      margin: 0 auto;
+      padding: 0 var(--sp-6);
     }
 
-    * {
-      box-sizing: border-box;
+    .section {
+      padding: var(--sp-20) var(--sp-6);
     }
 
-    html,
-    body {
-
-      color: var(--text);
-      font-family: var(--font-secondary);
-      font-size: 18px;
-      line-height: 1.45;
-      margin: 0;
-      padding: 0;
+    /* ── Button system ─────────────────────────────────────── */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--sp-2);
+      padding: var(--sp-3) var(--sp-6);
+      border-radius: var(--radius);
+      font-family: var(--font-body);
+      font-size: var(--text-base);
+      font-weight: var(--weight-bold);
+      border: none;
+      transition: background var(--ease), transform var(--ease), border-color var(--ease);
+      text-decoration: none;
+      white-space: nowrap;
+      cursor: pointer;
+      line-height: 1;
     }
 
-    body {
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      min-height: 100vh;
-      padding: 5rem 0 4rem;
+    .btn:focus-visible {
+      outline: 3px solid var(--color-accent);
+      outline-offset: 3px;
     }
 
-    h1, h2, h3 {
-      font-family: var(--font-primary);
+    .btn--primary {
+      background: var(--color-primary);
+      color: #fff;
     }
+    .btn--primary:hover { background: var(--color-primary-dark); transform: translateY(-1px); }
 
-    a:link,
-    a:visited {
-      color: var(--text);
-      text-decoration: underline;
-      text-decoration-color: var(--text);
-      font-weight: 600;
+    .btn--accent {
+      background: var(--color-accent);
+      color: var(--color-text);
     }
-    a:hover,
-    a:focus {
-      text-decoration-color: var(--highlight);
-    }
+    .btn--accent:hover { background: var(--color-accent-dark); transform: translateY(-1px); }
 
-    main {
-      background: var(--light);
-      margin-bottom: 2rem;
-      margin-top: 3rem;
-      padding: 2rem max(5vw, 50vw - 60ch / 2);
-      width: 100vw;
-      border-style: none;
+    .btn--white {
+      background: #fff;
+      color: var(--color-primary);
+      border: 2px solid #fff;
     }
+    .btn--white:hover { background: var(--color-primary-light); border-color: var(--color-primary-light); }
 
-    .sr-only:not(:focus):not(:active) {
-      clip: rect(0 0 0 0);
-      clip-path: inset(50%);
+    .btn--outline {
+      background: transparent;
+      color: var(--color-primary);
+      border: 2px solid var(--color-primary);
+    }
+    .btn--outline:hover { background: var(--color-primary-light); }
+
+    /* ── Accessibility ─────────────────────────────────────── */
+    .sr-only {
+      position: absolute;
+      width: 1px;
       height: 1px;
       overflow: hidden;
-      position: absolute;
+      clip: rect(0 0 0 0);
       white-space: nowrap;
-      width: 1px;
     }
 
-    .button,
-    a.button {
-      background: var(--primary);
-      border-radius: 4px;
-      color: var(--white);
-      display: inline-block;
-      font-weight: 800;
-      padding: 0.5rem 1rem;
-      text-decoration: none;
-      width: max-content;
-      transition-duration: .2s;
-      text-decoration: none;
-      margin-top: auto;
-    }
-
-    a.button:hover,
-    a.button:focus,
-    .button:hover,
-    .button:focus {
-      background: var(--primary-darker);
-    }
-
-
-    .container,
-    .footer {
-      margin: 0 auto;
-      text-align: center;
-      width: min(90vw, 900px);
-    }
-
-    .heading {
-      color: var(--heading);
-      font-size: 2.5rem;
-      margin: 0;
-      text-align: center;
-    }
-
-    .footer {
-      color: var(--text-muted);
-      font-size: 0.75rem;
-      margin-top: 4rem;
-    }
-
-    .footer a {
-      color: inherit;
-      text-decoration: none;
-    }
-
-    .footer a:focus,
-    .footer a:hover {
-      text-decoration: underline;
-    }
-
-    .footer ul {
+    /* ── WhatsApp float ────────────────────────────────────── */
+    .whatsapp-float {
+      position: fixed;
+      bottom: var(--sp-6);
+      right: var(--sp-6);
+      width: 52px;
+      height: 52px;
+      background: #25D366;
+      border-radius: var(--radius-full);
       display: flex;
-      flex-wrap: wrap;
       align-items: center;
       justify-content: center;
-      list-style-type: none;
+      font-size: var(--text-xl);
+      box-shadow: 0 4px 16px rgba(37, 211, 102, 0.4);
+      z-index: 999;
+      transition: transform var(--ease);
     }
 
-    .footer li {
-      margin: 0 1em;
-    }
-
-    .heart {
-      display: inline-block;
-      vertical-align: top;
-      width: 1.1rem;
-    }
-
-    .heart img {
-      display: block;
-      width: 100%;
+    .whatsapp-float:hover   { transform: scale(1.1); }
+    .whatsapp-float:focus-visible {
+      outline: 3px solid var(--color-accent);
+      outline-offset: 3px;
     }
   </style>
 </head>
+
 <body>
-  <header class="container">
-    <h1 class="heading">{title}</h1>
+  <Nav currentPage={page} />
 
-    <p class="description">{description}</p>
+  <main id="main-content" tabindex="-1">
+    <slot />
+  </main>
 
-    {home !== true && (
-      <p>
-        <a href="/">&larr; back to home</a>
-      </p>
-    )}
-  </header>
+  <a
+    href="https://wa.me/201000000000"
+    class="whatsapp-float"
+    aria-label="تواصل معنا عبر واتساب"
+    rel="noopener noreferrer"
+    target="_blank"
+  >
+    💬
+  </a>
 
-  <slot />
-
-  <footer class="footer">
-    <nav>
-      <ul>
-        <li>
-          <a class="footer-link" href="https://www.netlify.com/trust-center/">Trust Center</a>
-        </li>
-        <li>
-          <a class="footer-link" href="https://www.netlify.com/privacy/">Privacy</a>
-        </li>
-        <li>
-          <a class="footer-link" href="https://www.netlify.com/security/">Security</a>
-        </li>
-        <li>
-          <a class="footer-link" href="https://www.netlify.com/gdpr-ccpa/">GDPR/CCPA</a>
-        </li>
-        <li>
-          <a class="footer-link" href="mailto:fraud@netlify.com?subject=Abuse%20report&body=Please%20include%20the%20site%20URL%20and%20reason%20for%20your%20report%2C%20and%20we%20will%20reply%20promptly." target="_blank" rel="noopener noreferrer">Abuse</a>
-        </li>
-      </ul>
-    </nav>
-  </footer>
-
+  <Footer />
 </body>
 </html>

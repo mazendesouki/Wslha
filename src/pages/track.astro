@@ -1,0 +1,276 @@
+---
+import Layout from '../components/layout.astro';
+import PageHero from '../components/PageHero.astro';
+
+interface TimelineEvent {
+  state: 'done' | 'active' | 'wait';
+  title: string;
+  time: string;
+  desc?: string;
+}
+
+const TIMELINE: TimelineEvent[] = [
+  { state: 'done',   title: 'تم استلام الطلب',            time: 'اليوم — 10:00 ص', desc: 'تم تأكيد طلبك بنجاح'                       },
+  { state: 'done',   title: 'المندوب في الطريق للاستلام', time: 'اليوم — 10:20 ص', desc: 'المندوب توجه للمتجر لاستلام طلبك'            },
+  { state: 'active', title: 'في الطريق إليك',             time: 'اليوم — 10:45 ص', desc: 'المندوب في طريقه لتوصيل طلبك'               },
+  { state: 'wait',   title: 'تم التسليم',                 time: 'متوقع — خلال 15 دقيقة'                                             },
+];
+---
+
+<style>
+  .track-wrap {
+    padding: var(--sp-12) var(--sp-6) var(--sp-20);
+    max-width: 680px;
+    margin: 0 auto;
+  }
+
+  /* Search box */
+  .search-box {
+    background: var(--color-bg);
+    border-radius: var(--radius-xl);
+    padding: var(--sp-10);
+    box-shadow: var(--shadow-md);
+    border: 1px solid var(--color-border);
+    margin-bottom: var(--sp-6);
+  }
+
+  .search-box__title {
+    font-size: var(--text-lg);
+    font-weight: var(--weight-black);
+    margin-bottom: var(--sp-6);
+    color: var(--color-text);
+  }
+
+  .search-box__label {
+    display: block;
+    font-weight: var(--weight-bold);
+    font-size: var(--text-sm);
+    margin-bottom: var(--sp-2);
+    color: #374151;
+  }
+
+  .search-box__row {
+    display: flex;
+    gap: var(--sp-3);
+  }
+
+  .search-box__input {
+    flex: 1;
+    padding: var(--sp-3) var(--sp-4);
+    border: 2px solid var(--color-border);
+    border-radius: var(--radius);
+    font-family: var(--font-body);
+    font-size: var(--text-base);
+    outline: none;
+    transition: border-color var(--ease);
+    direction: rtl;
+    color: var(--color-text);
+    background: var(--color-bg);
+  }
+
+  .search-box__input:focus         { border-color: var(--color-primary); }
+  .search-box__input::placeholder  { color: var(--color-text-faint); }
+
+  .search-box__submit {
+    padding: var(--sp-3) var(--sp-5);
+    background: var(--color-primary);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius);
+    font-family: var(--font-body);
+    font-weight: var(--weight-black);
+    font-size: var(--text-base);
+    cursor: pointer;
+    transition: background var(--ease), transform var(--ease);
+    white-space: nowrap;
+  }
+
+  .search-box__submit:hover         { background: var(--color-primary-dark); transform: translateY(-1px); }
+  .search-box__submit:focus-visible { outline: 3px solid var(--color-accent); outline-offset: 3px; }
+
+  /* Result */
+  .result {
+    display: none;
+    background: var(--color-bg);
+    border-radius: var(--radius-xl);
+    border: 1px solid var(--color-border);
+    box-shadow: var(--shadow-md);
+    overflow: hidden;
+  }
+
+  .result.is-visible { display: block; }
+
+  .result__header {
+    background: var(--color-primary);
+    color: #fff;
+    padding: var(--sp-6) var(--sp-8);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--sp-4);
+  }
+
+  .result__id   { font-size: var(--text-xs); opacity: 0.75; margin-bottom: var(--sp-1); }
+  .result__name { font-size: var(--text-xl); font-weight: var(--weight-black); }
+
+  .result__status {
+    padding: var(--sp-1) var(--sp-4);
+    border-radius: var(--radius-full);
+    font-size: var(--text-sm);
+    font-weight: var(--weight-bold);
+    background: var(--color-accent);
+    color: var(--color-text);
+  }
+
+  .result__body { padding: var(--sp-8); }
+
+  /* Timeline */
+  .timeline { position: relative; padding-right: var(--sp-10); }
+
+  .timeline::before {
+    content: '';
+    position: absolute;
+    right: 9px;
+    top: 10px;
+    bottom: 10px;
+    width: 2px;
+    background: var(--color-border);
+  }
+
+  .timeline__item {
+    position: relative;
+    margin-bottom: var(--sp-6);
+  }
+
+  .timeline__item:last-child { margin-bottom: 0; }
+
+  .timeline__dot {
+    position: absolute;
+    right: calc(-1 * var(--sp-10));
+    top: 4px;
+    width: 20px;
+    height: 20px;
+    border-radius: var(--radius-full);
+    border: 3px solid var(--color-bg);
+  }
+
+  .timeline__dot--done   { background: var(--color-primary); box-shadow: 0 0 0 2px var(--color-primary); }
+  .timeline__dot--active { background: var(--color-accent);  box-shadow: 0 0 0 4px rgba(245,184,0,0.25); }
+  .timeline__dot--wait   { background: var(--color-border);  box-shadow: 0 0 0 2px var(--color-border);  }
+
+  .timeline__title { font-weight: var(--weight-black); font-size: var(--text-base); color: var(--color-text); }
+  .timeline__time  { font-size: var(--text-xs); color: var(--color-text-faint); margin-top: var(--sp-1); }
+  .timeline__desc  { font-size: var(--text-sm); color: var(--color-text-muted); margin-top: var(--sp-1); }
+
+  /* Info grid */
+  .result__info {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--sp-3);
+    margin-top: var(--sp-6);
+    padding-top: var(--sp-6);
+    border-top: 1px solid var(--color-bg-soft);
+  }
+
+  .result__info-label { font-size: var(--text-xs); color: var(--color-text-faint); font-weight: var(--weight-bold); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: var(--sp-1); }
+  .result__info-value { font-weight: var(--weight-bold); font-size: var(--text-sm); color: var(--color-text); }
+</style>
+
+<script>
+  const form  = document.getElementById('track-form')   as HTMLFormElement;
+  const input = document.getElementById('track-input')  as HTMLInputElement;
+  const result = document.getElementById('track-result') as HTMLElement;
+  const resultId = document.getElementById('result-id') as HTMLElement;
+
+  function showResult(trackingNumber: string): void {
+    resultId.textContent = trackingNumber;
+    result.classList.add('is-visible');
+    result.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  form.addEventListener('submit', (e: Event) => {
+    e.preventDefault();
+    const val = input.value.trim();
+    if (val) showResult(val);
+    else input.focus();
+  });
+
+  // Auto-fill from query param
+  const trackParam = new URLSearchParams(location.search).get('q');
+  if (trackParam) {
+    input.value = trackParam;
+    showResult(trackParam);
+  }
+</script>
+
+<Layout
+  title="تتبع الطلب"
+  description="تتبع طلبك لحظة بلحظة مع وصّلها"
+  page="track"
+>
+  <PageHero
+    badge="📡 تتبع فوري"
+    title="تتبع طلبك"
+    subtitle="أدخل رقم الطلب لمعرفة حالته لحظة بلحظة"
+  />
+
+  <div class="track-wrap">
+
+    <!-- Search -->
+    <div class="search-box">
+      <h2 class="search-box__title">🔍 أدخل رقم الطلب</h2>
+      <form id="track-form" role="search">
+        <label class="search-box__label" for="track-input">رقم الطلب أو رقم التتبع</label>
+        <div class="search-box__row">
+          <input
+            id="track-input"
+            class="search-box__input"
+            type="search"
+            placeholder="مثال: WSL-2024-001234"
+            autocomplete="off"
+            aria-label="أدخل رقم التتبع"
+          >
+          <button type="submit" class="search-box__submit">تتبع ←</button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Result -->
+    <section
+      id="track-result"
+      class="result"
+      aria-live="polite"
+      aria-label="نتيجة التتبع"
+    >
+      <div class="result__header">
+        <div>
+          <p class="result__id">رقم الطلب: <strong id="result-id">—</strong></p>
+          <p class="result__name">📦 طرد — توصيل محلي</p>
+        </div>
+        <span class="result__status" role="status">في الطريق</span>
+      </div>
+
+      <div class="result__body">
+        <ol class="timeline" aria-label="مراحل التوصيل">
+          {TIMELINE.map(event => (
+            <li class="timeline__item">
+              <div class={`timeline__dot timeline__dot--${event.state}`} aria-hidden="true"></div>
+              <p class="timeline__title">{event.title}</p>
+              <p class="timeline__time">{event.time}</p>
+              {event.desc && <p class="timeline__desc">{event.desc}</p>}
+            </li>
+          ))}
+        </ol>
+
+        <dl class="result__info">
+          <div><dt class="result__info-label">من</dt>          <dd class="result__info-value">متجر النخيل</dd></div>
+          <div><dt class="result__info-label">إلى</dt>         <dd class="result__info-value">حي الروضة</dd></div>
+          <div><dt class="result__info-label">المندوب</dt>     <dd class="result__info-value">أحمد محمد</dd></div>
+          <div><dt class="result__info-label">وقت التسليم</dt> <dd class="result__info-value">خلال 15 دقيقة</dd></div>
+        </dl>
+      </div>
+    </section>
+
+  </div>
+</Layout>

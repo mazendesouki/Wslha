@@ -1,0 +1,412 @@
+---
+import Layout from '../components/layout.astro';
+import PageHero from '../components/PageHero.astro';
+import SectionHeader from '../components/SectionHeader.astro';
+
+interface Service {
+  id: string;
+  emoji: string;
+  label: string;
+  title: string;
+  desc: string;
+  features: string[];
+  cta: string;
+  ctaHref: string;
+  badge: string;
+  badgeLabel: string;
+  variant: 'light' | 'tinted';
+}
+
+const SERVICES: Service[] = [
+  {
+    id:         'local',
+    emoji:      '🛵',
+    label:      '🛵 توصيل محلي',
+    title:      'من أي متجر لباب بيتك',
+    desc:       'نوصّل طلباتك من المطاعم والمتاجر والصيدليات وأي مكان تريده، مباشرة لبابك خلال 30 دقيقة فقط.',
+    features:   ['توصيل خلال 30 دقيقة', 'تتبع المندوب لحظة بلحظة', 'مئات المتاجر الشريكة', 'دفع عند الاستلام أو إلكتروني', 'خدمة 24 ساعة / 7 أيام'],
+    cta:        '🛵 اطلب الآن',
+    ctaHref:    '/contact',
+    badge:      '30',
+    badgeLabel: 'دقيقة توصيل',
+    variant:    'light',
+  },
+  {
+    id:         'airport',
+    emoji:      '✈️',
+    label:      '✈️ توصيل المطار',
+    title:      'توصيل احترافي من وإلى المطار',
+    desc:       'سائق مخصص في انتظارك في الوقت المحدد. لا تأخير، لا قلق، فقط سفر مريح.',
+    features:   ['مراقبة رحلتك آلياً', 'سائق مرحباً في موعده', 'سيارات مريحة ونظيفة', 'أسعار ثابتة بدون مفاجآت', 'حجز مسبق سهل'],
+    cta:        '✈️ احجز الآن',
+    ctaHref:    '/contact',
+    badge:      '0',
+    badgeLabel: 'تأخير مضمون',
+    variant:    'tinted',
+  },
+];
+
+const PARTNERS = [
+  { emoji: '🍕', name: 'المطاعم',       category: 'طعام وشراب'       },
+  { emoji: '💊', name: 'الصيدليات',     category: 'أدوية وصحة'       },
+  { emoji: '🛒', name: 'السوبرماركت',   category: 'بقالة ومنزل'      },
+  { emoji: '☕', name: 'المقاهي',       category: 'مشروبات وحلويات'   },
+  { emoji: '👗', name: 'الملابس',       category: 'أزياء وأكسسوار'   },
+  { emoji: '📱', name: 'الإلكترونيات', category: 'تقنية وكمبيوتر'    },
+  { emoji: '💐', name: 'الزهور',        category: 'هدايا وورود'       },
+  { emoji: '📦', name: 'متاجر أخرى',   category: 'وأكثر...'          },
+];
+
+interface PricingPlan {
+  name: string;
+  price: string;
+  unit: string;
+  desc: string;
+  features: string[];
+  cta: string;
+  featured: boolean;
+  variant: 'outline' | 'primary' | 'accent';
+}
+
+const PRICING: PricingPlan[] = [
+  {
+    name: 'توصيل محلي', price: '5',  unit: 'د.ل / طلب',   desc: 'داخل المدينة',
+    features: ['توصيل خلال 30 دقيقة', 'تتبع لحظي', 'دفع نقدي أو إلكتروني', 'تأمين على الطلب'],
+    cta: 'اطلب الآن', featured: false, variant: 'outline',
+  },
+  {
+    name: 'باقة شهرية', price: '49', unit: 'د.ل / شهر',   desc: 'للعملاء المنتظمين',
+    features: ['20 طلب توصيل شهرياً', 'أولوية في التوصيل', 'خصم 20% على الإضافي', 'دعم أولوية', 'تقارير شهرية'],
+    cta: 'اشترك الآن', featured: true, variant: 'accent',
+  },
+  {
+    name: 'توصيل مطار', price: '30', unit: 'د.ل / رحلة',  desc: 'من / إلى المطار',
+    features: ['سائق مخصص', 'مراقبة الرحلة آلياً', 'سيارة مريحة', 'سعر ثابت'],
+    cta: 'احجز الآن', featured: false, variant: 'primary',
+  },
+];
+---
+
+<style>
+  /* ── Split sections ─────────────────────────────────────── */
+  .split {
+    padding: var(--sp-20) var(--sp-6);
+  }
+
+  .split--tinted { background: var(--color-primary-light); }
+  .split--light  { background: var(--color-bg); }
+
+  .split__inner {
+    max-width: var(--container);
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--sp-20);
+    align-items: center;
+  }
+
+  .split__inner--reverse > :first-child { order: 2; }
+  .split__inner--reverse > :last-child  { order: 1; }
+
+  .split__label {
+    display: inline-block;
+    background: var(--color-primary-light);
+    color: var(--color-primary);
+    font-size: var(--text-xs);
+    font-weight: var(--weight-bold);
+    padding: var(--sp-1) var(--sp-3);
+    border-radius: var(--radius-full);
+    margin-bottom: var(--sp-4);
+  }
+
+  .split--tinted .split__label {
+    background: #fff;
+  }
+
+  .split__title {
+    font-size: var(--text-3xl);
+    font-weight: var(--weight-black);
+    line-height: 1.2;
+    margin-bottom: var(--sp-4);
+    color: var(--color-text);
+  }
+
+  .split__desc {
+    color: var(--color-text-muted);
+    line-height: 1.8;
+    margin-bottom: var(--sp-6);
+    font-size: var(--text-base);
+  }
+
+  .split__features {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-3);
+    margin-bottom: var(--sp-8);
+  }
+
+  .split__features li {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-3);
+    font-size: var(--text-sm);
+    font-weight: var(--weight-semi);
+    color: var(--color-text);
+  }
+
+  .split__features li::before {
+    content: '';
+    width: 20px;
+    height: 20px;
+    border-radius: var(--radius-full);
+    background: var(--color-primary);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6L9 17l-5-5'/%3E%3C/svg%3E");
+    background-size: 12px;
+    background-position: center;
+    background-repeat: no-repeat;
+    flex-shrink: 0;
+  }
+
+  .split__visual {
+    border-radius: var(--radius-2xl);
+    background: linear-gradient(135deg, var(--color-primary-light), #DBEAFE);
+    aspect-ratio: 4 / 3;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 5rem;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .split__visual-badge {
+    position: absolute;
+    bottom: var(--sp-6);
+    left: var(--sp-6);
+    background: var(--color-bg);
+    border-radius: var(--radius-lg);
+    padding: var(--sp-3) var(--sp-5);
+    box-shadow: var(--shadow-md);
+    text-align: center;
+  }
+
+  .split__visual-badge-num   { font-size: var(--text-2xl); font-weight: var(--weight-black); color: var(--color-primary); line-height: 1; }
+  .split__visual-badge-label { font-size: var(--text-xs);  color: var(--color-text-muted);   font-weight: var(--weight-semi); }
+
+  /* ── Partners ────────────────────────────────────────────── */
+  .partners { background: var(--color-bg); }
+
+  .partners__grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: var(--sp-4);
+  }
+
+  .partner-card {
+    background: var(--color-bg-soft);
+    border-radius: var(--radius-lg);
+    padding: var(--sp-8) var(--sp-4);
+    text-align: center;
+    border: 1.5px solid var(--color-border);
+    transition: border-color var(--ease), background var(--ease), transform var(--ease);
+  }
+
+  .partner-card:hover {
+    border-color: var(--color-primary);
+    background: var(--color-primary-light);
+    transform: translateY(-2px);
+  }
+
+  .partner-card__icon     { font-size: var(--text-4xl);  margin-bottom: var(--sp-3); }
+  .partner-card__name     { font-weight: var(--weight-black); font-size: var(--text-sm); color: var(--color-text); }
+  .partner-card__category { font-size: var(--text-xs);   color: var(--color-text-faint); margin-top: var(--sp-1); }
+
+  /* ── Pricing ─────────────────────────────────────────────── */
+  .pricing { background: var(--color-bg-soft); }
+
+  .pricing__grid {
+    max-width: 960px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--sp-6);
+    align-items: start;
+  }
+
+  .pricing-card {
+    background: var(--color-bg);
+    border-radius: var(--radius-xl);
+    padding: var(--sp-8);
+    border: 2px solid var(--color-border);
+    text-align: center;
+    position: relative;
+    transition: border-color var(--ease), box-shadow var(--ease);
+  }
+
+  .pricing-card--featured {
+    border-color: var(--color-primary);
+    transform: scale(1.04);
+    box-shadow: var(--shadow-primary);
+  }
+
+  .pricing-card__popular {
+    position: absolute;
+    top: -14px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--color-accent);
+    color: var(--color-text);
+    font-size: var(--text-xs);
+    font-weight: var(--weight-black);
+    padding: var(--sp-1) var(--sp-4);
+    border-radius: var(--radius-full);
+    white-space: nowrap;
+  }
+
+  .pricing-card__name  { font-weight: var(--weight-bold); color: var(--color-text-muted); font-size: var(--text-sm); margin-bottom: var(--sp-2); }
+  .pricing-card__price { font-size: var(--text-4xl); font-weight: var(--weight-black); color: var(--color-text); line-height: 1; }
+  .pricing-card__unit  { font-size: var(--text-base); font-weight: var(--weight-semi); color: var(--color-text-faint); }
+  .pricing-card__desc  { font-size: var(--text-sm); color: var(--color-text-faint); margin: var(--sp-3) 0 var(--sp-6); }
+
+  .pricing-card__features {
+    list-style: none;
+    text-align: right;
+    margin-bottom: var(--sp-8);
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-2);
+  }
+
+  .pricing-card__features li {
+    font-size: var(--text-sm);
+    color: var(--color-text);
+    display: flex;
+    align-items: center;
+    gap: var(--sp-2);
+  }
+
+  .pricing-card__features li::before {
+    content: '✓';
+    color: var(--color-primary);
+    font-weight: var(--weight-black);
+    font-size: var(--text-xs);
+    flex-shrink: 0;
+  }
+
+  .pricing-card__btn {
+    display: block;
+    width: 100%;
+    padding: var(--sp-3);
+    border-radius: var(--radius);
+    font-family: var(--font-body);
+    font-weight: var(--weight-black);
+    font-size: var(--text-base);
+    cursor: pointer;
+    border: none;
+    transition: background var(--ease), transform var(--ease);
+  }
+
+  .pricing-card__btn--outline { background: transparent; color: var(--color-primary); border: 2px solid var(--color-primary); }
+  .pricing-card__btn--outline:hover { background: var(--color-primary-light); }
+
+  .pricing-card__btn--primary { background: var(--color-primary); color: #fff; }
+  .pricing-card__btn--primary:hover { background: var(--color-primary-dark); transform: translateY(-1px); }
+
+  .pricing-card__btn--accent { background: var(--color-accent); color: var(--color-text); }
+  .pricing-card__btn--accent:hover { background: var(--color-accent-dark); transform: translateY(-1px); }
+
+  /* ── Responsive ──────────────────────────────────────────── */
+  @media (max-width: 900px) {
+    .split__inner  { grid-template-columns: 1fr; gap: var(--sp-10); }
+    .split__inner--reverse > :first-child { order: 1; }
+    .split__inner--reverse > :last-child  { order: 2; }
+    .partners__grid { grid-template-columns: repeat(2, 1fr); }
+    .pricing__grid  { grid-template-columns: 1fr; }
+    .pricing-card--featured { transform: none; }
+  }
+</style>
+
+<Layout
+  title="خدماتنا"
+  description="اكتشف خدمات وصّلها — توصيل محلي، توصيل مطار، المتاجر الشريكة، والأسعار"
+  page="services"
+>
+  <PageHero
+    badge="📦 خدماتنا"
+    title="حلول التوصيل لكل احتياج"
+    subtitle="من التوصيل المحلي إلى المطار، لدينا الحل المناسب لك"
+  />
+
+  <!-- Services (local + airport) -->
+  {SERVICES.map((svc, i) => (
+    <section
+      class:list={['split', `split--${svc.variant}`]}
+      id={svc.id}
+      aria-labelledby={`${svc.id}-title`}
+    >
+      <div class:list={['split__inner', i % 2 !== 0 && 'split__inner--reverse']}>
+        <div>
+          <span class="split__label">{svc.label}</span>
+          <h2 class="split__title" id={`${svc.id}-title`}>{svc.title}</h2>
+          <p class="split__desc">{svc.desc}</p>
+          <ul class="split__features">
+            {svc.features.map(f => <li>{f}</li>)}
+          </ul>
+          <a href={svc.ctaHref} class="btn btn--accent">{svc.cta}</a>
+        </div>
+        <div class="split__visual" role="img" aria-label={svc.title}>
+          {svc.emoji}
+          <div class="split__visual-badge">
+            <div class="split__visual-badge-num">{svc.badge}</div>
+            <div class="split__visual-badge-label">{svc.badgeLabel}</div>
+          </div>
+        </div>
+      </div>
+    </section>
+  ))}
+
+  <!-- Partners -->
+  <section class="section partners" id="partners" aria-labelledby="partners-title">
+    <div class="container">
+      <SectionHeader badge="شركاؤنا" title="المتاجر الشريكة" subtitle="اطلب من متاجرك المفضلة مباشرة" id="partners-title" />
+      <ul class="partners__grid" role="list">
+        {PARTNERS.map(p => (
+          <li class="partner-card">
+            <div class="partner-card__icon" aria-hidden="true">{p.emoji}</div>
+            <p class="partner-card__name">{p.name}</p>
+            <p class="partner-card__category">{p.category}</p>
+          </li>
+        ))}
+      </ul>
+    </div>
+  </section>
+
+  <!-- Pricing -->
+  <section class="section pricing" id="pricing" aria-labelledby="pricing-title">
+    <div class="container">
+      <SectionHeader badge="الأسعار" title="شفافية تامة في الأسعار" subtitle="لا رسوم خفية، لا مفاجآت" id="pricing-title" />
+      <div class="pricing__grid" role="list">
+        {PRICING.map(plan => (
+          <div
+            class:list={['pricing-card', plan.featured && 'pricing-card--featured']}
+            role="listitem"
+          >
+            {plan.featured && <span class="pricing-card__popular">الأكثر طلباً</span>}
+            <p class="pricing-card__name">{plan.name}</p>
+            <p class="pricing-card__price">
+              {plan.price} <span class="pricing-card__unit">{plan.unit}</span>
+            </p>
+            <p class="pricing-card__desc">{plan.desc}</p>
+            <ul class="pricing-card__features">
+              {plan.features.map(f => <li>{f}</li>)}
+            </ul>
+            <button class={`pricing-card__btn pricing-card__btn--${plan.variant}`}>
+              {plan.cta}
+            </button>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+</Layout>

@@ -1,108 +1,513 @@
 ---
 import Layout from '../components/layout.astro';
+import SectionHeader from '../components/SectionHeader.astro';
+
+const STATS = [
+  { value: '30 د',  label: 'متوسط التوصيل' },
+  { value: '24/7',  label: 'خدمة متاحة'    },
+  { value: '+2',    label: 'منطقة تغطية'   },
+  { value: '+0',    label: 'متجر شريك'     },
+];
+
+const SERVICES = [
+  { icon: '🛵', title: 'توصيل محلي',     desc: 'نوصّل طلباتك من أي متجر أو مطعم لباب بيتك خلال 30 دقيقة.',            href: '/services#local'    },
+  { icon: '✈️', title: 'توصيل المطار',   desc: 'توصيل احترافي من وإلى المطار في الوقت المحدد بدون تأخير.',             href: '/services#airport'  },
+  { icon: '🏪', title: 'المتاجر الشريكة', desc: 'اطلب من مئات المتاجر الشريكة واستلم طلبك بأسرع وقت.',                href: '/services#partners' },
+  { icon: '📦', title: 'شحن الطرود',     desc: 'أرسل طرودك وهداياك لأي مكان بأمان تام وتتبع لحظي.',                  href: '/track'             },
+  { icon: '🔄', title: 'المرتجعات',       desc: 'نظام سهل ومرن لإعادة المنتجات للمتاجر بدون أي تعقيد.',               href: '/services'          },
+  { icon: '📊', title: 'حلول الأعمال',   desc: 'لوحة تحكم متكاملة وباقات خاصة للشركات والمتاجر الإلكترونية.',        href: '/contact'           },
+];
+
+const HOW_STEPS = [
+  { num: '١', title: 'اختر المتجر',   desc: 'تصفح المتاجر الشريكة واختر ما تريد'         },
+  { num: '٢', title: 'أضف طلبك',     desc: 'حدد المنتجات وأدخل عنوان التوصيل'           },
+  { num: '٣', title: 'ادفع بأمان',   desc: 'طرق دفع متعددة ومشفرة'                       },
+  { num: '٤', title: 'استلم طلبك',   desc: 'المندوب عند بابك خلال 30 دقيقة'              },
+];
+
+const WHY_ITEMS = [
+  { icon: '⚡', title: 'توصيل فائق السرعة', desc: 'متوسط وقت التوصيل 30 دقيقة فقط داخل المدينة.'            },
+  { icon: '📡', title: 'تتبع فوري للطلب',  desc: 'تابع موقع مندوبك لحظة بلحظة على الخريطة.'                },
+  { icon: '🔒', title: 'أمان وضمان',       desc: 'شحناتك مؤمنة بالكامل مع ضمان الاسترداد عند أي مشكلة.'   },
+  { icon: '🕐', title: 'خدمة 24/7',        desc: 'نحن هنا في أي وقت، ليل أو نهار، طوال الأسبوع.'          },
+];
 ---
 
 <style>
-.steps {
-  background: var(--light);
-  display: grid;
-  gap: 2rem;
-  grid-template-columns: min(90vw, 250px);
-  justify-content: center;
-  margin-top: 3rem;
-  padding: 5rem 5vw;
-  width: 100vw;
-}
-
-@media (min-width: 550px) {
-  .steps {
-    grid-template-columns: repeat(2, min(calc(50% - 1rem), 250px));
+  /* ── Hero ───────────────────────────────────────────────── */
+  .hero {
+    background: linear-gradient(135deg, var(--color-primary) 60%, var(--color-primary-dark) 100%);
+    padding: var(--sp-16) var(--sp-6);
+    overflow: hidden;
+    position: relative;
   }
-}
 
-@media (min-width: 1050px) {
-  .steps {
-    grid-template-columns: repeat(4, min(calc(25% - 1.5rem), 250px));
+  .hero__inner {
+    max-width: var(--container);
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--sp-12);
+    align-items: center;
   }
-}
 
-.step {
-  background: var(--white);
-  border: 1px solid var(--lightBorder);
-  border-radius: var(--card-radius);
-  display: flex;
-  flex-direction: column;
-  font-size: 0.75rem;
-  padding: 1rem 1.5rem 1.5rem;
-  text-align: left;
-  box-shadow: 0 2px 4px rgb(14 30 37 / 12%);
-}
+  /* Text side */
+  .hero__text { color: #fff; }
 
-.stepHeading {
-  font-size: 1rem;
-  font-weight: 600;
-  margin: 0;
-}
+  .hero__badge {
+    display: inline-block;
+    background: rgba(255, 255, 255, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    font-size: var(--text-sm);
+    font-weight: var(--weight-bold);
+    padding: var(--sp-1) var(--sp-4);
+    border-radius: var(--radius-full);
+    margin-bottom: var(--sp-6);
+  }
 
+  .hero__title {
+    font-size: var(--text-5xl);
+    font-weight: var(--weight-black);
+    line-height: 1.05;
+    margin-bottom: var(--sp-5);
+  }
 
+  .hero__subtitle {
+    font-size: var(--text-xl);
+    font-weight: var(--weight-semi);
+    margin-bottom: var(--sp-3);
+    opacity: 0.95;
+  }
+
+  .hero__desc {
+    font-size: var(--text-base);
+    opacity: 0.8;
+    line-height: 1.8;
+    margin-bottom: var(--sp-10);
+    max-width: 420px;
+  }
+
+  .hero__actions {
+    display: flex;
+    gap: var(--sp-4);
+    flex-wrap: wrap;
+  }
+
+  /* Visual side */
+  .hero__visual { position: relative; }
+
+  .hero__img {
+    border-radius: var(--radius-2xl);
+    background: linear-gradient(135deg, rgba(41, 82, 217, 0.8), rgba(30, 60, 180, 0.9));
+    aspect-ratio: 4 / 3;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 6rem;
+    overflow: hidden;
+    position: relative;
+  }
+
+  /* Yellow "30 min" badge */
+  .hero__badge-img {
+    position: absolute;
+    top: var(--sp-4);
+    right: var(--sp-4);
+    background: var(--color-accent);
+    color: var(--color-text);
+    border-radius: var(--radius-lg);
+    padding: var(--sp-2) var(--sp-4);
+    text-align: center;
+    box-shadow: var(--shadow-accent);
+  }
+
+  .hero__badge-img-num   { font-size: var(--text-3xl); font-weight: var(--weight-black); line-height: 1; }
+  .hero__badge-img-label { font-size: var(--text-xs);  font-weight: var(--weight-bold); }
+
+  /* Success card */
+  .hero__success {
+    position: absolute;
+    bottom: calc(-1 * var(--sp-4));
+    left: calc(-1 * var(--sp-4));
+    background: #fff;
+    border-radius: var(--radius-lg);
+    padding: var(--sp-3) var(--sp-5);
+    box-shadow: var(--shadow-md);
+    display: flex;
+    align-items: center;
+    gap: var(--sp-3);
+    min-width: 200px;
+  }
+
+  .hero__success-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: var(--radius-full);
+    border: 2px solid var(--color-success);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: var(--text-lg);
+    flex-shrink: 0;
+  }
+
+  .hero__success-title { font-weight: var(--weight-black); font-size: var(--text-sm); color: var(--color-text); }
+  .hero__success-time  { font-size: var(--text-xs); color: var(--color-text-faint); margin-top: 2px; }
+
+  /* ── Stats ──────────────────────────────────────────────── */
+  .stats {
+    background: var(--color-bg);
+    padding: var(--sp-12) var(--sp-6);
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .stats__grid {
+    max-width: var(--container);
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: var(--sp-4);
+    text-align: center;
+  }
+
+  .stat__value { font-size: var(--text-4xl); font-weight: var(--weight-black); color: var(--color-primary); line-height: 1; margin-bottom: var(--sp-2); }
+  .stat__label { color: var(--color-text-muted); font-size: var(--text-sm); font-weight: var(--weight-semi); }
+
+  /* ── Services ───────────────────────────────────────────── */
+  .services { background: var(--color-bg-soft); }
+
+  .services__grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--sp-6);
+  }
+
+  .service-card {
+    background: var(--color-bg);
+    border-radius: var(--radius-xl);
+    padding: var(--sp-8);
+    border: 1.5px solid var(--color-border);
+    display: flex;
+    flex-direction: column;
+    transition: border-color var(--ease), box-shadow var(--ease), transform var(--ease);
+  }
+
+  .service-card:hover {
+    border-color: var(--color-primary);
+    box-shadow: var(--shadow-primary);
+    transform: translateY(-3px);
+  }
+
+  .service-card__icon {
+    width: 52px;
+    height: 52px;
+    border-radius: var(--radius-lg);
+    background: var(--color-primary-light);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: var(--text-2xl);
+    margin-bottom: var(--sp-5);
+  }
+
+  .service-card__title { font-size: var(--text-lg);  font-weight: var(--weight-black); margin-bottom: var(--sp-2); }
+  .service-card__desc  { font-size: var(--text-sm);  color: var(--color-text-muted);   line-height: 1.7; flex: 1; margin-bottom: var(--sp-5); }
+
+  .service-card__link {
+    font-size: var(--text-sm);
+    font-weight: var(--weight-bold);
+    color: var(--color-primary);
+    display: flex;
+    align-items: center;
+    gap: var(--sp-1);
+    transition: gap var(--ease);
+  }
+
+  .service-card:hover .service-card__link { gap: var(--sp-2); }
+
+  /* ── How it works ───────────────────────────────────────── */
+  .how { background: var(--color-bg); }
+
+  .how__steps {
+    max-width: 1000px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: var(--sp-6);
+    position: relative;
+  }
+
+  .how__steps::before {
+    content: '';
+    position: absolute;
+    top: 27px;
+    right: 12%;
+    left: 12%;
+    height: 2px;
+    background: linear-gradient(to left, var(--color-primary), var(--color-primary-light));
+    pointer-events: none;
+  }
+
+  .how-step { text-align: center; padding: var(--sp-2); }
+
+  .how-step__num {
+    width: 54px;
+    height: 54px;
+    border-radius: var(--radius-full);
+    background: var(--color-primary);
+    color: #fff;
+    font-size: var(--text-xl);
+    font-weight: var(--weight-black);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto var(--sp-4);
+    position: relative;
+    z-index: 1;
+    box-shadow: var(--shadow-primary);
+  }
+
+  .how-step__title { font-size: var(--text-base);  font-weight: var(--weight-black); margin-bottom: var(--sp-2); }
+  .how-step__desc  { font-size: var(--text-sm);    color: var(--color-text-muted);   line-height: 1.6; }
+
+  /* ── Why us ─────────────────────────────────────────────── */
+  .why { background: var(--color-primary-light); }
+
+  .why__inner {
+    max-width: var(--container);
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--sp-20);
+    align-items: center;
+  }
+
+  .why__list { display: flex; flex-direction: column; gap: var(--sp-5); }
+
+  .why-item {
+    display: flex;
+    gap: var(--sp-4);
+    align-items: flex-start;
+    background: var(--color-bg);
+    padding: var(--sp-5);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .why-item__icon {
+    width: 44px;
+    height: 44px;
+    border-radius: var(--radius);
+    background: var(--color-primary-light);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: var(--text-xl);
+    flex-shrink: 0;
+  }
+
+  .why-item__title { font-weight: var(--weight-black); margin-bottom: var(--sp-1); font-size: var(--text-base); }
+  .why-item__desc  { font-size: var(--text-sm); color: var(--color-text-muted); line-height: 1.6; }
+
+  .why__visual {
+    background: var(--color-bg);
+    border-radius: var(--radius-2xl);
+    padding: var(--sp-8);
+    box-shadow: var(--shadow-md);
+  }
+
+  .why__map {
+    background: linear-gradient(135deg, var(--color-primary-light), #DBEAFE);
+    border-radius: var(--radius-lg);
+    height: 220px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 4rem;
+    margin-bottom: var(--sp-6);
+  }
+
+  .why__stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--sp-3);
+  }
+
+  .why-stat {
+    text-align: center;
+    background: var(--color-bg-soft);
+    border-radius: var(--radius);
+    padding: var(--sp-4) var(--sp-2);
+  }
+
+  .why-stat__num   { font-size: var(--text-2xl); font-weight: var(--weight-black); color: var(--color-primary); line-height: 1; }
+  .why-stat__label { font-size: var(--text-xs);  color: var(--color-text-muted);   font-weight: var(--weight-semi); margin-top: var(--sp-1); }
+
+  /* ── CTA ─────────────────────────────────────────────────── */
+  .cta {
+    background: var(--color-primary);
+    padding: var(--sp-20) var(--sp-6);
+    text-align: center;
+  }
+
+  .cta__title { font-size: var(--text-4xl); font-weight: var(--weight-black); color: #fff; margin-bottom: var(--sp-4); }
+  .cta__desc  { color: rgba(255,255,255,0.8); font-size: var(--text-base); margin-bottom: var(--sp-10); }
+
+  .cta__actions {
+    display: flex;
+    gap: var(--sp-4);
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  /* ── Responsive ──────────────────────────────────────────── */
+  @media (max-width: 900px) {
+    .services__grid { grid-template-columns: 1fr 1fr; }
+  }
+
+  @media (max-width: 768px) {
+    .hero__inner    { grid-template-columns: 1fr; }
+    .hero__visual   { order: -1; }
+    .why__inner     { grid-template-columns: 1fr; gap: var(--sp-12); }
+    .hero__title    { font-size: var(--text-4xl); }
+  }
+
+  @media (max-width: 640px) {
+    .stats__grid    { grid-template-columns: repeat(2, 1fr); }
+    .services__grid { grid-template-columns: 1fr; }
+    .how__steps     { grid-template-columns: 1fr 1fr; }
+    .how__steps::before { display: none; }
+    .cta__title     { font-size: var(--text-3xl); }
+  }
 </style>
 
 <Layout
-  title="Netlify Feature Tour"
-  description="This is a small site to show the most powerful features of Netlify quickly!"
-  home
+  title="الرئيسية"
+  description="وصّلها — خدمة توصيل سريعة وموثوقة، توصيل محلي من المتاجر وتوصيل من وإلى المطار"
+  page="home"
 >
-  <main class="steps">
-    <section class="step">
-      <h2 class="stepHeading">Deploy Previews</h2>
-      <p>
-        Every pull request is automatically built in an
-        identical-to-production environment for
-        <strong>painless QA, feedback, and review.</strong>
-      </p>
-      <a href="/deploy-previews" class="button">
-        Learn more <span class="sr-only">about Deploy Previews</span>
-      </a>
-    </section>
+  <!-- ── Hero ── -->
+  <section class="hero" aria-labelledby="hero-title">
+    <div class="hero__inner">
 
-    <section class="step">
-      <h2 class="stepHeading">Instant Rollbacks</h2>
-      <p>
-        Confidently ship to production with the knowledge that it’s a
-        one-click operation to roll back to a previous version of the site.
-        <strong>Instant disaster recovery!</strong>
-      </p>
-      <a href="/instant-rollbacks" class="button">
-        Learn more
-        <span class="sr-only">about Instant Rollbacks</span>
-      </a>
-    </section>
+      <div class="hero__text">
+        <span class="hero__badge">خدمة توصيل موثوقة</span>
+        <h1 class="hero__title" id="hero-title">وصّلها</h1>
+        <p class="hero__subtitle">نوصّل طلباتك من أي متجر لباب بيتك</p>
+        <p class="hero__desc">
+          خدمة توصيل سريعة وموثوقة — توصيل محلي من المتاجر
+          وتوصيل من وإلى المطار
+        </p>
+        <div class="hero__actions">
+          <a href="/services#local"   class="btn btn--accent">🛵 اطلب توصيل محلي</a>
+          <a href="/services#airport" class="btn btn--white">✈️ توصيل مطار</a>
+        </div>
+      </div>
 
-    <section class="step">
-      <h2 class="stepHeading">Netlify Functions</h2>
-      <p>
-        <strong>Serverless functions are superpowers for web developers!</strong>
-        Securely handle server-like requirements at any scale with no
-        provisioning, scaling, or ops overhead.
-      </p>
-      <a href="/functions" class="button">
-      Learn more
-      <span class="sr-only">about Netlify Functions</span>
-      </a>
-    </section>
+      <div class="hero__visual" aria-hidden="true">
+        <div class="hero__img" role="img" aria-label="مندوب توصيل">🚐</div>
+        <div class="hero__badge-img">
+          <div class="hero__badge-img-num">30</div>
+          <div class="hero__badge-img-label">دقيقة توصيل</div>
+        </div>
+        <div class="hero__success" role="status">
+          <div class="hero__success-icon" aria-hidden="true">✅</div>
+          <div>
+            <div class="hero__success-title">تم التوصيل بنجاح</div>
+            <div class="hero__success-time">منذ 5 دقائق</div>
+          </div>
+        </div>
+      </div>
 
-    <section class="step">
-      <h2 class="stepHeading">Netlify Forms</h2>
-      <p>
-        Handle user input with a single line of code. Netlify Forms allow
-        any HTML form to
-        <strong>
-            accept submissions, send notification emails, and trigger custom events.
-        </strong>
-      </p>
-      <a href="/netlify-forms" class="button">
-        Learn more <span class="sr-only">about Netlify Forms</span>
-      </a>
-    </section>
-  </main>
+    </div>
+  </section>
+
+  <!-- ── Stats ── -->
+  <section class="stats" aria-label="إحصائيات الخدمة">
+    <dl class="stats__grid">
+      {STATS.map(s => (
+        <div>
+          <dt class="sr-only">{s.label}</dt>
+          <dd class="stat__value" aria-label={`${s.value} — ${s.label}`}>{s.value}</dd>
+          <p class="stat__label" aria-hidden="true">{s.label}</p>
+        </div>
+      ))}
+    </dl>
+  </section>
+
+  <!-- ── Services ── -->
+  <section class="section services" aria-labelledby="services-title">
+    <div class="container">
+      <SectionHeader
+        badge="خدماتنا"
+        title="خدمات لكل احتياج"
+        subtitle="نقدم مجموعة متكاملة من خدمات التوصيل لتلبية احتياجاتك"
+        id="services-title"
+      />
+      <ul class="services__grid" role="list">
+        {SERVICES.map(s => (
+          <li class="service-card">
+            <div class="service-card__icon" aria-hidden="true">{s.icon}</div>
+            <h3 class="service-card__title">{s.title}</h3>
+            <p class="service-card__desc">{s.desc}</p>
+            <a href={s.href} class="service-card__link">اعرف المزيد ←</a>
+          </li>
+        ))}
+      </ul>
+    </div>
+  </section>
+
+  <!-- ── How it works ── -->
+  <section class="section how" aria-labelledby="how-title">
+    <div class="container">
+      <SectionHeader badge="كيف تعمل؟" title="أربع خطوات بسيطة" subtitle="وشحنتك في الطريق" id="how-title" />
+      <ol class="how__steps">
+        {HOW_STEPS.map(s => (
+          <li class="how-step">
+            <div class="how-step__num" aria-hidden="true">{s.num}</div>
+            <h3 class="how-step__title">{s.title}</h3>
+            <p class="how-step__desc">{s.desc}</p>
+          </li>
+        ))}
+      </ol>
+    </div>
+  </section>
+
+  <!-- ── Why us ── -->
+  <section class="section why" aria-labelledby="why-title">
+    <div class="why__inner">
+      <div>
+        <SectionHeader badge="لماذا وصّلها؟" title="الأفضل في خدمة التوصيل" align="right" id="why-title" />
+        <ul class="why__list" role="list">
+          {WHY_ITEMS.map(w => (
+            <li class="why-item">
+              <div class="why-item__icon" aria-hidden="true">{w.icon}</div>
+              <div>
+                <h3 class="why-item__title">{w.title}</h3>
+                <p class="why-item__desc">{w.desc}</p>
+              </div>
+            </li>
+          ))}
+        </ul>
+      </div>
+      <div class="why__visual" aria-hidden="true">
+        <div class="why__map">🗺️</div>
+        <dl class="why__stats">
+          <div class="why-stat"><dt class="sr-only">متوسط التوصيل</dt><dd class="why-stat__num">30د</dd><p class="why-stat__label">متوسط التوصيل</p></div>
+          <div class="why-stat"><dt class="sr-only">الخدمة</dt><dd class="why-stat__num">24/7</dd><p class="why-stat__label">خدمة متاحة</p></div>
+          <div class="why-stat"><dt class="sr-only">مناطق التغطية</dt><dd class="why-stat__num">+2</dd><p class="why-stat__label">منطقة تغطية</p></div>
+        </dl>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── CTA ── -->
+  <section class="cta" aria-labelledby="cta-title">
+    <h2 class="cta__title" id="cta-title">ابدأ التوصيل الآن</h2>
+    <p class="cta__desc">انضم لآلاف العملاء الذين يثقون في وصّلها يومياً</p>
+    <div class="cta__actions">
+      <a href="/services#local" class="btn btn--accent">🛵 اطلب توصيل محلي</a>
+      <a href="/track"          class="btn btn--white">📦 تتبع طلبك</a>
+    </div>
+  </section>
 </Layout>

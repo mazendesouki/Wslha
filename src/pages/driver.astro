@@ -1,0 +1,309 @@
+---
+import Layout from '../components/layout.astro';
+import PageHero from '../components/PageHero.astro';
+
+const VEHICLE_TYPES = ['دراجة بخارية', 'سيارة ملاكي', 'سيارة نقل صغيرة', 'توك توك', 'دراجة هوائية'];
+const AREAS = ['دمياط الجديدة', 'دمياط', 'كفر سعد', 'فارسكور', 'منية النصر', 'رأس البر', 'الزرقا', 'كل المناطق'];
+---
+
+<style>
+  .driver-section {
+    padding: var(--sp-12) var(--sp-6) var(--sp-20);
+    max-width: 680px;
+    margin: 0 auto;
+  }
+
+  /* Benefits strip */
+  .driver-benefits {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--sp-4);
+    margin-bottom: var(--sp-10);
+  }
+
+  .benefit-card {
+    background: var(--color-bg);
+    border: 1.5px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: var(--sp-5);
+    text-align: center;
+  }
+
+  .benefit-card__icon { font-size: 1.8rem; margin-bottom: var(--sp-2); }
+  .benefit-card__title { font-weight: var(--weight-black); font-size: var(--text-sm); margin-bottom: 4px; }
+  .benefit-card__desc  { font-size: var(--text-xs); color: var(--color-text-muted); }
+
+  /* Form */
+  .driver-form {
+    background: var(--color-bg);
+    border: 1.5px solid var(--color-border);
+    border-radius: var(--radius-2xl);
+    padding: var(--sp-10);
+    box-shadow: var(--shadow-md);
+  }
+
+  .driver-form__title {
+    font-size: var(--text-xl);
+    font-weight: var(--weight-black);
+    margin-bottom: var(--sp-6);
+    padding-bottom: var(--sp-4);
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .driver-form__section {
+    font-size: var(--text-sm);
+    font-weight: var(--weight-black);
+    color: var(--color-primary);
+    margin: var(--sp-6) 0 var(--sp-4);
+    display: flex;
+    align-items: center;
+    gap: var(--sp-2);
+  }
+
+  .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--sp-4);
+  }
+
+  .field { margin-bottom: var(--sp-4); }
+  .field:last-child { margin-bottom: 0; }
+
+  .field__label {
+    display: block;
+    font-weight: var(--weight-bold);
+    font-size: var(--text-sm);
+    margin-bottom: var(--sp-2);
+    color: var(--color-text);
+  }
+
+  .field__required { color: #DC2626; margin-right: 2px; }
+
+  .field__input,
+  .field__select,
+  .field__textarea {
+    width: 100%;
+    padding: var(--sp-3) var(--sp-4);
+    border: 2px solid var(--color-border);
+    border-radius: var(--radius);
+    font-family: var(--font-body);
+    font-size: var(--text-base);
+    outline: none;
+    transition: border-color var(--ease);
+    direction: rtl;
+    color: var(--color-text);
+    background: var(--color-bg);
+  }
+
+  .field__input:focus,
+  .field__select:focus,
+  .field__textarea:focus { border-color: var(--color-primary); }
+
+  .field__input::placeholder,
+  .field__textarea::placeholder { color: var(--color-text-faint); }
+
+  .field__textarea { resize: vertical; min-height: 80px; }
+
+  /* Checkbox row */
+  .field__check-label {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--sp-3);
+    cursor: pointer;
+    font-size: var(--text-sm);
+    color: var(--color-text-muted);
+    line-height: 1.5;
+  }
+
+  .field__check-label input { margin-top: 2px; flex-shrink: 0; accent-color: var(--color-primary); }
+
+  /* Submit */
+  .driver-submit {
+    width: 100%;
+    margin-top: var(--sp-8);
+    padding: var(--sp-4);
+    background: #16A34A;
+    color: #fff;
+    border: none;
+    border-radius: var(--radius);
+    font-family: var(--font-body);
+    font-weight: var(--weight-black);
+    font-size: var(--text-base);
+    cursor: pointer;
+    transition: background var(--ease), transform var(--ease);
+  }
+  .driver-submit:hover    { background: #15803D; transform: translateY(-1px); }
+  .driver-submit:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+  /* Success */
+  .driver-success {
+    display: none;
+    text-align: center;
+    padding: var(--sp-12) var(--sp-6);
+  }
+  .driver-success.is-visible { display: block; }
+  .driver-success__icon  { font-size: 3rem; margin-bottom: var(--sp-4); }
+  .driver-success__title { font-size: var(--text-2xl); font-weight: var(--weight-black); margin-bottom: var(--sp-3); }
+  .driver-success__desc  { color: var(--color-text-muted); margin-bottom: var(--sp-6); line-height: 1.7; }
+
+  @media (max-width: 600px) {
+    .driver-benefits { grid-template-columns: 1fr; }
+    .form-row        { grid-template-columns: 1fr; }
+    .driver-form     { padding: var(--sp-6); }
+  }
+</style>
+
+<script>
+  const form      = document.getElementById('driver-form')    as HTMLFormElement;
+  const formWrap  = document.getElementById('driver-form-wrap') as HTMLElement;
+  const success   = document.getElementById('driver-success') as HTMLElement;
+  const submitBtn = document.getElementById('driver-submit')  as HTMLButtonElement;
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    submitBtn.disabled    = true;
+    submitBtn.textContent = 'جاري إرسال الطلب...';
+
+    await new Promise(r => setTimeout(r, 1000));
+
+    const name  = (document.getElementById('driver-name')  as HTMLInputElement).value;
+    const phone = (document.getElementById('driver-phone') as HTMLInputElement).value;
+
+    try {
+      const applications = JSON.parse(localStorage.getItem('wslha_driver_apps') || '[]');
+      applications.unshift({ name, phone, appliedAt: new Date().toISOString(), status: 'pending' });
+      localStorage.setItem('wslha_driver_apps', JSON.stringify(applications));
+    } catch { /* storage unavailable */ }
+
+    formWrap.style.display = 'none';
+    success.classList.add('is-visible');
+    success.focus();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+</script>
+
+<Layout title="انضم كسائق" description="انضم إلى أسطول وصّلها وابدأ تحقيق دخل إضافي في دمياط" page="driver">
+  <PageHero
+    badge="🚗 انضم كسائق"
+    title="كن جزءاً من أسطول وصّلها"
+    subtitle="حدد وقت عملك بنفسك واكسب دخلاً إضافياً يومياً"
+  />
+
+  <section class="driver-section">
+
+    <!-- Benefits -->
+    <div class="driver-benefits">
+      <div class="benefit-card">
+        <div class="benefit-card__icon">⏰</div>
+        <p class="benefit-card__title">ساعات مرنة</p>
+        <p class="benefit-card__desc">اعمل متى تشاء بدون التزام</p>
+      </div>
+      <div class="benefit-card">
+        <div class="benefit-card__icon">💰</div>
+        <p class="benefit-card__title">دخل يومي</p>
+        <p class="benefit-card__desc">استلم أرباحك يومياً مباشرة</p>
+      </div>
+      <div class="benefit-card">
+        <div class="benefit-card__icon">📱</div>
+        <p class="benefit-card__title">تطبيق السائق</p>
+        <p class="benefit-card__desc">إدارة طلباتك من هاتفك</p>
+      </div>
+    </div>
+
+    <!-- Registration form -->
+    <div id="driver-form-wrap">
+      <form class="driver-form" id="driver-form" novalidate>
+        <h2 class="driver-form__title">📋 استمارة التسجيل</h2>
+
+        <!-- Personal info -->
+        <p class="driver-form__section">👤 البيانات الشخصية</p>
+        <div class="form-row">
+          <div class="field">
+            <label class="field__label" for="driver-name">
+              الاسم الكامل <span class="field__required">*</span>
+            </label>
+            <input class="field__input" type="text" id="driver-name" placeholder="محمد أحمد محمد" required autocomplete="name">
+          </div>
+          <div class="field">
+            <label class="field__label" for="driver-phone">
+              رقم الجوال <span class="field__required">*</span>
+            </label>
+            <input class="field__input" type="tel" id="driver-phone" placeholder="010 0000 0000" required autocomplete="tel">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="field">
+            <label class="field__label" for="driver-id">رقم بطاقة الهوية</label>
+            <input class="field__input" type="text" id="driver-id" placeholder="29XXXXXXXXXX" inputmode="numeric">
+          </div>
+          <div class="field">
+            <label class="field__label" for="driver-age">العمر</label>
+            <input class="field__input" type="number" id="driver-age" placeholder="25" min="18" max="60">
+          </div>
+        </div>
+
+        <!-- Vehicle info -->
+        <p class="driver-form__section">🚗 بيانات المركبة</p>
+        <div class="form-row">
+          <div class="field">
+            <label class="field__label" for="driver-vehicle">
+              نوع المركبة <span class="field__required">*</span>
+            </label>
+            <select class="field__select" id="driver-vehicle" required>
+              <option value="" disabled selected>اختر نوع المركبة</option>
+              {VEHICLE_TYPES.map(v => <option value={v}>{v}</option>)}
+            </select>
+          </div>
+          <div class="field">
+            <label class="field__label" for="driver-plate">رقم اللوحة</label>
+            <input class="field__input" type="text" id="driver-plate" placeholder="أ ب ج ١٢٣٤">
+          </div>
+        </div>
+
+        <!-- Work area -->
+        <p class="driver-form__section">📍 منطقة العمل</p>
+        <div class="field">
+          <label class="field__label" for="driver-area">
+            المنطقة المفضلة للعمل <span class="field__required">*</span>
+          </label>
+          <select class="field__select" id="driver-area" required>
+            <option value="" disabled selected>اختر المنطقة</option>
+            {AREAS.map(a => <option value={a}>{a}</option>)}
+          </select>
+        </div>
+
+        <div class="field">
+          <label class="field__label" for="driver-notes">ملاحظات إضافية (اختياري)</label>
+          <textarea class="field__textarea" id="driver-notes" placeholder="أي معلومات إضافية تريد إخبارنا بها..."></textarea>
+        </div>
+
+        <!-- Terms -->
+        <div class="field" style="margin-top: var(--sp-4);">
+          <label class="field__check-label">
+            <input type="checkbox" required>
+            أوافق على <a href="/terms" style="color:var(--color-primary);">الشروط والأحكام</a> وسياسة الخصوصية الخاصة بوصّلها
+          </label>
+        </div>
+
+        <button type="submit" class="driver-submit" id="driver-submit">
+          🚗 تقديم طلب الانضمام
+        </button>
+      </form>
+    </div>
+
+    <!-- Success state -->
+    <div class="driver-success" id="driver-success" role="alert" aria-live="polite" tabindex="-1">
+      <div class="driver-success__icon">🎉</div>
+      <h2 class="driver-success__title">تم استلام طلبك!</h2>
+      <p class="driver-success__desc">
+        شكراً لاهتمامك بالانضمام إلى أسطول وصّلها.<br>
+        سيتواصل معك فريقنا خلال 24-48 ساعة على رقم الجوال الذي أدخلته.
+      </p>
+      <div style="display:flex;gap:var(--sp-4);justify-content:center;flex-wrap:wrap;">
+        <a href="/" class="btn btn--primary">الرئيسية</a>
+        <a href="/contact" class="btn btn--outline">تواصل معنا</a>
+      </div>
+    </div>
+
+  </section>
+</Layout>

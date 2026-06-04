@@ -1,0 +1,321 @@
+---
+import Layout from '../components/layout.astro';
+import PageHero from '../components/PageHero.astro';
+
+type OrderStatus = 'active' | 'delivered' | 'cancelled';
+
+interface Order {
+  id: string;
+  type: string;
+  icon: string;
+  route: string;
+  date: string;
+  price: string;
+  status: OrderStatus;
+}
+
+const STATUS_META: Record<OrderStatus, { label: string; className: string }> = {
+  active:    { label: 'قيد التوصيل', className: 'order-row__status--active'    },
+  delivered: { label: 'تم التسليم',  className: 'order-row__status--delivered' },
+  cancelled: { label: 'ملغي',        className: 'order-row__status--cancelled' },
+};
+
+const SAMPLE_ORDERS: Order[] = [
+  { id: 'WSL-2025-001234', type: 'توصيل محلي',   icon: '🛵', route: 'دمياط الجديدة → كفر سعد',  date: 'اليوم — 10:45 ص',   price: '25 ج.م',  status: 'active'    },
+  { id: 'WSL-2025-001198', type: 'توصيل سريع',   icon: '⚡', route: 'دمياط الجديدة → دمياط',    date: 'أمس — 06:20 م',     price: '45 ج.م',  status: 'delivered' },
+  { id: 'WSL-2025-001150', type: 'توصيل المطار', icon: '✈️', route: 'دمياط الجديدة → المطار',   date: '2 يونيو — 08:00 ص', price: '150 ج.م', status: 'delivered' },
+  { id: 'WSL-2025-001087', type: 'توصيل محلي',   icon: '🛵', route: 'دمياط → فارسكور',          date: '1 يونيو — 02:15 م', price: '45 ج.م',  status: 'delivered' },
+  { id: 'WSL-2025-001042', type: 'توصيل محلي',   icon: '🛵', route: 'دمياط الجديدة → رأس البر', date: '30 مايو — 11:30 ص', price: '25 ج.م',  status: 'cancelled' },
+];
+
+const FILTERS: { value: string; label: string }[] = [
+  { value: 'all',       label: 'الكل'        },
+  { value: 'active',    label: 'قيد التوصيل' },
+  { value: 'delivered', label: 'تم التسليم'  },
+  { value: 'cancelled', label: 'ملغي'        },
+];
+---
+
+<style>
+  .orders-wrap {
+    padding: var(--sp-12) var(--sp-6) var(--sp-20);
+    max-width: 860px;
+    margin: 0 auto;
+  }
+
+  .orders-new-btn { margin-bottom: var(--sp-6); }
+
+  /* Filters */
+  .orders-filters {
+    display: flex;
+    gap: var(--sp-2);
+    margin-bottom: var(--sp-6);
+    flex-wrap: wrap;
+  }
+
+  .orders-filter {
+    padding: var(--sp-2) var(--sp-5);
+    border-radius: var(--radius-full);
+    border: 1.5px solid var(--color-border);
+    background: var(--color-bg);
+    font-family: var(--font-body);
+    font-size: var(--text-sm);
+    font-weight: var(--weight-bold);
+    color: var(--color-text-muted);
+    cursor: pointer;
+    transition: all var(--ease);
+  }
+
+  .orders-filter:hover { border-color: var(--color-primary); color: var(--color-primary); }
+
+  .orders-filter.is-active {
+    background: var(--color-primary);
+    border-color: var(--color-primary);
+    color: #fff;
+  }
+
+  .orders-filter:focus-visible { outline: 3px solid var(--color-accent); outline-offset: 2px; }
+
+  /* Order list */
+  .orders-list { display: flex; flex-direction: column; gap: var(--sp-3); }
+
+  .order-row {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: var(--sp-4);
+    align-items: center;
+    background: var(--color-bg);
+    border: 1.5px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: var(--sp-5);
+    transition: border-color var(--ease), box-shadow var(--ease);
+  }
+
+  .order-row:hover {
+    border-color: var(--color-primary);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .order-row--new {
+    border-color: var(--color-primary);
+    background: var(--color-primary-light);
+  }
+
+  .order-row__icon {
+    width: 48px;
+    height: 48px;
+    border-radius: var(--radius);
+    background: var(--color-primary-light);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: var(--text-xl);
+    flex-shrink: 0;
+  }
+
+  .order-row__id    { font-weight: var(--weight-black); font-size: var(--text-sm); color: var(--color-text); }
+  .order-row__meta  { font-size: var(--text-xs); color: var(--color-text-muted); margin-top: 2px; }
+  .order-row__date  { font-size: var(--text-xs); color: var(--color-text-faint); margin-top: 2px; }
+
+  .order-row__side {
+    text-align: left;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: var(--sp-2);
+  }
+
+  .order-row__price { font-weight: var(--weight-black); color: var(--color-text); font-size: var(--text-base); }
+
+  .order-row__status {
+    font-size: var(--text-xs);
+    font-weight: var(--weight-bold);
+    padding: 2px var(--sp-3);
+    border-radius: var(--radius-full);
+    white-space: nowrap;
+  }
+
+  .order-row__status--active    { background: #FEF3C7; color: #B45309; }
+  .order-row__status--delivered { background: #DCFCE7; color: #15803D; }
+  .order-row__status--cancelled { background: #FEE2E2; color: #B91C1C; }
+
+  .order-row__track {
+    font-size: var(--text-xs);
+    font-weight: var(--weight-bold);
+    color: var(--color-primary);
+  }
+
+  .orders-section-label {
+    font-size: var(--text-xs);
+    font-weight: var(--weight-bold);
+    color: var(--color-text-faint);
+    letter-spacing: 0.05em;
+    margin: var(--sp-6) 0 var(--sp-3);
+  }
+
+  /* Empty state */
+  .orders-empty {
+    display: none;
+    text-align: center;
+    padding: var(--sp-16) var(--sp-6);
+    color: var(--color-text-muted);
+  }
+
+  .orders-empty.is-visible { display: block; }
+  .orders-empty__icon { font-size: 3rem; margin-bottom: var(--sp-4); }
+  .orders-empty__text { font-size: var(--text-base); margin-bottom: var(--sp-6); }
+
+  @media (max-width: 560px) {
+    .order-row { grid-template-columns: auto 1fr; }
+    .order-row__side { grid-column: 1 / -1; flex-direction: row; justify-content: space-between; align-items: center; padding-top: var(--sp-3); border-top: 1px solid var(--color-bg-soft); }
+  }
+</style>
+
+<script>
+  /* ── Filter logic ──────────────────────────────────────── */
+  const filters = document.querySelectorAll<HTMLButtonElement>('.orders-filter');
+  const empty   = document.getElementById('orders-empty') as HTMLElement;
+
+  function applyFilter(value: string): void {
+    const rows = document.querySelectorAll<HTMLElement>('.order-row');
+    let visibleCount = 0;
+    rows.forEach(row => {
+      const match = value === 'all' || row.dataset.status === value;
+      row.style.display = match ? '' : 'none';
+      if (match) visibleCount++;
+    });
+    empty.classList.toggle('is-visible', visibleCount === 0);
+  }
+
+  filters.forEach(btn => {
+    btn.addEventListener('click', () => {
+      filters.forEach(b => { b.classList.remove('is-active'); b.setAttribute('aria-pressed', 'false'); });
+      btn.classList.add('is-active');
+      btn.setAttribute('aria-pressed', 'true');
+      applyFilter(btn.dataset.filter ?? 'all');
+    });
+  });
+
+  /* ── Load real orders from localStorage ────────────────── */
+  function formatDate(isoStr: string): string {
+    try {
+      const d    = new Date(isoStr);
+      const now  = new Date();
+      const diff = now.getTime() - d.getTime();
+      if (diff < 60_000)     return 'الآن';
+      if (diff < 3_600_000)  return `منذ ${Math.floor(diff / 60_000)} دقيقة`;
+      if (diff < 86_400_000) return `منذ ${Math.floor(diff / 3_600_000)} ساعة`;
+      return d.toLocaleDateString('ar-EG', { day: 'numeric', month: 'long' });
+    } catch { return '—'; }
+  }
+
+  function renderRealOrders(): void {
+    try {
+      const saved = JSON.parse(localStorage.getItem('wslha_orders') || '[]') as Array<{
+        id: string; type: string; icon: string; route: string;
+        price: string; status: string; createdAt: string;
+      }>;
+      if (!saved.length) return;
+
+      const list  = document.getElementById('orders-list') as HTMLElement;
+      const label = document.createElement('p');
+      label.className   = 'orders-section-label';
+      label.textContent = '▸ طلباتي الأخيرة';
+      list.insertAdjacentElement('beforebegin', label);
+
+      const statusMeta: Record<string, { label: string; cls: string }> = {
+        active:    { label: 'قيد التوصيل', cls: 'order-row__status--active'    },
+        delivered: { label: 'تم التسليم',  cls: 'order-row__status--delivered' },
+        cancelled: { label: 'ملغي',        cls: 'order-row__status--cancelled' },
+      };
+
+      saved.forEach(order => {
+        const sm        = statusMeta[order.status] || statusMeta.active;
+        const trackLink = order.status === 'active'
+          ? `<a href="/track?q=${order.id}" class="order-row__track">تتبع ←</a>`
+          : '';
+        const article   = document.createElement('article');
+        article.className      = 'order-row order-row--new';
+        article.dataset.status = order.status;
+        article.innerHTML = `
+          <div class="order-row__icon" aria-hidden="true">${order.icon}</div>
+          <div>
+            <p class="order-row__id">${order.id}</p>
+            <p class="order-row__meta">${order.type} · ${order.route}</p>
+            <p class="order-row__date">${formatDate(order.createdAt)}</p>
+          </div>
+          <div class="order-row__side">
+            <span class="order-row__price">${order.price}</span>
+            <span class="order-row__status ${sm.cls}">${sm.label}</span>
+            ${trackLink}
+          </div>`;
+        list.prepend(article);
+      });
+    } catch { /* storage unavailable */ }
+  }
+
+  renderRealOrders();
+</script>
+
+<Layout
+  title="طلباتي"
+  description="تابع جميع طلباتك السابقة والحالية مع وصّلها"
+  page="orders"
+>
+  <PageHero
+    badge="📋 طلباتي"
+    title="سجل طلباتك"
+    subtitle="تابع جميع طلباتك الحالية والسابقة في مكان واحد"
+  />
+
+  <div class="orders-wrap">
+
+    <div class="orders-new-btn">
+      <a href="/order" class="btn btn--accent">🛵 طلب توصيل جديد</a>
+    </div>
+
+    <!-- Filters -->
+    <div class="orders-filters" role="group" aria-label="تصفية الطلبات">
+      {FILTERS.map((f, i) => (
+        <button
+          class:list={['orders-filter', i === 0 && 'is-active']}
+          data-filter={f.value}
+          aria-pressed={i === 0 ? 'true' : 'false'}
+        >
+          {f.label}
+        </button>
+      ))}
+    </div>
+
+    <!-- List -->
+    <div class="orders-list" id="orders-list">
+      {SAMPLE_ORDERS.map(order => (
+        <article class="order-row" data-status={order.status}>
+          <div class="order-row__icon" aria-hidden="true">{order.icon}</div>
+          <div>
+            <p class="order-row__id">{order.id}</p>
+            <p class="order-row__meta">{order.type} · {order.route}</p>
+            <p class="order-row__date">{order.date}</p>
+          </div>
+          <div class="order-row__side">
+            <span class="order-row__price">{order.price}</span>
+            <span class:list={['order-row__status', STATUS_META[order.status].className]}>
+              {STATUS_META[order.status].label}
+            </span>
+            {order.status === 'active' && (
+              <a href={`/track?q=${order.id}`} class="order-row__track">تتبع ←</a>
+            )}
+          </div>
+        </article>
+      ))}
+    </div>
+
+    <!-- Empty state -->
+    <div class="orders-empty" id="orders-empty" role="status">
+      <div class="orders-empty__icon" aria-hidden="true">📭</div>
+      <p class="orders-empty__text">لا توجد طلبات في هذه الفئة</p>
+      <a href="/order" class="btn btn--primary">اطلب الآن</a>
+    </div>
+
+  </div>
+</Layout>

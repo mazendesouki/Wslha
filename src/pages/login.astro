@@ -1,0 +1,208 @@
+---
+import Layout from '../components/layout.astro';
+import PageHero from '../components/PageHero.astro';
+---
+
+<style>
+  .auth-section {
+    padding: var(--sp-16) var(--sp-6) var(--sp-20);
+    display: flex;
+    justify-content: center;
+  }
+
+  .auth-card {
+    background: var(--color-bg);
+    border: 1.5px solid var(--color-border);
+    border-radius: var(--radius-2xl);
+    padding: var(--sp-10);
+    width: 100%;
+    max-width: 420px;
+    box-shadow: var(--shadow-md);
+  }
+
+  .auth-card__title {
+    font-size: var(--text-2xl);
+    font-weight: var(--weight-black);
+    margin-bottom: var(--sp-2);
+  }
+
+  .auth-card__sub {
+    font-size: var(--text-sm);
+    color: var(--color-text-muted);
+    margin-bottom: var(--sp-8);
+  }
+
+  /* Fields */
+  .field { margin-bottom: var(--sp-5); }
+
+  .field__label {
+    display: block;
+    font-weight: var(--weight-bold);
+    font-size: var(--text-sm);
+    margin-bottom: var(--sp-2);
+    color: var(--color-text);
+  }
+
+  .field__input {
+    width: 100%;
+    padding: var(--sp-3) var(--sp-4);
+    border: 2px solid var(--color-border);
+    border-radius: var(--radius);
+    font-family: var(--font-body);
+    font-size: var(--text-base);
+    outline: none;
+    transition: border-color var(--ease);
+    direction: rtl;
+    color: var(--color-text);
+    background: var(--color-bg);
+  }
+
+  .field__input:focus { border-color: var(--color-primary); }
+  .field__input::placeholder { color: var(--color-text-faint); }
+
+  /* Error */
+  .auth-error {
+    background: #FEE2E2;
+    color: #B91C1C;
+    border-radius: var(--radius);
+    padding: var(--sp-3) var(--sp-4);
+    font-size: var(--text-sm);
+    margin-bottom: var(--sp-4);
+    display: none;
+  }
+  .auth-error.is-visible { display: block; }
+
+  /* Submit */
+  .auth-submit {
+    width: 100%;
+    padding: var(--sp-4);
+    background: var(--color-primary);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius);
+    font-family: var(--font-body);
+    font-weight: var(--weight-black);
+    font-size: var(--text-base);
+    cursor: pointer;
+    transition: background var(--ease), transform var(--ease);
+    margin-bottom: var(--sp-4);
+  }
+  .auth-submit:hover    { background: var(--color-primary-dark); transform: translateY(-1px); }
+  .auth-submit:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+  /* Divider */
+  .auth-divider {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-3);
+    margin: var(--sp-6) 0;
+    color: var(--color-text-faint);
+    font-size: var(--text-sm);
+  }
+  .auth-divider::before,
+  .auth-divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--color-border);
+  }
+
+  /* Alt actions */
+  .auth-actions {
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-3);
+  }
+
+  .auth-actions .btn {
+    width: 100%;
+    justify-content: center;
+    text-align: center;
+  }
+
+  .auth-footer {
+    margin-top: var(--sp-6);
+    text-align: center;
+    font-size: var(--text-sm);
+    color: var(--color-text-muted);
+  }
+
+  .auth-footer a { color: var(--color-primary); font-weight: var(--weight-bold); }
+</style>
+
+<script>
+  const form      = document.getElementById('login-form')   as HTMLFormElement;
+  const errorBox  = document.getElementById('login-error')  as HTMLElement;
+  const submitBtn = document.getElementById('login-submit') as HTMLButtonElement;
+  const phoneInp  = document.getElementById('login-phone')  as HTMLInputElement;
+  const passInp   = document.getElementById('login-pass')   as HTMLInputElement;
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    errorBox.classList.remove('is-visible');
+    submitBtn.disabled     = true;
+    submitBtn.textContent  = 'جاري الدخول...';
+
+    await new Promise(r => setTimeout(r, 800));
+
+    const phone = phoneInp.value.trim();
+    const pass  = passInp.value;
+
+    if (!phone || pass.length < 4) {
+      errorBox.textContent = 'يرجى إدخال رقم جوال صحيح وكلمة مرور لا تقل عن 4 أحرف.';
+      errorBox.classList.add('is-visible');
+      submitBtn.disabled    = false;
+      submitBtn.textContent = 'دخول';
+      return;
+    }
+
+    try {
+      const user = { name: phone, phone, loginAt: new Date().toISOString() };
+      localStorage.setItem('wslha_user', JSON.stringify(user));
+    } catch { /* storage unavailable */ }
+
+    window.location.href = '/orders';
+  });
+</script>
+
+<Layout title="تسجيل الدخول" description="ادخل إلى حسابك في وصّلها" page="login">
+  <PageHero
+    badge="👤 حسابي"
+    title="تسجيل الدخول"
+    subtitle="أدخل بياناتك للوصول إلى طلباتك وتتبعها"
+  />
+
+  <section class="auth-section">
+    <div class="auth-card">
+      <h2 class="auth-card__title">مرحباً بعودتك</h2>
+      <p class="auth-card__sub">سجّل دخولك لمتابعة طلباتك</p>
+
+      <form id="login-form" novalidate>
+        <div id="login-error" class="auth-error" role="alert" aria-live="polite"></div>
+
+        <div class="field">
+          <label class="field__label" for="login-phone">رقم الجوال</label>
+          <input class="field__input" type="tel" id="login-phone" placeholder="010 0000 0000" required autocomplete="tel">
+        </div>
+
+        <div class="field">
+          <label class="field__label" for="login-pass">كلمة المرور</label>
+          <input class="field__input" type="password" id="login-pass" placeholder="••••••••" required autocomplete="current-password">
+        </div>
+
+        <button type="submit" class="auth-submit" id="login-submit">دخول ←</button>
+      </form>
+
+      <div class="auth-divider"><span>أو</span></div>
+
+      <div class="auth-actions">
+        <a href="/register" class="btn btn--outline">إنشاء حساب عميل جديد</a>
+        <a href="/driver" class="btn btn--accent">🚗 حساب سائق جديد</a>
+      </div>
+
+      <p class="auth-footer">
+        مشكلة في الدخول؟ <a href="/contact">تواصل معنا</a>
+      </p>
+    </div>
+  </section>
+</Layout>
