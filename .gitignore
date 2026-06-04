@@ -1,5 +1,5 @@
-# build output
-dist
+# build output — dist is committed for Netlify static deploy
+# dist
 
 # dependencies
 node_modules/
