@@ -8,8 +8,8 @@ export const NAV_LINKS: NavLink[] = [
   { label: 'الرئيسية',       href: '/',                    page: 'home'     },
   { label: 'المتاجر',        href: '/stores',               page: 'stores'   },
   { label: 'توصيل المطار',   href: '/airport',              page: 'airport'  },
+  { label: 'مشاوير',         href: '/rides',                page: 'rides'    },
   { label: 'خدماتنا',        href: '/services',             page: 'services' },
-  { label: 'طلب توصيل',      href: '/order',                page: 'order'    },
   { label: 'طلباتي',         href: '/orders',               page: 'orders'   },
   { label: 'تتبع الطلب',     href: '/track',                page: 'track'    },
   { label: 'من نحن',         href: '/about',                page: 'about'    },
@@ -21,14 +21,14 @@ export const FOOTER_LINKS = {
   quick: [
     { label: 'الرئيسية',    href: '/'        },
     { label: 'من نحن',      href: '/about'    },
-    { label: 'طلب توصيل',   href: '/order'    },
+    { label: 'مشاوير',      href: '/rides'    },
     { label: 'تتبع الطلب',  href: '/track'    },
     { label: 'تواصل معنا',  href: '/contact'  },
   ],
   services: [
     { label: 'المتاجر المحلية', href: '/stores'   },
     { label: 'توصيل المطار',   href: '/airport'  },
-    { label: 'طلب توصيل',      href: '/order'    },
+    { label: 'مشاوير دمياط',   href: '/rides'    },
     { label: 'الأسعار',        href: '/services#pricing' },
   ],
   contact: [
