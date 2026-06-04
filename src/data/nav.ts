@@ -6,8 +6,9 @@ export interface NavLink {
 
 export const NAV_LINKS: NavLink[] = [
   { label: 'الرئيسية',       href: '/',                    page: 'home'     },
+  { label: 'المتاجر',        href: '/stores',               page: 'stores'   },
+  { label: 'توصيل المطار',   href: '/airport',              page: 'airport'  },
   { label: 'خدماتنا',        href: '/services',             page: 'services' },
-  { label: 'الأسعار',        href: '/services#pricing',     page: 'pricing'  },
   { label: 'طلب توصيل',      href: '/order',                page: 'order'    },
   { label: 'طلباتي',         href: '/orders',               page: 'orders'   },
   { label: 'تتبع الطلب',     href: '/track',                page: 'track'    },
@@ -25,14 +26,14 @@ export const FOOTER_LINKS = {
     { label: 'تواصل معنا',  href: '/contact'  },
   ],
   services: [
-    { label: 'توصيل محلي',    href: '/services#local'    },
-    { label: 'توصيل مطار',   href: '/services#airport'  },
-    { label: 'المتاجر الشريكة', href: '/services#partners' },
-    { label: 'الأسعار',      href: '/services#pricing'  },
+    { label: 'المتاجر المحلية', href: '/stores'   },
+    { label: 'توصيل المطار',   href: '/airport'  },
+    { label: 'طلب توصيل',      href: '/order'    },
+    { label: 'الأسعار',        href: '/services#pricing' },
   ],
   contact: [
-    { label: '📞 920-000-000',     href: 'tel:+218910000000'     },
+    { label: '📞 0100 000 0000',   href: 'tel:+201000000000'     },
     { label: '✉️ info@wslha.co',   href: 'mailto:info@wslha.co' },
-    { label: '💬 واتساب',          href: 'https://wa.me/218910000000' },
+    { label: '💬 واتساب',          href: 'https://wa.me/201000000000' },
   ],
 };

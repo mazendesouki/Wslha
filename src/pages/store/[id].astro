@@ -1,0 +1,567 @@
+---
+import Layout from '../../components/layout.astro';
+import { STORES, getStore } from '../../data/stores';
+
+export function getStaticPaths() {
+  return STORES.map(s => ({ params: { id: s.id }, props: { store: s } }));
+}
+
+const { store } = Astro.props;
+const AREAS = ['دمياط الجديدة', 'دمياط', 'كفر سعد', 'فارسكور', 'منية النصر', 'رأس البر', 'الزرقا'];
+---
+
+<style>
+  .store-head {
+    background: linear-gradient(135deg, var(--color-primary), var(--color-primary-dark));
+    color: #fff;
+    padding: var(--sp-10) var(--sp-6);
+  }
+  .store-head__inner {
+    max-width: var(--container);
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    gap: var(--sp-6);
+  }
+  .store-head__emoji {
+    width: 88px; height: 88px;
+    border-radius: var(--radius-xl);
+    background: rgba(255,255,255,0.15);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 3rem; flex-shrink: 0;
+  }
+  .store-head__cat { font-size: var(--text-sm); opacity: 0.85; margin-bottom: 2px; }
+  .store-head__name { font-size: var(--text-3xl); font-weight: var(--weight-black); line-height: 1.1; margin-bottom: var(--sp-2); }
+  .store-head__meta { display: flex; flex-wrap: wrap; gap: var(--sp-4); font-size: var(--text-sm); opacity: 0.95; }
+  .store-head__meta span { display: inline-flex; align-items: center; gap: 4px; }
+  .store-back { display: inline-block; max-width: var(--container); margin: var(--sp-4) auto 0; padding: 0 var(--sp-6); width: 100%; }
+  .store-back a { color: var(--color-primary); font-weight: var(--weight-bold); font-size: var(--text-sm); }
+
+  /* Layout */
+  .store-layout {
+    max-width: var(--container);
+    margin: 0 auto;
+    padding: var(--sp-8) var(--sp-6) var(--sp-20);
+    display: grid;
+    grid-template-columns: 1fr 360px;
+    gap: var(--sp-8);
+    align-items: start;
+  }
+
+  /* Menu */
+  .menu-section { margin-bottom: var(--sp-8); }
+  .menu-section__title {
+    font-size: var(--text-lg);
+    font-weight: var(--weight-black);
+    margin-bottom: var(--sp-4);
+    padding-bottom: var(--sp-2);
+    border-bottom: 2px solid var(--color-border);
+  }
+  .product {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-4);
+    padding: var(--sp-4);
+    border: 1.5px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    margin-bottom: var(--sp-3);
+    transition: border-color var(--ease);
+  }
+  .product:hover { border-color: var(--color-primary); }
+  .product__emoji {
+    width: 52px; height: 52px;
+    border-radius: var(--radius);
+    background: var(--color-bg-soft);
+    display: flex; align-items: center; justify-content: center;
+    font-size: var(--text-2xl); flex-shrink: 0;
+  }
+  .product__info { flex: 1; min-width: 0; }
+  .product__name { font-weight: var(--weight-bold); font-size: var(--text-sm); }
+  .product__desc { font-size: var(--text-xs); color: var(--color-text-muted); margin-top: 2px; line-height: 1.5; }
+  .product__price { font-weight: var(--weight-black); color: var(--color-primary); font-size: var(--text-sm); white-space: nowrap; margin-inline-start: var(--sp-2); }
+
+  /* Stepper */
+  .stepper { display: flex; align-items: center; gap: var(--sp-2); flex-shrink: 0; }
+  .stepper__btn {
+    width: 32px; height: 32px;
+    border-radius: var(--radius);
+    border: 2px solid var(--color-primary);
+    background: var(--color-bg);
+    color: var(--color-primary);
+    font-size: var(--text-lg);
+    font-weight: var(--weight-black);
+    display: flex; align-items: center; justify-content: center;
+    line-height: 1;
+  }
+  .stepper__btn:hover { background: var(--color-primary-light); }
+  .stepper__qty { min-width: 20px; text-align: center; font-weight: var(--weight-black); }
+  .add-btn {
+    padding: var(--sp-2) var(--sp-4);
+    border-radius: var(--radius);
+    border: 2px solid var(--color-primary);
+    background: var(--color-primary);
+    color: #fff;
+    font-family: var(--font-body);
+    font-weight: var(--weight-bold);
+    font-size: var(--text-sm);
+    white-space: nowrap;
+  }
+  .add-btn:hover { background: var(--color-primary-dark); }
+  .stepper[hidden] { display: none; }
+
+  /* Cart sidebar */
+  .cart {
+    background: var(--color-bg);
+    border: 1.5px solid var(--color-border);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-md);
+    position: sticky;
+    top: calc(var(--nav-height) + var(--sp-4));
+    overflow: hidden;
+  }
+  .cart__head {
+    padding: var(--sp-5);
+    border-bottom: 1px solid var(--color-border);
+    font-weight: var(--weight-black);
+    font-size: var(--text-lg);
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .cart__body { padding: var(--sp-5); max-height: 320px; overflow-y: auto; }
+  .cart__empty { text-align: center; color: var(--color-text-faint); padding: var(--sp-8) 0; font-size: var(--text-sm); }
+  .cart-line { display: flex; align-items: center; gap: var(--sp-3); padding: var(--sp-2) 0; font-size: var(--text-sm); }
+  .cart-line__qty { color: var(--color-primary); font-weight: var(--weight-black); white-space: nowrap; }
+  .cart-line__name { flex: 1; min-width: 0; }
+  .cart-line__price { font-weight: var(--weight-bold); white-space: nowrap; }
+  .cart-line__remove { color: var(--color-text-faint); background: none; border: none; font-size: var(--text-base); padding: 0 4px; }
+  .cart-line__remove:hover { color: #DC2626; }
+
+  .cart__foot { padding: var(--sp-5); border-top: 1px solid var(--color-border); background: var(--color-bg-soft); }
+  .cart__row { display: flex; justify-content: space-between; font-size: var(--text-sm); margin-bottom: var(--sp-2); color: var(--color-text-muted); }
+  .cart__total { display: flex; justify-content: space-between; font-weight: var(--weight-black); font-size: var(--text-lg); margin-top: var(--sp-3); padding-top: var(--sp-3); border-top: 2px solid var(--color-border); }
+  .cart__total b { color: var(--color-primary); }
+  .cart__min-warn { font-size: var(--text-xs); color: #B45309; background: #FEF3C7; border-radius: var(--radius); padding: var(--sp-2) var(--sp-3); margin-top: var(--sp-3); }
+  .cart__checkout {
+    width: 100%; margin-top: var(--sp-4);
+    padding: var(--sp-4);
+    border: none; border-radius: var(--radius);
+    background: var(--color-accent); color: var(--color-text);
+    font-family: var(--font-body); font-weight: var(--weight-black); font-size: var(--text-base);
+  }
+  .cart__checkout:hover:not(:disabled) { background: var(--color-accent-dark); }
+  .cart__checkout:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  /* Checkout / success overlay */
+  .sheet-overlay {
+    position: fixed; inset: 0;
+    background: rgba(15,23,42,0.55);
+    display: none; align-items: center; justify-content: center;
+    z-index: 1000; padding: var(--sp-4);
+  }
+  .sheet-overlay.is-open { display: flex; }
+  .sheet {
+    background: var(--color-bg);
+    border-radius: var(--radius-2xl);
+    width: 100%; max-width: 480px;
+    max-height: 90vh; overflow-y: auto;
+    padding: var(--sp-8);
+  }
+  .sheet__title { font-size: var(--text-xl); font-weight: var(--weight-black); margin-bottom: var(--sp-5); }
+  .field { margin-bottom: var(--sp-4); }
+  .field__label { display: block; font-weight: var(--weight-bold); font-size: var(--text-sm); margin-bottom: var(--sp-2); }
+  .field__input, .field__select, .field__textarea {
+    width: 100%; padding: var(--sp-3) var(--sp-4);
+    border: 2px solid var(--color-border); border-radius: var(--radius);
+    font-family: var(--font-body); font-size: var(--text-base);
+    direction: rtl; background: var(--color-bg); color: var(--color-text); outline: none;
+  }
+  .field__input:focus, .field__select:focus, .field__textarea:focus { border-color: var(--color-primary); }
+  .field__textarea { min-height: 70px; resize: vertical; }
+
+  .pay-options { display: flex; flex-direction: column; gap: var(--sp-2); }
+  .pay-option {
+    display: flex; align-items: center; gap: var(--sp-3);
+    padding: var(--sp-3) var(--sp-4);
+    border: 2px solid var(--color-border); border-radius: var(--radius-lg);
+    cursor: pointer; font-size: var(--text-sm); font-weight: var(--weight-semi);
+  }
+  .pay-option:has(input:checked) { border-color: var(--color-primary); background: var(--color-primary-light); }
+  .pay-option input { accent-color: var(--color-primary); }
+  .pay-option__emoji { font-size: var(--text-xl); }
+
+  .sheet-error { background: #FEE2E2; color: #B91C1C; border-radius: var(--radius); padding: var(--sp-3) var(--sp-4); font-size: var(--text-sm); margin-bottom: var(--sp-4); display: none; }
+  .sheet-error.is-visible { display: block; }
+
+  .sheet__actions { display: flex; gap: var(--sp-3); margin-top: var(--sp-5); }
+  .sheet__btn { flex: 1; padding: var(--sp-3); border-radius: var(--radius); font-family: var(--font-body); font-weight: var(--weight-black); font-size: var(--text-base); border: none; }
+  .sheet__btn--ghost { background: var(--color-bg-soft); color: var(--color-text-muted); border: 1.5px solid var(--color-border); }
+  .sheet__btn--primary { background: var(--color-primary); color: #fff; }
+  .sheet__btn--primary:hover { background: var(--color-primary-dark); }
+
+  .sheet__summary { background: var(--color-bg-soft); border-radius: var(--radius-lg); padding: var(--sp-4); margin-bottom: var(--sp-5); }
+  .sheet__summary .cart__row { color: var(--color-text); }
+
+  /* Success */
+  .success-icon { width: 72px; height: 72px; border-radius: var(--radius-full); background: var(--color-primary-light); display: flex; align-items: center; justify-content: center; font-size: 2.2rem; margin: 0 auto var(--sp-5); }
+  .success-center { text-align: center; }
+  .success-center .order-id { font-weight: var(--weight-black); color: var(--color-primary); font-size: var(--text-lg); margin: var(--sp-2) 0 var(--sp-6); }
+
+  /* Mobile floating cart */
+  .cart-fab {
+    display: none;
+    position: fixed; bottom: var(--sp-4); left: var(--sp-4); right: var(--sp-4);
+    z-index: 900;
+    padding: var(--sp-4) var(--sp-5);
+    border: none; border-radius: var(--radius-lg);
+    background: var(--color-primary); color: #fff;
+    font-family: var(--font-body); font-weight: var(--weight-black); font-size: var(--text-base);
+    box-shadow: var(--shadow-lg);
+    align-items: center; justify-content: space-between;
+  }
+
+  @media (max-width: 860px) {
+    .store-layout { grid-template-columns: 1fr; }
+    .cart { display: none; }
+    .cart-fab[data-count]:not([data-count="0"]) { display: flex; }
+  }
+</style>
+
+<Layout
+  title={store.name}
+  description={`اطلب من ${store.name} في ${store.area} — ${store.tagline}`}
+  page="stores"
+>
+  <header
+    class="store-head"
+    data-store-id={store.id}
+    data-store-name={store.name}
+    data-store-emoji={store.emoji}
+    data-store-area={store.area}
+    data-delivery-fee={store.deliveryFee}
+    data-min-order={store.minOrder}
+  >
+    <div class="store-head__inner">
+      <div class="store-head__emoji" aria-hidden="true">{store.emoji}</div>
+      <div>
+        <p class="store-head__cat">{store.category} · {store.area}</p>
+        <h1 class="store-head__name">{store.name}</h1>
+        <div class="store-head__meta">
+          <span>★ {store.rating.toFixed(1)} ({store.reviews} تقييم)</span>
+          <span>⏱️ {store.deliveryTime}</span>
+          <span>🚚 {store.deliveryFee} ج.م</span>
+          <span>الحد الأدنى {store.minOrder} ج.م</span>
+        </div>
+      </div>
+    </div>
+  </header>
+  <p class="store-back"><a href="/stores">→ كل المتاجر</a></p>
+
+  <div class="store-layout">
+
+    <!-- Menu -->
+    <div>
+      {store.menu.map(sec => (
+        <section class="menu-section">
+          <h2 class="menu-section__title">{sec.section}</h2>
+          {sec.items.map(item => (
+            <div class="product">
+              <div class="product__emoji" aria-hidden="true">{item.emoji}</div>
+              <div class="product__info">
+                <p class="product__name">{item.name}</p>
+                {item.desc && <p class="product__desc">{item.desc}</p>}
+              </div>
+              <span class="product__price">{item.price} ج.م</span>
+              <button
+                class="add-btn"
+                data-add
+                data-id={item.id}
+                data-name={item.name}
+                data-price={item.price}
+                data-emoji={item.emoji}
+              >+ أضف</button>
+              <div class="stepper" data-stepper={item.id} hidden>
+                <button class="stepper__btn" data-dec={item.id} aria-label="إنقاص">−</button>
+                <span class="stepper__qty" data-qty={item.id}>0</span>
+                <button class="stepper__btn" data-inc={item.id} aria-label="زيادة">+</button>
+              </div>
+            </div>
+          ))}
+        </section>
+      ))}
+    </div>
+
+    <!-- Cart sidebar -->
+    <aside class="cart" aria-label="سلة المشتريات">
+      <div class="cart__head"><span>🛒 سلتك</span><span data-cart-count>0</span></div>
+      <div class="cart__body">
+        <p class="cart__empty" data-cart-empty>سلتك فارغة — أضف منتجات للبدء</p>
+        <div data-cart-lines></div>
+      </div>
+      <div class="cart__foot">
+        <div class="cart__row"><span>المجموع الفرعي</span><span data-subtotal>0 ج.م</span></div>
+        <div class="cart__row"><span>رسوم التوصيل</span><span>{store.deliveryFee} ج.م</span></div>
+        <div class="cart__total"><span>الإجمالي</span><b data-total>{store.deliveryFee} ج.م</b></div>
+        <p class="cart__min-warn" data-min-warn hidden></p>
+        <button class="cart__checkout" data-checkout disabled>متابعة الدفع ←</button>
+      </div>
+    </aside>
+  </div>
+
+  <!-- Mobile FAB -->
+  <button class="cart-fab" data-fab data-count="0" data-checkout>
+    <span>🛒 <span data-cart-count>0</span> عناصر</span>
+    <span data-total>{store.deliveryFee} ج.م</span>
+  </button>
+
+  <!-- Checkout sheet -->
+  <div class="sheet-overlay" data-sheet>
+    <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="checkout-title">
+      <!-- Checkout step -->
+      <div data-step="checkout">
+        <h2 class="sheet__title" id="checkout-title">إتمام الطلب</h2>
+
+        <div class="sheet__summary">
+          <div class="cart__row"><span>المجموع الفرعي</span><span data-subtotal>0 ج.م</span></div>
+          <div class="cart__row"><span>رسوم التوصيل</span><span>{store.deliveryFee} ج.م</span></div>
+          <div class="cart__total"><span>الإجمالي</span><b data-total>{store.deliveryFee} ج.م</b></div>
+        </div>
+
+        <div class="sheet-error" data-error role="alert"></div>
+
+        <div class="field">
+          <label class="field__label" for="co-name">اسم المستلم</label>
+          <input class="field__input" id="co-name" type="text" placeholder="محمد أحمد" autocomplete="name">
+        </div>
+        <div class="field">
+          <label class="field__label" for="co-phone">رقم الجوال</label>
+          <input class="field__input" id="co-phone" type="tel" placeholder="010 1234 5678" inputmode="numeric" maxlength="11" pattern="01[0125][0-9]{8}" autocomplete="tel">
+        </div>
+        <div class="field">
+          <label class="field__label" for="co-area">المنطقة</label>
+          <select class="field__select" id="co-area">
+            {AREAS.map(a => <option value={a} selected={a === store.area}>{a}</option>)}
+          </select>
+        </div>
+        <div class="field">
+          <label class="field__label" for="co-address">العنوان بالتفصيل</label>
+          <textarea class="field__textarea" id="co-address" placeholder="الحي، الشارع، رقم المبنى، الدور، علامة مميزة..."></textarea>
+        </div>
+
+        <div class="field">
+          <span class="field__label">وسيلة الدفع</span>
+          <div class="pay-options">
+            <label class="pay-option">
+              <input type="radio" name="pay" value="كاش عند الاستلام" checked>
+              <span class="pay-option__emoji">💵</span> الدفع نقداً عند الاستلام
+            </label>
+            <label class="pay-option">
+              <input type="radio" name="pay" value="بطاقة عند الاستلام">
+              <span class="pay-option__emoji">💳</span> بطاقة (فيزا / ميزة) عند الاستلام
+            </label>
+            <label class="pay-option">
+              <input type="radio" name="pay" value="محفظة إلكترونية">
+              <span class="pay-option__emoji">📱</span> محفظة إلكترونية (فودافون كاش / إنستاباي)
+            </label>
+          </div>
+        </div>
+
+        <div class="sheet__actions">
+          <button class="sheet__btn sheet__btn--ghost" data-close>رجوع</button>
+          <button class="sheet__btn sheet__btn--primary" data-confirm>تأكيد الطلب ←</button>
+        </div>
+      </div>
+
+      <!-- Success step -->
+      <div data-step="success" hidden>
+        <div class="success-center">
+          <div class="success-icon" aria-hidden="true">✅</div>
+          <h2 class="sheet__title" style="text-align:center;">تم استلام طلبك!</h2>
+          <p style="color:var(--color-text-muted);">جارٍ تحضير طلبك من <strong data-success-store></strong>. رقم طلبك:</p>
+          <p class="order-id" data-success-id>—</p>
+          <div class="sheet__actions">
+            <a class="sheet__btn sheet__btn--ghost" href="/orders">طلباتي</a>
+            <a class="sheet__btn sheet__btn--primary" href="/track">📡 تتبع الطلب</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    import { getCart, saveCart, cartCount, cartSubtotal, type Cart } from '../../utils/cart';
+    import { isEgyptianMobile, normalizeEgyptianPhone, EG_PHONE_ERROR } from '../../utils/phone';
+
+    const head = document.querySelector('.store-head') as HTMLElement;
+    const STORE = {
+      id: head.dataset.storeId!,
+      name: head.dataset.storeName!,
+      emoji: head.dataset.storeEmoji!,
+      area: head.dataset.storeArea!,
+      deliveryFee: Number(head.dataset.deliveryFee),
+      minOrder: Number(head.dataset.minOrder),
+    };
+
+    // Load or reset cart if it belongs to a different store
+    let cart: Cart = getCart() && getCart()!.storeId === STORE.id
+      ? getCart()!
+      : { storeId: STORE.id, storeName: STORE.name, deliveryFee: STORE.deliveryFee, minOrder: STORE.minOrder, items: [] };
+
+    const fmt = (n: number) => `${n} ج.م`;
+
+    function qtyOf(id: string): number {
+      const it = cart.items.find(i => i.id === id);
+      return it ? it.qty : 0;
+    }
+
+    function setQty(id: string, qty: number, meta?: { name: string; price: number; emoji: string }): void {
+      const idx = cart.items.findIndex(i => i.id === id);
+      if (qty <= 0) {
+        if (idx >= 0) cart.items.splice(idx, 1);
+      } else if (idx >= 0) {
+        cart.items[idx].qty = qty;
+      } else if (meta) {
+        cart.items.push({ id, name: meta.name, price: meta.price, emoji: meta.emoji, qty });
+      }
+      saveCart(cart);
+      render();
+    }
+
+    function render(): void {
+      // Product steppers
+      document.querySelectorAll<HTMLElement>('[data-add]').forEach(btn => {
+        const id = btn.dataset.id!;
+        const q = qtyOf(id);
+        const stepper = document.querySelector<HTMLElement>(`[data-stepper="${id}"]`)!;
+        btn.hidden = q > 0;
+        stepper.hidden = q === 0;
+        const qEl = document.querySelector(`[data-qty="${id}"]`);
+        if (qEl) qEl.textContent = String(q);
+      });
+
+      const count = cartCount(cart);
+      const subtotal = cartSubtotal(cart);
+      const total = subtotal + (count > 0 ? STORE.deliveryFee : 0);
+
+      document.querySelectorAll('[data-cart-count]').forEach(el => el.textContent = String(count));
+      document.querySelectorAll('[data-subtotal]').forEach(el => el.textContent = fmt(subtotal));
+      document.querySelectorAll('[data-total]').forEach(el => el.textContent = fmt(total));
+
+      // Cart lines
+      const linesWrap = document.querySelector('[data-cart-lines]') as HTMLElement;
+      const empty = document.querySelector('[data-cart-empty]') as HTMLElement;
+      empty.hidden = count > 0;
+      linesWrap.innerHTML = cart.items.map(it => `
+        <div class="cart-line">
+          <span class="cart-line__qty">${it.qty}×</span>
+          <span class="cart-line__name">${it.emoji} ${it.name}</span>
+          <span class="cart-line__price">${it.qty * it.price} ج.م</span>
+          <button class="cart-line__remove" data-remove="${it.id}" aria-label="حذف">✕</button>
+        </div>`).join('');
+
+      // Min-order warning + checkout enable
+      const belowMin = subtotal < STORE.minOrder;
+      const warn = document.querySelector('[data-min-warn]') as HTMLElement;
+      warn.hidden = !(count > 0 && belowMin);
+      if (count > 0 && belowMin) warn.textContent = `الحد الأدنى للطلب ${STORE.minOrder} ج.م — أضف بقيمة ${STORE.minOrder - subtotal} ج.م`;
+
+      document.querySelectorAll<HTMLButtonElement>('[data-checkout]').forEach(b => {
+        (b as HTMLButtonElement).disabled = count === 0 || belowMin;
+      });
+
+      // Mobile FAB
+      const fab = document.querySelector('[data-fab]') as HTMLElement;
+      fab.dataset.count = String(count);
+    }
+
+    // Event delegation
+    document.addEventListener('click', (e) => {
+      const t = e.target as HTMLElement;
+
+      const add = t.closest<HTMLElement>('[data-add]');
+      if (add) { const id = add.dataset.id!; setQty(id, qtyOf(id) + 1, { name: add.dataset.name!, price: Number(add.dataset.price), emoji: add.dataset.emoji! }); return; }
+
+      const inc = t.closest<HTMLElement>('[data-inc]');
+      if (inc) { const id = inc.dataset.inc!; const addBtn = document.querySelector<HTMLElement>(`[data-add][data-id="${id}"]`)!; setQty(id, qtyOf(id) + 1, { name: addBtn.dataset.name!, price: Number(addBtn.dataset.price), emoji: addBtn.dataset.emoji! }); return; }
+
+      const dec = t.closest<HTMLElement>('[data-dec]');
+      if (dec) { const id = dec.dataset.dec!; setQty(id, qtyOf(id) - 1); return; }
+
+      const rem = t.closest<HTMLElement>('[data-remove]');
+      if (rem) { setQty(rem.dataset.remove!, 0); return; }
+
+      if (t.closest('[data-checkout]')) { openSheet(); return; }
+      if (t.closest('[data-close]')) { closeSheet(); return; }
+      if (t.closest('[data-confirm]')) { confirmOrder(); return; }
+      if (t.matches('[data-sheet]')) { closeSheet(); return; }
+    });
+
+    const sheet = document.querySelector('[data-sheet]') as HTMLElement;
+    function openSheet(): void {
+      if (cartCount(cart) === 0) return;
+      (sheet.querySelector('[data-step="checkout"]') as HTMLElement).hidden = false;
+      (sheet.querySelector('[data-step="success"]') as HTMLElement).hidden = true;
+      sheet.classList.add('is-open');
+    }
+    function closeSheet(): void { sheet.classList.remove('is-open'); }
+
+    function confirmOrder(): void {
+      const errBox = sheet.querySelector('[data-error]') as HTMLElement;
+      const name = (document.getElementById('co-name') as HTMLInputElement).value.trim();
+      const phone = (document.getElementById('co-phone') as HTMLInputElement).value.trim();
+      const area = (document.getElementById('co-area') as HTMLSelectElement).value;
+      const address = (document.getElementById('co-address') as HTMLTextAreaElement).value.trim();
+      const pay = (sheet.querySelector('input[name="pay"]:checked') as HTMLInputElement).value;
+
+      const fail = (msg: string) => { errBox.textContent = msg; errBox.classList.add('is-visible'); };
+      if (name.length < 2) return fail('يرجى إدخال اسم المستلم.');
+      if (!isEgyptianMobile(phone)) return fail(EG_PHONE_ERROR);
+      if (address.length < 5) return fail('يرجى إدخال العنوان بالتفصيل.');
+      errBox.classList.remove('is-visible');
+
+      const subtotal = cartSubtotal(cart);
+      const total = subtotal + STORE.deliveryFee;
+      const orderId = 'WSL-' + new Date().getFullYear() + '-' + Math.floor(100000 + Math.random() * 900000);
+      const itemsSummary = cart.items.map(i => `${i.qty}× ${i.name}`).join('، ');
+
+      const order = {
+        id: orderId,
+        type: `طلب من ${STORE.name}`,
+        icon: STORE.emoji,
+        route: `${STORE.name} ← ${area}`,
+        date: 'الآن',
+        price: `${total} ج.م`,
+        status: 'active',
+        kind: 'store',
+        store: STORE.name,
+        items: cart.items,
+        itemsSummary,
+        subtotal,
+        deliveryFee: STORE.deliveryFee,
+        payment: pay,
+        recipient: name,
+        phone: normalizeEgyptianPhone(phone),
+        address: `${area} — ${address}`,
+        createdAt: new Date().toISOString(),
+      };
+
+      try {
+        const existing = JSON.parse(localStorage.getItem('wslha_orders') || '[]');
+        existing.unshift(order);
+        localStorage.setItem('wslha_orders', JSON.stringify(existing));
+      } catch { /* storage unavailable */ }
+
+      // Clear cart
+      cart = { storeId: STORE.id, storeName: STORE.name, deliveryFee: STORE.deliveryFee, minOrder: STORE.minOrder, items: [] };
+      saveCart(null);
+      render();
+
+      // Show success
+      (sheet.querySelector('[data-step="checkout"]') as HTMLElement).hidden = true;
+      const succ = sheet.querySelector('[data-step="success"]') as HTMLElement;
+      (succ.querySelector('[data-success-id]') as HTMLElement).textContent = orderId;
+      (succ.querySelector('[data-success-store]') as HTMLElement).textContent = STORE.name;
+      succ.hidden = false;
+    }
+
+    render();
+  </script>
+</Layout>
