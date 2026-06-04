@@ -20,12 +20,12 @@ const STATUS_META: Record<OrderStatus, { label: string; className: string }> = {
   cancelled: { label: 'ملغي',        className: 'order-row__status--cancelled' },
 };
 
-const ORDERS: Order[] = [
-  { id: 'WSL-2024-001234', type: 'توصيل محلي',   icon: '🛵', route: 'طرابلس → حي الروضة',  date: 'اليوم — 10:45 ص',   price: '5 د.ل',  status: 'active'    },
-  { id: 'WSL-2024-001198', type: 'توصيل سريع',   icon: '⚡', route: 'طرابلس → حي الأندلس', date: 'أمس — 06:20 م',     price: '10 د.ل', status: 'delivered' },
-  { id: 'WSL-2024-001150', type: 'توصيل المطار', icon: '✈️', route: 'طرابلس → المطار',     date: '2 يونيو — 08:00 ص', price: '30 د.ل', status: 'delivered' },
-  { id: 'WSL-2024-001087', type: 'توصيل محلي',   icon: '🛵', route: 'طرابلس → حي النصر',   date: '1 يونيو — 02:15 م', price: '13 د.ل', status: 'delivered' },
-  { id: 'WSL-2024-001042', type: 'توصيل محلي',   icon: '🛵', route: 'طرابلس → حي الزهور',  date: '30 مايو — 11:30 ص', price: '5 د.ل',  status: 'cancelled' },
+const SAMPLE_ORDERS: Order[] = [
+  { id: 'WSL-2025-001234', type: 'توصيل محلي',   icon: '🛵', route: 'دمياط الجديدة → كفر سعد',  date: 'اليوم — 10:45 ص',   price: '25 ج.م',  status: 'active'    },
+  { id: 'WSL-2025-001198', type: 'توصيل سريع',   icon: '⚡', route: 'دمياط الجديدة → دمياط',    date: 'أمس — 06:20 م',     price: '45 ج.م',  status: 'delivered' },
+  { id: 'WSL-2025-001150', type: 'توصيل المطار', icon: '✈️', route: 'دمياط الجديدة → المطار',   date: '2 يونيو — 08:00 ص', price: '150 ج.م', status: 'delivered' },
+  { id: 'WSL-2025-001087', type: 'توصيل محلي',   icon: '🛵', route: 'دمياط → فارسكور',          date: '1 يونيو — 02:15 م', price: '45 ج.م',  status: 'delivered' },
+  { id: 'WSL-2025-001042', type: 'توصيل محلي',   icon: '🛵', route: 'دمياط الجديدة → رأس البر', date: '30 مايو — 11:30 ص', price: '25 ج.م',  status: 'cancelled' },
 ];
 
 const FILTERS: { value: string; label: string }[] = [
@@ -42,6 +42,8 @@ const FILTERS: { value: string; label: string }[] = [
     max-width: 860px;
     margin: 0 auto;
   }
+
+  .orders-new-btn { margin-bottom: var(--sp-6); }
 
   /* Filters */
   .orders-filters {
@@ -94,6 +96,11 @@ const FILTERS: { value: string; label: string }[] = [
     box-shadow: var(--shadow-sm);
   }
 
+  .order-row--new {
+    border-color: var(--color-primary);
+    background: var(--color-primary-light);
+  }
+
   .order-row__icon {
     width: 48px;
     height: 48px;
@@ -138,6 +145,14 @@ const FILTERS: { value: string; label: string }[] = [
     color: var(--color-primary);
   }
 
+  .orders-section-label {
+    font-size: var(--text-xs);
+    font-weight: var(--weight-bold);
+    color: var(--color-text-faint);
+    letter-spacing: 0.05em;
+    margin: var(--sp-6) 0 var(--sp-3);
+  }
+
   /* Empty state */
   .orders-empty {
     display: none;
@@ -148,7 +163,7 @@ const FILTERS: { value: string; label: string }[] = [
 
   .orders-empty.is-visible { display: block; }
   .orders-empty__icon { font-size: 3rem; margin-bottom: var(--sp-4); }
-  .orders-empty__text { font-size: var(--text-base); }
+  .orders-empty__text { font-size: var(--text-base); margin-bottom: var(--sp-6); }
 
   @media (max-width: 560px) {
     .order-row { grid-template-columns: auto 1fr; }
@@ -157,11 +172,12 @@ const FILTERS: { value: string; label: string }[] = [
 </style>
 
 <script>
+  /* ── Filter logic ──────────────────────────────────────── */
   const filters = document.querySelectorAll<HTMLButtonElement>('.orders-filter');
-  const rows    = document.querySelectorAll<HTMLElement>('.order-row');
   const empty   = document.getElementById('orders-empty') as HTMLElement;
 
   function applyFilter(value: string): void {
+    const rows = document.querySelectorAll<HTMLElement>('.order-row');
     let visibleCount = 0;
     rows.forEach(row => {
       const match = value === 'all' || row.dataset.status === value;
@@ -173,15 +189,72 @@ const FILTERS: { value: string; label: string }[] = [
 
   filters.forEach(btn => {
     btn.addEventListener('click', () => {
-      filters.forEach(b => {
-        b.classList.remove('is-active');
-        b.setAttribute('aria-pressed', 'false');
-      });
+      filters.forEach(b => { b.classList.remove('is-active'); b.setAttribute('aria-pressed', 'false'); });
       btn.classList.add('is-active');
       btn.setAttribute('aria-pressed', 'true');
       applyFilter(btn.dataset.filter ?? 'all');
     });
   });
+
+  /* ── Load real orders from localStorage ────────────────── */
+  function formatDate(isoStr: string): string {
+    try {
+      const d    = new Date(isoStr);
+      const now  = new Date();
+      const diff = now.getTime() - d.getTime();
+      if (diff < 60_000)     return 'الآن';
+      if (diff < 3_600_000)  return `منذ ${Math.floor(diff / 60_000)} دقيقة`;
+      if (diff < 86_400_000) return `منذ ${Math.floor(diff / 3_600_000)} ساعة`;
+      return d.toLocaleDateString('ar-EG', { day: 'numeric', month: 'long' });
+    } catch { return '—'; }
+  }
+
+  function renderRealOrders(): void {
+    try {
+      const saved = JSON.parse(localStorage.getItem('wslha_orders') || '[]') as Array<{
+        id: string; type: string; icon: string; route: string;
+        price: string; status: string; createdAt: string;
+      }>;
+      if (!saved.length) return;
+
+      const list  = document.getElementById('orders-list') as HTMLElement;
+      const label = document.createElement('p');
+      label.className   = 'orders-section-label';
+      label.textContent = '▸ طلباتي الأخيرة';
+      list.insertAdjacentElement('beforebegin', label);
+
+      const statusMeta: Record<string, { label: string; cls: string }> = {
+        active:    { label: 'قيد التوصيل', cls: 'order-row__status--active'    },
+        delivered: { label: 'تم التسليم',  cls: 'order-row__status--delivered' },
+        cancelled: { label: 'ملغي',        cls: 'order-row__status--cancelled' },
+      };
+
+      saved.forEach(order => {
+        const sm        = statusMeta[order.status] || statusMeta.active;
+        const trackLink = order.status === 'active'
+          ? `<a href="/track?q=${order.id}" class="order-row__track">تتبع ←</a>`
+          : '';
+        const article   = document.createElement('article');
+        article.className      = 'order-row order-row--new';
+        article.dataset.status = order.status;
+        article.innerHTML = `
+          <div class="order-row__icon" aria-hidden="true">${order.icon}</div>
+          <div>
+            <p class="order-row__id">${order.id}</p>
+            <p class="order-row__meta">${order.type} · ${order.route}</p>
+            <p class="order-row__date">${formatDate(order.createdAt)}</p>
+          </div>
+          <div class="order-row__side">
+            <span class="order-row__price">${order.price}</span>
+            <span class="order-row__status ${sm.cls}">${sm.label}</span>
+            ${trackLink}
+          </div>`;
+        list.prepend(article);
+      });
+    } catch { /* storage unavailable */ }
+  }
+
+  renderRealOrders();
 </script>
 
 <Layout
@@ -197,6 +270,10 @@ const FILTERS: { value: string; label: string }[] = [
 
   <div class="orders-wrap">
 
+    <div class="orders-new-btn">
+      <a href="/order" class="btn btn--accent">🛵 طلب توصيل جديد</a>
+    </div>
+
     <!-- Filters -->
     <div class="orders-filters" role="group" aria-label="تصفية الطلبات">
       {FILTERS.map((f, i) => (
@@ -211,8 +288,8 @@ const FILTERS: { value: string; label: string }[] = [
     </div>
 
     <!-- List -->
-    <div class="orders-list">
-      {ORDERS.map(order => (
+    <div class="orders-list" id="orders-list">
+      {SAMPLE_ORDERS.map(order => (
         <article class="order-row" data-status={order.status}>
           <div class="order-row__icon" aria-hidden="true">{order.icon}</div>
           <div>
@@ -237,6 +314,7 @@ const FILTERS: { value: string; label: string }[] = [
     <div class="orders-empty" id="orders-empty" role="status">
       <div class="orders-empty__icon" aria-hidden="true">📭</div>
       <p class="orders-empty__text">لا توجد طلبات في هذه الفئة</p>
+      <a href="/order" class="btn btn--primary">اطلب الآن</a>
     </div>
 
   </div>

@@ -12,18 +12,18 @@ interface DeliveryType {
 }
 
 const DELIVERY_TYPES: DeliveryType[] = [
-  { id: 'local',   icon: '🛵', title: 'توصيل محلي',   desc: 'داخل المدينة خلال 30 دقيقة', base: 5,  eta: '30 دقيقة' },
-  { id: 'express', icon: '⚡', title: 'توصيل سريع',   desc: 'أولوية قصوى خلال 15 دقيقة',  base: 10, eta: '15 دقيقة' },
-  { id: 'airport', icon: '✈️', title: 'توصيل المطار', desc: 'من وإلى المطار',             base: 30, eta: '60 دقيقة' },
+  { id: 'local',   icon: '🛵', title: 'توصيل محلي',   desc: 'داخل المدينة خلال 30 دقيقة', base: 25,  eta: '30 دقيقة' },
+  { id: 'express', icon: '⚡', title: 'توصيل سريع',   desc: 'أولوية قصوى خلال 15 دقيقة',  base: 45,  eta: '15 دقيقة' },
+  { id: 'airport', icon: '✈️', title: 'توصيل المطار', desc: 'من وإلى مطار برج العرب',      base: 150, eta: '90 دقيقة' },
 ];
 
-const CITIES = ['طرابلس', 'بنغازي', 'مصراتة', 'الزاوية', 'صبراتة'];
+const CITIES = ['دمياط الجديدة', 'دمياط', 'كفر سعد', 'فارسكور', 'منية النصر', 'رأس البر', 'الزرقا'];
 ---
 
 <style>
   .order-wrap {
     padding: var(--sp-12) var(--sp-6) var(--sp-20);
-    max-width: 920px;
+    max-width: 960px;
     margin: 0 auto;
     display: grid;
     grid-template-columns: 1.7fr 1fr;
@@ -224,6 +224,28 @@ const CITIES = ['طرابلس', 'بنغازي', 'مصراتة', 'الزاوية'
     margin-top: var(--sp-3);
   }
 
+  /* ── WhatsApp button ─────────────────────────────────────── */
+  .summary__whatsapp {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--sp-2);
+    width: 100%;
+    margin-top: var(--sp-3);
+    padding: var(--sp-3);
+    background: #25D366;
+    color: #fff;
+    border: none;
+    border-radius: var(--radius);
+    font-family: var(--font-body);
+    font-weight: var(--weight-bold);
+    font-size: var(--text-sm);
+    cursor: pointer;
+    text-decoration: none;
+    transition: background var(--ease);
+  }
+  .summary__whatsapp:hover { background: #1EB856; }
+
   /* ── Success state ───────────────────────────────────────── */
   .order-success {
     display: none;
@@ -264,27 +286,28 @@ const CITIES = ['طرابلس', 'بنغازي', 'مصراتة', 'الزاوية'
 <script>
   interface Rates { [key: string]: number; }
 
-  const BASE_RATES: Rates = { local: 5, express: 10, airport: 30 };
-  const CROSS_CITY_FEE = 8;
+  const BASE_RATES: Rates = { local: 25, express: 45, airport: 150 };
+  const CROSS_CITY_FEE = 20;
 
-  const form        = document.getElementById('order-form')      as HTMLFormElement;
-  const wrap        = document.getElementById('order-wrap')      as HTMLElement;
-  const success     = document.getElementById('order-success')   as HTMLElement;
-  const successId   = document.getElementById('success-id')      as HTMLElement;
-  const fromCity    = document.getElementById('from-city')       as HTMLSelectElement;
-  const toCity      = document.getElementById('to-city')         as HTMLSelectElement;
-  const sumType     = document.getElementById('sum-type')        as HTMLElement;
-  const sumEta      = document.getElementById('sum-eta')         as HTMLElement;
-  const sumRoute    = document.getElementById('sum-route')       as HTMLElement;
-  const sumBase     = document.getElementById('sum-base')        as HTMLElement;
-  const sumCross    = document.getElementById('sum-cross-row')   as HTMLElement;
-  const sumTotal    = document.getElementById('sum-total')       as HTMLElement;
-  const submitBtn   = document.getElementById('order-submit')    as HTMLButtonElement;
+  const form      = document.getElementById('order-form')    as HTMLFormElement;
+  const wrap      = document.getElementById('order-wrap')    as HTMLElement;
+  const success   = document.getElementById('order-success') as HTMLElement;
+  const successId = document.getElementById('success-id')    as HTMLElement;
+  const fromCity  = document.getElementById('from-city')     as HTMLSelectElement;
+  const toCity    = document.getElementById('to-city')       as HTMLSelectElement;
+  const sumType   = document.getElementById('sum-type')      as HTMLElement;
+  const sumEta    = document.getElementById('sum-eta')       as HTMLElement;
+  const sumRoute  = document.getElementById('sum-route')     as HTMLElement;
+  const sumBase   = document.getElementById('sum-base')      as HTMLElement;
+  const sumCross  = document.getElementById('sum-cross-row') as HTMLElement;
+  const sumTotal  = document.getElementById('sum-total')     as HTMLElement;
+  const submitBtn = document.getElementById('order-submit')  as HTMLButtonElement;
+  const waBtn     = document.getElementById('whatsapp-btn')  as HTMLAnchorElement;
 
-  const TYPE_LABELS: Rates & Record<string, any> = {
-    local:   { label: 'توصيل محلي',  eta: '30 دقيقة' },
-    express: { label: 'توصيل سريع',  eta: '15 دقيقة' },
-    airport: { label: 'توصيل المطار', eta: '60 دقيقة' },
+  const TYPE_META: Record<string, { label: string; eta: string }> = {
+    local:   { label: 'توصيل محلي',   eta: '30 دقيقة' },
+    express: { label: 'توصيل سريع',   eta: '15 دقيقة' },
+    airport: { label: 'توصيل المطار', eta: '90 دقيقة' },
   };
 
   function selectedType(): string {
@@ -293,18 +316,25 @@ const CITIES = ['طرابلس', 'بنغازي', 'مصراتة', 'الزاوية'
   }
 
   function recalc(): void {
-    const type = selectedType();
-    const base = BASE_RATES[type];
-    const meta = TYPE_LABELS[type];
+    const type      = selectedType();
+    const base      = BASE_RATES[type];
+    const meta      = TYPE_META[type];
     const crossCity = fromCity.value && toCity.value && fromCity.value !== toCity.value;
-    const total = base + (crossCity ? CROSS_CITY_FEE : 0);
+    const total     = base + (crossCity ? CROSS_CITY_FEE : 0);
 
     sumType.textContent  = meta.label;
     sumEta.textContent   = meta.eta;
     sumRoute.textContent = fromCity.value && toCity.value ? `${fromCity.value} ← ${toCity.value}` : '—';
-    sumBase.textContent  = `${base} د.ل`;
+    sumBase.textContent  = `${base} ج.م`;
     sumCross.style.display = crossCity ? 'flex' : 'none';
-    sumTotal.innerHTML   = `${total} <small>د.ل</small>`;
+    sumTotal.innerHTML   = `${total} <small>ج.م</small>`;
+
+    // Build WhatsApp message
+    const address   = (document.getElementById('address')   as HTMLTextAreaElement).value;
+    const recipient = (document.getElementById('recipient') as HTMLInputElement).value;
+    const phone     = (document.getElementById('phone')     as HTMLInputElement).value;
+    const msg = `طلب توصيل جديد - وصّلها 🛵\n\nالنوع: ${meta.label}\nالمسار: ${fromCity.value || '—'} ← ${toCity.value || '—'}\nالعنوان: ${address || '—'}\nالمستلم: ${recipient || '—'}\nجوال: ${phone || '—'}\nالإجمالي: ${total} ج.م`;
+    waBtn.href = `https://wa.me/201000000000?text=${encodeURIComponent(msg)}`;
   }
 
   form.addEventListener('change', recalc);
@@ -315,9 +345,41 @@ const CITIES = ['طرابلس', 'بنغازي', 'مصراتة', 'الزاوية'
     submitBtn.disabled = true;
     submitBtn.textContent = 'جاري التأكيد...';
 
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    await new Promise(resolve => setTimeout(resolve, 900));
 
-    const orderId = 'WSL-2024-' + Math.floor(100000 + Math.random() * 900000);
+    const type      = selectedType();
+    const meta      = TYPE_META[type];
+    const base      = BASE_RATES[type];
+    const crossCity = fromCity.value && toCity.value && fromCity.value !== toCity.value;
+    const total     = base + (crossCity ? CROSS_CITY_FEE : 0);
+    const orderId   = 'WSL-' + new Date().getFullYear() + '-' + Math.floor(100000 + Math.random() * 900000);
+
+    const address   = (document.getElementById('address')   as HTMLTextAreaElement).value;
+    const recipient = (document.getElementById('recipient') as HTMLInputElement).value;
+    const phone     = (document.getElementById('phone')     as HTMLInputElement).value;
+    const notes     = (document.getElementById('notes')     as HTMLInputElement).value;
+
+    const order = {
+      id:        orderId,
+      type:      meta.label,
+      icon:      type === 'local' ? '🛵' : type === 'express' ? '⚡' : '✈️',
+      route:     `${fromCity.value} → ${toCity.value}`,
+      date:      'الآن',
+      price:     `${total} ج.م`,
+      status:    'active',
+      address,
+      recipient,
+      phone,
+      notes,
+      createdAt: new Date().toISOString(),
+    };
+
+    try {
+      const existing = JSON.parse(localStorage.getItem('wslha_orders') || '[]');
+      existing.unshift(order);
+      localStorage.setItem('wslha_orders', JSON.stringify(existing));
+    } catch { /* storage unavailable */ }
+
     successId.textContent = orderId;
     wrap.style.display = 'none';
     success.classList.add('is-visible');
@@ -359,7 +421,7 @@ const CITIES = ['طرابلس', 'بنغازي', 'مصراتة', 'الزاوية'
               <span class="type-option__title">{t.title}</span>
               <span class="type-option__desc">{t.desc}</span>
             </span>
-            <span class="type-option__price">{t.base} د.ل</span>
+            <span class="type-option__price">{t.base} ج.م</span>
           </label>
         ))}
       </fieldset>
@@ -373,14 +435,14 @@ const CITIES = ['طرابلس', 'بنغازي', 'مصراتة', 'الزاوية'
       </h2>
       <div class="order-form__row">
         <div class="field">
-          <label class="field__label" for="from-city">من مدينة</label>
+          <label class="field__label" for="from-city">من منطقة</label>
           <select class="field__select" id="from-city" required>
             <option value="" disabled selected>اختر</option>
-            {CITIES.map(c => <option value={c}>{c}</option>)}
+            {CITIES.map(c => <option value={c} selected={c === 'دمياط الجديدة'}>{c}</option>)}
           </select>
         </div>
         <div class="field">
-          <label class="field__label" for="to-city">إلى مدينة</label>
+          <label class="field__label" for="to-city">إلى منطقة</label>
           <select class="field__select" id="to-city" required>
             <option value="" disabled selected>اختر</option>
             {CITIES.map(c => <option value={c}>{c}</option>)}
@@ -406,7 +468,7 @@ const CITIES = ['طرابلس', 'بنغازي', 'مصراتة', 'الزاوية'
         </div>
         <div class="field">
           <label class="field__label" for="phone">رقم الجوال</label>
-          <input class="field__input" type="tel" id="phone" placeholder="091 000 0000" required autocomplete="tel">
+          <input class="field__input" type="tel" id="phone" placeholder="010 0000 0000" required autocomplete="tel">
         </div>
       </div>
       <div class="field">
@@ -421,17 +483,21 @@ const CITIES = ['طرابلس', 'بنغازي', 'مصراتة', 'الزاوية'
       <div class="summary__row"><span>نوع التوصيل</span><span id="sum-type">توصيل محلي</span></div>
       <div class="summary__row"><span>وقت التوصيل</span><span id="sum-eta">30 دقيقة</span></div>
       <div class="summary__row"><span>المسار</span><span id="sum-route">—</span></div>
-      <div class="summary__row"><span>سعر التوصيل</span><span id="sum-base">5 د.ل</span></div>
-      <div class="summary__row" id="sum-cross-row" style="display:none;"><span>رسوم بين المدن</span><span>8 د.ل</span></div>
+      <div class="summary__row"><span>سعر التوصيل</span><span id="sum-base">25 ج.م</span></div>
+      <div class="summary__row" id="sum-cross-row" style="display:none;"><span>رسوم بين المناطق</span><span>20 ج.م</span></div>
 
       <div class="summary__total">
         <span class="summary__total-label">الإجمالي</span>
-        <span class="summary__total-value" id="sum-total">5 <small>د.ل</small></span>
+        <span class="summary__total-value" id="sum-total">25 <small>ج.م</small></span>
       </div>
 
       <button type="submit" form="order-form" class="summary__submit" id="order-submit">
         تأكيد الطلب ←
       </button>
+      <a href="#" class="summary__whatsapp" id="whatsapp-btn" target="_blank" rel="noopener">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+        إرسال عبر واتساب
+      </a>
       <p class="summary__note">الدفع عند الاستلام أو إلكترونياً</p>
     </aside>
 
