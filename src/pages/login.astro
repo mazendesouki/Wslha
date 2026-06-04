@@ -158,8 +158,8 @@ import PageHero from '../components/PageHero.astro';
       return;
     }
 
-    if (pass.length < 4) {
-      errorBox.textContent = 'كلمة المرور يجب ألا تقل عن 4 أحرف.';
+    if (pass.length < 8) {
+      errorBox.textContent = 'كلمة المرور يجب أن تكون 8 أحرف على الأقل.';
       errorBox.classList.add('is-visible');
       submitBtn.disabled    = false;
       submitBtn.textContent = 'دخول';
