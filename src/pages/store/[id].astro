@@ -185,6 +185,16 @@ const staticMenuJson = JSON.stringify(
   .pay-option:has(input:checked) { border-color: var(--color-primary); background: var(--color-primary-light); }
   .pay-option input { accent-color: var(--color-primary); }
   .pay-option__emoji { font-size: var(--text-xl); }
+  .locate-btn {
+    width: 100%; padding: var(--sp-3); border: 1.5px dashed var(--color-primary);
+    background: var(--color-primary-light); color: var(--color-primary);
+    border-radius: var(--radius); font-family: var(--font-body); font-weight: var(--weight-bold);
+    font-size: var(--text-sm); cursor: pointer; transition: all .2s;
+  }
+  .locate-btn:hover { background: var(--color-primary); color: #fff; }
+  .locate-btn.located { border-style: solid; border-color: #16a34a; background: #dcfce7; color: #15803d; }
+  .locate-note { font-size: var(--text-xs); color: var(--color-text-faint); margin-top: var(--sp-2); text-align: center; }
+
   .sheet-error { background: #FEE2E2; color: #B91C1C; border-radius: var(--radius); padding: var(--sp-3) var(--sp-4); font-size: var(--text-sm); margin-bottom: var(--sp-4); display: none; }
   .sheet-error.is-visible { display: block; }
   .sheet__actions { display: flex; gap: var(--sp-3); margin-top: var(--sp-5); }
@@ -308,6 +318,10 @@ const staticMenuJson = JSON.stringify(
           <textarea class="field__textarea" id="co-address" placeholder="الحي، الشارع، رقم المبنى، الدور، علامة مميزة..."></textarea>
         </div>
         <div class="field">
+          <button type="button" class="locate-btn" data-locate>📍 حدّد موقعي لحساب رسوم التوصيل بدقّة</button>
+          <p class="locate-note" id="loc-note"></p>
+        </div>
+        <div class="field">
           <span class="field__label">وسيلة الدفع</span>
           <div class="pay-options">
             <label class="pay-option">
@@ -376,6 +390,39 @@ const staticMenuJson = JSON.stringify(
 
     const fmt = (n: number) => `${n} ج.م`;
 
+    // ── Distance-based delivery fee ──
+    let deliveryFee = STORE.deliveryFee;   // dynamic — base until customer locates
+    let custLat: number | null = null;
+    let custLng: number | null = null;
+    let distanceKm = 0;
+    const FREE_RADIUS_KM = 3;   // base fee covers first 3 km
+    const PER_KM = 5;           // EGP per extra km
+
+    function haversine(lat1: number, lng1: number, lat2: number, lng2: number): number {
+      const R = 6371, toRad = (d: number) => d * Math.PI / 180;
+      const dLat = toRad(lat2 - lat1), dLng = toRad(lng2 - lng1);
+      const a = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2;
+      return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    }
+
+    function recalcFee() {
+      if (custLat != null && custLng != null) {
+        distanceKm = haversine(STORE.lat, STORE.lng, custLat, custLng);
+        const extra = Math.max(0, Math.ceil(distanceKm - FREE_RADIUS_KM)) * PER_KM;
+        deliveryFee = STORE.deliveryFee + extra;
+      } else {
+        deliveryFee = STORE.deliveryFee;
+      }
+      const note = document.getElementById('loc-note');
+      if (note) {
+        if (custLat != null) {
+          note.textContent = `📏 المسافة ${distanceKm.toFixed(1)} كم — رسوم التوصيل ${deliveryFee} ج.م`;
+          note.style.color = '#16a34a';
+        }
+      }
+      render();
+    }
+
     function qtyOf(id: string): number {
       return cart.items.find(i => i.id === id)?.qty ?? 0;
     }
@@ -407,11 +454,13 @@ const staticMenuJson = JSON.stringify(
 
       const count = cartCount(cart);
       const subtotal = cartSubtotal(cart);
-      const total = subtotal + (count > 0 ? STORE.deliveryFee : 0);
+      const total = subtotal + (count > 0 ? deliveryFee : 0);
 
       document.querySelectorAll('[data-cart-count]').forEach(el => el.textContent = String(count));
       document.querySelectorAll('[data-subtotal]').forEach(el => el.textContent = fmt(subtotal));
       document.querySelectorAll('[data-total]').forEach(el => el.textContent = fmt(total));
+      const feeDisp = document.getElementById('fee-display'); if (feeDisp) feeDisp.textContent = fmt(deliveryFee);
+      const sheetFee = document.getElementById('sheet-fee'); if (sheetFee) sheetFee.textContent = fmt(deliveryFee);
 
       const linesWrap = document.querySelector('[data-cart-lines]') as HTMLElement;
       const empty = document.querySelector('[data-cart-empty]') as HTMLElement;
@@ -521,11 +570,7 @@ const staticMenuJson = JSON.stringify(
           STORE.deliveryFee = Number(s.delivery_fee);
           const feeEl = document.getElementById('hd-fee');
           if (feeEl) feeEl.textContent = s.delivery_fee;
-          const feeDisp = document.getElementById('fee-display');
-          if (feeDisp) feeDisp.textContent = `${s.delivery_fee} ج.م`;
-          const sheetFee = document.getElementById('sheet-fee');
-          if (sheetFee) sheetFee.textContent = `${s.delivery_fee} ج.م`;
-          render();
+          recalcFee();   // updates deliveryFee + all fee displays + re-renders
         }
         if (s.min_order != null) {
           STORE.minOrder = Number(s.min_order);
@@ -567,8 +612,33 @@ const staticMenuJson = JSON.stringify(
       if (t.closest('[data-checkout]')) { openSheet(); return; }
       if (t.closest('[data-close]'))    { closeSheet(); return; }
       if (t.closest('[data-confirm]'))  { confirmOrder(); return; }
+      if (t.closest('[data-locate]'))   { locateCustomer(); return; }
       if (t.matches('[data-sheet]'))    { closeSheet(); return; }
     });
+
+    function locateCustomer() {
+      const btn = document.querySelector('[data-locate]') as HTMLButtonElement;
+      const note = document.getElementById('loc-note')!;
+      if (!navigator.geolocation) { note.textContent = 'المتصفح لا يدعم تحديد الموقع.'; return; }
+      btn.disabled = true; btn.textContent = '⏳ جارٍ تحديد موقعك...';
+      navigator.geolocation.getCurrentPosition(
+        pos => {
+          custLat = pos.coords.latitude;
+          custLng = pos.coords.longitude;
+          btn.classList.add('located');
+          btn.textContent = '✅ تم تحديد موقعك';
+          btn.disabled = false;
+          recalcFee();
+        },
+        () => {
+          btn.disabled = false;
+          btn.textContent = '📍 حدّد موقعي لحساب رسوم التوصيل بدقّة';
+          note.textContent = 'تعذّر تحديد الموقع — سيتم احتساب الرسوم الأساسية.';
+          note.style.color = '#b45309';
+        },
+        { enableHighAccuracy: true, timeout: 10000 }
+      );
+    }
 
     const sheet = document.querySelector('[data-sheet]') as HTMLElement;
     function openSheet(): void {
@@ -595,7 +665,7 @@ const staticMenuJson = JSON.stringify(
       errBox.classList.remove('is-visible');
 
       const subtotal = cartSubtotal(cart);
-      const total    = subtotal + STORE.deliveryFee;
+      const total    = subtotal + deliveryFee;
       const code     = 'WSL-' + new Date().getFullYear() + '-' + Math.floor(100000 + Math.random() * 900000);
       const normPhone = normalizeEgyptianPhone(phone);
       const itemsSummary = cart.items.map(i => `${i.qty}× ${i.name}`).join('، ');
@@ -621,12 +691,14 @@ const staticMenuJson = JSON.stringify(
             items: cart.items,
             items_summary: itemsSummary,
             subtotal,
-            delivery_fee: STORE.deliveryFee,
+            delivery_fee: deliveryFee,
             total,
             payment: pay,
             status: 'pending',
             store_lat: STORE.lat,
             store_lng: STORE.lng,
+            customer_lat: custLat,
+            customer_lng: custLng,
           }),
         });
         if (res.ok) {
@@ -649,7 +721,7 @@ const staticMenuJson = JSON.stringify(
         storeId: STORE.id,
         items: cart.items,
         itemsSummary,
-        subtotal, deliveryFee: STORE.deliveryFee, payment: pay,
+        subtotal, deliveryFee, payment: pay,
         recipient: name, phone: normPhone,
         address: `${area} — ${address}`,
         createdAt: new Date().toISOString(),

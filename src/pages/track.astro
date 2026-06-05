@@ -206,6 +206,38 @@ const TIMELINE: TimelineEvent[] = [
   }
   .status-banner.show { opacity: 1; transform: translateX(-50%) translateY(0); }
   .status-banner.reject { background: #dc2626; }
+
+  /* Rating card */
+  .rate-card {
+    margin-top: var(--sp-6); padding: var(--sp-6);
+    border: 1.5px solid var(--color-border); border-radius: var(--radius-xl);
+    background: var(--color-bg-soft); display: none;
+  }
+  .rate-card.visible { display: block; }
+  .rate-card__title { font-weight: var(--weight-black); font-size: var(--text-base); margin-bottom: var(--sp-4); text-align: center; }
+  .rate-row { margin-bottom: var(--sp-5); }
+  .rate-row__label { font-size: var(--text-sm); font-weight: var(--weight-bold); margin-bottom: var(--sp-2); }
+  .stars { display: flex; gap: var(--sp-2); justify-content: center; direction: ltr; }
+  .star {
+    font-size: 2rem; cursor: pointer; color: #d1d5db; transition: transform .15s, color .15s;
+    background: none; border: none; padding: 0; line-height: 1;
+  }
+  .star:hover { transform: scale(1.15); }
+  .star.active { color: #f59e0b; }
+  .rate-comment {
+    width: 100%; padding: var(--sp-3); border: 2px solid var(--color-border);
+    border-radius: var(--radius); font-family: var(--font-body); font-size: var(--text-sm);
+    direction: rtl; resize: vertical; min-height: 60px; margin-bottom: var(--sp-4);
+  }
+  .rate-submit {
+    width: 100%; padding: var(--sp-4); border: none; border-radius: var(--radius-lg);
+    background: var(--color-primary); color: #fff; font-family: var(--font-body);
+    font-weight: var(--weight-black); font-size: var(--text-base); cursor: pointer; transition: background .2s;
+  }
+  .rate-submit:hover:not(:disabled) { background: var(--color-primary-dark); }
+  .rate-submit:disabled { opacity: .5; cursor: not-allowed; }
+  .rate-thanks { text-align: center; padding: var(--sp-6); color: #15803d; font-weight: var(--weight-bold); display: none; }
+  .rate-thanks.visible { display: block; }
 </style>
 
 <script>
@@ -310,6 +342,88 @@ const TIMELINE: TimelineEvent[] = [
     } catch {}
   }
 
+  // ── Rating ──
+  let currentOrder: any = null;
+
+  function setupStars(containerId: string) {
+    const container = document.getElementById(containerId)!;
+    container.querySelectorAll('.star').forEach(star => {
+      star.addEventListener('click', () => {
+        const v = Number((star as HTMLElement).dataset.v);
+        container.dataset.rating = String(v);
+        container.querySelectorAll('.star').forEach((s, i) => s.classList.toggle('active', i < v));
+      });
+    });
+  }
+  setupStars('stars-store');
+  setupStars('stars-driver');
+
+  function maybeShowRating(o: any) {
+    const card = document.getElementById('rate-card')!;
+    const thanks = document.getElementById('rate-thanks')!;
+    if (o.status !== 'delivered') { card.classList.remove('visible'); return; }
+
+    // Already rated? (kept in localStorage per order code)
+    let rated: string[] = [];
+    try { rated = JSON.parse(localStorage.getItem('wslha_rated') || '[]'); } catch {}
+    if (rated.includes(o.code)) { thanks.classList.add('visible'); return; }
+
+    // Hide driver row if no driver
+    document.getElementById('rate-driver-row')!.style.display = o.driver_phone ? 'block' : 'none';
+    document.getElementById('rate-store-label')!.textContent = `تقييم ${o.store_name || 'المتجر'}`;
+    card.classList.add('visible');
+  }
+
+  async function submitRating() {
+    if (!currentOrder) return;
+    const o = currentOrder;
+    const storeRating  = Number(document.getElementById('stars-store')!.dataset.rating || '0');
+    const driverRating = Number(document.getElementById('stars-driver')!.dataset.rating || '0');
+    const comment = (document.getElementById('rate-comment') as HTMLTextAreaElement).value.trim();
+
+    if (storeRating === 0) { alert('يرجى اختيار تقييم المتجر أولاً'); return; }
+
+    const btn = document.getElementById('rate-submit') as HTMLButtonElement;
+    btn.disabled = true; btn.textContent = 'جارٍ الإرسال...';
+
+    // Save the rating row
+    try {
+      await fetch(`${SB_URL}/rest/v1/ratings`, {
+        method: 'POST',
+        headers: { ...SB_H, 'Content-Type': 'application/json', Prefer: 'return=minimal' },
+        body: JSON.stringify({
+          order_code: o.code, store_id: o.store_id, driver_phone: o.driver_phone || null,
+          store_rating: storeRating, driver_rating: driverRating || null, comment: comment || null,
+        }),
+      });
+    } catch {}
+
+    // Update store's average rating
+    try {
+      const sr = await fetch(`${SB_URL}/rest/v1/stores?id=eq.${encodeURIComponent(o.store_id)}&select=rating,reviews&limit=1`, { headers: SB_H });
+      const store = (await sr.json())?.[0];
+      if (store) {
+        const reviews = (store.reviews || 0) + 1;
+        const newAvg = ((store.rating || 5) * (store.reviews || 0) + storeRating) / reviews;
+        await fetch(`${SB_URL}/rest/v1/stores?id=eq.${encodeURIComponent(o.store_id)}`, {
+          method: 'PATCH',
+          headers: { ...SB_H, 'Content-Type': 'application/json', Prefer: 'return=minimal' },
+          body: JSON.stringify({ rating: Math.round(newAvg * 100) / 100, reviews }),
+        });
+      }
+    } catch {}
+
+    try {
+      const rated = JSON.parse(localStorage.getItem('wslha_rated') || '[]');
+      rated.push(o.code); localStorage.setItem('wslha_rated', JSON.stringify(rated));
+    } catch {}
+
+    document.getElementById('rate-card')!.classList.remove('visible');
+    document.getElementById('rate-thanks')!.classList.add('visible');
+  }
+
+  document.getElementById('rate-submit')!.addEventListener('click', submitRating);
+
   // Status → ordered timeline steps
   const STEPS = [
     { key: 'pending',    title: 'تم استلام الطلب',          desc: 'بانتظار تأكيد المتجر' },
@@ -341,6 +455,7 @@ const TIMELINE: TimelineEvent[] = [
   }
 
   function renderOrder(o: any) {
+    currentOrder = o;
     document.getElementById('result-empty')!.style.display = 'none';
     document.getElementById('result-timeline')!.style.display = '';
     (document.querySelector('.result__info') as HTMLElement).style.display = '';
@@ -371,6 +486,8 @@ const TIMELINE: TimelineEvent[] = [
     } else if (o.status === 'delivered' || o.status === 'rejected') {
       if (driverPollTimer) { clearInterval(driverPollTimer); driverPollTimer = null; }
     }
+
+    maybeShowRating(o);
   }
 
   function showEmpty(code: string) {
@@ -399,6 +516,8 @@ const TIMELINE: TimelineEvent[] = [
     if (driverPollTimer) { clearInterval(driverPollTimer); driverPollTimer = null; }
     map = null; driverMarker = null; storeMarker = null;
     document.getElementById('track-map-card')!.classList.remove('visible');
+    document.getElementById('rate-card')!.classList.remove('visible');
+    document.getElementById('rate-thanks')!.classList.remove('visible');
     try { if ('Notification' in window && Notification.permission === 'default') Notification.requestPermission(); } catch {}
 
     const order = await fetchOrder(code);
@@ -514,6 +633,30 @@ const TIMELINE: TimelineEvent[] = [
           </div>
           <div id="track-map"></div>
         </div>
+
+        <!-- Rating (after delivery) -->
+        <div class="rate-card" id="rate-card">
+          <p class="rate-card__title">⭐ كيف كانت تجربتك؟</p>
+          <div class="rate-row">
+            <p class="rate-row__label" id="rate-store-label">تقييم المتجر</p>
+            <div class="stars" id="stars-store" data-rating="0">
+              <button class="star" data-v="1">★</button><button class="star" data-v="2">★</button>
+              <button class="star" data-v="3">★</button><button class="star" data-v="4">★</button>
+              <button class="star" data-v="5">★</button>
+            </div>
+          </div>
+          <div class="rate-row" id="rate-driver-row">
+            <p class="rate-row__label">تقييم المندوب</p>
+            <div class="stars" id="stars-driver" data-rating="0">
+              <button class="star" data-v="1">★</button><button class="star" data-v="2">★</button>
+              <button class="star" data-v="3">★</button><button class="star" data-v="4">★</button>
+              <button class="star" data-v="5">★</button>
+            </div>
+          </div>
+          <textarea class="rate-comment" id="rate-comment" placeholder="أضف تعليقاً (اختياري)..."></textarea>
+          <button class="rate-submit" id="rate-submit">إرسال التقييم</button>
+        </div>
+        <div class="rate-thanks" id="rate-thanks">🙏 شكراً لتقييمك! نسعد بخدمتك دائماً.</div>
 
         <p id="result-empty" style="text-align:center;color:var(--color-text-faint);font-size:var(--text-sm);display:none;padding:var(--sp-4) 0;">
           لم نعثر على طلب بهذا الرقم. تأكد من الرقم وحاول مرة أخرى.
