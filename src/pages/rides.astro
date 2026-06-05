@@ -89,9 +89,10 @@ import { AREAS } from '../data/rides';
     background: linear-gradient(135deg, #f0f9ff, #eff6ff);
     border: 1px solid #bfdbfe; border-radius: var(--radius-xl);
     padding: var(--sp-3) var(--sp-5);
-    display: none; gap: var(--sp-4); align-items: center; justify-content: space-between;
+    display: flex; gap: var(--sp-4); align-items: center; justify-content: space-between;
+    transition: opacity 0.3s;
   }
-  .route-summary.visible { display: flex; }
+  .route-summary.empty { opacity: 0.45; }
   .route-summary__stat { text-align: center; }
   .route-summary__val { font-size: var(--text-lg); font-weight: var(--weight-black); color: var(--color-primary); }
   .route-summary__val--price { color: #16a34a; }
@@ -99,8 +100,9 @@ import { AREAS } from '../data/rides';
   .route-summary__divider { width: 1px; height: 28px; background: #bfdbfe; flex-shrink: 0; }
 
   /* ── form ── */
-  .form-section { padding: var(--sp-5) var(--sp-6); border-top: 1px solid var(--color-border); margin-top: var(--sp-4); display: none; }
-  .form-section.visible { display: block; }
+  .form-section { padding: var(--sp-5) var(--sp-6); border-top: 1px solid var(--color-border); margin-top: var(--sp-4); display: block; }
+  .submit-hint { font-size: var(--text-xs); color: var(--color-text-faint); text-align: center; margin-top: var(--sp-2); display: none; }
+  .submit-hint.visible { display: block; }
   .field { margin-bottom: var(--sp-4); }
   .field__label { display: block; font-weight: var(--weight-bold); font-size: var(--text-sm); margin-bottom: var(--sp-2); color: #374151; }
   .field__input, .field__select, .field__textarea {
@@ -139,7 +141,12 @@ import { AREAS } from '../data/rides';
     border: none; cursor: pointer; transition: all var(--ease); margin-top: var(--sp-5);
   }
   .submit-btn:hover:not(:disabled) { background: var(--color-primary-dark); transform: translateY(-1px); box-shadow: var(--shadow-md); }
-  .submit-btn:disabled { opacity: .6; cursor: not-allowed; transform: none; }
+  .submit-btn:disabled { opacity: .45; cursor: not-allowed; transform: none; background: #94a3b8; }
+  .submit-btn.ready { animation: btn-glow 2.2s ease-in-out infinite; }
+  @keyframes btn-glow {
+    0%,100% { box-shadow: 0 0 0 0 rgba(59,130,246,.4); }
+    50%      { box-shadow: 0 0 0 10px rgba(59,130,246,0); }
+  }
   .alert-error { padding: var(--sp-3); border-radius: var(--radius); font-size: var(--text-sm); margin-bottom: var(--sp-3); display: none; background: #fef2f2; border: 1px solid #fca5a5; color: #b91c1c; }
   .alert-error.visible { display: block; }
 
@@ -392,12 +399,12 @@ import { AREAS } from '../data/rides';
             </div>
           </div>
 
-          <div id="route-summary" class="route-summary">
-            <div class="route-summary__stat"><div id="sum-dist" class="route-summary__val"></div><div class="route-summary__key">المسافة الفعلية</div></div>
+          <div id="route-summary" class="route-summary empty">
+            <div class="route-summary__stat"><div id="sum-dist" class="route-summary__val">—</div><div class="route-summary__key">المسافة الفعلية</div></div>
             <div class="route-summary__divider"></div>
-            <div class="route-summary__stat"><div id="sum-eta" class="route-summary__val"></div><div class="route-summary__key">الوقت المقدر</div></div>
+            <div class="route-summary__stat"><div id="sum-eta" class="route-summary__val">—</div><div class="route-summary__key">الوقت المقدر</div></div>
             <div class="route-summary__divider"></div>
-            <div class="route-summary__stat"><div id="sum-price" class="route-summary__val route-summary__val--price"></div><div class="route-summary__key">السعر النهائي</div></div>
+            <div class="route-summary__stat"><div id="sum-price" class="route-summary__val route-summary__val--price">—</div><div class="route-summary__key">السعر النهائي</div></div>
           </div>
           <div id="fare-breakdown" style="padding: var(--sp-2) var(--sp-6) 0; text-align:center;"></div>
 
@@ -429,7 +436,8 @@ import { AREAS } from '../data/rides';
                 <label class="payment-opt"><input type="radio" name="r-payment" value="wallet" /><span class="payment-opt__icon">📱</span><span><span class="payment-opt__name">فودافون كاش / إنستاباي</span><br><span class="payment-opt__desc">تحويل إلكتروني</span></span><span class="check-circle"></span></label>
               </div>
             </div>
-            <button id="confirm-btn" class="submit-btn" type="button">🚗 تأكيد الطلب وتتبع الرحلة</button>
+            <button id="confirm-btn" class="submit-btn" type="button" disabled>🚗 تأكيد الطلب وتتبع الرحلة</button>
+            <div id="submit-hint" class="submit-hint visible">اختر منطقة الانطلاق والوصول أولاً</div>
           </div>
         </div>
 
@@ -868,7 +876,6 @@ import { AREAS } from '../data/rides';
   const fromSel = document.getElementById('from-area');
   const toSel   = document.getElementById('to-area');
   const summary = document.getElementById('route-summary');
-  const formSec = document.getElementById('form-section');
 
   function areaBy(sel) {
     const o = sel.options[sel.selectedIndex];
@@ -876,10 +883,23 @@ import { AREAS } from '../data/rides';
     return { id: o.value, name: o.text, lat: +o.dataset.lat, lng: +o.dataset.lng };
   }
 
+  const confirmBtn = document.getElementById('confirm-btn');
+  const submitHint = document.getElementById('submit-hint');
+
   function updateUI() {
     const from = areaBy(fromSel), to = areaBy(toSel);
     if (!from || !to || from.id === to.id) {
-      summary.classList.remove('visible'); formSec.classList.remove('visible'); return;
+      // Reset to placeholder state
+      document.getElementById('sum-dist').textContent  = '—';
+      document.getElementById('sum-eta').textContent   = '—';
+      document.getElementById('sum-price').textContent = '—';
+      const bkEl = document.getElementById('fare-breakdown');
+      if (bkEl) bkEl.innerHTML = '';
+      summary.classList.add('empty');
+      confirmBtn.disabled = true;
+      confirmBtn.classList.remove('ready');
+      submitHint.classList.add('visible');
+      return;
     }
     // Estimate while OSRM loads
     _realRoadKm = 0; _realEtaMin = 0;
@@ -890,8 +910,10 @@ import { AREAS } from '../data/rides';
     document.getElementById('sum-price').textContent = fareFor(estRoad) + ' ج.م';
     const bkEl = document.getElementById('fare-breakdown');
     if (bkEl) bkEl.innerHTML = '<span style="color:var(--color-text-faint);font-size:11px;">جاري حساب المسافة الفعلية...</span>';
-    summary.classList.add('visible');
-    formSec.classList.add('visible');
+    summary.classList.remove('empty');
+    confirmBtn.disabled = false;
+    confirmBtn.classList.add('ready');
+    submitHint.classList.remove('visible');
     showRoute(from, to); // will update with real distance after OSRM
   }
 
@@ -924,8 +946,8 @@ import { AREAS } from '../data/rides';
     const pay    = document.querySelector('input[name="r-payment"]:checked').value;
     const notes  = document.getElementById('r-notes').value.trim();
 
-    const confirmBtn = document.getElementById('confirm-btn');
     confirmBtn.disabled    = true;
+    confirmBtn.classList.remove('ready');
     confirmBtn.textContent = 'جاري إرسال الطلب...';
 
     // POST to Supabase
@@ -948,6 +970,7 @@ import { AREAS } from '../data/rides';
     } catch {}
 
     confirmBtn.disabled    = false;
+    confirmBtn.classList.add('ready');
     confirmBtn.textContent = '🚗 تأكيد الطلب وتتبع الرحلة';
 
     // Show ride status panel
@@ -988,10 +1011,10 @@ import { AREAS } from '../data/rides';
     (document.getElementById('r-time') as HTMLSelectElement).value = 'now';
     (document.querySelector('input[name="r-payment"][value="cash"]') as HTMLInputElement).checked = true;
     fromSel.value = ''; toSel.value = '';
-    summary.classList.remove('visible'); formSec.classList.remove('visible');
     document.getElementById('success-card').classList.remove('visible');
     clearMap();
     resetToBooking();
+    updateUI();
     window.scrollTo({ top: 0, behavior: 'smooth' });
   });
 
