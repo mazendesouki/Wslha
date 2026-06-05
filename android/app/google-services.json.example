@@ -1,0 +1,8 @@
+الملف ده محتاج يتضاف يدويًا قبل البناء.
+مش محفوظ في git عشان يحتوي على مفاتيح Firebase.
+
+الخطوات:
+1. افتح Firebase Console → wslha-941c8
+2. Project Settings → General → Your apps → وصّلها Android
+3. نزّل google-services.json
+4. حطّه هنا: android/app/google-services.json
