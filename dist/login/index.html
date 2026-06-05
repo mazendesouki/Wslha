@@ -40,8 +40,8 @@
 
   
 <link rel="stylesheet" href="/_astro/about.1b1989f6.css" />
-<link rel="stylesheet" href="/_astro/login.79eabe57.css" />
-<link rel="stylesheet" href="/_astro/about.74625c24.css" /><script type="module" src="/_astro/hoisted.c0029388.js"></script></head>
+<link rel="stylesheet" href="/_astro/login.8370f6cd.css" />
+<link rel="stylesheet" href="/_astro/about.74625c24.css" /><script type="module" src="/_astro/hoisted.d0ad9c4c.js"></script></head>
 
 <body>
   <header role="banner" class="astro-DMQPWCEC">
@@ -231,38 +231,71 @@
     <section class="page-hero astro-S5HXUSYS" aria-labelledby="page-hero-title">
   <span class="page-hero__badge astro-S5HXUSYS" aria-label="👤 حسابي">👤 حسابي</span>
   <h1 class="page-hero__title astro-S5HXUSYS" id="page-hero-title">تسجيل الدخول</h1>
-  <p class="page-hero__subtitle astro-S5HXUSYS">أدخل بياناتك للوصول إلى طلباتك وتتبعها</p>
+  <p class="page-hero__subtitle astro-S5HXUSYS">أدخل رقمك وسنرسل لك كود التحقق</p>
 </section><section class="auth-section astro-SGPQYURT">
     <div class="auth-card astro-SGPQYURT">
-      <h2 class="auth-card__title astro-SGPQYURT">مرحباً بعودتك</h2>
-      <p class="auth-card__sub astro-SGPQYURT">سجّل دخولك لمتابعة طلباتك</p>
 
-      <form id="login-form" novalidate class="astro-SGPQYURT">
-        <div id="login-error" class="auth-error astro-SGPQYURT" role="alert" aria-live="polite"></div>
+      <!-- ── Step 1: Phone ── -->
+      <div id="step-phone" class="step active astro-SGPQYURT">
+        <h2 class="auth-card__title astro-SGPQYURT">مرحباً بعودتك 👋</h2>
+        <p class="auth-card__sub astro-SGPQYURT">سنرسل كود التحقق إلى رقم جوالك</p>
+
+        <div id="err1" class="auth-error astro-SGPQYURT" role="alert" aria-live="polite"></div>
 
         <div class="field astro-SGPQYURT">
           <label class="field__label astro-SGPQYURT" for="login-phone">رقم الجوال</label>
           <input class="field__input astro-SGPQYURT" type="tel" id="login-phone" placeholder="010 1234 5678" inputmode="numeric" maxlength="11" pattern="01[0125][0-9]{8}" required autocomplete="tel">
         </div>
 
-        <div class="field astro-SGPQYURT">
-          <label class="field__label astro-SGPQYURT" for="login-pass">كلمة المرور</label>
-          <input class="field__input astro-SGPQYURT" type="password" id="login-pass" placeholder="••••••••" required autocomplete="current-password">
+        <button type="button" class="auth-submit astro-SGPQYURT" id="send-btn">
+          أرسل كود التحقق ←
+        </button>
+
+        <div class="auth-divider astro-SGPQYURT"><span class="astro-SGPQYURT">أو</span></div>
+        <div class="auth-actions astro-SGPQYURT">
+          <a href="/register" class="btn btn--outline astro-SGPQYURT">إنشاء حساب عميل جديد</a>
+          <a href="/driver" class="btn btn--accent astro-SGPQYURT">🚗 حساب سائق جديد</a>
         </div>
-
-        <button type="submit" class="auth-submit astro-SGPQYURT" id="login-submit">دخول ←</button>
-      </form>
-
-      <div class="auth-divider astro-SGPQYURT"><span class="astro-SGPQYURT">أو</span></div>
-
-      <div class="auth-actions astro-SGPQYURT">
-        <a href="/register" class="btn btn--outline astro-SGPQYURT">إنشاء حساب عميل جديد</a>
-        <a href="/driver" class="btn btn--accent astro-SGPQYURT">🚗 حساب سائق جديد</a>
+        <p class="auth-footer astro-SGPQYURT">مشكلة في الدخول؟ <a href="/contact" class="astro-SGPQYURT">تواصل معنا</a></p>
       </div>
 
-      <p class="auth-footer astro-SGPQYURT">
-        مشكلة في الدخول؟ <a href="/contact" class="astro-SGPQYURT">تواصل معنا</a>
-      </p>
+      <!-- ── Step 2: OTP ── -->
+      <div id="step-otp" class="step astro-SGPQYURT">
+        <button type="button" id="back-btn" class="back-btn astro-SGPQYURT">→ رجوع</button>
+
+        <h2 class="auth-card__title astro-SGPQYURT">أدخل كود التحقق 🔐</h2>
+        <p class="auth-card__sub astro-SGPQYURT">
+          تم إرسال كود مكوّن من 6 أرقام إلى<br class="astro-SGPQYURT">
+          <span class="phone-badge astro-SGPQYURT">📱 <span id="phone-badge" class="astro-SGPQYURT"></span></span>
+        </p>
+
+        <div id="dev-notice" class="dev-notice astro-SGPQYURT" role="alert">
+          ⚠️ وضع التطوير — لم يُضبط مزوّد SMS بعد.<br class="astro-SGPQYURT">كودك هو:
+          <span id="dev-code" class="dev-notice__code astro-SGPQYURT"></span>
+        </div>
+
+        <div id="err2" class="auth-error astro-SGPQYURT" role="alert" aria-live="polite"></div>
+
+        <div class="otp-group astro-SGPQYURT" aria-label="كود التحقق">
+          <input type="text" class="otp-box astro-SGPQYURT" inputmode="numeric" pattern="[0-9]" maxlength="1" autocomplete="one-time-code">
+          <input type="text" class="otp-box astro-SGPQYURT" inputmode="numeric" pattern="[0-9]" maxlength="1">
+          <input type="text" class="otp-box astro-SGPQYURT" inputmode="numeric" pattern="[0-9]" maxlength="1">
+          <input type="text" class="otp-box astro-SGPQYURT" inputmode="numeric" pattern="[0-9]" maxlength="1">
+          <input type="text" class="otp-box astro-SGPQYURT" inputmode="numeric" pattern="[0-9]" maxlength="1">
+          <input type="text" class="otp-box astro-SGPQYURT" inputmode="numeric" pattern="[0-9]" maxlength="1">
+        </div>
+
+        <div class="countdown-row astro-SGPQYURT">
+          <span class="astro-SGPQYURT">ينتهي الكود خلال</span>
+          <span class="countdown-num astro-SGPQYURT" id="countdown">05:00</span>
+          <button type="button" id="resend-btn" class="resend-btn astro-SGPQYURT">أعد الإرسال</button>
+        </div>
+
+        <button type="button" class="auth-submit astro-SGPQYURT" id="verify-btn">
+          تحقق وادخل ←
+        </button>
+      </div>
+
     </div>
   </section>
   </main>
