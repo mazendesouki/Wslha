@@ -215,7 +215,7 @@ const CITIES = ['دمياط الجديدة', 'دمياط', 'كفر سعد', 'ف�
     if (!pwResult.valid) { showError(pwResult.message); return; }
     if (pass !== pass2) { showError('كلمتا المرور غير متطابقتين.'); return; }
 
-    const created = addAccount({
+    const created = await addAccount({
       name,
       phone: normalizeEgyptianPhone(phone),
       password: pass,
