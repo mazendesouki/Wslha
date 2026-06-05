@@ -100,13 +100,23 @@ import PageHero from '../components/PageHero.astro';
 
   /* Dev mode notice */
   .dev-notice {
-    background: #fefce8; border: 1px solid #fde047;
-    border-radius: var(--radius); padding: var(--sp-3) var(--sp-4);
+    background: linear-gradient(135deg, #fffbeb, #fef3c7);
+    border: 2px solid #f59e0b;
+    border-radius: var(--radius-lg); padding: var(--sp-4) var(--sp-5);
     font-size: var(--text-sm); margin-bottom: var(--sp-4);
-    display: none;
+    display: none; text-align: center;
   }
   .dev-notice.visible { display: block; }
-  .dev-notice__code { font-weight: var(--weight-black); font-size: 1.4rem; letter-spacing: .15em; color: #92400e; display: block; text-align: center; margin-top: var(--sp-1); direction: ltr; }
+  .dev-notice__label { color: #92400e; margin-bottom: var(--sp-2); font-weight: var(--weight-bold); }
+  .dev-notice__code {
+    font-weight: var(--weight-black); font-size: 2.2rem; letter-spacing: .25em;
+    color: #1d4ed8; display: block; margin-top: var(--sp-1); direction: ltr;
+    background: #fff; border-radius: var(--radius); padding: var(--sp-2) var(--sp-4);
+    border: 2px dashed #93c5fd; cursor: pointer; transition: background 0.2s;
+    user-select: all;
+  }
+  .dev-notice__code:hover { background: #eff6ff; }
+  .dev-notice__hint { font-size: 11px; color: #92400e; margin-top: var(--sp-1); }
 
   /* Error */
   .auth-error {
@@ -180,7 +190,6 @@ import PageHero from '../components/PageHero.astro';
   const backBtn   = document.getElementById('back-btn')!;
 
   let currentPhone = '';
-  let otpMethod: 'supabase' | 'custom' = 'supabase';
   let countdownTimer: ReturnType<typeof setInterval> | null = null;
 
   // ── Helpers ──
@@ -208,24 +217,8 @@ import PageHero from '../components/PageHero.astro';
     } catch { return null; }
   }
 
-  // ── OTP: Send ──
-  async function sendOTP(phone: string): Promise<'supabase' | 'custom'> {
-    const e164 = toE164(phone);
-
-    // Try Supabase Auth phone OTP (real SMS when configured)
-    const sbRes = await fetch(`${SB_URL}/auth/v1/otp`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'apikey': SB_KEY },
-      body: JSON.stringify({ phone: e164, channel: 'sms' }),
-    });
-    if (sbRes.ok || sbRes.status === 204) return 'supabase';
-
-    const sbErr = await sbRes.json().catch(() => ({}));
-    if (sbErr.error_code !== 'phone_provider_disabled') {
-      throw new Error(sbErr.msg || 'فشل إرسال الكود');
-    }
-
-    // ── Fallback: custom OTP stored in Supabase DB ──
+  // ── OTP: Send (custom DB flow — no SMS provider required) ──
+  async function sendOTP(phone: string): Promise<void> {
     const code = String(Math.floor(100000 + Math.random() * 900000));
 
     // Delete old OTPs for this phone
@@ -233,33 +226,27 @@ import PageHero from '../components/PageHero.astro';
       method: 'DELETE', headers: SB_H,
     }).catch(() => {});
 
-    // Insert new OTP
+    // Insert new OTP (expires 5 min)
     const ins = await fetch(`${SB_URL}/rest/v1/otps`, {
       method: 'POST',
       headers: { ...SB_H, Prefer: 'return=minimal' },
       body: JSON.stringify({ phone, code }),
     });
-    if (!ins.ok) throw new Error('فشل إنشاء الكود');
+    if (!ins.ok) throw new Error('فشل إنشاء الكود — تحقق من الاتصال وأعد المحاولة');
 
-    // Show code on screen (dev mode — no SMS provider configured)
+    // Show code prominently (click to auto-fill)
     devCode.textContent = code;
+    devCode.onclick = () => {
+      code.split('').forEach((d, i) => {
+        if (otpBoxes[i]) { otpBoxes[i].value = d; otpBoxes[i].classList.add('filled'); }
+      });
+      setTimeout(doVerify, 300);
+    };
     devNotice.classList.add('visible');
-
-    return 'custom';
   }
 
-  // ── OTP: Verify ──
-  async function verifyOTP(phone: string, token: string, method: 'supabase' | 'custom'): Promise<boolean> {
-    if (method === 'supabase') {
-      const res = await fetch(`${SB_URL}/auth/v1/verify`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'apikey': SB_KEY },
-        body: JSON.stringify({ phone: toE164(phone), token, type: 'sms' }),
-      });
-      return res.ok;
-    }
-
-    // Custom: call verify_otp RPC
+  // ── OTP: Verify via custom DB RPC ──
+  async function verifyOTP(phone: string, token: string): Promise<boolean> {
     const res = await fetch(`${SB_URL}/rest/v1/rpc/verify_otp`, {
       method: 'POST',
       headers: SB_H,
@@ -293,32 +280,42 @@ import PageHero from '../components/PageHero.astro';
     countEl.textContent = `${m}:${sec}`;
   }
 
-  // ── Go to step 2 ──
+  // ── Go to step 2 (call AFTER sendOTP so dev-notice stays visible) ──
   function goToOTP(phone: string) {
     currentPhone = phone;
     phoneBadge.textContent = phone;
     step1.classList.remove('active');
     step2.classList.add('active');
     otpBoxes.forEach(b => { b.value = ''; b.classList.remove('filled', 'shake'); });
-    devNotice.classList.remove('visible');
     hideErr(errBox2);
     startCountdown(300);
     setTimeout(() => otpBoxes[0]?.focus(), 100);
   }
 
-  // ── Step 1: Send OTP ──
+  // ── Step 1: Send OTP — check registration first ──
   sendBtn.addEventListener('click', async () => {
     hideErr(errBox1);
     const phone = phoneInp.value.trim();
     if (!isEgyptianMobile(phone)) { showErr(errBox1, EG_PHONE_ERROR); return; }
 
     sendBtn.disabled = true;
-    sendBtn.textContent = 'جاري الإرسال...';
+    sendBtn.textContent = 'جاري التحقق...';
 
     try {
       const normalized = normalizeEgyptianPhone(phone);
-      otpMethod = await sendOTP(normalized);
+
+      // Block unregistered numbers before sending any OTP
+      const account = await fetchAccount(normalized);
+      if (!account) {
+        showErr(errBox1,
+          'هذا الرقم غير مسجّل في النظام. ' +
+          '<a href="/register">أنشئ حساباً جديداً</a> أو تواصل معنا.'
+        );
+        return;
+      }
+
       goToOTP(normalized);
+      await sendOTP(normalized);
     } catch (e: any) {
       showErr(errBox1, e.message || 'حدث خطأ، حاول مرة أخرى.');
     } finally {
@@ -334,8 +331,9 @@ import PageHero from '../components/PageHero.astro';
     devNotice.classList.remove('visible');
     otpBoxes.forEach(b => { b.value = ''; b.classList.remove('filled', 'shake'); });
     try {
-      otpMethod = await sendOTP(currentPhone);
       startCountdown(300);
+      await sendOTP(currentPhone);
+      otpBoxes[0].focus();
     } catch (e: any) {
       showErr(errBox2, e.message || 'فشل إعادة الإرسال.');
     }
@@ -396,35 +394,31 @@ import PageHero from '../components/PageHero.astro';
 
     try {
       const token = getCode();
-      const ok = await verifyOTP(currentPhone, token, otpMethod);
+      const ok = await verifyOTP(currentPhone, token);
 
       if (!ok) {
         shakeBoxes();
-        showErr(errBox2, 'الكود غير صحيح أو انتهت صلاحيته. حاول مرة أخرى.');
+        otpBoxes.forEach(b => { b.value = ''; b.classList.remove('filled'); });
+        otpBoxes[0].focus();
+        showErr(errBox2, 'الكود غير صحيح أو انتهت صلاحيته. حاول مرة أخرى أو اضغط "أعد الإرسال".');
         verifyBtn.disabled = false;
         verifyBtn.textContent = 'تحقق وادخل ←';
         return;
       }
 
-      // OTP valid — check account exists
+      // Re-fetch account to get latest data for session
       const account = await fetchAccount(currentPhone);
-      if (!account) {
-        shakeBoxes();
-        showErr(errBox2, 'هذا الرقم غير مسجّل. <a href="/register">أنشئ حساباً</a> أولاً.');
-        verifyBtn.disabled = false;
-        verifyBtn.textContent = 'تحقق وادخل ←';
-        return;
-      }
-
       clearCountdown();
       try {
         localStorage.setItem('wslha_user', JSON.stringify({
-          name: account.name, phone: account.phone,
-          role: account.role, city: account.city,
+          name: account?.name || '', phone: currentPhone,
+          role: account?.role || 'customer', city: account?.city || '',
           loginAt: new Date().toISOString(),
         }));
       } catch {}
-      window.location.href = '/orders';
+
+      verifyBtn.textContent = '✅ تم الدخول، جاري التحويل...';
+      setTimeout(() => { window.location.href = '/orders'; }, 700);
 
     } catch (e: any) {
       showErr(errBox2, e.message || 'حدث خطأ، حاول مرة أخرى.');
@@ -484,8 +478,9 @@ import PageHero from '../components/PageHero.astro';
         </p>
 
         <div id="dev-notice" class="dev-notice" role="alert">
-          ⚠️ وضع التطوير — لم يُضبط مزوّد SMS بعد.<br>كودك هو:
+          <div class="dev-notice__label">📱 كود التحقق الخاص بك</div>
           <span id="dev-code" class="dev-notice__code"></span>
+          <div class="dev-notice__hint">اضغط على الكود للملء التلقائي</div>
         </div>
 
         <div id="err2" class="auth-error" role="alert" aria-live="polite"></div>
