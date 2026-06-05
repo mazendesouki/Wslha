@@ -1,6 +1,9 @@
 <!DOCTYPE html>
 
 
+<!-- Leaflet CSS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+
 <html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8">
@@ -39,7 +42,7 @@
   
 <link rel="stylesheet" href="/_astro/about.1b1989f6.css" />
 <link rel="stylesheet" href="/_astro/about.74625c24.css" />
-<link rel="stylesheet" href="/_astro/rides.16b325ba.css" /><script type="module" src="/_astro/hoisted.b7b5774d.js"></script></head>
+<link rel="stylesheet" href="/_astro/rides.2e44438a.css" /><script type="module" src="/_astro/hoisted.b7b5774d.js"></script></head>
 
 <body>
   <header role="banner" class="astro-DMQPWCEC">
@@ -229,182 +232,143 @@
     <section class="page-hero astro-S5HXUSYS" aria-labelledby="page-hero-title">
   
   <h1 class="page-hero__title astro-S5HXUSYS" id="page-hero-title">مشاوير داخل دمياط 🚗</h1>
-  <p class="page-hero__subtitle astro-S5HXUSYS">توصيلك لأي مكان في محافظة دمياط — أسعار شفافة بناءً على المسافة الفعلية</p>
-</section><div class="rides-wrap astro-KBAKWRXI">
+  <p class="page-hero__subtitle astro-S5HXUSYS">توصيلك لأي مكان في المحافظة — أسعار شفافة بحسب المسافة الفعلية</p>
+</section><div class="rides-page astro-KBAKWRXI">
 
     <!-- How it works -->
     <div class="how-strip astro-KBAKWRXI">
-      <div class="how-step astro-KBAKWRXI">
-        <div class="how-step__icon astro-KBAKWRXI">📍</div>
-        <div class="how-step__title astro-KBAKWRXI">اختر المناطق</div>
-        <div class="how-step__desc astro-KBAKWRXI">من أين وإلى أين</div>
-      </div>
-      <div class="how-step astro-KBAKWRXI">
-        <div class="how-step__icon astro-KBAKWRXI">💰</div>
-        <div class="how-step__title astro-KBAKWRXI">شوف السعر</div>
-        <div class="how-step__desc astro-KBAKWRXI">محسوب فورًا</div>
-      </div>
-      <div class="how-step astro-KBAKWRXI">
-        <div class="how-step__icon astro-KBAKWRXI">📋</div>
-        <div class="how-step__title astro-KBAKWRXI">أكمل بياناتك</div>
-        <div class="how-step__desc astro-KBAKWRXI">اسمك ورقمك فقط</div>
-      </div>
-      <div class="how-step astro-KBAKWRXI">
-        <div class="how-step__icon astro-KBAKWRXI">🚗</div>
-        <div class="how-step__title astro-KBAKWRXI">السائق في الطريق</div>
-        <div class="how-step__desc astro-KBAKWRXI">يتواصل معك مباشرة</div>
-      </div>
+      <div class="how-step astro-KBAKWRXI"><div class="how-step__icon astro-KBAKWRXI">📍</div><div class="how-step__title astro-KBAKWRXI">اختر المناطق</div><div class="how-step__desc astro-KBAKWRXI">من أين وإلى أين</div></div>
+      <div class="how-step astro-KBAKWRXI"><div class="how-step__icon astro-KBAKWRXI">🗺️</div><div class="how-step__title astro-KBAKWRXI">شوف الخريطة</div><div class="how-step__desc astro-KBAKWRXI">المسار والمسافة</div></div>
+      <div class="how-step astro-KBAKWRXI"><div class="how-step__icon astro-KBAKWRXI">💰</div><div class="how-step__title astro-KBAKWRXI">السعر فوري</div><div class="how-step__desc astro-KBAKWRXI">شفاف وثابت</div></div>
+      <div class="how-step astro-KBAKWRXI"><div class="how-step__icon astro-KBAKWRXI">🚗</div><div class="how-step__title astro-KBAKWRXI">السائق قادم</div><div class="how-step__desc astro-KBAKWRXI">تتبع الرحلة مباشرة</div></div>
     </div>
 
-    <!-- Booking card -->
-    <div id="booking-card" class="booking-card astro-KBAKWRXI">
+    <div class="main-grid astro-KBAKWRXI">
 
-      <!-- Route bar -->
-      <div class="route-bar astro-KBAKWRXI">
-        <div class="route-pick astro-KBAKWRXI">
-          <span class="route-pick__label astro-KBAKWRXI">
-            <span class="route-pick__dot route-pick__dot--from astro-KBAKWRXI"></span>
-            من أين؟
-          </span>
-          <select id="from-area" class="route-pick__select astro-KBAKWRXI">
-            <option value="" class="astro-KBAKWRXI">اختر منطقة الانطلاق</option>
-            <option value="center" data-lat="31.418" data-lng="31.814" class="astro-KBAKWRXI">وسط دمياط</option><option value="new-damietta" data-lat="31.392" data-lng="31.755" class="astro-KBAKWRXI">دمياط الجديدة</option><option value="industrial" data-lat="31.381" data-lng="31.765" class="astro-KBAKWRXI">المنطقة الصناعية</option><option value="sheikh-zaghloul" data-lat="31.436" data-lng="31.762" class="astro-KBAKWRXI">الشيخ زغلول</option><option value="kafr-saad" data-lat="31.402" data-lng="31.732" class="astro-KBAKWRXI">كفر سعد</option><option value="ras-el-bar" data-lat="31.49" data-lng="31.829" class="astro-KBAKWRXI">رأس البر</option><option value="izbet-elburg" data-lat="31.496" data-lng="31.843" class="astro-KBAKWRXI">عزبة البرج</option><option value="el-saro" data-lat="31.356" data-lng="31.81" class="astro-KBAKWRXI">السرو</option><option value="meet-abu-ghalib" data-lat="31.365" data-lng="31.864" class="astro-KBAKWRXI">ميت أبو غالب</option><option value="faraskur" data-lat="31.328" data-lng="31.672" class="astro-KBAKWRXI">فارسكور</option><option value="zarqa" data-lat="31.312" data-lng="31.874" class="astro-KBAKWRXI">الزرقا</option><option value="el-riyad" data-lat="31.297" data-lng="31.787" class="astro-KBAKWRXI">الرياض</option><option value="kafr-batikh" data-lat="31.27" data-lng="31.933" class="astro-KBAKWRXI">كفر البطيخ</option>
-          </select>
-        </div>
-
-        <button id="swap-btn" class="swap-btn astro-KBAKWRXI" title="تبديل الاتجاه" type="button">⇄</button>
-
-        <div class="route-pick astro-KBAKWRXI">
-          <span class="route-pick__label astro-KBAKWRXI">
-            <span class="route-pick__dot route-pick__dot--to astro-KBAKWRXI"></span>
-            إلى أين؟
-          </span>
-          <select id="to-area" class="route-pick__select route-pick__select--to astro-KBAKWRXI">
-            <option value="" class="astro-KBAKWRXI">اختر منطقة الوصول</option>
-            <option value="center" data-lat="31.418" data-lng="31.814" class="astro-KBAKWRXI">وسط دمياط</option><option value="new-damietta" data-lat="31.392" data-lng="31.755" class="astro-KBAKWRXI">دمياط الجديدة</option><option value="industrial" data-lat="31.381" data-lng="31.765" class="astro-KBAKWRXI">المنطقة الصناعية</option><option value="sheikh-zaghloul" data-lat="31.436" data-lng="31.762" class="astro-KBAKWRXI">الشيخ زغلول</option><option value="kafr-saad" data-lat="31.402" data-lng="31.732" class="astro-KBAKWRXI">كفر سعد</option><option value="ras-el-bar" data-lat="31.49" data-lng="31.829" class="astro-KBAKWRXI">رأس البر</option><option value="izbet-elburg" data-lat="31.496" data-lng="31.843" class="astro-KBAKWRXI">عزبة البرج</option><option value="el-saro" data-lat="31.356" data-lng="31.81" class="astro-KBAKWRXI">السرو</option><option value="meet-abu-ghalib" data-lat="31.365" data-lng="31.864" class="astro-KBAKWRXI">ميت أبو غالب</option><option value="faraskur" data-lat="31.328" data-lng="31.672" class="astro-KBAKWRXI">فارسكور</option><option value="zarqa" data-lat="31.312" data-lng="31.874" class="astro-KBAKWRXI">الزرقا</option><option value="el-riyad" data-lat="31.297" data-lng="31.787" class="astro-KBAKWRXI">الرياض</option><option value="kafr-batikh" data-lat="31.27" data-lng="31.933" class="astro-KBAKWRXI">كفر البطيخ</option>
-          </select>
-        </div>
-      </div>
-
-      <!-- Route summary -->
-      <div id="route-summary" class="route-summary astro-KBAKWRXI">
-        <div class="route-path astro-KBAKWRXI">
-          <span id="path-from" class="route-path__from astro-KBAKWRXI"></span>
-          <span class="route-path__arrow astro-KBAKWRXI">←</span>
-          <span id="path-to" class="route-path__to astro-KBAKWRXI"></span>
-        </div>
-        <div class="route-summary__divider astro-KBAKWRXI"></div>
-        <div class="route-summary__stat astro-KBAKWRXI">
-          <div id="summary-distance" class="route-summary__val astro-KBAKWRXI"></div>
-          <div class="route-summary__key astro-KBAKWRXI">المسافة</div>
-        </div>
-        <div class="route-summary__divider astro-KBAKWRXI"></div>
-        <div class="route-summary__stat astro-KBAKWRXI">
-          <div id="summary-eta" class="route-summary__val astro-KBAKWRXI"></div>
-          <div class="route-summary__key astro-KBAKWRXI">الوقت المقدر</div>
-        </div>
-        <div class="route-summary__divider astro-KBAKWRXI"></div>
-        <div class="route-summary__stat astro-KBAKWRXI">
-          <div id="summary-price" class="route-summary__val route-summary__val--price astro-KBAKWRXI"></div>
-          <div class="route-summary__key astro-KBAKWRXI">السعر</div>
-        </div>
-      </div>
-
-      <!-- Form section -->
-      <div id="form-section" class="form-section astro-KBAKWRXI">
-        <div class="form-section__title astro-KBAKWRXI">بيانات الرحلة</div>
-
-        <div id="alert-error" class="alert alert--error astro-KBAKWRXI"></div>
-
-        <div class="form-row astro-KBAKWRXI">
-          <div class="field astro-KBAKWRXI">
-            <label class="field__label astro-KBAKWRXI" for="r-name">الاسم الكامل</label>
-            <input id="r-name" type="text" class="field__input astro-KBAKWRXI" placeholder="محمد أحمد" required>
+      <!-- LEFT: booking -->
+      <div class="astro-KBAKWRXI">
+        <!-- Booking card -->
+        <div id="booking-card" class="booking-card astro-KBAKWRXI">
+          <div class="route-bar astro-KBAKWRXI">
+            <div class="route-pick astro-KBAKWRXI">
+              <span class="route-pick__label astro-KBAKWRXI"><span class="dot dot--from astro-KBAKWRXI"></span> من أين؟</span>
+              <select id="from-area" class="route-pick__select astro-KBAKWRXI">
+                <option value="" class="astro-KBAKWRXI">اختر منطقة الانطلاق</option>
+                <option value="center" data-lat="31.418" data-lng="31.814" class="astro-KBAKWRXI">وسط دمياط</option><option value="new-damietta" data-lat="31.392" data-lng="31.755" class="astro-KBAKWRXI">دمياط الجديدة</option><option value="industrial" data-lat="31.381" data-lng="31.765" class="astro-KBAKWRXI">المنطقة الصناعية</option><option value="sheikh-zaghloul" data-lat="31.436" data-lng="31.762" class="astro-KBAKWRXI">الشيخ زغلول</option><option value="kafr-saad" data-lat="31.402" data-lng="31.732" class="astro-KBAKWRXI">كفر سعد</option><option value="ras-el-bar" data-lat="31.49" data-lng="31.829" class="astro-KBAKWRXI">رأس البر</option><option value="izbet-elburg" data-lat="31.496" data-lng="31.843" class="astro-KBAKWRXI">عزبة البرج</option><option value="el-saro" data-lat="31.356" data-lng="31.81" class="astro-KBAKWRXI">السرو</option><option value="meet-abu-ghalib" data-lat="31.365" data-lng="31.864" class="astro-KBAKWRXI">ميت أبو غالب</option><option value="faraskur" data-lat="31.328" data-lng="31.672" class="astro-KBAKWRXI">فارسكور</option><option value="zarqa" data-lat="31.312" data-lng="31.874" class="astro-KBAKWRXI">الزرقا</option><option value="el-riyad" data-lat="31.297" data-lng="31.787" class="astro-KBAKWRXI">الرياض</option><option value="kafr-batikh" data-lat="31.27" data-lng="31.933" class="astro-KBAKWRXI">كفر البطيخ</option>
+              </select>
+            </div>
+            <button id="swap-btn" class="swap-btn astro-KBAKWRXI" title="تبديل" type="button">⇄</button>
+            <div class="route-pick astro-KBAKWRXI">
+              <span class="route-pick__label astro-KBAKWRXI"><span class="dot dot--to astro-KBAKWRXI"></span> إلى أين؟</span>
+              <select id="to-area" class="route-pick__select route-pick__select--to astro-KBAKWRXI">
+                <option value="" class="astro-KBAKWRXI">اختر منطقة الوصول</option>
+                <option value="center" data-lat="31.418" data-lng="31.814" class="astro-KBAKWRXI">وسط دمياط</option><option value="new-damietta" data-lat="31.392" data-lng="31.755" class="astro-KBAKWRXI">دمياط الجديدة</option><option value="industrial" data-lat="31.381" data-lng="31.765" class="astro-KBAKWRXI">المنطقة الصناعية</option><option value="sheikh-zaghloul" data-lat="31.436" data-lng="31.762" class="astro-KBAKWRXI">الشيخ زغلول</option><option value="kafr-saad" data-lat="31.402" data-lng="31.732" class="astro-KBAKWRXI">كفر سعد</option><option value="ras-el-bar" data-lat="31.49" data-lng="31.829" class="astro-KBAKWRXI">رأس البر</option><option value="izbet-elburg" data-lat="31.496" data-lng="31.843" class="astro-KBAKWRXI">عزبة البرج</option><option value="el-saro" data-lat="31.356" data-lng="31.81" class="astro-KBAKWRXI">السرو</option><option value="meet-abu-ghalib" data-lat="31.365" data-lng="31.864" class="astro-KBAKWRXI">ميت أبو غالب</option><option value="faraskur" data-lat="31.328" data-lng="31.672" class="astro-KBAKWRXI">فارسكور</option><option value="zarqa" data-lat="31.312" data-lng="31.874" class="astro-KBAKWRXI">الزرقا</option><option value="el-riyad" data-lat="31.297" data-lng="31.787" class="astro-KBAKWRXI">الرياض</option><option value="kafr-batikh" data-lat="31.27" data-lng="31.933" class="astro-KBAKWRXI">كفر البطيخ</option>
+              </select>
+            </div>
           </div>
-          <div class="field astro-KBAKWRXI">
-            <label class="field__label astro-KBAKWRXI" for="r-phone">رقم الجوال</label>
-            <input id="r-phone" type="tel" class="field__input astro-KBAKWRXI" placeholder="010 1234 5678" required>
+
+          <div id="route-summary" class="route-summary astro-KBAKWRXI">
+            <div class="route-summary__stat astro-KBAKWRXI"><div id="sum-dist" class="route-summary__val astro-KBAKWRXI"></div><div class="route-summary__key astro-KBAKWRXI">المسافة</div></div>
+            <div class="route-summary__divider astro-KBAKWRXI"></div>
+            <div class="route-summary__stat astro-KBAKWRXI"><div id="sum-eta" class="route-summary__val astro-KBAKWRXI"></div><div class="route-summary__key astro-KBAKWRXI">الوقت المقدر</div></div>
+            <div class="route-summary__divider astro-KBAKWRXI"></div>
+            <div class="route-summary__stat astro-KBAKWRXI"><div id="sum-price" class="route-summary__val route-summary__val--price astro-KBAKWRXI"></div><div class="route-summary__key astro-KBAKWRXI">السعر</div></div>
+          </div>
+
+          <div id="form-section" class="form-section astro-KBAKWRXI">
+            <div id="alert-error" class="alert-error astro-KBAKWRXI"></div>
+            <div class="form-row astro-KBAKWRXI">
+              <div class="field astro-KBAKWRXI"><label class="field__label astro-KBAKWRXI" for="r-name">الاسم الكامل</label><input id="r-name" type="text" class="field__input astro-KBAKWRXI" placeholder="محمد أحمد" required></div>
+              <div class="field astro-KBAKWRXI"><label class="field__label astro-KBAKWRXI" for="r-phone">رقم الجوال</label><input id="r-phone" type="tel" class="field__input astro-KBAKWRXI" placeholder="010 1234 5678" required></div>
+            </div>
+            <div class="form-row astro-KBAKWRXI">
+              <div class="field astro-KBAKWRXI">
+                <label class="field__label astro-KBAKWRXI" for="r-passengers">عدد الركاب</label>
+                <select id="r-passengers" class="field__select astro-KBAKWRXI">
+                  <option value="1" class="astro-KBAKWRXI">1 راكب</option><option value="2" class="astro-KBAKWRXI">2 ركاب</option><option value="3" class="astro-KBAKWRXI">3 ركاب</option><option value="4" class="astro-KBAKWRXI">4 ركاب</option><option value="5" class="astro-KBAKWRXI">5 ركاب</option><option value="6" class="astro-KBAKWRXI">6 ركاب</option>
+                </select>
+              </div>
+              <div class="field astro-KBAKWRXI">
+                <label class="field__label astro-KBAKWRXI" for="r-time">وقت الانطلاق</label>
+                <select id="r-time" class="field__select astro-KBAKWRXI">
+                  <option value="now" class="astro-KBAKWRXI">الآن فورًا</option><option value="15" class="astro-KBAKWRXI">بعد 15 دقيقة</option><option value="30" class="astro-KBAKWRXI">بعد 30 دقيقة</option><option value="60" class="astro-KBAKWRXI">بعد ساعة</option>
+                </select>
+              </div>
+            </div>
+            <div class="field astro-KBAKWRXI"><label class="field__label astro-KBAKWRXI" for="r-notes">ملاحظات (اختياري)</label><textarea id="r-notes" class="field__textarea astro-KBAKWRXI" placeholder="مثلاً: أمام مسجد النور، أو أي تفاصيل إضافية..."></textarea></div>
+            <div class="field astro-KBAKWRXI">
+              <label class="field__label astro-KBAKWRXI">طريقة الدفع</label>
+              <div class="payment-opts astro-KBAKWRXI">
+                <label class="payment-opt astro-KBAKWRXI"><input type="radio" name="r-payment" value="cash" checked class="astro-KBAKWRXI"><span class="payment-opt__icon astro-KBAKWRXI">💵</span><span class="astro-KBAKWRXI"><span class="payment-opt__name astro-KBAKWRXI">كاش عند الوصول</span><br class="astro-KBAKWRXI"><span class="payment-opt__desc astro-KBAKWRXI">ادفع للسائق مباشرة</span></span><span class="check-circle astro-KBAKWRXI"></span></label>
+                <label class="payment-opt astro-KBAKWRXI"><input type="radio" name="r-payment" value="wallet" class="astro-KBAKWRXI"><span class="payment-opt__icon astro-KBAKWRXI">📱</span><span class="astro-KBAKWRXI"><span class="payment-opt__name astro-KBAKWRXI">فودافون كاش / إنستاباي</span><br class="astro-KBAKWRXI"><span class="payment-opt__desc astro-KBAKWRXI">تحويل إلكتروني</span></span><span class="check-circle astro-KBAKWRXI"></span></label>
+              </div>
+            </div>
+            <button id="confirm-btn" class="submit-btn astro-KBAKWRXI" type="button">🚗 تأكيد الطلب وتتبع الرحلة</button>
           </div>
         </div>
 
-        <div class="form-row astro-KBAKWRXI">
-          <div class="field astro-KBAKWRXI">
-            <label class="field__label astro-KBAKWRXI" for="r-passengers">عدد الركاب</label>
-            <select id="r-passengers" class="field__select astro-KBAKWRXI">
-              <option value="1" class="astro-KBAKWRXI">1 راكب</option>
-              <option value="2" class="astro-KBAKWRXI">2 ركاب</option>
-              <option value="3" class="astro-KBAKWRXI">3 ركاب</option>
-              <option value="4" class="astro-KBAKWRXI">4 ركاب</option>
-              <option value="5" class="astro-KBAKWRXI">5 ركاب</option>
-              <option value="6" class="astro-KBAKWRXI">6 ركاب (ميني باص)</option>
-            </select>
+        <!-- Success card -->
+        <div id="success-card" class="success-card astro-KBAKWRXI">
+          <div class="success-card__icon astro-KBAKWRXI">✅</div>
+          <h2 class="success-card__title astro-KBAKWRXI">تم تأكيد طلبك!</h2>
+          <p class="success-card__sub astro-KBAKWRXI">تابع رحلتك على الخريطة ← السائق في الطريق إليك</p>
+          <div id="success-details" class="detail-rows astro-KBAKWRXI"></div>
+          <div class="success-actions astro-KBAKWRXI">
+            <a href="/orders" class="btn-outline astro-KBAKWRXI">📋 طلباتي</a>
+            <button id="new-ride-btn" class="btn-filled astro-KBAKWRXI" type="button">🚗 رحلة جديدة</button>
           </div>
-          <div class="field astro-KBAKWRXI">
-            <label class="field__label astro-KBAKWRXI" for="r-time">وقت الانطلاق</label>
-            <select id="r-time" class="field__select astro-KBAKWRXI">
-              <option value="now" class="astro-KBAKWRXI">الآن فورًا</option>
-              <option value="15" class="astro-KBAKWRXI">بعد 15 دقيقة</option>
-              <option value="30" class="astro-KBAKWRXI">بعد 30 دقيقة</option>
-              <option value="60" class="astro-KBAKWRXI">بعد ساعة</option>
-              <option value="later" class="astro-KBAKWRXI">موعد محدد لاحقًا</option>
-            </select>
+        </div>
+      </div>
+
+      <!-- RIGHT: map -->
+      <div class="map-panel astro-KBAKWRXI">
+        <div class="map-card astro-KBAKWRXI">
+          <div class="map-header astro-KBAKWRXI">
+            <span class="map-header__title astro-KBAKWRXI">🗺️ خريطة المسار</span>
+            <span id="live-badge" class="live-badge astro-KBAKWRXI" style="display:none">مباشر</span>
+          </div>
+          <div id="map-placeholder" class="map-placeholder astro-KBAKWRXI">
+            <span class="map-placeholder__icon astro-KBAKWRXI">🗺️</span>
+            <span class="astro-KBAKWRXI">اختر منطقة الانطلاق والوصول لعرض المسار</span>
+          </div>
+          <div id="ride-map" style="display:none" class="astro-KBAKWRXI"></div>
+        </div>
+
+        <!-- Ride status -->
+        <div id="ride-status" class="ride-status astro-KBAKWRXI">
+          <div class="ride-status__title astro-KBAKWRXI">📍 حالة الرحلة</div>
+          <div class="status-steps astro-KBAKWRXI">
+            <div class="status-step astro-KBAKWRXI" id="st-confirmed">
+              <div class="step-dot astro-KBAKWRXI">✓</div>
+              <div class="step-info astro-KBAKWRXI"><div class="step-info__label astro-KBAKWRXI">تم تأكيد الطلب</div><div class="step-info__time astro-KBAKWRXI" id="st-confirmed-time"></div></div>
+            </div>
+            <div class="status-step astro-KBAKWRXI" id="st-assigned">
+              <div class="step-dot astro-KBAKWRXI">🚗</div>
+              <div class="step-info astro-KBAKWRXI"><div class="step-info__label astro-KBAKWRXI">السائق في الطريق إليك</div><div class="step-info__time astro-KBAKWRXI">جاري التعيين...</div></div>
+            </div>
+            <div class="status-step astro-KBAKWRXI" id="st-arrived">
+              <div class="step-dot astro-KBAKWRXI">📍</div>
+              <div class="step-info astro-KBAKWRXI"><div class="step-info__label astro-KBAKWRXI">وصل السائق</div><div class="step-info__time astro-KBAKWRXI" id="st-arrived-time"></div></div>
+            </div>
+            <div class="status-step astro-KBAKWRXI" id="st-onride">
+              <div class="step-dot astro-KBAKWRXI">🏎️</div>
+              <div class="step-info astro-KBAKWRXI"><div class="step-info__label astro-KBAKWRXI">في الطريق إلى وجهتك</div><div class="step-info__time astro-KBAKWRXI" id="st-onride-time"></div></div>
+            </div>
+            <div class="status-step astro-KBAKWRXI" id="st-done">
+              <div class="step-dot astro-KBAKWRXI">🎉</div>
+              <div class="step-info astro-KBAKWRXI"><div class="step-info__label astro-KBAKWRXI">وصلت — رحلة ممتعة!</div><div class="step-info__time astro-KBAKWRXI" id="st-done-time"></div></div>
+            </div>
           </div>
         </div>
 
-        <div class="field astro-KBAKWRXI">
-          <label class="field__label astro-KBAKWRXI" for="r-notes">ملاحظات (اختياري)</label>
-          <textarea id="r-notes" class="field__textarea astro-KBAKWRXI" placeholder="مثلاً: أمام مسجد الفتح، أو أي تفاصيل إضافية..."></textarea>
+        <!-- Fare guide -->
+        <div class="fare-section astro-KBAKWRXI" id="fare-section">
+          <h2 class="fare-section__title astro-KBAKWRXI">دليل الأسعار</h2>
+          <div class="fare-grid astro-KBAKWRXI" id="fare-grid"></div>
         </div>
-
-        <div class="field astro-KBAKWRXI">
-          <label class="field__label astro-KBAKWRXI">طريقة الدفع</label>
-          <div class="payment-opts astro-KBAKWRXI">
-            <label class="payment-opt astro-KBAKWRXI">
-              <input type="radio" name="r-payment" value="cash" checked class="astro-KBAKWRXI">
-              <span class="payment-opt__icon astro-KBAKWRXI">💵</span>
-              <span class="payment-opt__text astro-KBAKWRXI">
-                <span class="payment-opt__name astro-KBAKWRXI">كاش عند الوصول</span>
-                <span class="payment-opt__desc astro-KBAKWRXI">ادفع للسائق مباشرةً</span>
-              </span>
-              <span class="payment-opt__check astro-KBAKWRXI"></span>
-            </label>
-            <label class="payment-opt astro-KBAKWRXI">
-              <input type="radio" name="r-payment" value="vodafone" class="astro-KBAKWRXI">
-              <span class="payment-opt__icon astro-KBAKWRXI">📱</span>
-              <span class="payment-opt__text astro-KBAKWRXI">
-                <span class="payment-opt__name astro-KBAKWRXI">فودافون كاش / إنستاباي</span>
-                <span class="payment-opt__desc astro-KBAKWRXI">تحويل إلكتروني قبل الرحلة</span>
-              </span>
-              <span class="payment-opt__check astro-KBAKWRXI"></span>
-            </label>
-          </div>
-        </div>
-
-        <button id="confirm-btn" class="submit-btn astro-KBAKWRXI" type="button">🚗 تأكيد الطلب</button>
       </div>
 
-    </div><!-- /booking-card -->
-
-    <!-- Success card -->
-    <div id="success-card" class="success-card astro-KBAKWRXI">
-      <div class="success-card__icon astro-KBAKWRXI">✅</div>
-      <h2 class="success-card__title astro-KBAKWRXI">تم تأكيد طلبك!</h2>
-      <p class="success-card__sub astro-KBAKWRXI">سيتواصل معك السائق على رقمك خلال دقائق</p>
-      <div id="success-details" class="success-details astro-KBAKWRXI"></div>
-      <div class="success-actions astro-KBAKWRXI">
-        <a href="/orders" class="btn-outline astro-KBAKWRXI">📋 طلباتي</a>
-        <button id="new-ride-btn" class="btn-filled astro-KBAKWRXI" type="button">🚗 رحلة جديدة</button>
-      </div>
-    </div>
-
-    <!-- Fare guide -->
-    <div class="fare-section astro-KBAKWRXI">
-      <h2 class="fare-section__title astro-KBAKWRXI">دليل الأسعار التقريبية</h2>
-      <div class="fare-grid astro-KBAKWRXI" id="fare-grid">
-        <!-- injected by script -->
-      </div>
-    </div>
-
+    </div><!-- /main-grid -->
   </div>
   </main>
 
@@ -464,206 +428,245 @@
 </footer>
 </body></html>
 
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
 <script>(function(){const AREAS = [{"id":"center","name":"وسط دمياط","lat":31.418,"lng":31.814},{"id":"new-damietta","name":"دمياط الجديدة","lat":31.392,"lng":31.755},{"id":"industrial","name":"المنطقة الصناعية","lat":31.381,"lng":31.765},{"id":"sheikh-zaghloul","name":"الشيخ زغلول","lat":31.436,"lng":31.762},{"id":"kafr-saad","name":"كفر سعد","lat":31.402,"lng":31.732},{"id":"ras-el-bar","name":"رأس البر","lat":31.49,"lng":31.829},{"id":"izbet-elburg","name":"عزبة البرج","lat":31.496,"lng":31.843},{"id":"el-saro","name":"السرو","lat":31.356,"lng":31.81},{"id":"meet-abu-ghalib","name":"ميت أبو غالب","lat":31.365,"lng":31.864},{"id":"faraskur","name":"فارسكور","lat":31.328,"lng":31.672},{"id":"zarqa","name":"الزرقا","lat":31.312,"lng":31.874},{"id":"el-riyad","name":"الرياض","lat":31.297,"lng":31.787},{"id":"kafr-batikh","name":"كفر البطيخ","lat":31.27,"lng":31.933}];
 
-  // ── Haversine ──
+  // ── distance helpers ──
   function haversineKm(lat1, lng1, lat2, lng2) {
-    const R = 6371;
-    const dLat = (lat2 - lat1) * Math.PI / 180;
-    const dLng = (lng2 - lng1) * Math.PI / 180;
-    const a = Math.sin(dLat / 2) ** 2 +
-      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-      Math.sin(dLng / 2) ** 2;
-    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    const R = 6371, dLat = (lat2-lat1)*Math.PI/180, dLng = (lng2-lng1)*Math.PI/180;
+    const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLng/2)**2;
+    return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
   }
-  function fareForDist(km) {
-    const road = km * 1.35;
-    return Math.ceil(Math.max(15 + road * 7, 20) / 5) * 5;
-  }
-  function etaMin(km) { return Math.ceil(km * 1.35 / 40 * 60); }
+  function fareFor(km) { return Math.ceil(Math.max(15+km*1.35*7,20)/5)*5; }
+  function etaMin(km)  { return Math.ceil(km*1.35/40*60); }
+  function normPhone(s){ return s.replace(/[\s\-()+]/g,''); }
+  const EG = /^01[0125][0-9]{8}$/;
 
-  // ── DOM refs ──
-  const fromSel  = document.getElementById('from-area');
-  const toSel    = document.getElementById('to-area');
-  const swapBtn  = document.getElementById('swap-btn');
-  const summary  = document.getElementById('route-summary');
-  const formSec  = document.getElementById('form-section');
-  const bookCard = document.getElementById('booking-card');
-  const succCard = document.getElementById('success-card');
+  // ── Leaflet map setup ──
+  let map = null, fromMarker = null, toMarker = null, routeLayer = null, driverMarker = null;
 
-  // ── area lookup ──
-  function areaById(id) { return AREAS.find(a => a.id === id); }
-  function selArea(sel) {
-    const opt = sel.options[sel.selectedIndex];
-    if (!opt || !opt.value) return null;
-    return { id: opt.value, name: opt.text, lat: parseFloat(opt.dataset.lat), lng: parseFloat(opt.dataset.lng) };
+  function initMap() {
+    if (map) return;
+    document.getElementById('map-placeholder').style.display = 'none';
+    document.getElementById('ride-map').style.display = 'block';
+    map = L.map('ride-map', { zoomControl: true, attributionControl: false })
+           .setView([31.418, 31.814], 11);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
   }
 
-  // ── update summary ──
-  function updateSummary() {
-    const from = selArea(fromSel);
-    const to   = selArea(toSel);
-    if (!from || !to || from.id === to.id) {
-      summary.classList.remove('visible');
-      formSec.classList.remove('visible');
-      return;
-    }
-    const km    = haversineKm(from.lat, from.lng, to.lat, to.lng);
-    const fare  = fareForDist(km);
-    const eta   = etaMin(km);
-    const road  = (km * 1.35).toFixed(1);
-
-    document.getElementById('path-from').textContent = from.name;
-    document.getElementById('path-to').textContent   = to.name;
-    document.getElementById('summary-distance').textContent = road + ' كم';
-    document.getElementById('summary-eta').textContent      = eta + ' دقيقة';
-    document.getElementById('summary-price').textContent    = fare + ' ج.م';
-
-    summary.classList.add('visible');
-    formSec.classList.add('visible');
+  function makeIcon(color, emoji) {
+    return L.divIcon({
+      className: '',
+      html: `<div style="
+        width:36px;height:36px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);
+        background:${color};border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.3);
+        display:flex;align-items:center;justify-content:center;
+      "><span style="transform:rotate(45deg);font-size:14px">${emoji}</span></div>`,
+      iconSize:[36,36], iconAnchor:[18,36], popupAnchor:[0,-36]
+    });
   }
 
-  fromSel.addEventListener('change', updateSummary);
-  toSel.addEventListener('change', updateSummary);
-
-  // ── swap ──
-  swapBtn.addEventListener('click', () => {
-    const fv = fromSel.value, tv = toSel.value;
-    fromSel.value = tv;
-    toSel.value   = fv;
-    updateSummary();
+  const carIcon = L.divIcon({
+    className: '',
+    html: `<div style="font-size:28px;filter:drop-shadow(0 2px 4px rgba(0,0,0,.3));transform:scale(1.1)">🚗</div>`,
+    iconSize:[36,36], iconAnchor:[18,18]
   });
 
-  // ── phone validation ──
-  const EG = /^01[0125][0-9]{8}$/;
-  function normPhone(s) { return s.replace(/[\s\-()]/g, ''); }
+  async function showRoute(from, to) {
+    initMap();
+    if (fromMarker) map.removeLayer(fromMarker);
+    if (toMarker)   map.removeLayer(toMarker);
+    if (routeLayer) map.removeLayer(routeLayer);
+    if (driverMarker) { map.removeLayer(driverMarker); driverMarker = null; }
+
+    fromMarker = L.marker([from.lat, from.lng], { icon: makeIcon('#3b82f6','📍') })
+                  .addTo(map).bindPopup(`<b>الانطلاق</b><br>${from.name}`);
+    toMarker   = L.marker([to.lat, to.lng],   { icon: makeIcon('#ef4444','🏁') })
+                  .addTo(map).bindPopup(`<b>الوصول</b><br>${to.name}`);
+
+    // Try OSRM road routing
+    try {
+      const osrm = `https://router.project-osrm.org/route/v1/driving/${from.lng},${from.lat};${to.lng},${to.lat}?overview=full&geometries=geojson`;
+      const res  = await fetch(osrm);
+      const data = await res.json();
+      if (data.routes?.[0]) {
+        const coords = data.routes[0].geometry.coordinates.map(([lng,lat]) => [lat,lng]);
+        window._routeCoords = coords;
+        routeLayer = L.polyline(coords, { color:'#3b82f6', weight:5, opacity:.8 }).addTo(map);
+        map.fitBounds(routeLayer.getBounds(), { padding:[50,50] });
+        return;
+      }
+    } catch {}
+
+    // Fallback: straight dashed line
+    window._routeCoords = [[from.lat,from.lng],[to.lat,to.lng]];
+    routeLayer = L.polyline([[from.lat,from.lng],[to.lat,to.lng]], { color:'#3b82f6', weight:4, dashArray:'8,6' }).addTo(map);
+    map.fitBounds(routeLayer.getBounds(), { padding:[60,60] });
+  }
+
+  // ── live simulation ──
+  function startLiveTracking(from, to, etaMinutes) {
+    if (driverMarker) map.removeLayer(driverMarker);
+    const coords = window._routeCoords || [[from.lat,from.lng],[to.lat,to.lng]];
+    const totalSteps = coords.length;
+    let step = 0;
+
+    driverMarker = L.marker([from.lat, from.lng], { icon: carIcon }).addTo(map);
+    document.getElementById('live-badge').style.display = 'inline-flex';
+
+    // ~3 seconds per route segment scaled to ETA
+    const msPerStep = Math.max(2000, (etaMinutes * 60 * 1000) / totalSteps);
+
+    window._liveInterval = setInterval(() => {
+      if (step >= totalSteps - 1) {
+        clearInterval(window._liveInterval);
+        // Final status: done
+        setTimeout(() => advanceStatus('done'), 1000);
+        return;
+      }
+      step++;
+      const [lat, lng] = coords[step];
+      driverMarker.setLatLng([lat, lng]);
+
+      // Trigger status changes at specific progress points
+      const pct = step / (totalSteps - 1);
+      if (pct >= 0.05 && !window._st_assigned) { window._st_assigned = true; advanceStatus('assigned'); }
+      if (pct >= 0.15 && !window._st_arrived)  { window._st_arrived = true;  advanceStatus('arrived'); }
+      if (pct >= 0.20 && !window._st_onride)   { window._st_onride  = true;  advanceStatus('onride'); }
+    }, msPerStep);
+  }
+
+  function advanceStatus(stage) {
+    const now = new Date().toLocaleTimeString('ar-EG', { hour:'2-digit', minute:'2-digit' });
+    if (stage === 'assigned') {
+      document.getElementById('st-confirmed').className = 'status-step done';
+      document.getElementById('st-assigned').className  = 'status-step active';
+    }
+    if (stage === 'arrived') {
+      document.getElementById('st-assigned').className  = 'status-step done';
+      document.getElementById('st-arrived').className   = 'status-step active';
+      document.getElementById('st-arrived-time').textContent = now;
+    }
+    if (stage === 'onride') {
+      document.getElementById('st-arrived').className   = 'status-step done';
+      document.getElementById('st-onride').className    = 'status-step active';
+      document.getElementById('st-onride-time').textContent = now;
+    }
+    if (stage === 'done') {
+      document.getElementById('st-onride').className    = 'status-step done';
+      document.getElementById('st-done').className      = 'status-step done';
+      document.getElementById('st-done-time').textContent = now;
+      document.getElementById('live-badge').style.display = 'none';
+    }
+  }
+
+  // ── selectors ──
+  const fromSel = document.getElementById('from-area');
+  const toSel   = document.getElementById('to-area');
+  const summary = document.getElementById('route-summary');
+  const formSec = document.getElementById('form-section');
+
+  function areaBy(sel) {
+    const o = sel.options[sel.selectedIndex];
+    if (!o?.value) return null;
+    return { id: o.value, name: o.text, lat: +o.dataset.lat, lng: +o.dataset.lng };
+  }
+
+  function updateUI() {
+    const from = areaBy(fromSel), to = areaBy(toSel);
+    if (!from || !to || from.id === to.id) {
+      summary.classList.remove('visible'); formSec.classList.remove('visible'); return;
+    }
+    const km = haversineKm(from.lat, from.lng, to.lat, to.lng);
+    document.getElementById('sum-dist').textContent  = (km*1.35).toFixed(1)+' كم';
+    document.getElementById('sum-eta').textContent   = etaMin(km)+' دق';
+    document.getElementById('sum-price').textContent = fareFor(km)+' ج.م';
+    summary.classList.add('visible');
+    formSec.classList.add('visible');
+    showRoute(from, to);
+  }
+
+  fromSel.addEventListener('change', updateUI);
+  toSel.addEventListener('change', updateUI);
+  document.getElementById('swap-btn').addEventListener('click', () => {
+    const v = fromSel.value; fromSel.value = toSel.value; toSel.value = v; updateUI();
+  });
 
   // ── confirm ──
   document.getElementById('confirm-btn').addEventListener('click', () => {
-    const from = selArea(fromSel);
-    const to   = selArea(toSel);
+    const from = areaBy(fromSel), to = areaBy(toSel);
     if (!from || !to) return;
-
-    const name     = document.getElementById('r-name').value.trim();
-    const phone    = normPhone(document.getElementById('r-phone').value.trim());
-    const pax      = document.getElementById('r-passengers').value;
-    const timing   = document.getElementById('r-time').value;
-    const notes    = document.getElementById('r-notes').value.trim();
-    const payment  = document.querySelector('input[name="r-payment"]:checked').value;
-    const errEl    = document.getElementById('alert-error');
-
+    const name    = document.getElementById('r-name').value.trim();
+    const phone   = normPhone(document.getElementById('r-phone').value.trim());
+    const errEl   = document.getElementById('alert-error');
     errEl.classList.remove('visible');
+    if (!name) { errEl.textContent='يرجى إدخال الاسم.'; errEl.classList.add('visible'); return; }
+    if (!EG.test(phone)) { errEl.textContent='رقم جوال مصري غير صحيح (يبدأ بـ 010 أو 011 أو 012 أو 015).'; errEl.classList.add('visible'); return; }
 
-    if (!name) {
-      errEl.textContent = 'يرجى إدخال الاسم.';
-      errEl.classList.add('visible'); return;
-    }
-    if (!EG.test(phone)) {
-      errEl.textContent = 'يرجى إدخال رقم جوال مصري صحيح (11 رقمًا يبدأ بـ 010 أو 011 أو 012 أو 015).';
-      errEl.classList.add('visible'); return;
-    }
+    const km      = haversineKm(from.lat, from.lng, to.lat, to.lng);
+    const fare    = fareFor(km);
+    const eta     = etaMin(km);
+    const pax     = document.getElementById('r-passengers').value;
+    const timing  = { now:'الآن فورًا','15':'بعد 15 دقيقة','30':'بعد 30 دقيقة','60':'بعد ساعة' }[document.getElementById('r-time').value];
+    const pay     = { cash:'كاش', wallet:'فودافون كاش / إنستاباي' }[document.querySelector('input[name="r-payment"]:checked').value];
+    const notes   = document.getElementById('r-notes').value.trim();
 
-    const km   = haversineKm(from.lat, from.lng, to.lat, to.lng);
-    const fare = fareForDist(km);
-    const eta  = etaMin(km);
-
-    const timingLabel = {
-      now: 'الآن فورًا', '15': 'بعد 15 دقيقة',
-      '30': 'بعد 30 دقيقة', '60': 'بعد ساعة', later: 'موعد لاحق'
-    }[timing] || timing;
-
-    const payLabel = { cash: 'كاش عند الوصول', vodafone: 'فودافون كاش / إنستاباي' }[payment];
-
-    const order = {
-      id: 'R' + Date.now(),
-      type: 'ride',
-      from: from.name,
-      to: to.name,
-      name, phone,
-      passengers: pax,
-      timing: timingLabel,
-      notes, payment: payLabel,
-      fare, eta,
-      distance: (km * 1.35).toFixed(1),
-      status: 'pending',
-      createdAt: new Date().toISOString(),
-    };
-
-    // save order
     try {
-      const orders = JSON.parse(localStorage.getItem('wslha_orders') || '[]');
-      orders.unshift(order);
+      const orders = JSON.parse(localStorage.getItem('wslha_orders')||'[]');
+      orders.unshift({ id:'R'+Date.now(), type:'ride', from:from.name, to:to.name, name, phone, passengers:pax, timing, notes, payment:pay, fare, eta, distance:(km*1.35).toFixed(1), status:'pending', createdAt:new Date().toISOString() });
       localStorage.setItem('wslha_orders', JSON.stringify(orders));
     } catch {}
 
-    // show success
-    const rows = [
-      ['من',        from.name],
-      ['إلى',       to.name],
-      ['المسافة',   (km * 1.35).toFixed(1) + ' كم'],
-      ['الوقت المقدر', eta + ' دقيقة'],
-      ['الراكب',    name],
-      ['الجوال',    phone],
-      ['الركاب',    pax],
-      ['الانطلاق',  timingLabel],
-      ['الدفع',     payLabel],
-      ['السعر',     fare + ' ج.م', true],
-    ];
-    document.getElementById('success-details').innerHTML = rows.map(([k, v, price]) =>
-      `<div class="detail-row">
-        <span class="detail-row__key">${k}</span>
-        <span class="detail-row__val${price ? ' detail-row__val--price' : ''}">${v}</span>
-      </div>`
-    ).join('');
+    // Show success + details
+    const rows = [['من',from.name],['إلى',to.name],['المسافة',(km*1.35).toFixed(1)+' كم'],['الوقت المقدر',eta+' دقيقة'],['الراكب',name],['الجوال',phone],['الركاب',pax],['الانطلاق',timing],['الدفع',pay],['السعر',fare+' ج.م',true]];
+    document.getElementById('success-details').innerHTML = rows.map(([k,v,p])=>`<div class="detail-row"><span class="detail-row__key">${k}</span><span class="detail-row__val${p?' detail-row__val--price':''}">${v}</span></div>`).join('');
 
-    bookCard.style.display = 'none';
-    succCard.classList.add('visible');
+    document.getElementById('booking-card').style.display = 'none';
+    document.getElementById('success-card').classList.add('visible');
+    document.getElementById('fare-section').style.display = 'none';
+
+    // Live ride status
+    document.getElementById('ride-status').classList.add('visible');
+    document.getElementById('st-confirmed-time').textContent = new Date().toLocaleTimeString('ar-EG',{hour:'2-digit',minute:'2-digit'});
+    document.getElementById('st-confirmed').className = 'status-step done';
+    document.getElementById('st-assigned').className  = 'status-step active';
+
+    window._st_assigned = false; window._st_arrived = false; window._st_onride = false;
+    if (window._liveInterval) clearInterval(window._liveInterval);
+    setTimeout(() => startLiveTracking(from, to, eta), 1500);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   });
 
   // ── new ride ──
   document.getElementById('new-ride-btn').addEventListener('click', () => {
-    fromSel.value = '';
-    toSel.value   = '';
-    document.getElementById('r-name').value  = '';
-    document.getElementById('r-phone').value = '';
-    document.getElementById('r-notes').value = '';
-    document.getElementById('r-passengers').value = '1';
-    document.getElementById('r-time').value = 'now';
-    document.querySelector('input[name="r-payment"][value="cash"]').checked = true;
-    summary.classList.remove('visible');
-    formSec.classList.remove('visible');
-    bookCard.style.display = '';
-    succCard.classList.remove('visible');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    if (window._liveInterval) clearInterval(window._liveInterval);
+    if (driverMarker) { map.removeLayer(driverMarker); driverMarker = null; }
+    document.getElementById('live-badge').style.display = 'none';
+    ['r-name','r-phone','r-notes'].forEach(id => document.getElementById(id).value='');
+    document.getElementById('r-passengers').value='1';
+    document.getElementById('r-time').value='now';
+    document.querySelector('input[name="r-payment"][value="cash"]').checked=true;
+    fromSel.value=''; toSel.value='';
+    summary.classList.remove('visible'); formSec.classList.remove('visible');
+    document.getElementById('booking-card').style.display='';
+    document.getElementById('success-card').classList.remove('visible');
+    document.getElementById('ride-status').classList.remove('visible');
+    document.getElementById('fare-section').style.display='';
+    ['st-confirmed','st-assigned','st-arrived','st-onride','st-done'].forEach(id => document.getElementById(id).className='status-step');
+    if (routeLayer) { map.removeLayer(routeLayer); routeLayer=null; }
+    if (fromMarker) { map.removeLayer(fromMarker); fromMarker=null; }
+    if (toMarker)   { map.removeLayer(toMarker);   toMarker=null; }
+    window.scrollTo({ top:0, behavior:'smooth' });
   });
 
   // ── fare guide ──
-  const SAMPLE_ROUTES = [
-    ['center', 'new-damietta'],
-    ['center', 'ras-el-bar'],
-    ['center', 'kafr-saad'],
-    ['center', 'faraskur'],
-    ['new-damietta', 'ras-el-bar'],
-    ['center', 'zarqa'],
-    ['center', 'el-saro'],
-    ['center', 'kafr-batikh'],
-  ];
+  const SAMPLE = [['center','new-damietta'],['center','ras-el-bar'],['center','kafr-saad'],['center','faraskur'],['new-damietta','ras-el-bar'],['center','zarqa'],['center','el-saro'],['center','kafr-batikh']];
   const grid = document.getElementById('fare-grid');
-  SAMPLE_ROUTES.forEach(([fid, tid]) => {
-    const f = AREAS.find(a => a.id === fid);
-    const t = AREAS.find(a => a.id === tid);
-    if (!f || !t) return;
-    const km   = haversineKm(f.lat, f.lng, t.lat, t.lng);
-    const fare = fareForDist(km);
-    grid.insertAdjacentHTML('beforeend', `
-      <div class="fare-card">
-        <div class="fare-card__route">
-          <div class="fare-card__from">${f.name}</div>
-          <div class="fare-card__to">← ${t.name}</div>
-        </div>
-        <div class="fare-card__price">${fare} ج.م</div>
-      </div>
-    `);
+  SAMPLE.forEach(([fid,tid]) => {
+    const f=AREAS.find(a=>a.id===fid), t=AREAS.find(a=>a.id===tid);
+    if(!f||!t) return;
+    const fare = fareFor(haversineKm(f.lat,f.lng,t.lat,t.lng));
+    grid.insertAdjacentHTML('beforeend',`<div class="fare-card"><div class="fare-card__route"><div class="fare-card__from">${f.name}</div><div class="fare-card__to">← ${t.name}</div></div><div class="fare-card__price">${fare} ج.م</div></div>`);
   });
 })();</script>

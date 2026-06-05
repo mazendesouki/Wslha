@@ -5,11 +5,11 @@ import { AREAS } from '../data/rides';
 ---
 
 <style>
-  /* ── layout ── */
-  .rides-wrap {
-    max-width: 680px;
+  /* ── page layout ── */
+  .rides-page {
+    max-width: 1100px;
     margin: 0 auto;
-    padding: var(--sp-10) var(--sp-6) var(--sp-20);
+    padding: var(--sp-8) var(--sp-6) var(--sp-20);
   }
 
   /* ── how-it-works strip ── */
@@ -17,7 +17,7 @@ import { AREAS } from '../data/rides';
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     gap: var(--sp-4);
-    margin-bottom: var(--sp-10);
+    margin-bottom: var(--sp-8);
   }
   .how-step {
     background: var(--color-bg);
@@ -26,11 +26,19 @@ import { AREAS } from '../data/rides';
     padding: var(--sp-5) var(--sp-4);
     text-align: center;
   }
-  .how-step__icon { font-size: 2rem; margin-bottom: var(--sp-2); }
-  .how-step__title { font-weight: var(--weight-black); font-size: var(--text-sm); color: var(--color-text); margin-bottom: 4px; }
+  .how-step__icon  { font-size: 2rem; margin-bottom: var(--sp-2); }
+  .how-step__title { font-weight: var(--weight-black); font-size: var(--text-sm); margin-bottom: 4px; }
   .how-step__desc  { font-size: var(--text-xs); color: var(--color-text-faint); }
 
-  /* ── booking card ── */
+  /* ── main grid ── */
+  .main-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--sp-6);
+    align-items: start;
+  }
+
+  /* ── booking panel ── */
   .booking-card {
     background: var(--color-bg);
     border: 1px solid var(--color-border);
@@ -49,631 +57,601 @@ import { AREAS } from '../data/rides';
   }
   .route-pick { display: flex; flex-direction: column; gap: var(--sp-2); }
   .route-pick__label {
-    font-weight: var(--weight-black);
-    font-size: var(--text-sm);
-    color: var(--color-text-faint);
-    display: flex; align-items: center; gap: var(--sp-1);
+    font-weight: var(--weight-black); font-size: var(--text-sm);
+    color: var(--color-text-faint); display: flex; align-items: center; gap: var(--sp-1);
   }
-  .route-pick__dot {
-    width: 10px; height: 10px; border-radius: 50%;
-    display: inline-block;
-  }
-  .route-pick__dot--from { background: var(--color-primary); }
-  .route-pick__dot--to   { background: #ef4444; }
+  .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
+  .dot--from { background: var(--color-primary); }
+  .dot--to   { background: #ef4444; }
   .route-pick__select {
-    width: 100%;
-    padding: var(--sp-3) var(--sp-4);
-    border: 2px solid var(--color-border);
-    border-radius: var(--radius-lg);
-    font-family: var(--font-body); font-size: var(--text-base);
+    width: 100%; padding: var(--sp-3) var(--sp-4);
+    border: 2px solid var(--color-border); border-radius: var(--radius-lg);
+    font-family: var(--font-body); font-size: var(--text-sm);
     direction: rtl; background: var(--color-bg); color: var(--color-text);
-    outline: none; cursor: pointer;
-    transition: border-color var(--ease);
-    appearance: none;
+    outline: none; cursor: pointer; transition: border-color var(--ease); appearance: none;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: left 12px center;
+    background-repeat: no-repeat; background-position: left 12px center;
   }
   .route-pick__select:focus { border-color: var(--color-primary); }
   .route-pick__select--to:focus { border-color: #ef4444; }
-
   .swap-btn {
-    width: 40px; height: 40px; border-radius: var(--radius-full);
+    width: 38px; height: 38px; border-radius: var(--radius-full);
     background: var(--color-bg); border: 2px solid var(--color-border);
     cursor: pointer; display: flex; align-items: center; justify-content: center;
-    font-size: 1.1rem; transition: all var(--ease); color: var(--color-primary);
-    flex-shrink: 0; align-self: end; margin-bottom: 4px;
+    font-size: 1rem; transition: all var(--ease); color: var(--color-primary); flex-shrink: 0;
+    margin-bottom: 3px;
   }
   .swap-btn:hover { background: var(--color-primary-light); border-color: var(--color-primary); transform: rotate(180deg); }
 
-  /* ── route summary ── */
+  /* ── route summary strip ── */
   .route-summary {
-    margin: var(--sp-5) var(--sp-6) 0;
-    background: linear-gradient(135deg, #f0f9ff 0%, #eff6ff 100%);
-    border: 1px solid #bfdbfe;
-    border-radius: var(--radius-xl);
-    padding: var(--sp-4) var(--sp-5);
-    display: none;
-    gap: var(--sp-6);
-    align-items: center;
-    justify-content: center;
+    margin: var(--sp-4) var(--sp-6) 0;
+    background: linear-gradient(135deg, #f0f9ff, #eff6ff);
+    border: 1px solid #bfdbfe; border-radius: var(--radius-xl);
+    padding: var(--sp-3) var(--sp-5);
+    display: none; gap: var(--sp-4); align-items: center; justify-content: space-between;
   }
   .route-summary.visible { display: flex; }
   .route-summary__stat { text-align: center; }
-  .route-summary__val {
-    font-size: var(--text-xl);
-    font-weight: var(--weight-black);
-    color: var(--color-primary);
-    line-height: 1.1;
-  }
-  .route-summary__val--price { color: #16a34a; font-size: 1.6rem; }
-  .route-summary__key {
-    font-size: var(--text-xs);
-    color: var(--color-text-faint);
-    margin-top: 2px;
-  }
-  .route-summary__divider { width: 1px; height: 36px; background: #bfdbfe; flex-shrink: 0; }
+  .route-summary__val { font-size: var(--text-lg); font-weight: var(--weight-black); color: var(--color-primary); }
+  .route-summary__val--price { color: #16a34a; }
+  .route-summary__key { font-size: 10px; color: var(--color-text-faint); }
+  .route-summary__divider { width: 1px; height: 28px; background: #bfdbfe; flex-shrink: 0; }
 
-  /* route path visualization */
-  .route-path {
-    display: flex; align-items: center; gap: var(--sp-2);
-    background: #fff; border: 1px solid #bfdbfe;
-    border-radius: var(--radius-full);
-    padding: var(--sp-2) var(--sp-4);
-    font-size: var(--text-sm);
-    font-weight: var(--weight-bold);
-    color: var(--color-text);
-    flex-shrink: 0;
-    max-width: 220px;
-    overflow: hidden;
-  }
-  .route-path__from { color: var(--color-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .route-path__arrow { color: var(--color-text-faint); flex-shrink: 0; }
-  .route-path__to { color: #ef4444; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-
-  /* ── booking form ── */
-  .form-section {
-    padding: var(--sp-6);
-    border-top: 1px solid var(--color-border);
-    margin-top: var(--sp-5);
-    display: none;
-  }
+  /* ── form ── */
+  .form-section { padding: var(--sp-5) var(--sp-6); border-top: 1px solid var(--color-border); margin-top: var(--sp-4); display: none; }
   .form-section.visible { display: block; }
-  .form-section__title {
-    font-size: var(--text-base);
-    font-weight: var(--weight-black);
-    margin-bottom: var(--sp-5);
-    color: var(--color-text);
-  }
-
   .field { margin-bottom: var(--sp-4); }
-  .field__label {
-    display: block; font-weight: var(--weight-bold);
-    font-size: var(--text-sm); margin-bottom: var(--sp-2); color: #374151;
-  }
+  .field__label { display: block; font-weight: var(--weight-bold); font-size: var(--text-sm); margin-bottom: var(--sp-2); color: #374151; }
   .field__input, .field__select, .field__textarea {
     width: 100%; padding: var(--sp-3) var(--sp-4);
     border: 2px solid var(--color-border); border-radius: var(--radius);
-    font-family: var(--font-body); font-size: var(--text-base);
-    direction: rtl; background: var(--color-bg); color: var(--color-text);
-    outline: none; transition: border-color var(--ease);
+    font-family: var(--font-body); font-size: var(--text-sm);
+    direction: rtl; background: var(--color-bg); color: var(--color-text); outline: none; transition: border-color var(--ease);
   }
   .field__input:focus, .field__select:focus, .field__textarea:focus { border-color: var(--color-primary); }
-  .field__textarea { resize: vertical; min-height: 80px; }
-  .field__hint { font-size: var(--text-xs); color: var(--color-text-faint); margin-top: 4px; }
+  .field__textarea { resize: vertical; min-height: 70px; }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-3); }
 
-  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-4); }
-
-  /* payment options */
-  .payment-opts { display: flex; flex-direction: column; gap: var(--sp-3); }
+  /* payment */
+  .payment-opts { display: flex; flex-direction: column; gap: var(--sp-2); }
   .payment-opt {
     display: flex; align-items: center; gap: var(--sp-3);
     border: 2px solid var(--color-border); border-radius: var(--radius-lg);
-    padding: var(--sp-3) var(--sp-4); cursor: pointer;
-    transition: all var(--ease);
+    padding: var(--sp-3) var(--sp-4); cursor: pointer; transition: all var(--ease);
   }
   .payment-opt:has(input:checked) { border-color: var(--color-primary); background: var(--color-primary-light); }
   .payment-opt input { position: absolute; opacity: 0; width: 0; }
-  .payment-opt__icon { font-size: 1.4rem; flex-shrink: 0; }
-  .payment-opt__text { flex: 1; }
+  .payment-opt__icon { font-size: 1.3rem; flex-shrink: 0; }
   .payment-opt__name { font-weight: var(--weight-bold); font-size: var(--text-sm); }
-  .payment-opt__desc { font-size: var(--text-xs); color: var(--color-text-faint); }
-  .payment-opt__check {
-    width: 20px; height: 20px; border-radius: var(--radius-full);
-    border: 2px solid var(--color-border); flex-shrink: 0;
-    display: flex; align-items: center; justify-content: center;
-    transition: all var(--ease);
+  .payment-opt__desc { font-size: 11px; color: var(--color-text-faint); }
+  .check-circle {
+    width: 18px; height: 18px; border-radius: 50%; border: 2px solid var(--color-border);
+    flex-shrink: 0; margin-right: auto; display: flex; align-items: center; justify-content: center;
   }
-  .payment-opt:has(input:checked) .payment-opt__check {
-    background: var(--color-primary); border-color: var(--color-primary);
-  }
-  .payment-opt:has(input:checked) .payment-opt__check::after {
-    content: '✓'; color: #fff; font-size: 11px; font-weight: 900;
-  }
+  .payment-opt:has(input:checked) .check-circle { background: var(--color-primary); border-color: var(--color-primary); }
+  .payment-opt:has(input:checked) .check-circle::after { content: '✓'; color: #fff; font-size: 10px; font-weight: 900; }
 
-  /* submit button */
   .submit-btn {
     width: 100%; padding: var(--sp-4); border-radius: var(--radius-lg);
     background: var(--color-primary); color: #fff; font-family: var(--font-body);
-    font-size: var(--text-base); font-weight: var(--weight-black);
-    border: none; cursor: pointer; transition: all var(--ease);
-    margin-top: var(--sp-6);
+    font-size: var(--text-sm); font-weight: var(--weight-black);
+    border: none; cursor: pointer; transition: all var(--ease); margin-top: var(--sp-5);
   }
   .submit-btn:hover:not(:disabled) { background: var(--color-primary-dark); transform: translateY(-1px); box-shadow: var(--shadow-md); }
   .submit-btn:disabled { opacity: .6; cursor: not-allowed; transform: none; }
+  .alert-error { padding: var(--sp-3); border-radius: var(--radius); font-size: var(--text-sm); margin-bottom: var(--sp-3); display: none; background: #fef2f2; border: 1px solid #fca5a5; color: #b91c1c; }
+  .alert-error.visible { display: block; }
 
-  /* ── error / success ── */
-  .alert {
-    padding: var(--sp-3) var(--sp-4);
-    border-radius: var(--radius);
-    font-size: var(--text-sm);
-    margin-bottom: var(--sp-4);
-    display: none;
+  /* ── MAP PANEL ── */
+  .map-panel {
+    position: sticky;
+    top: 80px;
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-4);
   }
-  .alert.visible { display: block; }
-  .alert--error { background: #fef2f2; border: 1px solid #fca5a5; color: #b91c1c; }
 
-  /* success card */
-  .success-card {
+  .map-card {
     background: var(--color-bg);
     border: 1px solid var(--color-border);
     border-radius: var(--radius-xl);
     box-shadow: var(--shadow-md);
-    padding: var(--sp-10) var(--sp-8);
-    text-align: center;
-    display: none;
+    overflow: hidden;
   }
-  .success-card.visible { display: block; }
-  .success-card__icon { font-size: 3.5rem; margin-bottom: var(--sp-4); }
-  .success-card__title { font-size: var(--text-2xl); font-weight: var(--weight-black); margin-bottom: var(--sp-2); }
-  .success-card__sub   { color: var(--color-text-faint); margin-bottom: var(--sp-6); }
-  .success-details {
-    background: #f9fafb; border: 1px solid var(--color-border);
-    border-radius: var(--radius-xl); padding: var(--sp-5);
-    text-align: right; margin-bottom: var(--sp-6);
-  }
-  .detail-row {
-    display: flex; justify-content: space-between; align-items: center;
-    padding: var(--sp-2) 0;
-    border-bottom: 1px solid var(--color-border);
-    font-size: var(--text-sm);
-  }
-  .detail-row:last-child { border-bottom: none; }
-  .detail-row__key { color: var(--color-text-faint); }
-  .detail-row__val { font-weight: var(--weight-bold); }
-  .detail-row__val--price { color: #16a34a; font-size: var(--text-base); }
-  .success-actions { display: flex; gap: var(--sp-3); justify-content: center; flex-wrap: wrap; }
-  .btn-outline {
-    padding: var(--sp-3) var(--sp-6); border: 2px solid var(--color-primary);
-    border-radius: var(--radius-lg); color: var(--color-primary);
-    font-family: var(--font-body); font-weight: var(--weight-bold);
-    font-size: var(--text-sm); cursor: pointer; background: transparent;
-    transition: all var(--ease); text-decoration: none; display: inline-flex; align-items: center; gap: var(--sp-2);
-  }
-  .btn-outline:hover { background: var(--color-primary-light); }
-  .btn-filled {
-    padding: var(--sp-3) var(--sp-6); background: var(--color-primary);
-    border-radius: var(--radius-lg); color: #fff;
-    font-family: var(--font-body); font-weight: var(--weight-bold);
-    font-size: var(--text-sm); cursor: pointer; border: none;
-    transition: all var(--ease); text-decoration: none; display: inline-flex; align-items: center; gap: var(--sp-2);
-  }
-  .btn-filled:hover { background: var(--color-primary-dark); }
 
-  /* ── fare guide ── */
+  .map-header {
+    padding: var(--sp-4) var(--sp-5);
+    border-bottom: 1px solid var(--color-border);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .map-header__title { font-weight: var(--weight-black); font-size: var(--text-sm); display: flex; align-items: center; gap: var(--sp-2); }
+  .live-badge {
+    display: inline-flex; align-items: center; gap: 5px;
+    background: #dcfce7; color: #16a34a; border-radius: var(--radius-full);
+    padding: 2px 10px; font-size: 11px; font-weight: var(--weight-bold);
+  }
+  .live-badge::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: #16a34a; animation: pulse-dot 1.4s ease-in-out infinite; }
+  @keyframes pulse-dot {
+    0%,100% { opacity: 1; transform: scale(1); }
+    50%      { opacity: .5; transform: scale(.7); }
+  }
+
+  #ride-map { width: 100%; height: 380px; }
+
+  .map-placeholder {
+    height: 380px; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: var(--sp-3);
+    background: #f8fafc; color: var(--color-text-faint); font-size: var(--text-sm);
+  }
+  .map-placeholder__icon { font-size: 3rem; }
+
+  /* ride status card */
+  .ride-status {
+    background: var(--color-bg); border: 1px solid var(--color-border);
+    border-radius: var(--radius-xl); padding: var(--sp-5); display: none;
+  }
+  .ride-status.visible { display: block; }
+  .ride-status__title { font-weight: var(--weight-black); font-size: var(--text-sm); margin-bottom: var(--sp-4); }
+  .status-steps { display: flex; flex-direction: column; gap: 0; }
+  .status-step {
+    display: flex; align-items: flex-start; gap: var(--sp-3);
+    padding: var(--sp-3) 0; position: relative;
+  }
+  .status-step:not(:last-child)::after {
+    content: ''; position: absolute; right: 15px; top: 36px;
+    width: 2px; height: calc(100% - 8px);
+    background: var(--color-border);
+  }
+  .status-step.done::after  { background: #16a34a; }
+  .status-step.active::after { background: linear-gradient(#16a34a 50%, var(--color-border) 50%); }
+  .step-dot {
+    width: 32px; height: 32px; border-radius: 50%; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: .9rem; border: 2px solid var(--color-border);
+    background: var(--color-bg); z-index: 1;
+  }
+  .status-step.done   .step-dot { background: #16a34a; border-color: #16a34a; color: #fff; }
+  .status-step.active .step-dot { background: var(--color-primary-light); border-color: var(--color-primary); animation: pulse-step 1.5s ease-in-out infinite; }
+  @keyframes pulse-step { 0%,100% { box-shadow: 0 0 0 0 rgba(59,130,246,.4); } 50% { box-shadow: 0 0 0 8px rgba(59,130,246,0); } }
+  .step-info { flex: 1; }
+  .step-info__label { font-weight: var(--weight-bold); font-size: var(--text-sm); }
+  .step-info__time  { font-size: 11px; color: var(--color-text-faint); margin-top: 2px; }
+
+  /* fare guide */
   .fare-section { margin-top: var(--sp-10); }
   .fare-section__title { font-size: var(--text-xl); font-weight: var(--weight-black); margin-bottom: var(--sp-5); }
-  .fare-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-3); }
+  .fare-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--sp-3); }
   .fare-card {
     background: var(--color-bg); border: 1px solid var(--color-border);
     border-radius: var(--radius-xl); padding: var(--sp-4) var(--sp-5);
     display: flex; align-items: center; gap: var(--sp-3);
   }
   .fare-card__route { flex: 1; font-size: var(--text-sm); }
-  .fare-card__from  { font-weight: var(--weight-black); color: var(--color-text); }
-  .fare-card__to    { color: var(--color-text-faint); font-size: var(--text-xs); }
+  .fare-card__from  { font-weight: var(--weight-black); }
+  .fare-card__to    { color: var(--color-text-faint); font-size: 11px; }
   .fare-card__price { font-weight: var(--weight-black); color: #16a34a; font-size: var(--text-base); white-space: nowrap; }
 
+  /* success card */
+  .success-card { background: var(--color-bg); border: 1px solid var(--color-border); border-radius: var(--radius-xl); box-shadow: var(--shadow-md); padding: var(--sp-8) var(--sp-6); text-align: center; display: none; }
+  .success-card.visible { display: block; }
+  .success-card__icon  { font-size: 3rem; margin-bottom: var(--sp-3); }
+  .success-card__title { font-size: var(--text-xl); font-weight: var(--weight-black); margin-bottom: var(--sp-2); }
+  .success-card__sub   { color: var(--color-text-faint); margin-bottom: var(--sp-5); font-size: var(--text-sm); }
+  .detail-rows { background: #f9fafb; border: 1px solid var(--color-border); border-radius: var(--radius-xl); padding: var(--sp-4); text-align: right; margin-bottom: var(--sp-5); }
+  .detail-row { display: flex; justify-content: space-between; padding: var(--sp-2) 0; border-bottom: 1px solid var(--color-border); font-size: var(--text-sm); }
+  .detail-row:last-child { border-bottom: none; }
+  .detail-row__key { color: var(--color-text-faint); }
+  .detail-row__val { font-weight: var(--weight-bold); }
+  .detail-row__val--price { color: #16a34a; font-size: var(--text-base); }
+  .success-actions { display: flex; gap: var(--sp-3); justify-content: center; flex-wrap: wrap; }
+  .btn-outline { padding: var(--sp-3) var(--sp-5); border: 2px solid var(--color-primary); border-radius: var(--radius-lg); color: var(--color-primary); font-family: var(--font-body); font-weight: var(--weight-bold); font-size: var(--text-sm); cursor: pointer; background: transparent; text-decoration: none; display: inline-flex; align-items: center; gap: var(--sp-2); transition: all var(--ease); }
+  .btn-outline:hover { background: var(--color-primary-light); }
+  .btn-filled { padding: var(--sp-3) var(--sp-5); background: var(--color-primary); border-radius: var(--radius-lg); color: #fff; font-family: var(--font-body); font-weight: var(--weight-bold); font-size: var(--text-sm); cursor: pointer; border: none; text-decoration: none; display: inline-flex; align-items: center; gap: var(--sp-2); transition: all var(--ease); }
+  .btn-filled:hover { background: var(--color-primary-dark); }
+
   /* ── responsive ── */
-  @media (max-width: 640px) {
+  @media (max-width: 768px) {
+    .main-grid { grid-template-columns: 1fr; }
+    .map-panel { position: static; order: -1; }
+    #ride-map { height: 280px; }
     .how-strip { grid-template-columns: 1fr 1fr; }
-    .route-bar { grid-template-columns: 1fr; }
-    .swap-btn { order: 3; width: 36px; height: 36px; align-self: auto; margin: 0 auto; }
-    .route-summary { flex-direction: column; gap: var(--sp-3); }
-    .route-summary__divider { width: 80%; height: 1px; }
     .form-row { grid-template-columns: 1fr; }
+    .fare-grid { grid-template-columns: 1fr 1fr; }
+    .route-bar { grid-template-columns: 1fr; }
+    .swap-btn { order: 3; align-self: auto; margin: 0 auto; }
+  }
+  @media (max-width: 480px) {
     .fare-grid { grid-template-columns: 1fr; }
-    .route-path { max-width: 100%; }
   }
 </style>
+
+<!-- Leaflet CSS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" is:inline />
 
 <Layout title="مشاوير دمياط | وصّلها" page="rides">
   <PageHero
     title="مشاوير داخل دمياط 🚗"
-    subtitle="توصيلك لأي مكان في محافظة دمياط — أسعار شفافة بناءً على المسافة الفعلية"
+    subtitle="توصيلك لأي مكان في المحافظة — أسعار شفافة بحسب المسافة الفعلية"
   />
 
-  <div class="rides-wrap">
+  <div class="rides-page">
 
     <!-- How it works -->
     <div class="how-strip">
-      <div class="how-step">
-        <div class="how-step__icon">📍</div>
-        <div class="how-step__title">اختر المناطق</div>
-        <div class="how-step__desc">من أين وإلى أين</div>
-      </div>
-      <div class="how-step">
-        <div class="how-step__icon">💰</div>
-        <div class="how-step__title">شوف السعر</div>
-        <div class="how-step__desc">محسوب فورًا</div>
-      </div>
-      <div class="how-step">
-        <div class="how-step__icon">📋</div>
-        <div class="how-step__title">أكمل بياناتك</div>
-        <div class="how-step__desc">اسمك ورقمك فقط</div>
-      </div>
-      <div class="how-step">
-        <div class="how-step__icon">🚗</div>
-        <div class="how-step__title">السائق في الطريق</div>
-        <div class="how-step__desc">يتواصل معك مباشرة</div>
-      </div>
+      <div class="how-step"><div class="how-step__icon">📍</div><div class="how-step__title">اختر المناطق</div><div class="how-step__desc">من أين وإلى أين</div></div>
+      <div class="how-step"><div class="how-step__icon">🗺️</div><div class="how-step__title">شوف الخريطة</div><div class="how-step__desc">المسار والمسافة</div></div>
+      <div class="how-step"><div class="how-step__icon">💰</div><div class="how-step__title">السعر فوري</div><div class="how-step__desc">شفاف وثابت</div></div>
+      <div class="how-step"><div class="how-step__icon">🚗</div><div class="how-step__title">السائق قادم</div><div class="how-step__desc">تتبع الرحلة مباشرة</div></div>
     </div>
 
-    <!-- Booking card -->
-    <div id="booking-card" class="booking-card">
+    <div class="main-grid">
 
-      <!-- Route bar -->
-      <div class="route-bar">
-        <div class="route-pick">
-          <span class="route-pick__label">
-            <span class="route-pick__dot route-pick__dot--from"></span>
-            من أين؟
-          </span>
-          <select id="from-area" class="route-pick__select">
-            <option value="">اختر منطقة الانطلاق</option>
-            {AREAS.map(a => (
-              <option value={a.id} data-lat={a.lat} data-lng={a.lng}>{a.name}</option>
-            ))}
-          </select>
-        </div>
-
-        <button id="swap-btn" class="swap-btn" title="تبديل الاتجاه" type="button">⇄</button>
-
-        <div class="route-pick">
-          <span class="route-pick__label">
-            <span class="route-pick__dot route-pick__dot--to"></span>
-            إلى أين؟
-          </span>
-          <select id="to-area" class="route-pick__select route-pick__select--to">
-            <option value="">اختر منطقة الوصول</option>
-            {AREAS.map(a => (
-              <option value={a.id} data-lat={a.lat} data-lng={a.lng}>{a.name}</option>
-            ))}
-          </select>
-        </div>
-      </div>
-
-      <!-- Route summary -->
-      <div id="route-summary" class="route-summary">
-        <div class="route-path">
-          <span id="path-from" class="route-path__from"></span>
-          <span class="route-path__arrow">←</span>
-          <span id="path-to" class="route-path__to"></span>
-        </div>
-        <div class="route-summary__divider"></div>
-        <div class="route-summary__stat">
-          <div id="summary-distance" class="route-summary__val"></div>
-          <div class="route-summary__key">المسافة</div>
-        </div>
-        <div class="route-summary__divider"></div>
-        <div class="route-summary__stat">
-          <div id="summary-eta" class="route-summary__val"></div>
-          <div class="route-summary__key">الوقت المقدر</div>
-        </div>
-        <div class="route-summary__divider"></div>
-        <div class="route-summary__stat">
-          <div id="summary-price" class="route-summary__val route-summary__val--price"></div>
-          <div class="route-summary__key">السعر</div>
-        </div>
-      </div>
-
-      <!-- Form section -->
-      <div id="form-section" class="form-section">
-        <div class="form-section__title">بيانات الرحلة</div>
-
-        <div id="alert-error" class="alert alert--error"></div>
-
-        <div class="form-row">
-          <div class="field">
-            <label class="field__label" for="r-name">الاسم الكامل</label>
-            <input id="r-name" type="text" class="field__input" placeholder="محمد أحمد" required />
+      <!-- LEFT: booking -->
+      <div>
+        <!-- Booking card -->
+        <div id="booking-card" class="booking-card">
+          <div class="route-bar">
+            <div class="route-pick">
+              <span class="route-pick__label"><span class="dot dot--from"></span> من أين؟</span>
+              <select id="from-area" class="route-pick__select">
+                <option value="">اختر منطقة الانطلاق</option>
+                {AREAS.map(a => <option value={a.id} data-lat={a.lat} data-lng={a.lng}>{a.name}</option>)}
+              </select>
+            </div>
+            <button id="swap-btn" class="swap-btn" title="تبديل" type="button">⇄</button>
+            <div class="route-pick">
+              <span class="route-pick__label"><span class="dot dot--to"></span> إلى أين؟</span>
+              <select id="to-area" class="route-pick__select route-pick__select--to">
+                <option value="">اختر منطقة الوصول</option>
+                {AREAS.map(a => <option value={a.id} data-lat={a.lat} data-lng={a.lng}>{a.name}</option>)}
+              </select>
+            </div>
           </div>
-          <div class="field">
-            <label class="field__label" for="r-phone">رقم الجوال</label>
-            <input id="r-phone" type="tel" class="field__input" placeholder="010 1234 5678" required />
+
+          <div id="route-summary" class="route-summary">
+            <div class="route-summary__stat"><div id="sum-dist" class="route-summary__val"></div><div class="route-summary__key">المسافة</div></div>
+            <div class="route-summary__divider"></div>
+            <div class="route-summary__stat"><div id="sum-eta" class="route-summary__val"></div><div class="route-summary__key">الوقت المقدر</div></div>
+            <div class="route-summary__divider"></div>
+            <div class="route-summary__stat"><div id="sum-price" class="route-summary__val route-summary__val--price"></div><div class="route-summary__key">السعر</div></div>
+          </div>
+
+          <div id="form-section" class="form-section">
+            <div id="alert-error" class="alert-error"></div>
+            <div class="form-row">
+              <div class="field"><label class="field__label" for="r-name">الاسم الكامل</label><input id="r-name" type="text" class="field__input" placeholder="محمد أحمد" required /></div>
+              <div class="field"><label class="field__label" for="r-phone">رقم الجوال</label><input id="r-phone" type="tel" class="field__input" placeholder="010 1234 5678" required /></div>
+            </div>
+            <div class="form-row">
+              <div class="field">
+                <label class="field__label" for="r-passengers">عدد الركاب</label>
+                <select id="r-passengers" class="field__select">
+                  <option value="1">1 راكب</option><option value="2">2 ركاب</option><option value="3">3 ركاب</option><option value="4">4 ركاب</option><option value="5">5 ركاب</option><option value="6">6 ركاب</option>
+                </select>
+              </div>
+              <div class="field">
+                <label class="field__label" for="r-time">وقت الانطلاق</label>
+                <select id="r-time" class="field__select">
+                  <option value="now">الآن فورًا</option><option value="15">بعد 15 دقيقة</option><option value="30">بعد 30 دقيقة</option><option value="60">بعد ساعة</option>
+                </select>
+              </div>
+            </div>
+            <div class="field"><label class="field__label" for="r-notes">ملاحظات (اختياري)</label><textarea id="r-notes" class="field__textarea" placeholder="مثلاً: أمام مسجد النور، أو أي تفاصيل إضافية..."></textarea></div>
+            <div class="field">
+              <label class="field__label">طريقة الدفع</label>
+              <div class="payment-opts">
+                <label class="payment-opt"><input type="radio" name="r-payment" value="cash" checked /><span class="payment-opt__icon">💵</span><span><span class="payment-opt__name">كاش عند الوصول</span><br><span class="payment-opt__desc">ادفع للسائق مباشرة</span></span><span class="check-circle"></span></label>
+                <label class="payment-opt"><input type="radio" name="r-payment" value="wallet" /><span class="payment-opt__icon">📱</span><span><span class="payment-opt__name">فودافون كاش / إنستاباي</span><br><span class="payment-opt__desc">تحويل إلكتروني</span></span><span class="check-circle"></span></label>
+              </div>
+            </div>
+            <button id="confirm-btn" class="submit-btn" type="button">🚗 تأكيد الطلب وتتبع الرحلة</button>
           </div>
         </div>
 
-        <div class="form-row">
-          <div class="field">
-            <label class="field__label" for="r-passengers">عدد الركاب</label>
-            <select id="r-passengers" class="field__select">
-              <option value="1">1 راكب</option>
-              <option value="2">2 ركاب</option>
-              <option value="3">3 ركاب</option>
-              <option value="4">4 ركاب</option>
-              <option value="5">5 ركاب</option>
-              <option value="6">6 ركاب (ميني باص)</option>
-            </select>
+        <!-- Success card -->
+        <div id="success-card" class="success-card">
+          <div class="success-card__icon">✅</div>
+          <h2 class="success-card__title">تم تأكيد طلبك!</h2>
+          <p class="success-card__sub">تابع رحلتك على الخريطة ← السائق في الطريق إليك</p>
+          <div id="success-details" class="detail-rows"></div>
+          <div class="success-actions">
+            <a href="/orders" class="btn-outline">📋 طلباتي</a>
+            <button id="new-ride-btn" class="btn-filled" type="button">🚗 رحلة جديدة</button>
           </div>
-          <div class="field">
-            <label class="field__label" for="r-time">وقت الانطلاق</label>
-            <select id="r-time" class="field__select">
-              <option value="now">الآن فورًا</option>
-              <option value="15">بعد 15 دقيقة</option>
-              <option value="30">بعد 30 دقيقة</option>
-              <option value="60">بعد ساعة</option>
-              <option value="later">موعد محدد لاحقًا</option>
-            </select>
+        </div>
+      </div>
+
+      <!-- RIGHT: map -->
+      <div class="map-panel">
+        <div class="map-card">
+          <div class="map-header">
+            <span class="map-header__title">🗺️ خريطة المسار</span>
+            <span id="live-badge" class="live-badge" style="display:none">مباشر</span>
+          </div>
+          <div id="map-placeholder" class="map-placeholder">
+            <span class="map-placeholder__icon">🗺️</span>
+            <span>اختر منطقة الانطلاق والوصول لعرض المسار</span>
+          </div>
+          <div id="ride-map" style="display:none"></div>
+        </div>
+
+        <!-- Ride status -->
+        <div id="ride-status" class="ride-status">
+          <div class="ride-status__title">📍 حالة الرحلة</div>
+          <div class="status-steps">
+            <div class="status-step" id="st-confirmed">
+              <div class="step-dot">✓</div>
+              <div class="step-info"><div class="step-info__label">تم تأكيد الطلب</div><div class="step-info__time" id="st-confirmed-time"></div></div>
+            </div>
+            <div class="status-step" id="st-assigned">
+              <div class="step-dot">🚗</div>
+              <div class="step-info"><div class="step-info__label">السائق في الطريق إليك</div><div class="step-info__time">جاري التعيين...</div></div>
+            </div>
+            <div class="status-step" id="st-arrived">
+              <div class="step-dot">📍</div>
+              <div class="step-info"><div class="step-info__label">وصل السائق</div><div class="step-info__time" id="st-arrived-time"></div></div>
+            </div>
+            <div class="status-step" id="st-onride">
+              <div class="step-dot">🏎️</div>
+              <div class="step-info"><div class="step-info__label">في الطريق إلى وجهتك</div><div class="step-info__time" id="st-onride-time"></div></div>
+            </div>
+            <div class="status-step" id="st-done">
+              <div class="step-dot">🎉</div>
+              <div class="step-info"><div class="step-info__label">وصلت — رحلة ممتعة!</div><div class="step-info__time" id="st-done-time"></div></div>
+            </div>
           </div>
         </div>
 
-        <div class="field">
-          <label class="field__label" for="r-notes">ملاحظات (اختياري)</label>
-          <textarea id="r-notes" class="field__textarea" placeholder="مثلاً: أمام مسجد الفتح، أو أي تفاصيل إضافية..."></textarea>
+        <!-- Fare guide -->
+        <div class="fare-section" id="fare-section">
+          <h2 class="fare-section__title">دليل الأسعار</h2>
+          <div class="fare-grid" id="fare-grid"></div>
         </div>
-
-        <div class="field">
-          <label class="field__label">طريقة الدفع</label>
-          <div class="payment-opts">
-            <label class="payment-opt">
-              <input type="radio" name="r-payment" value="cash" checked />
-              <span class="payment-opt__icon">💵</span>
-              <span class="payment-opt__text">
-                <span class="payment-opt__name">كاش عند الوصول</span>
-                <span class="payment-opt__desc">ادفع للسائق مباشرةً</span>
-              </span>
-              <span class="payment-opt__check"></span>
-            </label>
-            <label class="payment-opt">
-              <input type="radio" name="r-payment" value="vodafone" />
-              <span class="payment-opt__icon">📱</span>
-              <span class="payment-opt__text">
-                <span class="payment-opt__name">فودافون كاش / إنستاباي</span>
-                <span class="payment-opt__desc">تحويل إلكتروني قبل الرحلة</span>
-              </span>
-              <span class="payment-opt__check"></span>
-            </label>
-          </div>
-        </div>
-
-        <button id="confirm-btn" class="submit-btn" type="button">🚗 تأكيد الطلب</button>
       </div>
 
-    </div><!-- /booking-card -->
-
-    <!-- Success card -->
-    <div id="success-card" class="success-card">
-      <div class="success-card__icon">✅</div>
-      <h2 class="success-card__title">تم تأكيد طلبك!</h2>
-      <p class="success-card__sub">سيتواصل معك السائق على رقمك خلال دقائق</p>
-      <div id="success-details" class="success-details"></div>
-      <div class="success-actions">
-        <a href="/orders" class="btn-outline">📋 طلباتي</a>
-        <button id="new-ride-btn" class="btn-filled" type="button">🚗 رحلة جديدة</button>
-      </div>
-    </div>
-
-    <!-- Fare guide -->
-    <div class="fare-section">
-      <h2 class="fare-section__title">دليل الأسعار التقريبية</h2>
-      <div class="fare-grid" id="fare-grid">
-        <!-- injected by script -->
-      </div>
-    </div>
-
-  </div><!-- /rides-wrap -->
+    </div><!-- /main-grid -->
+  </div><!-- /rides-page -->
 </Layout>
 
+<script is:inline src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
 <script define:vars={{ AREAS }}>
-  // ── Haversine ──
+  // ── distance helpers ──
   function haversineKm(lat1, lng1, lat2, lng2) {
-    const R = 6371;
-    const dLat = (lat2 - lat1) * Math.PI / 180;
-    const dLng = (lng2 - lng1) * Math.PI / 180;
-    const a = Math.sin(dLat / 2) ** 2 +
-      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-      Math.sin(dLng / 2) ** 2;
-    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    const R = 6371, dLat = (lat2-lat1)*Math.PI/180, dLng = (lng2-lng1)*Math.PI/180;
+    const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLng/2)**2;
+    return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
   }
-  function fareForDist(km) {
-    const road = km * 1.35;
-    return Math.ceil(Math.max(15 + road * 7, 20) / 5) * 5;
-  }
-  function etaMin(km) { return Math.ceil(km * 1.35 / 40 * 60); }
+  function fareFor(km) { return Math.ceil(Math.max(15+km*1.35*7,20)/5)*5; }
+  function etaMin(km)  { return Math.ceil(km*1.35/40*60); }
+  function normPhone(s){ return s.replace(/[\s\-()+]/g,''); }
+  const EG = /^01[0125][0-9]{8}$/;
 
-  // ── DOM refs ──
-  const fromSel  = document.getElementById('from-area');
-  const toSel    = document.getElementById('to-area');
-  const swapBtn  = document.getElementById('swap-btn');
-  const summary  = document.getElementById('route-summary');
-  const formSec  = document.getElementById('form-section');
-  const bookCard = document.getElementById('booking-card');
-  const succCard = document.getElementById('success-card');
+  // ── Leaflet map setup ──
+  let map = null, fromMarker = null, toMarker = null, routeLayer = null, driverMarker = null;
 
-  // ── area lookup ──
-  function areaById(id) { return AREAS.find(a => a.id === id); }
-  function selArea(sel) {
-    const opt = sel.options[sel.selectedIndex];
-    if (!opt || !opt.value) return null;
-    return { id: opt.value, name: opt.text, lat: parseFloat(opt.dataset.lat), lng: parseFloat(opt.dataset.lng) };
+  function initMap() {
+    if (map) return;
+    document.getElementById('map-placeholder').style.display = 'none';
+    document.getElementById('ride-map').style.display = 'block';
+    map = L.map('ride-map', { zoomControl: true, attributionControl: false })
+           .setView([31.418, 31.814], 11);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
   }
 
-  // ── update summary ──
-  function updateSummary() {
-    const from = selArea(fromSel);
-    const to   = selArea(toSel);
-    if (!from || !to || from.id === to.id) {
-      summary.classList.remove('visible');
-      formSec.classList.remove('visible');
-      return;
-    }
-    const km    = haversineKm(from.lat, from.lng, to.lat, to.lng);
-    const fare  = fareForDist(km);
-    const eta   = etaMin(km);
-    const road  = (km * 1.35).toFixed(1);
-
-    document.getElementById('path-from').textContent = from.name;
-    document.getElementById('path-to').textContent   = to.name;
-    document.getElementById('summary-distance').textContent = road + ' كم';
-    document.getElementById('summary-eta').textContent      = eta + ' دقيقة';
-    document.getElementById('summary-price').textContent    = fare + ' ج.م';
-
-    summary.classList.add('visible');
-    formSec.classList.add('visible');
+  function makeIcon(color, emoji) {
+    return L.divIcon({
+      className: '',
+      html: `<div style="
+        width:36px;height:36px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);
+        background:${color};border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.3);
+        display:flex;align-items:center;justify-content:center;
+      "><span style="transform:rotate(45deg);font-size:14px">${emoji}</span></div>`,
+      iconSize:[36,36], iconAnchor:[18,36], popupAnchor:[0,-36]
+    });
   }
 
-  fromSel.addEventListener('change', updateSummary);
-  toSel.addEventListener('change', updateSummary);
-
-  // ── swap ──
-  swapBtn.addEventListener('click', () => {
-    const fv = fromSel.value, tv = toSel.value;
-    fromSel.value = tv;
-    toSel.value   = fv;
-    updateSummary();
+  const carIcon = L.divIcon({
+    className: '',
+    html: `<div style="font-size:28px;filter:drop-shadow(0 2px 4px rgba(0,0,0,.3));transform:scale(1.1)">🚗</div>`,
+    iconSize:[36,36], iconAnchor:[18,18]
   });
 
-  // ── phone validation ──
-  const EG = /^01[0125][0-9]{8}$/;
-  function normPhone(s) { return s.replace(/[\s\-()]/g, ''); }
+  async function showRoute(from, to) {
+    initMap();
+    if (fromMarker) map.removeLayer(fromMarker);
+    if (toMarker)   map.removeLayer(toMarker);
+    if (routeLayer) map.removeLayer(routeLayer);
+    if (driverMarker) { map.removeLayer(driverMarker); driverMarker = null; }
+
+    fromMarker = L.marker([from.lat, from.lng], { icon: makeIcon('#3b82f6','📍') })
+                  .addTo(map).bindPopup(`<b>الانطلاق</b><br>${from.name}`);
+    toMarker   = L.marker([to.lat, to.lng],   { icon: makeIcon('#ef4444','🏁') })
+                  .addTo(map).bindPopup(`<b>الوصول</b><br>${to.name}`);
+
+    // Try OSRM road routing
+    try {
+      const osrm = `https://router.project-osrm.org/route/v1/driving/${from.lng},${from.lat};${to.lng},${to.lat}?overview=full&geometries=geojson`;
+      const res  = await fetch(osrm);
+      const data = await res.json();
+      if (data.routes?.[0]) {
+        const coords = data.routes[0].geometry.coordinates.map(([lng,lat]) => [lat,lng]);
+        window._routeCoords = coords;
+        routeLayer = L.polyline(coords, { color:'#3b82f6', weight:5, opacity:.8 }).addTo(map);
+        map.fitBounds(routeLayer.getBounds(), { padding:[50,50] });
+        return;
+      }
+    } catch {}
+
+    // Fallback: straight dashed line
+    window._routeCoords = [[from.lat,from.lng],[to.lat,to.lng]];
+    routeLayer = L.polyline([[from.lat,from.lng],[to.lat,to.lng]], { color:'#3b82f6', weight:4, dashArray:'8,6' }).addTo(map);
+    map.fitBounds(routeLayer.getBounds(), { padding:[60,60] });
+  }
+
+  // ── live simulation ──
+  function startLiveTracking(from, to, etaMinutes) {
+    if (driverMarker) map.removeLayer(driverMarker);
+    const coords = window._routeCoords || [[from.lat,from.lng],[to.lat,to.lng]];
+    const totalSteps = coords.length;
+    let step = 0;
+
+    driverMarker = L.marker([from.lat, from.lng], { icon: carIcon }).addTo(map);
+    document.getElementById('live-badge').style.display = 'inline-flex';
+
+    // ~3 seconds per route segment scaled to ETA
+    const msPerStep = Math.max(2000, (etaMinutes * 60 * 1000) / totalSteps);
+
+    window._liveInterval = setInterval(() => {
+      if (step >= totalSteps - 1) {
+        clearInterval(window._liveInterval);
+        // Final status: done
+        setTimeout(() => advanceStatus('done'), 1000);
+        return;
+      }
+      step++;
+      const [lat, lng] = coords[step];
+      driverMarker.setLatLng([lat, lng]);
+
+      // Trigger status changes at specific progress points
+      const pct = step / (totalSteps - 1);
+      if (pct >= 0.05 && !window._st_assigned) { window._st_assigned = true; advanceStatus('assigned'); }
+      if (pct >= 0.15 && !window._st_arrived)  { window._st_arrived = true;  advanceStatus('arrived'); }
+      if (pct >= 0.20 && !window._st_onride)   { window._st_onride  = true;  advanceStatus('onride'); }
+    }, msPerStep);
+  }
+
+  function advanceStatus(stage) {
+    const now = new Date().toLocaleTimeString('ar-EG', { hour:'2-digit', minute:'2-digit' });
+    if (stage === 'assigned') {
+      document.getElementById('st-confirmed').className = 'status-step done';
+      document.getElementById('st-assigned').className  = 'status-step active';
+    }
+    if (stage === 'arrived') {
+      document.getElementById('st-assigned').className  = 'status-step done';
+      document.getElementById('st-arrived').className   = 'status-step active';
+      document.getElementById('st-arrived-time').textContent = now;
+    }
+    if (stage === 'onride') {
+      document.getElementById('st-arrived').className   = 'status-step done';
+      document.getElementById('st-onride').className    = 'status-step active';
+      document.getElementById('st-onride-time').textContent = now;
+    }
+    if (stage === 'done') {
+      document.getElementById('st-onride').className    = 'status-step done';
+      document.getElementById('st-done').className      = 'status-step done';
+      document.getElementById('st-done-time').textContent = now;
+      document.getElementById('live-badge').style.display = 'none';
+    }
+  }
+
+  // ── selectors ──
+  const fromSel = document.getElementById('from-area');
+  const toSel   = document.getElementById('to-area');
+  const summary = document.getElementById('route-summary');
+  const formSec = document.getElementById('form-section');
+
+  function areaBy(sel) {
+    const o = sel.options[sel.selectedIndex];
+    if (!o?.value) return null;
+    return { id: o.value, name: o.text, lat: +o.dataset.lat, lng: +o.dataset.lng };
+  }
+
+  function updateUI() {
+    const from = areaBy(fromSel), to = areaBy(toSel);
+    if (!from || !to || from.id === to.id) {
+      summary.classList.remove('visible'); formSec.classList.remove('visible'); return;
+    }
+    const km = haversineKm(from.lat, from.lng, to.lat, to.lng);
+    document.getElementById('sum-dist').textContent  = (km*1.35).toFixed(1)+' كم';
+    document.getElementById('sum-eta').textContent   = etaMin(km)+' دق';
+    document.getElementById('sum-price').textContent = fareFor(km)+' ج.م';
+    summary.classList.add('visible');
+    formSec.classList.add('visible');
+    showRoute(from, to);
+  }
+
+  fromSel.addEventListener('change', updateUI);
+  toSel.addEventListener('change', updateUI);
+  document.getElementById('swap-btn').addEventListener('click', () => {
+    const v = fromSel.value; fromSel.value = toSel.value; toSel.value = v; updateUI();
+  });
 
   // ── confirm ──
   document.getElementById('confirm-btn').addEventListener('click', () => {
-    const from = selArea(fromSel);
-    const to   = selArea(toSel);
+    const from = areaBy(fromSel), to = areaBy(toSel);
     if (!from || !to) return;
-
-    const name     = document.getElementById('r-name').value.trim();
-    const phone    = normPhone(document.getElementById('r-phone').value.trim());
-    const pax      = document.getElementById('r-passengers').value;
-    const timing   = document.getElementById('r-time').value;
-    const notes    = document.getElementById('r-notes').value.trim();
-    const payment  = document.querySelector('input[name="r-payment"]:checked').value;
-    const errEl    = document.getElementById('alert-error');
-
+    const name    = document.getElementById('r-name').value.trim();
+    const phone   = normPhone(document.getElementById('r-phone').value.trim());
+    const errEl   = document.getElementById('alert-error');
     errEl.classList.remove('visible');
+    if (!name) { errEl.textContent='يرجى إدخال الاسم.'; errEl.classList.add('visible'); return; }
+    if (!EG.test(phone)) { errEl.textContent='رقم جوال مصري غير صحيح (يبدأ بـ 010 أو 011 أو 012 أو 015).'; errEl.classList.add('visible'); return; }
 
-    if (!name) {
-      errEl.textContent = 'يرجى إدخال الاسم.';
-      errEl.classList.add('visible'); return;
-    }
-    if (!EG.test(phone)) {
-      errEl.textContent = 'يرجى إدخال رقم جوال مصري صحيح (11 رقمًا يبدأ بـ 010 أو 011 أو 012 أو 015).';
-      errEl.classList.add('visible'); return;
-    }
+    const km      = haversineKm(from.lat, from.lng, to.lat, to.lng);
+    const fare    = fareFor(km);
+    const eta     = etaMin(km);
+    const pax     = document.getElementById('r-passengers').value;
+    const timing  = { now:'الآن فورًا','15':'بعد 15 دقيقة','30':'بعد 30 دقيقة','60':'بعد ساعة' }[document.getElementById('r-time').value];
+    const pay     = { cash:'كاش', wallet:'فودافون كاش / إنستاباي' }[document.querySelector('input[name="r-payment"]:checked').value];
+    const notes   = document.getElementById('r-notes').value.trim();
 
-    const km   = haversineKm(from.lat, from.lng, to.lat, to.lng);
-    const fare = fareForDist(km);
-    const eta  = etaMin(km);
-
-    const timingLabel = {
-      now: 'الآن فورًا', '15': 'بعد 15 دقيقة',
-      '30': 'بعد 30 دقيقة', '60': 'بعد ساعة', later: 'موعد لاحق'
-    }[timing] || timing;
-
-    const payLabel = { cash: 'كاش عند الوصول', vodafone: 'فودافون كاش / إنستاباي' }[payment];
-
-    const order = {
-      id: 'R' + Date.now(),
-      type: 'ride',
-      from: from.name,
-      to: to.name,
-      name, phone,
-      passengers: pax,
-      timing: timingLabel,
-      notes, payment: payLabel,
-      fare, eta,
-      distance: (km * 1.35).toFixed(1),
-      status: 'pending',
-      createdAt: new Date().toISOString(),
-    };
-
-    // save order
     try {
-      const orders = JSON.parse(localStorage.getItem('wslha_orders') || '[]');
-      orders.unshift(order);
+      const orders = JSON.parse(localStorage.getItem('wslha_orders')||'[]');
+      orders.unshift({ id:'R'+Date.now(), type:'ride', from:from.name, to:to.name, name, phone, passengers:pax, timing, notes, payment:pay, fare, eta, distance:(km*1.35).toFixed(1), status:'pending', createdAt:new Date().toISOString() });
       localStorage.setItem('wslha_orders', JSON.stringify(orders));
     } catch {}
 
-    // show success
-    const rows = [
-      ['من',        from.name],
-      ['إلى',       to.name],
-      ['المسافة',   (km * 1.35).toFixed(1) + ' كم'],
-      ['الوقت المقدر', eta + ' دقيقة'],
-      ['الراكب',    name],
-      ['الجوال',    phone],
-      ['الركاب',    pax],
-      ['الانطلاق',  timingLabel],
-      ['الدفع',     payLabel],
-      ['السعر',     fare + ' ج.م', true],
-    ];
-    document.getElementById('success-details').innerHTML = rows.map(([k, v, price]) =>
-      `<div class="detail-row">
-        <span class="detail-row__key">${k}</span>
-        <span class="detail-row__val${price ? ' detail-row__val--price' : ''}">${v}</span>
-      </div>`
-    ).join('');
+    // Show success + details
+    const rows = [['من',from.name],['إلى',to.name],['المسافة',(km*1.35).toFixed(1)+' كم'],['الوقت المقدر',eta+' دقيقة'],['الراكب',name],['الجوال',phone],['الركاب',pax],['الانطلاق',timing],['الدفع',pay],['السعر',fare+' ج.م',true]];
+    document.getElementById('success-details').innerHTML = rows.map(([k,v,p])=>`<div class="detail-row"><span class="detail-row__key">${k}</span><span class="detail-row__val${p?' detail-row__val--price':''}">${v}</span></div>`).join('');
 
-    bookCard.style.display = 'none';
-    succCard.classList.add('visible');
+    document.getElementById('booking-card').style.display = 'none';
+    document.getElementById('success-card').classList.add('visible');
+    document.getElementById('fare-section').style.display = 'none';
+
+    // Live ride status
+    document.getElementById('ride-status').classList.add('visible');
+    document.getElementById('st-confirmed-time').textContent = new Date().toLocaleTimeString('ar-EG',{hour:'2-digit',minute:'2-digit'});
+    document.getElementById('st-confirmed').className = 'status-step done';
+    document.getElementById('st-assigned').className  = 'status-step active';
+
+    window._st_assigned = false; window._st_arrived = false; window._st_onride = false;
+    if (window._liveInterval) clearInterval(window._liveInterval);
+    setTimeout(() => startLiveTracking(from, to, eta), 1500);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   });
 
   // ── new ride ──
   document.getElementById('new-ride-btn').addEventListener('click', () => {
-    fromSel.value = '';
-    toSel.value   = '';
-    document.getElementById('r-name').value  = '';
-    document.getElementById('r-phone').value = '';
-    document.getElementById('r-notes').value = '';
-    document.getElementById('r-passengers').value = '1';
-    document.getElementById('r-time').value = 'now';
-    document.querySelector('input[name="r-payment"][value="cash"]').checked = true;
-    summary.classList.remove('visible');
-    formSec.classList.remove('visible');
-    bookCard.style.display = '';
-    succCard.classList.remove('visible');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    if (window._liveInterval) clearInterval(window._liveInterval);
+    if (driverMarker) { map.removeLayer(driverMarker); driverMarker = null; }
+    document.getElementById('live-badge').style.display = 'none';
+    ['r-name','r-phone','r-notes'].forEach(id => document.getElementById(id).value='');
+    document.getElementById('r-passengers').value='1';
+    document.getElementById('r-time').value='now';
+    document.querySelector('input[name="r-payment"][value="cash"]').checked=true;
+    fromSel.value=''; toSel.value='';
+    summary.classList.remove('visible'); formSec.classList.remove('visible');
+    document.getElementById('booking-card').style.display='';
+    document.getElementById('success-card').classList.remove('visible');
+    document.getElementById('ride-status').classList.remove('visible');
+    document.getElementById('fare-section').style.display='';
+    ['st-confirmed','st-assigned','st-arrived','st-onride','st-done'].forEach(id => document.getElementById(id).className='status-step');
+    if (routeLayer) { map.removeLayer(routeLayer); routeLayer=null; }
+    if (fromMarker) { map.removeLayer(fromMarker); fromMarker=null; }
+    if (toMarker)   { map.removeLayer(toMarker);   toMarker=null; }
+    window.scrollTo({ top:0, behavior:'smooth' });
   });
 
   // ── fare guide ──
-  const SAMPLE_ROUTES = [
-    ['center', 'new-damietta'],
-    ['center', 'ras-el-bar'],
-    ['center', 'kafr-saad'],
-    ['center', 'faraskur'],
-    ['new-damietta', 'ras-el-bar'],
-    ['center', 'zarqa'],
-    ['center', 'el-saro'],
-    ['center', 'kafr-batikh'],
-  ];
+  const SAMPLE = [['center','new-damietta'],['center','ras-el-bar'],['center','kafr-saad'],['center','faraskur'],['new-damietta','ras-el-bar'],['center','zarqa'],['center','el-saro'],['center','kafr-batikh']];
   const grid = document.getElementById('fare-grid');
-  SAMPLE_ROUTES.forEach(([fid, tid]) => {
-    const f = AREAS.find(a => a.id === fid);
-    const t = AREAS.find(a => a.id === tid);
-    if (!f || !t) return;
-    const km   = haversineKm(f.lat, f.lng, t.lat, t.lng);
-    const fare = fareForDist(km);
-    grid.insertAdjacentHTML('beforeend', `
-      <div class="fare-card">
-        <div class="fare-card__route">
-          <div class="fare-card__from">${f.name}</div>
-          <div class="fare-card__to">← ${t.name}</div>
-        </div>
-        <div class="fare-card__price">${fare} ج.م</div>
-      </div>
-    `);
+  SAMPLE.forEach(([fid,tid]) => {
+    const f=AREAS.find(a=>a.id===fid), t=AREAS.find(a=>a.id===tid);
+    if(!f||!t) return;
+    const fare = fareFor(haversineKm(f.lat,f.lng,t.lat,t.lng));
+    grid.insertAdjacentHTML('beforeend',`<div class="fare-card"><div class="fare-card__route"><div class="fare-card__from">${f.name}</div><div class="fare-card__to">← ${t.name}</div></div><div class="fare-card__price">${fare} ج.م</div></div>`);
   });
 </script>
