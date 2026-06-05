@@ -39,7 +39,7 @@
   
 <link rel="stylesheet" href="/_astro/about.1b1989f6.css" />
 <link rel="stylesheet" href="/_astro/about.74625c24.css" />
-<link rel="stylesheet" href="/_astro/rides.299f02c2.css" /><script type="module" src="/_astro/hoisted.b7b5774d.js"></script></head>
+<link rel="stylesheet" href="/_astro/rides.79269b45.css" /><script type="module" src="/_astro/hoisted.b7b5774d.js"></script></head>
 
 <body>
   <header role="banner" class="astro-DMQPWCEC">
@@ -264,12 +264,12 @@
             </div>
           </div>
 
-          <div id="route-summary" class="route-summary astro-KBAKWRXI">
-            <div class="route-summary__stat astro-KBAKWRXI"><div id="sum-dist" class="route-summary__val astro-KBAKWRXI"></div><div class="route-summary__key astro-KBAKWRXI">المسافة الفعلية</div></div>
+          <div id="route-summary" class="route-summary empty astro-KBAKWRXI">
+            <div class="route-summary__stat astro-KBAKWRXI"><div id="sum-dist" class="route-summary__val astro-KBAKWRXI">—</div><div class="route-summary__key astro-KBAKWRXI">المسافة الفعلية</div></div>
             <div class="route-summary__divider astro-KBAKWRXI"></div>
-            <div class="route-summary__stat astro-KBAKWRXI"><div id="sum-eta" class="route-summary__val astro-KBAKWRXI"></div><div class="route-summary__key astro-KBAKWRXI">الوقت المقدر</div></div>
+            <div class="route-summary__stat astro-KBAKWRXI"><div id="sum-eta" class="route-summary__val astro-KBAKWRXI">—</div><div class="route-summary__key astro-KBAKWRXI">الوقت المقدر</div></div>
             <div class="route-summary__divider astro-KBAKWRXI"></div>
-            <div class="route-summary__stat astro-KBAKWRXI"><div id="sum-price" class="route-summary__val route-summary__val--price astro-KBAKWRXI"></div><div class="route-summary__key astro-KBAKWRXI">السعر النهائي</div></div>
+            <div class="route-summary__stat astro-KBAKWRXI"><div id="sum-price" class="route-summary__val route-summary__val--price astro-KBAKWRXI">—</div><div class="route-summary__key astro-KBAKWRXI">السعر النهائي</div></div>
           </div>
           <div id="fare-breakdown" style="padding: var(--sp-2) var(--sp-6) 0; text-align:center;" class="astro-KBAKWRXI"></div>
 
@@ -301,7 +301,8 @@
                 <label class="payment-opt astro-KBAKWRXI"><input type="radio" name="r-payment" value="wallet" class="astro-KBAKWRXI"><span class="payment-opt__icon astro-KBAKWRXI">📱</span><span class="astro-KBAKWRXI"><span class="payment-opt__name astro-KBAKWRXI">فودافون كاش / إنستاباي</span><br class="astro-KBAKWRXI"><span class="payment-opt__desc astro-KBAKWRXI">تحويل إلكتروني</span></span><span class="check-circle astro-KBAKWRXI"></span></label>
               </div>
             </div>
-            <button id="confirm-btn" class="submit-btn astro-KBAKWRXI" type="button">🚗 تأكيد الطلب وتتبع الرحلة</button>
+            <button id="confirm-btn" class="submit-btn astro-KBAKWRXI" type="button" disabled>🚗 تأكيد الطلب وتتبع الرحلة</button>
+            <div id="submit-hint" class="submit-hint visible astro-KBAKWRXI">اختر منطقة الانطلاق والوصول أولاً</div>
           </div>
         </div>
 
@@ -797,7 +798,6 @@
   const fromSel = document.getElementById('from-area');
   const toSel   = document.getElementById('to-area');
   const summary = document.getElementById('route-summary');
-  const formSec = document.getElementById('form-section');
 
   function areaBy(sel) {
     const o = sel.options[sel.selectedIndex];
@@ -805,10 +805,23 @@
     return { id: o.value, name: o.text, lat: +o.dataset.lat, lng: +o.dataset.lng };
   }
 
+  const confirmBtn = document.getElementById('confirm-btn');
+  const submitHint = document.getElementById('submit-hint');
+
   function updateUI() {
     const from = areaBy(fromSel), to = areaBy(toSel);
     if (!from || !to || from.id === to.id) {
-      summary.classList.remove('visible'); formSec.classList.remove('visible'); return;
+      // Reset to placeholder state
+      document.getElementById('sum-dist').textContent  = '—';
+      document.getElementById('sum-eta').textContent   = '—';
+      document.getElementById('sum-price').textContent = '—';
+      const bkEl = document.getElementById('fare-breakdown');
+      if (bkEl) bkEl.innerHTML = '';
+      summary.classList.add('empty');
+      confirmBtn.disabled = true;
+      confirmBtn.classList.remove('ready');
+      submitHint.classList.add('visible');
+      return;
     }
     // Estimate while OSRM loads
     _realRoadKm = 0; _realEtaMin = 0;
@@ -819,8 +832,10 @@
     document.getElementById('sum-price').textContent = fareFor(estRoad) + ' ج.م';
     const bkEl = document.getElementById('fare-breakdown');
     if (bkEl) bkEl.innerHTML = '<span style="color:var(--color-text-faint);font-size:11px;">جاري حساب المسافة الفعلية...</span>';
-    summary.classList.add('visible');
-    formSec.classList.add('visible');
+    summary.classList.remove('empty');
+    confirmBtn.disabled = false;
+    confirmBtn.classList.add('ready');
+    submitHint.classList.remove('visible');
     showRoute(from, to); // will update with real distance after OSRM
   }
 
@@ -853,8 +868,8 @@
     const pay    = document.querySelector('input[name="r-payment"]:checked').value;
     const notes  = document.getElementById('r-notes').value.trim();
 
-    const confirmBtn = document.getElementById('confirm-btn');
     confirmBtn.disabled    = true;
+    confirmBtn.classList.remove('ready');
     confirmBtn.textContent = 'جاري إرسال الطلب...';
 
     // POST to Supabase
@@ -877,6 +892,7 @@
     } catch {}
 
     confirmBtn.disabled    = false;
+    confirmBtn.classList.add('ready');
     confirmBtn.textContent = '🚗 تأكيد الطلب وتتبع الرحلة';
 
     // Show ride status panel
@@ -917,10 +933,10 @@
     (document.getElementById('r-time') as HTMLSelectElement).value = 'now';
     (document.querySelector('input[name="r-payment"][value="cash"]') as HTMLInputElement).checked = true;
     fromSel.value = ''; toSel.value = '';
-    summary.classList.remove('visible'); formSec.classList.remove('visible');
     document.getElementById('success-card').classList.remove('visible');
     clearMap();
     resetToBooking();
+    updateUI();
     window.scrollTo({ top: 0, behavior: 'smooth' });
   });
 
