@@ -250,6 +250,92 @@ import { AREAS } from '../data/rides';
   .btn-filled { padding: var(--sp-3) var(--sp-5); background: var(--color-primary); border-radius: var(--radius-lg); color: #fff; font-family: var(--font-body); font-weight: var(--weight-bold); font-size: var(--text-sm); cursor: pointer; border: none; text-decoration: none; display: inline-flex; align-items: center; gap: var(--sp-2); transition: all var(--ease); }
   .btn-filled:hover { background: var(--color-primary-dark); }
 
+  /* ── searching state ── */
+  .searching-card {
+    background: var(--color-bg); border: 1px solid var(--color-border);
+    border-radius: var(--radius-xl); box-shadow: var(--shadow-md);
+    padding: var(--sp-8) var(--sp-6); text-align: center; display: none;
+  }
+  .searching-card.visible { display: block; }
+  .search-radar {
+    position: relative; width: 120px; height: 120px;
+    margin: 0 auto var(--sp-5); display: flex; align-items: center; justify-content: center;
+  }
+  .search-ring {
+    position: absolute; border-radius: 50%; border: 2px solid var(--color-primary);
+    opacity: 0; animation: search-pulse 2.4s ease-out infinite;
+  }
+  .search-ring:nth-child(1) { width: 120px; height: 120px; animation-delay: 0s; }
+  .search-ring:nth-child(2) { width:  80px; height:  80px; animation-delay: 0.7s; }
+  .search-ring:nth-child(3) { width:  40px; height:  40px; animation-delay: 1.4s; }
+  @keyframes search-pulse {
+    0%   { opacity: 0.8; transform: scale(0.5); }
+    100% { opacity: 0;   transform: scale(1); }
+  }
+  .search-center {
+    position: relative; z-index: 2; width: 46px; height: 46px;
+    background: var(--color-primary); border-radius: 50%;
+    display: flex; align-items: center; justify-content: center; font-size: 1.5rem;
+    box-shadow: 0 0 0 5px var(--color-primary-light);
+  }
+  .search-title { font-size: var(--text-xl); font-weight: var(--weight-black); margin-bottom: var(--sp-2); }
+  .search-sub   { color: var(--color-text-faint); font-size: var(--text-sm); margin-bottom: var(--sp-5); }
+  .search-mini  {
+    background: #f8fafc; border: 1px solid var(--color-border);
+    border-radius: var(--radius-xl); padding: var(--sp-4) var(--sp-5);
+    text-align: right; margin-bottom: var(--sp-5);
+  }
+  .search-mini__row { display: flex; justify-content: space-between; align-items: center; padding: var(--sp-2) 0; font-size: var(--text-sm); }
+  .search-mini__row:not(:last-child) { border-bottom: 1px solid var(--color-border); }
+  .search-mini__key { color: var(--color-text-faint); }
+  .search-mini__val { font-weight: var(--weight-bold); }
+  .search-mini__val--green { color: #16a34a; font-size: var(--text-base); font-weight: var(--weight-black); }
+  .cancel-ride-btn {
+    background: transparent; border: 1.5px solid #d1d5db; color: #6b7280;
+    border-radius: var(--radius-lg); padding: var(--sp-3) var(--sp-5);
+    font-family: var(--font-body); font-size: var(--text-sm); cursor: pointer; transition: all var(--ease);
+  }
+  .cancel-ride-btn:hover { background: #fee2e2; color: #dc2626; border-color: #fca5a5; }
+
+  /* ── driver found card ── */
+  .driver-card {
+    background: var(--color-bg); border: 1px solid var(--color-border);
+    border-radius: var(--radius-xl); box-shadow: var(--shadow-md); overflow: hidden; display: none;
+  }
+  .driver-card.visible { display: block; }
+  .driver-card__header {
+    background: linear-gradient(135deg, #1d4ed8, #3b82f6);
+    padding: var(--sp-4) var(--sp-5); color: #fff;
+    display: flex; align-items: center; gap: var(--sp-3);
+  }
+  .driver-avatar {
+    width: 52px; height: 52px; border-radius: 50%;
+    background: rgba(255,255,255,.2);
+    display: flex; align-items: center; justify-content: center; font-size: 1.6rem; flex-shrink: 0;
+  }
+  .driver-card__name   { font-weight: var(--weight-black); font-size: var(--text-base); }
+  .driver-card__status { font-size: var(--text-xs); opacity: 0.85; }
+  .driver-call-btn {
+    margin-right: auto;
+    display: flex; align-items: center; gap: 6px;
+    background: rgba(255,255,255,.2); color: #fff;
+    border-radius: var(--radius-lg); padding: var(--sp-2) var(--sp-4);
+    font-size: var(--text-sm); font-weight: var(--weight-bold);
+    text-decoration: none; transition: background 0.2s;
+  }
+  .driver-call-btn:hover { background: rgba(255,255,255,.35); }
+  .driver-card__body { padding: var(--sp-5); }
+  .driver-route { display: flex; flex-direction: column; gap: var(--sp-2); margin-bottom: var(--sp-4); }
+  .driver-route-row { display: flex; align-items: center; gap: var(--sp-3); font-size: var(--text-sm); }
+  .d-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .d-dot.from { background: #3b82f6; }
+  .d-dot.to   { background: #ef4444; }
+  .driver-fare {
+    display: inline-flex; align-items: center; gap: var(--sp-2);
+    background: #dcfce7; color: #16a34a; border-radius: var(--radius-lg);
+    padding: var(--sp-2) var(--sp-4); font-weight: var(--weight-black); font-size: var(--text-base);
+  }
+
   /* ── responsive ── */
   @media (max-width: 768px) {
     .main-grid { grid-template-columns: 1fr; }
@@ -349,12 +435,59 @@ import { AREAS } from '../data/rides';
         <!-- Success card -->
         <div id="success-card" class="success-card">
           <div class="success-card__icon">✅</div>
-          <h2 class="success-card__title">تم تأكيد طلبك!</h2>
-          <p class="success-card__sub">تابع رحلتك على الخريطة ← السائق في الطريق إليك</p>
+          <h2 class="success-card__title">انتهت الرحلة!</h2>
+          <p class="success-card__sub">شكراً لاستخدامك وصّلها — نراك قريباً</p>
           <div id="success-details" class="detail-rows"></div>
           <div class="success-actions">
             <a href="/orders" class="btn-outline">📋 طلباتي</a>
             <button id="new-ride-btn" class="btn-filled" type="button">🚗 رحلة جديدة</button>
+          </div>
+        </div>
+
+        <!-- Searching for driver -->
+        <div id="searching-card" class="searching-card">
+          <div class="search-radar">
+            <div class="search-ring"></div>
+            <div class="search-ring"></div>
+            <div class="search-ring"></div>
+            <div class="search-center">🔍</div>
+          </div>
+          <h2 class="search-title">جاري البحث عن سائق...</h2>
+          <p class="search-sub">سيتم تعيين أقرب سائق متاح خلال دقائق</p>
+          <div class="search-mini">
+            <div class="search-mini__row">
+              <span class="search-mini__key">من</span>
+              <span class="search-mini__val" id="search-from">—</span>
+            </div>
+            <div class="search-mini__row">
+              <span class="search-mini__key">إلى</span>
+              <span class="search-mini__val" id="search-to">—</span>
+            </div>
+            <div class="search-mini__row">
+              <span class="search-mini__key">السعر</span>
+              <span class="search-mini__val search-mini__val--green" id="search-fare">—</span>
+            </div>
+          </div>
+          <button class="cancel-ride-btn" id="cancel-ride-btn">إلغاء الطلب</button>
+        </div>
+
+        <!-- Driver found -->
+        <div id="driver-card" class="driver-card">
+          <div class="driver-card__header">
+            <div class="driver-avatar">🚗</div>
+            <div>
+              <div class="driver-card__name" id="driver-card-name">—</div>
+              <div class="driver-card__status" id="driver-card-status">السائق في الطريق إليك</div>
+            </div>
+            <a class="driver-call-btn" id="driver-call-btn" href="tel:">📞 اتصل</a>
+          </div>
+          <div class="driver-card__body">
+            <div class="driver-route">
+              <div class="driver-route-row"><span class="d-dot from"></span><span id="driver-card-from">—</span></div>
+              <div class="driver-route-row" style="padding-right:13px;color:var(--color-text-faint);font-size:11px;">↓</div>
+              <div class="driver-route-row"><span class="d-dot to"></span><span id="driver-card-to">—</span></div>
+            </div>
+            <span class="driver-fare">💵 <span id="driver-card-fare">—</span> ج.م</span>
           </div>
         </div>
       </div>
@@ -412,6 +545,11 @@ import { AREAS } from '../data/rides';
 </Layout>
 
 <script define:vars={{ AREAS }}>
+  // ── Supabase ──
+  const SB_URL = 'https://vtikgyiopkjnrwlqnmfx.supabase.co';
+  const SB_KEY = 'sb_publishable_PLSnpvCT-sAyUMtymNgTwA_QmL2suw4';
+  const SB_H = { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}`, 'Content-Type': 'application/json' };
+
   // ── Google Maps API key ──
   const GMAPS_KEY = 'AIzaSyAKvFfBYNDcTZgvZZH5s_lQbOc24LNjLsY';
 
@@ -566,6 +704,131 @@ import { AREAS } from '../data/rides';
     }
   }
 
+  // ── ride state ──
+  let activeRideId = null;
+  let ridePoller   = null;
+  let _currentFrom = null, _currentTo = null, _currentEta = 0;
+  let _driverShown = false, _onRide = false;
+
+  async function sbCreateRide(payload) {
+    try {
+      const res = await fetch(`${SB_URL}/rest/v1/rides`, {
+        method: 'POST',
+        headers: { ...SB_H, Prefer: 'return=representation' },
+        body: JSON.stringify(payload),
+      });
+      const rows = await res.json();
+      return Array.isArray(rows) ? rows[0] : null;
+    } catch { return null; }
+  }
+
+  async function sbCancelRide(id) {
+    try {
+      await fetch(`${SB_URL}/rest/v1/rides?id=eq.${id}`, {
+        method: 'PATCH',
+        headers: { ...SB_H, Prefer: 'return=minimal' },
+        body: JSON.stringify({ status: 'cancelled' }),
+      });
+    } catch {}
+  }
+
+  async function pollRideStatus() {
+    if (!activeRideId) return;
+    try {
+      const res = await fetch(`${SB_URL}/rest/v1/rides?id=eq.${activeRideId}&select=*`, { headers: SB_H });
+      const rows = await res.json();
+      if (!Array.isArray(rows) || rows.length === 0) return;
+      const ride = rows[0];
+
+      if ((ride.status === 'accepted' || ride.status === 'in_progress' || ride.status === 'completed') && !_driverShown) {
+        _driverShown = true;
+        showDriverFound(ride);
+      }
+      if (ride.status === 'in_progress' && !_onRide) {
+        _onRide = true;
+        document.getElementById('driver-card-status').textContent = 'في الطريق للوجهة 🚗';
+        advanceStatus('onride');
+      }
+      if (ride.status === 'completed') {
+        stopPoller();
+        advanceStatus('done');
+        setTimeout(() => showFinalSuccess(ride), 1800);
+      }
+      if (ride.status === 'cancelled') {
+        stopPoller();
+        resetToBooking();
+      }
+    } catch {}
+  }
+
+  function stopPoller() {
+    if (ridePoller) { clearInterval(ridePoller); ridePoller = null; }
+  }
+
+  function showSearching(fromName, toName, fare) {
+    document.getElementById('booking-card').style.display = 'none';
+    document.getElementById('success-card').classList.remove('visible');
+    document.getElementById('driver-card').classList.remove('visible');
+    document.getElementById('searching-card').classList.add('visible');
+    document.getElementById('fare-section').style.display = 'none';
+    document.getElementById('search-from').textContent = fromName;
+    document.getElementById('search-to').textContent   = toName;
+    document.getElementById('search-fare').textContent  = fare + ' ج.م';
+  }
+
+  function showDriverFound(ride) {
+    document.getElementById('searching-card').classList.remove('visible');
+    const card = document.getElementById('driver-card');
+    card.classList.add('visible');
+    document.getElementById('driver-card-name').textContent    = ride.driver_name  || 'السائق';
+    document.getElementById('driver-card-status').textContent  = 'السائق في الطريق إليك 🚗';
+    document.getElementById('driver-call-btn').setAttribute('href', 'tel:' + (ride.driver_phone || ''));
+    document.getElementById('driver-card-from').textContent = ride.from_area;
+    document.getElementById('driver-card-to').textContent   = ride.to_area;
+    document.getElementById('driver-card-fare').textContent = ride.fare;
+    advanceStatus('assigned');
+    if (window._routeCoords && _currentFrom && _currentTo) {
+      startLiveTracking(_currentFrom, _currentTo, _currentEta);
+    }
+  }
+
+  function showFinalSuccess(ride) {
+    document.getElementById('driver-card').classList.remove('visible');
+    document.getElementById('ride-status').classList.remove('visible');
+    const details = [
+      ['من', ride.from_area], ['إلى', ride.to_area],
+      ['المسافة', (ride.distance_km * 1.35).toFixed(1) + ' كم'],
+      ['السائق', ride.driver_name || '—'],
+      ['السعر', ride.fare + ' ج.م', true],
+    ];
+    document.getElementById('success-details').innerHTML = details
+      .map(([k, v, p]) => `<div class="detail-row"><span class="detail-row__key">${k}</span><span class="detail-row__val${p ? ' detail-row__val--price' : ''}">${v}</span></div>`)
+      .join('');
+    document.getElementById('success-card').classList.add('visible');
+  }
+
+  function resetToBooking() {
+    stopPoller();
+    activeRideId = null; _driverShown = false; _onRide = false;
+    if (window._liveInterval) { clearInterval(window._liveInterval); window._liveInterval = null; }
+    document.getElementById('searching-card').classList.remove('visible');
+    document.getElementById('driver-card').classList.remove('visible');
+    document.getElementById('booking-card').style.display = '';
+    document.getElementById('ride-status').classList.remove('visible');
+    document.getElementById('fare-section').style.display = '';
+    document.getElementById('live-badge').style.display = 'none';
+    ['st-confirmed','st-assigned','st-arrived','st-onride','st-done']
+      .forEach(id => document.getElementById(id).className = 'status-step');
+    window._st_assigned = window._st_arrived = window._st_onride = false;
+  }
+
+  document.getElementById('cancel-ride-btn').addEventListener('click', async () => {
+    if (activeRideId) await sbCancelRide(activeRideId);
+    resetToBooking();
+    clearMap();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+
   // ── selectors ──
   const fromSel = document.getElementById('from-area');
   const toSel   = document.getElementById('to-area');
@@ -599,68 +862,92 @@ import { AREAS } from '../data/rides';
   });
 
   // ── confirm ──
-  document.getElementById('confirm-btn').addEventListener('click', () => {
+  document.getElementById('confirm-btn').addEventListener('click', async () => {
     const from = areaBy(fromSel), to = areaBy(toSel);
     if (!from || !to) return;
-    const name    = document.getElementById('r-name').value.trim();
-    const phone   = normPhone(document.getElementById('r-phone').value.trim());
-    const errEl   = document.getElementById('alert-error');
+    const name  = document.getElementById('r-name').value.trim();
+    const phone = normPhone(document.getElementById('r-phone').value.trim());
+    const errEl = document.getElementById('alert-error');
     errEl.classList.remove('visible');
-    if (!name) { errEl.textContent='يرجى إدخال الاسم.'; errEl.classList.add('visible'); return; }
-    if (!EG.test(phone)) { errEl.textContent='رقم جوال مصري غير صحيح (يبدأ بـ 010 أو 011 أو 012 أو 015).'; errEl.classList.add('visible'); return; }
+    if (!name)          { errEl.textContent = 'يرجى إدخال الاسم.'; errEl.classList.add('visible'); return; }
+    if (!EG.test(phone)){ errEl.textContent = 'رقم جوال مصري غير صحيح (يبدأ بـ 010 أو 011 أو 012 أو 015).'; errEl.classList.add('visible'); return; }
 
-    const km      = haversineKm(from.lat, from.lng, to.lat, to.lng);
-    const fare    = fareFor(km);
-    const eta     = etaMin(km);
-    const pax     = document.getElementById('r-passengers').value;
-    const timing  = { now:'الآن فورًا','15':'بعد 15 دقيقة','30':'بعد 30 دقيقة','60':'بعد ساعة' }[document.getElementById('r-time').value];
-    const pay     = { cash:'كاش', wallet:'فودافون كاش / إنستاباي' }[document.querySelector('input[name="r-payment"]:checked').value];
-    const notes   = document.getElementById('r-notes').value.trim();
+    const km     = haversineKm(from.lat, from.lng, to.lat, to.lng);
+    const fare   = fareFor(km);
+    const eta    = etaMin(km);
+    const pax    = document.getElementById('r-passengers').value;
+    const pay    = document.querySelector('input[name="r-payment"]:checked').value;
+    const notes  = document.getElementById('r-notes').value.trim();
 
+    const confirmBtn = document.getElementById('confirm-btn');
+    confirmBtn.disabled    = true;
+    confirmBtn.textContent = 'جاري إرسال الطلب...';
+
+    // POST to Supabase
+    const ridePayload = {
+      customer_phone: phone, customer_name: name,
+      from_area: from.name, from_lat: from.lat, from_lng: from.lng,
+      to_area:   to.name,   to_lat:   to.lat,   to_lng:   to.lng,
+      distance_km: km, fare, eta_minutes: eta,
+      passengers: parseInt(pax), payment: pay, notes,
+      status: 'pending',
+    };
+    const ride = await sbCreateRide(ridePayload);
+    activeRideId = ride?.id || null;
+
+    // Save to localStorage for orders history
     try {
-      const orders = JSON.parse(localStorage.getItem('wslha_orders')||'[]');
-      orders.unshift({ id:'R'+Date.now(), type:'ride', from:from.name, to:to.name, name, phone, passengers:pax, timing, notes, payment:pay, fare, eta, distance:(km*1.35).toFixed(1), status:'pending', createdAt:new Date().toISOString() });
+      const orders = JSON.parse(localStorage.getItem('wslha_orders') || '[]');
+      orders.unshift({ id: ride?.id || ('R'+Date.now()), type:'ride', from:from.name, to:to.name, name, phone, passengers:pax, payment:pay, fare, eta, distance:(km*1.35).toFixed(1), status:'pending', createdAt:new Date().toISOString() });
       localStorage.setItem('wslha_orders', JSON.stringify(orders));
     } catch {}
 
-    // Show success + details
-    const rows = [['من',from.name],['إلى',to.name],['المسافة',(km*1.35).toFixed(1)+' كم'],['الوقت المقدر',eta+' دقيقة'],['الراكب',name],['الجوال',phone],['الركاب',pax],['الانطلاق',timing],['الدفع',pay],['السعر',fare+' ج.م',true]];
-    document.getElementById('success-details').innerHTML = rows.map(([k,v,p])=>`<div class="detail-row"><span class="detail-row__key">${k}</span><span class="detail-row__val${p?' detail-row__val--price':''}">${v}</span></div>`).join('');
+    confirmBtn.disabled    = false;
+    confirmBtn.textContent = '🚗 تأكيد الطلب وتتبع الرحلة';
 
-    document.getElementById('booking-card').style.display = 'none';
-    document.getElementById('success-card').classList.add('visible');
-    document.getElementById('fare-section').style.display = 'none';
-
-    // Live ride status
+    // Show ride status panel
     document.getElementById('ride-status').classList.add('visible');
-    document.getElementById('st-confirmed-time').textContent = new Date().toLocaleTimeString('ar-EG',{hour:'2-digit',minute:'2-digit'});
+    document.getElementById('st-confirmed-time').textContent = new Date().toLocaleTimeString('ar-EG', { hour:'2-digit', minute:'2-digit' });
     document.getElementById('st-confirmed').className = 'status-step done';
     document.getElementById('st-assigned').className  = 'status-step active';
 
-    window._st_assigned = false; window._st_arrived = false; window._st_onride = false;
+    _currentFrom = from; _currentTo = to; _currentEta = eta;
+    _driverShown = false; _onRide = false;
     if (window._liveInterval) clearInterval(window._liveInterval);
-    setTimeout(() => startLiveTracking(from, to, eta), 1500);
+    window._st_assigned = window._st_arrived = window._st_onride = false;
+
+    // Show route on map
+    showRoute(from, to);
+
+    showSearching(from.name, to.name, fare);
+
+    // Start polling for driver
+    if (activeRideId) {
+      ridePoller = setInterval(pollRideStatus, 2000);
+    } else {
+      // Supabase unavailable — simulate after delay
+      setTimeout(() => {
+        _driverShown = true;
+        showDriverFound({ driver_name: 'السائق المتاح', driver_phone: '', from_area: from.name, to_area: to.name, fare });
+        setTimeout(() => startLiveTracking(from, to, eta), 1000);
+      }, 4000);
+    }
+
     window.scrollTo({ top: 0, behavior: 'smooth' });
   });
 
   // ── new ride ──
   document.getElementById('new-ride-btn').addEventListener('click', () => {
-    if (window._liveInterval) clearInterval(window._liveInterval);
-    document.getElementById('live-badge').style.display = 'none';
-    ['r-name','r-phone','r-notes'].forEach(id => document.getElementById(id).value='');
-    document.getElementById('r-passengers').value='1';
-    document.getElementById('r-time').value='now';
-    document.querySelector('input[name="r-payment"][value="cash"]').checked=true;
-    fromSel.value=''; toSel.value='';
+    ['r-name','r-phone','r-notes'].forEach(id => (document.getElementById(id) as HTMLInputElement).value = '');
+    (document.getElementById('r-passengers') as HTMLSelectElement).value = '1';
+    (document.getElementById('r-time') as HTMLSelectElement).value = 'now';
+    (document.querySelector('input[name="r-payment"][value="cash"]') as HTMLInputElement).checked = true;
+    fromSel.value = ''; toSel.value = '';
     summary.classList.remove('visible'); formSec.classList.remove('visible');
-    document.getElementById('booking-card').style.display='';
     document.getElementById('success-card').classList.remove('visible');
-    document.getElementById('ride-status').classList.remove('visible');
-    document.getElementById('fare-section').style.display='';
-    ['st-confirmed','st-assigned','st-arrived','st-onride','st-done'].forEach(id => document.getElementById(id).className='status-step');
-    window._st_assigned = window._st_arrived = window._st_onride = false;
     clearMap();
-    window.scrollTo({ top:0, behavior:'smooth' });
+    resetToBooking();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   });
 
   // ── fare guide ──

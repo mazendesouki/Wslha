@@ -1,0 +1,741 @@
+---
+import Layout from '../components/layout.astro';
+import PageHero from '../components/PageHero.astro';
+---
+
+<style>
+  .dash-page {
+    max-width: 520px;
+    margin: 0 auto;
+    padding: var(--sp-6) var(--sp-4) var(--sp-20);
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-4);
+  }
+
+  /* Status bar */
+  .status-bar {
+    background: var(--color-bg);
+    border: 1.5px solid var(--color-border);
+    border-radius: var(--radius-xl);
+    padding: var(--sp-4) var(--sp-5);
+    display: flex;
+    align-items: center;
+    gap: var(--sp-4);
+    box-shadow: var(--shadow-md);
+  }
+  .status-bar__info { flex: 1; min-width: 0; }
+  .status-bar__label { font-size: 11px; color: var(--color-text-faint); }
+  .status-bar__name  { font-weight: var(--weight-black); font-size: var(--text-base); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .status-bar__phone { font-size: var(--text-xs); color: var(--color-text-muted); }
+
+  /* Toggle */
+  .toggle-wrap { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  .toggle-btn {
+    position: relative;
+    width: 64px; height: 34px;
+    border-radius: 999px;
+    border: none; cursor: pointer;
+    display: flex; align-items: center;
+    transition: background 0.3s;
+    padding: 0 4px;
+  }
+  .toggle-btn.offline { background: #d1d5db; justify-content: flex-start; }
+  .toggle-btn.online  { background: #16a34a; justify-content: flex-end; }
+  .toggle-btn__knob {
+    width: 26px; height: 26px;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 1px 4px rgba(0,0,0,.3);
+    flex-shrink: 0;
+  }
+  .toggle-label { font-size: 11px; font-weight: var(--weight-bold); white-space: nowrap; }
+  .toggle-label.online-text  { color: #16a34a; }
+  .toggle-label.offline-text { color: #6b7280; }
+
+  /* Stats */
+  .stats-strip {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--sp-3);
+  }
+  .stat-card {
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-xl);
+    padding: var(--sp-4) var(--sp-3);
+    text-align: center;
+    box-shadow: var(--shadow-md);
+  }
+  .stat-card__val  { font-size: var(--text-2xl); font-weight: var(--weight-black); color: var(--color-primary); line-height: 1; }
+  .stat-card__key  { font-size: 11px; color: var(--color-text-faint); margin-top: var(--sp-1); }
+
+  /* Offline state */
+  #state-offline {
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-xl);
+    padding: var(--sp-10) var(--sp-6);
+    text-align: center;
+    box-shadow: var(--shadow-md);
+  }
+  #state-offline.hidden { display: none; }
+  .offline-icon  { font-size: 3.5rem; margin-bottom: var(--sp-4); }
+  .offline-title { font-size: var(--text-xl); font-weight: var(--weight-black); margin-bottom: var(--sp-2); }
+  .offline-sub   { color: var(--color-text-faint); font-size: var(--text-sm); }
+
+  /* Waiting state */
+  #state-waiting {
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-xl);
+    padding: var(--sp-10) var(--sp-6);
+    text-align: center;
+    box-shadow: var(--shadow-md);
+    display: none;
+  }
+  #state-waiting.visible { display: block; }
+  .radar-wrap {
+    position: relative; width: 140px; height: 140px;
+    margin: 0 auto var(--sp-6);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .radar-ring {
+    position: absolute;
+    border-radius: 50%;
+    border: 2px solid var(--color-primary);
+    opacity: 0;
+    animation: radar-pulse 2.4s ease-out infinite;
+  }
+  .radar-ring:nth-child(1) { width: 140px; height: 140px; animation-delay: 0s; }
+  .radar-ring:nth-child(2) { width: 100px; height: 100px; animation-delay: 0.6s; }
+  .radar-ring:nth-child(3) { width:  60px; height:  60px; animation-delay: 1.2s; }
+  @keyframes radar-pulse {
+    0%   { opacity: 0.8; transform: scale(0.6); }
+    100% { opacity: 0;   transform: scale(1); }
+  }
+  .radar-center {
+    position: relative; z-index: 2;
+    width: 52px; height: 52px;
+    background: var(--color-primary);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.6rem;
+    box-shadow: 0 0 0 6px var(--color-primary-light);
+  }
+  .waiting-title { font-size: var(--text-lg); font-weight: var(--weight-black); margin-bottom: var(--sp-2); }
+  .waiting-sub   { color: var(--color-text-faint); font-size: var(--text-sm); }
+
+  /* Active trip */
+  #state-active { display: none; flex-direction: column; gap: var(--sp-4); }
+  #state-active.visible { display: flex; }
+
+  .customer-card {
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-xl);
+    padding: var(--sp-5);
+    box-shadow: var(--shadow-md);
+  }
+  .customer-card__header {
+    display: flex; align-items: center; gap: var(--sp-3);
+    margin-bottom: var(--sp-4); padding-bottom: var(--sp-4);
+    border-bottom: 1px solid var(--color-border);
+  }
+  .customer-avatar {
+    width: 50px; height: 50px; border-radius: 50%;
+    background: var(--color-primary-light);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.5rem; flex-shrink: 0;
+  }
+  .customer-name   { font-weight: var(--weight-black); font-size: var(--text-base); }
+  .customer-status { font-size: var(--text-xs); color: var(--color-text-faint); }
+  .call-btn {
+    margin-right: auto;
+    display: flex; align-items: center; gap: var(--sp-2);
+    background: #dcfce7; color: #16a34a;
+    border-radius: var(--radius-lg);
+    padding: var(--sp-2) var(--sp-4);
+    font-size: var(--text-sm); font-weight: var(--weight-bold);
+    text-decoration: none; transition: background 0.2s;
+  }
+  .call-btn:hover { background: #bbf7d0; }
+
+  .trip-route { display: flex; flex-direction: column; gap: var(--sp-2); margin-bottom: var(--sp-4); }
+  .trip-route-row { display: flex; align-items: center; gap: var(--sp-3); font-size: var(--text-sm); }
+  .trip-route-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .trip-route-dot.from { background: #3b82f6; }
+  .trip-route-dot.to   { background: #ef4444; }
+  .fare-badge {
+    display: inline-flex; align-items: center; gap: var(--sp-2);
+    background: #dcfce7; color: #16a34a;
+    border-radius: var(--radius-lg);
+    padding: var(--sp-2) var(--sp-4);
+    font-weight: var(--weight-black); font-size: var(--text-base);
+  }
+
+  .trip-map-card {
+    background: var(--color-bg); border: 1px solid var(--color-border);
+    border-radius: var(--radius-xl); overflow: hidden; box-shadow: var(--shadow-md);
+  }
+  .trip-map-header {
+    padding: var(--sp-3) var(--sp-4); border-bottom: 1px solid var(--color-border);
+    font-weight: var(--weight-black); font-size: var(--text-sm);
+    display: flex; align-items: center; gap: var(--sp-2);
+  }
+  #driver-map { width: 100%; height: 260px; }
+
+  .action-card {
+    background: var(--color-bg); border: 1px solid var(--color-border);
+    border-radius: var(--radius-xl); padding: var(--sp-5); box-shadow: var(--shadow-md);
+  }
+  .action-card__title { font-weight: var(--weight-black); font-size: var(--text-sm); margin-bottom: var(--sp-4); color: var(--color-text-faint); }
+  .action-btn {
+    width: 100%; padding: var(--sp-4); border-radius: var(--radius-lg);
+    border: none; cursor: pointer;
+    font-family: var(--font-body); font-size: var(--text-base); font-weight: var(--weight-black);
+    transition: all 0.2s; margin-bottom: var(--sp-3);
+    display: flex; align-items: center; justify-content: center; gap: var(--sp-2);
+  }
+  .action-btn:last-child { margin-bottom: 0; }
+  .action-btn.pickup  { background: var(--color-primary); color: #fff; }
+  .action-btn.pickup:hover  { background: #1d4ed8; transform: translateY(-1px); }
+  .action-btn.complete { background: #16a34a; color: #fff; }
+  .action-btn.complete:hover { background: #15803d; transform: translateY(-1px); }
+  .action-btn:disabled { background: #f3f4f6; color: #9ca3af; cursor: not-allowed; transform: none !important; }
+
+  /* Ride request notification */
+  #ride-request {
+    position: fixed; bottom: -100%; left: 0; right: 0; z-index: 500; padding: var(--sp-4);
+    transition: bottom 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  #ride-request.visible { bottom: 0; }
+  .ride-req-card {
+    background: #fff; border-radius: var(--radius-xl);
+    box-shadow: 0 -4px 40px rgba(0,0,0,.25), 0 0 0 1px rgba(0,0,0,.06);
+    overflow: hidden; max-width: 480px; margin: 0 auto;
+  }
+  .ride-req-header {
+    background: linear-gradient(135deg, #1d4ed8, #3b82f6);
+    padding: var(--sp-4) var(--sp-5);
+    display: flex; align-items: center; gap: var(--sp-3); color: #fff;
+  }
+  .bell-icon { font-size: 2rem; animation: bell-shake 0.5s ease-in-out infinite alternate; }
+  @keyframes bell-shake {
+    0%   { transform: rotate(-15deg); }
+    100% { transform: rotate(15deg); }
+  }
+  .ride-req-header__title { font-size: var(--text-lg); font-weight: var(--weight-black); }
+  .ride-req-header__sub   { font-size: var(--text-xs); opacity: 0.85; }
+  .ride-req-timer {
+    margin-right: auto; width: 48px; height: 48px; border-radius: 50%;
+    border: 3px solid rgba(255,255,255,.4);
+    display: flex; align-items: center; justify-content: center;
+    font-size: var(--text-lg); font-weight: var(--weight-black);
+    background: rgba(255,255,255,.15);
+  }
+  .ride-req-body { padding: var(--sp-5); }
+  .route-display {
+    display: flex; flex-direction: column; gap: var(--sp-2);
+    background: #f8fafc; border-radius: var(--radius-lg); padding: var(--sp-4); margin-bottom: var(--sp-4);
+  }
+  .route-point { display: flex; align-items: center; gap: var(--sp-3); font-size: var(--text-sm); }
+  .route-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .route-dot.from { background: #3b82f6; }
+  .route-dot.to   { background: #ef4444; }
+  .ride-meta { display: flex; gap: var(--sp-3); margin-bottom: var(--sp-5); }
+  .ride-meta__item {
+    flex: 1; background: var(--color-primary-light);
+    border-radius: var(--radius-lg); padding: var(--sp-3); text-align: center;
+  }
+  .ride-meta__val { font-size: var(--text-base); font-weight: var(--weight-black); color: var(--color-primary); }
+  .ride-meta__key { font-size: 10px; color: var(--color-text-faint); }
+  .ride-meta__item.fare { background: #dcfce7; }
+  .ride-meta__item.fare .ride-meta__val { color: #16a34a; }
+  .req-btns { display: flex; gap: var(--sp-3); align-items: center; }
+  .accept-btn {
+    flex: 1; padding: var(--sp-4); background: #16a34a; color: #fff;
+    border: none; border-radius: var(--radius-lg);
+    font-family: var(--font-body); font-size: var(--text-base); font-weight: var(--weight-black);
+    cursor: pointer; transition: all 0.2s;
+  }
+  .accept-btn:hover { background: #15803d; transform: translateY(-1px); }
+  .reject-btn {
+    padding: var(--sp-3) var(--sp-4); background: #f3f4f6; color: #6b7280;
+    border: 1.5px solid #d1d5db; border-radius: var(--radius-lg);
+    font-family: var(--font-body); font-size: var(--text-sm); font-weight: var(--weight-bold);
+    cursor: pointer; transition: all 0.2s; white-space: nowrap;
+  }
+  .reject-btn:hover { background: #fee2e2; color: #dc2626; border-color: #fca5a5; }
+
+  /* Toast */
+  .toast {
+    position: fixed; top: 80px; left: 50%;
+    transform: translateX(-50%) translateY(-20px);
+    background: #1f2937; color: #fff;
+    padding: var(--sp-3) var(--sp-5); border-radius: var(--radius-lg);
+    font-size: var(--text-sm); font-weight: var(--weight-bold);
+    z-index: 600; opacity: 0; transition: all 0.3s ease; white-space: nowrap;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* Auth prompt */
+  .auth-prompt {
+    background: var(--color-bg); border: 1px solid var(--color-border);
+    border-radius: var(--radius-xl); padding: var(--sp-10) var(--sp-6);
+    text-align: center; box-shadow: var(--shadow-md);
+  }
+  .auth-prompt__icon  { font-size: 3rem; margin-bottom: var(--sp-4); }
+  .auth-prompt__title { font-size: var(--text-xl); font-weight: var(--weight-black); margin-bottom: var(--sp-3); }
+  .auth-prompt__desc  { color: var(--color-text-muted); font-size: var(--text-sm); margin-bottom: var(--sp-6); }
+</style>
+
+<Layout title="لوحة السائق | وصّلها" description="لوحة تحكم السائق — استقبل الطلبات وابدأ رحلتك" page="driver-dashboard">
+  <PageHero
+    title="لوحة السائق 🚗"
+    subtitle="استقبل الطلبات وابدأ رحلتك"
+  />
+
+  <div class="dash-page" id="dash-page">
+
+    <!-- Auth prompt (shown if not logged in as driver) -->
+    <div class="auth-prompt" id="auth-prompt" style="display:none">
+      <div class="auth-prompt__icon">🔒</div>
+      <div class="auth-prompt__title">تسجيل الدخول مطلوب</div>
+      <div class="auth-prompt__desc">هذه الصفحة للسائقين المسجلين فقط. يرجى تسجيل الدخول أو التسجيل كسائق.</div>
+      <div style="display:flex;gap:var(--sp-3);justify-content:center;flex-wrap:wrap;">
+        <a href="/login" class="btn btn--primary">تسجيل الدخول</a>
+        <a href="/driver" class="btn btn--outline">التسجيل كسائق</a>
+      </div>
+    </div>
+
+    <!-- Main dashboard (hidden until auth check passes) -->
+    <div id="main-dash" style="display:none;flex-direction:column;gap:var(--sp-4);">
+
+      <!-- Status bar -->
+      <div class="status-bar">
+        <div class="status-bar__info">
+          <div class="status-bar__label">مرحباً بك</div>
+          <div class="status-bar__name" id="driver-name-bar">—</div>
+          <div class="status-bar__phone" id="driver-phone-bar">—</div>
+        </div>
+        <div class="toggle-wrap">
+          <button class="toggle-btn offline" id="toggle-btn" type="button">
+            <span class="toggle-btn__knob"></span>
+            <span id="toggle-text" style="position:relative;z-index:1;font-size:11px;">إيقاف</span>
+          </button>
+          <span class="toggle-label offline-text" id="toggle-label">غير متصل</span>
+        </div>
+      </div>
+
+      <!-- Stats -->
+      <div class="stats-strip">
+        <div class="stat-card"><div class="stat-card__val" id="stat-trips">0</div><div class="stat-card__key">رحلات اليوم</div></div>
+        <div class="stat-card"><div class="stat-card__val" id="stat-earn">0</div><div class="stat-card__key">ج.م اليوم</div></div>
+        <div class="stat-card"><div class="stat-card__val" id="stat-rating">⭐ 5.0</div><div class="stat-card__key">التقييم</div></div>
+      </div>
+
+      <!-- Offline state -->
+      <div id="state-offline">
+        <div class="offline-icon">🔴</div>
+        <div class="offline-title">أنت غير متصل</div>
+        <div class="offline-sub">فعّل التشغيل لاستقبال الطلبات</div>
+      </div>
+
+      <!-- Waiting state -->
+      <div id="state-waiting">
+        <div class="radar-wrap">
+          <div class="radar-ring"></div>
+          <div class="radar-ring"></div>
+          <div class="radar-ring"></div>
+          <div class="radar-center">🚗</div>
+        </div>
+        <div class="waiting-title">جاري الانتظار على طلبات...</div>
+        <div class="waiting-sub">ستصلك إشعار فور وجود راكب قريب منك</div>
+      </div>
+
+      <!-- Active trip -->
+      <div id="state-active">
+        <div class="customer-card">
+          <div class="customer-card__header">
+            <div class="customer-avatar">👤</div>
+            <div>
+              <div class="customer-name" id="active-customer-name">—</div>
+              <div class="customer-status" id="active-trip-status">في الطريق للإستلام</div>
+            </div>
+            <a class="call-btn" id="active-call-btn" href="tel:">📞 اتصل</a>
+          </div>
+          <div class="trip-route">
+            <div class="trip-route-row"><span class="trip-route-dot from"></span><span id="active-from">—</span></div>
+            <div class="trip-route-row" style="padding-right:13px;color:var(--color-text-faint);font-size:11px;">↓</div>
+            <div class="trip-route-row"><span class="trip-route-dot to"></span><span id="active-to">—</span></div>
+          </div>
+          <span class="fare-badge">💵 <span id="active-fare">—</span> ج.م</span>
+        </div>
+
+        <div class="trip-map-card">
+          <div class="trip-map-header">🗺️ خريطة الرحلة</div>
+          <div id="driver-map"></div>
+        </div>
+
+        <div class="action-card">
+          <div class="action-card__title">الإجراءات</div>
+          <button class="action-btn pickup" id="btn-pickup" type="button">✓ التقطت الراكب</button>
+          <button class="action-btn" id="btn-complete" type="button" disabled>✓ وصلت للوجهة</button>
+        </div>
+      </div>
+
+    </div><!-- /main-dash -->
+  </div><!-- /dash-page -->
+
+  <!-- Ride request notification -->
+  <div id="ride-request">
+    <div class="ride-req-card">
+      <div class="ride-req-header">
+        <span class="bell-icon">🔔</span>
+        <div>
+          <div class="ride-req-header__title">راكب جديد!</div>
+          <div class="ride-req-header__sub" id="req-customer-name">يبحث عن سائق</div>
+        </div>
+        <div class="ride-req-timer" id="req-timer">30</div>
+      </div>
+      <div class="ride-req-body">
+        <div class="route-display">
+          <div class="route-point"><span class="route-dot from"></span><span id="req-from">—</span></div>
+          <div class="route-point" style="padding-right:13px;color:var(--color-text-faint);font-size:11px;"><span>↓</span></div>
+          <div class="route-point"><span class="route-dot to"></span><span id="req-to">—</span></div>
+        </div>
+        <div class="ride-meta">
+          <div class="ride-meta__item"><div class="ride-meta__val" id="req-dist">—</div><div class="ride-meta__key">كم</div></div>
+          <div class="ride-meta__item"><div class="ride-meta__val" id="req-eta">—</div><div class="ride-meta__key">دقيقة</div></div>
+          <div class="ride-meta__item fare"><div class="ride-meta__val" id="req-fare">—</div><div class="ride-meta__key">ج.م</div></div>
+        </div>
+        <div class="req-btns">
+          <button class="accept-btn" id="accept-btn" type="button">✅ قبول الرحلة</button>
+          <button class="reject-btn" id="reject-btn" type="button">✗ رفض</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+</Layout>
+
+<script>
+  const SB_URL = 'https://vtikgyiopkjnrwlqnmfx.supabase.co';
+  const SB_KEY = 'sb_publishable_PLSnpvCT-sAyUMtymNgTwA_QmL2suw4';
+  const SB_H = { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}`, 'Content-Type': 'application/json' };
+  const GMAPS_KEY = 'AIzaSyAKvFfBYNDcTZgvZZH5s_lQbOc24LNjLsY';
+
+  /* ── Auth guard ── */
+  let driver: any = null;
+  try { const raw = localStorage.getItem('wslha_user'); driver = raw ? JSON.parse(raw) : null; } catch {}
+
+  const authPrompt = document.getElementById('auth-prompt')!;
+  const mainDash   = document.getElementById('main-dash')!;
+
+  if (!driver || driver.role !== 'driver') {
+    authPrompt.style.display = 'block';
+  } else {
+    mainDash.style.display = 'flex';
+    document.getElementById('driver-name-bar')!.textContent  = driver.name  || driver.phone;
+    document.getElementById('driver-phone-bar')!.textContent = driver.phone || '';
+  }
+
+  /* ── Stats ── */
+  let todayStats = { trips: 0, earn: 0 };
+  try {
+    const key = 'wslha_driver_stats_' + new Date().toDateString();
+    todayStats = JSON.parse(localStorage.getItem(key) || '{"trips":0,"earn":0}');
+  } catch {}
+  function renderStats() {
+    (document.getElementById('stat-trips') as HTMLElement).textContent = String(todayStats.trips);
+    (document.getElementById('stat-earn')  as HTMLElement).textContent = String(todayStats.earn);
+  }
+  renderStats();
+
+  /* ── State ── */
+  let isOnline      = false;
+  let currentRide: any   = null;
+  let pendingRide: any   = null;
+  let pollInterval: any  = null;
+  let geoWatchId: any    = null;
+  let timerInterval: any = null;
+  let driverLat: number | null = null;
+  let driverLng: number | null = null;
+  let map: any = null, driverMarker: any = null, gmapsReady = false;
+
+  /* ── Toast ── */
+  function showToast(msg: string) {
+    const t = document.getElementById('toast')!;
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2800);
+  }
+
+  /* ── Google Maps ── */
+  function loadGMaps(): Promise<void> {
+    return new Promise((resolve, reject) => {
+      if ((window as any).google?.maps) { resolve(); return; }
+      (window as any)._driverGmCb = () => { gmapsReady = true; resolve(); };
+      const s = document.createElement('script');
+      s.src = `https://maps.googleapis.com/maps/api/js?key=${GMAPS_KEY}&callback=_driverGmCb&language=ar&region=EG`;
+      s.async = true; s.defer = true;
+      s.onerror = () => reject(new Error('gmaps'));
+      document.head.appendChild(s);
+    });
+  }
+
+  async function initDriverMap(fromLat: number, fromLng: number, toLat: number, toLng: number) {
+    try { await loadGMaps(); } catch { return; }
+    const mapEl = document.getElementById('driver-map')!;
+    map = new (window as any).google.maps.Map(mapEl, {
+      center: { lat: fromLat, lng: fromLng }, zoom: 12,
+      mapTypeControl: false, streetViewControl: false, fullscreenControl: false,
+    });
+    const g = (window as any).google.maps;
+    const pinIcon = (color: string) => ({
+      path: 'M12 0C7 0 3 4 3 9c0 6.5 9 15 9 15s9-8.5 9-15c0-5-4-9-9-9z',
+      fillColor: color, fillOpacity: 1, strokeColor: '#fff', strokeWeight: 3,
+      scale: 1.4, anchor: new g.Point(12, 24),
+    });
+    new g.Marker({ position: { lat: fromLat, lng: fromLng }, map, icon: pinIcon('#3b82f6'), title: 'الراكب' });
+    new g.Marker({ position: { lat: toLat,   lng: toLng   }, map, icon: pinIcon('#ef4444'), title: 'الوجهة' });
+    if (driverLat && driverLng) {
+      driverMarker = new g.Marker({
+        position: { lat: driverLat, lng: driverLng }, map,
+        icon: { path: g.SymbolPath.FORWARD_CLOSED_ARROW, fillColor: '#16a34a', fillOpacity: 1, strokeColor: '#fff', strokeWeight: 2, scale: 5, anchor: new g.Point(0, 2.5) },
+        title: 'موقعك', zIndex: 999,
+      });
+    }
+    const bounds = new g.LatLngBounds();
+    bounds.extend({ lat: fromLat, lng: fromLng });
+    bounds.extend({ lat: toLat, lng: toLng });
+    if (driverLat && driverLng) bounds.extend({ lat: driverLat, lng: driverLng });
+    map.fitBounds(bounds, 60);
+  }
+
+  function updateDriverMarker() {
+    if (!map || !driverLat || !driverLng || !gmapsReady) return;
+    const pos = { lat: driverLat, lng: driverLng };
+    if (driverMarker) { driverMarker.setPosition(pos); return; }
+    const g = (window as any).google.maps;
+    driverMarker = new g.Marker({
+      position: pos, map,
+      icon: { path: g.SymbolPath.FORWARD_CLOSED_ARROW, fillColor: '#16a34a', fillOpacity: 1, strokeColor: '#fff', strokeWeight: 2, scale: 5, anchor: new g.Point(0, 2.5) },
+      title: 'موقعك', zIndex: 999,
+    });
+  }
+
+  /* ── UI state ── */
+  function showState(name: 'offline' | 'waiting' | 'active') {
+    document.getElementById('state-offline')!.classList.toggle('hidden', name !== 'offline');
+    document.getElementById('state-waiting')!.classList.toggle('visible', name === 'waiting');
+    document.getElementById('state-active')!.classList.toggle('visible',  name === 'active');
+  }
+
+  function hideRideRequest() {
+    document.getElementById('ride-request')!.classList.remove('visible');
+    if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
+  }
+
+  function showRideRequest(ride: any) {
+    pendingRide = ride;
+    (document.getElementById('req-customer-name') as HTMLElement).textContent = (ride.customer_name || 'راكب') + ' — راكب جديد';
+    (document.getElementById('req-from') as HTMLElement).textContent = ride.from_area;
+    (document.getElementById('req-to')   as HTMLElement).textContent = ride.to_area;
+    (document.getElementById('req-dist') as HTMLElement).textContent = (ride.distance_km * 1.35).toFixed(1);
+    (document.getElementById('req-eta')  as HTMLElement).textContent = ride.eta_minutes;
+    (document.getElementById('req-fare') as HTMLElement).textContent = ride.fare;
+    document.getElementById('ride-request')!.classList.add('visible');
+    let secs = 30;
+    (document.getElementById('req-timer') as HTMLElement).textContent = String(secs);
+    if (timerInterval) clearInterval(timerInterval);
+    timerInterval = setInterval(() => {
+      secs--;
+      (document.getElementById('req-timer') as HTMLElement).textContent = String(secs);
+      if (secs <= 0) { clearInterval(timerInterval); timerInterval = null; hideRideRequest(); pendingRide = null; }
+    }, 1000);
+  }
+
+  /* ── Supabase helpers ── */
+  async function upsertLocation(online: boolean) {
+    if (!driver) return;
+    try {
+      await fetch(`${SB_URL}/rest/v1/driver_locations`, {
+        method: 'POST',
+        headers: { ...SB_H, Prefer: 'resolution=merge-duplicates,return=minimal' },
+        body: JSON.stringify({
+          driver_phone: driver.phone,
+          driver_name: driver.name || driver.phone,
+          lat: driverLat ?? 31.418,
+          lng: driverLng ?? 31.814,
+          is_online: online,
+          updated_at: new Date().toISOString(),
+          ...(currentRide ? { ride_id: currentRide.id } : { ride_id: null }),
+        }),
+      });
+    } catch {}
+  }
+
+  async function pollRides() {
+    if (!isOnline || currentRide) return;
+    try {
+      const res = await fetch(
+        `${SB_URL}/rest/v1/rides?status=eq.pending&driver_phone=is.null&select=*&order=created_at.asc&limit=1`,
+        { headers: SB_H }
+      );
+      const rides = await res.json();
+      if (Array.isArray(rides) && rides.length > 0) {
+        const ride = rides[0];
+        const reqEl = document.getElementById('ride-request')!;
+        if (!reqEl.classList.contains('visible') || pendingRide?.id !== ride.id) {
+          showRideRequest(ride);
+        }
+      } else {
+        if (pendingRide) { hideRideRequest(); pendingRide = null; }
+      }
+    } catch {}
+  }
+
+  async function acceptRide(ride: any) {
+    try {
+      const res = await fetch(`${SB_URL}/rest/v1/rides?id=eq.${ride.id}`, {
+        method: 'PATCH',
+        headers: { ...SB_H, Prefer: 'return=representation' },
+        body: JSON.stringify({
+          status: 'accepted',
+          driver_phone: driver.phone,
+          driver_name: driver.name || driver.phone,
+          accepted_at: new Date().toISOString(),
+        }),
+      });
+      const rows = await res.json();
+      return Array.isArray(rows) ? rows[0] : null;
+    } catch { return null; }
+  }
+
+  async function patchRide(id: string, data: object) {
+    try {
+      const res = await fetch(`${SB_URL}/rest/v1/rides?id=eq.${id}`, {
+        method: 'PATCH',
+        headers: { ...SB_H, Prefer: 'return=representation' },
+        body: JSON.stringify(data),
+      });
+      const rows = await res.json();
+      return Array.isArray(rows) ? rows[0] : null;
+    } catch { return null; }
+  }
+
+  /* ── Accept ── */
+  document.getElementById('accept-btn')!.addEventListener('click', async () => {
+    const ride = pendingRide;
+    if (!ride) return;
+    hideRideRequest();
+    const accepted = await acceptRide(ride);
+    if (!accepted) { showToast('حدث خطأ، حاول مرة أخرى'); return; }
+    currentRide = accepted;
+    await upsertLocation(true);
+
+    (document.getElementById('active-customer-name') as HTMLElement).textContent = currentRide.customer_name || '—';
+    (document.getElementById('active-call-btn') as HTMLAnchorElement).href = 'tel:' + (currentRide.customer_phone || '');
+    (document.getElementById('active-from') as HTMLElement).textContent = currentRide.from_area;
+    (document.getElementById('active-to')   as HTMLElement).textContent = currentRide.to_area;
+    (document.getElementById('active-fare') as HTMLElement).textContent = currentRide.fare;
+    (document.getElementById('active-trip-status') as HTMLElement).textContent = 'في الطريق للإستلام';
+
+    const pickupBtn   = document.getElementById('btn-pickup')!  as HTMLButtonElement;
+    const completeBtn = document.getElementById('btn-complete')! as HTMLButtonElement;
+    pickupBtn.disabled   = false;
+    completeBtn.disabled = true;
+    pickupBtn.classList.add('pickup');
+    completeBtn.classList.remove('complete');
+
+    showState('active');
+    initDriverMap(currentRide.from_lat, currentRide.from_lng, currentRide.to_lat, currentRide.to_lng);
+    showToast('تم قبول الرحلة! توجه إلى الراكب');
+  });
+
+  /* ── Reject ── */
+  document.getElementById('reject-btn')!.addEventListener('click', () => {
+    hideRideRequest(); pendingRide = null;
+  });
+
+  /* ── Picked up ── */
+  document.getElementById('btn-pickup')!.addEventListener('click', async () => {
+    if (!currentRide) return;
+    await patchRide(currentRide.id, { status: 'in_progress' });
+    currentRide.status = 'in_progress';
+    (document.getElementById('active-trip-status') as HTMLElement).textContent = 'في الطريق للوجهة 🚗';
+    const pickupBtn   = document.getElementById('btn-pickup')!  as HTMLButtonElement;
+    const completeBtn = document.getElementById('btn-complete')! as HTMLButtonElement;
+    pickupBtn.disabled   = true;
+    pickupBtn.classList.remove('pickup');
+    completeBtn.disabled = false;
+    completeBtn.classList.add('complete');
+    showToast('تم التأكيد — استمر في الرحلة!');
+  });
+
+  /* ── Complete ── */
+  document.getElementById('btn-complete')!.addEventListener('click', async () => {
+    if (!currentRide) return;
+    await patchRide(currentRide.id, { status: 'completed', completed_at: new Date().toISOString() });
+    try {
+      const key = 'wslha_driver_stats_' + new Date().toDateString();
+      todayStats.trips += 1;
+      todayStats.earn  += currentRide.fare || 0;
+      localStorage.setItem(key, JSON.stringify(todayStats));
+      renderStats();
+    } catch {}
+    const fare = currentRide.fare;
+    currentRide = null;
+    await upsertLocation(true);
+    map = null; driverMarker = null;
+    (document.getElementById('btn-pickup')!  as HTMLButtonElement).disabled = false;
+    (document.getElementById('btn-complete')! as HTMLButtonElement).disabled = true;
+    document.getElementById('btn-pickup')!.classList.add('pickup');
+    document.getElementById('btn-complete')!.classList.remove('complete');
+    showState('waiting');
+    showToast(`رحلة منتهية! أرباح +${fare} ج.م 🎉`);
+  });
+
+  /* ── Toggle online/offline ── */
+  document.getElementById('toggle-btn')!.addEventListener('click', async () => {
+    if (!driver) return;
+    isOnline = !isOnline;
+    const btn   = document.getElementById('toggle-btn')!;
+    const label = document.getElementById('toggle-label')!;
+    const text  = document.getElementById('toggle-text')!;
+
+    if (isOnline) {
+      btn.classList.replace('offline', 'online');
+      text.textContent  = 'تشغيل';
+      label.textContent = 'متصل الآن';
+      label.className   = 'toggle-label online-text';
+      showState('waiting');
+
+      if (navigator.geolocation) {
+        geoWatchId = navigator.geolocation.watchPosition(
+          pos => { driverLat = pos.coords.latitude; driverLng = pos.coords.longitude; updateDriverMarker(); },
+          () => {}, { enableHighAccuracy: true, maximumAge: 3000 }
+        );
+      }
+      await upsertLocation(true);
+      pollInterval = setInterval(pollRides, 2000);
+      (window as any)._gpsInterval = setInterval(() => upsertLocation(true), 3000);
+      showToast('أنت الآن متصل — انتظر الطلبات');
+    } else {
+      btn.classList.replace('online', 'offline');
+      text.textContent  = 'إيقاف';
+      label.textContent = 'غير متصل';
+      label.className   = 'toggle-label offline-text';
+      showState('offline');
+      if (geoWatchId !== null) { navigator.geolocation.clearWatch(geoWatchId); geoWatchId = null; }
+      clearInterval(pollInterval); pollInterval = null;
+      clearInterval((window as any)._gpsInterval); (window as any)._gpsInterval = null;
+      hideRideRequest(); pendingRide = null;
+      await upsertLocation(false);
+      showToast('تم إيقاف التشغيل');
+    }
+  });
+</script>

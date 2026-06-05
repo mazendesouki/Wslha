@@ -39,7 +39,7 @@
   
 <link rel="stylesheet" href="/_astro/about.1b1989f6.css" />
 <link rel="stylesheet" href="/_astro/about.74625c24.css" />
-<link rel="stylesheet" href="/_astro/rides.2e44438a.css" /><script type="module" src="/_astro/hoisted.b7b5774d.js"></script></head>
+<link rel="stylesheet" href="/_astro/rides.299f02c2.css" /><script type="module" src="/_astro/hoisted.b7b5774d.js"></script></head>
 
 <body>
   <header role="banner" class="astro-DMQPWCEC">
@@ -307,12 +307,59 @@
         <!-- Success card -->
         <div id="success-card" class="success-card astro-KBAKWRXI">
           <div class="success-card__icon astro-KBAKWRXI">✅</div>
-          <h2 class="success-card__title astro-KBAKWRXI">تم تأكيد طلبك!</h2>
-          <p class="success-card__sub astro-KBAKWRXI">تابع رحلتك على الخريطة ← السائق في الطريق إليك</p>
+          <h2 class="success-card__title astro-KBAKWRXI">انتهت الرحلة!</h2>
+          <p class="success-card__sub astro-KBAKWRXI">شكراً لاستخدامك وصّلها — نراك قريباً</p>
           <div id="success-details" class="detail-rows astro-KBAKWRXI"></div>
           <div class="success-actions astro-KBAKWRXI">
             <a href="/orders" class="btn-outline astro-KBAKWRXI">📋 طلباتي</a>
             <button id="new-ride-btn" class="btn-filled astro-KBAKWRXI" type="button">🚗 رحلة جديدة</button>
+          </div>
+        </div>
+
+        <!-- Searching for driver -->
+        <div id="searching-card" class="searching-card astro-KBAKWRXI">
+          <div class="search-radar astro-KBAKWRXI">
+            <div class="search-ring astro-KBAKWRXI"></div>
+            <div class="search-ring astro-KBAKWRXI"></div>
+            <div class="search-ring astro-KBAKWRXI"></div>
+            <div class="search-center astro-KBAKWRXI">🔍</div>
+          </div>
+          <h2 class="search-title astro-KBAKWRXI">جاري البحث عن سائق...</h2>
+          <p class="search-sub astro-KBAKWRXI">سيتم تعيين أقرب سائق متاح خلال دقائق</p>
+          <div class="search-mini astro-KBAKWRXI">
+            <div class="search-mini__row astro-KBAKWRXI">
+              <span class="search-mini__key astro-KBAKWRXI">من</span>
+              <span class="search-mini__val astro-KBAKWRXI" id="search-from">—</span>
+            </div>
+            <div class="search-mini__row astro-KBAKWRXI">
+              <span class="search-mini__key astro-KBAKWRXI">إلى</span>
+              <span class="search-mini__val astro-KBAKWRXI" id="search-to">—</span>
+            </div>
+            <div class="search-mini__row astro-KBAKWRXI">
+              <span class="search-mini__key astro-KBAKWRXI">السعر</span>
+              <span class="search-mini__val search-mini__val--green astro-KBAKWRXI" id="search-fare">—</span>
+            </div>
+          </div>
+          <button class="cancel-ride-btn astro-KBAKWRXI" id="cancel-ride-btn">إلغاء الطلب</button>
+        </div>
+
+        <!-- Driver found -->
+        <div id="driver-card" class="driver-card astro-KBAKWRXI">
+          <div class="driver-card__header astro-KBAKWRXI">
+            <div class="driver-avatar astro-KBAKWRXI">🚗</div>
+            <div class="astro-KBAKWRXI">
+              <div class="driver-card__name astro-KBAKWRXI" id="driver-card-name">—</div>
+              <div class="driver-card__status astro-KBAKWRXI" id="driver-card-status">السائق في الطريق إليك</div>
+            </div>
+            <a class="driver-call-btn astro-KBAKWRXI" id="driver-call-btn" href="tel:">📞 اتصل</a>
+          </div>
+          <div class="driver-card__body astro-KBAKWRXI">
+            <div class="driver-route astro-KBAKWRXI">
+              <div class="driver-route-row astro-KBAKWRXI"><span class="d-dot from astro-KBAKWRXI"></span><span id="driver-card-from" class="astro-KBAKWRXI">—</span></div>
+              <div class="driver-route-row astro-KBAKWRXI" style="padding-right:13px;color:var(--color-text-faint);font-size:11px;">↓</div>
+              <div class="driver-route-row astro-KBAKWRXI"><span class="d-dot to astro-KBAKWRXI"></span><span id="driver-card-to" class="astro-KBAKWRXI">—</span></div>
+            </div>
+            <span class="driver-fare astro-KBAKWRXI">💵 <span id="driver-card-fare" class="astro-KBAKWRXI">—</span> ج.م</span>
           </div>
         </div>
       </div>
@@ -426,6 +473,11 @@
 </body></html>
 
 <script>(function(){const AREAS = [{"id":"center","name":"وسط دمياط","lat":31.418,"lng":31.814},{"id":"new-damietta","name":"دمياط الجديدة","lat":31.392,"lng":31.755},{"id":"industrial","name":"المنطقة الصناعية","lat":31.381,"lng":31.765},{"id":"sheikh-zaghloul","name":"الشيخ زغلول","lat":31.436,"lng":31.762},{"id":"kafr-saad","name":"كفر سعد","lat":31.402,"lng":31.732},{"id":"ras-el-bar","name":"رأس البر","lat":31.49,"lng":31.829},{"id":"izbet-elburg","name":"عزبة البرج","lat":31.496,"lng":31.843},{"id":"el-saro","name":"السرو","lat":31.356,"lng":31.81},{"id":"meet-abu-ghalib","name":"ميت أبو غالب","lat":31.365,"lng":31.864},{"id":"faraskur","name":"فارسكور","lat":31.328,"lng":31.672},{"id":"zarqa","name":"الزرقا","lat":31.312,"lng":31.874},{"id":"el-riyad","name":"الرياض","lat":31.297,"lng":31.787},{"id":"kafr-batikh","name":"كفر البطيخ","lat":31.27,"lng":31.933}];
+
+  // ── Supabase ──
+  const SB_URL = 'https://vtikgyiopkjnrwlqnmfx.supabase.co';
+  const SB_KEY = 'sb_publishable_PLSnpvCT-sAyUMtymNgTwA_QmL2suw4';
+  const SB_H = { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}`, 'Content-Type': 'application/json' };
 
   // ── Google Maps API key ──
   const GMAPS_KEY = 'AIzaSyAKvFfBYNDcTZgvZZH5s_lQbOc24LNjLsY';
@@ -581,6 +633,131 @@
     }
   }
 
+  // ── ride state ──
+  let activeRideId = null;
+  let ridePoller   = null;
+  let _currentFrom = null, _currentTo = null, _currentEta = 0;
+  let _driverShown = false, _onRide = false;
+
+  async function sbCreateRide(payload) {
+    try {
+      const res = await fetch(`${SB_URL}/rest/v1/rides`, {
+        method: 'POST',
+        headers: { ...SB_H, Prefer: 'return=representation' },
+        body: JSON.stringify(payload),
+      });
+      const rows = await res.json();
+      return Array.isArray(rows) ? rows[0] : null;
+    } catch { return null; }
+  }
+
+  async function sbCancelRide(id) {
+    try {
+      await fetch(`${SB_URL}/rest/v1/rides?id=eq.${id}`, {
+        method: 'PATCH',
+        headers: { ...SB_H, Prefer: 'return=minimal' },
+        body: JSON.stringify({ status: 'cancelled' }),
+      });
+    } catch {}
+  }
+
+  async function pollRideStatus() {
+    if (!activeRideId) return;
+    try {
+      const res = await fetch(`${SB_URL}/rest/v1/rides?id=eq.${activeRideId}&select=*`, { headers: SB_H });
+      const rows = await res.json();
+      if (!Array.isArray(rows) || rows.length === 0) return;
+      const ride = rows[0];
+
+      if ((ride.status === 'accepted' || ride.status === 'in_progress' || ride.status === 'completed') && !_driverShown) {
+        _driverShown = true;
+        showDriverFound(ride);
+      }
+      if (ride.status === 'in_progress' && !_onRide) {
+        _onRide = true;
+        document.getElementById('driver-card-status').textContent = 'في الطريق للوجهة 🚗';
+        advanceStatus('onride');
+      }
+      if (ride.status === 'completed') {
+        stopPoller();
+        advanceStatus('done');
+        setTimeout(() => showFinalSuccess(ride), 1800);
+      }
+      if (ride.status === 'cancelled') {
+        stopPoller();
+        resetToBooking();
+      }
+    } catch {}
+  }
+
+  function stopPoller() {
+    if (ridePoller) { clearInterval(ridePoller); ridePoller = null; }
+  }
+
+  function showSearching(fromName, toName, fare) {
+    document.getElementById('booking-card').style.display = 'none';
+    document.getElementById('success-card').classList.remove('visible');
+    document.getElementById('driver-card').classList.remove('visible');
+    document.getElementById('searching-card').classList.add('visible');
+    document.getElementById('fare-section').style.display = 'none';
+    document.getElementById('search-from').textContent = fromName;
+    document.getElementById('search-to').textContent   = toName;
+    document.getElementById('search-fare').textContent  = fare + ' ج.م';
+  }
+
+  function showDriverFound(ride) {
+    document.getElementById('searching-card').classList.remove('visible');
+    const card = document.getElementById('driver-card');
+    card.classList.add('visible');
+    document.getElementById('driver-card-name').textContent    = ride.driver_name  || 'السائق';
+    document.getElementById('driver-card-status').textContent  = 'السائق في الطريق إليك 🚗';
+    document.getElementById('driver-call-btn').setAttribute('href', 'tel:' + (ride.driver_phone || ''));
+    document.getElementById('driver-card-from').textContent = ride.from_area;
+    document.getElementById('driver-card-to').textContent   = ride.to_area;
+    document.getElementById('driver-card-fare').textContent = ride.fare;
+    advanceStatus('assigned');
+    if (window._routeCoords && _currentFrom && _currentTo) {
+      startLiveTracking(_currentFrom, _currentTo, _currentEta);
+    }
+  }
+
+  function showFinalSuccess(ride) {
+    document.getElementById('driver-card').classList.remove('visible');
+    document.getElementById('ride-status').classList.remove('visible');
+    const details = [
+      ['من', ride.from_area], ['إلى', ride.to_area],
+      ['المسافة', (ride.distance_km * 1.35).toFixed(1) + ' كم'],
+      ['السائق', ride.driver_name || '—'],
+      ['السعر', ride.fare + ' ج.م', true],
+    ];
+    document.getElementById('success-details').innerHTML = details
+      .map(([k, v, p]) => `<div class="detail-row"><span class="detail-row__key">${k}</span><span class="detail-row__val${p ? ' detail-row__val--price' : ''}">${v}</span></div>`)
+      .join('');
+    document.getElementById('success-card').classList.add('visible');
+  }
+
+  function resetToBooking() {
+    stopPoller();
+    activeRideId = null; _driverShown = false; _onRide = false;
+    if (window._liveInterval) { clearInterval(window._liveInterval); window._liveInterval = null; }
+    document.getElementById('searching-card').classList.remove('visible');
+    document.getElementById('driver-card').classList.remove('visible');
+    document.getElementById('booking-card').style.display = '';
+    document.getElementById('ride-status').classList.remove('visible');
+    document.getElementById('fare-section').style.display = '';
+    document.getElementById('live-badge').style.display = 'none';
+    ['st-confirmed','st-assigned','st-arrived','st-onride','st-done']
+      .forEach(id => document.getElementById(id).className = 'status-step');
+    window._st_assigned = window._st_arrived = window._st_onride = false;
+  }
+
+  document.getElementById('cancel-ride-btn').addEventListener('click', async () => {
+    if (activeRideId) await sbCancelRide(activeRideId);
+    resetToBooking();
+    clearMap();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+
   // ── selectors ──
   const fromSel = document.getElementById('from-area');
   const toSel   = document.getElementById('to-area');
@@ -614,68 +791,92 @@
   });
 
   // ── confirm ──
-  document.getElementById('confirm-btn').addEventListener('click', () => {
+  document.getElementById('confirm-btn').addEventListener('click', async () => {
     const from = areaBy(fromSel), to = areaBy(toSel);
     if (!from || !to) return;
-    const name    = document.getElementById('r-name').value.trim();
-    const phone   = normPhone(document.getElementById('r-phone').value.trim());
-    const errEl   = document.getElementById('alert-error');
+    const name  = document.getElementById('r-name').value.trim();
+    const phone = normPhone(document.getElementById('r-phone').value.trim());
+    const errEl = document.getElementById('alert-error');
     errEl.classList.remove('visible');
-    if (!name) { errEl.textContent='يرجى إدخال الاسم.'; errEl.classList.add('visible'); return; }
-    if (!EG.test(phone)) { errEl.textContent='رقم جوال مصري غير صحيح (يبدأ بـ 010 أو 011 أو 012 أو 015).'; errEl.classList.add('visible'); return; }
+    if (!name)          { errEl.textContent = 'يرجى إدخال الاسم.'; errEl.classList.add('visible'); return; }
+    if (!EG.test(phone)){ errEl.textContent = 'رقم جوال مصري غير صحيح (يبدأ بـ 010 أو 011 أو 012 أو 015).'; errEl.classList.add('visible'); return; }
 
-    const km      = haversineKm(from.lat, from.lng, to.lat, to.lng);
-    const fare    = fareFor(km);
-    const eta     = etaMin(km);
-    const pax     = document.getElementById('r-passengers').value;
-    const timing  = { now:'الآن فورًا','15':'بعد 15 دقيقة','30':'بعد 30 دقيقة','60':'بعد ساعة' }[document.getElementById('r-time').value];
-    const pay     = { cash:'كاش', wallet:'فودافون كاش / إنستاباي' }[document.querySelector('input[name="r-payment"]:checked').value];
-    const notes   = document.getElementById('r-notes').value.trim();
+    const km     = haversineKm(from.lat, from.lng, to.lat, to.lng);
+    const fare   = fareFor(km);
+    const eta    = etaMin(km);
+    const pax    = document.getElementById('r-passengers').value;
+    const pay    = document.querySelector('input[name="r-payment"]:checked').value;
+    const notes  = document.getElementById('r-notes').value.trim();
 
+    const confirmBtn = document.getElementById('confirm-btn');
+    confirmBtn.disabled    = true;
+    confirmBtn.textContent = 'جاري إرسال الطلب...';
+
+    // POST to Supabase
+    const ridePayload = {
+      customer_phone: phone, customer_name: name,
+      from_area: from.name, from_lat: from.lat, from_lng: from.lng,
+      to_area:   to.name,   to_lat:   to.lat,   to_lng:   to.lng,
+      distance_km: km, fare, eta_minutes: eta,
+      passengers: parseInt(pax), payment: pay, notes,
+      status: 'pending',
+    };
+    const ride = await sbCreateRide(ridePayload);
+    activeRideId = ride?.id || null;
+
+    // Save to localStorage for orders history
     try {
-      const orders = JSON.parse(localStorage.getItem('wslha_orders')||'[]');
-      orders.unshift({ id:'R'+Date.now(), type:'ride', from:from.name, to:to.name, name, phone, passengers:pax, timing, notes, payment:pay, fare, eta, distance:(km*1.35).toFixed(1), status:'pending', createdAt:new Date().toISOString() });
+      const orders = JSON.parse(localStorage.getItem('wslha_orders') || '[]');
+      orders.unshift({ id: ride?.id || ('R'+Date.now()), type:'ride', from:from.name, to:to.name, name, phone, passengers:pax, payment:pay, fare, eta, distance:(km*1.35).toFixed(1), status:'pending', createdAt:new Date().toISOString() });
       localStorage.setItem('wslha_orders', JSON.stringify(orders));
     } catch {}
 
-    // Show success + details
-    const rows = [['من',from.name],['إلى',to.name],['المسافة',(km*1.35).toFixed(1)+' كم'],['الوقت المقدر',eta+' دقيقة'],['الراكب',name],['الجوال',phone],['الركاب',pax],['الانطلاق',timing],['الدفع',pay],['السعر',fare+' ج.م',true]];
-    document.getElementById('success-details').innerHTML = rows.map(([k,v,p])=>`<div class="detail-row"><span class="detail-row__key">${k}</span><span class="detail-row__val${p?' detail-row__val--price':''}">${v}</span></div>`).join('');
+    confirmBtn.disabled    = false;
+    confirmBtn.textContent = '🚗 تأكيد الطلب وتتبع الرحلة';
 
-    document.getElementById('booking-card').style.display = 'none';
-    document.getElementById('success-card').classList.add('visible');
-    document.getElementById('fare-section').style.display = 'none';
-
-    // Live ride status
+    // Show ride status panel
     document.getElementById('ride-status').classList.add('visible');
-    document.getElementById('st-confirmed-time').textContent = new Date().toLocaleTimeString('ar-EG',{hour:'2-digit',minute:'2-digit'});
+    document.getElementById('st-confirmed-time').textContent = new Date().toLocaleTimeString('ar-EG', { hour:'2-digit', minute:'2-digit' });
     document.getElementById('st-confirmed').className = 'status-step done';
     document.getElementById('st-assigned').className  = 'status-step active';
 
-    window._st_assigned = false; window._st_arrived = false; window._st_onride = false;
+    _currentFrom = from; _currentTo = to; _currentEta = eta;
+    _driverShown = false; _onRide = false;
     if (window._liveInterval) clearInterval(window._liveInterval);
-    setTimeout(() => startLiveTracking(from, to, eta), 1500);
+    window._st_assigned = window._st_arrived = window._st_onride = false;
+
+    // Show route on map
+    showRoute(from, to);
+
+    showSearching(from.name, to.name, fare);
+
+    // Start polling for driver
+    if (activeRideId) {
+      ridePoller = setInterval(pollRideStatus, 2000);
+    } else {
+      // Supabase unavailable — simulate after delay
+      setTimeout(() => {
+        _driverShown = true;
+        showDriverFound({ driver_name: 'السائق المتاح', driver_phone: '', from_area: from.name, to_area: to.name, fare });
+        setTimeout(() => startLiveTracking(from, to, eta), 1000);
+      }, 4000);
+    }
+
     window.scrollTo({ top: 0, behavior: 'smooth' });
   });
 
   // ── new ride ──
   document.getElementById('new-ride-btn').addEventListener('click', () => {
-    if (window._liveInterval) clearInterval(window._liveInterval);
-    document.getElementById('live-badge').style.display = 'none';
-    ['r-name','r-phone','r-notes'].forEach(id => document.getElementById(id).value='');
-    document.getElementById('r-passengers').value='1';
-    document.getElementById('r-time').value='now';
-    document.querySelector('input[name="r-payment"][value="cash"]').checked=true;
-    fromSel.value=''; toSel.value='';
+    ['r-name','r-phone','r-notes'].forEach(id => (document.getElementById(id) as HTMLInputElement).value = '');
+    (document.getElementById('r-passengers') as HTMLSelectElement).value = '1';
+    (document.getElementById('r-time') as HTMLSelectElement).value = 'now';
+    (document.querySelector('input[name="r-payment"][value="cash"]') as HTMLInputElement).checked = true;
+    fromSel.value = ''; toSel.value = '';
     summary.classList.remove('visible'); formSec.classList.remove('visible');
-    document.getElementById('booking-card').style.display='';
     document.getElementById('success-card').classList.remove('visible');
-    document.getElementById('ride-status').classList.remove('visible');
-    document.getElementById('fare-section').style.display='';
-    ['st-confirmed','st-assigned','st-arrived','st-onride','st-done'].forEach(id => document.getElementById(id).className='status-step');
-    window._st_assigned = window._st_arrived = window._st_onride = false;
     clearMap();
-    window.scrollTo({ top:0, behavior:'smooth' });
+    resetToBooking();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   });
 
   // ── fare guide ──
