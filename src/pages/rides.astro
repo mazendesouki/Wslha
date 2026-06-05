@@ -393,12 +393,13 @@ import { AREAS } from '../data/rides';
           </div>
 
           <div id="route-summary" class="route-summary">
-            <div class="route-summary__stat"><div id="sum-dist" class="route-summary__val"></div><div class="route-summary__key">المسافة</div></div>
+            <div class="route-summary__stat"><div id="sum-dist" class="route-summary__val"></div><div class="route-summary__key">المسافة الفعلية</div></div>
             <div class="route-summary__divider"></div>
             <div class="route-summary__stat"><div id="sum-eta" class="route-summary__val"></div><div class="route-summary__key">الوقت المقدر</div></div>
             <div class="route-summary__divider"></div>
-            <div class="route-summary__stat"><div id="sum-price" class="route-summary__val route-summary__val--price"></div><div class="route-summary__key">السعر</div></div>
+            <div class="route-summary__stat"><div id="sum-price" class="route-summary__val route-summary__val--price"></div><div class="route-summary__key">السعر النهائي</div></div>
           </div>
+          <div id="fare-breakdown" style="padding: var(--sp-2) var(--sp-6) 0; text-align:center;"></div>
 
           <div id="form-section" class="form-section">
             <div id="alert-error" class="alert-error"></div>
@@ -535,7 +536,7 @@ import { AREAS } from '../data/rides';
 
         <!-- Fare guide -->
         <div class="fare-section" id="fare-section">
-          <h2 class="fare-section__title">دليل الأسعار</h2>
+          <h2 class="fare-section__title">دليل الأسعار 2026</h2>
           <div class="fare-grid" id="fare-grid"></div>
         </div>
       </div>
@@ -553,16 +554,33 @@ import { AREAS } from '../data/rides';
   // ── Google Maps API key ──
   const GMAPS_KEY = 'AIzaSyAKvFfBYNDcTZgvZZH5s_lQbOc24LNjLsY';
 
-  // ── distance helpers ──
+  // ── distance & pricing helpers (أسعار 2026) ──
+  const BASE_FARE   = 20;   // ج.م — عداد الانطلاق
+  const RATE_PER_KM = 10;   // ج.م / كم — طريق فعلي
+  const MIN_FARE    = 25;   // ج.م — الحد الأدنى
+
   function haversineKm(lat1, lng1, lat2, lng2) {
     const R = 6371, dLat = (lat2-lat1)*Math.PI/180, dLng = (lng2-lng1)*Math.PI/180;
     const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLng/2)**2;
     return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
   }
-  function fareFor(km) { return Math.ceil(Math.max(15+km*1.35*7,20)/5)*5; }
-  function etaMin(km)  { return Math.ceil(km*1.35/40*60); }
+  // roadKm = المسافة الفعلية على الطريق (من OSRM)، أو haversine×1.35 كتقدير
+  function fareFor(roadKm) {
+    return Math.ceil(Math.max(BASE_FARE + roadKm * RATE_PER_KM, MIN_FARE) / 5) * 5;
+  }
+  function fareBreakdown(roadKm) {
+    const dist   = +(roadKm).toFixed(1);
+    const distCost = +(roadKm * RATE_PER_KM).toFixed(0);
+    const total  = fareFor(roadKm);
+    return `<span style="color:var(--color-text-faint);font-size:11px;">عداد ${BASE_FARE} + ${dist}كم × ${RATE_PER_KM} = <strong style="color:#16a34a">${total} ج.م</strong></span>`;
+  }
+  function etaMin(km)  { return Math.ceil(km * 1.35 / 40 * 60); }
   function normPhone(s){ return s.replace(/[\s\-()+]/g,''); }
   const EG = /^01[0125][0-9]{8}$/;
+
+  // real road distance from OSRM (updated after route fetch)
+  let _realRoadKm = 0;
+  let _realEtaMin = 0;
 
   // ── Google Maps setup ──
   let map = null, fromMarker = null, toMarker = null, routeLine = null, driverMarker = null;
@@ -628,13 +646,22 @@ import { AREAS } from '../data/rides';
       icon: pinIcon('#ef4444'), title: 'الوصول: ' + to.name,
     });
 
-    // Road geometry via OSRM (free; Google Directions legacy API not enabled)
+    // Road geometry + distance via OSRM
     let coords;
     try {
       const osrm = `https://router.project-osrm.org/route/v1/driving/${from.lng},${from.lat};${to.lng},${to.lat}?overview=full&geometries=geojson`;
       const data = await (await fetch(osrm)).json();
       if (data.routes?.[0]) {
         coords = data.routes[0].geometry.coordinates.map(([lng,lat]) => ({ lat, lng }));
+        // Use actual road distance & duration from OSRM
+        _realRoadKm  = data.routes[0].distance / 1000;
+        _realEtaMin  = Math.max(1, Math.ceil(data.routes[0].duration / 60));
+        const realFare = fareFor(_realRoadKm);
+        document.getElementById('sum-dist').textContent  = _realRoadKm.toFixed(1) + ' كم';
+        document.getElementById('sum-eta').textContent   = _realEtaMin + ' دق';
+        document.getElementById('sum-price').textContent = realFare + ' ج.م';
+        const bkEl = document.getElementById('fare-breakdown');
+        if (bkEl) bkEl.innerHTML = fareBreakdown(_realRoadKm);
       }
     } catch {}
     if (!coords) coords = [{ lat: from.lat, lng: from.lng }, { lat: to.lat, lng: to.lng }];
@@ -846,13 +873,18 @@ import { AREAS } from '../data/rides';
     if (!from || !to || from.id === to.id) {
       summary.classList.remove('visible'); formSec.classList.remove('visible'); return;
     }
-    const km = haversineKm(from.lat, from.lng, to.lat, to.lng);
-    document.getElementById('sum-dist').textContent  = (km*1.35).toFixed(1)+' كم';
-    document.getElementById('sum-eta').textContent   = etaMin(km)+' دق';
-    document.getElementById('sum-price').textContent = fareFor(km)+' ج.م';
+    // Estimate while OSRM loads
+    _realRoadKm = 0; _realEtaMin = 0;
+    const km      = haversineKm(from.lat, from.lng, to.lat, to.lng);
+    const estRoad = km * 1.35;
+    document.getElementById('sum-dist').textContent  = '~' + estRoad.toFixed(1) + ' كم';
+    document.getElementById('sum-eta').textContent   = etaMin(km) + ' دق';
+    document.getElementById('sum-price').textContent = fareFor(estRoad) + ' ج.م';
+    const bkEl = document.getElementById('fare-breakdown');
+    if (bkEl) bkEl.innerHTML = '<span style="color:var(--color-text-faint);font-size:11px;">جاري حساب المسافة الفعلية...</span>';
     summary.classList.add('visible');
     formSec.classList.add('visible');
-    showRoute(from, to);
+    showRoute(from, to); // will update with real distance after OSRM
   }
 
   fromSel.addEventListener('change', updateUI);
@@ -872,9 +904,10 @@ import { AREAS } from '../data/rides';
     if (!name)          { errEl.textContent = 'يرجى إدخال الاسم.'; errEl.classList.add('visible'); return; }
     if (!EG.test(phone)){ errEl.textContent = 'رقم جوال مصري غير صحيح (يبدأ بـ 010 أو 011 أو 012 أو 015).'; errEl.classList.add('visible'); return; }
 
-    const km     = haversineKm(from.lat, from.lng, to.lat, to.lng);
-    const fare   = fareFor(km);
-    const eta    = etaMin(km);
+    const km       = haversineKm(from.lat, from.lng, to.lat, to.lng);
+    const roadKm   = _realRoadKm > 0 ? _realRoadKm : km * 1.35;
+    const fare     = fareFor(roadKm);
+    const eta      = _realEtaMin > 0 ? _realEtaMin : etaMin(km);
     const pax    = document.getElementById('r-passengers').value;
     const pay    = document.querySelector('input[name="r-payment"]:checked').value;
     const notes  = document.getElementById('r-notes').value.trim();
@@ -888,7 +921,7 @@ import { AREAS } from '../data/rides';
       customer_phone: phone, customer_name: name,
       from_area: from.name, from_lat: from.lat, from_lng: from.lng,
       to_area:   to.name,   to_lat:   to.lat,   to_lng:   to.lng,
-      distance_km: km, fare, eta_minutes: eta,
+      distance_km: roadKm, fare, eta_minutes: eta,
       passengers: parseInt(pax), payment: pay, notes,
       status: 'pending',
     };
@@ -898,7 +931,7 @@ import { AREAS } from '../data/rides';
     // Save to localStorage for orders history
     try {
       const orders = JSON.parse(localStorage.getItem('wslha_orders') || '[]');
-      orders.unshift({ id: ride?.id || ('R'+Date.now()), type:'ride', from:from.name, to:to.name, name, phone, passengers:pax, payment:pay, fare, eta, distance:(km*1.35).toFixed(1), status:'pending', createdAt:new Date().toISOString() });
+      orders.unshift({ id: ride?.id || ('R'+Date.now()), type:'ride', from:from.name, to:to.name, name, phone, passengers:pax, payment:pay, fare, eta, distance: roadKm.toFixed(1), status:'pending', createdAt:new Date().toISOString() });
       localStorage.setItem('wslha_orders', JSON.stringify(orders));
     } catch {}
 
@@ -950,13 +983,33 @@ import { AREAS } from '../data/rides';
     window.scrollTo({ top: 0, behavior: 'smooth' });
   });
 
-  // ── fare guide ──
-  const SAMPLE = [['center','new-damietta'],['center','ras-el-bar'],['center','kafr-saad'],['center','faraskur'],['new-damietta','ras-el-bar'],['center','zarqa'],['center','el-saro'],['center','kafr-batikh']];
+  // ── fare guide (2026 prices) ──
+  const SAMPLE = [
+    ['center','new-damietta'],['center','ras-el-bar'],['center','kafr-saad'],
+    ['center','faraskur'],['new-damietta','ras-el-bar'],['center','zarqa'],
+    ['center','el-saro'],['center','kafr-batikh'],
+  ];
   const grid = document.getElementById('fare-grid');
   SAMPLE.forEach(([fid,tid]) => {
-    const f=AREAS.find(a=>a.id===fid), t=AREAS.find(a=>a.id===tid);
-    if(!f||!t) return;
-    const fare = fareFor(haversineKm(f.lat,f.lng,t.lat,t.lng));
-    grid.insertAdjacentHTML('beforeend',`<div class="fare-card"><div class="fare-card__route"><div class="fare-card__from">${f.name}</div><div class="fare-card__to">← ${t.name}</div></div><div class="fare-card__price">${fare} ج.م</div></div>`);
+    const f = AREAS.find(a => a.id === fid), t = AREAS.find(a => a.id === tid);
+    if (!f || !t) return;
+    const estRoad = haversineKm(f.lat, f.lng, t.lat, t.lng) * 1.35;
+    const fare = fareFor(estRoad);
+    grid.insertAdjacentHTML('beforeend',
+      `<div class="fare-card">
+        <div class="fare-card__route">
+          <div class="fare-card__from">${f.name}</div>
+          <div class="fare-card__to">← ${t.name}</div>
+          <div style="font-size:10px;color:var(--color-text-faint);margin-top:2px;">~${estRoad.toFixed(1)} كم</div>
+        </div>
+        <div class="fare-card__price">${fare} ج.م</div>
+      </div>`
+    );
   });
+  // Add pricing note
+  document.getElementById('fare-section').insertAdjacentHTML('afterbegin',
+    `<p style="font-size:var(--text-xs);color:var(--color-text-faint);margin-bottom:var(--sp-3);">
+      أسعار 2026 — عداد انطلاق ${BASE_FARE} ج.م + ${RATE_PER_KM} ج.م/كم — الحد الأدنى ${MIN_FARE} ج.م
+    </p>`
+  );
 </script>
