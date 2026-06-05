@@ -196,7 +196,7 @@ const AREAS = ['دمياط الجديدة', 'دمياط', 'كفر سعد', 'فا
     if (pass !== pass2) { fail('كلمتا المرور غير متطابقتين.', 'driver-pass2'); return; }
     errorBox.classList.remove('is-visible');
 
-    const created = addAccount({
+    const created = await addAccount({
       name,
       phone: normalizeEgyptianPhone(phone),
       password: pass,

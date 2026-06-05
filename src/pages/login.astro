@@ -160,7 +160,7 @@ import PageHero from '../components/PageHero.astro';
       return;
     }
 
-    const result = verifyLogin(phone, pass);
+    const result = await verifyLogin(phone, pass);
     if (!result.ok) {
       errorBox.innerHTML = result.reason === 'not_found'
         ? 'هذا الرقم غير مسجّل لدينا. <a href="/register">أنشئ حساباً جديداً</a> أولاً.'
