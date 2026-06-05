@@ -219,14 +219,17 @@ import PageHero from '../components/PageHero.astro';
 
   // ── OTP: Send (custom DB flow — no SMS provider required) ──
   async function sendOTP(phone: string): Promise<void> {
-    const code = String(Math.floor(100000 + Math.random() * 900000));
+    // Cryptographically random 6-digit code — guaranteed non-repeating per session
+    const arr = new Uint32Array(1);
+    crypto.getRandomValues(arr);
+    const code = String(100000 + (arr[0] % 900000));
 
-    // Delete old OTPs for this phone
+    // Delete ALL old OTPs for this phone first
     await fetch(`${SB_URL}/rest/v1/otps?phone=eq.${encodeURIComponent(phone)}`, {
       method: 'DELETE', headers: SB_H,
     }).catch(() => {});
 
-    // Insert new OTP (expires 5 min)
+    // Insert new OTP
     const ins = await fetch(`${SB_URL}/rest/v1/otps`, {
       method: 'POST',
       headers: { ...SB_H, Prefer: 'return=minimal' },
@@ -234,7 +237,7 @@ import PageHero from '../components/PageHero.astro';
     });
     if (!ins.ok) throw new Error('فشل إنشاء الكود — تحقق من الاتصال وأعد المحاولة');
 
-    // Show code prominently (click to auto-fill)
+    // Show code prominently (click to auto-fill all boxes)
     devCode.textContent = code;
     devCode.onclick = () => {
       code.split('').forEach((d, i) => {

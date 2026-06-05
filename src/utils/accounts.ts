@@ -3,39 +3,54 @@ import { normalizeEgyptianPhone } from './phone';
 export type Role = 'customer' | 'driver';
 
 export interface Account {
-  phone: string;
-  password: string;
-  name: string;
-  role: Role;
-  city?: string;
+  phone:     string;
+  password:  string;
+  name:      string;
+  username?: string;
+  email?:    string;
+  role:      Role;
+  city?:     string;
   createdAt: string;
 }
 
-// ── Supabase config (anon/publishable key — safe for client) ──
 const SB_URL = 'https://vtikgyiopkjnrwlqnmfx.supabase.co';
 const SB_KEY = 'sb_publishable_PLSnpvCT-sAyUMtymNgTwA_QmL2suw4';
-const SB_HEADERS = { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}`, 'Content-Type': 'application/json' };
+const SB_H   = { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}`, 'Content-Type': 'application/json' };
 
-async function sbFind(phone: string): Promise<Account | null | 'error'> {
+// ── Check if a field value is already taken in Supabase ──
+export async function fieldExists(
+  field: 'phone' | 'email' | 'username',
+  value: string,
+): Promise<boolean | 'error'> {
+  if (!value) return false;
   try {
+    const v = field === 'phone' ? normalizeEgyptianPhone(value) : value.trim().toLowerCase();
+    const col = field === 'email' ? `email=ilike.${encodeURIComponent(v)}`
+              : field === 'username' ? `username=ilike.${encodeURIComponent(v)}`
+              : `phone=eq.${encodeURIComponent(v)}`;
     const res = await fetch(
-      `${SB_URL}/rest/v1/accounts?phone=eq.${encodeURIComponent(phone)}&select=*&limit=1`,
-      { headers: SB_HEADERS }
+      `${SB_URL}/rest/v1/accounts?${col}&select=phone&limit=1`,
+      { headers: SB_H }
     );
     if (!res.ok) return 'error';
     const rows = await res.json();
-    return rows[0] ?? null;
+    return Array.isArray(rows) && rows.length > 0;
   } catch { return 'error'; }
 }
 
 async function sbInsert(acc: Account): Promise<true | false | 'error'> {
   try {
+    const payload = {
+      ...acc,
+      email:    acc.email?.toLowerCase()    || null,
+      username: acc.username?.toLowerCase() || null,
+    };
     const res = await fetch(`${SB_URL}/rest/v1/accounts`, {
-      method: 'POST',
-      headers: { ...SB_HEADERS, Prefer: 'return=minimal' },
-      body: JSON.stringify(acc),
+      method:  'POST',
+      headers: { ...SB_H, Prefer: 'return=minimal' },
+      body:    JSON.stringify(payload),
     });
-    if (res.status === 409) return false; // unique violation — duplicate phone
+    if (res.status === 409) return false; // unique constraint violation
     if (!res.ok) return 'error';
     return true;
   } catch { return 'error'; }
@@ -51,16 +66,18 @@ function lsSave(accounts: Account[]): void {
   try { localStorage.setItem(LS_KEY, JSON.stringify(accounts)); } catch {}
 }
 
-// ── Public API (async) ──
+// ── Public API ──
 
-export async function addAccount(acc: Omit<Account, 'phone'> & { phone: string }): Promise<boolean> {
-  const phone = normalizeEgyptianPhone(acc.phone);
-  const record: Account = { ...acc, phone } as Account;
+export async function addAccount(
+  acc: Omit<Account, 'phone'> & { phone: string }
+): Promise<boolean> {
+  const phone  = normalizeEgyptianPhone(acc.phone);
+  const record: Account = { ...acc, phone };
 
   const sbResult = await sbInsert(record);
-  if (sbResult !== 'error') return sbResult; // true = success, false = duplicate
+  if (sbResult !== 'error') return sbResult;
 
-  // Supabase unavailable → localStorage
+  // Supabase unavailable → localStorage (phone-only uniqueness)
   const accounts = lsAll();
   if (accounts.some(a => a.phone === phone)) return false;
   lsSave([...accounts, record]);
@@ -68,27 +85,30 @@ export async function addAccount(acc: Omit<Account, 'phone'> & { phone: string }
 }
 
 export type LoginResult =
-  | { ok: true; account: Account }
+  | { ok: true;  account: Account }
   | { ok: false; reason: 'not_found' | 'bad_password' };
 
 export async function verifyLogin(phone: string, password: string): Promise<LoginResult> {
   const p = normalizeEgyptianPhone(phone);
+  try {
+    const res = await fetch(
+      `${SB_URL}/rest/v1/accounts?phone=eq.${encodeURIComponent(p)}&select=*&limit=1`,
+      { headers: SB_H }
+    );
+    if (res.ok) {
+      const rows = await res.json();
+      if (!rows[0])                        return { ok: false, reason: 'not_found' };
+      if (rows[0].password !== password)   return { ok: false, reason: 'bad_password' };
+      return { ok: true, account: rows[0] };
+    }
+  } catch {}
 
-  const sbResult = await sbFind(p);
-  if (sbResult !== 'error') {
-    if (!sbResult)                       return { ok: false, reason: 'not_found' };
-    if (sbResult.password !== password)  return { ok: false, reason: 'bad_password' };
-    return { ok: true, account: sbResult };
-  }
-
-  // Supabase unavailable → localStorage
   const account = lsAll().find(a => a.phone === p);
-  if (!account)                        return { ok: false, reason: 'not_found' };
-  if (account.password !== password)   return { ok: false, reason: 'bad_password' };
+  if (!account)                      return { ok: false, reason: 'not_found' };
+  if (account.password !== password) return { ok: false, reason: 'bad_password' };
   return { ok: true, account };
 }
 
-// kept for compatibility (sync, localStorage only — used by orders page etc.)
 export function findAccount(phone: string): Account | undefined {
   return lsAll().find(a => a.phone === normalizeEgyptianPhone(phone));
 }

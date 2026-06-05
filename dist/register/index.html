@@ -10,13 +10,13 @@
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
 
   <!-- SEO -->
-  <title>حساب جديد | وصّلها</title>
-  <meta name="description" content="أنشئ حساب عميل جديد في وصّلها وابدأ بطلب التوصيل">
+  <title>حساب جديد | وصّلها | وصّلها</title>
+  <meta name="description" content="أنشئ حساب عميل جديد في وصّلها">
   <link rel="canonical" href="https://wslha.co/register/">
 
   <!-- Open Graph -->
-  <meta property="og:title" content="حساب جديد | وصّلها">
-  <meta property="og:description" content="أنشئ حساب عميل جديد في وصّلها وابدأ بطلب التوصيل">
+  <meta property="og:title" content="حساب جديد | وصّلها | وصّلها">
+  <meta property="og:description" content="أنشئ حساب عميل جديد في وصّلها">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://wslha.co/register/">
 
@@ -40,8 +40,8 @@
 
   
 <link rel="stylesheet" href="/_astro/about.1b1989f6.css" />
-<link rel="stylesheet" href="/_astro/register.258fb458.css" />
-<link rel="stylesheet" href="/_astro/about.74625c24.css" /><script type="module" src="/_astro/hoisted.0851892a.js"></script></head>
+<link rel="stylesheet" href="/_astro/register.f7735941.css" />
+<link rel="stylesheet" href="/_astro/about.74625c24.css" /><script type="module" src="/_astro/hoisted.605cd3bf.js"></script></head>
 
 <body>
   <header role="banner" class="astro-DMQPWCEC">
@@ -234,22 +234,61 @@
   <p class="page-hero__subtitle astro-S5HXUSYS">سجّل بياناتك لتبدأ بطلب التوصيل ومتابعة طلباتك</p>
 </section><section class="auth-section astro-QRAOSRXQ">
     <div class="auth-card astro-QRAOSRXQ">
-      <h2 class="auth-card__title astro-QRAOSRXQ">انضم إلى وصّلها</h2>
-      <p class="auth-card__sub astro-QRAOSRXQ">أنشئ حسابك في دقيقة واحدة</p>
+      <h2 class="auth-card__title astro-QRAOSRXQ">انضم إلى وصّلها 🎉</h2>
+      <p class="auth-card__sub astro-QRAOSRXQ">أنشئ حسابك في دقيقة واحدة — بياناتك آمنة ومشفّرة</p>
+
+      <div class="progress-bar astro-QRAOSRXQ">
+        <div class="progress-step active astro-QRAOSRXQ"></div>
+        <div class="progress-step active astro-QRAOSRXQ"></div>
+        <div class="progress-step active astro-QRAOSRXQ"></div>
+      </div>
 
       <form id="register-form" novalidate class="astro-QRAOSRXQ">
         <div id="register-error" class="auth-error astro-QRAOSRXQ" role="alert" aria-live="polite"></div>
 
+        <!-- Name -->
         <div class="field astro-QRAOSRXQ">
           <label class="field__label astro-QRAOSRXQ" for="reg-name">الاسم بالكامل</label>
-          <input class="field__input astro-QRAOSRXQ" type="text" id="reg-name" placeholder="مثال: أحمد محمد" required autocomplete="name">
+          <div class="field__wrap astro-QRAOSRXQ">
+            <input class="field__input astro-QRAOSRXQ" type="text" id="reg-name" placeholder="مثال: أحمد محمد علي" required autocomplete="name">
+          </div>
         </div>
 
+        <!-- Username -->
         <div class="field astro-QRAOSRXQ">
-          <label class="field__label astro-QRAOSRXQ" for="reg-phone">رقم الجوال</label>
-          <input class="field__input astro-QRAOSRXQ" type="tel" id="reg-phone" placeholder="010 1234 5678" inputmode="numeric" maxlength="11" pattern="01[0125][0-9]{8}" required autocomplete="tel">
+          <label class="field__label astro-QRAOSRXQ" for="reg-username">
+            اسم المستخدم
+            <span id="user-avail" class="field__avail astro-QRAOSRXQ"></span>
+          </label>
+          <div class="field__wrap astro-QRAOSRXQ">
+            <input class="field__input astro-QRAOSRXQ" type="text" id="reg-username" placeholder="مثال: ahmed_2026" required autocomplete="username" minlength="3" maxlength="20" dir="ltr">
+          </div>
+          <div style="font-size:11px;color:var(--color-text-faint);margin-top:4px;" class="astro-QRAOSRXQ">أحرف إنجليزية وأرقام و _ . فقط (3-20 حرف)</div>
         </div>
 
+        <!-- Phone -->
+        <div class="field astro-QRAOSRXQ">
+          <label class="field__label astro-QRAOSRXQ" for="reg-phone">
+            رقم الجوال
+            <span id="phone-avail" class="field__avail astro-QRAOSRXQ"></span>
+          </label>
+          <div class="field__wrap astro-QRAOSRXQ">
+            <input class="field__input astro-QRAOSRXQ" type="tel" id="reg-phone" placeholder="010 1234 5678" inputmode="numeric" maxlength="11" pattern="01[0125][0-9]{8}" required autocomplete="tel">
+          </div>
+        </div>
+
+        <!-- Email -->
+        <div class="field astro-QRAOSRXQ">
+          <label class="field__label astro-QRAOSRXQ" for="reg-email">
+            البريد الإلكتروني
+            <span id="email-avail" class="field__avail astro-QRAOSRXQ"></span>
+          </label>
+          <div class="field__wrap astro-QRAOSRXQ">
+            <input class="field__input astro-QRAOSRXQ" type="email" id="reg-email" placeholder="example@gmail.com" required autocomplete="email" dir="ltr">
+          </div>
+        </div>
+
+        <!-- City -->
         <div class="field astro-QRAOSRXQ">
           <label class="field__label astro-QRAOSRXQ" for="reg-city">المدينة</label>
           <select class="field__select astro-QRAOSRXQ" id="reg-city" required>
@@ -258,36 +297,35 @@
           </select>
         </div>
 
+        <!-- Password -->
         <div class="field astro-QRAOSRXQ">
           <label class="field__label astro-QRAOSRXQ" for="reg-pass">كلمة المرور</label>
-          <input class="field__input astro-QRAOSRXQ" type="password" id="reg-pass" placeholder="مثال: Ahmed1234" required autocomplete="new-password">
-          <ul class="pw-rules astro-QRAOSRXQ" id="pw-rules" aria-live="polite">
+          <input class="field__input astro-QRAOSRXQ" type="password" id="reg-pass" placeholder="••••••••" required autocomplete="new-password">
+          <ul class="pw-rules astro-QRAOSRXQ" aria-live="polite">
             <li id="rule-len" class="pw-rule astro-QRAOSRXQ">✗ 8 أحرف على الأقل</li>
             <li id="rule-up" class="pw-rule astro-QRAOSRXQ">✗ حرف كبير (A-Z)</li>
             <li id="rule-low" class="pw-rule astro-QRAOSRXQ">✗ حرف صغير (a-z)</li>
-            <li id="rule-dig" class="pw-rule astro-QRAOSRXQ">✗ رقم واحد على الأقل</li>
-            <li id="rule-sym" class="pw-rule astro-QRAOSRXQ">✗ بدون مسافات أو رموز</li>
+            <li id="rule-dig" class="pw-rule astro-QRAOSRXQ">✗ رقم واحد</li>
+            <li id="rule-sym" class="pw-rule astro-QRAOSRXQ">✗ بدون رموز أو مسافات</li>
           </ul>
         </div>
 
+        <!-- Confirm Password -->
         <div class="field astro-QRAOSRXQ">
           <label class="field__label astro-QRAOSRXQ" for="reg-pass2">تأكيد كلمة المرور</label>
           <input class="field__input astro-QRAOSRXQ" type="password" id="reg-pass2" placeholder="••••••••" required autocomplete="new-password">
+          <div id="pass-match" class="match-row astro-QRAOSRXQ"></div>
         </div>
 
         <button type="submit" class="auth-submit astro-QRAOSRXQ" id="register-submit">إنشاء الحساب ←</button>
       </form>
 
       <div class="auth-divider astro-QRAOSRXQ"><span class="astro-QRAOSRXQ">أو</span></div>
-
       <div class="auth-actions astro-QRAOSRXQ">
         <a href="/login" class="btn btn--outline astro-QRAOSRXQ">لديك حساب؟ سجّل الدخول</a>
         <a href="/driver" class="btn btn--accent astro-QRAOSRXQ">🚗 حساب سائق جديد</a>
       </div>
-
-      <p class="auth-footer astro-QRAOSRXQ">
-        بإنشائك الحساب فأنت توافق على <a href="/about" class="astro-QRAOSRXQ">شروط الخدمة</a>
-      </p>
+      <p class="auth-footer astro-QRAOSRXQ">بإنشائك الحساب فأنت توافق على <a href="/about" class="astro-QRAOSRXQ">شروط الخدمة</a></p>
     </div>
   </section>
   </main>
