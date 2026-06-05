@@ -178,29 +178,121 @@ const TIMELINE: TimelineEvent[] = [
 </style>
 
 <script>
+  const SB_URL = 'https://vtikgyiopkjnrwlqnmfx.supabase.co';
+  const SB_KEY = 'sb_publishable_PLSnpvCT-sAyUMtymNgTwA_QmL2suw4';
+  const SB_H   = { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}` };
+
   const form  = document.getElementById('track-form')   as HTMLFormElement;
   const input = document.getElementById('track-input')  as HTMLInputElement;
   const result = document.getElementById('track-result') as HTMLElement;
   const resultId = document.getElementById('result-id') as HTMLElement;
 
-  function showResult(trackingNumber: string): void {
-    resultId.textContent = trackingNumber;
+  // Status → ordered timeline steps
+  const STEPS = [
+    { key: 'pending',    title: 'تم استلام الطلب',          desc: 'بانتظار تأكيد المتجر' },
+    { key: 'preparing',  title: 'المتجر يجهّز طلبك',         desc: 'جارٍ تجهيز الطلب والبحث عن مندوب' },
+    { key: 'on_the_way', title: 'المندوب في الطريق إليك',    desc: 'طلبك في الطريق' },
+    { key: 'delivered',  title: 'تم التسليم',               desc: 'تم توصيل طلبك بنجاح' },
+  ];
+  const STATUS_BADGE: Record<string, string> = {
+    pending:'قيد الانتظار', preparing:'قيد التجهيز', on_the_way:'في الطريق',
+    delivered:'تم التسليم', rejected:'مرفوض',
+  };
+
+  let pollTimer: any = null;
+
+  function renderTimeline(status: string) {
+    const order = ['pending', 'preparing', 'on_the_way', 'delivered'];
+    const curIdx = order.indexOf(status);
+    const tl = document.getElementById('result-timeline')!;
+    tl.innerHTML = STEPS.map((s, i) => {
+      const state = status === 'rejected' ? 'wait'
+        : i < curIdx ? 'done' : i === curIdx ? 'active' : 'wait';
+      return `
+        <li class="timeline__item">
+          <div class="timeline__dot timeline__dot--${state}" aria-hidden="true"></div>
+          <p class="timeline__title">${s.title}</p>
+          ${i === curIdx ? `<p class="timeline__desc">${s.desc}</p>` : ''}
+        </li>`;
+    }).join('');
+  }
+
+  function renderOrder(o: any) {
+    document.getElementById('result-empty')!.style.display = 'none';
+    document.getElementById('result-timeline')!.style.display = '';
+    (document.querySelector('.result__info') as HTMLElement).style.display = '';
+
+    resultId.textContent = o.code || o.id;
+    document.getElementById('result-name')!.textContent = `${o.store_emoji || '📦'} طلب من ${o.store_name || ''}`;
+    const badge = document.getElementById('result-status')!;
+    badge.textContent = STATUS_BADGE[o.status] || o.status;
+
+    document.getElementById('info-from')!.textContent   = o.store_name || '—';
+    document.getElementById('info-to')!.textContent     = `${o.area || ''}${o.address ? ' — ' + o.address : ''}`;
+    document.getElementById('info-driver')!.textContent = o.driver_name || (o.status === 'preparing' ? 'جارٍ التعيين…' : '—');
+    document.getElementById('info-total')!.textContent  = `${o.total || 0} ج.م`;
+
+    renderTimeline(o.status);
+  }
+
+  function showEmpty(code: string) {
+    resultId.textContent = code;
+    document.getElementById('result-timeline')!.style.display = 'none';
+    (document.querySelector('.result__info') as HTMLElement).style.display = 'none';
+    document.getElementById('result-status')!.textContent = '—';
+    document.getElementById('result-empty')!.style.display = 'block';
+  }
+
+  async function fetchOrder(code: string) {
+    try {
+      const r = await fetch(`${SB_URL}/rest/v1/orders?code=eq.${encodeURIComponent(code)}&limit=1`, { headers: SB_H });
+      if (!r.ok) return null;
+      const rows = await r.json();
+      return rows?.[0] || null;
+    } catch { return null; }
+  }
+
+  async function track(code: string) {
     result.classList.add('is-visible');
     result.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+    const order = await fetchOrder(code);
+    if (order) renderOrder(order);
+    else showEmpty(code);
+
+    // Live polling while a non-terminal order is shown
+    if (pollTimer) clearInterval(pollTimer);
+    if (order && order.status !== 'delivered' && order.status !== 'rejected') {
+      pollTimer = setInterval(async () => {
+        const fresh = await fetchOrder(code);
+        if (fresh) {
+          renderOrder(fresh);
+          if (fresh.status === 'delivered' || fresh.status === 'rejected') {
+            clearInterval(pollTimer); pollTimer = null;
+          }
+        }
+      }, 5000);
+    }
   }
 
   form.addEventListener('submit', (e: Event) => {
     e.preventDefault();
     const val = input.value.trim();
-    if (val) showResult(val);
+    if (val) track(val);
     else input.focus();
   });
 
-  // Auto-fill from query param
+  // Auto-fill from query param or last order in localStorage
   const trackParam = new URLSearchParams(location.search).get('q');
   if (trackParam) {
     input.value = trackParam;
-    showResult(trackParam);
+    track(trackParam);
+  } else {
+    try {
+      const orders = JSON.parse(localStorage.getItem('wslha_orders') || '[]');
+      const last = orders.find((o: any) => o.kind === 'store' && o.code);
+      if (last) { input.value = last.code; track(last.code); }
+    } catch {}
   }
 </script>
 
@@ -246,13 +338,13 @@ const TIMELINE: TimelineEvent[] = [
       <div class="result__header">
         <div>
           <p class="result__id">رقم الطلب: <strong id="result-id">—</strong></p>
-          <p class="result__name">📦 طرد — توصيل محلي</p>
+          <p class="result__name" id="result-name">📦 طلب — توصيل محلي</p>
         </div>
-        <span class="result__status" role="status">في الطريق</span>
+        <span class="result__status" role="status" id="result-status">—</span>
       </div>
 
       <div class="result__body">
-        <ol class="timeline" aria-label="مراحل التوصيل">
+        <ol class="timeline" id="result-timeline" aria-label="مراحل التوصيل">
           {TIMELINE.map(event => (
             <li class="timeline__item">
               <div class={`timeline__dot timeline__dot--${event.state}`} aria-hidden="true"></div>
@@ -264,11 +356,15 @@ const TIMELINE: TimelineEvent[] = [
         </ol>
 
         <dl class="result__info">
-          <div><dt class="result__info-label">من</dt>          <dd class="result__info-value">متجر النخيل</dd></div>
-          <div><dt class="result__info-label">إلى</dt>         <dd class="result__info-value">حي الروضة</dd></div>
-          <div><dt class="result__info-label">المندوب</dt>     <dd class="result__info-value">أحمد محمد</dd></div>
-          <div><dt class="result__info-label">وقت التسليم</dt> <dd class="result__info-value">خلال 15 دقيقة</dd></div>
+          <div><dt class="result__info-label">من</dt>          <dd class="result__info-value" id="info-from">—</dd></div>
+          <div><dt class="result__info-label">إلى</dt>         <dd class="result__info-value" id="info-to">—</dd></div>
+          <div><dt class="result__info-label">المندوب</dt>     <dd class="result__info-value" id="info-driver">—</dd></div>
+          <div><dt class="result__info-label">الإجمالي</dt>    <dd class="result__info-value" id="info-total">—</dd></div>
         </dl>
+
+        <p id="result-empty" style="text-align:center;color:var(--color-text-faint);font-size:var(--text-sm);display:none;padding:var(--sp-4) 0;">
+          لم نعثر على طلب بهذا الرقم. تأكد من الرقم وحاول مرة أخرى.
+        </p>
       </div>
     </section>
 

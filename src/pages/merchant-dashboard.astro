@@ -187,9 +187,81 @@ import Layout from '../components/layout.astro';
     padding: 2px 10px; border-radius: var(--radius-full);
     font-size: 11px; font-weight: var(--weight-bold);
   }
-  .order-status.pending   { background: #fef3c7; color: #92400e; }
-  .order-status.confirmed { background: #dbeafe; color: #1e40af; }
-  .order-status.delivered { background: #dcfce7; color: #166534; }
+  .order-status.pending    { background: #fef3c7; color: #92400e; }
+  .order-status.preparing  { background: #dbeafe; color: #1e40af; }
+  .order-status.on_the_way { background: #ede9fe; color: #6d28d9; }
+  .order-status.delivered  { background: #dcfce7; color: #166534; }
+  .order-status.rejected   { background: #fee2e2; color: #b91c1c; }
+
+  /* Tab badge */
+  .tab-badge {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-width: 20px; height: 20px; padding: 0 6px; margin-inline-start: 4px;
+    background: #dc2626; color: #fff; border-radius: 99px;
+    font-size: 11px; font-weight: var(--weight-black);
+    animation: badge-pop 1.5s ease-in-out infinite;
+  }
+  @keyframes badge-pop { 0%,100%{transform:scale(1)} 50%{transform:scale(1.18)} }
+
+  /* New order card (needs action) */
+  .new-order {
+    background: var(--color-bg);
+    border: 2px solid #f59e0b; border-radius: var(--radius-2xl);
+    padding: var(--sp-5); margin-bottom: var(--sp-4);
+    box-shadow: 0 6px 24px rgba(245,158,11,0.18);
+    animation: new-order-in 0.4s cubic-bezier(0.34,1.56,0.64,1);
+  }
+  @keyframes new-order-in { from{opacity:0;transform:translateY(-12px)} to{opacity:1;transform:none} }
+  .new-order.ringing { animation: ring-shake 0.6s ease-in-out infinite; }
+  @keyframes ring-shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-3px)} 75%{transform:translateX(3px)} }
+  .new-order__head { display:flex; align-items:center; justify-content:space-between; margin-bottom: var(--sp-3); }
+  .new-order__code { font-weight: var(--weight-black); color: var(--color-primary); font-size: var(--text-base); }
+  .new-order__time { font-size: 11px; color: var(--color-text-faint); }
+  .new-order__cust { font-size: var(--text-sm); margin-bottom: var(--sp-3); }
+  .new-order__cust b { font-weight: var(--weight-bold); }
+  .new-order__items {
+    background: var(--color-bg-soft); border-radius: var(--radius-lg);
+    padding: var(--sp-3) var(--sp-4); font-size: var(--text-sm);
+    margin-bottom: var(--sp-3); line-height: 1.7;
+  }
+  .new-order__total { display:flex; justify-content:space-between; font-weight: var(--weight-black); margin-bottom: var(--sp-4); }
+  .new-order__total b { color: #16a34a; }
+  .new-order__actions { display:flex; gap: var(--sp-3); }
+  .btn-accept {
+    flex:1; background:#16a34a; color:#fff; border:none; border-radius: var(--radius-lg);
+    padding: var(--sp-4); font-family: var(--font-body); font-weight: var(--weight-black);
+    font-size: var(--text-base); cursor:pointer; transition: all .2s;
+  }
+  .btn-accept:hover { background:#15803d; transform: translateY(-1px); }
+  .btn-reject {
+    background:#fee2e2; color:#b91c1c; border:1.5px solid #fca5a5; border-radius: var(--radius-lg);
+    padding: var(--sp-4) var(--sp-5); font-family: var(--font-body); font-weight: var(--weight-bold);
+    font-size: var(--text-sm); cursor:pointer; transition: all .2s; white-space:nowrap;
+  }
+  .btn-reject:hover { background:#fca5a5; }
+
+  /* Active order card */
+  .active-order {
+    background: var(--color-bg); border: 1px solid var(--color-border);
+    border-radius: var(--radius-xl); padding: var(--sp-4) var(--sp-5);
+    margin-bottom: var(--sp-3); display:flex; align-items:center; gap: var(--sp-4); flex-wrap:wrap;
+  }
+  .active-order__info { flex:1; min-width: 0; }
+  .active-order__code { font-weight: var(--weight-black); color: var(--color-primary); font-size: var(--text-sm); }
+  .active-order__meta { font-size: 11px; color: var(--color-text-faint); }
+  .ao-driver { font-size: 11px; color:#6d28d9; font-weight: var(--weight-bold); }
+  .btn-ready {
+    background:#dbeafe; color:#1e40af; border:1.5px solid #93c5fd; border-radius: var(--radius-lg);
+    padding: var(--sp-2) var(--sp-4); font-family: var(--font-body); font-weight: var(--weight-bold);
+    font-size: var(--text-xs); cursor:pointer; transition: all .2s;
+  }
+  .btn-ready:hover { background:#bfdbfe; }
+  .searching-pill {
+    display:inline-flex; align-items:center; gap:6px; font-size:11px; font-weight:var(--weight-bold);
+    color:#92400e; background:#fef3c7; padding:3px 10px; border-radius:99px;
+  }
+  .searching-pill .dot { width:6px;height:6px;border-radius:50%;background:#f59e0b;animation:blink 1s infinite; }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.25} }
 
   /* Toast */
   .toast {
@@ -321,7 +393,7 @@ import Layout from '../components/layout.astro';
       <!-- Tabs -->
       <div class="tabs">
         <button class="tab-btn active" data-tab="menu">🍽️ إدارة القائمة</button>
-        <button class="tab-btn" data-tab="orders">📦 الطلبات</button>
+        <button class="tab-btn" data-tab="orders">📦 الطلبات <span class="tab-badge" id="orders-badge" hidden>0</span></button>
         <button class="tab-btn" data-tab="settings">⚙️ إعدادات المتجر</button>
       </div>
 
@@ -346,7 +418,23 @@ import Layout from '../components/layout.astro';
 
       <!-- Tab: Orders -->
       <div id="tab-orders" class="tab-panel">
-        <h2 style="font-weight:var(--weight-black);font-size:var(--text-lg);margin-bottom:var(--sp-5);">الطلبات الأخيرة</h2>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--sp-5);flex-wrap:wrap;gap:var(--sp-3);">
+          <h2 style="font-weight:var(--weight-black);font-size:var(--text-lg);">الطلبات المباشرة 📡</h2>
+          <label style="display:flex;align-items:center;gap:var(--sp-2);font-size:var(--text-sm);cursor:pointer;">
+            <input type="checkbox" id="sound-toggle" checked style="width:18px;height:18px;accent-color:var(--color-primary);" />
+            🔔 تنبيه صوتي للطلبات الجديدة
+          </label>
+        </div>
+
+        <!-- New / incoming orders (need merchant action) -->
+        <div id="new-orders" style="margin-bottom:var(--sp-6);"></div>
+
+        <!-- Active orders (accepted / being delivered) -->
+        <h3 id="active-orders-title" style="font-weight:var(--weight-black);font-size:var(--text-sm);color:var(--color-text-faint);margin-bottom:var(--sp-3);" hidden>قيد التنفيذ</h3>
+        <div id="active-orders" style="margin-bottom:var(--sp-6);"></div>
+
+        <!-- Order history -->
+        <h3 style="font-weight:var(--weight-black);font-size:var(--text-sm);color:var(--color-text-faint);margin-bottom:var(--sp-3);">السجل</h3>
         <div id="orders-container" style="background:var(--color-bg);border:1px solid var(--color-border);border-radius:var(--radius-xl);overflow:hidden;">
           <div style="padding:var(--sp-8);text-align:center;color:var(--color-text-faint);">لا توجد طلبات بعد</div>
         </div>
@@ -545,8 +633,9 @@ import Layout from '../components/layout.astro';
     // Load sections & products
     await loadMenu();
 
-    // Load orders
+    // Load orders + start live polling
     await loadOrders();
+    startOrdersPolling();
 
     // Tabs
     document.querySelectorAll('.tab-btn').forEach(btn => {
@@ -828,26 +917,177 @@ import Layout from '../components/layout.astro';
     } else toast('❌ فشل حذف المنتج');
   }
 
-  // ── Orders ──
-  async function loadOrders() {
-    const orders = await sbGet(`orders?store_id=eq.${currentStore.id}&order=created_at.desc&limit=30`);
-    const container = document.getElementById('orders-container')!;
-    if (!orders?.length) {
-      container.innerHTML = '<div style="padding:var(--sp-8);text-align:center;color:var(--color-text-faint);">لا توجد طلبات بعد — انتظر قليلاً 😊</div>';
-      return;
+  // ── Orders (real-time) ──
+  const STATUS_LABEL: Record<string, string> = {
+    pending:'قيد الانتظار', preparing:'قيد التجهيز', on_the_way:'في الطريق',
+    delivered:'تم التوصيل', rejected:'مرفوض',
+  };
+
+  let knownPendingIds = new Set<string>();
+  let ordersPollTimer: any = null;
+  let audioCtx: AudioContext | null = null;
+
+  function soundEnabled(): boolean {
+    const el = document.getElementById('sound-toggle') as HTMLInputElement | null;
+    return el ? el.checked : true;
+  }
+
+  // Short two-tone chime via Web Audio (no asset needed)
+  function playChime() {
+    if (!soundEnabled()) return;
+    try {
+      audioCtx = audioCtx || new (window.AudioContext || (window as any).webkitAudioContext)();
+      const now = audioCtx.currentTime;
+      [[880, 0], [1320, 0.16]].forEach(([freq, t]) => {
+        const osc = audioCtx!.createOscillator();
+        const gain = audioCtx!.createGain();
+        osc.type = 'sine'; osc.frequency.value = freq as number;
+        gain.gain.setValueAtTime(0.0001, now + (t as number));
+        gain.gain.exponentialRampToValueAtTime(0.3, now + (t as number) + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + (t as number) + 0.32);
+        osc.connect(gain); gain.connect(audioCtx!.destination);
+        osc.start(now + (t as number)); osc.stop(now + (t as number) + 0.34);
+      });
+    } catch {}
+    if (navigator.vibrate) navigator.vibrate([120, 60, 120]);
+  }
+
+  function timeAgo(iso: string): string {
+    if (!iso) return '';
+    const diff = Math.floor((Date.now() - new Date(iso).getTime()) / 1000);
+    if (diff < 60) return 'الآن';
+    if (diff < 3600) return `منذ ${Math.floor(diff / 60)} دقيقة`;
+    return new Date(iso).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
+  }
+
+  function renderItems(o: any): string {
+    let items: any[] = [];
+    try { items = Array.isArray(o.items) ? o.items : JSON.parse(o.items || '[]'); } catch {}
+    if (items.length) return items.map(i => `${i.qty}× ${i.emoji || ''} ${i.name}`).join('<br>');
+    return o.items_summary || '—';
+  }
+
+  async function loadOrders(announce = false) {
+    const orders = await sbGet(`orders?store_id=eq.${currentStore.id}&order=created_at.desc&limit=40`);
+    if (!orders) return;
+
+    const pending  = orders.filter((o: any) => o.status === 'pending');
+    const active   = orders.filter((o: any) => o.status === 'preparing' || o.status === 'on_the_way');
+    const history  = orders.filter((o: any) => o.status === 'delivered' || o.status === 'rejected');
+
+    // Detect genuinely new pending orders → chime
+    const currentPendingIds = new Set<string>(pending.map((o: any) => o.id));
+    if (announce) {
+      const hasNew = pending.some((o: any) => !knownPendingIds.has(o.id));
+      if (hasNew) { playChime(); toast('🔔 طلب جديد وصل!'); }
     }
-    const statusMap: Record<string, string> = { pending:'قيد الانتظار', confirmed:'مؤكد', delivered:'تم التوصيل' };
-    container.innerHTML = orders.map((o: any) => `
-      <div class="order-row">
-        <span class="order-id">#${(o.id || '').slice(-6).toUpperCase()}</span>
-        <div class="order-cust">
-          <div style="font-weight:600;">${o.customer_name || '—'}</div>
-          <div style="font-size:11px;color:var(--color-text-faint);">${o.customer_phone || ''} · ${o.area || ''}</div>
+    knownPendingIds = currentPendingIds;
+
+    // Badge on tab
+    const badge = document.getElementById('orders-badge')!;
+    if (pending.length > 0) { badge.hidden = false; badge.textContent = String(pending.length); }
+    else badge.hidden = true;
+
+    // ── New orders (need accept/reject) ──
+    const newWrap = document.getElementById('new-orders')!;
+    newWrap.innerHTML = pending.map((o: any) => `
+      <div class="new-order ringing" data-oid="${o.id}">
+        <div class="new-order__head">
+          <span class="new-order__code">🆕 ${o.code || ('#' + String(o.id).slice(-6))}</span>
+          <span class="new-order__time">${timeAgo(o.created_at)}</span>
         </div>
-        <span class="order-total">${o.total || 0} ج.م</span>
-        <span class="order-status ${o.status || 'pending'}">${statusMap[o.status] || o.status || 'قيد الانتظار'}</span>
+        <div class="new-order__cust">
+          <b>${o.customer_name || '—'}</b> · ${o.customer_phone || ''}<br>
+          📍 ${o.area || ''} — ${o.address || ''}
+        </div>
+        <div class="new-order__items">${renderItems(o)}</div>
+        <div class="new-order__total">
+          <span>الإجمالي (${o.payment || 'كاش'})</span>
+          <b>${o.total || 0} ج.م</b>
+        </div>
+        <div class="new-order__actions">
+          <button class="btn-accept" data-accept="${o.id}">✅ قبول وتجهيز</button>
+          <button class="btn-reject" data-reject="${o.id}">✗ رفض</button>
+        </div>
       </div>
     `).join('');
+
+    newWrap.querySelectorAll('[data-accept]').forEach(b =>
+      b.addEventListener('click', () => acceptOrder((b as HTMLElement).dataset.accept!)));
+    newWrap.querySelectorAll('[data-reject]').forEach(b =>
+      b.addEventListener('click', () => rejectOrder((b as HTMLElement).dataset.reject!)));
+
+    // ── Active orders ──
+    const activeWrap  = document.getElementById('active-orders')!;
+    const activeTitle = document.getElementById('active-orders-title')!;
+    activeTitle.hidden = active.length === 0;
+    activeWrap.innerHTML = active.map((o: any) => {
+      const statusBit = o.status === 'preparing'
+        ? (o.driver_phone
+            ? `<span class="ao-driver">🛵 السائق ${o.driver_name || ''} في الطريق للاستلام</span>`
+            : `<span class="searching-pill"><span class="dot"></span> جارٍ البحث عن سائق…</span>`)
+        : `<span class="ao-driver">🚗 ${o.driver_name || 'السائق'} — في الطريق للعميل</span>`;
+      const readyBtn = o.status === 'preparing'
+        ? `<button class="btn-ready" data-ready="${o.id}">📦 الطلب جاهز للتسليم</button>` : '';
+      return `
+        <div class="active-order" data-oid="${o.id}">
+          <div class="active-order__info">
+            <div class="active-order__code">${o.code || ('#' + String(o.id).slice(-6))} · <span class="order-status ${o.status}">${STATUS_LABEL[o.status]}</span></div>
+            <div class="active-order__meta">${o.customer_name || ''} · ${o.total || 0} ج.م · ${o.area || ''}</div>
+            <div style="margin-top:4px;">${statusBit}</div>
+          </div>
+          ${readyBtn}
+        </div>`;
+    }).join('');
+
+    activeWrap.querySelectorAll('[data-ready]').forEach(b =>
+      b.addEventListener('click', () => markReady((b as HTMLElement).dataset.ready!)));
+
+    // ── History ──
+    const container = document.getElementById('orders-container')!;
+    if (!history.length) {
+      container.innerHTML = '<div style="padding:var(--sp-8);text-align:center;color:var(--color-text-faint);">لا يوجد سجل بعد</div>';
+    } else {
+      container.innerHTML = history.map((o: any) => `
+        <div class="order-row">
+          <span class="order-id">${o.code || ('#' + String(o.id).slice(-6))}</span>
+          <div class="order-cust">
+            <div style="font-weight:600;">${o.customer_name || '—'}</div>
+            <div style="font-size:11px;color:var(--color-text-faint);">${o.customer_phone || ''} · ${o.area || ''}</div>
+          </div>
+          <span class="order-total">${o.total || 0} ج.م</span>
+          <span class="order-status ${o.status}">${STATUS_LABEL[o.status] || o.status}</span>
+        </div>
+      `).join('');
+    }
+  }
+
+  // Merchant accepts → preparing + becomes visible to drivers (broadcast)
+  async function acceptOrder(id: string) {
+    const ok = await sbPatch(`orders?id=eq.${id}`, {
+      status: 'preparing', accepted_at: new Date().toISOString(),
+    });
+    if (ok) { toast('✅ تم قبول الطلب — جارٍ البحث عن سائق'); knownPendingIds.delete(id); await loadOrders(); loadStats(); }
+    else toast('❌ فشل قبول الطلب');
+  }
+
+  async function rejectOrder(id: string) {
+    if (!confirm('هل تريد رفض هذا الطلب؟')) return;
+    const ok = await sbPatch(`orders?id=eq.${id}`, {
+      status: 'rejected', rejected_at: new Date().toISOString(),
+    });
+    if (ok) { toast('تم رفض الطلب'); knownPendingIds.delete(id); await loadOrders(); }
+    else toast('❌ فشل رفض الطلب');
+  }
+
+  async function markReady(id: string) {
+    const ok = await sbPatch(`orders?id=eq.${id}`, { ready_at: new Date().toISOString() });
+    if (ok) { toast('📦 تم وسم الطلب كجاهز'); await loadOrders(); }
+  }
+
+  function startOrdersPolling() {
+    if (ordersPollTimer) return;
+    ordersPollTimer = setInterval(() => loadOrders(true), 5000);
   }
 
   // ── Settings ──

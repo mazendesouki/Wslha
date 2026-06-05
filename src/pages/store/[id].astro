@@ -366,6 +366,8 @@ const staticMenuJson = JSON.stringify(
       area: head.dataset.storeArea!,
       deliveryFee: Number(head.dataset.deliveryFee),
       minOrder: Number(head.dataset.minOrder),
+      lat: 31.4441,   // New Damietta centre — overridden from Supabase if available
+      lng: 31.6533,
     };
 
     let cart: Cart = getCart() && getCart()!.storeId === STORE.id
@@ -530,6 +532,8 @@ const staticMenuJson = JSON.stringify(
           const minEl = document.getElementById('hd-min');
           if (minEl) minEl.textContent = s.min_order;
         }
+        if (s.lat != null) STORE.lat = Number(s.lat);
+        if (s.lng != null) STORE.lng = Number(s.lng);
       } catch { /* ignore */ }
     }
 
@@ -575,8 +579,9 @@ const staticMenuJson = JSON.stringify(
     }
     function closeSheet(): void { sheet.classList.remove('is-open'); }
 
-    function confirmOrder(): void {
+    async function confirmOrder(): Promise<void> {
       const errBox  = sheet.querySelector('[data-error]') as HTMLElement;
+      const confirmBtn = sheet.querySelector('[data-confirm]') as HTMLButtonElement;
       const name    = (document.getElementById('co-name') as HTMLInputElement).value.trim();
       const phone   = (document.getElementById('co-phone') as HTMLInputElement).value.trim();
       const area    = (document.getElementById('co-area') as HTMLSelectElement).value;
@@ -591,22 +596,61 @@ const staticMenuJson = JSON.stringify(
 
       const subtotal = cartSubtotal(cart);
       const total    = subtotal + STORE.deliveryFee;
-      const orderId  = 'WSL-' + new Date().getFullYear() + '-' + Math.floor(100000 + Math.random() * 900000);
+      const code     = 'WSL-' + new Date().getFullYear() + '-' + Math.floor(100000 + Math.random() * 900000);
+      const normPhone = normalizeEgyptianPhone(phone);
+      const itemsSummary = cart.items.map(i => `${i.qty}× ${i.name}`).join('، ');
+
+      confirmBtn.disabled = true;
+      confirmBtn.textContent = 'جارٍ إرسال الطلب...';
+
+      // ── Send order to Supabase so the merchant tablet receives it live ──
+      let dbId: string | null = null;
+      try {
+        const res = await fetch(`${SB_URL}/rest/v1/orders`, {
+          method: 'POST',
+          headers: { ...SB_H, 'Content-Type': 'application/json', Prefer: 'return=representation' },
+          body: JSON.stringify({
+            code,
+            store_id: STORE.id,
+            store_name: STORE.name,
+            store_emoji: STORE.emoji,
+            customer_name: name,
+            customer_phone: normPhone,
+            area,
+            address,
+            items: cart.items,
+            items_summary: itemsSummary,
+            subtotal,
+            delivery_fee: STORE.deliveryFee,
+            total,
+            payment: pay,
+            status: 'pending',
+            store_lat: STORE.lat,
+            store_lng: STORE.lng,
+          }),
+        });
+        if (res.ok) {
+          const rows = await res.json();
+          dbId = Array.isArray(rows) ? rows[0]?.id : null;
+        }
+      } catch { /* offline — still keep a local copy below */ }
 
       const order = {
-        id: orderId,
+        id: dbId || code,
+        code,
         type: `طلب من ${STORE.name}`,
         icon: STORE.emoji,
         route: `${STORE.name} ← ${area}`,
         date: 'الآن',
         price: `${total} ج.م`,
-        status: 'active',
+        status: 'pending',
         kind: 'store',
         store: STORE.name,
+        storeId: STORE.id,
         items: cart.items,
-        itemsSummary: cart.items.map(i => `${i.qty}× ${i.name}`).join('، '),
+        itemsSummary,
         subtotal, deliveryFee: STORE.deliveryFee, payment: pay,
-        recipient: name, phone: normalizeEgyptianPhone(phone),
+        recipient: name, phone: normPhone,
         address: `${area} — ${address}`,
         createdAt: new Date().toISOString(),
       };
@@ -621,9 +665,12 @@ const staticMenuJson = JSON.stringify(
       saveCart(null);
       render();
 
+      confirmBtn.disabled = false;
+      confirmBtn.textContent = 'تأكيد الطلب ←';
+
       (sheet.querySelector('[data-step="checkout"]') as HTMLElement).hidden = true;
       const succ = sheet.querySelector('[data-step="success"]') as HTMLElement;
-      (succ.querySelector('[data-success-id]') as HTMLElement).textContent = orderId;
+      (succ.querySelector('[data-success-id]') as HTMLElement).textContent = code;
       (succ.querySelector('[data-success-store]') as HTMLElement).textContent = STORE.name;
       succ.hidden = false;
     }

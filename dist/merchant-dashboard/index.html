@@ -37,8 +37,8 @@
   <link rel="stylesheet" href="/global.css">
 
   
-<link rel="stylesheet" href="/_astro/merchant-dashboard.36373df9.css" />
-<link rel="stylesheet" href="/_astro/about.74625c24.css" /><script type="module" src="/_astro/hoisted.bff741de.js"></script></head>
+<link rel="stylesheet" href="/_astro/merchant-dashboard.106f97a6.css" />
+<link rel="stylesheet" href="/_astro/about.74625c24.css" /><script type="module" src="/_astro/hoisted.4acebf5a.js"></script></head>
 
 <body>
   <header role="banner" class="astro-DMQPWCEC">
@@ -330,7 +330,7 @@
       <!-- Tabs -->
       <div class="tabs astro-RWY5V4S6">
         <button class="tab-btn active astro-RWY5V4S6" data-tab="menu">🍽️ إدارة القائمة</button>
-        <button class="tab-btn astro-RWY5V4S6" data-tab="orders">📦 الطلبات</button>
+        <button class="tab-btn astro-RWY5V4S6" data-tab="orders">📦 الطلبات <span class="tab-badge astro-RWY5V4S6" id="orders-badge" hidden>0</span></button>
         <button class="tab-btn astro-RWY5V4S6" data-tab="settings">⚙️ إعدادات المتجر</button>
       </div>
 
@@ -355,7 +355,23 @@
 
       <!-- Tab: Orders -->
       <div id="tab-orders" class="tab-panel astro-RWY5V4S6">
-        <h2 style="font-weight:var(--weight-black);font-size:var(--text-lg);margin-bottom:var(--sp-5);" class="astro-RWY5V4S6">الطلبات الأخيرة</h2>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--sp-5);flex-wrap:wrap;gap:var(--sp-3);" class="astro-RWY5V4S6">
+          <h2 style="font-weight:var(--weight-black);font-size:var(--text-lg);" class="astro-RWY5V4S6">الطلبات المباشرة 📡</h2>
+          <label style="display:flex;align-items:center;gap:var(--sp-2);font-size:var(--text-sm);cursor:pointer;" class="astro-RWY5V4S6">
+            <input type="checkbox" id="sound-toggle" checked style="width:18px;height:18px;accent-color:var(--color-primary);" class="astro-RWY5V4S6">
+            🔔 تنبيه صوتي للطلبات الجديدة
+          </label>
+        </div>
+
+        <!-- New / incoming orders (need merchant action) -->
+        <div id="new-orders" style="margin-bottom:var(--sp-6);" class="astro-RWY5V4S6"></div>
+
+        <!-- Active orders (accepted / being delivered) -->
+        <h3 id="active-orders-title" style="font-weight:var(--weight-black);font-size:var(--text-sm);color:var(--color-text-faint);margin-bottom:var(--sp-3);" hidden class="astro-RWY5V4S6">قيد التنفيذ</h3>
+        <div id="active-orders" style="margin-bottom:var(--sp-6);" class="astro-RWY5V4S6"></div>
+
+        <!-- Order history -->
+        <h3 style="font-weight:var(--weight-black);font-size:var(--text-sm);color:var(--color-text-faint);margin-bottom:var(--sp-3);" class="astro-RWY5V4S6">السجل</h3>
         <div id="orders-container" style="background:var(--color-bg);border:1px solid var(--color-border);border-radius:var(--radius-xl);overflow:hidden;" class="astro-RWY5V4S6">
           <div style="padding:var(--sp-8);text-align:center;color:var(--color-text-faint);" class="astro-RWY5V4S6">لا توجد طلبات بعد</div>
         </div>

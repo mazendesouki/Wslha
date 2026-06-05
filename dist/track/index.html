@@ -41,7 +41,7 @@
   
 <link rel="stylesheet" href="/_astro/about.1b1989f6.css" />
 <link rel="stylesheet" href="/_astro/track.ea702820.css" />
-<link rel="stylesheet" href="/_astro/about.74625c24.css" /><script type="module" src="/_astro/hoisted.86cf1eef.js"></script></head>
+<link rel="stylesheet" href="/_astro/about.74625c24.css" /><script type="module" src="/_astro/hoisted.1e628b9d.js"></script></head>
 
 <body>
   <header role="banner" class="astro-DMQPWCEC">
@@ -251,13 +251,13 @@
       <div class="result__header astro-VM2MI7TS">
         <div class="astro-VM2MI7TS">
           <p class="result__id astro-VM2MI7TS">رقم الطلب: <strong id="result-id" class="astro-VM2MI7TS">—</strong></p>
-          <p class="result__name astro-VM2MI7TS">📦 طرد — توصيل محلي</p>
+          <p class="result__name astro-VM2MI7TS" id="result-name">📦 طلب — توصيل محلي</p>
         </div>
-        <span class="result__status astro-VM2MI7TS" role="status">في الطريق</span>
+        <span class="result__status astro-VM2MI7TS" role="status" id="result-status">—</span>
       </div>
 
       <div class="result__body astro-VM2MI7TS">
-        <ol class="timeline astro-VM2MI7TS" aria-label="مراحل التوصيل">
+        <ol class="timeline astro-VM2MI7TS" id="result-timeline" aria-label="مراحل التوصيل">
           <li class="timeline__item astro-VM2MI7TS">
               <div class="timeline__dot timeline__dot--done astro-VM2MI7TS" aria-hidden="true"></div>
               <p class="timeline__title astro-VM2MI7TS">تم استلام الطلب</p>
@@ -282,11 +282,15 @@
         </ol>
 
         <dl class="result__info astro-VM2MI7TS">
-          <div class="astro-VM2MI7TS"><dt class="result__info-label astro-VM2MI7TS">من</dt>          <dd class="result__info-value astro-VM2MI7TS">متجر النخيل</dd></div>
-          <div class="astro-VM2MI7TS"><dt class="result__info-label astro-VM2MI7TS">إلى</dt>         <dd class="result__info-value astro-VM2MI7TS">حي الروضة</dd></div>
-          <div class="astro-VM2MI7TS"><dt class="result__info-label astro-VM2MI7TS">المندوب</dt>     <dd class="result__info-value astro-VM2MI7TS">أحمد محمد</dd></div>
-          <div class="astro-VM2MI7TS"><dt class="result__info-label astro-VM2MI7TS">وقت التسليم</dt> <dd class="result__info-value astro-VM2MI7TS">خلال 15 دقيقة</dd></div>
+          <div class="astro-VM2MI7TS"><dt class="result__info-label astro-VM2MI7TS">من</dt>          <dd class="result__info-value astro-VM2MI7TS" id="info-from">—</dd></div>
+          <div class="astro-VM2MI7TS"><dt class="result__info-label astro-VM2MI7TS">إلى</dt>         <dd class="result__info-value astro-VM2MI7TS" id="info-to">—</dd></div>
+          <div class="astro-VM2MI7TS"><dt class="result__info-label astro-VM2MI7TS">المندوب</dt>     <dd class="result__info-value astro-VM2MI7TS" id="info-driver">—</dd></div>
+          <div class="astro-VM2MI7TS"><dt class="result__info-label astro-VM2MI7TS">الإجمالي</dt>    <dd class="result__info-value astro-VM2MI7TS" id="info-total">—</dd></div>
         </dl>
+
+        <p id="result-empty" style="text-align:center;color:var(--color-text-faint);font-size:var(--text-sm);display:none;padding:var(--sp-4) 0;" class="astro-VM2MI7TS">
+          لم نعثر على طلب بهذا الرقم. تأكد من الرقم وحاول مرة أخرى.
+        </p>
       </div>
     </section>
 
