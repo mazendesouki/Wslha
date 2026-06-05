@@ -1,11 +1,49 @@
 {
-    "name": "Netlify Tour",
-    "short_name": "Netlify Tour",
-    "icons": [
-      { "src": "/icon-192.png", "type": "image/png", "sizes": "192x192" },
-      { "src": "/icon-512.png", "type": "image/png", "sizes": "512x512" }
-    ],
-    "theme_color": "#ffffff",
-    "background_color": "#ffffff",
-    "display": "standalone"
+  "name": "وصّلها — توصيل سريع في دمياط الجديدة",
+  "short_name": "وصّلها",
+  "description": "اطلب من متاجر ومطاعم دمياط الجديدة وتابع طلبك لحظة بلحظة. توصيل خلال 30 دقيقة.",
+  "lang": "ar",
+  "dir": "rtl",
+  "start_url": "/?source=pwa",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "theme_color": "#3B6EF8",
+  "background_color": "#2952D9",
+  "categories": ["food", "shopping", "business"],
+  "icons": [
+    { "src": "/icon-192.png", "type": "image/png", "sizes": "192x192", "purpose": "any" },
+    { "src": "/icon-512.png", "type": "image/png", "sizes": "512x512", "purpose": "any" },
+    { "src": "/icon-maskable-512.png", "type": "image/png", "sizes": "512x512", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    {
+      "name": "المتاجر",
+      "short_name": "المتاجر",
+      "description": "تصفّح المتاجر والمطاعم",
+      "url": "/stores?source=pwa",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "تتبّع طلبي",
+      "short_name": "تتبّع",
+      "description": "تابع طلبك الحالي",
+      "url": "/track?source=pwa",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "لوحة المتجر",
+      "short_name": "المتجر",
+      "description": "استقبل الطلبات على التابلت",
+      "url": "/merchant-dashboard?source=pwa",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "لوحة السائق",
+      "short_name": "السائق",
+      "description": "استقبل طلبات التوصيل",
+      "url": "/driver-dashboard?source=pwa",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    }
+  ]
 }

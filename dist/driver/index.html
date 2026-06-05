@@ -20,12 +20,18 @@
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://wslha.co/driver/">
 
-  <!-- Icons -->
+  <!-- Icons & PWA -->
   <link rel="icon" href="/favicon.ico" sizes="any">
   <link rel="icon" href="/icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="/apple-touch-icon.png">
   <link rel="manifest" href="/site.webmanifest">
   <meta name="theme-color" content="#3B6EF8">
+
+  <!-- iOS standalone web-app -->
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="وصّلها">
 
   <!-- Disable Netlify Identity widget -->
   <meta name="netlify-identity-widget" content="disabled">
@@ -41,7 +47,7 @@
   
 <link rel="stylesheet" href="/_astro/about.1b1989f6.css" />
 <link rel="stylesheet" href="/_astro/driver.ce36f184.css" />
-<link rel="stylesheet" href="/_astro/about.74625c24.css" /><script type="module" src="/_astro/hoisted.9aef74b6.js"></script></head>
+<link rel="stylesheet" href="/_astro/about.fde18b9b.css" /><script type="module" src="/_astro/hoisted.9aef74b6.js"></script></head>
 
 <body>
   <header role="banner" class="astro-DMQPWCEC">
@@ -423,4 +429,67 @@
     <span class="astro-SZ7XMLTE">Wslha.co</span>
   </div>
 </footer>
-</body></html>
+
+  <!-- ── PWA install banner ──────────────────────────────────── -->
+  <div id="pwa-install" class="pwa-install" hidden>
+    <img src="/icon-192.png" alt="" class="pwa-install__icon" width="44" height="44">
+    <div class="pwa-install__text">
+      <strong>ثبّت تطبيق وصّلها</strong>
+      <span>أسرع وأسهل — أيقونة على شاشتك مباشرة</span>
+    </div>
+    <button type="button" id="pwa-install-btn" class="pwa-install__btn">تثبيت</button>
+    <button type="button" id="pwa-install-close" class="pwa-install__close" aria-label="إغلاق">✕</button>
+  </div>
+
+  
+
+  <script>
+    // ── Service worker registration ──────────────────────────
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function () {
+        navigator.serviceWorker.register('/sw.js').catch(function () {});
+      });
+    }
+
+    // ── Install prompt (Android / desktop Chrome) ────────────
+    (function () {
+      var banner = document.getElementById('pwa-install');
+      var installBtn = document.getElementById('pwa-install-btn');
+      var closeBtn = document.getElementById('pwa-install-close');
+      var deferred = null;
+      var DISMISS_KEY = 'wslha_pwa_dismissed';
+
+      function isStandalone() {
+        return window.matchMedia('(display-mode: standalone)').matches ||
+               window.navigator.standalone === true;
+      }
+
+      window.addEventListener('beforeinstallprompt', function (e) {
+        e.preventDefault();
+        deferred = e;
+        if (isStandalone()) return;
+        if (localStorage.getItem(DISMISS_KEY)) return;
+        if (banner) banner.hidden = false;
+      });
+
+      if (installBtn) installBtn.addEventListener('click', function () {
+        if (!deferred) return;
+        deferred.prompt();
+        deferred.userChoice.finally(function () {
+          deferred = null;
+          if (banner) banner.hidden = true;
+        });
+      });
+
+      if (closeBtn) closeBtn.addEventListener('click', function () {
+        if (banner) banner.hidden = true;
+        try { localStorage.setItem(DISMISS_KEY, '1'); } catch (e) {}
+      });
+
+      window.addEventListener('appinstalled', function () {
+        if (banner) banner.hidden = true;
+      });
+    })();
+  </script>
+</body>
+</html>
