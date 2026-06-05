@@ -615,16 +615,24 @@ import { AREAS } from '../data/rides';
 
   async function initMap() {
     if (map) return true;
-    try { await loadGoogleMaps(); } catch { return false; }
-    document.getElementById('map-placeholder').style.display = 'none';
-    document.getElementById('ride-map').style.display = 'block';
-    map = new google.maps.Map(document.getElementById('ride-map'), {
-      center: { lat: 31.418, lng: 31.814 }, zoom: 11,
-      mapTypeControl: false, streetViewControl: false, fullscreenControl: true,
-      styles: [{ featureType: 'poi', stylers: [{ visibility: 'off' }] }],
-    });
-    gmapsReady = true;
-    return true;
+    try {
+      await loadGoogleMaps();
+      document.getElementById('map-placeholder').style.display = 'none';
+      document.getElementById('ride-map').style.display = 'block';
+      map = new google.maps.Map(document.getElementById('ride-map'), {
+        center: { lat: 31.418, lng: 31.814 }, zoom: 11,
+        mapTypeControl: false, streetViewControl: false, fullscreenControl: true,
+        styles: [{ featureType: 'poi', stylers: [{ visibility: 'off' }] }],
+      });
+      gmapsReady = true;
+      return true;
+    } catch {
+      document.getElementById('map-placeholder').innerHTML =
+        '<span style="font-size:2rem;margin-bottom:8px">🗺️</span>' +
+        '<span>الخريطة التفاعلية غير متاحة<br>' +
+        '<span style="font-size:11px;color:#9ca3af;">المسافة والسعر محسوبان بدقة</span></span>';
+      return false;
+    }
   }
 
   function clearMap() {
@@ -892,6 +900,10 @@ import { AREAS } from '../data/rides';
   document.getElementById('swap-btn').addEventListener('click', () => {
     const v = fromSel.value; fromSel.value = toSel.value; toSel.value = v; updateUI();
   });
+
+  // Browser restores dropdown values on page reload WITHOUT firing change events —
+  // manually trigger if both already have values (e.g. after back-navigation or reload)
+  if (fromSel.value && toSel.value) updateUI();
 
   // ── confirm ──
   document.getElementById('confirm-btn').addEventListener('click', async () => {
