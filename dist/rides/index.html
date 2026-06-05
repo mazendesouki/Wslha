@@ -928,10 +928,10 @@
 
   // ── new ride ──
   document.getElementById('new-ride-btn').addEventListener('click', () => {
-    ['r-name','r-phone','r-notes'].forEach(id => (document.getElementById(id) as HTMLInputElement).value = '');
-    (document.getElementById('r-passengers') as HTMLSelectElement).value = '1';
-    (document.getElementById('r-time') as HTMLSelectElement).value = 'now';
-    (document.querySelector('input[name="r-payment"][value="cash"]') as HTMLInputElement).checked = true;
+    ['r-name','r-phone','r-notes'].forEach(id => (document.getElementById(id)).value = '');
+    document.getElementById('r-passengers').value = '1';
+    document.getElementById('r-time').value = 'now';
+    document.querySelector('input[name="r-payment"][value="cash"]').checked = true;
     fromSel.value = ''; toSel.value = '';
     document.getElementById('success-card').classList.remove('visible');
     clearMap();
