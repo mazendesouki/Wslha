@@ -1,0 +1,9 @@
+الملف ده محتاج يتضاف يدويًا قبل بناء iOS.
+مش محفوظ في git عشان يحتوي على مفاتيح Firebase.
+
+الخطوات:
+1. افتح Firebase Console → wslha-941c8
+2. Project Settings → General → Your apps → تطبيق iOS
+3. نزّل GoogleService-Info.plist
+4. حطّه هنا: ios/App/App/GoogleService-Info.plist
+5. في Xcode: اسحب الملف جوّه المشروع (target: App) + فعّل Push Notifications من Signing & Capabilities
