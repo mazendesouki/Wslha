@@ -266,9 +266,6 @@ import { AREAS } from '../data/rides';
   }
 </style>
 
-<!-- Leaflet CSS -->
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" is:inline />
-
 <Layout title="مشاوير دمياط | وصّلها" page="rides">
   <PageHero
     title="مشاوير داخل دمياط 🚗"
@@ -414,9 +411,10 @@ import { AREAS } from '../data/rides';
   </div><!-- /rides-page -->
 </Layout>
 
-<script is:inline src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
 <script define:vars={{ AREAS }}>
+  // ── Google Maps API key ──
+  const GMAPS_KEY = 'AIzaSyAKvFfBYNDcTZgvZZH5s_lQbOc24LNjLsY';
+
   // ── distance helpers ──
   function haversineKm(lat1, lng1, lat2, lng2) {
     const R = 6371, dLat = (lat2-lat1)*Math.PI/180, dLng = (lng2-lng1)*Math.PI/180;
@@ -428,93 +426,115 @@ import { AREAS } from '../data/rides';
   function normPhone(s){ return s.replace(/[\s\-()+]/g,''); }
   const EG = /^01[0125][0-9]{8}$/;
 
-  // ── Leaflet map setup ──
-  let map = null, fromMarker = null, toMarker = null, routeLayer = null, driverMarker = null;
+  // ── Google Maps setup ──
+  let map = null, fromMarker = null, toMarker = null, routeLine = null, driverMarker = null;
+  let gmapsReady = false, pendingRoute = null;
 
-  function initMap() {
-    if (map) return;
-    document.getElementById('map-placeholder').style.display = 'none';
-    document.getElementById('ride-map').style.display = 'block';
-    map = L.map('ride-map', { zoomControl: true, attributionControl: false })
-           .setView([31.418, 31.814], 11);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-  }
-
-  function makeIcon(color, emoji) {
-    return L.divIcon({
-      className: '',
-      html: `<div style="
-        width:36px;height:36px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);
-        background:${color};border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.3);
-        display:flex;align-items:center;justify-content:center;
-      "><span style="transform:rotate(45deg);font-size:14px">${emoji}</span></div>`,
-      iconSize:[36,36], iconAnchor:[18,36], popupAnchor:[0,-36]
+  // Load Google Maps JS API dynamically
+  function loadGoogleMaps() {
+    return new Promise((resolve, reject) => {
+      if (window.google?.maps) { resolve(); return; }
+      window._gmapsCb = () => resolve();
+      const s = document.createElement('script');
+      s.src = `https://maps.googleapis.com/maps/api/js?key=${GMAPS_KEY}&callback=_gmapsCb&language=ar&region=EG`;
+      s.async = true; s.defer = true;
+      s.onerror = () => reject(new Error('gmaps-load-failed'));
+      document.head.appendChild(s);
     });
   }
 
-  const carIcon = L.divIcon({
-    className: '',
-    html: `<div style="font-size:28px;filter:drop-shadow(0 2px 4px rgba(0,0,0,.3));transform:scale(1.1)">🚗</div>`,
-    iconSize:[36,36], iconAnchor:[18,18]
-  });
+  function pinIcon(color) {
+    return {
+      path: 'M12 0C7 0 3 4 3 9c0 6.5 9 15 9 15s9-8.5 9-15c0-5-4-9-9-9z',
+      fillColor: color, fillOpacity: 1,
+      strokeColor: '#fff', strokeWeight: 3,
+      scale: 1.6, anchor: new google.maps.Point(12, 24),
+    };
+  }
+  const carSymbol = {
+    path: 'M5 11l1.5-4.5h11L19 11m-1.5 5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0m-8 0a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0M3 11v6h2m14-6v6h-2m-12 0h10',
+    fillColor: '#1d4ed8', fillOpacity: 1, strokeColor: '#fff', strokeWeight: 1,
+    scale: 1.4, anchor: { x: 12, y: 12 },
+  };
+
+  async function initMap() {
+    if (map) return true;
+    try { await loadGoogleMaps(); } catch { return false; }
+    document.getElementById('map-placeholder').style.display = 'none';
+    document.getElementById('ride-map').style.display = 'block';
+    map = new google.maps.Map(document.getElementById('ride-map'), {
+      center: { lat: 31.418, lng: 31.814 }, zoom: 11,
+      mapTypeControl: false, streetViewControl: false, fullscreenControl: true,
+      styles: [{ featureType: 'poi', stylers: [{ visibility: 'off' }] }],
+    });
+    gmapsReady = true;
+    return true;
+  }
+
+  function clearMap() {
+    [fromMarker, toMarker, routeLine, driverMarker].forEach(o => o && o.setMap(null));
+    fromMarker = toMarker = routeLine = driverMarker = null;
+  }
 
   async function showRoute(from, to) {
-    initMap();
-    if (fromMarker) map.removeLayer(fromMarker);
-    if (toMarker)   map.removeLayer(toMarker);
-    if (routeLayer) map.removeLayer(routeLayer);
-    if (driverMarker) { map.removeLayer(driverMarker); driverMarker = null; }
+    const ok = await initMap();
+    if (!ok) return;
+    clearMap();
 
-    fromMarker = L.marker([from.lat, from.lng], { icon: makeIcon('#3b82f6','📍') })
-                  .addTo(map).bindPopup(`<b>الانطلاق</b><br>${from.name}`);
-    toMarker   = L.marker([to.lat, to.lng],   { icon: makeIcon('#ef4444','🏁') })
-                  .addTo(map).bindPopup(`<b>الوصول</b><br>${to.name}`);
+    fromMarker = new google.maps.Marker({
+      position: { lat: from.lat, lng: from.lng }, map,
+      icon: pinIcon('#3b82f6'), title: 'الانطلاق: ' + from.name,
+    });
+    toMarker = new google.maps.Marker({
+      position: { lat: to.lat, lng: to.lng }, map,
+      icon: pinIcon('#ef4444'), title: 'الوصول: ' + to.name,
+    });
 
-    // Try OSRM road routing
+    // Road geometry via OSRM (free; Google Directions legacy API not enabled)
+    let coords;
     try {
       const osrm = `https://router.project-osrm.org/route/v1/driving/${from.lng},${from.lat};${to.lng},${to.lat}?overview=full&geometries=geojson`;
-      const res  = await fetch(osrm);
-      const data = await res.json();
+      const data = await (await fetch(osrm)).json();
       if (data.routes?.[0]) {
-        const coords = data.routes[0].geometry.coordinates.map(([lng,lat]) => [lat,lng]);
-        window._routeCoords = coords;
-        routeLayer = L.polyline(coords, { color:'#3b82f6', weight:5, opacity:.8 }).addTo(map);
-        map.fitBounds(routeLayer.getBounds(), { padding:[50,50] });
-        return;
+        coords = data.routes[0].geometry.coordinates.map(([lng,lat]) => ({ lat, lng }));
       }
     } catch {}
+    if (!coords) coords = [{ lat: from.lat, lng: from.lng }, { lat: to.lat, lng: to.lng }];
+    window._routeCoords = coords;
 
-    // Fallback: straight dashed line
-    window._routeCoords = [[from.lat,from.lng],[to.lat,to.lng]];
-    routeLayer = L.polyline([[from.lat,from.lng],[to.lat,to.lng]], { color:'#3b82f6', weight:4, dashArray:'8,6' }).addTo(map);
-    map.fitBounds(routeLayer.getBounds(), { padding:[60,60] });
+    routeLine = new google.maps.Polyline({
+      path: coords, map, strokeColor: '#3b82f6', strokeOpacity: 0.85, strokeWeight: 5,
+    });
+
+    const bounds = new google.maps.LatLngBounds();
+    coords.forEach(c => bounds.extend(c));
+    map.fitBounds(bounds, 50);
   }
 
   // ── live simulation ──
   function startLiveTracking(from, to, etaMinutes) {
-    if (driverMarker) map.removeLayer(driverMarker);
-    const coords = window._routeCoords || [[from.lat,from.lng],[to.lat,to.lng]];
+    if (!gmapsReady) return;
+    if (driverMarker) driverMarker.setMap(null);
+    const coords = window._routeCoords || [{ lat: from.lat, lng: from.lng }, { lat: to.lat, lng: to.lng }];
     const totalSteps = coords.length;
     let step = 0;
 
-    driverMarker = L.marker([from.lat, from.lng], { icon: carIcon }).addTo(map);
+    driverMarker = new google.maps.Marker({
+      position: coords[0], map, icon: carSymbol, zIndex: 999,
+    });
     document.getElementById('live-badge').style.display = 'inline-flex';
 
-    // ~3 seconds per route segment scaled to ETA
-    const msPerStep = Math.max(2000, (etaMinutes * 60 * 1000) / totalSteps);
+    const msPerStep = Math.max(1500, (etaMinutes * 60 * 1000) / totalSteps);
 
     window._liveInterval = setInterval(() => {
       if (step >= totalSteps - 1) {
         clearInterval(window._liveInterval);
-        // Final status: done
         setTimeout(() => advanceStatus('done'), 1000);
         return;
       }
       step++;
-      const [lat, lng] = coords[step];
-      driverMarker.setLatLng([lat, lng]);
+      driverMarker.setPosition(coords[step]);
 
-      // Trigger status changes at specific progress points
       const pct = step / (totalSteps - 1);
       if (pct >= 0.05 && !window._st_assigned) { window._st_assigned = true; advanceStatus('assigned'); }
       if (pct >= 0.15 && !window._st_arrived)  { window._st_arrived = true;  advanceStatus('arrived'); }
@@ -626,7 +646,6 @@ import { AREAS } from '../data/rides';
   // ── new ride ──
   document.getElementById('new-ride-btn').addEventListener('click', () => {
     if (window._liveInterval) clearInterval(window._liveInterval);
-    if (driverMarker) { map.removeLayer(driverMarker); driverMarker = null; }
     document.getElementById('live-badge').style.display = 'none';
     ['r-name','r-phone','r-notes'].forEach(id => document.getElementById(id).value='');
     document.getElementById('r-passengers').value='1';
@@ -639,9 +658,8 @@ import { AREAS } from '../data/rides';
     document.getElementById('ride-status').classList.remove('visible');
     document.getElementById('fare-section').style.display='';
     ['st-confirmed','st-assigned','st-arrived','st-onride','st-done'].forEach(id => document.getElementById(id).className='status-step');
-    if (routeLayer) { map.removeLayer(routeLayer); routeLayer=null; }
-    if (fromMarker) { map.removeLayer(fromMarker); fromMarker=null; }
-    if (toMarker)   { map.removeLayer(toMarker);   toMarker=null; }
+    window._st_assigned = window._st_arrived = window._st_onride = false;
+    clearMap();
     window.scrollTo({ top:0, behavior:'smooth' });
   });
 
