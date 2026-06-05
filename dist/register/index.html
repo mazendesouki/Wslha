@@ -451,6 +451,72 @@
         if (banner) banner.hidden = true;
       });
     })();
+
+    // ── Native (Capacitor) progressive enhancement ───────────
+    // Runs only inside the packaged Android/iOS app. On the web this
+    // block is inert, so the same build serves browser + native.
+    (function () {
+      var Cap = window.Capacitor;
+      if (!Cap || !Cap.isNativePlatform || !Cap.isNativePlatform()) return;
+
+      // Never show the web install banner inside the native app.
+      var b = document.getElementById('pwa-install');
+      if (b) b.hidden = true;
+
+      var P = Cap.Plugins || {};
+
+      // Status bar to brand colour.
+      if (P.StatusBar) {
+        try {
+          P.StatusBar.setBackgroundColor({ color: '#2952D9' });
+          P.StatusBar.setStyle({ style: 'LIGHT' });
+        } catch (e) {}
+      }
+
+      // Hide the splash once the page is interactive.
+      if (P.SplashScreen) {
+        try { P.SplashScreen.hide(); } catch (e) {}
+      }
+
+      // Request notification permission (+ register push if available).
+      if (P.PushNotifications) {
+        try {
+          P.PushNotifications.requestPermissions().then(function (r) {
+            if (r && r.receive === 'granted') P.PushNotifications.register();
+          });
+        } catch (e) {}
+      }
+      if (P.LocalNotifications) {
+        try { P.LocalNotifications.requestPermissions(); } catch (e) {}
+      }
+
+      // Bridge web notification calls to native local notifications so
+      // status/order alerts still fire inside the WebView.
+      if (P.LocalNotifications) {
+        window.wslhaNativeNotify = function (title, body) {
+          try {
+            P.LocalNotifications.schedule({
+              notifications: [{
+                id: Date.now() % 100000,
+                title: title || 'وصّلها',
+                body: body || '',
+                smallIcon: 'ic_stat_icon',
+              }],
+            });
+          } catch (e) {}
+        };
+      }
+
+      // Hardware back button: go back in history, else stay (don't exit abruptly).
+      if (P.App) {
+        try {
+          P.App.addListener('backButton', function (info) {
+            if (info && info.canGoBack) window.history.back();
+            else if (P.App.exitApp) P.App.exitApp();
+          });
+        } catch (e) {}
+      }
+    })();
   </script>
 </body>
 </html>

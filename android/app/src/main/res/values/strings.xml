@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">وصّلها</string>
+    <string name="title_activity_main">وصّلها</string>
+    <string name="package_name">co.wslha.app</string>
+    <string name="custom_url_scheme">co.wslha.app</string>
+</resources>

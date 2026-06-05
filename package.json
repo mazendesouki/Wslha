@@ -6,13 +6,32 @@
     "dev": "astro dev",
     "start": "astro dev",
     "build": "astro build",
-    "preview": "astro preview"
+    "preview": "astro preview",
+    "icons": "node scripts/gen-icons.mjs",
+    "assets": "npx @capacitor/assets generate --iconBackgroundColor #3B6EF8 --iconBackgroundColorDark #2952D9 --splashBackgroundColor #3B6EF8 --splashBackgroundColorDark #2952D9",
+    "app:sync": "astro build && npx cap sync",
+    "app:android": "npm run app:sync && npx cap open android",
+    "app:ios": "npm run app:sync && npx cap open ios",
+    "app:run:android": "npm run app:sync && npx cap run android"
   },
   "devDependencies": {
     "@astrojs/preact": "^1.0.2",
     "@astrojs/sitemap": "^1.0.0",
+    "@capacitor/cli": "^5.7.8",
     "@netlify/netlify-marketing-tokens": "^1.1.0",
     "astro": "^2.0.0",
     "playwright": "^1.60.0"
+  },
+  "dependencies": {
+    "@capacitor/android": "^5.7.8",
+    "@capacitor/app": "^5.0.8",
+    "@capacitor/core": "^5.7.8",
+    "@capacitor/geolocation": "^5.0.8",
+    "@capacitor/haptics": "^5.0.8",
+    "@capacitor/ios": "^5.7.8",
+    "@capacitor/local-notifications": "^5.0.8",
+    "@capacitor/push-notifications": "^5.1.2",
+    "@capacitor/splash-screen": "^5.0.8",
+    "@capacitor/status-bar": "^5.0.8"
   }
 }

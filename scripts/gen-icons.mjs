@@ -124,6 +124,46 @@ function makePNG(S) {
   ]);
 }
 
+// ── Native-asset variants for @capacitor/assets ─────────────────────────────
+// Full-bleed pin (no rounded square) — used as adaptive foreground & splash.
+function makeFlat(S, { bg = null, pinScale = 1, padFactor = 1 } = {}) {
+  const raw = Buffer.alloc((S * 4 + 1) * S);
+  let p = 0;
+  for (let y = 0; y < S; y++) {
+    raw[p++] = 0;
+    for (let x = 0; x < S; x++) {
+      let r = 0, g = 0, b = 0, a = 0;
+      if (bg) { r = bg[0]; g = bg[1]; b = bg[2]; a = 255; }
+      // centre & scale the pin within the canvas
+      const cx = S / 2, cy = S / 2;
+      const span = S * padFactor;
+      const lx = (x - cx) / pinScale + span / 2;
+      const ly = (y - cy) / pinScale + span / 2;
+      const pin = pinAlpha(lx + 0.5, ly + 0.5, span);
+      if (pin > 0) { r = WHITE[0]; g = WHITE[1]; b = WHITE[2]; a = 255; }
+      raw[p++] = r; raw[p++] = g; raw[p++] = b; raw[p++] = a;
+    }
+  }
+  const idat = zlib.deflateSync(raw, { level: 9 });
+  const crcTable = (() => {
+    const t = [];
+    for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; }
+    return t;
+  })();
+  const crc32 = (buf) => { let c = 0xffffffff; for (let i = 0; i < buf.length; i++) c = crcTable[(c ^ buf[i]) & 0xff] ^ (c >>> 8); return (c ^ 0xffffffff) >>> 0; };
+  const chunk = (type, data) => {
+    const len = Buffer.alloc(4); len.writeUInt32BE(data.length, 0);
+    const t = Buffer.from(type, 'ascii');
+    const crc = Buffer.alloc(4); crc.writeUInt32BE(crc32(Buffer.concat([t, data])), 0);
+    return Buffer.concat([len, t, data, crc]);
+  };
+  const sig = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+  const ihdr = Buffer.alloc(13);
+  ihdr.writeUInt32BE(S, 0); ihdr.writeUInt32BE(S, 4);
+  ihdr[8] = 8; ihdr[9] = 6; ihdr[10] = 0; ihdr[11] = 0; ihdr[12] = 0;
+  return Buffer.concat([sig, chunk('IHDR', ihdr), chunk('IDAT', idat), chunk('IEND', Buffer.alloc(0))]);
+}
+
 mkdirSync('public', { recursive: true });
 writeFileSync('public/icon-192.png', makePNG(192));
 writeFileSync('public/icon-512.png', makePNG(512));
@@ -131,3 +171,12 @@ writeFileSync('public/apple-touch-icon.png', makePNG(180));
 // maskable needs safe padding — our rounded square already has margin; reuse 512
 writeFileSync('public/icon-maskable-512.png', makePNG(512));
 console.log('Icons generated: 192, 512, apple-touch (180), maskable-512');
+
+// Source assets consumed by `npx @capacitor/assets generate`.
+mkdirSync('assets', { recursive: true });
+writeFileSync('assets/icon-only.png', makePNG(1024));                 // store/marketing icon
+writeFileSync('assets/icon-foreground.png', makeFlat(1024, { pinScale: 0.55, padFactor: 1 })); // adaptive fg (safe zone)
+writeFileSync('assets/icon-background.png', makeFlat(1024, { bg: BRAND_TOP })); // solid brand bg
+writeFileSync('assets/splash.png', makeFlat(2732, { bg: BRAND_TOP, pinScale: 0.20, padFactor: 1 }));
+writeFileSync('assets/splash-dark.png', makeFlat(2732, { bg: BRAND_BOT, pinScale: 0.20, padFactor: 1 }));
+console.log('Native assets generated in /assets (icon-only, icon-foreground, icon-background, splash, splash-dark)');
