@@ -46,8 +46,8 @@
 
   
 <link rel="stylesheet" href="/_astro/about.1b1989f6.css" />
-<link rel="stylesheet" href="/_astro/track.338e3077.css" />
-<link rel="stylesheet" href="/_astro/about.fde18b9b.css" /><script type="module" src="/_astro/hoisted.46633bff.js"></script></head>
+<link rel="stylesheet" href="/_astro/track.4e261810.css" />
+<link rel="stylesheet" href="/_astro/about.fde18b9b.css" /><script type="module" src="/_astro/hoisted.7088f503.js"></script></head>
 
 <body>
   <header role="banner" class="astro-DMQPWCEC">
@@ -263,29 +263,40 @@
       </div>
 
       <div class="result__body astro-VM2MI7TS">
-        <ol class="timeline astro-VM2MI7TS" id="result-timeline" aria-label="مراحل التوصيل">
-          <li class="timeline__item astro-VM2MI7TS">
-              <div class="timeline__dot timeline__dot--done astro-VM2MI7TS" aria-hidden="true"></div>
-              <p class="timeline__title astro-VM2MI7TS">تم استلام الطلب</p>
-              <p class="timeline__time astro-VM2MI7TS">اليوم — 10:00 ص</p>
-              <p class="timeline__desc astro-VM2MI7TS">تم تأكيد طلبك بنجاح</p>
-            </li><li class="timeline__item astro-VM2MI7TS">
-              <div class="timeline__dot timeline__dot--done astro-VM2MI7TS" aria-hidden="true"></div>
-              <p class="timeline__title astro-VM2MI7TS">المندوب في الطريق للاستلام</p>
-              <p class="timeline__time astro-VM2MI7TS">اليوم — 10:20 ص</p>
-              <p class="timeline__desc astro-VM2MI7TS">المندوب توجه للمتجر لاستلام طلبك</p>
-            </li><li class="timeline__item astro-VM2MI7TS">
-              <div class="timeline__dot timeline__dot--active astro-VM2MI7TS" aria-hidden="true"></div>
-              <p class="timeline__title astro-VM2MI7TS">في الطريق إليك</p>
-              <p class="timeline__time astro-VM2MI7TS">اليوم — 10:45 ص</p>
-              <p class="timeline__desc astro-VM2MI7TS">المندوب في طريقه لتوصيل طلبك</p>
-            </li><li class="timeline__item astro-VM2MI7TS">
-              <div class="timeline__dot timeline__dot--wait astro-VM2MI7TS" aria-hidden="true"></div>
-              <p class="timeline__title astro-VM2MI7TS">تم التسليم</p>
-              <p class="timeline__time astro-VM2MI7TS">متوقع — خلال 15 دقيقة</p>
-              
-            </li>
-        </ol>
+
+        <!-- HungerStation-style icon timeline -->
+        <div class="timeline-hs astro-VM2MI7TS" id="timeline-hs" aria-label="مراحل التوصيل">
+          <div class="timeline-hs__progress astro-VM2MI7TS" id="tl-progress"></div>
+          <div class="tl-step astro-VM2MI7TS" id="tl-pending">
+            <div class="tl-step__icon astro-VM2MI7TS">📋</div>
+            <span class="tl-step__label astro-VM2MI7TS">استلام الطلب</span>
+          </div>
+          <div class="tl-step astro-VM2MI7TS" id="tl-preparing">
+            <div class="tl-step__icon astro-VM2MI7TS">👨‍🍳</div>
+            <span class="tl-step__label astro-VM2MI7TS">جاري التجهيز</span>
+          </div>
+          <div class="tl-step astro-VM2MI7TS" id="tl-on_the_way">
+            <div class="tl-step__icon astro-VM2MI7TS">🛵</div>
+            <span class="tl-step__label astro-VM2MI7TS">في الطريق</span>
+          </div>
+          <div class="tl-step astro-VM2MI7TS" id="tl-delivered">
+            <div class="tl-step__icon astro-VM2MI7TS">✅</div>
+            <span class="tl-step__label astro-VM2MI7TS">تم التسليم</span>
+          </div>
+        </div>
+
+        <!-- ETA window -->
+        <div class="eta-card astro-VM2MI7TS" id="eta-card">
+          <span style="font-size:1.4rem" class="astro-VM2MI7TS">🕐</span>
+          <div class="astro-VM2MI7TS">
+            <div class="eta-card__time astro-VM2MI7TS" id="eta-window">—</div>
+            <div class="eta-card__label astro-VM2MI7TS" id="eta-label">الوقت المقدر للتوصيل</div>
+          </div>
+          <span class="eta-card__badge astro-VM2MI7TS" id="eta-badge">قيد التجهيز</span>
+        </div>
+
+        <!-- hidden old timeline (kept for JS compat) -->
+        <ol class="timeline astro-VM2MI7TS" id="result-timeline" style="display:none" aria-hidden="true"></ol>
 
         <dl class="result__info astro-VM2MI7TS">
           <div class="astro-VM2MI7TS"><dt class="result__info-label astro-VM2MI7TS">من</dt>          <dd class="result__info-value astro-VM2MI7TS" id="info-from">—</dd></div>

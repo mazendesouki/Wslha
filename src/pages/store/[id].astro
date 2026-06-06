@@ -185,6 +185,40 @@ const staticMenuJson = JSON.stringify(
   .pay-option:has(input:checked) { border-color: var(--color-primary); background: var(--color-primary-light); }
   .pay-option input { accent-color: var(--color-primary); }
   .pay-option__emoji { font-size: var(--text-xl); }
+
+  /* Delivery time toggle (اطلب الآن / طلب مجدول) */
+  .time-toggle { display: flex; gap: var(--sp-2); margin-bottom: var(--sp-3); }
+  .time-toggle__opt {
+    flex: 1; display: flex; align-items: center; gap: var(--sp-2);
+    border: 2px solid var(--color-border); border-radius: var(--radius-lg);
+    padding: var(--sp-3) var(--sp-4); cursor: pointer; font-size: var(--text-sm);
+    font-weight: var(--weight-semi); transition: all .2s;
+  }
+  .time-toggle__opt:has(input:checked) { border-color: var(--color-primary); background: var(--color-primary-light); }
+  .time-toggle__opt input { accent-color: var(--color-primary); }
+  .time-toggle__icon { font-size: 1.1rem; }
+  .scheduled-fields { display: none; margin-top: var(--sp-3); }
+  .scheduled-fields.visible { display: block; }
+
+  /* Delivery instructions chips */
+  .delivery-chips { display: flex; flex-wrap: wrap; gap: var(--sp-2); }
+  .chip {
+    display: flex; align-items: center; gap: 6px;
+    border: 1.5px solid var(--color-border); border-radius: 999px;
+    padding: var(--sp-2) var(--sp-3); cursor: pointer; font-family: var(--font-body);
+    font-size: var(--text-xs); font-weight: var(--weight-semi); background: var(--color-bg);
+    color: var(--color-text-muted); transition: all .2s;
+  }
+  .chip:has(input:checked) { border-color: var(--color-primary); background: var(--color-primary-light); color: var(--color-primary); }
+  .chip input { position: absolute; opacity: 0; pointer-events: none; }
+
+  /* Special notes */
+  .notes-toggle { font-size: var(--text-sm); color: var(--color-primary); background: none; border: none;
+    font-family: var(--font-body); font-weight: var(--weight-semi); cursor: pointer; padding: 0;
+    text-decoration: underline; text-underline-offset: 3px; }
+  .notes-area { margin-top: var(--sp-3); display: none; }
+  .notes-area.visible { display: block; }
+
   .locate-btn {
     width: 100%; padding: var(--sp-3); border: 1.5px dashed var(--color-primary);
     background: var(--color-primary-light); color: var(--color-primary);
@@ -321,6 +355,47 @@ const staticMenuJson = JSON.stringify(
           <button type="button" class="locate-btn" data-locate>📍 حدّد موقعي لحساب رسوم التوصيل بدقّة</button>
           <p class="locate-note" id="loc-note"></p>
         </div>
+
+        <!-- وقت التوصيل -->
+        <div class="field">
+          <span class="field__label">وقت التوصيل</span>
+          <div class="time-toggle">
+            <label class="time-toggle__opt">
+              <input type="radio" name="delivery-time" value="now" checked>
+              <span class="time-toggle__icon">🕐</span>
+              <div><strong>اطلب الآن</strong><br><small id="eta-hint">أسرع وقت ممكن</small></div>
+            </label>
+            <label class="time-toggle__opt">
+              <input type="radio" name="delivery-time" value="scheduled">
+              <span class="time-toggle__icon">📅</span>
+              <div><strong>طلب مجدول</strong><br><small>حدّد التاريخ والوقت</small></div>
+            </label>
+          </div>
+          <div class="scheduled-fields" id="scheduled-fields">
+            <input class="field__input" type="datetime-local" id="scheduled-at"
+              min="" style="margin-top:0">
+          </div>
+        </div>
+
+        <!-- تعليمات للمندوب -->
+        <div class="field">
+          <span class="field__label">تعليمات للمندوب</span>
+          <div class="delivery-chips">
+            <label class="chip"><input type="checkbox" name="instr" value="اترك عند الباب"><span>🚪</span> اتركه عند الباب</label>
+            <label class="chip"><input type="checkbox" name="instr" value="لا ترن الجرس"><span>🔕</span> لا ترن الجرس</label>
+            <label class="chip"><input type="checkbox" name="instr" value="أضف صورة عند التسليم"><span>📸</span> صوّر عند التسليم</label>
+            <label class="chip"><input type="checkbox" name="instr" value="اتصل قبل الوصول"><span>📞</span> اتصل قبل الوصول</label>
+          </div>
+        </div>
+
+        <!-- ملاحظة خاصة للمطعم -->
+        <div class="field">
+          <button type="button" class="notes-toggle" id="notes-toggle">✏️ إضافة ملاحظة خاصة للمتجر</button>
+          <div class="notes-area" id="notes-area">
+            <textarea class="field__textarea" id="co-notes" placeholder="مثال: بدون بصل، تحضير إضافي للصلصة..." style="min-height:60px"></textarea>
+          </div>
+        </div>
+
         <div class="field">
           <span class="field__label">وسيلة الدفع</span>
           <div class="pay-options">
@@ -641,6 +716,44 @@ const staticMenuJson = JSON.stringify(
     }
 
     const sheet = document.querySelector('[data-sheet]') as HTMLElement;
+    // ── Notes toggle ──────────────────────────────────────────
+    document.getElementById('notes-toggle')?.addEventListener('click', function() {
+      const area = document.getElementById('notes-area')!;
+      area.classList.toggle('visible');
+      this.textContent = area.classList.contains('visible')
+        ? '✏️ إخفاء الملاحظة' : '✏️ إضافة ملاحظة خاصة للمتجر';
+    });
+
+    // ── Scheduled delivery toggle ──────────────────────────────
+    sheet.querySelectorAll('input[name="delivery-time"]').forEach(radio => {
+      radio.addEventListener('change', function() {
+        const fields = document.getElementById('scheduled-fields')!;
+        const isScheduled = (this as HTMLInputElement).value === 'scheduled';
+        fields.classList.toggle('visible', isScheduled);
+        if (isScheduled) {
+          // default = 1 hour from now
+          const d = new Date(Date.now() + 60 * 60000);
+          const pad = (n: number) => String(n).padStart(2, '0');
+          const local = `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+          const input = document.getElementById('scheduled-at') as HTMLInputElement;
+          input.min = local;
+          input.value = local;
+        }
+      });
+    });
+
+    // ── ETA hint (show delivery window) ───────────────────────
+    function updateEtaHint() {
+      const hint = document.getElementById('eta-hint');
+      if (!hint) return;
+      const now = new Date();
+      const lo = new Date(now.getTime() + 20 * 60000);
+      const hi = new Date(now.getTime() + 40 * 60000);
+      const fmt = (d: Date) => d.toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
+      hint.textContent = `${fmt(lo)} – ${fmt(hi)}`;
+    }
+    updateEtaHint();
+
     function openSheet(): void {
       if (cartCount(cart) === 0) return;
       (sheet.querySelector('[data-step="checkout"]') as HTMLElement).hidden = false;
@@ -657,6 +770,12 @@ const staticMenuJson = JSON.stringify(
       const area    = (document.getElementById('co-area') as HTMLSelectElement).value;
       const address = (document.getElementById('co-address') as HTMLTextAreaElement).value.trim();
       const pay     = (sheet.querySelector('input[name="pay"]:checked') as HTMLInputElement).value;
+      const deliveryMode = (sheet.querySelector('input[name="delivery-time"]:checked') as HTMLInputElement)?.value || 'now';
+      const scheduledAt  = deliveryMode === 'scheduled'
+        ? (document.getElementById('scheduled-at') as HTMLInputElement).value : null;
+      const instrChecked = [...sheet.querySelectorAll('input[name="instr"]:checked')] as HTMLInputElement[];
+      const delivery_instructions = instrChecked.map(el => el.value).join('، ') || null;
+      const notes = (document.getElementById('co-notes') as HTMLTextAreaElement).value.trim() || null;
 
       const fail = (msg: string) => { errBox.textContent = msg; errBox.classList.add('is-visible'); };
       if (name.length < 2) return fail('يرجى إدخال اسم المستلم.');
@@ -699,6 +818,9 @@ const staticMenuJson = JSON.stringify(
             store_lng: STORE.lng,
             customer_lat: custLat,
             customer_lng: custLng,
+            notes,
+            delivery_instructions,
+            scheduled_at: scheduledAt,
           }),
         });
         if (res.ok) {

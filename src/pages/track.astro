@@ -125,40 +125,80 @@ const TIMELINE: TimelineEvent[] = [
 
   .result__body { padding: var(--sp-8); }
 
-  /* Timeline */
-  .timeline { position: relative; padding-right: var(--sp-10); }
-
-  .timeline::before {
+  /* Timeline — HungerStation style */
+  .timeline-hs {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    position: relative;
+    padding: var(--sp-4) 0;
+    margin-bottom: var(--sp-4);
+  }
+  .timeline-hs::before {
     content: '';
     position: absolute;
-    right: 9px;
-    top: 10px;
-    bottom: 10px;
-    width: 2px;
+    top: 32px;
+    right: 28px;
+    left: 28px;
+    height: 3px;
     background: var(--color-border);
+    z-index: 0;
   }
-
-  .timeline__item {
-    position: relative;
-    margin-bottom: var(--sp-6);
-  }
-
-  .timeline__item:last-child { margin-bottom: 0; }
-
-  .timeline__dot {
+  .timeline-hs__progress {
     position: absolute;
-    right: calc(-1 * var(--sp-10));
-    top: 4px;
-    width: 20px;
-    height: 20px;
+    top: 32px;
+    right: 28px;
+    height: 3px;
+    background: var(--color-primary);
+    z-index: 1;
+    transition: width .6s ease;
+    width: 0%;
+  }
+  .tl-step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--sp-2);
+    z-index: 2;
+    flex: 1;
+  }
+  .tl-step__icon {
+    width: 44px; height: 44px;
     border-radius: var(--radius-full);
-    border: 3px solid var(--color-bg);
+    border: 3px solid var(--color-border);
+    background: var(--color-bg);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.2rem;
+    transition: all .3s;
+  }
+  .tl-step--done .tl-step__icon   { border-color: var(--color-primary); background: var(--color-primary); filter: grayscale(0); }
+  .tl-step--active .tl-step__icon { border-color: var(--color-accent); background: var(--color-accent-dark);
+    box-shadow: 0 0 0 6px rgba(245,184,0,.2); animation: tl-pulse .9s ease-in-out infinite; }
+  .tl-step--wait .tl-step__icon   { filter: grayscale(1); opacity: .4; }
+  @keyframes tl-pulse {
+    0%,100% { box-shadow: 0 0 0 4px rgba(245,184,0,.25); }
+    50%      { box-shadow: 0 0 0 10px rgba(245,184,0,0); }
+  }
+  .tl-step__label { font-size: 11px; font-weight: var(--weight-semi); text-align: center;
+    color: var(--color-text-muted); max-width: 70px; line-height: 1.3; }
+  .tl-step--done .tl-step__label, .tl-step--active .tl-step__label { color: var(--color-text); }
+
+  /* ETA card */
+  .eta-card {
+    display: flex; align-items: center; gap: var(--sp-3);
+    background: var(--color-primary-light); border: 1.5px solid var(--color-primary);
+    border-radius: var(--radius-lg); padding: var(--sp-3) var(--sp-4); margin-bottom: var(--sp-5);
+  }
+  .eta-card__time { font-size: var(--text-lg); font-weight: var(--weight-black); color: var(--color-primary); }
+  .eta-card__label { font-size: var(--text-sm); color: var(--color-text-muted); }
+  .eta-card__badge {
+    margin-right: auto; background: #dcfce7; color: #15803d;
+    font-size: var(--text-xs); font-weight: var(--weight-bold);
+    border-radius: 999px; padding: 3px 10px;
   }
 
-  .timeline__dot--done   { background: var(--color-primary); box-shadow: 0 0 0 2px var(--color-primary); }
-  .timeline__dot--active { background: var(--color-accent);  box-shadow: 0 0 0 4px rgba(245,184,0,0.25); }
-  .timeline__dot--wait   { background: var(--color-border);  box-shadow: 0 0 0 2px var(--color-border);  }
-
+  /* Old timeline kept as fallback (hidden) */
+  .timeline { display: none; }
   .timeline__title { font-weight: var(--weight-black); font-size: var(--text-base); color: var(--color-text); }
   .timeline__time  { font-size: var(--text-xs); color: var(--color-text-faint); margin-top: var(--sp-1); }
   .timeline__desc  { font-size: var(--text-sm); color: var(--color-text-muted); margin-top: var(--sp-1); }
@@ -438,20 +478,64 @@ const TIMELINE: TimelineEvent[] = [
 
   let pollTimer: any = null;
 
-  function renderTimeline(status: string) {
-    const order = ['pending', 'preparing', 'on_the_way', 'delivered'];
-    const curIdx = order.indexOf(status);
-    const tl = document.getElementById('result-timeline')!;
-    tl.innerHTML = STEPS.map((s, i) => {
-      const state = status === 'rejected' ? 'wait'
-        : i < curIdx ? 'done' : i === curIdx ? 'active' : 'wait';
-      return `
-        <li class="timeline__item">
-          <div class="timeline__dot timeline__dot--${state}" aria-hidden="true"></div>
-          <p class="timeline__title">${s.title}</p>
-          ${i === curIdx ? `<p class="timeline__desc">${s.desc}</p>` : ''}
-        </li>`;
-    }).join('');
+  function renderTimeline(status: string, order?: any) {
+    const KEYS = ['pending', 'preparing', 'on_the_way', 'delivered'];
+    const curIdx = KEYS.indexOf(status);
+
+    // Drive icon steps
+    KEYS.forEach((key, i) => {
+      const el = document.getElementById('tl-' + key);
+      if (!el) return;
+      el.className = 'tl-step';
+      if (status === 'rejected') { el.classList.add('tl-step--wait'); return; }
+      if (i < curIdx)       el.classList.add('tl-step--done');
+      else if (i === curIdx) el.classList.add('tl-step--active');
+      else                   el.classList.add('tl-step--wait');
+    });
+
+    // Progress bar width
+    const prog = document.getElementById('tl-progress')!;
+    const pct = status === 'rejected' ? 0
+      : curIdx <= 0 ? 0 : Math.round((curIdx / (KEYS.length - 1)) * 100);
+    prog.style.width = pct + '%';
+
+    // ETA window
+    const etaWindow  = document.getElementById('eta-window')!;
+    const etaLabel   = document.getElementById('eta-label')!;
+    const etaBadge   = document.getElementById('eta-badge')!;
+    const fmt = (d: Date) => d.toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
+    const now = new Date();
+    if (status === 'delivered') {
+      etaWindow.textContent = 'تم التسليم ✅';
+      etaLabel.textContent  = 'وصل طلبك بنجاح';
+      etaBadge.textContent  = '🎉 مكتمل';
+      etaBadge.style.background = '#dbeafe'; etaBadge.style.color = '#1e40af';
+    } else if (status === 'rejected') {
+      etaWindow.textContent = 'تم الإلغاء';
+      etaLabel.textContent  = 'الطلب مرفوض من المتجر';
+      etaBadge.textContent  = '❌ ملغي';
+      etaBadge.style.background = '#fee2e2'; etaBadge.style.color = '#b91c1c';
+    } else if (status === 'on_the_way') {
+      const lo = new Date(now.getTime() + 10 * 60000);
+      const hi = new Date(now.getTime() + 25 * 60000);
+      etaWindow.textContent = `${fmt(lo)} – ${fmt(hi)}`;
+      etaLabel.textContent  = 'الوقت المتوقع للوصول';
+      etaBadge.textContent  = '🛵 في الطريق';
+      etaBadge.style.background = '#dbeafe'; etaBadge.style.color = '#1d4ed8';
+    } else if (status === 'preparing') {
+      const lo = new Date(now.getTime() + 20 * 60000);
+      const hi = new Date(now.getTime() + 40 * 60000);
+      etaWindow.textContent = `${fmt(lo)} – ${fmt(hi)}`;
+      etaLabel.textContent  = 'الوقت المقدر للتوصيل';
+      etaBadge.textContent  = '👨‍🍳 قيد التجهيز';
+      etaBadge.style.background = '#fef9c3'; etaBadge.style.color = '#854d0e';
+    } else {
+      const lo = new Date(now.getTime() + 25 * 60000);
+      const hi = new Date(now.getTime() + 45 * 60000);
+      etaWindow.textContent = `${fmt(lo)} – ${fmt(hi)}`;
+      etaLabel.textContent  = 'بانتظار تأكيد المتجر';
+      etaBadge.textContent  = '📋 جديد';
+    }
   }
 
   function renderOrder(o: any) {
@@ -608,16 +692,40 @@ const TIMELINE: TimelineEvent[] = [
       </div>
 
       <div class="result__body">
-        <ol class="timeline" id="result-timeline" aria-label="مراحل التوصيل">
-          {TIMELINE.map(event => (
-            <li class="timeline__item">
-              <div class={`timeline__dot timeline__dot--${event.state}`} aria-hidden="true"></div>
-              <p class="timeline__title">{event.title}</p>
-              <p class="timeline__time">{event.time}</p>
-              {event.desc && <p class="timeline__desc">{event.desc}</p>}
-            </li>
-          ))}
-        </ol>
+
+        <!-- HungerStation-style icon timeline -->
+        <div class="timeline-hs" id="timeline-hs" aria-label="مراحل التوصيل">
+          <div class="timeline-hs__progress" id="tl-progress"></div>
+          <div class="tl-step" id="tl-pending">
+            <div class="tl-step__icon">📋</div>
+            <span class="tl-step__label">استلام الطلب</span>
+          </div>
+          <div class="tl-step" id="tl-preparing">
+            <div class="tl-step__icon">👨‍🍳</div>
+            <span class="tl-step__label">جاري التجهيز</span>
+          </div>
+          <div class="tl-step" id="tl-on_the_way">
+            <div class="tl-step__icon">🛵</div>
+            <span class="tl-step__label">في الطريق</span>
+          </div>
+          <div class="tl-step" id="tl-delivered">
+            <div class="tl-step__icon">✅</div>
+            <span class="tl-step__label">تم التسليم</span>
+          </div>
+        </div>
+
+        <!-- ETA window -->
+        <div class="eta-card" id="eta-card">
+          <span style="font-size:1.4rem">🕐</span>
+          <div>
+            <div class="eta-card__time" id="eta-window">—</div>
+            <div class="eta-card__label" id="eta-label">الوقت المقدر للتوصيل</div>
+          </div>
+          <span class="eta-card__badge" id="eta-badge">قيد التجهيز</span>
+        </div>
+
+        <!-- hidden old timeline (kept for JS compat) -->
+        <ol class="timeline" id="result-timeline" style="display:none" aria-hidden="true"></ol>
 
         <dl class="result__info">
           <div><dt class="result__info-label">من</dt>          <dd class="result__info-value" id="info-from">—</dd></div>
