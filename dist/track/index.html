@@ -464,6 +464,20 @@
         });
       });
 
+      // يتفعّل بأي طريقة تثبيت (حتى من قائمة Chrome)
+      window.addEventListener('appinstalled', function () {
+        try { localStorage.setItem(INSTALLED_KEY, '1'); } catch(e) {}
+        if (banner) banner.hidden = true;
+      });
+
+      // لو فُتح كـ standalone (من أيقونة الشاشة) أخفِ البانر فوراً
+      window.matchMedia('(display-mode: standalone)').addEventListener('change', function(e) {
+        if (e.matches) {
+          try { localStorage.setItem(INSTALLED_KEY, '1'); } catch(err) {}
+          if (banner) banner.hidden = true;
+        }
+      });
+
       if (closeBtn) closeBtn.addEventListener('click', function () {
         if (banner) banner.hidden = true;
         try { localStorage.setItem(DISMISS_KEY, '1'); } catch (e) {}
