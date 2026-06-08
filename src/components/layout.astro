@@ -182,10 +182,13 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site ?? 'https://wslha.co
   <Footer />
 
   <!-- ── زرار + مودال تثبيت التطبيق (يعمل على كل المتصفحات) ── -->
-  <button id="pwa-fab" class="pwa-fab" hidden aria-label="تثبيت التطبيق">
-    <span class="pwa-fab__icon">📲</span>
-    <span class="pwa-fab__text">تثبيت التطبيق</span>
-  </button>
+  <div id="pwa-fab-wrap" class="pwa-fab-wrap" hidden>
+    <button id="pwa-fab-dismiss" class="pwa-fab-dismiss" aria-label="إغلاق" onclick="document.getElementById('pwa-fab-wrap').hidden=true;try{localStorage.setItem('wslha_dismissed','1')}catch(e){}">✕</button>
+    <button id="pwa-fab" class="pwa-fab" aria-label="تثبيت التطبيق">
+      <span class="pwa-fab__icon">📲</span>
+      <span class="pwa-fab__text">تثبيت التطبيق</span>
+    </button>
+  </div>
 
   <!-- مودال تعليمات Safari/Firefox -->
   <div id="pwa-modal" class="pwa-modal" hidden role="dialog" aria-modal="true" aria-label="تثبيت التطبيق">
@@ -199,10 +202,17 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site ?? 'https://wslha.co
   </div>
 
   <style is:global>
-    .pwa-fab {
+    .pwa-fab-wrap {
       position: fixed;
       bottom: 80px;
       left: 16px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      z-index: 1000;
+    }
+    .pwa-fab-wrap[hidden] { display: none; }
+    .pwa-fab {
       display: flex;
       align-items: center;
       gap: 6px;
@@ -216,11 +226,26 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site ?? 'https://wslha.co
       font-weight: 700;
       box-shadow: 0 4px 16px rgba(59,110,248,.4);
       cursor: pointer;
-      z-index: 1000;
-      transition: transform .2s, opacity .2s;
+      transition: transform .2s;
+      touch-action: manipulation;
     }
     .pwa-fab:active { transform: scale(.94); }
     .pwa-fab__icon { font-size: 18px; line-height: 1; }
+    .pwa-fab-dismiss {
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      background: rgba(0,0,0,.45);
+      color: #fff;
+      border: none;
+      font-size: 13px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      touch-action: manipulation;
+      flex-shrink: 0;
+    }
 
     .pwa-modal {
       position: fixed;
@@ -321,10 +346,14 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site ?? 'https://wslha.co
 
     // ── Universal PWA install ────────────────────────────────
     (function () {
+      var wrap  = document.getElementById('pwa-fab-wrap');
       var fab   = document.getElementById('pwa-fab');
       var modal = document.getElementById('pwa-modal');
       var steps = document.getElementById('pwa-steps');
       var closeBtn = document.getElementById('pwa-modal-close');
+
+      function showFab() { if (wrap) wrap.hidden = false; }
+      function hideFab() { if (wrap) wrap.hidden = true; }
 
       function isInstalled() {
         return window.matchMedia('(display-mode: standalone)').matches ||
@@ -332,7 +361,11 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site ?? 'https://wslha.co
                localStorage.getItem('wslha_installed') === '1';
       }
 
-      if (isInstalled()) return;
+      function isDismissed() {
+        return localStorage.getItem('wslha_dismissed') === '1';
+      }
+
+      if (isInstalled() || isDismissed()) return;
 
       // ── Detect browser ────────────────────────────────────
       var ua = navigator.userAgent;
@@ -372,26 +405,24 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site ?? 'https://wslha.co
       });
 
       // ── Chrome/Edge/Samsung: use native prompt ────────────
-      if (window.__pwaPrompt) {
-        if (fab) fab.hidden = false;
-      }
+      if (window.__pwaPrompt) showFab();
 
       window.addEventListener('beforeinstallprompt', function(e) {
         e.preventDefault();
         window.__pwaPrompt = e;
-        if (fab) fab.hidden = false;
+        showFab();
       });
 
       if (fab) fab.addEventListener('click', function () {
         if (window.__pwaPrompt) {
           // Chrome/Edge: trigger native dialog
-          fab.hidden = true;
+          hideFab();
           window.__pwaPrompt.prompt();
           window.__pwaPrompt.userChoice.then(function(c) {
             if (c.outcome === 'accepted') {
               try { localStorage.setItem('wslha_installed', '1'); } catch(x) {}
             } else {
-              if (fab) fab.hidden = false;
+              showFab();
             }
             window.__pwaPrompt = null;
           });
@@ -419,12 +450,12 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site ?? 'https://wslha.co
 
       // ── Show FAB for Safari/Firefox even without beforeinstallprompt
       if (!window.__pwaPrompt && (isSafari || isFirefox || (!isChromeLike))) {
-        if (fab) fab.hidden = false;
+        showFab();
       }
 
       window.addEventListener('appinstalled', function () {
         try { localStorage.setItem('wslha_installed', '1'); } catch(x) {}
-        if (fab) fab.hidden = true;
+        hideFab();
         hideModal();
         window.__pwaPrompt = null;
       });
