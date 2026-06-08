@@ -190,7 +190,7 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site ?? 'https://wslha.co
   <!-- مودال تعليمات Safari/Firefox -->
   <div id="pwa-modal" class="pwa-modal" hidden role="dialog" aria-modal="true" aria-label="تثبيت التطبيق">
     <div class="pwa-modal__box">
-      <button class="pwa-modal__close" id="pwa-modal-close" aria-label="إغلاق">✕</button>
+      <button class="pwa-modal__close" id="pwa-modal-close" aria-label="إغلاق" onclick="document.getElementById('pwa-modal').hidden=true">✕</button>
       <div class="pwa-modal__icon">📲</div>
       <h2 class="pwa-modal__title">ثبّت تطبيق وصّلها</h2>
       <p class="pwa-modal__sub">أسرع وأسهل — أيقونة مباشرة على شاشتك</p>
@@ -245,18 +245,21 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site ?? 'https://wslha.co
     }
     .pwa-modal__close {
       position: absolute;
-      top: 14px;
-      left: 16px;
-      background: #f0f0f0;
+      top: 12px;
+      left: 12px;
+      background: #e8e8e8;
       border: none;
       border-radius: 50%;
-      width: 32px;
-      height: 32px;
-      font-size: 14px;
+      width: 40px;
+      height: 40px;
+      font-size: 16px;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
+      z-index: 10;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
     }
     .pwa-modal__icon { font-size: 48px; margin-bottom: 8px; }
     .pwa-modal__title { font-size: 20px; font-weight: 800; color: #1a1a2e; margin: 0 0 6px; }
