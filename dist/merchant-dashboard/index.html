@@ -510,10 +510,13 @@
       window.addEventListener('beforeinstallprompt', function (e) {
         e.preventDefault();
         deferred = e;
-        if (isStandalone()) return;
-        if (localStorage.getItem(DISMISS_KEY)) return;
-        if (localStorage.getItem(INSTALLED_KEY)) return;
-        if (banner) banner.hidden = false;
+        // تأخير 500ms عشان نتأكد مش شغّال standalone
+        setTimeout(function () {
+          if (isStandalone()) { try { localStorage.setItem(INSTALLED_KEY, '1'); } catch(x){} return; }
+          if (localStorage.getItem(DISMISS_KEY)) return;
+          if (localStorage.getItem(INSTALLED_KEY)) return;
+          if (banner) banner.hidden = false;
+        }, 500);
       });
 
       if (installBtn) installBtn.addEventListener('click', function () {
