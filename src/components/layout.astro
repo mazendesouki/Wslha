@@ -170,7 +170,36 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site ?? 'https://wslha.co
 
   <Footer />
 
-  <!-- PWA install banner removed — Chrome shows its own native prompt -->
+  <!-- ── زرار تثبيت التطبيق (داخل الموقع) ──────────────────── -->
+  <button id="pwa-fab" class="pwa-fab" hidden aria-label="تثبيت التطبيق">
+    <span class="pwa-fab__icon">📲</span>
+    <span class="pwa-fab__text">تثبيت</span>
+  </button>
+
+  <style is:global>
+    .pwa-fab {
+      position: fixed;
+      bottom: 80px;
+      left: 16px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: #3B6EF8;
+      color: #fff;
+      border: none;
+      border-radius: 999px;
+      padding: 10px 16px 10px 12px;
+      font-family: var(--font-body, sans-serif);
+      font-size: 14px;
+      font-weight: 700;
+      box-shadow: 0 4px 16px rgba(59,110,248,.4);
+      cursor: pointer;
+      z-index: 999;
+      transition: transform .2s, opacity .2s;
+    }
+    .pwa-fab:active { transform: scale(.94); }
+    .pwa-fab__icon { font-size: 18px; line-height: 1; }
+  </style>
 
   <script is:inline>
     // ── Service worker registration ──────────────────────────
@@ -180,6 +209,46 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site ?? 'https://wslha.co
       });
     }
 
+
+    // ── PWA install button (replaces native browser prompt) ─────
+    (function () {
+      var fab = document.getElementById('pwa-fab');
+      var deferred = null;
+
+      function isInstalled() {
+        return window.matchMedia('(display-mode: standalone)').matches ||
+               window.navigator.standalone === true ||
+               localStorage.getItem('wslha_installed') === '1';
+      }
+
+      if (isInstalled()) return;
+
+      // اعترض إشعار المتصفح واعرض زرارنا بدله
+      window.addEventListener('beforeinstallprompt', function (e) {
+        e.preventDefault();
+        deferred = e;
+        if (!isInstalled() && fab) fab.hidden = false;
+      });
+
+      if (fab) fab.addEventListener('click', function () {
+        if (!deferred) return;
+        fab.hidden = true;
+        deferred.prompt();
+        deferred.userChoice.then(function (c) {
+          if (c.outcome === 'accepted') {
+            try { localStorage.setItem('wslha_installed', '1'); } catch(x) {}
+          } else {
+            if (fab) fab.hidden = false;
+          }
+          deferred = null;
+        });
+      });
+
+      window.addEventListener('appinstalled', function () {
+        try { localStorage.setItem('wslha_installed', '1'); } catch(x) {}
+        if (fab) fab.hidden = true;
+      });
+    })();
 
     // ── Native (Capacitor) progressive enhancement ───────────
     // Runs only inside the packaged Android/iOS app. On the web this

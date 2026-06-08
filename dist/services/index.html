@@ -44,7 +44,7 @@
 
   
 <link rel="stylesheet" href="/_astro/about.1b1989f6.css" />
-<link rel="stylesheet" href="/_astro/about.74625c24.css" />
+<link rel="stylesheet" href="/_astro/about.1687f53d.css" />
 <link rel="stylesheet" href="/_astro/about.0e53b6bd.css" />
 <link rel="stylesheet" href="/_astro/services.18bb80b2.css" /><script type="module" src="/_astro/hoisted.b7b5774d.js"></script></head>
 
@@ -426,7 +426,13 @@
   </div>
 </footer>
 
-  <!-- PWA install banner removed — Chrome shows its own native prompt -->
+  <!-- ── زرار تثبيت التطبيق (داخل الموقع) ──────────────────── -->
+  <button id="pwa-fab" class="pwa-fab" hidden aria-label="تثبيت التطبيق">
+    <span class="pwa-fab__icon">📲</span>
+    <span class="pwa-fab__text">تثبيت</span>
+  </button>
+
+  
 
   <script>
     // ── Service worker registration ──────────────────────────
@@ -436,6 +442,46 @@
       });
     }
 
+
+    // ── PWA install button (replaces native browser prompt) ─────
+    (function () {
+      var fab = document.getElementById('pwa-fab');
+      var deferred = null;
+
+      function isInstalled() {
+        return window.matchMedia('(display-mode: standalone)').matches ||
+               window.navigator.standalone === true ||
+               localStorage.getItem('wslha_installed') === '1';
+      }
+
+      if (isInstalled()) return;
+
+      // اعترض إشعار المتصفح واعرض زرارنا بدله
+      window.addEventListener('beforeinstallprompt', function (e) {
+        e.preventDefault();
+        deferred = e;
+        if (!isInstalled() && fab) fab.hidden = false;
+      });
+
+      if (fab) fab.addEventListener('click', function () {
+        if (!deferred) return;
+        fab.hidden = true;
+        deferred.prompt();
+        deferred.userChoice.then(function (c) {
+          if (c.outcome === 'accepted') {
+            try { localStorage.setItem('wslha_installed', '1'); } catch(x) {}
+          } else {
+            if (fab) fab.hidden = false;
+          }
+          deferred = null;
+        });
+      });
+
+      window.addEventListener('appinstalled', function () {
+        try { localStorage.setItem('wslha_installed', '1'); } catch(x) {}
+        if (fab) fab.hidden = true;
+      });
+    })();
 
     // ── Native (Capacitor) progressive enhancement ───────────
     // Runs only inside the packaged Android/iOS app. On the web this
