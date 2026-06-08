@@ -47,7 +47,7 @@
   
 <link rel="stylesheet" href="/_astro/about.1b1989f6.css" />
 <link rel="stylesheet" href="/_astro/order.8378eca9.css" />
-<link rel="stylesheet" href="/_astro/about.fde18b9b.css" /><script type="module" src="/_astro/hoisted.b0dff4c7.js"></script></head>
+<link rel="stylesheet" href="/_astro/about.74625c24.css" /><script type="module" src="/_astro/hoisted.b0dff4c7.js"></script></head>
 
 <body>
   <header role="banner" class="astro-DMQPWCEC">
@@ -420,18 +420,7 @@
   </div>
 </footer>
 
-  <!-- ── PWA install banner ──────────────────────────────────── -->
-  <div id="pwa-install" class="pwa-install" hidden>
-    <img src="/icon-192.png" alt="" class="pwa-install__icon" width="44" height="44">
-    <div class="pwa-install__text">
-      <strong>ثبّت تطبيق وصّلها</strong>
-      <span>أسرع وأسهل — أيقونة على شاشتك مباشرة</span>
-    </div>
-    <button type="button" id="pwa-install-btn" class="pwa-install__btn">تثبيت</button>
-    <button type="button" id="pwa-install-close" class="pwa-install__close" aria-label="إغلاق">✕</button>
-  </div>
-
-  
+  <!-- PWA install banner removed — Chrome shows its own native prompt -->
 
   <script>
     // ── Service worker registration ──────────────────────────
@@ -441,82 +430,6 @@
       });
     }
 
-    // ── Install prompt (Android / desktop Chrome) ────────────
-    (function () {
-      var banner = document.getElementById('pwa-install');
-      var installBtn = document.getElementById('pwa-install-btn');
-      var closeBtn = document.getElementById('pwa-install-close');
-      var deferred = null;
-      var DISMISS_KEY = 'wslha_pwa_dismissed';
-      var INSTALLED_KEY = 'wslha_pwa_installed';
-
-      function isStandalone() {
-        return window.matchMedia('(display-mode: standalone)').matches ||
-               window.navigator.standalone === true;
-      }
-
-      // لو التطبيق متثبّت بالفعل — أخفِ البانر نهائياً
-      if (isStandalone() || localStorage.getItem(INSTALLED_KEY)) {
-        if (banner) banner.hidden = true;
-        return;
-      }
-
-      // تأكيد تاني بعد 1 ثانية (بعض أجهزة أندرويد بتتأخر)
-      setTimeout(function () {
-        if (isStandalone()) {
-          try { localStorage.setItem(INSTALLED_KEY, '1'); } catch(x) {}
-          if (banner) banner.hidden = true;
-        }
-      }, 1000);
-
-      window.addEventListener('beforeinstallprompt', function (e) {
-        e.preventDefault();
-        deferred = e;
-        // تأخير 500ms عشان نتأكد مش شغّال standalone
-        setTimeout(function () {
-          if (isStandalone()) { try { localStorage.setItem(INSTALLED_KEY, '1'); } catch(x){} return; }
-          if (localStorage.getItem(DISMISS_KEY)) return;
-          if (localStorage.getItem(INSTALLED_KEY)) return;
-          if (banner) banner.hidden = false;
-        }, 500);
-      });
-
-      if (installBtn) installBtn.addEventListener('click', function () {
-        if (!deferred) return;
-        deferred.prompt();
-        deferred.userChoice.then(function (choice) {
-          if (choice.outcome === 'accepted') {
-            try { localStorage.setItem(INSTALLED_KEY, '1'); } catch(e) {}
-          }
-        }).finally(function () {
-          deferred = null;
-          if (banner) banner.hidden = true;
-        });
-      });
-
-      // يتفعّل بأي طريقة تثبيت (حتى من قائمة Chrome)
-      window.addEventListener('appinstalled', function () {
-        try { localStorage.setItem(INSTALLED_KEY, '1'); } catch(e) {}
-        if (banner) banner.hidden = true;
-      });
-
-      // لو فُتح كـ standalone (من أيقونة الشاشة) أخفِ البانر فوراً
-      window.matchMedia('(display-mode: standalone)').addEventListener('change', function(e) {
-        if (e.matches) {
-          try { localStorage.setItem(INSTALLED_KEY, '1'); } catch(err) {}
-          if (banner) banner.hidden = true;
-        }
-      });
-
-      if (closeBtn) closeBtn.addEventListener('click', function () {
-        if (banner) banner.hidden = true;
-        try { localStorage.setItem(DISMISS_KEY, '1'); } catch (e) {}
-      });
-
-      window.addEventListener('appinstalled', function () {
-        if (banner) banner.hidden = true;
-      });
-    })();
 
     // ── Native (Capacitor) progressive enhancement ───────────
     // Runs only inside the packaged Android/iOS app. On the web this
@@ -524,10 +437,6 @@
     (function () {
       var Cap = window.Capacitor;
       if (!Cap || !Cap.isNativePlatform || !Cap.isNativePlatform()) return;
-
-      // Never show the web install banner inside the native app.
-      var b = document.getElementById('pwa-install');
-      if (b) b.hidden = true;
 
       var P = Cap.Plugins || {};
 
