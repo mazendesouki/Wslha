@@ -43,8 +43,8 @@ async function sbInsert(acc: Account): Promise<true | false | 'error'> {
     const { createdAt, ...rest } = acc;
     const payload = {
       ...rest,
-      email:    acc.email?.toLowerCase()    || null,
-      username: acc.username?.toLowerCase() || null,
+      email:      acc.email?.toLowerCase()    || null,
+      username:   acc.username?.toLowerCase() || null,
       created_at: createdAt,
     };
     const res = await fetch(`${SB_URL}/rest/v1/accounts`, {
@@ -53,9 +53,16 @@ async function sbInsert(acc: Account): Promise<true | false | 'error'> {
       body:    JSON.stringify(payload),
     });
     if (res.status === 409) return false; // unique constraint violation
-    if (!res.ok) return 'error';
+    if (!res.ok) {
+      // Log for debugging without crashing
+      res.text().then(t => console.warn('[accounts] sbInsert failed', res.status, t)).catch(() => {});
+      return 'error';
+    }
     return true;
-  } catch { return 'error'; }
+  } catch (e) {
+    console.warn('[accounts] sbInsert exception', e);
+    return 'error';
+  }
 }
 
 // ── localStorage fallback ──
@@ -99,15 +106,35 @@ export async function verifyLogin(phone: string, password: string): Promise<Logi
     );
     if (res.ok) {
       const rows = await res.json();
-      if (!rows[0])                        return { ok: false, reason: 'not_found' };
-      if (rows[0].password !== password)   return { ok: false, reason: 'bad_password' };
-      return { ok: true, account: rows[0] };
+      if (rows[0]) {
+        // Normalize snake_case fields from Supabase to camelCase
+        const raw = rows[0];
+        const account: Account = {
+          phone:     raw.phone,
+          password:  raw.password,
+          name:      raw.name,
+          username:  raw.username,
+          email:     raw.email,
+          role:      raw.role,
+          city:      raw.city,
+          createdAt: raw.created_at ?? raw.createdAt,
+        };
+        if (account.password !== password) return { ok: false, reason: 'bad_password' };
+        // Migrate into localStorage so offline use works
+        const stored = lsAll();
+        if (!stored.some(a => a.phone === p)) lsSave([...stored, account]);
+        return { ok: true, account };
+      }
+      // Not in Supabase — fall through to check localStorage
     }
   } catch {}
 
+  // localStorage fallback: covers accounts saved locally when Supabase insert failed
   const account = lsAll().find(a => a.phone === p);
-  if (!account)                      return { ok: false, reason: 'not_found' };
+  if (!account) return { ok: false, reason: 'not_found' };
   if (account.password !== password) return { ok: false, reason: 'bad_password' };
+  // Try to sync this localStorage account up to Supabase now
+  sbInsert(account).catch(() => {});
   return { ok: true, account };
 }
 
