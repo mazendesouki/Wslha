@@ -54,6 +54,17 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site ?? 'https://wslha.co
   <!-- Base styles -->
   <link rel="stylesheet" href="/global.css">
 
+  <!-- Capture beforeinstallprompt ASAP before any other script runs -->
+  <script is:inline>
+    window.__pwaPrompt = null;
+    window.addEventListener('beforeinstallprompt', function(e) {
+      e.preventDefault();
+      window.__pwaPrompt = e;
+      var fab = document.getElementById('pwa-fab');
+      if (fab) fab.hidden = false;
+    });
+  </script>
+
   <style is:global>
     /* ── Layout utilities ──────────────────────────────────── */
     .container {
@@ -213,7 +224,6 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site ?? 'https://wslha.co
     // ── PWA install button (replaces native browser prompt) ─────
     (function () {
       var fab = document.getElementById('pwa-fab');
-      var deferred = null;
 
       function isInstalled() {
         return window.matchMedia('(display-mode: standalone)').matches ||
@@ -221,16 +231,13 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site ?? 'https://wslha.co
                localStorage.getItem('wslha_installed') === '1';
       }
 
-      if (isInstalled()) return;
+      if (isInstalled()) { if (fab) fab.hidden = true; return; }
 
-      // اعترض إشعار المتصفح واعرض زرارنا بدله
-      window.addEventListener('beforeinstallprompt', function (e) {
-        e.preventDefault();
-        deferred = e;
-        if (!isInstalled() && fab) fab.hidden = false;
-      });
+      // If the event was already captured in <head>, show FAB now
+      if (window.__pwaPrompt && fab) fab.hidden = false;
 
       if (fab) fab.addEventListener('click', function () {
+        var deferred = window.__pwaPrompt;
         if (!deferred) return;
         fab.hidden = true;
         deferred.prompt();
@@ -240,13 +247,14 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site ?? 'https://wslha.co
           } else {
             if (fab) fab.hidden = false;
           }
-          deferred = null;
+          window.__pwaPrompt = null;
         });
       });
 
       window.addEventListener('appinstalled', function () {
         try { localStorage.setItem('wslha_installed', '1'); } catch(x) {}
         if (fab) fab.hidden = true;
+        window.__pwaPrompt = null;
       });
     })();
 
