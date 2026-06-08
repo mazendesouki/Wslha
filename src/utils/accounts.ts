@@ -40,10 +40,12 @@ export async function fieldExists(
 
 async function sbInsert(acc: Account): Promise<true | false | 'error'> {
   try {
+    const { createdAt, ...rest } = acc;
     const payload = {
-      ...acc,
+      ...rest,
       email:    acc.email?.toLowerCase()    || null,
       username: acc.username?.toLowerCase() || null,
+      created_at: createdAt,
     };
     const res = await fetch(`${SB_URL}/rest/v1/accounts`, {
       method:  'POST',
