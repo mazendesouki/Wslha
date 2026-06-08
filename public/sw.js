@@ -5,7 +5,7 @@
  *  - Supabase / Google Maps / any cross-origin API: NEVER cached
  *    (live orders, driver locations and maps must always be fresh).
  */
-const VERSION = 'wslha-v2';
+const VERSION = 'wslha-v3';
 const SHELL_CACHE = `${VERSION}-shell`;
 const ASSET_CACHE = `${VERSION}-assets`;
 
