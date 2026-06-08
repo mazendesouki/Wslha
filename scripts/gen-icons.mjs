@@ -39,30 +39,42 @@ function roundedRectAlpha(x, y, S, pad, r) {
 }
 
 // Pin shape: head circle (with hole) + tapering body to a point.
-function pinAlpha(x, y, S) {
+// Binary inside/outside test — wrap with pinCoverage() for anti-aliasing.
+function pinInside(x, y, S) {
   const cx = S / 2;
-  const headCy = S * 0.40;
-  const headR = S * 0.165;
-  const tipY = S * 0.74;
-  // hole
-  const holeR = headR * 0.42;
+  const headCy = S * 0.38;
+  const headR = S * 0.18;
+  const tipY = S * 0.80;
+  const holeR = headR * 0.40;
   const dHead = Math.hypot(x - cx, y - headCy);
 
-  // body: linear taper from head bottom to tip
+  // body: smooth taper from head centre line down to the tip
   let bodyInside = false;
   if (y >= headCy && y <= tipY) {
     const t = (y - headCy) / (tipY - headCy);
-    const halfW = headR * 0.95 * (1 - t);
+    // ease-out taper gives the classic teardrop silhouette
+    const halfW = headR * Math.pow(1 - t, 1.35);
     if (Math.abs(x - cx) <= halfW) bodyInside = true;
   }
 
   const inHead = dHead <= headR;
-  let inside = inHead || bodyInside;
-  if (!inside) return 0;
-  // punch hole in head
-  const dHole = Math.hypot(x - cx, y - headCy);
-  if (dHole <= holeR) return 0;
+  if (!(inHead || bodyInside)) return 0;
+  // punch the circular hole in the head
+  if (dHead <= holeR) return 0;
   return 1;
+}
+
+// Anti-aliased pin coverage: 4×4 supersampling of the binary shape.
+function pinAlpha(x, y, S) {
+  let hit = 0;
+  for (let sy = 0; sy < 4; sy++) {
+    for (let sx = 0; sx < 4; sx++) {
+      const px = x + (sx + 0.5) / 4 - 0.5;
+      const py = y + (sy + 0.5) / 4 - 0.5;
+      hit += pinInside(px, py, S);
+    }
+  }
+  return hit / 16;
 }
 
 function makePNG(S) {
@@ -80,10 +92,12 @@ function makePNG(S) {
       const rr = roundedRectAlpha(x + 0.5, y + 0.5, S, S * 0.06, S * 0.22);
       a = Math.round(255 * Math.min(1, Math.max(0, rr)));
 
-      // pin (white)
+      // pin (white) — alpha-blended over the gradient for soft edges
       const pin = pinAlpha(x + 0.5, y + 0.5, S);
       if (pin > 0 && a > 0) {
-        r = WHITE[0]; g = WHITE[1]; b = WHITE[2];
+        r = Math.round(r + (WHITE[0] - r) * pin);
+        g = Math.round(g + (WHITE[1] - g) * pin);
+        b = Math.round(b + (WHITE[2] - b) * pin);
       }
 
       raw[p++] = r; raw[p++] = g; raw[p++] = b; raw[p++] = a;
@@ -140,7 +154,18 @@ function makeFlat(S, { bg = null, pinScale = 1, padFactor = 1 } = {}) {
       const lx = (x - cx) / pinScale + span / 2;
       const ly = (y - cy) / pinScale + span / 2;
       const pin = pinAlpha(lx + 0.5, ly + 0.5, span);
-      if (pin > 0) { r = WHITE[0]; g = WHITE[1]; b = WHITE[2]; a = 255; }
+      if (pin > 0) {
+        if (a > 0) {
+          // over a solid background: blend white by coverage
+          r = Math.round(r + (WHITE[0] - r) * pin);
+          g = Math.round(g + (WHITE[1] - g) * pin);
+          b = Math.round(b + (WHITE[2] - b) * pin);
+        } else {
+          // over transparency: white pin with soft coverage alpha
+          r = WHITE[0]; g = WHITE[1]; b = WHITE[2];
+          a = Math.round(255 * pin);
+        }
+      }
       raw[p++] = r; raw[p++] = g; raw[p++] = b; raw[p++] = a;
     }
   }

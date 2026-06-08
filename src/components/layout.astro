@@ -185,7 +185,10 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site ?? 'https://wslha.co
   <div id="pwa-fab-wrap" class="pwa-fab-wrap" hidden>
     <button id="pwa-fab-dismiss" class="pwa-fab-dismiss" aria-label="إغلاق" onclick="document.getElementById('pwa-fab-wrap').hidden=true;try{localStorage.setItem('wslha_dismissed','1')}catch(e){}">✕</button>
     <button id="pwa-fab" class="pwa-fab" aria-label="تثبيت التطبيق">
-      <span class="pwa-fab__icon">📲</span>
+      <svg class="pwa-fab__icon" width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path d="M12 3v10m0 0l-4-4m4 4l4-4" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M4 16v2.5A2.5 2.5 0 0 0 6.5 21h11a2.5 2.5 0 0 0 2.5-2.5V16" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+      </svg>
       <span class="pwa-fab__text">تثبيت التطبيق</span>
     </button>
   </div>
@@ -194,7 +197,9 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site ?? 'https://wslha.co
   <div id="pwa-modal" class="pwa-modal" hidden role="dialog" aria-modal="true" aria-label="تثبيت التطبيق">
     <div class="pwa-modal__box">
       <button class="pwa-modal__close" id="pwa-modal-close" aria-label="إغلاق" onclick="document.getElementById('pwa-modal').hidden=true">✕</button>
-      <div class="pwa-modal__icon">📲</div>
+      <div class="pwa-modal__icon">
+        <img src="/icon-192.png" width="56" height="56" alt="وصّلها" style="border-radius:14px;display:inline-block">
+      </div>
       <h2 class="pwa-modal__title">ثبّت تطبيق وصّلها</h2>
       <p class="pwa-modal__sub">أسرع وأسهل — أيقونة مباشرة على شاشتك</p>
       <ol class="pwa-modal__steps" id="pwa-steps"></ol>
@@ -230,7 +235,7 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site ?? 'https://wslha.co
       touch-action: manipulation;
     }
     .pwa-fab:active { transform: scale(.94); }
-    .pwa-fab__icon { font-size: 18px; line-height: 1; }
+    .pwa-fab__icon { display: block; flex-shrink: 0; }
     .pwa-fab-dismiss {
       width: 26px;
       height: 26px;
