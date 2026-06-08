@@ -281,6 +281,18 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site ?? 'https://wslha.co
       font-weight: 600;
       color: #1a1a2e;
     }
+    .pwa-modal__extra { margin-top: 16px; }
+    .pwa-chrome-btn {
+      display: block;
+      background: #3B6EF8;
+      color: #fff;
+      text-decoration: none;
+      border-radius: 12px;
+      padding: 14px;
+      font-weight: 700;
+      font-size: 15px;
+      text-align: center;
+    }
     .pwa-modal__steps li span.step-num {
       background: #3B6EF8;
       color: #fff;
@@ -332,10 +344,18 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site ?? 'https://wslha.co
         return li;
       }
 
-      function showModal(stepsArr) {
+      function showModal(stepsArr, extraHTML) {
         if (!steps || !modal) return;
         steps.innerHTML = '';
         stepsArr.forEach(function(t, i) { steps.appendChild(makeStep(i + 1, t)); });
+        var extra = modal.querySelector('.pwa-modal__extra');
+        if (extra) extra.remove();
+        if (extraHTML) {
+          var div = document.createElement('div');
+          div.className = 'pwa-modal__extra';
+          div.innerHTML = extraHTML;
+          steps.after(div);
+        }
         modal.hidden = false;
       }
 
@@ -380,12 +400,10 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site ?? 'https://wslha.co
             'اضغط "إضافة" في الأعلى ✅'
           ]);
         } else if (isFirefox) {
-          // Firefox Android
-          showModal([
-            'اضغط على النقاط الثلاث ⋮ في شريط Firefox',
-            'اختر "تثبيت" أو "إضافة إلى الشاشة الرئيسية" 📲',
-            'اضغط "إضافة" ✅'
-          ]);
+          showModal(
+            ['Firefox لا يدعم تثبيت التطبيقات 😔', 'افتح الموقع في Chrome لتثبيت التطبيق 🌐'],
+            '<a href="intent://wslha-941c8.web.app#Intent;scheme=https;package=com.android.chrome;end" class="pwa-chrome-btn">افتح في Chrome ↗</a>'
+          );
         } else {
           // Other browsers
           showModal([
