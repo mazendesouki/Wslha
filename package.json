@@ -7,7 +7,7 @@
     "start": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "icons": "node scripts/gen-icons.mjs",
+    "icons": "node scripts/gen-brand-icons.mjs",
     "assets": "npx @capacitor/assets generate --iconBackgroundColor #3B6EF8 --iconBackgroundColorDark #2952D9 --splashBackgroundColor #3B6EF8 --splashBackgroundColorDark #2952D9",
     "app:sync": "astro build && npx cap sync",
     "app:android": "npm run app:sync && npx cap open android",
@@ -19,6 +19,7 @@
     "@astrojs/sitemap": "^1.0.0",
     "@capacitor/cli": "^5.7.8",
     "@netlify/netlify-marketing-tokens": "^1.1.0",
+    "@resvg/resvg-js": "^2.6.2",
     "astro": "^2.0.0",
     "playwright": "^1.60.0"
   },
