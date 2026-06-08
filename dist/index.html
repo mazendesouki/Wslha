@@ -504,6 +504,14 @@
         return;
       }
 
+      // تأكيد تاني بعد 1 ثانية (بعض أجهزة أندرويد بتتأخر)
+      setTimeout(function () {
+        if (isStandalone()) {
+          try { localStorage.setItem(INSTALLED_KEY, '1'); } catch(x) {}
+          if (banner) banner.hidden = true;
+        }
+      }, 1000);
+
       window.addEventListener('beforeinstallprompt', function (e) {
         e.preventDefault();
         deferred = e;
