@@ -562,12 +562,16 @@ async function submitApplication() {
       headers: { ...SB_H, 'Content-Type': 'application/json', Prefer: 'return=minimal' },
       body: JSON.stringify(payload),
     });
-    // Update account status to pending
+    // Update account role to driver and status to pending
     await fetch(`${SB_URL}/rest/v1/accounts?phone=eq.${encodeURIComponent(USER.phone)}`, {
       method: 'PATCH',
       headers: { ...SB_H, 'Content-Type': 'application/json', Prefer: 'return=minimal' },
-      body: JSON.stringify({ status: 'pending' }),
+      body: JSON.stringify({ role: 'driver', status: 'pending' }),
     });
+    // Update localStorage
+    USER.role = 'driver';
+    USER.status = 'pending';
+    localStorage.setItem('wslha_user', JSON.stringify(USER));
     document.getElementById(`step-${currentStep}`).classList.add('hidden');
     document.getElementById('step-success').classList.remove('hidden');
   } catch(e) {

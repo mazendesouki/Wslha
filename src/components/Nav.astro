@@ -39,7 +39,7 @@ const { currentPage } = Astro.props;
       <div class="nav__actions">
 
         <!-- Driver CTA -->
-        <a href="/driver" class="nav__driver">
+        <a href="/driver" class="nav__driver" id="nav-driver-btn">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
             <circle cx="12" cy="12" r="10"/>
             <path d="M14.5 4.5 C14.5 4.5 16 8 14.5 12 C13 16 12 19.5 12 19.5"/>
@@ -51,7 +51,7 @@ const { currentPage } = Astro.props;
         </a>
 
         <!-- Merchant CTA -->
-        <a href="/merchant-apply" class="nav__merchant">
+        <a href="/merchant-apply" class="nav__merchant" id="nav-merchant-btn">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
             <path d="M5 9l4 4-2 8H3V9z"/>
             <path d="M11 9l-4 4 2 8h4V9z"/>
@@ -138,8 +138,8 @@ const { currentPage } = Astro.props;
       </ul>
       <div class="nav__mobile-actions">
         <a href="/login" class="btn btn--outline" style="width:100%;justify-content:center;">تسجيل الدخول</a>
-        <a href="/driver" class="btn btn--accent" style="width:100%;justify-content:center;">🚗 انضم كسائق</a>
-        <a href="/merchant-apply" class="btn btn--accent" style="width:100%;justify-content:center;background:#f59e0b;">🏪 انضم كتاجر</a>
+        <a href="/driver" class="btn btn--accent" style="width:100%;justify-content:center;" id="nav-mobile-driver">🚗 انضم كسائق</a>
+        <a href="/merchant-apply" class="btn btn--accent" style="width:100%;justify-content:center;background:#f59e0b;" id="nav-mobile-merchant">🏪 انضم كتاجر</a>
       </div>
     </div>
   </div>
@@ -156,6 +156,10 @@ const { currentPage } = Astro.props;
   const dropdownUserInfo= document.getElementById('dropdown-user-info') as HTMLElement;
   const dropdownLogin   = document.getElementById('dropdown-login')   as HTMLElement;
   const dropdownLogout  = document.getElementById('dropdown-logout')  as HTMLButtonElement;
+  const navDriverBtn     = document.getElementById('nav-driver-btn')    as HTMLElement;
+  const navMerchantBtn   = document.getElementById('nav-merchant-btn')  as HTMLElement;
+  const navMobileDriver  = document.getElementById('nav-mobile-driver') as HTMLElement;
+  const navMobileMerchant= document.getElementById('nav-mobile-merchant') as HTMLElement;
 
   function updateProfileUI(): void {
     try {
@@ -168,11 +172,35 @@ const { currentPage } = Astro.props;
         dropdownUserInfo.removeAttribute('hidden');
         dropdownLogin.setAttribute('hidden', '');
         dropdownLogout.removeAttribute('hidden');
+
+        // Show/hide buttons based on role (mutually exclusive)
+        if (user.role === 'driver') {
+          navDriverBtn?.setAttribute('hidden', '');
+          navMerchantBtn?.removeAttribute('hidden');
+          navMobileDriver?.setAttribute('hidden', '');
+          navMobileMerchant?.removeAttribute('hidden');
+        } else if (user.role === 'merchant') {
+          navMerchantBtn?.setAttribute('hidden', '');
+          navDriverBtn?.removeAttribute('hidden');
+          navMobileMerchant?.setAttribute('hidden', '');
+          navMobileDriver?.removeAttribute('hidden');
+        } else {
+          navDriverBtn?.removeAttribute('hidden');
+          navMerchantBtn?.removeAttribute('hidden');
+          navMobileDriver?.removeAttribute('hidden');
+          navMobileMerchant?.removeAttribute('hidden');
+        }
       } else {
         profileName.textContent = 'دخول';
         dropdownUserInfo.setAttribute('hidden', '');
         dropdownLogin.removeAttribute('hidden');
         dropdownLogout.setAttribute('hidden', '');
+
+        // Show both buttons when not logged in
+        navDriverBtn?.removeAttribute('hidden');
+        navMerchantBtn?.removeAttribute('hidden');
+        navMobileDriver?.removeAttribute('hidden');
+        navMobileMerchant?.removeAttribute('hidden');
       }
     } catch { /* storage unavailable */ }
   }
@@ -342,6 +370,7 @@ const { currentPage } = Astro.props;
     white-space: nowrap;
   }
   .nav__driver:hover { background: #15803D; transform: translateY(-1px); }
+  .nav__driver[hidden] { display: none; }
 
   /* Merchant button */
   .nav__merchant {
@@ -359,6 +388,7 @@ const { currentPage } = Astro.props;
     white-space: nowrap;
   }
   .nav__merchant:hover { background: #d97706; transform: translateY(-1px); }
+  .nav__merchant[hidden] { display: none; }
 
   /* ── Profile dropdown ───────────────────────────────── */
   .nav__profile { position: relative; }
@@ -531,6 +561,9 @@ const { currentPage } = Astro.props;
     padding-top: var(--sp-6);
     border-top: 1px solid var(--color-border);
   }
+
+  #nav-mobile-driver[hidden],
+  #nav-mobile-merchant[hidden] { display: none; }
 
   /* ── Responsive ─────────────────────────────────────── */
   @media (max-width: 900px) {
