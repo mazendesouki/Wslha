@@ -166,53 +166,55 @@ const { currentPage } = Astro.props;
     try {
       const raw  = localStorage.getItem('wslha_user');
       const user = raw ? JSON.parse(raw) : null;
-      if (user && (user.name || user.phone)) {
-        // ── User is logged in ────────────────────────
-        profileName.textContent        = user.name || user.phone;
-        dropdownName.textContent       = user.name  || '—';
-        dropdownPhone.textContent      = user.phone || '';
+      // Strict check: must have phone (the real identifier)
+      const isLoggedIn = !!(user && user.phone && user.phone.length > 5);
 
-        // Show logged-in sections
-        dropdownUserInfo.removeAttribute('hidden');
-        (document.getElementById('dropdown-profile') as HTMLElement)?.removeAttribute('hidden');
-        (document.getElementById('dropdown-orders') as HTMLElement)?.removeAttribute('hidden');
-        (document.getElementById('dropdown-track') as HTMLElement)?.removeAttribute('hidden');
-        (document.getElementById('dropdown-divider') as HTMLElement)?.removeAttribute('hidden');
-        (document.getElementById('dropdown-logout-divider') as HTMLElement)?.removeAttribute('hidden');
+      if (isLoggedIn) {
+        // ── User is logged in ─────────────────────────
+        profileName.textContent  = user.name || user.phone;
+        dropdownName.textContent = user.name || '—';
+        dropdownPhone.textContent= user.phone || '';
 
-        // Hide login, show logout
-        dropdownLogin.setAttribute('hidden', '');
-        dropdownLogout.removeAttribute('hidden');
+        show('dropdown-user-info');
+        show('dropdown-profile');
+        show('dropdown-orders');
+        show('dropdown-track');
+        show('dropdown-divider');
+        show('dropdown-logout-divider');
+        show('dropdown-logout');
+        hide('dropdown-login');
 
-        // Show/hide merchant button based on role
         if (user.role === 'merchant') {
-          navMerchantBtn?.setAttribute('hidden', '');
-          navMobileMerchant?.setAttribute('hidden', '');
+          hide('nav-merchant-btn');
+          hide('nav-mobile-merchant');
         } else {
-          navMerchantBtn?.removeAttribute('hidden');
-          navMobileMerchant?.removeAttribute('hidden');
+          show('nav-merchant-btn');
+          show('nav-mobile-merchant');
         }
       } else {
-        // ── User is NOT logged in ───────────────────
+        // ── Not logged in ─────────────────────────────
         profileName.textContent = 'دخول';
-        dropdownUserInfo.setAttribute('hidden', '');
 
-        // Hide logged-in sections
-        (document.getElementById('dropdown-profile') as HTMLElement)?.setAttribute('hidden', '');
-        (document.getElementById('dropdown-orders') as HTMLElement)?.setAttribute('hidden', '');
-        (document.getElementById('dropdown-track') as HTMLElement)?.setAttribute('hidden', '');
-        (document.getElementById('dropdown-divider') as HTMLElement)?.setAttribute('hidden', '');
-        (document.getElementById('dropdown-logout-divider') as HTMLElement)?.setAttribute('hidden', '');
+        hide('dropdown-user-info');
+        hide('dropdown-profile');
+        hide('dropdown-orders');
+        hide('dropdown-track');
+        hide('dropdown-divider');
+        hide('dropdown-logout-divider');
+        hide('dropdown-logout');
+        show('dropdown-login');
 
-        // Show login, hide logout
-        dropdownLogin.removeAttribute('hidden');
-        dropdownLogout.setAttribute('hidden', '');
-
-        // Show merchant button when not logged in
-        navMerchantBtn?.removeAttribute('hidden');
-        navMobileMerchant?.removeAttribute('hidden');
+        show('nav-merchant-btn');
+        show('nav-mobile-merchant');
       }
     } catch { /* storage unavailable */ }
+  }
+
+  function show(id: string): void {
+    document.getElementById(id)?.removeAttribute('hidden');
+  }
+  function hide(id: string): void {
+    document.getElementById(id)?.setAttribute('hidden', '');
   }
 
   updateProfileUI();
@@ -483,6 +485,9 @@ const { currentPage } = Astro.props;
 
   .nav__dropdown-logout { color: #DC2626; }
   .nav__dropdown-logout:hover { background: #FEE2E2; color: #B91C1C; }
+
+  /* Ensure hidden always works regardless of display rules */
+  [hidden] { display: none !important; }
 
   .nav__dropdown-driver { color: #16A34A; font-weight: var(--weight-bold); }
   .nav__dropdown-driver:hover { background: #DCFCE7; }
