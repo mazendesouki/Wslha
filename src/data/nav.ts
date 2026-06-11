@@ -31,8 +31,8 @@ export const FOOTER_LINKS = {
     { label: 'الأسعار',        href: '/services#pricing' },
   ],
   contact: [
-    { label: '📞 0100 000 0000',   href: 'tel:+201000000000'     },
-    { label: '✉️ info@wslha.co',   href: 'mailto:info@wslha.co' },
-    { label: '💬 واتساب',          href: 'https://wa.me/201000000000' },
+    { label: '📞 0020 1102 667324',   href: 'tel:+201102667324'              },
+    { label: '✉️ info@wslha.co',       href: 'mailto:info@wslha.co'           },
+    { label: '💬 واتساب',              href: 'https://wa.me/201102667324'     },
   ],
 };
