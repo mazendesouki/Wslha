@@ -1,7 +1,6 @@
 ---
 import Layout from '../components/layout.astro';
 import PageHero from '../components/PageHero.astro';
-const GMAPS_KEY = import.meta.env.PUBLIC_GMAPS_KEY || 'AIzaSyAKvFfBYNDcTZgvZZH5s_lQbOc24LNjLsY';
 ---
 
 <style>
@@ -315,29 +314,29 @@ const GMAPS_KEY = import.meta.env.PUBLIC_GMAPS_KEY || 'AIzaSyAKvFfBYNDcTZgvZZH5s
   .rate-thanks.visible { display: block; }
 </style>
 
-<script define:vars={{ GMAPS_KEY }}>
+<script>
   const SB_URL = 'https://vtikgyiopkjnrwlqnmfx.supabase.co';
   const SB_KEY = 'sb_publishable_PLSnpvCT-sAyUMtymNgTwA_QmL2suw4';
   const SB_H   = { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}` };
 
-  const form  = document.getElementById('track-form')   as HTMLFormElement;
-  const input = document.getElementById('track-input')  as HTMLInputElement;
-  const result = document.getElementById('track-result') as HTMLElement;
-  const resultId = document.getElementById('result-id') as HTMLElement;
+  const form  = document.getElementById('track-form');
+  const input = document.getElementById('track-input');
+  const result = document.getElementById('track-result');
+  const resultId = document.getElementById('result-id');
 
-  let lastStatus: string | null = null;
-  let driverPollTimer: any = null;
-  let map: any = null;
-  let driverMarker: any = null;
-  let storeMarker: any = null;
-  let customerMarker: any = null;
-  let routeRenderer: any = null;
-  let gmapsReady = false;
-  let customerLatLng: {lat: number; lng: number} | null = null;
+  let lastStatus = null;
+  let driverPollTimer = null;
+  let map = null;
+  let driverMarker = null;
+  let storeMarker = null;
+  let customerMarker = null;
+  let routeLine = null;
+  let customerLatLng = null;
+  let storeLLng = null;
 
   // ── Status-change banner + optional browser notification ──
-  function notifyStatusChange(status: string, order: any) {
-    const messages: Record<string, string> = {
+  function notifyStatusChange(status, order) {
+    const messages = {
       preparing:  `✅ قبِل ${order.store_name || 'المتجر'} طلبك ويجهّزه الآن`,
       on_the_way: `🛵 طلبك في الطريق إليك مع ${order.driver_name || 'المندوب'}`,
       delivered:  '🎉 تم توصيل طلبك بنجاح — بالهنا والشفا!',
@@ -345,7 +344,7 @@ const GMAPS_KEY = import.meta.env.PUBLIC_GMAPS_KEY || 'AIzaSyAKvFfBYNDcTZgvZZH5s
     };
     const msg = messages[status];
     if (!msg) return;
-    const banner = document.getElementById('status-banner')!;
+    const banner = document.getElementById('status-banner');
     banner.textContent = msg;
     banner.classList.toggle('reject', status === 'rejected');
     banner.classList.add('show');
@@ -362,118 +361,100 @@ const GMAPS_KEY = import.meta.env.PUBLIC_GMAPS_KEY || 'AIzaSyAKvFfBYNDcTZgvZZH5s
     if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
   }
 
-  // ── Google Maps ──────────────────────────────────────────────
-  function loadGMaps(): Promise<void> {
-    return new Promise((resolve, reject) => {
-      if ((window as any).google?.maps?.places) { gmapsReady = true; resolve(); return; }
-      (window as any)._trackGmCb = () => { gmapsReady = true; resolve(); };
+  // ── Leaflet ──────────────────────────────────────────────
+  function loadLeaflet() {
+    return new Promise((resolve) => {
+      if (window.L) { resolve(); return; }
+      const link = document.createElement('link');
+      link.rel = 'stylesheet';
+      link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+      document.head.appendChild(link);
       const s = document.createElement('script');
-      s.src = `https://maps.googleapis.com/maps/api/js?key=${GMAPS_KEY}&libraries=places,geometry&callback=_trackGmCb&language=ar&region=EG`;
-      s.async = true; s.defer = true;
-      s.onerror = () => reject(new Error('gmaps'));
+      s.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+      s.onload = resolve;
       document.head.appendChild(s);
     });
   }
 
-  async function initTrackMap(storeLat: number, storeLng: number) {
-    document.getElementById('track-map-card')!.classList.add('visible');
-    try { await loadGMaps(); } catch { return; }
+  function makeIcon(emoji, color) {
+    return L.divIcon({
+      html: `<div style="background:${color};width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;border:3px solid white;box-shadow:0 2px 6px rgba(0,0,0,.3)">${emoji}</div>`,
+      className: '',
+      iconSize: [36, 36],
+      iconAnchor: [18, 18],
+      popupAnchor: [0, -18],
+    });
+  }
+
+  async function fetchOSRMRoute(lat1, lng1, lat2, lng2) {
+    const res = await fetch(`https://router.project-osrm.org/route/v1/driving/${lng1},${lat1};${lng2},${lat2}?overview=full&geometries=geojson`);
+    const data = await res.json();
+    if (!data.routes?.[0]) return null;
+    return {
+      coords: data.routes[0].geometry.coordinates.map(([lng, lat]) => [lat, lng]),
+      distanceKm: data.routes[0].distance / 1000,
+      durationMin: Math.ceil(data.routes[0].duration / 60),
+    };
+  }
+
+  async function initTrackMap(sLat, sLng) {
+    document.getElementById('track-map-card').classList.add('visible');
+    try { await loadLeaflet(); } catch { return; }
     if (map) return;
-    const g = (window as any).google.maps;
+    storeLLng = { lat: sLat, lng: sLng };
 
-    map = new g.Map(document.getElementById('track-map')!, {
-      center: { lat: storeLat, lng: storeLng }, zoom: 14,
-      mapTypeControl: false, streetViewControl: false,
-      fullscreenControl: true, zoomControl: true,
-      styles: [
-        { featureType: 'poi', elementType: 'labels', stylers: [{ visibility: 'off' }] },
-      ],
-    });
+    map = L.map('track-map').setView([sLat, sLng], 14);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap contributors',
+      maxZoom: 19,
+    }).addTo(map);
 
-    // Store marker (blue pin)
-    storeMarker = new g.Marker({
-      position: { lat: storeLat, lng: storeLng }, map,
-      icon: {
-        url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(`
-          <svg xmlns="http://www.w3.org/2000/svg" width="36" height="42" viewBox="0 0 36 42">
-            <path d="M18 0C8 0 0 8 0 18c0 12 18 24 18 24s18-12 18-24C36 8 28 0 18 0z" fill="#3b82f6"/>
-            <text x="18" y="22" text-anchor="middle" font-size="16" fill="white">🏪</text>
-          </svg>`)}`,
-        scaledSize: new g.Size(36, 42),
-        anchor: new g.Point(18, 42),
-      },
-      title: 'المتجر',
-    });
-    new g.InfoWindow({ content: '<div style="font-family:Cairo,sans-serif;font-size:13px;font-weight:700">🏪 المتجر</div>' })
-      .open(map, storeMarker);
-
-    // Route renderer
-    routeRenderer = new g.DirectionsRenderer({
-      map,
-      suppressMarkers: true,
-      polylineOptions: { strokeColor: '#3b82f6', strokeWeight: 4, strokeOpacity: 0.7 },
-    });
+    // Store marker (blue)
+    storeMarker = L.marker([sLat, sLng], { icon: makeIcon('🏪', '#3b82f6'), title: 'المتجر' })
+      .addTo(map)
+      .bindPopup('<div style="font-family:Cairo,sans-serif;font-size:13px;font-weight:700">🏪 المتجر</div>')
+      .openPopup();
 
     // My-location button
-    document.getElementById('btn-my-location')!.addEventListener('click', getCustomerLocation);
+    document.getElementById('btn-my-location').addEventListener('click', getCustomerLocation);
   }
 
   // Draw route: driver → customer (or store if no customer)
-  function drawRoute(driverLat: number, driverLng: number) {
-    if (!map || !gmapsReady || !routeRenderer) return;
-    const g = (window as any).google.maps;
-    const dest = customerLatLng || storeMarker?.getPosition();
+  async function drawRoute(dLat, dLng) {
+    if (!map) return;
+    const dest = customerLatLng || storeLLng;
     if (!dest) return;
 
-    const service = new g.DirectionsService();
-    service.route({
-      origin: { lat: driverLat, lng: driverLng },
-      destination: dest,
-      travelMode: g.TravelMode.DRIVING,
-    }, (result: any, status: any) => {
-      if (status !== 'OK') return;
-      routeRenderer.setDirections(result);
+    if (routeLine) { map.removeLayer(routeLine); routeLine = null; }
 
-      const leg = result.routes?.[0]?.legs?.[0];
-      if (leg) {
-        document.getElementById('stat-distance')!.textContent = leg.distance?.text || '—';
-        document.getElementById('stat-duration')!.textContent = leg.duration?.text || '—';
-        const arr = new Date(Date.now() + (leg.duration?.value || 0) * 1000);
-        document.getElementById('stat-eta')!.textContent = arr.toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
-        (document.getElementById('map-stats') as HTMLElement).style.display = 'grid';
+    try {
+      const route = await fetchOSRMRoute(dLat, dLng, dest.lat, dest.lng);
+      if (route) {
+        routeLine = L.polyline(route.coords, { color: '#3b82f6', weight: 5, opacity: 0.85 }).addTo(map);
+        document.getElementById('stat-distance').textContent = route.distanceKm.toFixed(1) + ' كم';
+        document.getElementById('stat-duration').textContent = route.durationMin + ' دق';
+        const arr = new Date(Date.now() + route.durationMin * 60 * 1000);
+        document.getElementById('stat-eta').textContent = arr.toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
+        document.getElementById('map-stats').style.display = 'grid';
       }
-    });
+    } catch {}
   }
 
-  function updateDriverOnMap(lat: number, lng: number) {
-    if (!map || !gmapsReady) return;
-    const g = (window as any).google.maps;
-    const pos = { lat, lng };
+  function updateDriverOnMap(lat, lng) {
+    if (!map) return;
 
     if (driverMarker) {
-      driverMarker.setPosition(pos);
+      driverMarker.setLatLng([lat, lng]);
     } else {
-      driverMarker = new g.Marker({
-        position: pos, map, zIndex: 999,
-        icon: {
-          url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(`
-            <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 40 40">
-              <circle cx="20" cy="20" r="18" fill="#16a34a" stroke="white" stroke-width="3"/>
-              <text x="20" y="26" text-anchor="middle" font-size="18" fill="white">🛵</text>
-            </svg>`)}`,
-          scaledSize: new g.Size(40, 40),
-          anchor: new g.Point(20, 20),
-        },
-        title: 'المندوب',
-      });
+      driverMarker = L.marker([lat, lng], { icon: makeIcon('🛵', '#16a34a'), zIndexOffset: 999, title: 'المندوب' }).addTo(map);
     }
 
     // Fit bounds to show all markers
-    const bounds = new g.LatLngBounds();
-    bounds.extend(pos);
-    if (storeMarker) bounds.extend(storeMarker.getPosition());
-    if (customerMarker) bounds.extend(customerMarker.getPosition());
-    map.fitBounds(bounds, { top: 60, right: 40, bottom: 60, left: 40 });
+    const points = [[lat, lng]];
+    if (storeLLng) points.push([storeLLng.lat, storeLLng.lng]);
+    if (customerLatLng) points.push([customerLatLng.lat, customerLatLng.lng]);
+    if (customerMarker) points.push(customerMarker.getLatLng());
+    map.fitBounds(L.latLngBounds(points), { padding: [40, 40] });
 
     // Draw route
     drawRoute(lat, lng);
@@ -482,7 +463,7 @@ const GMAPS_KEY = import.meta.env.PUBLIC_GMAPS_KEY || 'AIzaSyAKvFfBYNDcTZgvZZH5s
   // Get customer's real location
   function getCustomerLocation() {
     if (!navigator.geolocation) return;
-    const btn = document.getElementById('btn-my-location')!;
+    const btn = document.getElementById('btn-my-location');
     btn.textContent = '⏳ جارٍ التحديد...';
     navigator.geolocation.getCurrentPosition(
       (pos) => {
@@ -490,33 +471,25 @@ const GMAPS_KEY = import.meta.env.PUBLIC_GMAPS_KEY || 'AIzaSyAKvFfBYNDcTZgvZZH5s
         btn.style.cssText = 'background:#d1fae5;border-color:#16a34a;color:#16a34a';
         customerLatLng = { lat: pos.coords.latitude, lng: pos.coords.longitude };
 
-        if (map && gmapsReady) {
-          const g = (window as any).google.maps;
-          if (customerMarker) customerMarker.setPosition(customerLatLng);
+        if (map) {
+          if (customerMarker) customerMarker.setLatLng([customerLatLng.lat, customerLatLng.lng]);
           else {
-            customerMarker = new g.Marker({
-              position: customerLatLng, map,
-              icon: {
-                url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(`
-                  <svg xmlns="http://www.w3.org/2000/svg" width="36" height="42" viewBox="0 0 36 42">
-                    <path d="M18 0C8 0 0 8 0 18c0 12 18 24 18 24s18-12 18-24C36 8 28 0 18 0z" fill="#ef4444"/>
-                    <text x="18" y="22" text-anchor="middle" font-size="16" fill="white">🏠</text>
-                  </svg>`)}`,
-                scaledSize: new g.Size(36, 42),
-                anchor: new g.Point(18, 42),
-              },
-              title: 'موقع التوصيل',
-            });
+            customerMarker = L.marker([customerLatLng.lat, customerLatLng.lng], {
+              icon: makeIcon('🏠', '#ef4444'), title: 'موقع التوصيل'
+            }).addTo(map);
           }
           // Redraw route with real destination
-          if (driverMarker) drawRoute(driverMarker.getPosition().lat(), driverMarker.getPosition().lng());
+          if (driverMarker) {
+            const ll = driverMarker.getLatLng();
+            drawRoute(ll.lat, ll.lng);
+          }
         }
       },
       () => { btn.textContent = '📍 موقعي'; }
     );
   }
 
-  async function pollDriverLocation(driverPhone: string) {
+  async function pollDriverLocation(driverPhone) {
     try {
       const r = await fetch(
         `${SB_URL}/rest/v1/driver_locations?driver_phone=eq.${encodeURIComponent(driverPhone)}&select=lat,lng,heading,updated_at&limit=1`,
@@ -530,13 +503,13 @@ const GMAPS_KEY = import.meta.env.PUBLIC_GMAPS_KEY || 'AIzaSyAKvFfBYNDcTZgvZZH5s
   }
 
   // ── Rating ──
-  let currentOrder: any = null;
+  let currentOrder = null;
 
-  function setupStars(containerId: string) {
-    const container = document.getElementById(containerId)!;
+  function setupStars(containerId) {
+    const container = document.getElementById(containerId);
     container.querySelectorAll('.star').forEach(star => {
       star.addEventListener('click', () => {
-        const v = Number((star as HTMLElement).dataset.v);
+        const v = Number(star.dataset.v);
         container.dataset.rating = String(v);
         container.querySelectorAll('.star').forEach((s, i) => s.classList.toggle('active', i < v));
       });
@@ -545,32 +518,32 @@ const GMAPS_KEY = import.meta.env.PUBLIC_GMAPS_KEY || 'AIzaSyAKvFfBYNDcTZgvZZH5s
   setupStars('stars-store');
   setupStars('stars-driver');
 
-  function maybeShowRating(o: any) {
-    const card = document.getElementById('rate-card')!;
-    const thanks = document.getElementById('rate-thanks')!;
+  function maybeShowRating(o) {
+    const card = document.getElementById('rate-card');
+    const thanks = document.getElementById('rate-thanks');
     if (o.status !== 'delivered') { card.classList.remove('visible'); return; }
 
     // Already rated? (kept in localStorage per order code)
-    let rated: string[] = [];
+    let rated = [];
     try { rated = JSON.parse(localStorage.getItem('wslha_rated') || '[]'); } catch {}
     if (rated.includes(o.code)) { thanks.classList.add('visible'); return; }
 
     // Hide driver row if no driver
-    document.getElementById('rate-driver-row')!.style.display = o.driver_phone ? 'block' : 'none';
-    document.getElementById('rate-store-label')!.textContent = `تقييم ${o.store_name || 'المتجر'}`;
+    document.getElementById('rate-driver-row').style.display = o.driver_phone ? 'block' : 'none';
+    document.getElementById('rate-store-label').textContent = `تقييم ${o.store_name || 'المتجر'}`;
     card.classList.add('visible');
   }
 
   async function submitRating() {
     if (!currentOrder) return;
     const o = currentOrder;
-    const storeRating  = Number(document.getElementById('stars-store')!.dataset.rating || '0');
-    const driverRating = Number(document.getElementById('stars-driver')!.dataset.rating || '0');
-    const comment = (document.getElementById('rate-comment') as HTMLTextAreaElement).value.trim();
+    const storeRating  = Number(document.getElementById('stars-store').dataset.rating || '0');
+    const driverRating = Number(document.getElementById('stars-driver').dataset.rating || '0');
+    const comment = document.getElementById('rate-comment').value.trim();
 
     if (storeRating === 0) { alert('يرجى اختيار تقييم المتجر أولاً'); return; }
 
-    const btn = document.getElementById('rate-submit') as HTMLButtonElement;
+    const btn = document.getElementById('rate-submit');
     btn.disabled = true; btn.textContent = 'جارٍ الإرسال...';
 
     // Save the rating row
@@ -605,11 +578,11 @@ const GMAPS_KEY = import.meta.env.PUBLIC_GMAPS_KEY || 'AIzaSyAKvFfBYNDcTZgvZZH5s
       rated.push(o.code); localStorage.setItem('wslha_rated', JSON.stringify(rated));
     } catch {}
 
-    document.getElementById('rate-card')!.classList.remove('visible');
-    document.getElementById('rate-thanks')!.classList.add('visible');
+    document.getElementById('rate-card').classList.remove('visible');
+    document.getElementById('rate-thanks').classList.add('visible');
   }
 
-  document.getElementById('rate-submit')!.addEventListener('click', submitRating);
+  document.getElementById('rate-submit').addEventListener('click', submitRating);
 
   // Status → ordered timeline steps
   const STEPS = [
@@ -618,14 +591,14 @@ const GMAPS_KEY = import.meta.env.PUBLIC_GMAPS_KEY || 'AIzaSyAKvFfBYNDcTZgvZZH5s
     { key: 'on_the_way', title: 'المندوب في الطريق إليك',    desc: 'طلبك في الطريق' },
     { key: 'delivered',  title: 'تم التسليم',               desc: 'تم توصيل طلبك بنجاح' },
   ];
-  const STATUS_BADGE: Record<string, string> = {
+  const STATUS_BADGE = {
     pending:'قيد الانتظار', preparing:'قيد التجهيز', on_the_way:'في الطريق',
     delivered:'تم التسليم', rejected:'مرفوض',
   };
 
-  let pollTimer: any = null;
+  let pollTimer = null;
 
-  function renderTimeline(status: string, order?: any) {
+  function renderTimeline(status, order) {
     const KEYS = ['pending', 'preparing', 'on_the_way', 'delivered'];
     const curIdx = KEYS.indexOf(status);
 
@@ -641,16 +614,16 @@ const GMAPS_KEY = import.meta.env.PUBLIC_GMAPS_KEY || 'AIzaSyAKvFfBYNDcTZgvZZH5s
     });
 
     // Progress bar width
-    const prog = document.getElementById('tl-progress')!;
+    const prog = document.getElementById('tl-progress');
     const pct = status === 'rejected' ? 0
       : curIdx <= 0 ? 0 : Math.round((curIdx / (KEYS.length - 1)) * 100);
     prog.style.width = pct + '%';
 
     // ETA window
-    const etaWindow  = document.getElementById('eta-window')!;
-    const etaLabel   = document.getElementById('eta-label')!;
-    const etaBadge   = document.getElementById('eta-badge')!;
-    const fmt = (d: Date) => d.toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
+    const etaWindow  = document.getElementById('eta-window');
+    const etaLabel   = document.getElementById('eta-label');
+    const etaBadge   = document.getElementById('eta-badge');
+    const fmt = (d) => d.toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
     const now = new Date();
     if (status === 'delivered') {
       etaWindow.textContent = 'تم التسليم ✅';
@@ -685,21 +658,21 @@ const GMAPS_KEY = import.meta.env.PUBLIC_GMAPS_KEY || 'AIzaSyAKvFfBYNDcTZgvZZH5s
     }
   }
 
-  function renderOrder(o: any) {
+  function renderOrder(o) {
     currentOrder = o;
-    document.getElementById('result-empty')!.style.display = 'none';
-    document.getElementById('result-timeline')!.style.display = '';
-    (document.querySelector('.result__info') as HTMLElement).style.display = '';
+    document.getElementById('result-empty').style.display = 'none';
+    document.getElementById('result-timeline').style.display = '';
+    document.querySelector('.result__info').style.display = '';
 
     resultId.textContent = o.code || o.id;
-    document.getElementById('result-name')!.textContent = `${o.store_emoji || '📦'} طلب من ${o.store_name || ''}`;
-    const badge = document.getElementById('result-status')!;
+    document.getElementById('result-name').textContent = `${o.store_emoji || '📦'} طلب من ${o.store_name || ''}`;
+    const badge = document.getElementById('result-status');
     badge.textContent = STATUS_BADGE[o.status] || o.status;
 
-    document.getElementById('info-from')!.textContent   = o.store_name || '—';
-    document.getElementById('info-to')!.textContent     = `${o.area || ''}${o.address ? ' — ' + o.address : ''}`;
-    document.getElementById('info-driver')!.textContent = o.driver_name || (o.status === 'preparing' ? 'جارٍ التعيين…' : '—');
-    document.getElementById('info-total')!.textContent  = `${o.total || 0} ج.م`;
+    document.getElementById('info-from').textContent   = o.store_name || '—';
+    document.getElementById('info-to').textContent     = `${o.area || ''}${o.address ? ' — ' + o.address : ''}`;
+    document.getElementById('info-driver').textContent = o.driver_name || (o.status === 'preparing' ? 'جارٍ التعيين…' : '—');
+    document.getElementById('info-total').textContent  = `${o.total || 0} ج.م`;
 
     renderTimeline(o.status);
 
@@ -721,15 +694,15 @@ const GMAPS_KEY = import.meta.env.PUBLIC_GMAPS_KEY || 'AIzaSyAKvFfBYNDcTZgvZZH5s
     maybeShowRating(o);
   }
 
-  function showEmpty(code: string) {
+  function showEmpty(code) {
     resultId.textContent = code;
-    document.getElementById('result-timeline')!.style.display = 'none';
-    (document.querySelector('.result__info') as HTMLElement).style.display = 'none';
-    document.getElementById('result-status')!.textContent = '—';
-    document.getElementById('result-empty')!.style.display = 'block';
+    document.getElementById('result-timeline').style.display = 'none';
+    document.querySelector('.result__info').style.display = 'none';
+    document.getElementById('result-status').textContent = '—';
+    document.getElementById('result-empty').style.display = 'block';
   }
 
-  async function fetchOrder(code: string) {
+  async function fetchOrder(code) {
     try {
       const r = await fetch(`${SB_URL}/rest/v1/orders?code=eq.${encodeURIComponent(code)}&limit=1`, { headers: SB_H });
       if (!r.ok) return null;
@@ -738,17 +711,17 @@ const GMAPS_KEY = import.meta.env.PUBLIC_GMAPS_KEY || 'AIzaSyAKvFfBYNDcTZgvZZH5s
     } catch { return null; }
   }
 
-  async function track(code: string) {
+  async function track(code) {
     result.classList.add('is-visible');
     result.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 
     // Reset per-order state
     lastStatus = null;
     if (driverPollTimer) { clearInterval(driverPollTimer); driverPollTimer = null; }
-    map = null; driverMarker = null; storeMarker = null;
-    document.getElementById('track-map-card')!.classList.remove('visible');
-    document.getElementById('rate-card')!.classList.remove('visible');
-    document.getElementById('rate-thanks')!.classList.remove('visible');
+    map = null; driverMarker = null; storeMarker = null; storeLLng = null;
+    document.getElementById('track-map-card').classList.remove('visible');
+    document.getElementById('rate-card').classList.remove('visible');
+    document.getElementById('rate-thanks').classList.remove('visible');
     try { if ('Notification' in window && Notification.permission === 'default') Notification.requestPermission(); } catch {}
 
     const order = await fetchOrder(code);
@@ -770,7 +743,7 @@ const GMAPS_KEY = import.meta.env.PUBLIC_GMAPS_KEY || 'AIzaSyAKvFfBYNDcTZgvZZH5s
     }
   }
 
-  form.addEventListener('submit', (e: Event) => {
+  form.addEventListener('submit', (e) => {
     e.preventDefault();
     const val = input.value.trim();
     if (val) track(val);
@@ -785,7 +758,7 @@ const GMAPS_KEY = import.meta.env.PUBLIC_GMAPS_KEY || 'AIzaSyAKvFfBYNDcTZgvZZH5s
   } else {
     try {
       const orders = JSON.parse(localStorage.getItem('wslha_orders') || '[]');
-      const last = orders.find((o: any) => o.kind === 'store' && o.code);
+      const last = orders.find((o) => o.kind === 'store' && o.code);
       if (last) { input.value = last.code; track(last.code); }
     } catch {}
   }

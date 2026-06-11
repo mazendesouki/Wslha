@@ -1,7 +1,6 @@
 ---
 import Layout from '../components/layout.astro';
 import PageHero from '../components/PageHero.astro';
-const GMAPS_KEY = import.meta.env.PUBLIC_GMAPS_KEY || 'AIzaSyAKvFfBYNDcTZgvZZH5s_lQbOc24LNjLsY';
 ---
 
 <style>
@@ -456,24 +455,24 @@ const GMAPS_KEY = import.meta.env.PUBLIC_GMAPS_KEY || 'AIzaSyAKvFfBYNDcTZgvZZH5s
   <div class="toast" id="toast"></div>
 </Layout>
 
-<script define:vars={{ GMAPS_KEY }}>
+<script>
   const SB_URL = 'https://vtikgyiopkjnrwlqnmfx.supabase.co';
   const SB_KEY = 'sb_publishable_PLSnpvCT-sAyUMtymNgTwA_QmL2suw4';
   const SB_H = { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}`, 'Content-Type': 'application/json' };
 
   /* ── Auth guard ── */
-  let driver: any = null;
+  let driver = null;
   try { const raw = localStorage.getItem('wslha_user'); driver = raw ? JSON.parse(raw) : null; } catch {}
 
-  const authPrompt = document.getElementById('auth-prompt')!;
-  const mainDash   = document.getElementById('main-dash')!;
+  const authPrompt = document.getElementById('auth-prompt');
+  const mainDash   = document.getElementById('main-dash');
 
   if (!driver || driver.role !== 'driver') {
     authPrompt.style.display = 'block';
   } else {
     mainDash.style.display = 'flex';
-    document.getElementById('driver-name-bar')!.textContent  = driver.name  || driver.phone;
-    document.getElementById('driver-phone-bar')!.textContent = driver.phone || '';
+    document.getElementById('driver-name-bar').textContent  = driver.name  || driver.phone;
+    document.getElementById('driver-phone-bar').textContent = driver.phone || '';
   }
 
   /* ── Stats ── */
@@ -483,152 +482,137 @@ const GMAPS_KEY = import.meta.env.PUBLIC_GMAPS_KEY || 'AIzaSyAKvFfBYNDcTZgvZZH5s
     todayStats = JSON.parse(localStorage.getItem(key) || '{"trips":0,"earn":0}');
   } catch {}
   function renderStats() {
-    (document.getElementById('stat-trips') as HTMLElement).textContent = String(todayStats.trips);
-    (document.getElementById('stat-earn')  as HTMLElement).textContent = String(todayStats.earn);
+    document.getElementById('stat-trips').textContent = String(todayStats.trips);
+    document.getElementById('stat-earn').textContent  = String(todayStats.earn);
   }
   renderStats();
 
   /* ── State ── */
   let isOnline      = false;
-  let currentRide: any   = null;
-  let pendingRide: any   = null;
-  let currentOrder: any  = null;   // active delivery order
-  let pendingOrder: any  = null;   // delivery offer awaiting accept
-  let pollInterval: any  = null;
-  let geoWatchId: any    = null;
-  let timerInterval: any = null;
-  let driverLat: number | null = null;
-  let driverLng: number | null = null;
-  let map: any = null, driverMarker: any = null, gmapsReady = false;
+  let currentRide   = null;
+  let pendingRide   = null;
+  let currentOrder  = null;   // active delivery order
+  let pendingOrder  = null;   // delivery offer awaiting accept
+  let pollInterval  = null;
+  let geoWatchId    = null;
+  let timerInterval = null;
+  let driverLat = null;
+  let driverLng = null;
+  let map = null, driverMarker = null, fromMarkerRef = null, toMarkerRef = null, routeLine = null;
 
   /* ── Toast ── */
-  function showToast(msg: string) {
-    const t = document.getElementById('toast')!;
+  function showToast(msg) {
+    const t = document.getElementById('toast');
     t.textContent = msg;
     t.classList.add('show');
     setTimeout(() => t.classList.remove('show'), 2800);
   }
 
-  /* ── Google Maps ── */
-  function loadGMaps(): Promise<void> {
-    return new Promise((resolve, reject) => {
-      if ((window as any).google?.maps) { resolve(); return; }
-      (window as any)._driverGmCb = () => { gmapsReady = true; resolve(); };
+  /* ── Leaflet helpers ── */
+  function loadLeaflet() {
+    return new Promise((resolve) => {
+      if (window.L) { resolve(); return; }
+      const link = document.createElement('link');
+      link.rel = 'stylesheet';
+      link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+      document.head.appendChild(link);
       const s = document.createElement('script');
-      s.src = `https://maps.googleapis.com/maps/api/js?key=${GMAPS_KEY}&callback=_driverGmCb&language=ar&region=EG`;
-      s.async = true; s.defer = true;
-      s.onerror = () => reject(new Error('gmaps'));
+      s.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+      s.onload = resolve;
       document.head.appendChild(s);
     });
   }
 
-  let routeRenderer: any = null;
-  let destLat: number | null = null;
-  let destLng: number | null = null;
-
-  async function initDriverMap(fromLat: number, fromLng: number, toLat: number, toLng: number) {
-    try { await loadGMaps(); } catch { return; }
-    destLat = toLat; destLng = toLng;
-    const mapEl = document.getElementById('driver-map')!;
-    const g = (window as any).google.maps;
-
-    map = new g.Map(mapEl, {
-      center: { lat: fromLat, lng: fromLng }, zoom: 13,
-      mapTypeControl: false, streetViewControl: false, fullscreenControl: false,
-      styles: [{ featureType: 'poi', elementType: 'labels', stylers: [{ visibility: 'off' }] }],
+  function makeIcon(emoji, color) {
+    return L.divIcon({
+      html: `<div style="background:${color};width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;border:3px solid white;box-shadow:0 2px 6px rgba(0,0,0,.3)">${emoji}</div>`,
+      className: '',
+      iconSize: [36, 36],
+      iconAnchor: [18, 18],
+      popupAnchor: [0, -18],
     });
+  }
 
-    const svgMarker = (emoji: string, bg: string) =>
-      `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(
-        `<svg xmlns="http://www.w3.org/2000/svg" width="38" height="44" viewBox="0 0 38 44">
-          <path d="M19 0C8.5 0 0 8.5 0 19c0 13 19 25 19 25s19-12 19-25C38 8.5 29.5 0 19 0z" fill="${bg}"/>
-          <text x="19" y="24" text-anchor="middle" font-size="17" fill="white">${emoji}</text>
-        </svg>`
-      )}`;
+  async function fetchOSRMRoute(lat1, lng1, lat2, lng2) {
+    const res = await fetch(`https://router.project-osrm.org/route/v1/driving/${lng1},${lat1};${lng2},${lat2}?overview=full&geometries=geojson`);
+    const data = await res.json();
+    if (!data.routes?.[0]) return null;
+    return {
+      coords: data.routes[0].geometry.coordinates.map(([lng, lat]) => [lat, lng]),
+      distanceKm: data.routes[0].distance / 1000,
+      durationMin: Math.ceil(data.routes[0].duration / 60),
+    };
+  }
+
+  let destLat = null;
+  let destLng = null;
+
+  async function initDriverMap(fromLat, fromLng, toLat, toLng) {
+    try { await loadLeaflet(); } catch { return; }
+    destLat = toLat; destLng = toLng;
+    const mapEl = document.getElementById('driver-map');
+    if (!mapEl) return;
+
+    if (map) {
+      // Already initialized — just update markers and route
+      if (fromMarkerRef) map.removeLayer(fromMarkerRef);
+      if (toMarkerRef) map.removeLayer(toMarkerRef);
+      fromMarkerRef = L.marker([fromLat, fromLng], { icon: makeIcon('🏪', '#3b82f6'), title: 'نقطة الاستلام' }).addTo(map);
+      toMarkerRef   = L.marker([toLat, toLng],   { icon: makeIcon('🏠', '#ef4444'), title: 'الوجهة' }).addTo(map);
+      drawDriverRoute();
+      return;
+    }
+
+    map = L.map('driver-map').setView([fromLat, fromLng], 13);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap contributors',
+      maxZoom: 19,
+    }).addTo(map);
 
     // From marker (pickup)
-    new g.Marker({
-      position: { lat: fromLat, lng: fromLng }, map,
-      icon: { url: svgMarker('🏪', '#3b82f6'), scaledSize: new g.Size(38, 44), anchor: new g.Point(19, 44) },
-      title: 'نقطة الاستلام',
-    });
+    fromMarkerRef = L.marker([fromLat, fromLng], { icon: makeIcon('🏪', '#3b82f6'), title: 'نقطة الاستلام' }).addTo(map);
 
     // To marker (destination)
-    new g.Marker({
-      position: { lat: toLat, lng: toLng }, map,
-      icon: { url: svgMarker('🏠', '#ef4444'), scaledSize: new g.Size(38, 44), anchor: new g.Point(19, 44) },
-      title: 'الوجهة',
-    });
+    toMarkerRef = L.marker([toLat, toLng], { icon: makeIcon('🏠', '#ef4444'), title: 'الوجهة' }).addTo(map);
 
     // Driver marker
     if (driverLat && driverLng) {
-      driverMarker = new g.Marker({
-        position: { lat: driverLat, lng: driverLng }, map, zIndex: 999,
-        icon: { url: svgMarker('🛵', '#16a34a'), scaledSize: new g.Size(38, 44), anchor: new g.Point(19, 44) },
-        title: 'موقعك',
-      });
+      driverMarker = L.marker([driverLat, driverLng], { icon: makeIcon('🛵', '#16a34a'), zIndexOffset: 999, title: 'موقعك' }).addTo(map);
     }
 
-    // Route renderer
-    routeRenderer = new g.DirectionsRenderer({
-      map, suppressMarkers: true,
-      polylineOptions: { strokeColor: '#16a34a', strokeWeight: 5, strokeOpacity: 0.8 },
-    });
-
     // Draw initial route
-    drawDriverRoute();
+    await drawDriverRoute();
 
-    const bounds = new g.LatLngBounds();
-    bounds.extend({ lat: fromLat, lng: fromLng });
-    bounds.extend({ lat: toLat, lng: toLng });
-    if (driverLat && driverLng) bounds.extend({ lat: driverLat, lng: driverLng });
-    map.fitBounds(bounds, 60);
+    const points = [[fromLat, fromLng], [toLat, toLng]];
+    if (driverLat && driverLng) points.push([driverLat, driverLng]);
+    map.fitBounds(L.latLngBounds(points), { padding: [40, 40] });
   }
 
-  function drawDriverRoute() {
-    if (!map || !destLat || !destLng || !gmapsReady || !routeRenderer) return;
-    const g = (window as any).google.maps;
-    const origin = (driverLat && driverLng)
-      ? { lat: driverLat, lng: driverLng }
-      : (routeRenderer.getDirections()?.request?.origin ?? null);
-    if (!origin) return;
+  async function drawDriverRoute() {
+    if (!map || !destLat || !destLng) return;
+    const oLat = driverLat ?? destLat;
+    const oLng = driverLng ?? destLng;
 
-    new g.DirectionsService().route({
-      origin,
-      destination: { lat: destLat, lng: destLng },
-      travelMode: g.TravelMode.DRIVING,
-    }, (result: any, status: any) => {
-      if (status !== 'OK') return;
-      routeRenderer.setDirections(result);
-      const leg = result.routes?.[0]?.legs?.[0];
-      if (leg) {
+    if (routeLine) { map.removeLayer(routeLine); routeLine = null; }
+
+    try {
+      const route = await fetchOSRMRoute(oLat, oLng, destLat, destLng);
+      if (route) {
+        routeLine = L.polyline(route.coords, { color: '#16a34a', weight: 5, opacity: 0.85 }).addTo(map);
         const distEl = document.getElementById('driver-stat-dist');
         const durEl  = document.getElementById('driver-stat-dur');
-        if (distEl) distEl.textContent = leg.distance?.text || '—';
-        if (durEl)  durEl.textContent  = leg.duration?.text || '—';
+        if (distEl) distEl.textContent = route.distanceKm.toFixed(1) + ' كم';
+        if (durEl)  durEl.textContent  = route.durationMin + ' دق';
       }
-    });
+    } catch {}
   }
 
   function updateDriverMarker() {
-    if (!driverLat || !driverLng) return;
-    const pos = { lat: driverLat, lng: driverLng };
-    if (!map || !gmapsReady) return;
+    if (!driverLat || !driverLng || !map) return;
     if (driverMarker) {
-      driverMarker.setPosition(pos);
+      driverMarker.setLatLng([driverLat, driverLng]);
     } else {
-      const g = (window as any).google.maps;
-      const svg = `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(
-        `<svg xmlns="http://www.w3.org/2000/svg" width="38" height="44" viewBox="0 0 38 44">
-          <path d="M19 0C8.5 0 0 8.5 0 19c0 13 19 25 19 25s19-12 19-25C38 8.5 29.5 0 19 0z" fill="#16a34a"/>
-          <text x="19" y="24" text-anchor="middle" font-size="17" fill="white">🛵</text>
-        </svg>`
-      )}`;
-      driverMarker = new g.Marker({
-        position: pos, map, zIndex: 999,
-        icon: { url: svg, scaledSize: new g.Size(38, 44), anchor: new g.Point(19, 44) },
-        title: 'موقعك',
-      });
+      driverMarker = L.marker([driverLat, driverLng], { icon: makeIcon('🛵', '#16a34a'), zIndexOffset: 999, title: 'موقعك' }).addTo(map);
     }
     // Redraw route every GPS update
     drawDriverRoute();

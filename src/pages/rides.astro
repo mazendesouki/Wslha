@@ -2,7 +2,6 @@
 import Layout from '../components/layout.astro';
 import PageHero from '../components/PageHero.astro';
 import { AREAS } from '../data/rides';
-const GMAPS_KEY = import.meta.env.PUBLIC_GMAPS_KEY || 'AIzaSyAKvFfBYNDcTZgvZZH5s_lQbOc24LNjLsY';
 ---
 
 <style>
@@ -554,7 +553,7 @@ const GMAPS_KEY = import.meta.env.PUBLIC_GMAPS_KEY || 'AIzaSyAKvFfBYNDcTZgvZZH5s
   </div><!-- /rides-page -->
 </Layout>
 
-<script define:vars={{ AREAS, GMAPS_KEY }}>
+<script define:vars={{ AREAS }}>
   // ── Supabase ──
   const SB_URL = 'https://vtikgyiopkjnrwlqnmfx.supabase.co';
   const SB_KEY = 'sb_publishable_PLSnpvCT-sAyUMtymNgTwA_QmL2suw4';
@@ -588,49 +587,57 @@ const GMAPS_KEY = import.meta.env.PUBLIC_GMAPS_KEY || 'AIzaSyAKvFfBYNDcTZgvZZH5s
   let _realRoadKm = 0;
   let _realEtaMin = 0;
 
-  // ── Google Maps setup ──
+  // ── Leaflet map setup ──
   let map = null, fromMarker = null, toMarker = null, routeLine = null, driverMarker = null;
-  let gmapsReady = false, pendingRoute = null;
+  let leafletReady = false;
 
-  // Load Google Maps JS API dynamically
-  function loadGoogleMaps() {
-    return new Promise((resolve, reject) => {
-      if (window.google?.maps) { resolve(); return; }
-      window._gmapsCb = () => resolve();
+  function loadLeaflet() {
+    return new Promise((resolve) => {
+      if (window.L) { resolve(); return; }
+      const link = document.createElement('link');
+      link.rel = 'stylesheet';
+      link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+      document.head.appendChild(link);
       const s = document.createElement('script');
-      s.src = `https://maps.googleapis.com/maps/api/js?key=${GMAPS_KEY}&callback=_gmapsCb&language=ar&region=EG`;
-      s.async = true; s.defer = true;
-      s.onerror = () => reject(new Error('gmaps-load-failed'));
+      s.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+      s.onload = resolve;
       document.head.appendChild(s);
     });
   }
 
-  function pinIcon(color) {
+  function makeIcon(emoji, color) {
+    return L.divIcon({
+      html: `<div style="background:${color};width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;border:3px solid white;box-shadow:0 2px 6px rgba(0,0,0,.3)">${emoji}</div>`,
+      className: '',
+      iconSize: [36, 36],
+      iconAnchor: [18, 18],
+      popupAnchor: [0, -18],
+    });
+  }
+
+  async function fetchOSRMRoute(lat1, lng1, lat2, lng2) {
+    const res = await fetch(`https://router.project-osrm.org/route/v1/driving/${lng1},${lat1};${lng2},${lat2}?overview=full&geometries=geojson`);
+    const data = await res.json();
+    if (!data.routes?.[0]) return null;
     return {
-      path: 'M12 0C7 0 3 4 3 9c0 6.5 9 15 9 15s9-8.5 9-15c0-5-4-9-9-9z',
-      fillColor: color, fillOpacity: 1,
-      strokeColor: '#fff', strokeWeight: 3,
-      scale: 1.6, anchor: new google.maps.Point(12, 24),
+      coords: data.routes[0].geometry.coordinates.map(([lng, lat]) => [lat, lng]),
+      distanceKm: data.routes[0].distance / 1000,
+      durationMin: Math.ceil(data.routes[0].duration / 60),
     };
   }
-  const carSymbol = {
-    path: 'M5 11l1.5-4.5h11L19 11m-1.5 5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0m-8 0a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0M3 11v6h2m14-6v6h-2m-12 0h10',
-    fillColor: '#1d4ed8', fillOpacity: 1, strokeColor: '#fff', strokeWeight: 1,
-    scale: 1.4, anchor: { x: 12, y: 12 },
-  };
 
   async function initMap() {
     if (map) return true;
     try {
-      await loadGoogleMaps();
+      await loadLeaflet();
       document.getElementById('map-placeholder').style.display = 'none';
       document.getElementById('ride-map').style.display = 'block';
-      map = new google.maps.Map(document.getElementById('ride-map'), {
-        center: { lat: 31.418, lng: 31.814 }, zoom: 11,
-        mapTypeControl: false, streetViewControl: false, fullscreenControl: true,
-        styles: [{ featureType: 'poi', stylers: [{ visibility: 'off' }] }],
-      });
-      gmapsReady = true;
+      map = L.map('ride-map').setView([31.418, 31.814], 11);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors',
+        maxZoom: 19,
+      }).addTo(map);
+      leafletReady = true;
       return true;
     } catch {
       document.getElementById('map-placeholder').innerHTML =
@@ -642,7 +649,7 @@ const GMAPS_KEY = import.meta.env.PUBLIC_GMAPS_KEY || 'AIzaSyAKvFfBYNDcTZgvZZH5s
   }
 
   function clearMap() {
-    [fromMarker, toMarker, routeLine, driverMarker].forEach(o => o && o.setMap(null));
+    [fromMarker, toMarker, routeLine, driverMarker].forEach(o => o && map && map.removeLayer(o));
     fromMarker = toMarker = routeLine = driverMarker = null;
   }
 
@@ -651,25 +658,17 @@ const GMAPS_KEY = import.meta.env.PUBLIC_GMAPS_KEY || 'AIzaSyAKvFfBYNDcTZgvZZH5s
     if (!ok) return;
     clearMap();
 
-    fromMarker = new google.maps.Marker({
-      position: { lat: from.lat, lng: from.lng }, map,
-      icon: pinIcon('#3b82f6'), title: 'الانطلاق: ' + from.name,
-    });
-    toMarker = new google.maps.Marker({
-      position: { lat: to.lat, lng: to.lng }, map,
-      icon: pinIcon('#ef4444'), title: 'الوصول: ' + to.name,
-    });
+    fromMarker = L.marker([from.lat, from.lng], { icon: makeIcon('🏠', '#3b82f6'), title: 'الانطلاق: ' + from.name }).addTo(map);
+    toMarker   = L.marker([to.lat,   to.lng],   { icon: makeIcon('📍', '#ef4444'), title: 'الوصول: ' + to.name }).addTo(map);
 
     // Road geometry + distance via OSRM
     let coords;
     try {
-      const osrm = `https://router.project-osrm.org/route/v1/driving/${from.lng},${from.lat};${to.lng},${to.lat}?overview=full&geometries=geojson`;
-      const data = await (await fetch(osrm)).json();
-      if (data.routes?.[0]) {
-        coords = data.routes[0].geometry.coordinates.map(([lng,lat]) => ({ lat, lng }));
-        // Use actual road distance & duration from OSRM
-        _realRoadKm  = data.routes[0].distance / 1000;
-        _realEtaMin  = Math.max(1, Math.ceil(data.routes[0].duration / 60));
+      const route = await fetchOSRMRoute(from.lat, from.lng, to.lat, to.lng);
+      if (route) {
+        coords = route.coords;
+        _realRoadKm = route.distanceKm;
+        _realEtaMin = Math.max(1, route.durationMin);
         const realFare = fareFor(_realRoadKm);
         document.getElementById('sum-dist').textContent  = _realRoadKm.toFixed(1) + ' كم';
         document.getElementById('sum-eta').textContent   = _realEtaMin + ' دق';
@@ -678,29 +677,22 @@ const GMAPS_KEY = import.meta.env.PUBLIC_GMAPS_KEY || 'AIzaSyAKvFfBYNDcTZgvZZH5s
         if (bkEl) bkEl.innerHTML = fareBreakdown(_realRoadKm);
       }
     } catch {}
-    if (!coords) coords = [{ lat: from.lat, lng: from.lng }, { lat: to.lat, lng: to.lng }];
+    if (!coords) coords = [[from.lat, from.lng], [to.lat, to.lng]];
     window._routeCoords = coords;
 
-    routeLine = new google.maps.Polyline({
-      path: coords, map, strokeColor: '#3b82f6', strokeOpacity: 0.85, strokeWeight: 5,
-    });
-
-    const bounds = new google.maps.LatLngBounds();
-    coords.forEach(c => bounds.extend(c));
-    map.fitBounds(bounds, 50);
+    routeLine = L.polyline(coords, { color: '#3b82f6', weight: 5, opacity: 0.85 }).addTo(map);
+    map.fitBounds(routeLine.getBounds(), { padding: [40, 40] });
   }
 
   // ── live simulation ──
   function startLiveTracking(from, to, etaMinutes) {
-    if (!gmapsReady) return;
-    if (driverMarker) driverMarker.setMap(null);
-    const coords = window._routeCoords || [{ lat: from.lat, lng: from.lng }, { lat: to.lat, lng: to.lng }];
+    if (!leafletReady || !map) return;
+    if (driverMarker) map.removeLayer(driverMarker);
+    const coords = window._routeCoords || [[from.lat, from.lng], [to.lat, to.lng]];
     const totalSteps = coords.length;
     let step = 0;
 
-    driverMarker = new google.maps.Marker({
-      position: coords[0], map, icon: carSymbol, zIndex: 999,
-    });
+    driverMarker = L.marker(coords[0], { icon: makeIcon('🛵', '#16a34a'), zIndexOffset: 999 }).addTo(map);
     document.getElementById('live-badge').style.display = 'inline-flex';
 
     const msPerStep = Math.max(1500, (etaMinutes * 60 * 1000) / totalSteps);
@@ -712,7 +704,7 @@ const GMAPS_KEY = import.meta.env.PUBLIC_GMAPS_KEY || 'AIzaSyAKvFfBYNDcTZgvZZH5s
         return;
       }
       step++;
-      driverMarker.setPosition(coords[step]);
+      driverMarker.setLatLng(coords[step]);
 
       const pct = step / (totalSteps - 1);
       if (pct >= 0.05 && !window._st_assigned) { window._st_assigned = true; advanceStatus('assigned'); }
