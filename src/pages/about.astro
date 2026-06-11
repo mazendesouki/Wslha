@@ -23,10 +23,10 @@ interface Milestone {
 }
 
 const MILESTONES: Milestone[] = [
-  { year: '2024', title: 'انطلاق وصّلها',      desc: 'بدأنا رحلتنا بخدمة التوصيل المحلي في دمياط الجديدة.' },
-  { year: '2024', title: 'توصيل المطار',       desc: 'أضفنا خدمة التوصيل من وإلى مطار برج العرب باحترافية.' },
-  { year: '2024', title: 'المتاجر الشريكة',    desc: 'توسّعنا بشراكات مع مئات المتاجر والمطاعم في دمياط.'  },
-  { year: '2025', title: 'التوسّع المحافظاتي', desc: 'نخطط للوصول إلى محافظات جديدة وخدمات أوسع.'          },
+  { year: '2026', title: 'انطلاق وصّلها',      desc: 'بدأنا رحلتنا بخدمة التوصيل المحلي في دمياط الجديدة.' },
+  { year: '2026', title: 'توصيل المطار',       desc: 'أضفنا خدمة التوصيل من وإلى مطار برج العرب باحترافية.' },
+  { year: '2026', title: 'المتاجر الشريكة',    desc: 'توسّعنا بشراكات مع المتاجر والمطاعم في دمياط.'        },
+  { year: '2027', title: 'التوسّع التدريجي',   desc: 'نخطط للوصول إلى مناطق جديدة وتقديم خدمات أوسع.'      },
 ];
 
 const STATS = [
@@ -318,7 +318,7 @@ const STATS = [
   <!-- Journey -->
   <section class="section journey" aria-labelledby="journey-title">
     <div class="container">
-      <SectionHeader badge="رحلتنا" title="محطات في طريقنا" subtitle="من البداية وحتى اليوم" id="journey-title" />
+      <SectionHeader badge="رحلتنا" title="محطات رئيسية على طول الطريق" subtitle="من هذا العام إلى التوسع التدريجي" id="journey-title" />
       <ol class="journey__list">
         {MILESTONES.map(m => (
           <li class="journey__item">
