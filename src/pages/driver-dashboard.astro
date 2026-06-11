@@ -619,62 +619,62 @@ import PageHero from '../components/PageHero.astro';
   }
 
   /* ── UI state ── */
-  function showState(name: 'offline' | 'waiting' | 'active') {
-    document.getElementById('state-offline')!.classList.toggle('hidden', name !== 'offline');
-    document.getElementById('state-waiting')!.classList.toggle('visible', name === 'waiting');
-    document.getElementById('state-active')!.classList.toggle('visible',  name === 'active');
+  function showState(name) {
+    document.getElementById('state-offline').classList.toggle('hidden', name !== 'offline');
+    document.getElementById('state-waiting').classList.toggle('visible', name === 'waiting');
+    document.getElementById('state-active').classList.toggle('visible',  name === 'active');
   }
 
   function hideRideRequest() {
-    document.getElementById('ride-request')!.classList.remove('visible');
+    document.getElementById('ride-request').classList.remove('visible');
     if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
   }
 
-  function showRideRequest(ride: any) {
+  function showRideRequest(ride) {
     pendingRide = ride;
-    (document.getElementById('req-customer-name') as HTMLElement).textContent = (ride.customer_name || 'راكب') + ' — راكب جديد';
-    (document.getElementById('req-from') as HTMLElement).textContent = ride.from_area;
-    (document.getElementById('req-to')   as HTMLElement).textContent = ride.to_area;
-    (document.getElementById('req-dist') as HTMLElement).textContent = (ride.distance_km * 1.35).toFixed(1);
-    (document.getElementById('req-eta')  as HTMLElement).textContent = ride.eta_minutes;
-    (document.getElementById('req-fare') as HTMLElement).textContent = ride.fare;
-    document.getElementById('ride-request')!.classList.add('visible');
+    document.getElementById('req-customer-name').textContent = (ride.customer_name || 'راكب') + ' — راكب جديد';
+    document.getElementById('req-from').textContent = ride.from_area;
+    document.getElementById('req-to').textContent   = ride.to_area;
+    document.getElementById('req-dist').textContent = (ride.distance_km * 1.35).toFixed(1);
+    document.getElementById('req-eta').textContent  = ride.eta_minutes;
+    document.getElementById('req-fare').textContent = ride.fare;
+    document.getElementById('ride-request').classList.add('visible');
     let secs = 30;
-    (document.getElementById('req-timer') as HTMLElement).textContent = String(secs);
+    document.getElementById('req-timer').textContent = String(secs);
     if (timerInterval) clearInterval(timerInterval);
     timerInterval = setInterval(() => {
       secs--;
-      (document.getElementById('req-timer') as HTMLElement).textContent = String(secs);
+      document.getElementById('req-timer').textContent = String(secs);
       if (secs <= 0) { clearInterval(timerInterval); timerInterval = null; hideRideRequest(); pendingRide = null; }
     }, 1000);
   }
 
   /* ── Delivery-order request (HungerStation-style) ── */
-  function showOrderRequest(order: any) {
+  function showOrderRequest(order) {
     pendingOrder = order;
-    const header = document.querySelector('.ride-req-header__title') as HTMLElement;
-    const sub    = document.getElementById('req-customer-name') as HTMLElement;
+    const header = document.querySelector('.ride-req-header__title');
+    const sub    = document.getElementById('req-customer-name');
     header.textContent = '🛵 طلب توصيل جديد!';
     sub.textContent = `من ${order.store_name || order.store_id}`;
-    (document.getElementById('req-from') as HTMLElement).textContent = `🏪 ${order.store_name || ''} — ${order.area || ''}`;
-    (document.getElementById('req-to')   as HTMLElement).textContent = `🏠 ${order.customer_name || 'العميل'} — ${order.address || order.area || ''}`;
-    (document.getElementById('req-dist') as HTMLElement).textContent = (order.distance_km ? order.distance_km.toFixed(1) : '~3');
-    (document.getElementById('req-eta')  as HTMLElement).textContent = '15';
-    (document.getElementById('req-fare') as HTMLElement).textContent = String(order.delivery_fee ?? 20);
-    document.getElementById('ride-request')!.classList.add('visible');
+    document.getElementById('req-from').textContent = `🏪 ${order.store_name || ''} — ${order.area || ''}`;
+    document.getElementById('req-to').textContent   = `🏠 ${order.customer_name || 'العميل'} — ${order.address || order.area || ''}`;
+    document.getElementById('req-dist').textContent = (order.distance_km ? order.distance_km.toFixed(1) : '~3');
+    document.getElementById('req-eta').textContent  = '15';
+    document.getElementById('req-fare').textContent = String(order.delivery_fee ?? 20);
+    document.getElementById('ride-request').classList.add('visible');
 
     let secs = 30;
-    (document.getElementById('req-timer') as HTMLElement).textContent = String(secs);
+    document.getElementById('req-timer').textContent = String(secs);
     if (timerInterval) clearInterval(timerInterval);
     timerInterval = setInterval(() => {
       secs--;
-      (document.getElementById('req-timer') as HTMLElement).textContent = String(secs);
+      document.getElementById('req-timer').textContent = String(secs);
       if (secs <= 0) { clearInterval(timerInterval); timerInterval = null; hideRideRequest(); pendingOrder = null; }
     }, 1000);
   }
 
   /* ── Supabase helpers ── */
-  async function upsertLocation(online: boolean) {
+  async function upsertLocation(online) {
     if (!driver) return;
     try {
       await fetch(`${SB_URL}/rest/v1/driver_locations`, {
@@ -703,7 +703,7 @@ import PageHero from '../components/PageHero.astro';
       const rides = await res.json();
       if (Array.isArray(rides) && rides.length > 0) {
         const ride = rides[0];
-        const reqEl = document.getElementById('ride-request')!;
+        const reqEl = document.getElementById('ride-request');
         if (!reqEl.classList.contains('visible') || pendingRide?.id !== ride.id) {
           showRideRequest(ride);
         }
@@ -713,7 +713,7 @@ import PageHero from '../components/PageHero.astro';
     } catch {}
   }
 
-  async function acceptRide(ride: any) {
+  async function acceptRide(ride) {
     try {
       const res = await fetch(`${SB_URL}/rest/v1/rides?id=eq.${ride.id}`, {
         method: 'PATCH',
@@ -730,7 +730,7 @@ import PageHero from '../components/PageHero.astro';
     } catch { return null; }
   }
 
-  async function patchRide(id: string, data: object) {
+  async function patchRide(id, data) {
     try {
       const res = await fetch(`${SB_URL}/rest/v1/rides?id=eq.${id}`, {
         method: 'PATCH',
@@ -754,7 +754,7 @@ import PageHero from '../components/PageHero.astro';
       const orders = await res.json();
       if (Array.isArray(orders) && orders.length > 0) {
         const order = orders[0];
-        const reqEl = document.getElementById('ride-request')!;
+        const reqEl = document.getElementById('ride-request');
         if (!reqEl.classList.contains('visible') || pendingOrder?.id !== order.id) {
           if (!pendingRide) showOrderRequest(order);  // rides take priority if already showing
         }
@@ -764,7 +764,7 @@ import PageHero from '../components/PageHero.astro';
     } catch {}
   }
 
-  async function patchOrder(id: string, data: object) {
+  async function patchOrder(id, data) {
     try {
       const res = await fetch(`${SB_URL}/rest/v1/orders?id=eq.${id}`, {
         method: 'PATCH',
@@ -777,7 +777,7 @@ import PageHero from '../components/PageHero.astro';
   }
 
   // Atomic-ish claim: only set driver if still unclaimed
-  async function claimOrder(order: any) {
+  async function claimOrder(order) {
     try {
       const res = await fetch(
         `${SB_URL}/rest/v1/orders?id=eq.${order.id}&driver_phone=is.null&status=eq.preparing`,
@@ -799,15 +799,15 @@ import PageHero from '../components/PageHero.astro';
 
   function showActiveOrder() {
     const o = currentOrder;
-    (document.getElementById('active-customer-name') as HTMLElement).textContent = `🛵 توصيل — ${o.store_name || ''}`;
-    (document.getElementById('active-call-btn') as HTMLAnchorElement).href = 'tel:' + (o.customer_phone || '');
-    (document.getElementById('active-from') as HTMLElement).textContent = `🏪 ${o.store_name || ''} — ${o.area || ''}`;
-    (document.getElementById('active-to')   as HTMLElement).textContent = `🏠 ${o.customer_name || 'العميل'} — ${o.address || ''}`;
-    (document.getElementById('active-fare') as HTMLElement).textContent = String(o.delivery_fee ?? 20);
-    (document.getElementById('active-trip-status') as HTMLElement).textContent = 'توجّه للمتجر لاستلام الطلب';
+    document.getElementById('active-customer-name').textContent = `🛵 توصيل — ${o.store_name || ''}`;
+    document.getElementById('active-call-btn').href = 'tel:' + (o.customer_phone || '');
+    document.getElementById('active-from').textContent = `🏪 ${o.store_name || ''} — ${o.area || ''}`;
+    document.getElementById('active-to').textContent   = `🏠 ${o.customer_name || 'العميل'} — ${o.address || ''}`;
+    document.getElementById('active-fare').textContent = String(o.delivery_fee ?? 20);
+    document.getElementById('active-trip-status').textContent = 'توجّه للمتجر لاستلام الطلب';
 
-    const pickupBtn   = document.getElementById('btn-pickup')!  as HTMLButtonElement;
-    const completeBtn = document.getElementById('btn-complete')! as HTMLButtonElement;
+    const pickupBtn   = document.getElementById('btn-pickup');
+    const completeBtn = document.getElementById('btn-complete');
     pickupBtn.textContent   = '📦 استلمت الطلب من المتجر';
     completeBtn.textContent = '✅ سلّمت الطلب للعميل';
     pickupBtn.disabled   = false;
@@ -823,7 +823,7 @@ import PageHero from '../components/PageHero.astro';
   }
 
   /* ── Accept ── */
-  document.getElementById('accept-btn')!.addEventListener('click', async () => {
+  document.getElementById('accept-btn').addEventListener('click', async () => {
     // Delivery order takes this branch
     if (pendingOrder) {
       const offer = pendingOrder;
@@ -846,15 +846,15 @@ import PageHero from '../components/PageHero.astro';
     currentRide = accepted;
     await upsertLocation(true);
 
-    (document.getElementById('active-customer-name') as HTMLElement).textContent = currentRide.customer_name || '—';
-    (document.getElementById('active-call-btn') as HTMLAnchorElement).href = 'tel:' + (currentRide.customer_phone || '');
-    (document.getElementById('active-from') as HTMLElement).textContent = currentRide.from_area;
-    (document.getElementById('active-to')   as HTMLElement).textContent = currentRide.to_area;
-    (document.getElementById('active-fare') as HTMLElement).textContent = currentRide.fare;
-    (document.getElementById('active-trip-status') as HTMLElement).textContent = 'في الطريق للإستلام';
+    document.getElementById('active-customer-name').textContent = currentRide.customer_name || '—';
+    document.getElementById('active-call-btn').href = 'tel:' + (currentRide.customer_phone || '');
+    document.getElementById('active-from').textContent = currentRide.from_area;
+    document.getElementById('active-to').textContent   = currentRide.to_area;
+    document.getElementById('active-fare').textContent = currentRide.fare;
+    document.getElementById('active-trip-status').textContent = 'في الطريق للإستلام';
 
-    const pickupBtn   = document.getElementById('btn-pickup')!  as HTMLButtonElement;
-    const completeBtn = document.getElementById('btn-complete')! as HTMLButtonElement;
+    const pickupBtn   = document.getElementById('btn-pickup');
+    const completeBtn = document.getElementById('btn-complete');
     pickupBtn.disabled   = false;
     completeBtn.disabled = true;
     pickupBtn.classList.add('pickup');
@@ -866,19 +866,19 @@ import PageHero from '../components/PageHero.astro';
   });
 
   /* ── Reject ── */
-  document.getElementById('reject-btn')!.addEventListener('click', () => {
+  document.getElementById('reject-btn').addEventListener('click', () => {
     hideRideRequest(); pendingRide = null; pendingOrder = null;
   });
 
   /* ── Picked up ── */
-  document.getElementById('btn-pickup')!.addEventListener('click', async () => {
+  document.getElementById('btn-pickup').addEventListener('click', async () => {
     // Delivery order branch — picked up from store
     if (currentOrder) {
       await patchOrder(currentOrder.id, { status: 'on_the_way', picked_up_at: new Date().toISOString() });
       currentOrder.status = 'on_the_way';
-      (document.getElementById('active-trip-status') as HTMLElement).textContent = 'في الطريق للعميل 🚗';
-      const pickupBtn   = document.getElementById('btn-pickup')!  as HTMLButtonElement;
-      const completeBtn = document.getElementById('btn-complete')! as HTMLButtonElement;
+      document.getElementById('active-trip-status').textContent = 'في الطريق للعميل 🚗';
+      const pickupBtn   = document.getElementById('btn-pickup');
+      const completeBtn = document.getElementById('btn-complete');
       pickupBtn.disabled   = true;
       pickupBtn.classList.remove('pickup');
       completeBtn.disabled = false;
@@ -890,9 +890,9 @@ import PageHero from '../components/PageHero.astro';
     if (!currentRide) return;
     await patchRide(currentRide.id, { status: 'in_progress' });
     currentRide.status = 'in_progress';
-    (document.getElementById('active-trip-status') as HTMLElement).textContent = 'في الطريق للوجهة 🚗';
-    const pickupBtn   = document.getElementById('btn-pickup')!  as HTMLButtonElement;
-    const completeBtn = document.getElementById('btn-complete')! as HTMLButtonElement;
+    document.getElementById('active-trip-status').textContent = 'في الطريق للوجهة 🚗';
+    const pickupBtn   = document.getElementById('btn-pickup');
+    const completeBtn = document.getElementById('btn-complete');
     pickupBtn.disabled   = true;
     pickupBtn.classList.remove('pickup');
     completeBtn.disabled = false;
@@ -901,8 +901,8 @@ import PageHero from '../components/PageHero.astro';
   });
 
   function resetActionButtons() {
-    const pickupBtn   = document.getElementById('btn-pickup')!  as HTMLButtonElement;
-    const completeBtn = document.getElementById('btn-complete')! as HTMLButtonElement;
+    const pickupBtn   = document.getElementById('btn-pickup');
+    const completeBtn = document.getElementById('btn-complete');
     pickupBtn.textContent   = '✓ التقطت الراكب';
     completeBtn.textContent = '✓ وصلت للوجهة';
     pickupBtn.disabled   = false;
@@ -912,7 +912,7 @@ import PageHero from '../components/PageHero.astro';
   }
 
   /* ── Complete ── */
-  document.getElementById('btn-complete')!.addEventListener('click', async () => {
+  document.getElementById('btn-complete').addEventListener('click', async () => {
     // Delivery order branch — delivered to customer
     if (currentOrder) {
       await patchOrder(currentOrder.id, { status: 'delivered', delivered_at: new Date().toISOString() });
@@ -952,7 +952,7 @@ import PageHero from '../components/PageHero.astro';
   });
 
   /* ── Navigate button: open Google Maps ── */
-  document.getElementById('btn-navigate')!.addEventListener('click', () => {
+  document.getElementById('btn-navigate').addEventListener('click', () => {
     if (!destLat || !destLng) return;
     const origin = (driverLat && driverLng) ? `${driverLat},${driverLng}` : '';
     const url = `https://www.google.com/maps/dir/${origin}/${destLat},${destLng}`;
@@ -960,12 +960,12 @@ import PageHero from '../components/PageHero.astro';
   });
 
   /* ── Toggle online/offline ── */
-  document.getElementById('toggle-btn')!.addEventListener('click', async () => {
+  document.getElementById('toggle-btn').addEventListener('click', async () => {
     if (!driver) return;
     isOnline = !isOnline;
-    const btn   = document.getElementById('toggle-btn')!;
-    const label = document.getElementById('toggle-label')!;
-    const text  = document.getElementById('toggle-text')!;
+    const btn   = document.getElementById('toggle-btn');
+    const label = document.getElementById('toggle-label');
+    const text  = document.getElementById('toggle-text');
 
     if (isOnline) {
       btn.classList.replace('offline', 'online');
@@ -982,7 +982,7 @@ import PageHero from '../components/PageHero.astro';
       }
       await upsertLocation(true);
       pollInterval = setInterval(() => { pollRides(); pollOrders(); }, 2500);
-      (window as any)._gpsInterval = setInterval(() => upsertLocation(true), 3000);
+      window._gpsInterval = setInterval(() => upsertLocation(true), 3000);
       showToast('أنت الآن متصل — انتظر الطلبات');
     } else {
       btn.classList.replace('online', 'offline');
@@ -992,7 +992,7 @@ import PageHero from '../components/PageHero.astro';
       showState('offline');
       if (geoWatchId !== null) { navigator.geolocation.clearWatch(geoWatchId); geoWatchId = null; }
       clearInterval(pollInterval); pollInterval = null;
-      clearInterval((window as any)._gpsInterval); (window as any)._gpsInterval = null;
+      clearInterval(window._gpsInterval); window._gpsInterval = null;
       hideRideRequest(); pendingRide = null; pendingOrder = null;
       await upsertLocation(false);
       showToast('تم إيقاف التشغيل');
