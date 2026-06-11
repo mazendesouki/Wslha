@@ -1,0 +1,371 @@
+---
+import Layout from '../components/layout.astro';
+---
+<Layout title="تقديم طلب تاجر — وصّلها" currentPage="merchant-apply">
+<style>
+  .apply-wrap{max-width:860px;margin:0 auto;padding:var(--sp-8) var(--sp-6) var(--sp-20)}
+  .step-header{display:flex;align-items:center;gap:var(--sp-3);padding:var(--sp-5) var(--sp-6);background:linear-gradient(135deg,#16A34A,#15803D);color:#fff;border-radius:var(--radius-lg);margin-bottom:var(--sp-6)}
+  .step-header__icon{font-size:2.2rem}
+  .step-header__title{font-size:var(--text-xl);font-weight:var(--weight-black)}
+  .step-header__sub{font-size:var(--text-sm);opacity:.85;margin-top:4px}
+  .steps-nav{display:flex;gap:var(--sp-1);margin-bottom:var(--sp-6);overflow-x:auto;scrollbar-width:none}
+  .step-pill{padding:var(--sp-2) var(--sp-4);border-radius:var(--radius-full);font-size:var(--text-xs);font-weight:var(--weight-bold);white-space:nowrap;background:var(--color-bg-soft);color:var(--color-text-muted);border:1.5px solid var(--color-border)}
+  .step-pill.active{background:#16A34A;color:#fff;border-color:#16A34A}
+  .step-pill.done{color:#16A34A;border-color:#16A34A}
+  .card{background:var(--color-bg);border:1px solid var(--color-border);border-radius:var(--radius-lg);margin-bottom:var(--sp-5);box-shadow:var(--shadow-sm)}
+  .card__head{padding:var(--sp-4) var(--sp-5);border-bottom:1px solid var(--color-border);font-size:var(--text-base);font-weight:var(--weight-black)}
+  .card__body{padding:var(--sp-5)}
+  .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-4)}
+  .form-group{display:flex;flex-direction:column;gap:var(--sp-2)}
+  .form-group--full{grid-column:1/-1}
+  label{font-size:var(--text-sm);font-weight:var(--weight-bold);color:var(--color-text)}
+  label .req{color:#DC2626;margin-right:2px}
+  .form-input,.form-select,.form-textarea{padding:var(--sp-3) var(--sp-4);border:1.5px solid var(--color-border);border-radius:var(--radius);font-family:var(--font-body);font-size:var(--text-base);color:var(--color-text);background:var(--color-bg);transition:border-color var(--ease);width:100%}
+  .form-input:focus,.form-select:focus,.form-textarea:focus{outline:none;border-color:#16A34A}
+  .form-textarea{min-height:80px;resize:vertical}
+  .upload-zone{border:2px dashed var(--color-border);border-radius:var(--radius);padding:var(--sp-5);text-align:center;cursor:pointer;transition:all var(--ease);position:relative;background:var(--color-bg-soft)}
+  .upload-zone:hover{border-color:#16A34A;background:#DCFCE7}
+  .upload-zone input[type="file"]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+  .upload-zone__icon{font-size:2rem;margin-bottom:var(--sp-2)}
+  .upload-zone__text{font-size:var(--text-sm);font-weight:var(--weight-bold);color:var(--color-text-muted)}
+  .upload-preview{width:100%;height:140px;object-fit:cover;border-radius:var(--radius);margin-top:var(--sp-2);border:1px solid var(--color-border);display:none}
+  .nav-buttons{display:flex;gap:var(--sp-3);justify-content:space-between;margin-top:var(--sp-6)}
+  .btn-next{padding:var(--sp-3) var(--sp-8);background:#16A34A;color:#fff;border:none;border-radius:var(--radius);font-family:var(--font-body);font-size:var(--text-base);font-weight:var(--weight-bold);cursor:pointer;transition:all var(--ease)}
+  .btn-next:hover{background:#15803D;transform:translateY(-1px)}
+  .btn-next:disabled{opacity:.5;cursor:not-allowed;transform:none}
+  .btn-back{padding:var(--sp-3) var(--sp-6);background:var(--color-bg-soft);color:var(--color-text-muted);border:1.5px solid var(--color-border);border-radius:var(--radius);font-family:var(--font-body);font-size:var(--text-base);font-weight:var(--weight-bold);cursor:pointer}
+  .info-box{padding:var(--sp-4);background:#DCFCE7;border:1px solid #86EFAC;border-radius:var(--radius);font-size:var(--text-sm);color:#14532D;line-height:1.7;margin-bottom:var(--sp-5)}
+  .warn-box{padding:var(--sp-4);background:#FEF9C3;border:1px solid #FDE047;border-radius:var(--radius);font-size:var(--text-sm);color:#92400E;line-height:1.7;margin-bottom:var(--sp-5)}
+  .success-state{text-align:center;padding:var(--sp-12) var(--sp-6)}
+  .success-state__icon{font-size:4rem;margin-bottom:var(--sp-4)}
+  .success-state__title{font-size:var(--text-2xl);font-weight:var(--weight-black);margin-bottom:var(--sp-3)}
+  .success-state__text{color:var(--color-text-muted);font-size:var(--text-base);line-height:1.7;max-width:480px;margin:0 auto var(--sp-6)}
+  @media(max-width:600px){.form-grid{grid-template-columns:1fr}.apply-wrap{padding:var(--sp-6) var(--sp-4) var(--sp-20)}}
+</style>
+
+<div class="apply-wrap" id="main-content">
+  <div id="auth-gate" hidden>
+    <div class="info-box">يجب تسجيل الدخول أولاً لتقديم طلب تاجر. <a href="/login?next=/merchant-apply" style="font-weight:900">تسجيل الدخول</a></div>
+  </div>
+
+  <div id="app-form-wrap" hidden>
+    <div class="steps-nav">
+      <div class="step-pill active" data-step="1">1. بيانات النشاط</div>
+      <div class="step-pill" data-step="2">2. السجل التجاري والهوية</div>
+      <div class="step-pill" data-step="3">3. الوثائق الضريبية</div>
+      <div class="step-pill" data-step="4">4. مراجعة وإرسال</div>
+    </div>
+
+    <!-- ── Step 1: Business Info ─────────────────────────── -->
+    <div class="form-step" id="step-1">
+      <div class="step-header">
+        <div class="step-header__icon">🏪</div>
+        <div><div class="step-header__title">بيانات النشاط التجاري</div><div class="step-header__sub">معلومات المشروع والموقع</div></div>
+      </div>
+      <div class="card">
+        <div class="card__head">معلومات النشاط</div>
+        <div class="card__body">
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="biz-name">اسم النشاط التجاري <span class="req">*</span></label>
+              <input class="form-input" id="biz-name" type="text" placeholder="مثال: مطعم الأصيل"/>
+            </div>
+            <div class="form-group">
+              <label for="biz-type">نوع النشاط التجاري <span class="req">*</span></label>
+              <select class="form-select" id="biz-type">
+                <option value="">اختر النوع</option>
+                <option value="restaurant">مطعم / كافيه</option>
+                <option value="grocery">سوبر ماركت / بقالة</option>
+                <option value="pharmacy">صيدلية</option>
+                <option value="bakery">مخبز / حلويات</option>
+                <option value="electronics">إلكترونيات</option>
+                <option value="clothing">ملابس وأزياء</option>
+                <option value="health">صحة وجمال</option>
+                <option value="flowers">ورود وهدايا</option>
+                <option value="produce">خضروات وفاكهة</option>
+                <option value="other">أخرى</option>
+              </select>
+            </div>
+            <div class="form-group form-group--full">
+              <label for="biz-address">عنوان النشاط بالتفصيل <span class="req">*</span></label>
+              <input class="form-input" id="biz-address" type="text" placeholder="الشارع، المنطقة، المدينة"/>
+            </div>
+            <div class="form-group">
+              <label for="biz-phone">جوال النشاط (للعملاء) <span class="req">*</span></label>
+              <input class="form-input" id="biz-phone" type="tel" placeholder="01XXXXXXXXX" dir="ltr"/>
+            </div>
+            <div class="form-group">
+              <label for="owner-phone">جوال صاحب النشاط (حسابك)</label>
+              <input class="form-input" id="owner-phone" type="tel" readonly style="background:var(--color-bg-soft)" dir="ltr"/>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="nav-buttons">
+        <div></div>
+        <button class="btn-next" onclick="goStep(2)">التالي ← السجل والهوية</button>
+      </div>
+    </div>
+
+    <!-- ── Step 2: Commercial Reg + ID ──────────────────── -->
+    <div class="form-step hidden" id="step-2">
+      <div class="step-header">
+        <div class="step-header__icon">📋</div>
+        <div><div class="step-header__title">السجل التجاري والهوية الوطنية</div><div class="step-header__sub">وثائق ملكية النشاط والهوية الشخصية</div></div>
+      </div>
+      <div class="card">
+        <div class="card__head">السجل التجاري</div>
+        <div class="card__body">
+          <div class="form-grid">
+            <div class="form-group">
+              <label>رقم السجل التجاري <span class="req">*</span></label>
+              <input class="form-input" id="creg-num" type="text" placeholder="رقم السجل"/>
+            </div>
+            <div class="form-group">
+              <label>تاريخ إصدار السجل <span class="req">*</span></label>
+              <input class="form-input" id="creg-date" type="date"/>
+            </div>
+            <div class="form-group form-group--full">
+              <label>صورة السجل التجاري <span class="req">*</span></label>
+              <div class="upload-zone" id="zone-creg">
+                <div class="upload-zone__icon">📜</div>
+                <div class="upload-zone__text">صورة السجل التجاري</div>
+                <div class="upload-zone__sub" style="font-size:.72rem;color:#64748B;margin-top:4px">JPG / PNG / PDF</div>
+                <input type="file" accept="image/*,application/pdf" onchange="handleUpload(this,'creg','zone-creg')"/>
+              </div>
+              <img id="prev-creg" class="upload-preview" alt=""/>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card__head">الهوية الوطنية لصاحب النشاط</div>
+        <div class="card__body">
+          <div class="form-grid">
+            <div class="form-group">
+              <label>رقم الهوية الوطنية <span class="req">*</span></label>
+              <input class="form-input" id="nat-id-num" type="text" placeholder="رقم الهوية" maxlength="20"/>
+            </div>
+            <div class="form-group">
+              <label>تاريخ انتهاء الهوية <span class="req">*</span></label>
+              <input class="form-input" id="nat-id-expiry" type="date"/>
+            </div>
+            <div class="form-group form-group--full">
+              <label>صورة الهوية الوطنية <span class="req">*</span></label>
+              <div class="upload-zone" id="zone-natid">
+                <div class="upload-zone__icon">🪪</div>
+                <div class="upload-zone__text">صورة الهوية الوطنية</div>
+                <input type="file" accept="image/*" onchange="handleUpload(this,'natid','zone-natid')"/>
+              </div>
+              <img id="prev-natid" class="upload-preview" alt=""/>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="nav-buttons">
+        <button class="btn-back" onclick="goStep(1)">→ رجوع</button>
+        <button class="btn-next" onclick="goStep(3)">التالي ← الوثائق الضريبية</button>
+      </div>
+    </div>
+
+    <!-- ── Step 3: Tax + Work Permit ────────────────────── -->
+    <div class="form-step hidden" id="step-3">
+      <div class="step-header">
+        <div class="step-header__icon">🧾</div>
+        <div><div class="step-header__title">الوثائق الضريبية ورخصة العمل</div><div class="step-header__sub">البطاقة الضريبية ورخصة مزاولة النشاط</div></div>
+      </div>
+      <div class="card">
+        <div class="card__head">البطاقة الضريبية</div>
+        <div class="card__body">
+          <div class="form-grid">
+            <div class="form-group">
+              <label>رقم البطاقة الضريبية <span class="req">*</span></label>
+              <input class="form-input" id="tax-num" type="text" placeholder="الرقم الضريبي"/>
+            </div>
+            <div class="form-group">
+              <label>صورة البطاقة الضريبية <span class="req">*</span></label>
+              <div class="upload-zone" id="zone-tax">
+                <div class="upload-zone__icon">🧾</div>
+                <div class="upload-zone__text">صورة البطاقة الضريبية</div>
+                <input type="file" accept="image/*,application/pdf" onchange="handleUpload(this,'tax','zone-tax')"/>
+              </div>
+              <img id="prev-tax" class="upload-preview" alt=""/>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card__head">رخصة مزاولة النشاط</div>
+        <div class="card__body">
+          <div class="form-group">
+            <label>صورة رخصة مزاولة النشاط / رخصة العمل <span class="req">*</span></label>
+            <div class="upload-zone" id="zone-permit">
+              <div class="upload-zone__icon">📄</div>
+              <div class="upload-zone__text">رخصة مزاولة النشاط</div>
+              <input type="file" accept="image/*,application/pdf" onchange="handleUpload(this,'permit','zone-permit')"/>
+            </div>
+            <img id="prev-permit" class="upload-preview" alt=""/>
+          </div>
+        </div>
+      </div>
+      <div class="nav-buttons">
+        <button class="btn-back" onclick="goStep(2)">→ رجوع</button>
+        <button class="btn-next" onclick="goStep(4)">التالي ← مراجعة الطلب</button>
+      </div>
+    </div>
+
+    <!-- ── Step 4: Review & Submit ──────────────────────── -->
+    <div class="form-step hidden" id="step-4">
+      <div class="step-header">
+        <div class="step-header__icon">✅</div>
+        <div><div class="step-header__title">مراجعة وإرسال الطلب</div><div class="step-header__sub">تحقق من بياناتك قبل الإرسال</div></div>
+      </div>
+      <div class="card">
+        <div class="card__head">ملخص طلب الاعتماد</div>
+        <div class="card__body" id="review-summary"><p style="color:var(--color-text-muted)">جاري التحميل…</p></div>
+      </div>
+      <div class="warn-box">⚠️ بالضغط على "إرسال الطلب" أنت تؤكد أن جميع البيانات والوثائق المرفوعة صحيحة وأصلية.</div>
+      <div id="submit-err" class="warn-box" style="display:none"></div>
+      <div class="nav-buttons">
+        <button class="btn-back" onclick="goStep(3)">→ رجوع</button>
+        <button class="btn-next" id="submit-btn" onclick="submitApplication()">📤 إرسال الطلب</button>
+      </div>
+    </div>
+
+    <!-- Success -->
+    <div class="form-step hidden" id="step-success">
+      <div class="success-state">
+        <div class="success-state__icon">🎉</div>
+        <h2 class="success-state__title">تم إرسال طلبك بنجاح!</h2>
+        <p class="success-state__text">سيقوم فريق وصّلها بمراجعة وثائقك في غضون 2-3 أيام عمل. بعد الاعتماد يمكنك إنشاء متجرك والبدء في البيع فوراً.</p>
+        <a href="/" class="btn-next" style="text-decoration:none;display:inline-block">العودة للرئيسية</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script is:inline>
+const SB_URL = 'https://vtikgyiopkjnrwlqnmfx.supabase.co';
+const SB_KEY = 'sb_publishable_PLSnpvCT-sAyUMtymNgTwA_QmL2suw4';
+const SB_H   = { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}` };
+
+let USER;
+try { USER = JSON.parse(localStorage.getItem('wslha_user') || 'null'); } catch {}
+if (!USER?.phone) {
+  document.getElementById('auth-gate').hidden = false;
+} else {
+  document.getElementById('app-form-wrap').hidden = false;
+  document.getElementById('owner-phone').value = USER.phone;
+}
+
+let currentStep = 1;
+function goStep(n) {
+  document.getElementById(`step-${currentStep}`).classList.add('hidden');
+  document.querySelectorAll('.step-pill').forEach(p => {
+    const s = +p.dataset.step;
+    p.classList.remove('active','done');
+    if (s === n) p.classList.add('active');
+    if (s < n) p.classList.add('done');
+  });
+  if (n === 4) buildReview();
+  document.getElementById(`step-${n}`).classList.remove('hidden');
+  currentStep = n;
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+const uploads = {};
+async function handleUpload(input, key, zoneId) {
+  const file = input.files[0]; if (!file) return;
+  const prev = document.getElementById(`prev-${key}`);
+  const reader = new FileReader();
+  reader.onload = e => { if (prev) { prev.src = e.target.result; prev.style.display = 'block'; } };
+  reader.readAsDataURL(file);
+  document.getElementById(zoneId).style.borderColor = '#16A34A';
+  const ext  = file.name.split('.').pop() || 'jpg';
+  const path = `merchant-apps/${USER?.phone||'anon'}/${key}-${Date.now()}.${ext}`;
+  try {
+    const res = await fetch(`${SB_URL}/storage/v1/object/documents/${path}`, {
+      method: 'POST',
+      headers: { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}`, 'Content-Type': file.type },
+      body: file,
+    });
+    uploads[key] = res.ok
+      ? `${SB_URL}/storage/v1/object/public/documents/${path}`
+      : URL.createObjectURL(file);
+  } catch { uploads[key] = URL.createObjectURL(file); }
+}
+
+function buildReview() {
+  const fields = [
+    ['اسم النشاط', document.getElementById('biz-name')?.value],
+    ['نوع النشاط', document.getElementById('biz-type')?.options[document.getElementById('biz-type')?.selectedIndex]?.text],
+    ['عنوان النشاط', document.getElementById('biz-address')?.value],
+    ['جوال النشاط', document.getElementById('biz-phone')?.value],
+    ['رقم السجل التجاري', document.getElementById('creg-num')?.value],
+    ['تاريخ السجل', document.getElementById('creg-date')?.value],
+    ['رقم الهوية', document.getElementById('nat-id-num')?.value],
+    ['انتهاء الهوية', document.getElementById('nat-id-expiry')?.value],
+    ['رقم الضريبة', document.getElementById('tax-num')?.value],
+  ];
+  const html = `
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:.75rem">
+      ${fields.filter(([,v])=>v).map(([l,v])=>`<div style="background:#F8FAFC;border:1px solid var(--color-border);border-radius:8px;padding:.6rem .8rem"><div style="font-size:.68rem;font-weight:700;color:#64748B;margin-bottom:.15rem">${l}</div><div style="font-size:.875rem;font-weight:600">${v}</div></div>`).join('')}
+      <div style="background:#F8FAFC;border:1px solid var(--color-border);border-radius:8px;padding:.6rem .8rem"><div style="font-size:.68rem;font-weight:700;color:#64748B;margin-bottom:.15rem">المستندات المرفوعة</div><div style="font-size:.875rem;font-weight:600;color:${Object.keys(uploads).length>=3?'#16A34A':'#D97706'}">${Object.keys(uploads).length} مستند</div></div>
+    </div>`;
+  document.getElementById('review-summary').innerHTML = html;
+}
+
+async function submitApplication() {
+  const btn = document.getElementById('submit-btn');
+  const err = document.getElementById('submit-err');
+  err.style.display = 'none';
+  const required = {
+    'biz-name':'اسم النشاط','biz-type':'نوع النشاط','biz-address':'عنوان النشاط',
+    'creg-num':'رقم السجل التجاري','creg-date':'تاريخ السجل',
+    'nat-id-num':'رقم الهوية','tax-num':'رقم البطاقة الضريبية',
+  };
+  for (const [id, label] of Object.entries(required)) {
+    if (!document.getElementById(id)?.value?.trim()) {
+      err.textContent = `⚠️ الحقل "${label}" مطلوب`; err.style.display = 'block'; return;
+    }
+  }
+  btn.disabled = true; btn.textContent = '⏳ جاري الإرسال…';
+  const payload = {
+    id: `mrc-${Date.now()}`,
+    phone:                USER.phone,
+    status:               'pending',
+    business_name:        document.getElementById('biz-name').value.trim(),
+    business_type:        document.getElementById('biz-type').value,
+    business_address:     document.getElementById('biz-address').value.trim(),
+    commercial_reg_number:document.getElementById('creg-num').value.trim(),
+    commercial_reg_date:  document.getElementById('creg-date').value,
+    commercial_reg_url:   uploads['creg'] || null,
+    national_id_number:   document.getElementById('nat-id-num').value.trim(),
+    national_id_expiry:   document.getElementById('nat-id-expiry').value,
+    national_id_url:      uploads['natid'] || null,
+    tax_card_number:      document.getElementById('tax-num').value.trim(),
+    tax_card_url:         uploads['tax'] || null,
+    work_permit_url:      uploads['permit'] || null,
+    created_at:           new Date().toISOString(),
+  };
+  try {
+    await fetch(`${SB_URL}/rest/v1/merchant_applications`, {
+      method: 'POST',
+      headers: { ...SB_H, 'Content-Type': 'application/json', Prefer: 'return=minimal' },
+      body: JSON.stringify(payload),
+    });
+    await fetch(`${SB_URL}/rest/v1/accounts?phone=eq.${encodeURIComponent(USER.phone)}`, {
+      method: 'PATCH',
+      headers: { ...SB_H, 'Content-Type': 'application/json', Prefer: 'return=minimal' },
+      body: JSON.stringify({ status: 'pending' }),
+    });
+    document.getElementById(`step-${currentStep}`).classList.add('hidden');
+    document.getElementById('step-success').classList.remove('hidden');
+  } catch {
+    err.textContent = '❌ حدث خطأ أثناء الإرسال. تحقق من اتصالك وحاول مجدداً.';
+    err.style.display = 'block';
+    btn.disabled = false; btn.textContent = '📤 إرسال الطلب';
+  }
+}
+</script>
+</Layout>
