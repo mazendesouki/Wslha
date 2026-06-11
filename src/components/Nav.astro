@@ -83,25 +83,29 @@ const { currentPage } = Astro.props;
               <span class="nav__dropdown-phone" id="dropdown-phone">—</span>
             </div>
 
-            <a href="/profile" class="nav__dropdown-item" role="menuitem">
+            <!-- Logged-in menu items -->
+            <a href="/profile" class="nav__dropdown-item" id="dropdown-profile" role="menuitem" hidden>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 10-16 0"/></svg>
               حسابي
             </a>
-            <a href="/orders" class="nav__dropdown-item" role="menuitem">
+            <a href="/orders" class="nav__dropdown-item" id="dropdown-orders" role="menuitem" hidden>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/></svg>
               طلباتي
             </a>
-            <a href="/track" class="nav__dropdown-item" role="menuitem">
+            <a href="/track" class="nav__dropdown-item" id="dropdown-track" role="menuitem" hidden>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg>
               تتبع الطلب
             </a>
 
-            <div class="nav__dropdown-divider"></div>
-
+            <!-- Login (only when not logged in) -->
+            <div class="nav__dropdown-divider" id="dropdown-divider" hidden></div>
             <a href="/login" class="nav__dropdown-item" id="dropdown-login" role="menuitem">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
               تسجيل الدخول
             </a>
+
+            <!-- Logout (only when logged in) -->
+            <div class="nav__dropdown-divider" id="dropdown-logout-divider" hidden></div>
             <button class="nav__dropdown-item nav__dropdown-logout" id="dropdown-logout" role="menuitem" hidden type="button">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
               تسجيل الخروج
@@ -163,10 +167,20 @@ const { currentPage } = Astro.props;
       const raw  = localStorage.getItem('wslha_user');
       const user = raw ? JSON.parse(raw) : null;
       if (user && (user.name || user.phone)) {
+        // ── User is logged in ────────────────────────
         profileName.textContent        = user.name || user.phone;
         dropdownName.textContent       = user.name  || '—';
         dropdownPhone.textContent      = user.phone || '';
+
+        // Show logged-in sections
         dropdownUserInfo.removeAttribute('hidden');
+        (document.getElementById('dropdown-profile') as HTMLElement)?.removeAttribute('hidden');
+        (document.getElementById('dropdown-orders') as HTMLElement)?.removeAttribute('hidden');
+        (document.getElementById('dropdown-track') as HTMLElement)?.removeAttribute('hidden');
+        (document.getElementById('dropdown-divider') as HTMLElement)?.removeAttribute('hidden');
+        (document.getElementById('dropdown-logout-divider') as HTMLElement)?.removeAttribute('hidden');
+
+        // Hide login, show logout
         dropdownLogin.setAttribute('hidden', '');
         dropdownLogout.removeAttribute('hidden');
 
@@ -179,8 +193,18 @@ const { currentPage } = Astro.props;
           navMobileMerchant?.removeAttribute('hidden');
         }
       } else {
+        // ── User is NOT logged in ───────────────────
         profileName.textContent = 'دخول';
         dropdownUserInfo.setAttribute('hidden', '');
+
+        // Hide logged-in sections
+        (document.getElementById('dropdown-profile') as HTMLElement)?.setAttribute('hidden', '');
+        (document.getElementById('dropdown-orders') as HTMLElement)?.setAttribute('hidden', '');
+        (document.getElementById('dropdown-track') as HTMLElement)?.setAttribute('hidden', '');
+        (document.getElementById('dropdown-divider') as HTMLElement)?.setAttribute('hidden', '');
+        (document.getElementById('dropdown-logout-divider') as HTMLElement)?.setAttribute('hidden', '');
+
+        // Show login, hide logout
         dropdownLogin.removeAttribute('hidden');
         dropdownLogout.setAttribute('hidden', '');
 
