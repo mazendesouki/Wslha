@@ -1,3 +1,19 @@
+-- ── Contact Messages ─────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS messages (
+  id         TEXT PRIMARY KEY,
+  name       TEXT NOT NULL,
+  phone      TEXT NOT NULL,
+  email      TEXT,
+  subject    TEXT NOT NULL,
+  message    TEXT NOT NULL,
+  status     TEXT NOT NULL DEFAULT 'unread', -- unread, read, replied
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX idx_messages_status     ON messages(status);
+CREATE INDEX idx_messages_created_at ON messages(created_at DESC);
+
+
 -- ── Driver Applications ──────────────────────────────────────
 CREATE TABLE IF NOT EXISTS driver_applications (
   id TEXT PRIMARY KEY,

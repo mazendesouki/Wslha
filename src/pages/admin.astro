@@ -207,6 +207,10 @@
     <button class="nav-item" data-section="stores">
       <span class="nav-item__icon">🏬</span> المتاجر
     </button>
+    <button class="nav-item" data-section="messages">
+      <span class="nav-item__icon">✉️</span> الرسائل
+      <span class="nav-item__badge hidden" id="badge-messages">0</span>
+    </button>
     <div class="nav-divider"></div>
     <button class="nav-item" data-section="finance">
       <span class="nav-item__icon">💰</span> التقارير المالية
@@ -389,6 +393,54 @@
             <thead><tr><th>المتجر</th><th>الفئة</th><th>المنطقة</th><th>صاحب العمل</th><th>رسوم التوصيل</th><th>التقييم</th><th>نشط</th><th>مفتوح</th><th>إجراءات</th></tr></thead>
             <tbody id="stores-tbody"><tr><td colspan="9" style="text-align:center;color:#94A3B8;padding:2rem">جاري التحميل…</td></tr></tbody>
           </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════ MESSAGES ════════════════════════ -->
+    <div class="section" id="sec-messages">
+      <div class="card">
+        <div class="card__head" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.5rem">
+          <span class="card__title">✉️ رسائل التواصل</span>
+          <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+            <select id="msg-filter" style="padding:.4rem .75rem;border-radius:6px;border:1px solid #334155;background:#1E293B;color:#e2e8f0;font-size:.8rem">
+              <option value="">كل الرسائل</option>
+              <option value="unread">غير مقروء</option>
+              <option value="read">مقروء</option>
+              <option value="replied">تم الرد</option>
+            </select>
+          </div>
+        </div>
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr><th>الاسم</th><th>الجوال</th><th>البريد</th><th>الموضوع</th><th>الحالة</th><th>التاريخ</th><th>إجراء</th></tr></thead>
+            <tbody id="messages-tbody"><tr><td colspan="7" style="text-align:center;color:#94A3B8;padding:2rem">جاري التحميل…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Message detail modal -->
+      <div id="msg-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:1000;align-items:center;justify-content:center;padding:1rem">
+        <div style="background:#1E293B;border-radius:12px;padding:1.5rem;max-width:580px;width:100%;border:1px solid #334155;max-height:90vh;overflow-y:auto">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+            <h3 style="font-size:1rem;font-weight:800;color:#f1f5f9" id="msg-modal-subject">—</h3>
+            <button onclick="document.getElementById('msg-modal').style.display='none'" style="background:none;border:none;color:#94A3B8;font-size:1.2rem;cursor:pointer">✕</button>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-bottom:1rem">
+            <div><div style="font-size:.7rem;color:#64748B;margin-bottom:2px">الاسم</div><div style="font-size:.875rem;color:#f1f5f9;font-weight:700" id="msg-modal-name">—</div></div>
+            <div><div style="font-size:.7rem;color:#64748B;margin-bottom:2px">الجوال</div><div style="font-size:.875rem;color:#f1f5f9;font-weight:700" id="msg-modal-phone">—</div></div>
+            <div><div style="font-size:.7rem;color:#64748B;margin-bottom:2px">البريد</div><div style="font-size:.875rem;color:#3B82F6" id="msg-modal-email">—</div></div>
+            <div><div style="font-size:.7rem;color:#64748B;margin-bottom:2px">التاريخ</div><div style="font-size:.875rem;color:#f1f5f9" id="msg-modal-date">—</div></div>
+          </div>
+          <div style="background:#0F172A;border-radius:8px;padding:1rem;margin-bottom:1rem">
+            <div style="font-size:.7rem;color:#64748B;margin-bottom:.5rem">الرسالة</div>
+            <p style="font-size:.875rem;color:#e2e8f0;line-height:1.7;white-space:pre-wrap" id="msg-modal-body">—</p>
+          </div>
+          <div style="display:flex;gap:.75rem;flex-wrap:wrap">
+            <button id="msg-mark-read" style="padding:.5rem 1rem;background:#3B82F6;color:#fff;border:none;border-radius:6px;font-size:.8rem;font-weight:700;cursor:pointer">✓ تحديد كمقروء</button>
+            <button id="msg-mark-replied" style="padding:.5rem 1rem;background:#16A34A;color:#fff;border:none;border-radius:6px;font-size:.8rem;font-weight:700;cursor:pointer">↩ تم الرد</button>
+            <button id="msg-reply-email" style="padding:.5rem 1rem;background:#F59E0B;color:#fff;border:none;border-radius:6px;font-size:.8rem;font-weight:700;cursor:pointer">✉ رد بالبريد</button>
+          </div>
         </div>
       </div>
     </div>
@@ -631,7 +683,8 @@ const sectionTitles = {
 };
 let currentSection = 'dash';
 const loaders = { dash:loadDash, users:loadUsers, drivers:loadDriverApps,
-  merchants:loadMerchantApps, orders:loadOrders, rides:loadRides, stores:loadStores, finance:loadFinance };
+  merchants:loadMerchantApps, orders:loadOrders, rides:loadRides, stores:loadStores,
+  messages:loadMessages, finance:loadFinance };
 
 document.querySelectorAll('.nav-item').forEach(btn => {
   btn.addEventListener('click', () => {
@@ -1177,6 +1230,71 @@ async function deleteStore(id) {
   if (ok) { showToast('✅ تم الحذف', '#16A34A'); loadStores(); }
   else showToast('❌ حدث خطأ', '#DC2626');
 }
+
+/* ═══════════════════ MESSAGES ══════════════════════════════ */
+let currentMsg: any = null;
+
+async function loadMessages() {
+  const filter = (document.getElementById('msg-filter') as HTMLSelectElement).value;
+  const q = filter ? `messages?status=eq.${filter}&order=created_at.desc` : 'messages?order=created_at.desc';
+  const rows = await sbGet(q);
+  const tbody = document.getElementById('messages-tbody')!;
+  if (!rows?.length) { tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#94A3B8;padding:2rem">لا توجد رسائل</td></tr>'; return; }
+
+  const unread = rows.filter((r:any) => r.status === 'unread').length;
+  const badge = document.getElementById('badge-messages')!;
+  if (unread > 0) { badge.textContent = String(unread); badge.classList.remove('hidden'); }
+  else badge.classList.add('hidden');
+
+  const statusLabel: Record<string,string> = { unread:'غير مقروء', read:'مقروء', replied:'تم الرد' };
+  const statusColor: Record<string,string> = { unread:'#F59E0B', read:'#3B82F6', replied:'#16A34A' };
+
+  tbody.innerHTML = rows.map((m: any) => `
+    <tr style="${m.status === 'unread' ? 'background:rgba(245,158,11,.07)' : ''}">
+      <td style="font-weight:700">${m.name}</td>
+      <td>${m.phone}</td>
+      <td style="color:#3B82F6">${m.email || '—'}</td>
+      <td>${m.subject}</td>
+      <td><span style="padding:2px 8px;border-radius:99px;font-size:.75rem;font-weight:700;background:${statusColor[m.status]}22;color:${statusColor[m.status]}">${statusLabel[m.status] || m.status}</span></td>
+      <td style="font-size:.78rem;color:#64748B">${new Date(m.created_at).toLocaleDateString('ar-EG')}</td>
+      <td><button onclick="openMsg(${JSON.stringify(JSON.stringify(m))})" style="padding:.3rem .7rem;background:#3B6EF8;color:#fff;border:none;border-radius:5px;font-size:.78rem;cursor:pointer">عرض</button></td>
+    </tr>`).join('');
+}
+
+function openMsg(jsonStr: string) {
+  currentMsg = JSON.parse(jsonStr);
+  const m = currentMsg;
+  (document.getElementById('msg-modal-subject') as HTMLElement).textContent = m.subject;
+  (document.getElementById('msg-modal-name') as HTMLElement).textContent = m.name;
+  (document.getElementById('msg-modal-phone') as HTMLElement).textContent = m.phone;
+  (document.getElementById('msg-modal-email') as HTMLElement).textContent = m.email || '—';
+  (document.getElementById('msg-modal-date') as HTMLElement).textContent = new Date(m.created_at).toLocaleString('ar-EG');
+  (document.getElementById('msg-modal-body') as HTMLElement).textContent = m.message;
+  const modal = document.getElementById('msg-modal')!;
+  modal.style.display = 'flex';
+  if (m.status === 'unread') updateMsgStatus(m.id, 'read');
+}
+
+async function updateMsgStatus(id: string, status: string) {
+  await sbFetch(`${SB_URL}/rest/v1/messages?id=eq.${id}`, {
+    method: 'PATCH', headers: { ...SB_H, 'Content-Type':'application/json', Prefer:'return=minimal' },
+    body: JSON.stringify({ status }),
+  });
+  if (currentMsg?.id === id) currentMsg.status = status;
+  loadMessages();
+}
+
+document.getElementById('msg-mark-read')?.addEventListener('click', () => { if (currentMsg) updateMsgStatus(currentMsg.id, 'read'); });
+document.getElementById('msg-mark-replied')?.addEventListener('click', () => { if (currentMsg) updateMsgStatus(currentMsg.id, 'replied'); });
+document.getElementById('msg-reply-email')?.addEventListener('click', () => {
+  if (!currentMsg?.email) { showToast('لا يوجد بريد إلكتروني', '#F59E0B'); return; }
+  window.open(`mailto:${currentMsg.email}?subject=رد: ${currentMsg.subject}`);
+  updateMsgStatus(currentMsg.id, 'replied');
+});
+document.getElementById('msg-filter')?.addEventListener('change', loadMessages);
+document.getElementById('msg-modal')?.addEventListener('click', (e) => {
+  if (e.target === document.getElementById('msg-modal')) (document.getElementById('msg-modal') as HTMLElement).style.display = 'none';
+});
 
 /* ═══════════════════ FINANCE ═══════════════════════════════ */
 async function loadFinance() {

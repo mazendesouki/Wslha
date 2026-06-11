@@ -215,34 +215,103 @@ const SUBJECTS = [
 <script>
   import { isEgyptianMobile, EG_PHONE_ERROR } from '../utils/phone';
 
-  const form    = document.getElementById('contact-form')  as HTMLFormElement;
-  const submit  = form.querySelector('.form-submit')       as HTMLButtonElement;
-  const success = document.getElementById('form-success') as HTMLElement;
-  const errorBox = document.getElementById('cf-error')     as HTMLElement;
+  /* ── Config ─────────────────────────────────────────────── */
+  const SB_URL  = import.meta.env.PUBLIC_SB_URL  || (window as any).__SB_URL;
+  const SB_KEY  = import.meta.env.PUBLIC_SB_KEY  || (window as any).__SB_KEY;
+  const SB_H    = { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}` };
 
+  const EJS_SERVICE  = import.meta.env.PUBLIC_EMAILJS_SERVICE_ID   || '';
+  const EJS_TEMPLATE = import.meta.env.PUBLIC_EMAILJS_TEMPLATE_ID  || '';
+  const EJS_REPLY    = import.meta.env.PUBLIC_EMAILJS_REPLY_ID     || '';
+  const EJS_KEY      = import.meta.env.PUBLIC_EMAILJS_PUBLIC_KEY   || '';
+
+  const form     = document.getElementById('contact-form')  as HTMLFormElement;
+  const submit   = form.querySelector('.form-submit')        as HTMLButtonElement;
+  const success  = document.getElementById('form-success')   as HTMLElement;
+  const errorBox = document.getElementById('cf-error')       as HTMLElement;
+
+  /* ── Load EmailJS SDK lazily ────────────────────────────── */
+  function loadEmailJS(): Promise<void> {
+    return new Promise((resolve) => {
+      if ((window as any).emailjs) { resolve(); return; }
+      const s = document.createElement('script');
+      s.src = 'https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js';
+      s.onload = () => { (window as any).emailjs.init({ publicKey: EJS_KEY }); resolve(); };
+      document.head.appendChild(s);
+    });
+  }
+
+  /* ── Save to Supabase ───────────────────────────────────── */
+  async function saveToSupabase(data: Record<string, string>): Promise<void> {
+    if (!SB_URL || !SB_KEY) return;
+    try {
+      await fetch(`${SB_URL}/rest/v1/messages`, {
+        method: 'POST',
+        headers: { ...SB_H, 'Content-Type': 'application/json', Prefer: 'return=minimal' },
+        body: JSON.stringify({
+          id:         `msg-${Date.now()}`,
+          name:       data.name,
+          phone:      data.phone,
+          email:      data.email || null,
+          subject:    data.subject,
+          message:    data.message,
+          status:     'unread',
+          created_at: new Date().toISOString(),
+        }),
+      });
+    } catch { /* non-blocking */ }
+  }
+
+  /* ── Submit handler ─────────────────────────────────────── */
   form.addEventListener('submit', async (e: Event) => {
     e.preventDefault();
+    errorBox.classList.remove('is-visible');
 
-    const phone = (document.getElementById('cf-phone') as HTMLInputElement).value;
+    const name    = (document.getElementById('cf-name')    as HTMLInputElement).value.trim();
+    const phone   = (document.getElementById('cf-phone')   as HTMLInputElement).value.trim();
+    const email   = (document.getElementById('cf-email')   as HTMLInputElement).value.trim();
+    const subject = (document.getElementById('cf-subject') as HTMLSelectElement).value;
+    const message = (document.getElementById('cf-message') as HTMLTextAreaElement).value.trim();
+
     if (!isEgyptianMobile(phone)) {
       errorBox.textContent = EG_PHONE_ERROR;
       errorBox.classList.add('is-visible');
       (document.getElementById('cf-phone') as HTMLInputElement).focus();
       return;
     }
-    errorBox.classList.remove('is-visible');
 
     submit.disabled = true;
-    submit.textContent = 'جاري الإرسال...';
+    submit.textContent = '⏳ جاري الإرسال…';
 
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    const params = { name, phone, email, subject, message, to_email: 'info@wslha.co' };
 
-    form.reset();
-    submit.disabled = false;
-    submit.textContent = 'إرسال الرسالة ←';
-    success.classList.add('is-visible');
-    success.focus();
+    try {
+      /* 1. Save to Supabase (non-blocking) */
+      saveToSupabase({ name, phone, email, subject, message });
+
+      /* 2. Send notification email to admin */
+      if (EJS_SERVICE && EJS_TEMPLATE && EJS_KEY) {
+        await loadEmailJS();
+        await (window as any).emailjs.send(EJS_SERVICE, EJS_TEMPLATE, params);
+
+        /* 3. Send auto-reply to user (if they gave an email) */
+        if (email && EJS_REPLY) {
+          await (window as any).emailjs.send(EJS_SERVICE, EJS_REPLY, {
+            ...params, to_email: email,
+          });
+        }
+      }
+
+      form.reset();
+      success.classList.add('is-visible');
+      success.focus();
+    } catch {
+      errorBox.textContent = '❌ تعذّر الإرسال. تحقق من اتصالك وحاول مجدداً.';
+      errorBox.classList.add('is-visible');
+    } finally {
+      submit.disabled = false;
+      submit.textContent = 'إرسال الرسالة ←';
+    }
   });
 </script>
 
