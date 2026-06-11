@@ -38,6 +38,18 @@ const { currentPage } = Astro.props;
       <!-- Actions -->
       <div class="nav__actions">
 
+        <!-- Driver CTA -->
+        <a href="/driver" class="nav__driver" id="nav-driver-btn">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <circle cx="12" cy="12" r="10"/>
+            <path d="M14.5 4.5 C14.5 4.5 16 8 14.5 12 C13 16 12 19.5 12 19.5"/>
+            <path d="M9.5 4.5 C9.5 4.5 8 8 9.5 12 C11 16 12 19.5 12 19.5"/>
+            <path d="M4.5 9.5 h15"/>
+            <path d="M4.5 14.5 h15"/>
+          </svg>
+          انضم كسائق
+        </a>
+
         <!-- Merchant CTA -->
         <a href="/merchant-apply" class="nav__merchant" id="nav-merchant-btn">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
@@ -328,6 +340,24 @@ const { currentPage } = Astro.props;
     flex-shrink: 0;
   }
 
+  /* Driver button */
+  .nav__driver {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-1);
+    padding: var(--sp-2) var(--sp-3);
+    background: #16A34A;
+    color: #fff;
+    border-radius: var(--radius);
+    font-size: var(--text-sm);
+    font-weight: var(--weight-bold);
+    text-decoration: none;
+    transition: background var(--ease), transform var(--ease);
+    white-space: nowrap;
+  }
+  .nav__driver:hover { background: #15803D; transform: translateY(-1px); }
+  .nav__driver[hidden] { display: none; }
+
   /* Merchant button */
   .nav__merchant {
     display: flex;
@@ -522,9 +552,10 @@ const { currentPage } = Astro.props;
 
   /* ── Responsive ─────────────────────────────────────── */
   @media (max-width: 900px) {
-    .nav__links  { display: none; }
+    .nav__links   { display: none; }
+    .nav__driver  { display: none; }
     .nav__merchant { display: none; }
-    .nav__burger { display: flex; }
+    .nav__burger  { display: flex; }
   }
 
   @media (max-width: 600px) {

@@ -14,7 +14,6 @@ export const NAV_LINKS: NavLink[] = [
   { label: 'تتبع الطلب',     href: '/track',                page: 'track'    },
   { label: 'من نحن',         href: '/about',                page: 'about'    },
   { label: 'تواصل معنا',     href: '/contact',              page: 'contact'  },
-  { label: 'انضم كسائق',    href: '/driver',               page: 'driver'   },
 ];
 
 export const FOOTER_LINKS = {
