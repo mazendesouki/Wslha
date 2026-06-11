@@ -979,38 +979,30 @@ import Layout from '../components/layout.astro';
   let allRides  = [];
   let currentOrderFilter = 'all';
 
-  /* ── Supabase fetchers ─────────────────────────────────────── */
+  /* ── Supabase fetchers (4 s timeout each) ─────────────────── */
+  function sbFetch(url) {
+    const ctrl = new AbortController();
+    const tid  = setTimeout(() => ctrl.abort(), 4000);
+    return fetch(url, { headers: SB_H, signal: ctrl.signal })
+      .then(r => { clearTimeout(tid); return r.ok ? r.json() : null; })
+      .catch(() => null);
+  }
   async function fetchOrders(phone) {
-    try {
-      const res = await fetch(
-        SB_URL + '/rest/v1/orders?customer_phone=eq.' + encodeURIComponent(phone) +
-        '&order=created_at.desc&limit=100',
-        { headers: SB_H }
-      );
-      if (res.ok) return await res.json();
-    } catch {}
-    return [];
+    const data = await sbFetch(
+      SB_URL + '/rest/v1/orders?customer_phone=eq.' + encodeURIComponent(phone) +
+      '&order=created_at.desc&limit=100');
+    return Array.isArray(data) ? data : [];
   }
   async function fetchRides(phone) {
-    try {
-      const res = await fetch(
-        SB_URL + '/rest/v1/rides?customer_phone=eq.' + encodeURIComponent(phone) +
-        '&order=created_at.desc&limit=100',
-        { headers: SB_H }
-      );
-      if (res.ok) return await res.json();
-    } catch {}
-    return [];
+    const data = await sbFetch(
+      SB_URL + '/rest/v1/rides?customer_phone=eq.' + encodeURIComponent(phone) +
+      '&order=created_at.desc&limit=100');
+    return Array.isArray(data) ? data : [];
   }
   async function fetchAccount(phone) {
-    try {
-      const res = await fetch(
-        SB_URL + '/rest/v1/accounts?phone=eq.' + encodeURIComponent(phone) + '&select=*&limit=1',
-        { headers: SB_H }
-      );
-      if (res.ok) { const rows = await res.json(); return rows[0] || null; }
-    } catch {}
-    return null;
+    const data = await sbFetch(
+      SB_URL + '/rest/v1/accounts?phone=eq.' + encodeURIComponent(phone) + '&select=*&limit=1');
+    return Array.isArray(data) ? (data[0] || null) : null;
   }
 
   /* ── Render helpers ────────────────────────────────────────── */
@@ -1390,54 +1382,55 @@ import Layout from '../components/layout.astro';
   });
 
   /* ── Init ──────────────────────────────────────────────────── */
-  async function init() {
-    const phone = user.phone;
-
-    // Fetch everything in parallel
-    const [sbAccount, sbOrders, sbRides] = await Promise.all([
-      fetchAccount(phone),
-      fetchOrders(phone),
-      fetchRides(phone),
-    ]);
-
-    // Merge localStorage orders
-    let lsOrders = [];
-    try { lsOrders = JSON.parse(localStorage.getItem('wslha_orders') || '[]'); } catch {}
-    // Deduplicate by id
-    const sbIds = new Set(sbOrders.map(o => o.id));
-    const extra = lsOrders.filter(o => !sbIds.has(o.id));
-    allOrders = [...sbOrders, ...extra].sort((a, b) =>
-      new Date(b.created_at || b.date || 0) - new Date(a.created_at || a.date || 0));
-    allRides = sbRides;
-
-    // Build account object for display
-    let acc = sbAccount;
-    if (!acc) {
-      // Fall back to localStorage account
-      try {
-        const accounts = JSON.parse(localStorage.getItem('wslha_accounts') || '[]');
-        acc = accounts.find(a => a.phone === phone);
-      } catch {}
-    }
-    if (!acc) acc = { phone, name: user.name || '', role: user.role || 'customer', city: user.city || '', createdAt: user.loginAt || '' };
-    cachedAccount = acc;
-
-    // Render everything
-    renderHeader(acc);
-    renderStats(allOrders, allRides);
-    renderOrders(allOrders);
-    renderRides(allRides);
-    renderStatisticsTab(allOrders, allRides);
-
-    // Show content
-    $('profile-loading').hidden = true;
-    $('profile-content').hidden = false;
+  function buildAccFromLocal(phone) {
+    try {
+      const accounts = JSON.parse(localStorage.getItem('wslha_accounts') || '[]');
+      const found = accounts.find(a => a.phone === phone);
+      if (found) return found;
+    } catch {}
+    return { phone, name: user.name || '', role: user.role || 'customer', city: user.city || '', createdAt: user.loginAt || '' };
   }
 
-  init().catch(err => {
-    console.error('[profile] init error', err);
-    $('profile-loading').innerHTML = '<p style="color:#DC2626">حدث خطأ أثناء تحميل البيانات. حاول مجدداً.</p>';
-  });
+  function mergeOrders(sbOrders, lsOrders) {
+    const ids = new Set(sbOrders.map(o => o.id));
+    const extra = lsOrders.filter(o => !ids.has(o.id));
+    return [...sbOrders, ...extra].sort((a, b) =>
+      new Date(b.created_at || b.date || 0) - new Date(a.created_at || a.date || 0));
+  }
+
+  function showContent(acc, orders, rides) {
+    cachedAccount = acc;
+    allOrders = orders;
+    allRides  = rides;
+    renderHeader(acc);
+    renderStats(orders, rides);
+    renderOrders(orders);
+    renderRides(rides);
+    renderStatisticsTab(orders, rides);
+    $('profile-loading').hidden  = true;
+    $('profile-content').hidden  = false;
+  }
+
+  function init() {
+    const phone = user.phone;
+
+    // ── Step 1: render immediately from localStorage (instant) ──
+    let lsOrders = [];
+    try { lsOrders = JSON.parse(localStorage.getItem('wslha_orders') || '[]'); } catch {}
+    const lsAcc = buildAccFromLocal(phone);
+    showContent(lsAcc, mergeOrders([], lsOrders), []);
+
+    // ── Step 2: fetch from Supabase in background and refresh ──
+    Promise.all([fetchAccount(phone), fetchOrders(phone), fetchRides(phone)])
+      .then(([sbAcc, sbOrders, sbRides]) => {
+        const acc    = sbAcc || lsAcc;
+        const orders = mergeOrders(sbOrders, lsOrders);
+        showContent(acc, orders, sbRides);
+      })
+      .catch(err => console.warn('[profile] Supabase refresh failed', err));
+  }
+
+  init();
 })();
 </script>
 
