@@ -1,20 +1,7 @@
 ---
 import Layout from '../components/layout.astro';
 import PageHero from '../components/PageHero.astro';
-
-interface TimelineEvent {
-  state: 'done' | 'active' | 'wait';
-  title: string;
-  time: string;
-  desc?: string;
-}
-
-const TIMELINE: TimelineEvent[] = [
-  { state: 'done',   title: 'تم استلام الطلب',            time: 'اليوم — 10:00 ص', desc: 'تم تأكيد طلبك بنجاح'                       },
-  { state: 'done',   title: 'المندوب في الطريق للاستلام', time: 'اليوم — 10:20 ص', desc: 'المندوب توجه للمتجر لاستلام طلبك'            },
-  { state: 'active', title: 'في الطريق إليك',             time: 'اليوم — 10:45 ص', desc: 'المندوب في طريقه لتوصيل طلبك'               },
-  { state: 'wait',   title: 'تم التسليم',                 time: 'متوقع — خلال 15 دقيقة'                                             },
-];
+const GMAPS_KEY = import.meta.env.PUBLIC_GMAPS_KEY || 'AIzaSyAKvFfBYNDcTZgvZZH5s_lQbOc24LNjLsY';
 ---
 
 <style>
@@ -328,11 +315,10 @@ const TIMELINE: TimelineEvent[] = [
   .rate-thanks.visible { display: block; }
 </style>
 
-<script>
+<script define:vars={{ GMAPS_KEY }}>
   const SB_URL = 'https://vtikgyiopkjnrwlqnmfx.supabase.co';
   const SB_KEY = 'sb_publishable_PLSnpvCT-sAyUMtymNgTwA_QmL2suw4';
   const SB_H   = { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}` };
-  const GMAPS_KEY = 'AIzaSyAKvFfBYNDcTZgvZZH5s_lQbOc24LNjLsY';
 
   const form  = document.getElementById('track-form')   as HTMLFormElement;
   const input = document.getElementById('track-input')  as HTMLInputElement;

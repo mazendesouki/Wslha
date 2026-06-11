@@ -2,6 +2,7 @@
 import Layout from '../components/layout.astro';
 import PageHero from '../components/PageHero.astro';
 import { AREAS } from '../data/rides';
+const GMAPS_KEY = import.meta.env.PUBLIC_GMAPS_KEY || 'AIzaSyAKvFfBYNDcTZgvZZH5s_lQbOc24LNjLsY';
 ---
 
 <style>
@@ -553,14 +554,11 @@ import { AREAS } from '../data/rides';
   </div><!-- /rides-page -->
 </Layout>
 
-<script define:vars={{ AREAS }}>
+<script define:vars={{ AREAS, GMAPS_KEY }}>
   // ── Supabase ──
   const SB_URL = 'https://vtikgyiopkjnrwlqnmfx.supabase.co';
   const SB_KEY = 'sb_publishable_PLSnpvCT-sAyUMtymNgTwA_QmL2suw4';
   const SB_H = { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}`, 'Content-Type': 'application/json' };
-
-  // ── Google Maps API key ──
-  const GMAPS_KEY = 'AIzaSyAKvFfBYNDcTZgvZZH5s_lQbOc24LNjLsY';
 
   // ── distance & pricing helpers (أسعار 2026) ──
   const BASE_FARE   = 20;   // ج.م — عداد الانطلاق
