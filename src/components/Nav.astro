@@ -50,6 +50,19 @@ const { currentPage } = Astro.props;
           انضم كسائق
         </a>
 
+        <!-- Merchant CTA -->
+        <a href="/merchant-apply" class="nav__merchant">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path d="M5 9l4 4-2 8H3V9z"/>
+            <path d="M11 9l-4 4 2 8h4V9z"/>
+            <path d="M3 9h18l-2 8H5l2-8z"/>
+            <path d="M21 9v12H3V9"/>
+            <circle cx="9" cy="15" r="1"/>
+            <circle cx="15" cy="15" r="1"/>
+          </svg>
+          انضم كتاجر
+        </a>
+
         <!-- Profile dropdown -->
         <div class="nav__profile" id="nav-profile">
           <button class="nav__user" id="profile-btn" aria-expanded="false" aria-haspopup="menu" type="button">
@@ -93,15 +106,6 @@ const { currentPage } = Astro.props;
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
               تسجيل الخروج
             </button>
-            <a href="/driver-apply" class="nav__dropdown-item" role="menuitem" id="driver-apply-link" hidden>
-              🚗 تقديم طلب سائق
-            </a>
-            <a href="/merchant-apply" class="nav__dropdown-item" role="menuitem" id="merchant-apply-link" hidden>
-              🏪 تقديم طلب تاجر
-            </a>
-            <a href="/driver" class="nav__dropdown-item nav__dropdown-driver" role="menuitem">
-              🚗 انضم كسائق جديد
-            </a>
           </div>
         </div>
 
@@ -135,6 +139,7 @@ const { currentPage } = Astro.props;
       <div class="nav__mobile-actions">
         <a href="/login" class="btn btn--outline" style="width:100%;justify-content:center;">تسجيل الدخول</a>
         <a href="/driver" class="btn btn--accent" style="width:100%;justify-content:center;">🚗 انضم كسائق</a>
+        <a href="/merchant-apply" class="btn btn--accent" style="width:100%;justify-content:center;background:#f59e0b;">🏪 انضم كتاجر</a>
       </div>
     </div>
   </div>
@@ -338,6 +343,23 @@ const { currentPage } = Astro.props;
   }
   .nav__driver:hover { background: #15803D; transform: translateY(-1px); }
 
+  /* Merchant button */
+  .nav__merchant {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-1);
+    padding: var(--sp-2) var(--sp-3);
+    background: #f59e0b;
+    color: #fff;
+    border-radius: var(--radius);
+    font-size: var(--text-sm);
+    font-weight: var(--weight-bold);
+    text-decoration: none;
+    transition: background var(--ease), transform var(--ease);
+    white-space: nowrap;
+  }
+  .nav__merchant:hover { background: #d97706; transform: translateY(-1px); }
+
   /* ── Profile dropdown ───────────────────────────────── */
   .nav__profile { position: relative; }
 
@@ -514,6 +536,7 @@ const { currentPage } = Astro.props;
   @media (max-width: 900px) {
     .nav__links  { display: none; }
     .nav__driver { display: none; }
+    .nav__merchant { display: none; }
     .nav__burger { display: flex; }
   }
 
