@@ -19,6 +19,32 @@ import { FOOTER_LINKS } from '../data/nav';
           <li><a href="https://wa.me/218910000000" aria-label="واتساب">💬</a></li>
         </ul>
       </nav>
+
+      <!-- App Store Buttons -->
+      <div class="footer__apps">
+        <button class="app-btn" id="btn-google-play" aria-label="تحميل من Google Play" type="button">
+          <svg class="app-btn__icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M3.18 23.76c.37.2.8.2 1.18.01l11.45-6.53-2.56-2.56-10.07 9.08z" fill="#EA4335"/>
+            <path d="M21.37 10.34L18.8 8.87l-2.88 2.88 2.88 2.87 2.6-1.49a1.5 1.5 0 000-2.79z" fill="#FBBC04"/>
+            <path d="M2.01 1.04A1.5 1.5 0 000 2.4v19.2a1.5 1.5 0 002.01 1.36l12.63-11.4L2.01 1.04z" fill="#4285F4"/>
+            <path d="M4.36.23L15.81 6.76l-2.56 2.56L3.18.24A1.5 1.5 0 014.36.23z" fill="#34A853"/>
+          </svg>
+          <span class="app-btn__text">
+            <span class="app-btn__sub">GET IT ON</span>
+            <span class="app-btn__name">Google Play</span>
+          </span>
+        </button>
+
+        <button class="app-btn" id="btn-app-store" aria-label="تحميل من App Store" type="button">
+          <svg class="app-btn__icon" viewBox="0 0 24 24" fill="white" aria-hidden="true">
+            <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
+          </svg>
+          <span class="app-btn__text">
+            <span class="app-btn__sub">Download on the</span>
+            <span class="app-btn__name">App Store</span>
+          </span>
+        </button>
+      </div>
     </div>
 
     <!-- Quick links -->
@@ -58,6 +84,16 @@ import { FOOTER_LINKS } from '../data/nav';
     <span>Wslha.co</span>
   </div>
 </footer>
+
+<!-- App coming-soon toast -->
+<div class="app-toast" id="app-toast" role="alert" aria-live="polite" hidden>
+  <span class="app-toast__icon">🚀</span>
+  <div class="app-toast__body">
+    <strong>قريباً على المتاجر!</strong>
+    <span>التطبيق قيد التطوير وسيُتاح للتحميل قريباً.</span>
+  </div>
+  <button class="app-toast__close" id="app-toast-close" type="button" aria-label="إغلاق">✕</button>
+</div>
 
 <style>
   .footer {
@@ -142,11 +178,153 @@ import { FOOTER_LINKS } from '../data/nav';
     gap: var(--sp-2);
   }
 
+  /* ── App Store Buttons ──────────────────────────────────── */
+  .footer__apps {
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-2);
+    margin-top: var(--sp-5);
+  }
+
+  .app-btn {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-3);
+    background: #000;
+    border: 1.5px solid #444;
+    border-radius: 10px;
+    padding: 10px 16px;
+    cursor: pointer;
+    transition: border-color 0.2s, transform 0.15s;
+    font-family: var(--font-body);
+    text-align: right;
+    width: 100%;
+    max-width: 200px;
+  }
+  .app-btn:hover { border-color: #fff; transform: translateY(-2px); }
+
+  .app-btn__icon {
+    width: 28px;
+    height: 28px;
+    flex-shrink: 0;
+  }
+
+  .app-btn__text {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+  }
+
+  .app-btn__sub {
+    font-size: 10px;
+    color: #aaa;
+    font-weight: 400;
+    letter-spacing: 0.3px;
+  }
+
+  .app-btn__name {
+    font-size: 15px;
+    font-weight: 700;
+    color: #fff;
+    white-space: nowrap;
+  }
+
+  /* ── Toast ──────────────────────────────────────────────── */
+  .app-toast {
+    position: fixed;
+    bottom: var(--sp-6);
+    left: 50%;
+    transform: translateX(-50%) translateY(120%);
+    background: #1E293B;
+    color: #fff;
+    border: 1px solid #334155;
+    border-radius: var(--radius-lg);
+    padding: var(--sp-4) var(--sp-5);
+    display: flex;
+    align-items: center;
+    gap: var(--sp-3);
+    z-index: 9999;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+    max-width: 360px;
+    width: calc(100vw - var(--sp-8));
+    transition: transform 0.35s cubic-bezier(.34,1.56,.64,1), opacity 0.3s;
+    opacity: 0;
+  }
+
+  .app-toast.is-visible {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+  }
+
+  .app-toast__icon { font-size: 1.6rem; flex-shrink: 0; }
+
+  .app-toast__body {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    flex: 1;
+  }
+
+  .app-toast__body strong {
+    font-size: var(--text-sm);
+    font-weight: var(--weight-black);
+    color: #fff;
+  }
+
+  .app-toast__body span {
+    font-size: var(--text-xs);
+    color: #94A3B8;
+    line-height: 1.5;
+  }
+
+  .app-toast__close {
+    background: none;
+    border: none;
+    color: #64748B;
+    font-size: var(--text-sm);
+    cursor: pointer;
+    padding: var(--sp-1);
+    flex-shrink: 0;
+    transition: color 0.2s;
+    font-family: var(--font-body);
+  }
+  .app-toast__close:hover { color: #fff; }
+
   @media (max-width: 900px) {
     .footer__grid { grid-template-columns: 1fr 1fr; gap: var(--sp-8); }
   }
 
   @media (max-width: 500px) {
     .footer__grid { grid-template-columns: 1fr; }
+    .app-btn { max-width: 100%; }
   }
 </style>
+
+<script>
+  const toast      = document.getElementById('app-toast')      as HTMLElement;
+  const toastClose = document.getElementById('app-toast-close') as HTMLButtonElement;
+  const btnPlay    = document.getElementById('btn-google-play') as HTMLButtonElement;
+  const btnStore   = document.getElementById('btn-app-store')   as HTMLButtonElement;
+
+  let toastTimer: ReturnType<typeof setTimeout>;
+
+  function showToast(): void {
+    if (!toast) return;
+    toast.removeAttribute('hidden');
+    clearTimeout(toastTimer);
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => toast.classList.add('is-visible'));
+    });
+    toastTimer = setTimeout(hideToast, 5000);
+  }
+
+  function hideToast(): void {
+    if (!toast) return;
+    toast.classList.remove('is-visible');
+    setTimeout(() => toast.setAttribute('hidden', ''), 350);
+  }
+
+  btnPlay?.addEventListener('click', showToast);
+  btnStore?.addEventListener('click', showToast);
+  toastClose?.addEventListener('click', hideToast);
+</script>
