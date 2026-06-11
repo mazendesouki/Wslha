@@ -231,10 +231,58 @@ const TIMELINE: TimelineEvent[] = [
     font-weight: var(--weight-black); font-size: var(--text-sm);
     display: flex; align-items: center; gap: var(--sp-2);
     background: var(--color-bg-soft);
+    flex-wrap: wrap;
   }
-  .live-dot { width: 8px; height: 8px; border-radius: 50%; background: #16a34a; animation: live-blink 1.2s infinite; }
+  .live-dot { width: 8px; height: 8px; border-radius: 50%; background: #16a34a; animation: live-blink 1.2s infinite; flex-shrink:0; }
   @keyframes live-blink { 0%,100%{opacity:1} 50%{opacity:.3} }
-  #track-map { width: 100%; height: 280px; }
+  #track-map { width: 100%; height: 340px; }
+
+  /* Distance + ETA strip under map */
+  .map-stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    border-top: 1px solid var(--color-border);
+  }
+  .map-stat {
+    padding: var(--sp-3) var(--sp-2);
+    text-align: center;
+    border-left: 1px solid var(--color-border);
+  }
+  .map-stat:last-child { border-left: none; }
+  .map-stat__val { font-size: var(--text-base); font-weight: var(--weight-black); color: var(--color-primary); }
+  .map-stat__lbl { font-size: 10px; color: var(--color-text-faint); margin-top: 2px; }
+
+  /* Map legend */
+  .map-legend {
+    display: flex;
+    gap: var(--sp-4);
+    padding: var(--sp-2) var(--sp-4);
+    border-top: 1px solid var(--color-border);
+    background: var(--color-bg-soft);
+    font-size: 11px;
+    flex-wrap: wrap;
+  }
+  .map-legend__item { display: flex; align-items: center; gap: 5px; color: var(--color-text-muted); }
+  .map-legend__dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+
+  /* Geolocation button */
+  .btn-myloc {
+    margin-right: auto;
+    background: var(--color-primary-light);
+    border: 1px solid var(--color-primary);
+    color: var(--color-primary);
+    border-radius: var(--radius);
+    padding: 3px 10px;
+    font-size: 11px;
+    font-weight: var(--weight-bold);
+    cursor: pointer;
+    font-family: var(--font-body);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    transition: background 0.2s;
+  }
+  .btn-myloc:hover { background: var(--color-primary); color: #fff; }
 
   /* Status-change banner */
   .status-banner {
@@ -293,7 +341,13 @@ const TIMELINE: TimelineEvent[] = [
 
   let lastStatus: string | null = null;
   let driverPollTimer: any = null;
-  let map: any = null, driverMarker: any = null, storeMarker: any = null, gmapsReady = false;
+  let map: any = null;
+  let driverMarker: any = null;
+  let storeMarker: any = null;
+  let customerMarker: any = null;
+  let routeRenderer: any = null;
+  let gmapsReady = false;
+  let customerLatLng: {lat: number; lng: number} | null = null;
 
   // ── Status-change banner + optional browser notification ──
   function notifyStatusChange(status: string, order: any) {
@@ -322,13 +376,13 @@ const TIMELINE: TimelineEvent[] = [
     if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
   }
 
-  // ── Google Maps for live driver tracking ──
+  // ── Google Maps ──────────────────────────────────────────────
   function loadGMaps(): Promise<void> {
     return new Promise((resolve, reject) => {
-      if ((window as any).google?.maps) { gmapsReady = true; resolve(); return; }
+      if ((window as any).google?.maps?.places) { gmapsReady = true; resolve(); return; }
       (window as any)._trackGmCb = () => { gmapsReady = true; resolve(); };
       const s = document.createElement('script');
-      s.src = `https://maps.googleapis.com/maps/api/js?key=${GMAPS_KEY}&callback=_trackGmCb&language=ar&region=EG`;
+      s.src = `https://maps.googleapis.com/maps/api/js?key=${GMAPS_KEY}&libraries=places,geometry&callback=_trackGmCb&language=ar&region=EG`;
       s.async = true; s.defer = true;
       s.onerror = () => reject(new Error('gmaps'));
       document.head.appendChild(s);
@@ -340,16 +394,68 @@ const TIMELINE: TimelineEvent[] = [
     try { await loadGMaps(); } catch { return; }
     if (map) return;
     const g = (window as any).google.maps;
+
     map = new g.Map(document.getElementById('track-map')!, {
       center: { lat: storeLat, lng: storeLng }, zoom: 14,
-      mapTypeControl: false, streetViewControl: false, fullscreenControl: false,
+      mapTypeControl: false, streetViewControl: false,
+      fullscreenControl: true, zoomControl: true,
+      styles: [
+        { featureType: 'poi', elementType: 'labels', stylers: [{ visibility: 'off' }] },
+      ],
     });
+
+    // Store marker (blue pin)
     storeMarker = new g.Marker({
       position: { lat: storeLat, lng: storeLng }, map,
-      icon: { path: 'M12 0C7 0 3 4 3 9c0 6.5 9 15 9 15s9-8.5 9-15c0-5-4-9-9-9z',
-        fillColor: '#3b82f6', fillOpacity: 1, strokeColor: '#fff', strokeWeight: 3, scale: 1.3,
-        anchor: new g.Point(12, 24) },
+      icon: {
+        url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(`
+          <svg xmlns="http://www.w3.org/2000/svg" width="36" height="42" viewBox="0 0 36 42">
+            <path d="M18 0C8 0 0 8 0 18c0 12 18 24 18 24s18-12 18-24C36 8 28 0 18 0z" fill="#3b82f6"/>
+            <text x="18" y="22" text-anchor="middle" font-size="16" fill="white">🏪</text>
+          </svg>`)}`,
+        scaledSize: new g.Size(36, 42),
+        anchor: new g.Point(18, 42),
+      },
       title: 'المتجر',
+    });
+    new g.InfoWindow({ content: '<div style="font-family:Cairo,sans-serif;font-size:13px;font-weight:700">🏪 المتجر</div>' })
+      .open(map, storeMarker);
+
+    // Route renderer
+    routeRenderer = new g.DirectionsRenderer({
+      map,
+      suppressMarkers: true,
+      polylineOptions: { strokeColor: '#3b82f6', strokeWeight: 4, strokeOpacity: 0.7 },
+    });
+
+    // My-location button
+    document.getElementById('btn-my-location')!.addEventListener('click', getCustomerLocation);
+  }
+
+  // Draw route: driver → customer (or store if no customer)
+  function drawRoute(driverLat: number, driverLng: number) {
+    if (!map || !gmapsReady || !routeRenderer) return;
+    const g = (window as any).google.maps;
+    const dest = customerLatLng || storeMarker?.getPosition();
+    if (!dest) return;
+
+    const service = new g.DirectionsService();
+    service.route({
+      origin: { lat: driverLat, lng: driverLng },
+      destination: dest,
+      travelMode: g.TravelMode.DRIVING,
+    }, (result: any, status: any) => {
+      if (status !== 'OK') return;
+      routeRenderer.setDirections(result);
+
+      const leg = result.routes?.[0]?.legs?.[0];
+      if (leg) {
+        document.getElementById('stat-distance')!.textContent = leg.distance?.text || '—';
+        document.getElementById('stat-duration')!.textContent = leg.duration?.text || '—';
+        const arr = new Date(Date.now() + (leg.duration?.value || 0) * 1000);
+        document.getElementById('stat-eta')!.textContent = arr.toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
+        (document.getElementById('map-stats') as HTMLElement).style.display = 'grid';
+      }
     });
   }
 
@@ -357,28 +463,83 @@ const TIMELINE: TimelineEvent[] = [
     if (!map || !gmapsReady) return;
     const g = (window as any).google.maps;
     const pos = { lat, lng };
-    if (driverMarker) { driverMarker.setPosition(pos); }
-    else {
+
+    if (driverMarker) {
+      driverMarker.setPosition(pos);
+    } else {
       driverMarker = new g.Marker({
-        position: pos, map,
-        icon: { path: g.SymbolPath.FORWARD_CLOSED_ARROW, fillColor: '#16a34a', fillOpacity: 1,
-          strokeColor: '#fff', strokeWeight: 2, scale: 6, anchor: new g.Point(0, 2.5) },
-        title: 'المندوب', zIndex: 999,
+        position: pos, map, zIndex: 999,
+        icon: {
+          url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(`
+            <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 40 40">
+              <circle cx="20" cy="20" r="18" fill="#16a34a" stroke="white" stroke-width="3"/>
+              <text x="20" y="26" text-anchor="middle" font-size="18" fill="white">🛵</text>
+            </svg>`)}`,
+          scaledSize: new g.Size(40, 40),
+          anchor: new g.Point(20, 20),
+        },
+        title: 'المندوب',
       });
     }
+
+    // Fit bounds to show all markers
     const bounds = new g.LatLngBounds();
-    if (storeMarker) bounds.extend(storeMarker.getPosition());
     bounds.extend(pos);
-    map.fitBounds(bounds, 70);
+    if (storeMarker) bounds.extend(storeMarker.getPosition());
+    if (customerMarker) bounds.extend(customerMarker.getPosition());
+    map.fitBounds(bounds, { top: 60, right: 40, bottom: 60, left: 40 });
+
+    // Draw route
+    drawRoute(lat, lng);
+  }
+
+  // Get customer's real location
+  function getCustomerLocation() {
+    if (!navigator.geolocation) return;
+    const btn = document.getElementById('btn-my-location')!;
+    btn.textContent = '⏳ جارٍ التحديد...';
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        btn.textContent = '📍 تم تحديد موقعي';
+        btn.style.cssText = 'background:#d1fae5;border-color:#16a34a;color:#16a34a';
+        customerLatLng = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+
+        if (map && gmapsReady) {
+          const g = (window as any).google.maps;
+          if (customerMarker) customerMarker.setPosition(customerLatLng);
+          else {
+            customerMarker = new g.Marker({
+              position: customerLatLng, map,
+              icon: {
+                url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(`
+                  <svg xmlns="http://www.w3.org/2000/svg" width="36" height="42" viewBox="0 0 36 42">
+                    <path d="M18 0C8 0 0 8 0 18c0 12 18 24 18 24s18-12 18-24C36 8 28 0 18 0z" fill="#ef4444"/>
+                    <text x="18" y="22" text-anchor="middle" font-size="16" fill="white">🏠</text>
+                  </svg>`)}`,
+                scaledSize: new g.Size(36, 42),
+                anchor: new g.Point(18, 42),
+              },
+              title: 'موقع التوصيل',
+            });
+          }
+          // Redraw route with real destination
+          if (driverMarker) drawRoute(driverMarker.getPosition().lat(), driverMarker.getPosition().lng());
+        }
+      },
+      () => { btn.textContent = '📍 موقعي'; }
+    );
   }
 
   async function pollDriverLocation(driverPhone: string) {
     try {
-      const r = await fetch(`${SB_URL}/rest/v1/driver_locations?driver_phone=eq.${encodeURIComponent(driverPhone)}&limit=1`, { headers: SB_H });
+      const r = await fetch(
+        `${SB_URL}/rest/v1/driver_locations?driver_phone=eq.${encodeURIComponent(driverPhone)}&select=lat,lng,heading,updated_at&limit=1`,
+        { headers: SB_H }
+      );
       if (!r.ok) return;
       const rows = await r.json();
       const loc = rows?.[0];
-      if (loc && loc.lat && loc.lng) updateDriverOnMap(Number(loc.lat), Number(loc.lng));
+      if (loc?.lat && loc?.lng) updateDriverOnMap(Number(loc.lat), Number(loc.lng));
     } catch {}
   }
 
@@ -737,9 +898,43 @@ const TIMELINE: TimelineEvent[] = [
         <!-- Live driver map -->
         <div class="track-map-card" id="track-map-card">
           <div class="track-map-card__head">
-            <span class="live-dot"></span> 🛵 موقع المندوب المباشر
+            <span class="live-dot"></span>
+            <span>🛵 موقع المندوب المباشر</span>
+            <button class="btn-myloc" id="btn-my-location" type="button">
+              📍 موقعي
+            </button>
           </div>
           <div id="track-map"></div>
+          <!-- Distance / Duration / ETA stats -->
+          <div class="map-stats" id="map-stats" style="display:none">
+            <div class="map-stat">
+              <div class="map-stat__val" id="stat-distance">—</div>
+              <div class="map-stat__lbl">المسافة المتبقية</div>
+            </div>
+            <div class="map-stat">
+              <div class="map-stat__val" id="stat-duration">—</div>
+              <div class="map-stat__lbl">وقت التوصيل</div>
+            </div>
+            <div class="map-stat">
+              <div class="map-stat__val" id="stat-eta">—</div>
+              <div class="map-stat__lbl">الوصول المتوقع</div>
+            </div>
+          </div>
+          <!-- Legend -->
+          <div class="map-legend">
+            <div class="map-legend__item">
+              <div class="map-legend__dot" style="background:#3b82f6"></div>
+              <span>المتجر</span>
+            </div>
+            <div class="map-legend__item">
+              <div class="map-legend__dot" style="background:#16a34a"></div>
+              <span>المندوب</span>
+            </div>
+            <div class="map-legend__item">
+              <div class="map-legend__dot" style="background:#ef4444"></div>
+              <span>موقع التوصيل</span>
+            </div>
+          </div>
         </div>
 
         <!-- Rating (after delivery) -->

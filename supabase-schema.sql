@@ -1,3 +1,19 @@
+-- ── Driver Live Locations ────────────────────────────────────
+CREATE TABLE IF NOT EXISTS driver_locations (
+  driver_phone  TEXT PRIMARY KEY,
+  driver_name   TEXT,
+  lat           DOUBLE PRECISION NOT NULL,
+  lng           DOUBLE PRECISION NOT NULL,
+  heading       DOUBLE PRECISION DEFAULT 0,
+  is_online     BOOLEAN DEFAULT false,
+  ride_id       TEXT,
+  updated_at    TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX idx_driver_locations_online ON driver_locations(is_online);
+CREATE INDEX idx_driver_locations_updated ON driver_locations(updated_at DESC);
+
+
 -- ── Contact Messages ─────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS messages (
   id         TEXT PRIMARY KEY,

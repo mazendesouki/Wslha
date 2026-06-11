@@ -183,7 +183,28 @@ import PageHero from '../components/PageHero.astro';
     font-weight: var(--weight-black); font-size: var(--text-sm);
     display: flex; align-items: center; gap: var(--sp-2);
   }
-  #driver-map { width: 100%; height: 260px; }
+  #driver-map { width: 100%; height: 280px; }
+
+  .driver-map-stats {
+    display: grid; grid-template-columns: 1fr 1fr;
+    border-top: 1px solid var(--color-border);
+  }
+  .driver-map-stat {
+    padding: var(--sp-3); text-align: center;
+    border-left: 1px solid var(--color-border);
+  }
+  .driver-map-stat:last-child { border-left: none; }
+  .driver-map-stat__val { font-size: var(--text-base); font-weight: var(--weight-black); color: var(--color-primary); }
+  .driver-map-stat__lbl { font-size: 10px; color: var(--color-text-faint); margin-top: 2px; }
+
+  .nav-to-btn {
+    width: 100%; padding: var(--sp-3); border: none; border-top: 1px solid var(--color-border);
+    background: var(--color-primary); color: #fff; font-family: var(--font-body);
+    font-weight: var(--weight-black); font-size: var(--text-sm); cursor: pointer;
+    display: flex; align-items: center; justify-content: center; gap: var(--sp-2);
+    transition: background 0.2s;
+  }
+  .nav-to-btn:hover { background: var(--color-primary-dark); }
 
   .action-card {
     background: var(--color-bg); border: 1px solid var(--color-border);
@@ -374,8 +395,21 @@ import PageHero from '../components/PageHero.astro';
         </div>
 
         <div class="trip-map-card">
-          <div class="trip-map-header">🗺️ خريطة الرحلة</div>
+          <div class="trip-map-header">🗺️ خريطة الرحلة — مسار فعلي</div>
           <div id="driver-map"></div>
+          <div class="driver-map-stats">
+            <div class="driver-map-stat">
+              <div class="driver-map-stat__val" id="driver-stat-dist">—</div>
+              <div class="driver-map-stat__lbl">المسافة المتبقية</div>
+            </div>
+            <div class="driver-map-stat">
+              <div class="driver-map-stat__val" id="driver-stat-dur">—</div>
+              <div class="driver-map-stat__lbl">الوقت المتوقع</div>
+            </div>
+          </div>
+          <button class="nav-to-btn" id="btn-navigate" type="button">
+            🧭 افتح Google Maps للملاحة
+          </button>
         </div>
 
         <div class="action-card">
@@ -488,28 +522,62 @@ import PageHero from '../components/PageHero.astro';
     });
   }
 
+  let routeRenderer: any = null;
+  let destLat: number | null = null;
+  let destLng: number | null = null;
+
   async function initDriverMap(fromLat: number, fromLng: number, toLat: number, toLng: number) {
     try { await loadGMaps(); } catch { return; }
+    destLat = toLat; destLng = toLng;
     const mapEl = document.getElementById('driver-map')!;
-    map = new (window as any).google.maps.Map(mapEl, {
-      center: { lat: fromLat, lng: fromLng }, zoom: 12,
-      mapTypeControl: false, streetViewControl: false, fullscreenControl: false,
-    });
     const g = (window as any).google.maps;
-    const pinIcon = (color: string) => ({
-      path: 'M12 0C7 0 3 4 3 9c0 6.5 9 15 9 15s9-8.5 9-15c0-5-4-9-9-9z',
-      fillColor: color, fillOpacity: 1, strokeColor: '#fff', strokeWeight: 3,
-      scale: 1.4, anchor: new g.Point(12, 24),
+
+    map = new g.Map(mapEl, {
+      center: { lat: fromLat, lng: fromLng }, zoom: 13,
+      mapTypeControl: false, streetViewControl: false, fullscreenControl: false,
+      styles: [{ featureType: 'poi', elementType: 'labels', stylers: [{ visibility: 'off' }] }],
     });
-    new g.Marker({ position: { lat: fromLat, lng: fromLng }, map, icon: pinIcon('#3b82f6'), title: 'الراكب' });
-    new g.Marker({ position: { lat: toLat,   lng: toLng   }, map, icon: pinIcon('#ef4444'), title: 'الوجهة' });
+
+    const svgMarker = (emoji: string, bg: string) =>
+      `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(
+        `<svg xmlns="http://www.w3.org/2000/svg" width="38" height="44" viewBox="0 0 38 44">
+          <path d="M19 0C8.5 0 0 8.5 0 19c0 13 19 25 19 25s19-12 19-25C38 8.5 29.5 0 19 0z" fill="${bg}"/>
+          <text x="19" y="24" text-anchor="middle" font-size="17" fill="white">${emoji}</text>
+        </svg>`
+      )}`;
+
+    // From marker (pickup)
+    new g.Marker({
+      position: { lat: fromLat, lng: fromLng }, map,
+      icon: { url: svgMarker('🏪', '#3b82f6'), scaledSize: new g.Size(38, 44), anchor: new g.Point(19, 44) },
+      title: 'نقطة الاستلام',
+    });
+
+    // To marker (destination)
+    new g.Marker({
+      position: { lat: toLat, lng: toLng }, map,
+      icon: { url: svgMarker('🏠', '#ef4444'), scaledSize: new g.Size(38, 44), anchor: new g.Point(19, 44) },
+      title: 'الوجهة',
+    });
+
+    // Driver marker
     if (driverLat && driverLng) {
       driverMarker = new g.Marker({
-        position: { lat: driverLat, lng: driverLng }, map,
-        icon: { path: g.SymbolPath.FORWARD_CLOSED_ARROW, fillColor: '#16a34a', fillOpacity: 1, strokeColor: '#fff', strokeWeight: 2, scale: 5, anchor: new g.Point(0, 2.5) },
-        title: 'موقعك', zIndex: 999,
+        position: { lat: driverLat, lng: driverLng }, map, zIndex: 999,
+        icon: { url: svgMarker('🛵', '#16a34a'), scaledSize: new g.Size(38, 44), anchor: new g.Point(19, 44) },
+        title: 'موقعك',
       });
     }
+
+    // Route renderer
+    routeRenderer = new g.DirectionsRenderer({
+      map, suppressMarkers: true,
+      polylineOptions: { strokeColor: '#16a34a', strokeWeight: 5, strokeOpacity: 0.8 },
+    });
+
+    // Draw initial route
+    drawDriverRoute();
+
     const bounds = new g.LatLngBounds();
     bounds.extend({ lat: fromLat, lng: fromLng });
     bounds.extend({ lat: toLat, lng: toLng });
@@ -517,16 +585,53 @@ import PageHero from '../components/PageHero.astro';
     map.fitBounds(bounds, 60);
   }
 
-  function updateDriverMarker() {
-    if (!map || !driverLat || !driverLng || !gmapsReady) return;
-    const pos = { lat: driverLat, lng: driverLng };
-    if (driverMarker) { driverMarker.setPosition(pos); return; }
+  function drawDriverRoute() {
+    if (!map || !destLat || !destLng || !gmapsReady || !routeRenderer) return;
     const g = (window as any).google.maps;
-    driverMarker = new g.Marker({
-      position: pos, map,
-      icon: { path: g.SymbolPath.FORWARD_CLOSED_ARROW, fillColor: '#16a34a', fillOpacity: 1, strokeColor: '#fff', strokeWeight: 2, scale: 5, anchor: new g.Point(0, 2.5) },
-      title: 'موقعك', zIndex: 999,
+    const origin = (driverLat && driverLng)
+      ? { lat: driverLat, lng: driverLng }
+      : (routeRenderer.getDirections()?.request?.origin ?? null);
+    if (!origin) return;
+
+    new g.DirectionsService().route({
+      origin,
+      destination: { lat: destLat, lng: destLng },
+      travelMode: g.TravelMode.DRIVING,
+    }, (result: any, status: any) => {
+      if (status !== 'OK') return;
+      routeRenderer.setDirections(result);
+      const leg = result.routes?.[0]?.legs?.[0];
+      if (leg) {
+        const distEl = document.getElementById('driver-stat-dist');
+        const durEl  = document.getElementById('driver-stat-dur');
+        if (distEl) distEl.textContent = leg.distance?.text || '—';
+        if (durEl)  durEl.textContent  = leg.duration?.text || '—';
+      }
     });
+  }
+
+  function updateDriverMarker() {
+    if (!driverLat || !driverLng) return;
+    const pos = { lat: driverLat, lng: driverLng };
+    if (!map || !gmapsReady) return;
+    if (driverMarker) {
+      driverMarker.setPosition(pos);
+    } else {
+      const g = (window as any).google.maps;
+      const svg = `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(
+        `<svg xmlns="http://www.w3.org/2000/svg" width="38" height="44" viewBox="0 0 38 44">
+          <path d="M19 0C8.5 0 0 8.5 0 19c0 13 19 25 19 25s19-12 19-25C38 8.5 29.5 0 19 0z" fill="#16a34a"/>
+          <text x="19" y="24" text-anchor="middle" font-size="17" fill="white">🛵</text>
+        </svg>`
+      )}`;
+      driverMarker = new g.Marker({
+        position: pos, map, zIndex: 999,
+        icon: { url: svg, scaledSize: new g.Size(38, 44), anchor: new g.Point(19, 44) },
+        title: 'موقعك',
+      });
+    }
+    // Redraw route every GPS update
+    drawDriverRoute();
   }
 
   /* ── UI state ── */
@@ -860,6 +965,14 @@ import PageHero from '../components/PageHero.astro';
     resetActionButtons();
     showState('waiting');
     showToast(`رحلة منتهية! أرباح +${fare} ج.م 🎉`);
+  });
+
+  /* ── Navigate button: open Google Maps ── */
+  document.getElementById('btn-navigate')!.addEventListener('click', () => {
+    if (!destLat || !destLng) return;
+    const origin = (driverLat && driverLng) ? `${driverLat},${driverLng}` : '';
+    const url = `https://www.google.com/maps/dir/${origin}/${destLat},${destLng}`;
+    window.open(url, '_blank');
   });
 
   /* ── Toggle online/offline ── */
