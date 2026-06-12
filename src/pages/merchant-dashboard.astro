@@ -68,8 +68,9 @@ import Layout from '../components/layout.astro';
   /* ── Tabs ── */
   .tabs {
     display: flex; gap: 0; border-bottom: 2px solid var(--color-border);
-    margin-bottom: var(--sp-7); overflow-x: auto;
+    margin-bottom: var(--sp-7); overflow-x: auto; scrollbar-width: none;
   }
+  .tabs::-webkit-scrollbar { display: none; }
   .tab-btn {
     padding: var(--sp-3) var(--sp-6); background: none; border: none;
     font-family: var(--font-body); font-weight: var(--weight-bold);
@@ -81,6 +82,59 @@ import Layout from '../components/layout.astro';
   .tab-btn.active { color: var(--color-primary); border-bottom-color: var(--color-primary); }
   .tab-panel { display: none; }
   .tab-panel.active { display: block; }
+
+  /* ── Approval banner ── */
+  .approval-banner {
+    border-radius: var(--radius-xl); padding: var(--sp-4) var(--sp-5);
+    display: flex; align-items: flex-start; gap: var(--sp-3);
+    margin-bottom: var(--sp-5); box-shadow: var(--shadow-sm);
+  }
+  .approval-banner.pending  { background: #FEF9C3; border: 1.5px solid #FDE047; }
+  .approval-banner.approved { background: #DCFCE7; border: 1.5px solid #86EFAC; }
+  .approval-banner.rejected { background: #FEE2E2; border: 1.5px solid #FCA5A5; }
+  .approval-banner__icon  { font-size: 1.8rem; flex-shrink: 0; }
+  .approval-banner__title { font-weight: var(--weight-black); font-size: var(--text-sm); margin-bottom: 2px; }
+  .approval-banner.pending  .approval-banner__title { color: #92400E; }
+  .approval-banner.approved .approval-banner__title { color: #14532D; }
+  .approval-banner.rejected .approval-banner__title { color: #991B1B; }
+  .approval-banner__sub   { font-size: var(--text-xs); color: var(--color-text-muted); line-height: 1.5; }
+
+  /* ── Account cards ── */
+  .acct-card {
+    background: var(--color-bg); border: 1px solid var(--color-border);
+    border-radius: var(--radius-xl); padding: var(--sp-5);
+    margin-bottom: var(--sp-5); box-shadow: var(--shadow-sm);
+  }
+  .acct-card__header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: var(--sp-4); padding-bottom: var(--sp-3);
+    border-bottom: 1px solid var(--color-border);
+  }
+  .acct-card__title { font-weight: var(--weight-black); font-size: var(--text-base); display: flex; align-items: center; gap: var(--sp-2); }
+  .acct-card__big   { font-size: var(--text-3xl); font-weight: var(--weight-black); color: var(--color-primary); }
+  .acct-card__unit  { font-size: var(--text-sm); color: var(--color-text-muted); }
+  .acct-tx-list     { display: flex; flex-direction: column; gap: var(--sp-2); }
+  .acct-tx {
+    display: flex; align-items: center; justify-content: space-between;
+    font-size: var(--text-xs); padding: var(--sp-2) 0;
+    border-bottom: 1px solid var(--color-border);
+  }
+  .acct-tx:last-child { border-bottom: none; }
+  .acct-tx__note  { color: var(--color-text-muted); flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .acct-tx__date  { color: var(--color-text-faint); font-size: 10px; margin: 0 var(--sp-2); flex-shrink: 0; }
+  .acct-tx__amt   { font-weight: var(--weight-bold); flex-shrink: 0; }
+  .acct-tx__amt.pos { color: #16a34a; }
+  .acct-tx__amt.neg { color: #dc2626; }
+  .acct-empty { text-align: center; color: var(--color-text-faint); font-size: var(--text-xs); padding: var(--sp-4); }
+  .rating-summary { display: flex; align-items: center; gap: var(--sp-5); margin-bottom: var(--sp-4); padding-bottom: var(--sp-4); border-bottom: 1px solid var(--color-border); }
+  .rating-big     { font-size: var(--text-4xl); font-weight: var(--weight-black); color: var(--color-primary); line-height: 1; }
+  .rating-count   { font-size: var(--text-xs); color: var(--color-text-faint); }
+  .rating-item    { display: flex; flex-direction: column; gap: 2px; padding: var(--sp-3) 0; border-bottom: 1px solid var(--color-border); }
+  .rating-item:last-child { border-bottom: none; }
+  .rating-item__top  { display: flex; align-items: center; justify-content: space-between; }
+  .rating-item__stars { font-size: var(--text-sm); }
+  .rating-item__date  { font-size: 10px; color: var(--color-text-faint); }
+  .rating-item__comment { font-size: var(--text-xs); color: var(--color-text-muted); margin-top: 2px; }
 
   /* ── Fields ── */
   .field { margin-bottom: var(--sp-4); }
@@ -390,11 +444,15 @@ import Layout from '../components/layout.astro';
         </div>
       </div>
 
+      <!-- Approval banner -->
+      <div id="merchant-approval-banner" style="display:none"></div>
+
       <!-- Tabs -->
       <div class="tabs">
         <button class="tab-btn active" data-tab="menu">🍽️ إدارة القائمة</button>
         <button class="tab-btn" data-tab="orders">📦 الطلبات <span class="tab-badge" id="orders-badge" hidden>0</span></button>
         <button class="tab-btn" data-tab="settings">⚙️ إعدادات المتجر</button>
+        <button class="tab-btn" data-tab="account">💳 الحساب</button>
       </div>
 
       <!-- Tab: Menu management -->
@@ -439,6 +497,62 @@ import Layout from '../components/layout.astro';
           <div style="padding:var(--sp-8);text-align:center;color:var(--color-text-faint);">لا توجد طلبات بعد</div>
         </div>
       </div>
+
+      <!-- Tab: Account (wallet, points, ratings) -->
+      <div id="tab-account" class="tab-panel">
+
+        <!-- Wallet -->
+        <div class="acct-card">
+          <div class="acct-card__header">
+            <div class="acct-card__title">💰 المحفظة</div>
+            <div>
+              <span class="acct-card__big" id="m-wallet-balance">0</span>
+              <span class="acct-card__unit"> ج.م</span>
+            </div>
+          </div>
+          <div style="font-size:var(--text-xs);color:var(--color-text-faint);margin-bottom:var(--sp-3);">
+            إيرادات الطلبات المكتملة · تُضاف تلقائياً عند التوصيل
+          </div>
+          <div class="acct-tx-list" id="m-wallet-txs">
+            <div class="acct-empty">لا توجد معاملات بعد</div>
+          </div>
+        </div>
+
+        <!-- Points -->
+        <div class="acct-card">
+          <div class="acct-card__header">
+            <div class="acct-card__title">⭐ نقاط الولاء</div>
+            <div>
+              <span class="acct-card__big" id="m-points-total">0</span>
+              <span class="acct-card__unit"> نقطة</span>
+            </div>
+          </div>
+          <div style="font-size:var(--text-xs);color:var(--color-text-faint);margin-bottom:var(--sp-3);">
+            5 نقاط لكل طلب مكتمل · مكافآت على الأداء المميز
+          </div>
+          <div class="acct-tx-list" id="m-points-txs">
+            <div class="acct-empty">لا توجد نقاط بعد</div>
+          </div>
+        </div>
+
+        <!-- Ratings from customers -->
+        <div class="acct-card">
+          <div class="acct-card__header">
+            <div class="acct-card__title">🌟 تقييمات العملاء</div>
+          </div>
+          <div class="rating-summary">
+            <div>
+              <div class="rating-big" id="m-rating-avg">—</div>
+              <div id="m-rating-stars"></div>
+            </div>
+            <div class="rating-count" id="m-rating-count">لا توجد تقييمات</div>
+          </div>
+          <div id="m-ratings-list">
+            <div class="acct-empty">لا توجد تقييمات بعد</div>
+          </div>
+        </div>
+
+      </div><!-- /tab-account -->
 
       <!-- Tab: Settings -->
       <div id="tab-settings" class="tab-panel">
@@ -643,10 +757,14 @@ import Layout from '../components/layout.astro';
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
         document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
         btn.classList.add('active');
-        const panelId = 'tab-' + (btn as HTMLElement).dataset.tab;
-        document.getElementById(panelId)!.classList.add('active');
+        const tab = (btn as HTMLElement).dataset.tab;
+        document.getElementById('tab-' + tab)!.classList.add('active');
+        if (tab === 'account') loadMerchantAccountData();
       });
     });
+
+    // Load approval status
+    loadMerchantApprovalStatus();
 
     // Add section
     document.getElementById('add-section-btn')!.addEventListener('click', () => {
@@ -1121,6 +1239,94 @@ import Layout from '../components/layout.astro';
       document.getElementById('dh-name')!.textContent  = patch.name;
       toast('✅ تم حفظ الإعدادات');
     } else toast('❌ فشل حفظ الإعدادات');
+  }
+
+  // ── Approval status ──
+  async function loadMerchantApprovalStatus() {
+    let user: any = null;
+    try { user = JSON.parse(localStorage.getItem('wslha_user') || 'null'); } catch {}
+    if (!user?.phone) return;
+    try {
+      const rows = await sbGet(`merchant_applications?phone=eq.${encodeURIComponent(user.phone)}&select=status&order=created_at.desc&limit=1`);
+      const banner = document.getElementById('merchant-approval-banner')!;
+      if (!rows || rows.length === 0) { banner.style.display = 'none'; return; }
+      const { status } = rows[0];
+      const configs: Record<string, {cls:string;icon:string;title:string;sub:string}> = {
+        pending:  { cls:'pending',  icon:'⏳', title:'طلبك قيد المراجعة',    sub:'يراجع فريق وصّلها وثائقك خلال 2-3 أيام عمل.' },
+        approved: { cls:'approved', icon:'✅', title:'تم اعتماد متجرك!',      sub:'يمكنك الآن استقبال الطلبات ونشر منتجاتك.' },
+        rejected: { cls:'rejected', icon:'❌', title:'تم رفض طلبك',           sub:'يرجى التواصل مع الدعم. <a href="/contact" style="color:#991B1B;font-weight:700">تواصل معنا</a>' },
+      };
+      const c = configs[status] || configs.pending;
+      banner.innerHTML = `<div class="approval-banner ${c.cls}"><div class="approval-banner__icon">${c.icon}</div><div><div class="approval-banner__title">${c.title}</div><div class="approval-banner__sub">${c.sub}</div></div></div>`;
+      banner.style.display = 'block';
+    } catch {}
+  }
+
+  // ── Merchant account data (wallet, points, ratings) ──
+  async function loadMerchantAccountData() {
+    let user: any = null;
+    try { user = JSON.parse(localStorage.getItem('wslha_user') || 'null'); } catch {}
+    if (!user?.phone) return;
+    const phone = encodeURIComponent(user.phone);
+
+    const [walletRes, walletTxRes, pointsRes, pointsTxRes, ratingsRes] = await Promise.allSettled([
+      sbGet(`wallets?phone=eq.${phone}&select=balance`),
+      sbGet(`wallet_transactions?phone=eq.${phone}&select=amount,type,note,created_at&order=created_at.desc&limit=10`),
+      sbGet(`points?phone=eq.${phone}&select=total_points`),
+      sbGet(`point_transactions?phone=eq.${phone}&select=points,type,created_at&order=created_at.desc&limit=10`),
+      sbGet(`ratings?driver_phone=eq.${user.phone}&select=rating,comment,service_type,created_at&order=created_at.desc&limit=10`),
+    ]);
+
+    // Wallet
+    if (walletRes.status === 'fulfilled') {
+      const b = (walletRes.value as any)?.[0]?.balance ?? 0;
+      document.getElementById('m-wallet-balance')!.textContent = Number(b).toLocaleString('ar-EG');
+    }
+    if (walletTxRes.status === 'fulfilled') {
+      const txs = walletTxRes.value as any[];
+      const el  = document.getElementById('m-wallet-txs')!;
+      if (Array.isArray(txs) && txs.length) {
+        el.innerHTML = txs.map(t => {
+          const amt = Number(t.amount); const sign = amt >= 0 ? '+' : ''; const cls = amt >= 0 ? 'pos' : 'neg';
+          const d = new Date(t.created_at).toLocaleDateString('ar-EG', { month: 'short', day: 'numeric' });
+          const lbl = ({commission:'عمولة منصة',earning:'أرباح',topup:'إضافة رصيد',withdrawal:'سحب',refund:'استرداد'} as any)[t.type] || t.type;
+          return `<div class="acct-tx"><span class="acct-tx__note">${t.note || lbl}</span><span class="acct-tx__date">${d}</span><span class="acct-tx__amt ${cls}">${sign}${Math.abs(amt)} ج.م</span></div>`;
+        }).join('');
+      }
+    }
+    // Points
+    if (pointsRes.status === 'fulfilled') {
+      const p = (pointsRes.value as any)?.[0]?.total_points ?? 0;
+      document.getElementById('m-points-total')!.textContent = Number(p).toLocaleString('ar-EG');
+    }
+    if (pointsTxRes.status === 'fulfilled') {
+      const ptxs = pointsTxRes.value as any[];
+      const el   = document.getElementById('m-points-txs')!;
+      if (Array.isArray(ptxs) && ptxs.length) {
+        el.innerHTML = ptxs.map(t => {
+          const p = Number(t.points); const sign = p >= 0 ? '+' : ''; const cls = p >= 0 ? 'pos' : 'neg';
+          const d = new Date(t.created_at).toLocaleDateString('ar-EG', { month: 'short', day: 'numeric' });
+          const lbl = ({ride:'مشوار',delivery:'توصيل',airport:'مطار',bonus:'مكافأة',redeem:'استبدال'} as any)[t.type] || t.type;
+          return `<div class="acct-tx"><span class="acct-tx__note">${lbl}</span><span class="acct-tx__date">${d}</span><span class="acct-tx__amt ${cls}">${sign}${Math.abs(p)} نقطة</span></div>`;
+        }).join('');
+      }
+    }
+    // Store ratings
+    if (ratingsRes.status === 'fulfilled') {
+      const rts = ratingsRes.value as any[];
+      if (Array.isArray(rts) && rts.length) {
+        const avg = rts.reduce((s: number, r: any) => s + r.rating, 0) / rts.length;
+        const stars = '⭐'.repeat(Math.round(avg)) + '☆'.repeat(5 - Math.round(avg));
+        document.getElementById('m-rating-avg')!.textContent   = avg.toFixed(1);
+        document.getElementById('m-rating-stars')!.textContent = stars;
+        document.getElementById('m-rating-count')!.textContent = `${rts.length} تقييم`;
+        document.getElementById('m-ratings-list')!.innerHTML = rts.map((r: any) => {
+          const d = new Date(r.created_at).toLocaleDateString('ar-EG', { month: 'short', day: 'numeric' });
+          const s = '⭐'.repeat(r.rating) + '☆'.repeat(5 - r.rating);
+          return `<div class="rating-item"><div class="rating-item__top"><span class="rating-item__stars">${s}</span><span class="rating-item__date">${d}</span></div>${r.comment ? `<div class="rating-item__comment">"${r.comment}"</div>` : ''}</div>`;
+        }).join('');
+      }
+    }
   }
 
   // ── Bootstrap ──

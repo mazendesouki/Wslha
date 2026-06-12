@@ -142,3 +142,66 @@ CREATE INDEX idx_merchant_applications_status ON merchant_applications(status);
 -- SELECT 'documents', 'Allow authenticated uploads',
 --   '{"bucket_id":"documents","definition":{"role":"authenticated"},"action":"INSERT"}'
 -- WHERE NOT EXISTS (SELECT 1 FROM storage.policies WHERE bucket_id = 'documents');
+
+
+-- ── Driver & Merchant Wallets ────────────────────────────────
+CREATE TABLE IF NOT EXISTS wallets (
+  phone       TEXT PRIMARY KEY,
+  balance     DECIMAL(12,2) NOT NULL DEFAULT 0,
+  updated_at  TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  FOREIGN KEY (phone) REFERENCES accounts(phone) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS wallet_transactions (
+  id          TEXT PRIMARY KEY,
+  phone       TEXT NOT NULL,
+  amount      DECIMAL(12,2) NOT NULL,       -- positive=credit, negative=debit
+  type        TEXT NOT NULL,                -- commission, earning, topup, withdrawal, refund
+  reference_id TEXT,                        -- ride_id / order_id
+  note        TEXT,
+  created_at  TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  FOREIGN KEY (phone) REFERENCES accounts(phone) ON DELETE CASCADE
+);
+
+CREATE INDEX idx_wallet_tx_phone      ON wallet_transactions(phone);
+CREATE INDEX idx_wallet_tx_created_at ON wallet_transactions(created_at DESC);
+
+
+-- ── Points System ─────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS points (
+  phone        TEXT PRIMARY KEY,
+  total_points INT NOT NULL DEFAULT 0,
+  updated_at   TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  FOREIGN KEY (phone) REFERENCES accounts(phone) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS point_transactions (
+  id           TEXT PRIMARY KEY,
+  phone        TEXT NOT NULL,
+  points       INT NOT NULL,               -- positive=earned, negative=redeemed
+  type         TEXT NOT NULL,              -- ride, delivery, airport, bonus, redeem
+  reference_id TEXT,
+  created_at   TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  FOREIGN KEY (phone) REFERENCES accounts(phone) ON DELETE CASCADE
+);
+
+CREATE INDEX idx_point_tx_phone      ON point_transactions(phone);
+CREATE INDEX idx_point_tx_created_at ON point_transactions(created_at DESC);
+
+
+-- ── Customer Ratings ──────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS ratings (
+  id            TEXT PRIMARY KEY,
+  driver_phone  TEXT NOT NULL,
+  customer_phone TEXT,
+  ride_id       TEXT,
+  order_id      TEXT,
+  service_type  TEXT NOT NULL DEFAULT 'ride', -- ride, delivery, airport
+  rating        SMALLINT NOT NULL CHECK (rating BETWEEN 1 AND 5),
+  comment       TEXT,
+  created_at    TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  FOREIGN KEY (driver_phone) REFERENCES accounts(phone) ON DELETE CASCADE
+);
+
+CREATE INDEX idx_ratings_driver_phone  ON ratings(driver_phone);
+CREATE INDEX idx_ratings_created_at    ON ratings(created_at DESC);
