@@ -569,13 +569,23 @@ import { AREAS, AIRPORTS } from '../data/rides';
                 </label>
                 <select id="intl-airport" class="intl-field__select">
                   <option value="">اختر المطار</option>
-                  {AIRPORTS.map(a => <option value={a.id} data-fare={a.flatFare} data-mins={a.driveMins} data-lat={a.lat} data-lng={a.lng}>{a.name} — {a.flatFare} ج.م</option>)}
+                  {AIRPORTS.map(a => <option value={a.id} data-fare={a.flatFare} data-mins={a.driveMins} data-lat={a.lat} data-lng={a.lng}>{a.name}</option>)}
                 </select>
               </div>
-              <!-- Airport fare badge — shows immediately after selecting airport -->
-              <div class="intl-fare-badge" id="intl-fare-badge" style="display:none">
-                <div id="intl-fare-amount">—</div>
-                <div class="intl-fare-badge__sub">سعر ثابت شامل — لا توجد رسوم إضافية</div>
+
+              <!-- Live airport summary (always visible once airport selected) -->
+              <div id="airport-summary" style="display:none;flex-direction:column;gap:var(--sp-2);background:#f0fdf4;border:2px solid #16a34a;border-radius:var(--radius-xl);padding:var(--sp-4) var(--sp-5);">
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                  <span style="font-size:var(--text-sm);color:#374151;font-weight:var(--weight-bold);">💰 سعر الرحلة</span>
+                  <span id="summary-fare" style="font-size:var(--text-2xl);font-weight:900;color:#16a34a;">— ج.م</span>
+                </div>
+                <div style="font-size:11px;color:#16a34a;">✓ سعر ثابت شامل — لا توجد رسوم إضافية</div>
+                <div id="summary-drive" style="font-size:var(--text-xs);color:var(--color-text-faint);"></div>
+                <div id="summary-depart" style="display:none;margin-top:var(--sp-2);background:#eff6ff;border-radius:var(--radius-lg);padding:var(--sp-3) var(--sp-4);">
+                  <div style="font-size:11px;color:#1d4ed8;margin-bottom:4px;">🕐 اترك البيت في موعد أقصاه:</div>
+                  <div id="summary-depart-time" style="font-size:var(--text-base);font-weight:900;color:#1d4ed8;"></div>
+                  <div style="font-size:10px;color:#6b7280;margin-top:2px;">= وقت الرحلة − 3 ساعات − وقت القيادة</div>
+                </div>
               </div>
               <!-- Pickup address -->
               <div class="intl-field">
@@ -588,17 +598,7 @@ import { AREAS, AIRPORTS } from '../data/rides';
                 <input type="datetime-local" id="intl-flight-time" class="intl-field__input" />
                 <span style="font-size:11px;color:var(--color-text-faint);">سنحسب تلقائياً وقت مغادرتك من البيت</span>
               </div>
-              <!-- Calculated departure box -->
-              <div class="depart-box" id="depart-box" style="display:none">
-                <span class="depart-box__icon">🕐</span>
-                <div class="depart-box__text">
-                  <div class="depart-box__label">اترك البيت في موعد أقصاه:</div>
-                  <div class="depart-box__time" id="depart-time">—</div>
-                </div>
-                <div style="font-size:11px;color:var(--color-text-faint);text-align:center;line-height:1.4;">
-                  بفر 3 ساعات<br>+ وقت القيادة
-                </div>
-              </div>
+
             </div>
 
             <div class="form-section">
@@ -1233,27 +1233,27 @@ import { AREAS, AIRPORTS } from '../data/rides';
     const flightVal = intlFlightTime.value;
     const address  = document.getElementById('intl-address').value.trim();
 
-    // Show/hide fare badge
-    const fareBadge  = document.getElementById('intl-fare-badge');
-    const fareAmount = document.getElementById('intl-fare-amount');
+    // Show/hide airport summary card
+    const summaryCard = document.getElementById('airport-summary');
     if (airport) {
-      fareBadge.style.display = 'block';
-      fareAmount.textContent  = airport.flatFare.toLocaleString('ar-EG') + ' ج.م — ' + airport.name;
+      summaryCard.style.display = 'flex';
+      document.getElementById('summary-fare').textContent = airport.flatFare.toLocaleString('ar-EG') + ' ج.م';
+      document.getElementById('summary-drive').textContent = '⏱ وقت القيادة للمطار: ' + airport.driveMins + ' دقيقة تقريباً';
     } else {
-      fareBadge.style.display = 'none';
+      summaryCard.style.display = 'none';
     }
 
     // Calculate and show departure time
-    const departBox = document.getElementById('depart-box');
+    const departEl = document.getElementById('summary-depart');
     if (airport && flightVal) {
       const flightDate = new Date(flightVal);
       const bufferMs   = (3 * 60 + airport.driveMins) * 60 * 1000;
       const departDate = new Date(flightDate.getTime() - bufferMs);
-      document.getElementById('depart-time').textContent =
+      document.getElementById('summary-depart-time').textContent =
         departDate.toLocaleString('ar-EG', { weekday:'short', month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' });
-      departBox.style.display = 'flex';
+      departEl.style.display = 'block';
     } else {
-      departBox.style.display = 'none';
+      if (departEl) departEl.style.display = 'none';
     }
 
     // Update map if both from and airport selected
@@ -1280,6 +1280,7 @@ import { AREAS, AIRPORTS } from '../data/rides';
   intlFromSel.addEventListener('change', updateIntlUI);
   intlAirportSel.addEventListener('change', updateIntlUI);
   intlFlightTime.addEventListener('input', updateIntlUI);
+  intlFlightTime.addEventListener('change', updateIntlUI);
   document.getElementById('intl-address').addEventListener('input', updateIntlUI);
 
   // International confirm
