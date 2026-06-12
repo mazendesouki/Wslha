@@ -5,15 +5,13 @@ export interface NavLink {
 }
 
 export const NAV_LINKS: NavLink[] = [
-  { label: 'الرئيسية',       href: '/',                    page: 'home'     },
-  { label: 'المتاجر',        href: '/stores',               page: 'stores'   },
-  { label: 'توصيل المطار',   href: '/airport',              page: 'airport'  },
-  { label: 'مشاوير',         href: '/rides',                page: 'rides'    },
-  { label: 'خدماتنا',        href: '/services',             page: 'services' },
-  { label: 'طلباتي',         href: '/orders',               page: 'orders'   },
-  { label: 'تتبع الطلب',     href: '/track',                page: 'track'    },
-  { label: 'من نحن',         href: '/about',                page: 'about'    },
-  { label: 'تواصل معنا',     href: '/contact',              page: 'contact'  },
+  { label: 'الرئيسية',     href: '/',          page: 'home'     },
+  { label: 'المتاجر',      href: '/stores',     page: 'stores'   },
+  { label: 'مشاوير',       href: '/rides',      page: 'rides'    },
+  { label: 'توصيل المطار', href: '/airport',    page: 'airport'  },
+  { label: 'خدماتنا',      href: '/services',   page: 'services' },
+  { label: 'من نحن',       href: '/about',      page: 'about'    },
+  { label: 'تواصل معنا',   href: '/contact',    page: 'contact'  },
 ];
 
 export const FOOTER_LINKS = {
