@@ -1,7 +1,7 @@
 ---
 import Layout from '../components/layout.astro';
 import PageHero from '../components/PageHero.astro';
-import { AREAS, AIRPORTS } from '../data/rides';
+import { AIRPORTS } from '../data/rides';
 ---
 
 <style>
@@ -572,10 +572,7 @@ import { AREAS, AIRPORTS } from '../data/rides';
                   <span style="width:10px;height:10px;border-radius:50%;background:var(--color-primary);display:inline-block;flex-shrink:0"></span>
                   منطقتك (نقطة الانطلاق)
                 </label>
-                <select id="intl-from-area" class="intl-field__select">
-                  <option value="">اختر منطقتك في دمياط</option>
-                  {AREAS.map(a => <option value={a.id} data-lat={a.lat} data-lng={a.lng}>{a.name}</option>)}
-                </select>
+                <input id="intl-from-area" type="text" class="intl-field__input" placeholder="اكتب منطقتك أو حيّك أو شارعك..." autocomplete="off" />
               </div>
               <!-- Airport -->
               <div class="intl-field">
@@ -764,7 +761,7 @@ import { AREAS, AIRPORTS } from '../data/rides';
   </div><!-- /rides-page -->
 </Layout>
 
-<script define:vars={{ AREAS, AIRPORTS }}>
+<script define:vars={{ AIRPORTS }}>
   // ── Supabase ──
   const SB_URL = 'https://vtikgyiopkjnrwlqnmfx.supabase.co';
   const SB_KEY = 'sb_publishable_PLSnpvCT-sAyUMtymNgTwA_QmL2suw4';
@@ -804,6 +801,7 @@ import { AREAS, AIRPORTS } from '../data/rides';
   let gmapsReady = false;
   let fromPlace = null; // { name, lat, lng }
   let toPlace   = null; // { name, lat, lng }
+  let intlOriginPlace = null; // { name, lat, lng }
 
   function loadGoogleMaps() {
     return new Promise((resolve) => {
@@ -844,6 +842,17 @@ import { AREAS, AIRPORTS } from '../data/rides';
       if (!p?.geometry?.location) return;
       toPlace = { name: p.name || p.formatted_address, lat: p.geometry.location.lat(), lng: p.geometry.location.lng() };
       updateUI();
+    });
+
+    const acIntlFrom = new G.places.Autocomplete(document.getElementById('intl-from-area'), {
+      ...opts,
+      fields: ['geometry', 'name', 'formatted_address'],
+    });
+    acIntlFrom.addListener('place_changed', () => {
+      const p = acIntlFrom.getPlace();
+      if (!p?.geometry?.location) return;
+      intlOriginPlace = { name: p.name || p.formatted_address, lat: p.geometry.location.lat(), lng: p.geometry.location.lng() };
+      updateIntlUI();
     });
 
     // GPS "my location" button
@@ -1255,7 +1264,6 @@ import { AREAS, AIRPORTS } from '../data/rides';
   // ═══════════════════════════════════════════
   //  INTERNATIONAL / AIRPORT FORM
   // ═══════════════════════════════════════════
-  const intlFromSel    = document.getElementById('intl-from-area');
   const intlAirportSel = document.getElementById('intl-airport');
   const intlFlightTime = document.getElementById('intl-flight-time');
   const intlBtn        = document.getElementById('intl-confirm-btn');
@@ -1279,9 +1287,7 @@ import { AREAS, AIRPORTS } from '../data/rides';
   }
 
   function selectedIntlFrom() {
-    const o = intlFromSel.options[intlFromSel.selectedIndex];
-    if (!o?.value) return null;
-    return { id: o.value, name: o.text, lat: Number(o.dataset.lat), lng: Number(o.dataset.lng) };
+    return intlOriginPlace;
   }
 
   function updateIntlUI() {
@@ -1334,7 +1340,6 @@ import { AREAS, AIRPORTS } from '../data/rides';
     }
   }
 
-  intlFromSel.addEventListener('change', updateIntlUI);
   intlAirportSel.addEventListener('change', updateIntlUI);
   intlFlightTime.addEventListener('input', updateIntlUI);
   intlFlightTime.addEventListener('change', updateIntlUI);
@@ -1419,9 +1424,10 @@ import { AREAS, AIRPORTS } from '../data/rides';
   // ── new ride ──
   document.getElementById('new-ride-btn').addEventListener('click', () => {
     ['l-name','l-phone','l-notes','i-name','i-phone','i-notes'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
-    fromPlace = null; toPlace = null;
+    fromPlace = null; toPlace = null; intlOriginPlace = null;
     document.getElementById('from-area').value = '';
     document.getElementById('to-area').value = '';
+    document.getElementById('intl-from-area').value = '';
     document.getElementById('success-card').classList.remove('visible');
     clearMap();
     resetToBooking();
@@ -1454,21 +1460,23 @@ import { AREAS, AIRPORTS } from '../data/rides';
     } else {
       fareSection.querySelector('h2').textContent = 'دليل الأسعار المحلية 2026';
       const SAMPLE = [
-        ['center','new-damietta'],['center','ras-el-bar'],['center','kafr-saad'],
-        ['center','faraskur'],['new-damietta','ras-el-bar'],['center','zarqa'],
-        ['center','el-saro'],['center','kafr-batikh'],
+        { from: 'وسط دمياط',       to: 'دمياط الجديدة',    km: 5.5 },
+        { from: 'وسط دمياط',       to: 'رأس البر',          km: 12.0 },
+        { from: 'وسط دمياط',       to: 'كفر سعد',           km: 8.0 },
+        { from: 'وسط دمياط',       to: 'فارسكور',           km: 11.5 },
+        { from: 'دمياط الجديدة',   to: 'رأس البر',          km: 9.5 },
+        { from: 'وسط دمياط',       to: 'الزرقا',            km: 14.0 },
+        { from: 'وسط دمياط',       to: 'منية النصر',        km: 18.0 },
+        { from: 'دمياط الجديدة',   to: 'كفر سعد',           km: 6.5 },
       ];
-      SAMPLE.forEach(([fid,tid]) => {
-        const f = AREAS.find(a => a.id === fid), t = AREAS.find(a => a.id === tid);
-        if (!f || !t) return;
-        const estRoad = haversineKm(f.lat, f.lng, t.lat, t.lng) * 1.35;
-        const fare = fareFor(estRoad);
+      SAMPLE.forEach(({ from, to, km }) => {
+        const fare = fareFor(km);
         fareGrid.insertAdjacentHTML('beforeend',
           `<div class="fare-card">
             <div class="fare-card__route">
-              <div class="fare-card__from">${f.name}</div>
-              <div class="fare-card__to">← ${t.name}</div>
-              <div style="font-size:10px;color:var(--color-text-faint);margin-top:2px;">~${estRoad.toFixed(1)} كم</div>
+              <div class="fare-card__from">${from}</div>
+              <div class="fare-card__to">← ${to}</div>
+              <div style="font-size:10px;color:var(--color-text-faint);margin-top:2px;">~${km.toFixed(1)} كم</div>
             </div>
             <div class="fare-card__price">${fare} ج.م</div>
           </div>`

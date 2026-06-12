@@ -2,8 +2,6 @@
 import Layout from '../components/layout.astro';
 import PageHero from '../components/PageHero.astro';
 import { AIRPORTS, priceForDistance } from '../data/airports';
-
-const AREAS = ['دمياط الجديدة', 'دمياط', 'كفر سعد', 'فارسكور', 'منية النصر', 'رأس البر', 'الزرقا'];
 ---
 
 <style>
@@ -124,6 +122,8 @@ const AREAS = ['دمياط الجديدة', 'دمياط', 'كفر سعد', 'فا
     .air-summary { position: static; }
     .air-row { grid-template-columns: 1fr; }
   }
+  /* ensure Google Places dropdown appears above everything */
+  .pac-container { z-index: 9999 !important; direction: rtl; font-family: var(--font-body); }
 </style>
 
 <Layout
@@ -156,9 +156,7 @@ const AREAS = ['دمياط الجديدة', 'دمياط', 'كفر سعد', 'فا
       <div class="air-row">
         <div class="field">
           <label class="field__label" for="from-area">نقطة البداية (منطقتك)</label>
-          <select class="field__select" id="from-area">
-            {AREAS.map(a => <option value={a} selected={a === 'دمياط الجديدة'}>{a}</option>)}
-          </select>
+          <input type="text" class="field__input" id="from-area" placeholder="اكتب منطقتك أو حيّك في دمياط..." autocomplete="off" />
         </div>
         <div class="field">
           <label class="field__label" for="airport">المطار (نقطة النهاية)</label>
@@ -290,11 +288,50 @@ const AREAS = ['دمياط الجديدة', 'دمياط', 'كفر سعد', 'فا
     import { priceForDistance, CHECKIN_BUFFER, SAFETY_MARGIN } from '../data/airports';
     import { isEgyptianMobile, normalizeEgyptianPhone, EG_PHONE_ERROR } from '../utils/phone';
 
+    const GMAPS_KEY = 'AIzaSyAKvFfBYNDcTZgvZZH5s_lQbOc24LNjLsY';
+
     const $ = (id: string) => document.getElementById(id)!;
     const form = $('air-form') as HTMLFormElement;
     const airportSel = $('airport') as HTMLSelectElement;
     const flightInput = $('flight-time') as HTMLInputElement;
     const errBox = $('air-error') as HTMLElement;
+
+    // ── Google Places for from-area ──
+    let fromAreaPlace: { name: string; lat: number; lng: number } | null = null;
+
+    function loadGoogleMaps(): Promise<void> {
+      return new Promise((resolve) => {
+        if ((window as any).google?.maps) { resolve(); return; }
+        (window as any).__airGmInit = resolve;
+        const s = document.createElement('script');
+        s.src = `https://maps.googleapis.com/maps/api/js?key=${GMAPS_KEY}&libraries=places&callback=__airGmInit&language=ar`;
+        s.async = true;
+        document.head.appendChild(s);
+      });
+    }
+
+    async function initFromAreaAutocomplete(): Promise<void> {
+      await loadGoogleMaps();
+      const G = (window as any).google.maps;
+      const damiettaBounds = new G.LatLngBounds(
+        { lat: 31.25, lng: 31.55 },
+        { lat: 31.60, lng: 32.05 }
+      );
+      const ac = new G.places.Autocomplete(document.getElementById('from-area'), {
+        bounds: damiettaBounds,
+        componentRestrictions: { country: 'eg' },
+        strictBounds: false,
+        fields: ['geometry', 'name', 'formatted_address'],
+      });
+      ac.addListener('place_changed', () => {
+        const p = ac.getPlace();
+        if (!p?.geometry?.location) return;
+        fromAreaPlace = { name: p.name || p.formatted_address, lat: p.geometry.location.lat(), lng: p.geometry.location.lng() };
+        render();
+      });
+    }
+
+    initFromAreaAutocomplete();
 
     const BAG_FREE = 4;
     const BAG_FEE = 15;
@@ -353,7 +390,7 @@ const AREAS = ['دمياط الجديدة', 'دمياط', 'كفر سعد', 'فا
     function render(): void {
       const c = calc();
       const opt = airportSel.selectedOptions[0];
-      const fromArea = ($('from-area') as HTMLSelectElement).value;
+      const fromArea = fromAreaPlace?.name || (document.getElementById('from-area') as HTMLInputElement).value || '';
 
       // Route
       $('sum-route').textContent = opt && opt.value
@@ -400,7 +437,7 @@ const AREAS = ['دمياط الجديدة', 'دمياط', 'كفر سعد', 'فا
       errBox.classList.remove('is-visible');
 
       const opt = airportSel.selectedOptions[0];
-      const fromArea = ($('from-area') as HTMLSelectElement).value;
+      const fromArea = fromAreaPlace?.name || (document.getElementById('from-area') as HTMLInputElement).value || '';
       const orderId = 'WSL-' + new Date().getFullYear() + '-' + Math.floor(100000 + Math.random() * 900000);
 
       const order = {
@@ -423,7 +460,7 @@ const AREAS = ['دمياط الجديدة', 'دمياط', 'كفر سعد', 'فا
         bags: ($('bags') as HTMLInputElement).value,
         recipient: name,
         phone: normalizeEgyptianPhone(phone),
-        address: `${fromArea} — ${($('address') as HTMLTextAreaElement).value}`,
+        address: `${fromArea} — ${($('address') as HTMLTextAreaElement).value.trim()}`,
         createdAt: new Date().toISOString(),
       };
 
