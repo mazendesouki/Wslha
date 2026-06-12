@@ -21,6 +21,24 @@ export const AREAS: Area[] = [
   { id: 'kafr-batikh',      name: 'كفر البطيخ',        lat: 31.270, lng: 31.933 },
 ];
 
+export interface Airport {
+  id: string;
+  name: string;
+  lat: number;
+  lng: number;
+  flatFare: number;    // EGP — سعر ثابت من محافظة دمياط
+  driveMins: number;   // متوسط وقت القيادة من وسط دمياط
+}
+
+export const AIRPORTS: Airport[] = [
+  { id: 'port-said',  name: 'مطار بورسعيد',              lat: 31.282, lng: 32.236, flatFare: 220,  driveMins: 90  },
+  { id: 'cairo',      name: 'مطار القاهرة الدولي ✈️',    lat: 30.122, lng: 31.406, flatFare: 600,  driveMins: 200 },
+  { id: 'alex',       name: 'مطار برج العرب (إسكندرية)', lat: 30.917, lng: 29.696, flatFare: 750,  driveMins: 230 },
+  { id: 'sharm',      name: 'مطار شرم الشيخ',             lat: 27.977, lng: 34.395, flatFare: 950,  driveMins: 310 },
+  { id: 'hurghada',   name: 'مطار الغردقة',               lat: 27.178, lng: 33.800, flatFare: 1050, driveMins: 360 },
+  { id: 'luxor',      name: 'مطار الأقصر',                lat: 25.671, lng: 32.706, flatFare: 1200, driveMins: 420 },
+];
+
 // Pricing constants
 export const BASE_FARE    = 15;   // ج.م fixed flag-fall
 export const RATE_PER_KM  = 7;    // ج.م per road-km

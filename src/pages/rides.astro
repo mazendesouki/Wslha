@@ -1,7 +1,7 @@
 ---
 import Layout from '../components/layout.astro';
 import PageHero from '../components/PageHero.astro';
-import { AREAS } from '../data/rides';
+import { AREAS, AIRPORTS } from '../data/rides';
 ---
 
 <style>
@@ -46,6 +46,83 @@ import { AREAS } from '../data/rides';
     box-shadow: var(--shadow-md);
     overflow: hidden;
   }
+
+  /* ── trip type toggle ── */
+  .type-bar {
+    padding: var(--sp-5) var(--sp-6) 0;
+  }
+  .type-bar__label {
+    font-size: var(--text-xs); font-weight: var(--weight-bold);
+    color: var(--color-text-faint); margin-bottom: var(--sp-2); display: block;
+  }
+  .type-btns {
+    display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-2);
+    background: var(--color-bg-soft); border-radius: var(--radius-xl);
+    padding: var(--sp-1); border: 1px solid var(--color-border);
+  }
+  .type-btn {
+    padding: var(--sp-3) var(--sp-2);
+    border-radius: var(--radius-lg); border: 2px solid transparent;
+    font-family: var(--font-body); font-size: var(--text-sm); font-weight: var(--weight-bold);
+    cursor: pointer; transition: all 0.2s; background: transparent; color: var(--color-text-muted);
+    display: flex; flex-direction: column; align-items: center; gap: 3px;
+  }
+  .type-btn__icon { font-size: 1.4rem; }
+  .type-btn__name { font-weight: var(--weight-black); font-size: var(--text-sm); }
+  .type-btn__desc { font-size: 10px; color: var(--color-text-faint); }
+  .type-btn.active {
+    background: var(--color-bg); border-color: var(--color-primary);
+    color: var(--color-primary); box-shadow: var(--shadow-sm);
+  }
+  .type-btn.active .type-btn__desc { color: var(--color-primary); opacity: 0.75; }
+  .type-hint {
+    font-size: 11px; color: var(--color-text-faint); text-align: center;
+    margin-top: var(--sp-2); padding: 0 var(--sp-4);
+  }
+
+  /* ── international fields ── */
+  .intl-section {
+    padding: var(--sp-4) var(--sp-6) 0;
+    display: none;
+    flex-direction: column;
+    gap: var(--sp-4);
+  }
+  .intl-section.visible { display: flex; }
+  .intl-field { display: flex; flex-direction: column; gap: var(--sp-2); }
+  .intl-field__label { font-weight: var(--weight-bold); font-size: var(--text-sm); color: #374151; display: flex; align-items: center; gap: 6px; }
+  .intl-field__select, .intl-field__input, .intl-field__textarea {
+    width: 100%; padding: var(--sp-3) var(--sp-4);
+    border: 2px solid var(--color-border); border-radius: var(--radius);
+    font-family: var(--font-body); font-size: var(--text-sm);
+    direction: rtl; background: var(--color-bg); color: var(--color-text); outline: none;
+    transition: border-color var(--ease);
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: left 12px center;
+  }
+  .intl-field__select:focus, .intl-field__input:focus, .intl-field__textarea:focus { border-color: var(--color-primary); }
+  .intl-field__textarea { resize: vertical; min-height: 70px; background-image: none; }
+  .intl-field__input[type="datetime-local"] { background-image: none; cursor: pointer; }
+  .depart-box {
+    background: #eff6ff; border: 1.5px solid #bfdbfe;
+    border-radius: var(--radius-lg); padding: var(--sp-3) var(--sp-4);
+    display: none; gap: var(--sp-2); align-items: center;
+  }
+  .depart-box.visible { display: flex; }
+  .depart-box__icon { font-size: 1.4rem; flex-shrink: 0; }
+  .depart-box__text { flex: 1; font-size: var(--text-sm); }
+  .depart-box__time { font-weight: var(--weight-black); color: var(--color-primary); font-size: var(--text-base); }
+  .depart-box__label { font-size: 11px; color: var(--color-text-faint); }
+
+  /* fare badge for intl */
+  .intl-fare-badge {
+    background: #dcfce7; color: #15803d;
+    border-radius: var(--radius-lg); padding: var(--sp-3) var(--sp-5);
+    font-weight: var(--weight-black); font-size: var(--text-lg);
+    text-align: center; display: none;
+  }
+  .intl-fare-badge.visible { display: block; }
+  .intl-fare-badge__sub { font-size: 11px; font-weight: var(--weight-normal); color: #16a34a; margin-top: 2px; }
 
   /* ── route selector ── */
   .route-bar {
@@ -381,7 +458,79 @@ import { AREAS } from '../data/rides';
       <div>
         <!-- Booking card -->
         <div id="booking-card" class="booking-card">
-          <div class="route-bar">
+
+          <!-- Trip type selector -->
+          <div class="type-bar">
+            <span class="type-bar__label">نوع الرحلة</span>
+            <div class="type-btns">
+              <button class="type-btn active" id="btn-local" type="button">
+                <span class="type-btn__icon">🚗</span>
+                <span class="type-btn__name">محلية (ساعتان)</span>
+                <span class="type-btn__desc">داخل دمياط — عداد</span>
+              </button>
+              <button class="type-btn" id="btn-intl" type="button">
+                <span class="type-btn__icon">✈️</span>
+                <span class="type-btn__name">دولية (3 ساعات)</span>
+                <span class="type-btn__desc">توصيل للمطار — ثابت</span>
+              </button>
+            </div>
+            <p class="type-hint" id="type-hint" style="display:none">نستخدمها لحساب الوقت اللازم للوصول قبل الإقلاع.</p>
+          </div>
+
+          <!-- International / Airport fields (hidden by default) -->
+          <div class="intl-section" id="intl-section">
+            <!-- From area -->
+            <div class="intl-field">
+              <label class="intl-field__label" for="intl-from-area">
+                <span style="width:10px;height:10px;border-radius:50%;background:var(--color-primary);display:inline-block;flex-shrink:0"></span>
+                نقطة البداية (منطقتك)
+              </label>
+              <select id="intl-from-area" class="intl-field__select">
+                <option value="">اختر منطقتك</option>
+                {AREAS.map(a => <option value={a.id} data-lat={a.lat} data-lng={a.lng}>{a.name}</option>)}
+              </select>
+            </div>
+            <!-- Airport -->
+            <div class="intl-field">
+              <label class="intl-field__label" for="intl-airport">
+                <span style="width:10px;height:10px;border-radius:50%;background:#ef4444;display:inline-block;flex-shrink:0"></span>
+                المطار (نقطة النهاية)
+              </label>
+              <select id="intl-airport" class="intl-field__select">
+                <option value="">اختر المطار</option>
+                {AIRPORTS.map(a => <option value={a.id} data-fare={a.flatFare} data-mins={a.driveMins} data-lat={a.lat} data-lng={a.lng}>{a.name}</option>)}
+              </select>
+            </div>
+            <!-- Pickup address -->
+            <div class="intl-field">
+              <label class="intl-field__label" for="intl-address">📍 عنوان الاستلام بالتفصيل</label>
+              <textarea id="intl-address" class="intl-field__textarea" placeholder="الحي، الشارع، رقم المبنى، علامة مميزة..."></textarea>
+            </div>
+            <!-- Flight datetime -->
+            <div class="intl-field">
+              <label class="intl-field__label" for="intl-flight-time">📅 تاريخ ووقت إقلاع الطائرة</label>
+              <input type="datetime-local" id="intl-flight-time" class="intl-field__input" />
+              <span style="font-size:11px;color:var(--color-text-faint);">سنحسب لك وقت المغادرة من بيتك للوصول للمطار تلقائياً</span>
+            </div>
+            <!-- Calculated departure box -->
+            <div class="depart-box" id="depart-box">
+              <span class="depart-box__icon">🕐</span>
+              <div class="depart-box__text">
+                <div class="depart-box__label">اترك بيتك في موعد أقصاه:</div>
+                <div class="depart-box__time" id="depart-time">—</div>
+              </div>
+              <div style="font-size:11px;color:var(--color-text-faint);text-align:center;line-height:1.4;">
+                3 ساعات حجز<br>+ وقت القيادة
+              </div>
+            </div>
+            <!-- Airport fare badge -->
+            <div class="intl-fare-badge" id="intl-fare-badge">
+              <div id="intl-fare-amount">—</div>
+              <div class="intl-fare-badge__sub">سعر ثابت شامل — لا توجد رسوم إضافية</div>
+            </div>
+          </div>
+
+          <div class="route-bar" id="local-route-bar">
             <div class="route-pick">
               <span class="route-pick__label"><span class="dot dot--from"></span> من أين؟</span>
               <select id="from-area" class="route-pick__select">
@@ -553,7 +702,7 @@ import { AREAS } from '../data/rides';
   </div><!-- /rides-page -->
 </Layout>
 
-<script define:vars={{ AREAS }}>
+<script define:vars={{ AREAS, AIRPORTS }}>
   // ── Supabase ──
   const SB_URL = 'https://vtikgyiopkjnrwlqnmfx.supabase.co';
   const SB_KEY = 'sb_publishable_PLSnpvCT-sAyUMtymNgTwA_QmL2suw4';
@@ -862,6 +1011,128 @@ import { AREAS } from '../data/rides';
     window.scrollTo({ top: 0, behavior: 'smooth' });
   });
 
+  // ── Trip type (local / international) ──
+  let tripType = 'local'; // 'local' | 'intl'
+
+  function switchType(type) {
+    tripType = type;
+    const isIntl = type === 'intl';
+    document.getElementById('btn-local').classList.toggle('active', !isIntl);
+    document.getElementById('btn-intl').classList.toggle('active', isIntl);
+    document.getElementById('type-hint').style.display = isIntl ? 'block' : 'none';
+    document.getElementById('local-route-bar').style.display = isIntl ? 'none' : '';
+    document.getElementById('route-summary').style.display = isIntl ? 'none' : '';
+    document.getElementById('fare-breakdown').style.display = isIntl ? 'none' : '';
+    document.getElementById('intl-section').classList.toggle('visible', isIntl);
+
+    // Update confirm button label and hint
+    const confirmBtn = document.getElementById('confirm-btn');
+    const submitHint = document.getElementById('submit-hint');
+    if (isIntl) {
+      confirmBtn.textContent = '✈️ تأكيد حجز المطار';
+      submitHint.textContent = 'اختر منطقتك والمطار وأدخل وقت الرحلة أولاً';
+      confirmBtn.disabled = true;
+      submitHint.classList.add('visible');
+    } else {
+      confirmBtn.textContent = '🚗 تأكيد الطلب وتتبع الرحلة';
+      submitHint.classList.add('visible');
+      submitHint.textContent = 'اختر منطقة الانطلاق والوصول أولاً';
+      updateUI(); // re-evaluate local state
+    }
+    clearMap();
+  }
+
+  document.getElementById('btn-local').addEventListener('click', () => switchType('local'));
+  document.getElementById('btn-intl').addEventListener('click',  () => switchType('intl'));
+
+  // ── International mode logic ──
+  const intlFromSel    = document.getElementById('intl-from-area');
+  const intlAirportSel = document.getElementById('intl-airport');
+  const intlFlightTime = document.getElementById('intl-flight-time');
+
+  function airportOption() {
+    const o = intlAirportSel.options[intlAirportSel.selectedIndex];
+    if (!o?.value) return null;
+    return {
+      id: o.value, name: o.text,
+      flatFare: Number(o.dataset.fare),
+      driveMins: Number(o.dataset.mins),
+      lat: Number(o.dataset.lat), lng: Number(o.dataset.lng),
+    };
+  }
+
+  function fromAreaOption() {
+    const sel = intlFromSel;
+    const o = sel.options[sel.selectedIndex];
+    if (!o?.value) return null;
+    return { id: o.value, name: o.text, lat: Number(o.dataset.lat), lng: Number(o.dataset.lng) };
+  }
+
+  function updateIntlUI() {
+    const airport   = airportOption();
+    const fromArea  = fromAreaOption();
+    const flightVal = intlFlightTime.value;
+    const confirmBtn = document.getElementById('confirm-btn');
+    const submitHint = document.getElementById('submit-hint');
+    const departBox  = document.getElementById('depart-box');
+    const fareBadge  = document.getElementById('intl-fare-badge');
+    const fareAmount = document.getElementById('intl-fare-amount');
+
+    if (!airport) {
+      departBox.classList.remove('visible');
+      fareBadge.classList.remove('visible');
+      confirmBtn.disabled = true;
+      submitHint.classList.add('visible');
+      return;
+    }
+
+    // Show flat fare
+    fareBadge.classList.add('visible');
+    fareAmount.textContent = airport.flatFare.toLocaleString('ar-EG') + ' ج.م — ' + airport.name;
+
+    // Calculate departure time if flight time given
+    if (flightVal) {
+      const flightDate = new Date(flightVal);
+      const totalBufferMs = (3 * 60 + airport.driveMins) * 60 * 1000; // 3h buffer + drive
+      const departDate = new Date(flightDate.getTime() - totalBufferMs);
+      document.getElementById('depart-time').textContent =
+        departDate.toLocaleString('ar-EG', { weekday:'short', month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' });
+      departBox.classList.add('visible');
+    } else {
+      departBox.classList.remove('visible');
+    }
+
+    // Enable confirm if all required fields filled
+    const hasFrom  = !!intlFromSel.value;
+    const hasAirport = !!intlAirportSel.value;
+    const hasTime  = !!flightVal;
+    const hasAddress = !!document.getElementById('intl-address').value.trim();
+    const ready = hasFrom && hasAirport && hasTime && hasAddress;
+    confirmBtn.disabled = !ready;
+    if (ready) {
+      submitHint.classList.remove('visible');
+      confirmBtn.classList.add('ready');
+    } else {
+      submitHint.classList.add('visible');
+      confirmBtn.classList.remove('ready');
+      submitHint.textContent = !hasFrom ? 'اختر منطقتك' :
+        !hasAirport ? 'اختر المطار' :
+        !hasAddress ? 'أدخل عنوان الاستلام' :
+        'أدخل تاريخ ووقت الرحلة';
+    }
+
+    // Show route on map if from and airport are chosen
+    if (fromArea && airport) {
+      showRoute(fromArea, { lat: airport.lat, lng: airport.lng, name: airport.name, id: airport.id });
+    }
+  }
+
+  intlFromSel.addEventListener('change', updateIntlUI);
+  intlAirportSel.addEventListener('change', updateIntlUI);
+  intlFlightTime.addEventListener('change', updateIntlUI);
+  intlFlightTime.addEventListener('input', updateIntlUI);
+  document.getElementById('intl-address').addEventListener('input', updateIntlUI);
+
   // ── selectors ──
   const fromSel = document.getElementById('from-area');
   const toSel   = document.getElementById('to-area');
@@ -919,25 +1190,94 @@ import { AREAS } from '../data/rides';
 
   // ── confirm ──
   document.getElementById('confirm-btn').addEventListener('click', async () => {
-    const from = areaBy(fromSel), to = areaBy(toSel);
-    if (!from || !to) return;
-    const name  = document.getElementById('r-name').value.trim();
-    const phone = normPhone(document.getElementById('r-phone').value.trim());
     const errEl = document.getElementById('alert-error');
     errEl.classList.remove('visible');
-    if (!name)          { errEl.textContent = 'يرجى إدخال الاسم.'; errEl.classList.add('visible'); return; }
-    if (!EG.test(phone)){ errEl.textContent = 'رقم جوال مصري غير صحيح (يبدأ بـ 010 أو 011 أو 012 أو 015).'; errEl.classList.add('visible'); return; }
+
+    const name  = document.getElementById('r-name').value.trim();
+    const phone = normPhone(document.getElementById('r-phone').value.trim());
+    if (!name)           { errEl.textContent = 'يرجى إدخال الاسم.'; errEl.classList.add('visible'); return; }
+    if (!EG.test(phone)) { errEl.textContent = 'رقم جوال مصري غير صحيح (يبدأ بـ 010 أو 011 أو 012 أو 015).'; errEl.classList.add('visible'); return; }
+
+    const pax  = document.getElementById('r-passengers').value;
+    const pay  = document.querySelector('input[name="r-payment"]:checked').value;
+    const notes = document.getElementById('r-notes').value.trim();
+
+    confirmBtn.disabled = true;
+    confirmBtn.classList.remove('ready');
+
+    // ── INTERNATIONAL branch ──
+    if (tripType === 'intl') {
+      const airport  = airportOption();
+      const fromArea = fromAreaOption();
+      const flightVal = intlFlightTime.value;
+      const address  = document.getElementById('intl-address').value.trim();
+      if (!airport || !fromArea || !flightVal || !address) return;
+
+      confirmBtn.textContent = 'جاري إرسال الحجز...';
+
+      const flightDate = new Date(flightVal);
+      const totalBufferMs = (3 * 60 + airport.driveMins) * 60 * 1000;
+      const departDate = new Date(flightDate.getTime() - totalBufferMs);
+
+      const ridePayload = {
+        customer_phone: phone, customer_name: name,
+        from_area: fromArea.name, from_lat: fromArea.lat, from_lng: fromArea.lng,
+        to_area: airport.name, to_lat: airport.lat, to_lng: airport.lng,
+        distance_km: 0, fare: airport.flatFare, eta_minutes: airport.driveMins,
+        passengers: parseInt(pax), payment: pay,
+        notes: `✈️ رحلة دولية — ${address} — إقلاع: ${flightDate.toLocaleString('ar-EG')} — مغادرة: ${departDate.toLocaleString('ar-EG')}${notes ? ' — ' + notes : ''}`,
+        status: 'pending', ride_type: 'airport',
+      };
+      const ride = await sbCreateRide(ridePayload);
+      activeRideId = ride?.id || null;
+
+      try {
+        const orders = JSON.parse(localStorage.getItem('wslha_orders') || '[]');
+        orders.unshift({ id: ride?.id || ('R'+Date.now()), type:'airport', from:fromArea.name, to:airport.name, name, phone, passengers:pax, payment:pay, fare:airport.flatFare, eta:airport.driveMins, status:'pending', createdAt:new Date().toISOString(), flightTime:flightVal, departTime:departDate.toISOString() });
+        localStorage.setItem('wslha_orders', JSON.stringify(orders));
+      } catch {}
+
+      confirmBtn.disabled = false;
+      confirmBtn.classList.add('ready');
+      confirmBtn.textContent = '✈️ تأكيد حجز المطار';
+
+      const from = fromArea;
+      const to   = { lat: airport.lat, lng: airport.lng, name: airport.name, id: airport.id };
+      _currentFrom = from; _currentTo = to; _currentEta = airport.driveMins;
+      _driverShown = false; _onRide = false;
+      if (window._liveInterval) clearInterval(window._liveInterval);
+      window._st_assigned = window._st_arrived = window._st_onride = false;
+
+      document.getElementById('ride-status').classList.add('visible');
+      document.getElementById('st-confirmed-time').textContent = new Date().toLocaleTimeString('ar-EG', { hour:'2-digit', minute:'2-digit' });
+      document.getElementById('st-confirmed').className = 'status-step done';
+      document.getElementById('st-assigned').className  = 'status-step active';
+
+      showRoute(from, to);
+      showSearching(from.name, airport.name, airport.flatFare);
+
+      if (activeRideId) {
+        ridePoller = setInterval(pollRideStatus, 2000);
+      } else {
+        setTimeout(() => {
+          _driverShown = true;
+          showDriverFound({ driver_name: 'السائق المتاح', driver_phone: '', from_area: from.name, to_area: airport.name, fare: airport.flatFare });
+          setTimeout(() => startLiveTracking(from, to, airport.driveMins), 1000);
+        }, 4000);
+      }
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+
+    // ── LOCAL branch ──
+    const from = areaBy(fromSel), to = areaBy(toSel);
+    if (!from || !to) return;
 
     const km       = haversineKm(from.lat, from.lng, to.lat, to.lng);
     const roadKm   = _realRoadKm > 0 ? _realRoadKm : km * 1.35;
     const fare     = fareFor(roadKm);
     const eta      = _realEtaMin > 0 ? _realEtaMin : etaMin(km);
-    const pax    = document.getElementById('r-passengers').value;
-    const pay    = document.querySelector('input[name="r-payment"]:checked').value;
-    const notes  = document.getElementById('r-notes').value.trim();
 
-    confirmBtn.disabled    = true;
-    confirmBtn.classList.remove('ready');
     confirmBtn.textContent = 'جاري إرسال الطلب...';
 
     // POST to Supabase
@@ -947,7 +1287,7 @@ import { AREAS } from '../data/rides';
       to_area:   to.name,   to_lat:   to.lat,   to_lng:   to.lng,
       distance_km: roadKm, fare, eta_minutes: eta,
       passengers: parseInt(pax), payment: pay, notes,
-      status: 'pending',
+      status: 'pending', ride_type: 'local',
     };
     const ride = await sbCreateRide(ridePayload);
     activeRideId = ride?.id || null;
