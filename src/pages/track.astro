@@ -361,103 +361,96 @@ import PageHero from '../components/PageHero.astro';
     if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
   }
 
-  // ── Leaflet ──────────────────────────────────────────────
-  function loadLeaflet() {
+  // ── Google Maps ──────────────────────────────────────────
+  const GMAPS_KEY = 'AIzaSyAKvFfBYNDcTZgvZZH5s_lQbOc24LNjLsY';
+  let _routeRenderer = null;
+
+  function loadGoogleMaps() {
     return new Promise((resolve) => {
-      if (window.L) { resolve(); return; }
-      const link = document.createElement('link');
-      link.rel = 'stylesheet';
-      link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
-      document.head.appendChild(link);
+      if (window.google?.maps) { resolve(); return; }
+      window.__gmInit = resolve;
       const s = document.createElement('script');
-      s.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
-      s.onload = resolve;
+      s.src = `https://maps.googleapis.com/maps/api/js?key=${GMAPS_KEY}&callback=__gmInit&language=ar`;
+      s.async = true;
       document.head.appendChild(s);
     });
   }
 
-  function makeIcon(emoji, color) {
-    return L.divIcon({
-      html: `<div style="background:${color};width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;border:3px solid white;box-shadow:0 2px 6px rgba(0,0,0,.3)">${emoji}</div>`,
-      className: '',
-      iconSize: [36, 36],
-      iconAnchor: [18, 18],
-      popupAnchor: [0, -18],
-    });
-  }
-
-  async function fetchOSRMRoute(lat1, lng1, lat2, lng2) {
-    const res = await fetch(`https://router.project-osrm.org/route/v1/driving/${lng1},${lat1};${lng2},${lat2}?overview=full&geometries=geojson`);
-    const data = await res.json();
-    if (!data.routes?.[0]) return null;
-    return {
-      coords: data.routes[0].geometry.coordinates.map(([lng, lat]) => [lat, lng]),
-      distanceKm: data.routes[0].distance / 1000,
-      durationMin: Math.ceil(data.routes[0].duration / 60),
-    };
-  }
-
   async function initTrackMap(sLat, sLng) {
     document.getElementById('track-map-card').classList.add('visible');
-    try { await loadLeaflet(); } catch { return; }
+    try { await loadGoogleMaps(); } catch { return; }
     if (map) return;
     storeLLng = { lat: sLat, lng: sLng };
+    const G = window.google.maps;
 
-    map = L.map('track-map').setView([sLat, sLng], 14);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '© OpenStreetMap contributors',
-      maxZoom: 19,
-    }).addTo(map);
+    map = new G.Map(document.getElementById('track-map'), {
+      center: { lat: sLat, lng: sLng }, zoom: 14,
+      mapTypeControl: false, fullscreenControl: false, streetViewControl: false,
+    });
 
-    // Store marker (blue)
-    storeMarker = L.marker([sLat, sLng], { icon: makeIcon('🏪', '#3b82f6'), title: 'المتجر' })
-      .addTo(map)
-      .bindPopup('<div style="font-family:Cairo,sans-serif;font-size:13px;font-weight:700">🏪 المتجر</div>')
-      .openPopup();
+    storeMarker = new G.Marker({
+      position: { lat: sLat, lng: sLng }, map, title: 'المتجر',
+      icon: { path: G.SymbolPath.CIRCLE, fillColor: '#3b82f6', fillOpacity: 1, strokeColor: '#fff', strokeWeight: 3, scale: 11 },
+      label: { text: '🏪', color: '#fff', fontSize: '13px' },
+    });
+    new G.InfoWindow({ content: '<div style="font-family:Cairo,sans-serif;font-size:13px;font-weight:700">🏪 المتجر</div>' }).open(map, storeMarker);
 
-    // My-location button
     document.getElementById('btn-my-location').addEventListener('click', getCustomerLocation);
   }
 
-  // Draw route: driver → customer (or store if no customer)
+  // Draw route once; subsequent GPS updates only move the marker
   async function drawRoute(dLat, dLng) {
     if (!map) return;
     const dest = customerLatLng || storeLLng;
     if (!dest) return;
+    const G = window.google.maps;
 
-    if (routeLine) { map.removeLayer(routeLine); routeLine = null; }
-
+    if (!_routeRenderer) {
+      _routeRenderer = new G.DirectionsRenderer({
+        map, suppressMarkers: true,
+        polylineOptions: { strokeColor: '#3b82f6', strokeWeight: 5, strokeOpacity: 0.85 },
+      });
+    }
     try {
-      const route = await fetchOSRMRoute(dLat, dLng, dest.lat, dest.lng);
-      if (route) {
-        routeLine = L.polyline(route.coords, { color: '#3b82f6', weight: 5, opacity: 0.85 }).addTo(map);
-        document.getElementById('stat-distance').textContent = route.distanceKm.toFixed(1) + ' كم';
-        document.getElementById('stat-duration').textContent = route.durationMin + ' دق';
-        const arr = new Date(Date.now() + route.durationMin * 60 * 1000);
-        document.getElementById('stat-eta').textContent = arr.toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
-        document.getElementById('map-stats').style.display = 'grid';
-      }
+      const result = await new Promise((res, rej) =>
+        new G.DirectionsService().route({
+          origin: { lat: dLat, lng: dLng },
+          destination: { lat: dest.lat, lng: dest.lng },
+          travelMode: G.TravelMode.DRIVING,
+        }, (r, s) => s === 'OK' ? res(r) : rej(s))
+      );
+      _routeRenderer.setDirections(result);
+      const leg = result.routes[0].legs[0];
+      const distKm = leg.distance.value / 1000;
+      const durMin = Math.ceil(leg.duration.value / 60);
+      const arr = new Date(Date.now() + durMin * 60 * 1000);
+      document.getElementById('stat-distance').textContent = distKm.toFixed(1) + ' كم';
+      document.getElementById('stat-duration').textContent = durMin + ' دق';
+      document.getElementById('stat-eta').textContent = arr.toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
+      document.getElementById('map-stats').style.display = 'grid';
     } catch {}
   }
 
   function updateDriverOnMap(lat, lng) {
     if (!map) return;
-
+    const G = window.google.maps;
     if (driverMarker) {
-      driverMarker.setLatLng([lat, lng]);
+      driverMarker.setPosition({ lat, lng });
     } else {
-      driverMarker = L.marker([lat, lng], { icon: makeIcon('🛵', '#16a34a'), zIndexOffset: 999, title: 'المندوب' }).addTo(map);
+      driverMarker = new G.Marker({
+        position: { lat, lng }, map, title: 'المندوب', zIndex: 999,
+        icon: { path: G.SymbolPath.FORWARD_CLOSED_ARROW, fillColor: '#16a34a', fillOpacity: 1, strokeColor: '#fff', strokeWeight: 2, scale: 7 },
+      });
+      // Draw route only on first appearance
+      drawRoute(lat, lng);
     }
 
-    // Fit bounds to show all markers
-    const points = [[lat, lng]];
-    if (storeLLng) points.push([storeLLng.lat, storeLLng.lng]);
-    if (customerLatLng) points.push([customerLatLng.lat, customerLatLng.lng]);
-    if (customerMarker) points.push(customerMarker.getLatLng());
-    map.fitBounds(L.latLngBounds(points), { padding: [40, 40] });
-
-    // Draw route
-    drawRoute(lat, lng);
+    // Fit bounds
+    const bounds = new G.LatLngBounds();
+    bounds.extend({ lat, lng });
+    if (storeLLng)    bounds.extend(storeLLng);
+    if (customerLatLng) bounds.extend(customerLatLng);
+    map.fitBounds(bounds);
   }
 
   // Get customer's real location
@@ -470,18 +463,18 @@ import PageHero from '../components/PageHero.astro';
         btn.textContent = '📍 تم تحديد موقعي';
         btn.style.cssText = 'background:#d1fae5;border-color:#16a34a;color:#16a34a';
         customerLatLng = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-
         if (map) {
-          if (customerMarker) customerMarker.setLatLng([customerLatLng.lat, customerLatLng.lng]);
+          const G = window.google.maps;
+          if (customerMarker) customerMarker.setPosition(customerLatLng);
           else {
-            customerMarker = L.marker([customerLatLng.lat, customerLatLng.lng], {
-              icon: makeIcon('🏠', '#ef4444'), title: 'موقع التوصيل'
-            }).addTo(map);
+            customerMarker = new G.Marker({
+              position: customerLatLng, map, title: 'موقع التوصيل',
+              icon: { path: G.SymbolPath.CIRCLE, fillColor: '#ef4444', fillOpacity: 1, strokeColor: '#fff', strokeWeight: 3, scale: 10 },
+            });
           }
-          // Redraw route with real destination
           if (driverMarker) {
-            const ll = driverMarker.getLatLng();
-            drawRoute(ll.lat, ll.lng);
+            const p = driverMarker.getPosition();
+            drawRoute(p.lat(), p.lng());
           }
         }
       },

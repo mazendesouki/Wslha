@@ -508,114 +508,108 @@ import PageHero from '../components/PageHero.astro';
     setTimeout(() => t.classList.remove('show'), 2800);
   }
 
-  /* ── Leaflet helpers ── */
-  function loadLeaflet() {
+  /* ── Google Maps helpers ── */
+  const GMAPS_KEY = 'AIzaSyAKvFfBYNDcTZgvZZH5s_lQbOc24LNjLsY';
+  let _dirRenderer = null;
+  let _gpsCount = 0;
+
+  function loadGoogleMaps() {
     return new Promise((resolve) => {
-      if (window.L) { resolve(); return; }
-      const link = document.createElement('link');
-      link.rel = 'stylesheet';
-      link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
-      document.head.appendChild(link);
+      if (window.google?.maps) { resolve(); return; }
+      window.__gmInit = resolve;
       const s = document.createElement('script');
-      s.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
-      s.onload = resolve;
+      s.src = `https://maps.googleapis.com/maps/api/js?key=${GMAPS_KEY}&callback=__gmInit&language=ar`;
+      s.async = true;
       document.head.appendChild(s);
     });
-  }
-
-  function makeIcon(emoji, color) {
-    return L.divIcon({
-      html: `<div style="background:${color};width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;border:3px solid white;box-shadow:0 2px 6px rgba(0,0,0,.3)">${emoji}</div>`,
-      className: '',
-      iconSize: [36, 36],
-      iconAnchor: [18, 18],
-      popupAnchor: [0, -18],
-    });
-  }
-
-  async function fetchOSRMRoute(lat1, lng1, lat2, lng2) {
-    const res = await fetch(`https://router.project-osrm.org/route/v1/driving/${lng1},${lat1};${lng2},${lat2}?overview=full&geometries=geojson`);
-    const data = await res.json();
-    if (!data.routes?.[0]) return null;
-    return {
-      coords: data.routes[0].geometry.coordinates.map(([lng, lat]) => [lat, lng]),
-      distanceKm: data.routes[0].distance / 1000,
-      durationMin: Math.ceil(data.routes[0].duration / 60),
-    };
   }
 
   let destLat = null;
   let destLng = null;
 
   async function initDriverMap(fromLat, fromLng, toLat, toLng) {
-    try { await loadLeaflet(); } catch { return; }
+    try { await loadGoogleMaps(); } catch { return; }
     destLat = toLat; destLng = toLng;
     const mapEl = document.getElementById('driver-map');
     if (!mapEl) return;
+    const G = window.google.maps;
 
     if (map) {
-      // Already initialized — just update markers and route
-      if (fromMarkerRef) map.removeLayer(fromMarkerRef);
-      if (toMarkerRef) map.removeLayer(toMarkerRef);
-      fromMarkerRef = L.marker([fromLat, fromLng], { icon: makeIcon('🏪', '#3b82f6'), title: 'نقطة الاستلام' }).addTo(map);
-      toMarkerRef   = L.marker([toLat, toLng],   { icon: makeIcon('🏠', '#ef4444'), title: 'الوجهة' }).addTo(map);
-      drawDriverRoute();
+      if (fromMarkerRef) fromMarkerRef.setMap(null);
+      if (toMarkerRef)   toMarkerRef.setMap(null);
+      fromMarkerRef = new G.Marker({ position: { lat: fromLat, lng: fromLng }, map, title: 'نقطة الاستلام',
+        icon: { path: G.SymbolPath.CIRCLE, fillColor: '#3b82f6', fillOpacity: 1, strokeColor: '#fff', strokeWeight: 3, scale: 10 } });
+      toMarkerRef = new G.Marker({ position: { lat: toLat, lng: toLng }, map, title: 'الوجهة',
+        icon: { path: G.SymbolPath.CIRCLE, fillColor: '#ef4444', fillOpacity: 1, strokeColor: '#fff', strokeWeight: 3, scale: 10 } });
+      await drawDriverRoute();
       return;
     }
 
-    map = L.map('driver-map').setView([fromLat, fromLng], 13);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '© OpenStreetMap contributors',
-      maxZoom: 19,
-    }).addTo(map);
+    map = new G.Map(mapEl, {
+      center: { lat: fromLat, lng: fromLng }, zoom: 13,
+      mapTypeControl: false, fullscreenControl: false, streetViewControl: false,
+    });
 
-    // From marker (pickup)
-    fromMarkerRef = L.marker([fromLat, fromLng], { icon: makeIcon('🏪', '#3b82f6'), title: 'نقطة الاستلام' }).addTo(map);
+    fromMarkerRef = new G.Marker({ position: { lat: fromLat, lng: fromLng }, map, title: 'نقطة الاستلام',
+      icon: { path: G.SymbolPath.CIRCLE, fillColor: '#3b82f6', fillOpacity: 1, strokeColor: '#fff', strokeWeight: 3, scale: 10 } });
+    toMarkerRef = new G.Marker({ position: { lat: toLat, lng: toLng }, map, title: 'الوجهة',
+      icon: { path: G.SymbolPath.CIRCLE, fillColor: '#ef4444', fillOpacity: 1, strokeColor: '#fff', strokeWeight: 3, scale: 10 } });
 
-    // To marker (destination)
-    toMarkerRef = L.marker([toLat, toLng], { icon: makeIcon('🏠', '#ef4444'), title: 'الوجهة' }).addTo(map);
-
-    // Driver marker
     if (driverLat && driverLng) {
-      driverMarker = L.marker([driverLat, driverLng], { icon: makeIcon('🛵', '#16a34a'), zIndexOffset: 999, title: 'موقعك' }).addTo(map);
+      driverMarker = new G.Marker({ position: { lat: driverLat, lng: driverLng }, map, title: 'موقعك', zIndex: 999,
+        icon: { path: G.SymbolPath.FORWARD_CLOSED_ARROW, fillColor: '#16a34a', fillOpacity: 1, strokeColor: '#fff', strokeWeight: 2, scale: 7 } });
     }
 
-    // Draw initial route
     await drawDriverRoute();
 
-    const points = [[fromLat, fromLng], [toLat, toLng]];
-    if (driverLat && driverLng) points.push([driverLat, driverLng]);
-    map.fitBounds(L.latLngBounds(points), { padding: [40, 40] });
+    const bounds = new G.LatLngBounds();
+    bounds.extend({ lat: fromLat, lng: fromLng });
+    bounds.extend({ lat: toLat, lng: toLng });
+    if (driverLat && driverLng) bounds.extend({ lat: driverLat, lng: driverLng });
+    map.fitBounds(bounds);
   }
 
   async function drawDriverRoute() {
     if (!map || !destLat || !destLng) return;
+    const G = window.google.maps;
     const oLat = driverLat ?? destLat;
     const oLng = driverLng ?? destLng;
 
-    if (routeLine) { map.removeLayer(routeLine); routeLine = null; }
-
+    if (!_dirRenderer) {
+      _dirRenderer = new G.DirectionsRenderer({
+        map, suppressMarkers: true,
+        polylineOptions: { strokeColor: '#16a34a', strokeWeight: 5, strokeOpacity: 0.85 },
+      });
+    }
     try {
-      const route = await fetchOSRMRoute(oLat, oLng, destLat, destLng);
-      if (route) {
-        routeLine = L.polyline(route.coords, { color: '#16a34a', weight: 5, opacity: 0.85 }).addTo(map);
-        const distEl = document.getElementById('driver-stat-dist');
-        const durEl  = document.getElementById('driver-stat-dur');
-        if (distEl) distEl.textContent = route.distanceKm.toFixed(1) + ' كم';
-        if (durEl)  durEl.textContent  = route.durationMin + ' دق';
-      }
+      const result = await new Promise((res, rej) =>
+        new G.DirectionsService().route({
+          origin: { lat: oLat, lng: oLng },
+          destination: { lat: destLat, lng: destLng },
+          travelMode: G.TravelMode.DRIVING,
+        }, (r, s) => s === 'OK' ? res(r) : rej(s))
+      );
+      _dirRenderer.setDirections(result);
+      const leg = result.routes[0].legs[0];
+      const distEl = document.getElementById('driver-stat-dist');
+      const durEl  = document.getElementById('driver-stat-dur');
+      if (distEl) distEl.textContent = (leg.distance.value / 1000).toFixed(1) + ' كم';
+      if (durEl)  durEl.textContent  = Math.ceil(leg.duration.value / 60) + ' دق';
     } catch {}
   }
 
   function updateDriverMarker() {
     if (!driverLat || !driverLng || !map) return;
+    const G = window.google.maps;
     if (driverMarker) {
-      driverMarker.setLatLng([driverLat, driverLng]);
+      driverMarker.setPosition({ lat: driverLat, lng: driverLng });
     } else {
-      driverMarker = L.marker([driverLat, driverLng], { icon: makeIcon('🛵', '#16a34a'), zIndexOffset: 999, title: 'موقعك' }).addTo(map);
+      driverMarker = new G.Marker({ position: { lat: driverLat, lng: driverLng }, map, title: 'موقعك', zIndex: 999,
+        icon: { path: G.SymbolPath.FORWARD_CLOSED_ARROW, fillColor: '#16a34a', fillOpacity: 1, strokeColor: '#fff', strokeWeight: 2, scale: 7 } });
     }
-    // Redraw route every GPS update
-    drawDriverRoute();
+    // Redraw route every ~30s (every 10th GPS tick)
+    _gpsCount++;
+    if (_gpsCount === 1 || _gpsCount % 10 === 0) drawDriverRoute();
   }
 
   /* ── UI state ── */

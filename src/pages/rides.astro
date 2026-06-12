@@ -782,70 +782,57 @@ import { AREAS, AIRPORTS } from '../data/rides';
   let _realRoadKm = 0;
   let _realEtaMin = 0;
 
-  // ── Leaflet map setup ──
-  let map = null, fromMarker = null, toMarker = null, routeLine = null, driverMarker = null;
-  let leafletReady = false;
+  // ── Google Maps setup ──
+  const GMAPS_KEY = 'AIzaSyAKvFfBYNDcTZgvZZH5s_lQbOc24LNjLsY';
+  let map = null, fromMarker = null, toMarker = null, routeRenderer = null, driverMarker = null;
+  let gmapsReady = false;
 
-  function loadLeaflet() {
+  function loadGoogleMaps() {
     return new Promise((resolve) => {
-      if (window.L) { resolve(); return; }
-      const link = document.createElement('link');
-      link.rel = 'stylesheet';
-      link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
-      document.head.appendChild(link);
+      if (window.google?.maps) { resolve(); return; }
+      window.__gmInit = resolve;
       const s = document.createElement('script');
-      s.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
-      s.onload = resolve;
+      s.src = `https://maps.googleapis.com/maps/api/js?key=${GMAPS_KEY}&callback=__gmInit&language=ar`;
+      s.async = true;
       document.head.appendChild(s);
     });
-  }
-
-  function makeIcon(emoji, color) {
-    return L.divIcon({
-      html: `<div style="background:${color};width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;border:3px solid white;box-shadow:0 2px 6px rgba(0,0,0,.3)">${emoji}</div>`,
-      className: '',
-      iconSize: [36, 36],
-      iconAnchor: [18, 18],
-      popupAnchor: [0, -18],
-    });
-  }
-
-  async function fetchOSRMRoute(lat1, lng1, lat2, lng2) {
-    const res = await fetch(`https://router.project-osrm.org/route/v1/driving/${lng1},${lat1};${lng2},${lat2}?overview=full&geometries=geojson`);
-    const data = await res.json();
-    if (!data.routes?.[0]) return null;
-    return {
-      coords: data.routes[0].geometry.coordinates.map(([lng, lat]) => [lat, lng]),
-      distanceKm: data.routes[0].distance / 1000,
-      durationMin: Math.ceil(data.routes[0].duration / 60),
-    };
   }
 
   async function initMap() {
     if (map) return true;
     try {
-      await loadLeaflet();
+      await loadGoogleMaps();
       document.getElementById('map-placeholder').style.display = 'none';
       document.getElementById('ride-map').style.display = 'block';
-      map = L.map('ride-map').setView([31.418, 31.814], 11);
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '© OpenStreetMap contributors',
-        maxZoom: 19,
-      }).addTo(map);
-      leafletReady = true;
+      const G = window.google.maps;
+      map = new G.Map(document.getElementById('ride-map'), {
+        center: { lat: 31.418, lng: 31.814 }, zoom: 11,
+        mapTypeControl: false, fullscreenControl: false, streetViewControl: false,
+      });
+      gmapsReady = true;
       return true;
     } catch {
       document.getElementById('map-placeholder').innerHTML =
         '<span style="font-size:2rem;margin-bottom:8px">🗺️</span>' +
-        '<span>الخريطة التفاعلية غير متاحة<br>' +
+        '<span>الخريطة غير متاحة<br>' +
         '<span style="font-size:11px;color:#9ca3af;">المسافة والسعر محسوبان بدقة</span></span>';
       return false;
     }
   }
 
   function clearMap() {
-    [fromMarker, toMarker, routeLine, driverMarker].forEach(o => o && map && map.removeLayer(o));
-    fromMarker = toMarker = routeLine = driverMarker = null;
+    [fromMarker, toMarker, driverMarker].forEach(m => m && m.setMap(null));
+    fromMarker = toMarker = driverMarker = null;
+    if (routeRenderer) { routeRenderer.setMap(null); routeRenderer = null; }
+  }
+
+  function gMarker(lat, lng, label, color, title) {
+    const G = window.google.maps;
+    return new G.Marker({
+      position: { lat, lng }, map, title,
+      icon: { path: G.SymbolPath.CIRCLE, fillColor: color, fillOpacity: 1, strokeColor: '#fff', strokeWeight: 3, scale: 11 },
+      label: { text: label, color: '#fff', fontSize: '13px', fontWeight: 'bold' },
+    });
   }
 
   async function showRoute(from, to) {
@@ -853,45 +840,55 @@ import { AREAS, AIRPORTS } from '../data/rides';
     if (!ok) return;
     clearMap();
 
-    fromMarker = L.marker([from.lat, from.lng], { icon: makeIcon('🏠', '#3b82f6'), title: 'الانطلاق: ' + from.name }).addTo(map);
-    toMarker   = L.marker([to.lat,   to.lng],   { icon: makeIcon('📍', '#ef4444'), title: 'الوصول: ' + to.name }).addTo(map);
+    const G = window.google.maps;
+    fromMarker = gMarker(from.lat, from.lng, 'A', '#3b82f6', 'الانطلاق: ' + from.name);
+    toMarker   = gMarker(to.lat,   to.lng,   'B', '#ef4444', 'الوصول: '  + to.name);
 
-    // Road geometry + distance via OSRM
-    let coords;
     try {
-      const route = await fetchOSRMRoute(from.lat, from.lng, to.lat, to.lng);
-      if (route) {
-        coords = route.coords;
-        _realRoadKm = route.distanceKm;
-        _realEtaMin = Math.max(1, route.durationMin);
-        const realFare = fareFor(_realRoadKm);
-        document.getElementById('sum-dist').textContent  = _realRoadKm.toFixed(1) + ' كم';
-        document.getElementById('sum-eta').textContent   = _realEtaMin + ' دق';
-        document.getElementById('sum-price').textContent = realFare + ' ج.م';
-        const bkEl = document.getElementById('fare-breakdown');
-        if (bkEl) bkEl.innerHTML = fareBreakdown(_realRoadKm);
-      }
-    } catch {}
-    if (!coords) coords = [[from.lat, from.lng], [to.lat, to.lng]];
-    window._routeCoords = coords;
-
-    routeLine = L.polyline(coords, { color: '#3b82f6', weight: 5, opacity: 0.85 }).addTo(map);
-    map.fitBounds(routeLine.getBounds(), { padding: [40, 40] });
+      routeRenderer = new G.DirectionsRenderer({
+        map, suppressMarkers: true,
+        polylineOptions: { strokeColor: '#3b82f6', strokeWeight: 5, strokeOpacity: 0.85 },
+      });
+      const result = await new Promise((res, rej) =>
+        new G.DirectionsService().route({
+          origin: { lat: from.lat, lng: from.lng },
+          destination: { lat: to.lat, lng: to.lng },
+          travelMode: G.TravelMode.DRIVING,
+        }, (r, s) => s === 'OK' ? res(r) : rej(s))
+      );
+      routeRenderer.setDirections(result);
+      const leg = result.routes[0].legs[0];
+      _realRoadKm = leg.distance.value / 1000;
+      _realEtaMin = Math.max(1, Math.ceil(leg.duration.value / 60));
+      const realFare = fareFor(_realRoadKm);
+      document.getElementById('sum-dist').textContent  = _realRoadKm.toFixed(1) + ' كم';
+      document.getElementById('sum-eta').textContent   = _realEtaMin + ' دق';
+      document.getElementById('sum-price').textContent = realFare + ' ج.م';
+      const bkEl = document.getElementById('fare-breakdown');
+      if (bkEl) bkEl.innerHTML = fareBreakdown(_realRoadKm);
+      window._routeCoords = result.routes[0].overview_path.map(p => ({ lat: p.lat(), lng: p.lng() }));
+    } catch {
+      const bounds = new G.LatLngBounds({ lat: from.lat, lng: from.lng }, { lat: to.lat, lng: to.lng });
+      map.fitBounds(bounds);
+    }
   }
 
   // ── live simulation ──
   function startLiveTracking(from, to, etaMinutes) {
-    if (!leafletReady || !map) return;
-    if (driverMarker) map.removeLayer(driverMarker);
-    const coords = window._routeCoords || [[from.lat, from.lng], [to.lat, to.lng]];
+    if (!gmapsReady || !map) return;
+    if (driverMarker) driverMarker.setMap(null);
+    const coords = window._routeCoords || [{ lat: from.lat, lng: from.lng }, { lat: to.lat, lng: to.lng }];
     const totalSteps = coords.length;
     let step = 0;
 
-    driverMarker = L.marker(coords[0], { icon: makeIcon('🛵', '#16a34a'), zIndexOffset: 999 }).addTo(map);
+    const G = window.google.maps;
+    driverMarker = new G.Marker({
+      position: coords[0], map, title: 'السائق', zIndex: 999,
+      icon: { path: G.SymbolPath.FORWARD_CLOSED_ARROW, fillColor: '#16a34a', fillOpacity: 1, strokeColor: '#fff', strokeWeight: 2, scale: 7 },
+    });
     document.getElementById('live-badge').style.display = 'inline-flex';
 
     const msPerStep = Math.max(1500, (etaMinutes * 60 * 1000) / totalSteps);
-
     window._liveInterval = setInterval(() => {
       if (step >= totalSteps - 1) {
         clearInterval(window._liveInterval);
@@ -899,8 +896,7 @@ import { AREAS, AIRPORTS } from '../data/rides';
         return;
       }
       step++;
-      driverMarker.setLatLng(coords[step]);
-
+      driverMarker.setPosition(coords[step]);
       const pct = step / (totalSteps - 1);
       if (pct >= 0.05 && !window._st_assigned) { window._st_assigned = true; advanceStatus('assigned'); }
       if (pct >= 0.15 && !window._st_arrived)  { window._st_arrived = true;  advanceStatus('arrived'); }
