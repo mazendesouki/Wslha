@@ -124,6 +124,15 @@ import { AIRPORTS, priceForDistance } from '../data/airports';
   }
   /* ensure Google Places dropdown appears above everything */
   .pac-container { z-index: 9999 !important; direction: rtl; font-family: var(--font-body); }
+  .loc-wrap { display: flex; align-items: center; gap: 8px; }
+  .loc-wrap .field__input { flex: 1; }
+  .loc-btn {
+    width: 38px; height: 38px; flex-shrink: 0;
+    border: 1.5px solid var(--color-border); border-radius: var(--radius);
+    background: var(--color-bg-soft); cursor: pointer; font-size: 0.95rem;
+    display: flex; align-items: center; justify-content: center; transition: all 0.2s;
+  }
+  .loc-btn:hover { background: var(--color-primary-light); border-color: var(--color-primary); }
 </style>
 
 <Layout
@@ -156,7 +165,10 @@ import { AIRPORTS, priceForDistance } from '../data/airports';
       <div class="air-row">
         <div class="field">
           <label class="field__label" for="from-area">نقطة البداية (منطقتك)</label>
-          <input type="text" class="field__input" id="from-area" placeholder="اكتب منطقتك أو حيّك في دمياط..." autocomplete="off" />
+          <div class="loc-wrap">
+            <input type="text" class="field__input" id="from-area" placeholder="اكتب منطقتك أو حيّك في دمياط..." autocomplete="off" />
+            <button type="button" class="loc-btn" id="btn-air-loc" title="موقعي الحالي">📍</button>
+          </div>
         </div>
         <div class="field">
           <label class="field__label" for="airport">المطار (نقطة النهاية)</label>
@@ -333,6 +345,22 @@ import { AIRPORTS, priceForDistance } from '../data/airports';
     }
 
     initFromAreaAutocomplete();
+
+    document.getElementById('btn-air-loc')?.addEventListener('click', () => {
+      if (!navigator.geolocation) return;
+      const btn = document.getElementById('btn-air-loc')!;
+      btn.textContent = '⏳';
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          fromAreaPlace = { name: 'موقعي الحالي', lat: pos.coords.latitude, lng: pos.coords.longitude };
+          (document.getElementById('from-area') as HTMLInputElement).value = 'موقعي الحالي';
+          btn.textContent = '✅';
+          render();
+          setTimeout(() => { btn.textContent = '📍'; }, 2000);
+        },
+        () => { btn.textContent = '📍'; }
+      );
+    });
 
     const BAG_FREE = 4;
     const BAG_FEE = 15;

@@ -88,7 +88,10 @@ import Layout from '../components/layout.astro';
             </div>
             <div class="form-group form-group--full">
               <label for="biz-address">عنوان النشاط بالتفصيل <span class="req">*</span></label>
-              <input class="form-input" id="biz-address" type="text" placeholder="ابحث: الشارع، الحي، المنطقة، المدينة..." autocomplete="off" />
+              <div style="display:flex;gap:8px;align-items:center;">
+                <input class="form-input" id="biz-address" type="text" placeholder="ابحث: الشارع، الحي، المنطقة، المدينة..." autocomplete="off" style="flex:1" />
+                <button type="button" id="btn-biz-loc" title="موقعي الحالي" style="width:38px;height:38px;flex-shrink:0;border:1.5px solid var(--color-border);border-radius:var(--radius);background:var(--color-bg-soft);cursor:pointer;font-size:0.95rem;display:flex;align-items:center;justify-content:center;">📍</button>
+              </div>
             </div>
             <div class="form-group">
               <label for="biz-phone">جوال النشاط (للعملاء) <span class="req">*</span></label>
@@ -397,7 +400,23 @@ async function submitApplication() {
       if (p?.formatted_address) input.value = p.formatted_address;
     });
   }
-  document.addEventListener('DOMContentLoaded', loadPlaces);
+  document.addEventListener('DOMContentLoaded', () => {
+    loadPlaces();
+    document.getElementById('btn-biz-loc')?.addEventListener('click', () => {
+      if (!navigator.geolocation) return;
+      const btn = document.getElementById('btn-biz-loc');
+      btn.textContent = '⏳';
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          const input = document.getElementById('biz-address');
+          if (input) input.value = 'موقعي الحالي';
+          btn.textContent = '✅';
+          setTimeout(() => { btn.textContent = '📍'; }, 2000);
+        },
+        () => { btn.textContent = '📍'; }
+      );
+    });
+  });
 })();
 </script>
 </Layout>
