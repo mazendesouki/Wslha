@@ -151,6 +151,23 @@ import { AREAS, AIRPORTS } from '../data/rides';
   }
   .route-pick__select:focus { border-color: var(--color-primary); }
   .route-pick__select--to:focus { border-color: #ef4444; }
+  .autocomplete-wrap { position: relative; display: flex; gap: 6px; align-items: center; }
+  .route-pick__input {
+    width: 100%; padding: var(--sp-3) var(--sp-4);
+    border: 2px solid var(--color-border); border-radius: var(--radius-lg);
+    font-family: var(--font-body); font-size: var(--text-sm);
+    direction: rtl; background: var(--color-bg); color: var(--color-text);
+    outline: none; transition: border-color var(--ease);
+  }
+  .route-pick__input:focus { border-color: var(--color-primary); }
+  .route-pick__input--to:focus { border-color: #ef4444; }
+  .loc-btn {
+    width: 36px; height: 36px; flex-shrink: 0;
+    border: 2px solid var(--color-border); border-radius: var(--radius);
+    background: var(--color-bg); cursor: pointer; font-size: 1rem;
+    display: flex; align-items: center; justify-content: center; transition: all 0.2s;
+  }
+  .loc-btn:hover { background: var(--color-primary-light); border-color: var(--color-primary); }
   .swap-btn {
     width: 38px; height: 38px; border-radius: var(--radius-full);
     background: var(--color-bg); border: 2px solid var(--color-border);
@@ -434,6 +451,8 @@ import { AREAS, AIRPORTS } from '../data/rides';
   @media (max-width: 480px) {
     .fare-grid { grid-template-columns: 1fr; }
   }
+  /* ensure Google Places dropdown appears above everything */
+  .pac-container { z-index: 9999 !important; direction: rtl; font-family: var(--font-body); }
 </style>
 
 <Layout title="مشاوير دمياط | وصّلها" page="rides">
@@ -483,18 +502,15 @@ import { AREAS, AIRPORTS } from '../data/rides';
             <div class="route-bar">
               <div class="route-pick">
                 <span class="route-pick__label"><span class="dot dot--from"></span> من أين؟</span>
-                <select id="from-area" class="route-pick__select">
-                  <option value="">اختر منطقة الانطلاق</option>
-                  {AREAS.map(a => <option value={a.id} data-lat={a.lat} data-lng={a.lng}>{a.name}</option>)}
-                </select>
+                <div class="autocomplete-wrap">
+                  <input id="from-area" type="text" class="route-pick__input" placeholder="اكتب عنوانك أو اسم المنطقة..." autocomplete="off" />
+                  <button class="loc-btn" id="btn-my-loc" type="button" title="موقعي الحالي">📍</button>
+                </div>
               </div>
               <button id="swap-btn" class="swap-btn" title="تبديل" type="button">⇄</button>
               <div class="route-pick">
                 <span class="route-pick__label"><span class="dot dot--to"></span> إلى أين؟</span>
-                <select id="to-area" class="route-pick__select route-pick__select--to">
-                  <option value="">اختر منطقة الوصول</option>
-                  {AREAS.map(a => <option value={a.id} data-lat={a.lat} data-lng={a.lng}>{a.name}</option>)}
-                </select>
+                <input id="to-area" type="text" class="route-pick__input route-pick__input--to" placeholder="الوجهة..." autocomplete="off" />
               </div>
             </div>
 
@@ -786,17 +802,70 @@ import { AREAS, AIRPORTS } from '../data/rides';
   const GMAPS_KEY = 'AIzaSyAKvFfBYNDcTZgvZZH5s_lQbOc24LNjLsY';
   let map = null, fromMarker = null, toMarker = null, routeRenderer = null, driverMarker = null;
   let gmapsReady = false;
+  let fromPlace = null; // { name, lat, lng }
+  let toPlace   = null; // { name, lat, lng }
 
   function loadGoogleMaps() {
     return new Promise((resolve) => {
       if (window.google?.maps) { resolve(); return; }
       window.__gmInit = resolve;
       const s = document.createElement('script');
-      s.src = `https://maps.googleapis.com/maps/api/js?key=${GMAPS_KEY}&callback=__gmInit&language=ar`;
+      s.src = `https://maps.googleapis.com/maps/api/js?key=${GMAPS_KEY}&libraries=places&callback=__gmInit&language=ar`;
       s.async = true;
       document.head.appendChild(s);
     });
   }
+
+  async function initPlaces() {
+    await loadGoogleMaps();
+    const G = window.google.maps;
+    const damiettaBounds = new G.LatLngBounds(
+      { lat: 31.25, lng: 31.55 },
+      { lat: 31.60, lng: 32.05 }
+    );
+    const opts = {
+      bounds: damiettaBounds,
+      componentRestrictions: { country: 'eg' },
+      strictBounds: false,
+      fields: ['geometry', 'name', 'formatted_address'],
+    };
+
+    const acFrom = new G.places.Autocomplete(document.getElementById('from-area'), opts);
+    const acTo   = new G.places.Autocomplete(document.getElementById('to-area'),   opts);
+
+    acFrom.addListener('place_changed', () => {
+      const p = acFrom.getPlace();
+      if (!p?.geometry?.location) return;
+      fromPlace = { name: p.name || p.formatted_address, lat: p.geometry.location.lat(), lng: p.geometry.location.lng() };
+      updateUI();
+    });
+    acTo.addListener('place_changed', () => {
+      const p = acTo.getPlace();
+      if (!p?.geometry?.location) return;
+      toPlace = { name: p.name || p.formatted_address, lat: p.geometry.location.lat(), lng: p.geometry.location.lng() };
+      updateUI();
+    });
+
+    // GPS "my location" button
+    document.getElementById('btn-my-loc')?.addEventListener('click', () => {
+      if (!navigator.geolocation) return;
+      const btn = document.getElementById('btn-my-loc');
+      btn.textContent = '⏳';
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          btn.textContent = '✅';
+          fromPlace = { name: 'موقعي الحالي', lat: pos.coords.latitude, lng: pos.coords.longitude };
+          document.getElementById('from-area').value = 'موقعي الحالي';
+          updateUI();
+          setTimeout(() => { btn.textContent = '📍'; }, 2000);
+        },
+        () => { btn.textContent = '📍'; }
+      );
+    });
+  }
+
+  // Start loading Places API immediately (for autocomplete)
+  initPlaces();
 
   async function initMap() {
     if (map) return true;
@@ -1076,21 +1145,13 @@ import { AREAS, AIRPORTS } from '../data/rides';
   // ═══════════════════════════════════════════
   //  LOCAL FORM
   // ═══════════════════════════════════════════
-  const fromSel     = document.getElementById('from-area');
-  const toSel       = document.getElementById('to-area');
   const summary     = document.getElementById('route-summary');
   const localBtn    = document.getElementById('local-confirm-btn');
   const localHint   = document.getElementById('local-hint');
 
-  function areaBy(sel) {
-    const o = sel.options[sel.selectedIndex];
-    if (!o?.value) return null;
-    return { id: o.value, name: o.text, lat: +o.dataset.lat, lng: +o.dataset.lng };
-  }
-
   function updateUI() {
-    const from = areaBy(fromSel), to = areaBy(toSel);
-    if (!from || !to || from.id === to.id) {
+    const from = fromPlace, to = toPlace;
+    if (!from || !to) {
       document.getElementById('sum-dist').textContent  = '—';
       document.getElementById('sum-eta').textContent   = '—';
       document.getElementById('sum-price').textContent = '—';
@@ -1115,12 +1176,12 @@ import { AREAS, AIRPORTS } from '../data/rides';
     showRoute(from, to);
   }
 
-  fromSel.addEventListener('change', updateUI);
-  toSel.addEventListener('change', updateUI);
   document.getElementById('swap-btn').addEventListener('click', () => {
-    const v = fromSel.value; fromSel.value = toSel.value; toSel.value = v; updateUI();
+    const tmp = fromPlace; fromPlace = toPlace; toPlace = tmp;
+    document.getElementById('from-area').value = fromPlace?.name || '';
+    document.getElementById('to-area').value   = toPlace?.name  || '';
+    updateUI();
   });
-  if (fromSel.value && toSel.value) updateUI();
 
   // Local confirm
   localBtn.addEventListener('click', async () => {
@@ -1131,7 +1192,7 @@ import { AREAS, AIRPORTS } from '../data/rides';
     if (!name)           { errEl.textContent = 'يرجى إدخال الاسم.'; errEl.classList.add('visible'); return; }
     if (!EG.test(phone)) { errEl.textContent = 'رقم جوال غير صحيح (01...)'; errEl.classList.add('visible'); return; }
 
-    const from = areaBy(fromSel), to = areaBy(toSel);
+    const from = fromPlace, to = toPlace;
     if (!from || !to) return;
 
     const km     = haversineKm(from.lat, from.lng, to.lat, to.lng);
@@ -1358,7 +1419,9 @@ import { AREAS, AIRPORTS } from '../data/rides';
   // ── new ride ──
   document.getElementById('new-ride-btn').addEventListener('click', () => {
     ['l-name','l-phone','l-notes','i-name','i-phone','i-notes'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
-    fromSel.value = ''; toSel.value = '';
+    fromPlace = null; toPlace = null;
+    document.getElementById('from-area').value = '';
+    document.getElementById('to-area').value = '';
     document.getElementById('success-card').classList.remove('visible');
     clearMap();
     resetToBooking();
