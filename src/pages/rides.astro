@@ -808,7 +808,7 @@ import { AIRPORTS } from '../data/rides';
       if (window.google?.maps) { resolve(); return; }
       window.__gmInit = resolve;
       const s = document.createElement('script');
-      s.src = `https://maps.googleapis.com/maps/api/js?key=${GMAPS_KEY}&libraries=places&callback=__gmInit&language=ar`;
+      s.src = `https://maps.googleapis.com/maps/api/js?key=${GMAPS_KEY}&libraries=places&callback=__gmInit&language=ar&region=EG`;
       s.async = true;
       document.head.appendChild(s);
     });
@@ -825,6 +825,7 @@ import { AIRPORTS } from '../data/rides';
       bounds: damiettaBounds,
       componentRestrictions: { country: 'eg' },
       strictBounds: false,
+      types: ['geocode'],
       fields: ['geometry', 'name', 'formatted_address'],
     };
 

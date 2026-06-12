@@ -449,7 +449,7 @@ const staticMenuJson = JSON.stringify(
         if ((window as any).google?.maps) { resolve(); return; }
         (window as any).__storeGmInit = resolve;
         const s = document.createElement('script');
-        s.src = `https://maps.googleapis.com/maps/api/js?key=${GMAPS_KEY}&libraries=places&callback=__storeGmInit&language=ar`;
+        s.src = `https://maps.googleapis.com/maps/api/js?key=${GMAPS_KEY}&libraries=places&callback=__storeGmInit&language=ar&region=EG`;
         s.async = true;
         document.head.appendChild(s);
       });
@@ -466,6 +466,7 @@ const staticMenuJson = JSON.stringify(
         bounds: damiettaBounds,
         componentRestrictions: { country: 'eg' },
         strictBounds: false,
+        types: ['geocode'],
         fields: ['geometry', 'name', 'formatted_address'],
       });
       ac.addListener('place_changed', () => {
