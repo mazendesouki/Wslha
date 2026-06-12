@@ -1,6 +1,6 @@
 // Egyptian airports served from Damietta governorate.
 // Distance/drive-time are approximate road estimates from Damietta city.
-// Price is distance-based (see priceFor()).
+// Pricing updated June 2026 to reflect current Egyptian fuel prices.
 
 export interface Airport {
   id: string;
@@ -26,13 +26,32 @@ export const AIRPORTS: Airport[] = [
   { id: 'atz', name: 'مطار أسيوط',                 city: 'أسيوط',        code: 'ATZ', distanceKm: 620, driveMinutes: 450 },
 ];
 
-// Distance-based pricing: base fee + per-km rate, rounded up to nearest 10 EGP.
-export const AIRPORT_BASE_FEE = 150;   // ج.م
-export const AIRPORT_RATE_PER_KM = 6;  // ج.م / كم
+// ─────────────────────────────────────────────────────────────────────────────
+// نموذج التسعير 2026 (تدرّج حسب المسافة)
+//
+//  الرسوم الأساسية: 300 ج.م  (وقت الانطظار + الخروج + عموم التشغيل)
+//  ≤ 150 كم  →  11 ج.م / كم
+//  151–400 كم →  10 ج.م / كم
+//  401 كم+   →   9 ج.م / كم
+//  (السائق يذهب ويرجع — تكلفة الوقود مضاعفة محسوبة ضمن السعر)
+// ─────────────────────────────────────────────────────────────────────────────
+export const AIRPORT_BASE_FEE = 300; // ج.م — رسوم أساسية ثابتة
 
 export function priceForDistance(distanceKm: number): number {
-  const raw = AIRPORT_BASE_FEE + distanceKm * AIRPORT_RATE_PER_KM;
-  return Math.ceil(raw / 10) * 10;
+  const TIERS: { upTo: number; rate: number }[] = [
+    { upTo: 150,       rate: 11 },
+    { upTo: 400,       rate: 10 },
+    { upTo: Infinity,  rate: 9  },
+  ];
+  let cost = AIRPORT_BASE_FEE;
+  let covered = 0;
+  for (const tier of TIERS) {
+    if (distanceKm <= covered) break;
+    const km = Math.min(distanceKm, tier.upTo) - covered;
+    cost += km * tier.rate;
+    covered = tier.upTo;
+  }
+  return Math.ceil(cost / 50) * 50;
 }
 
 export function getAirport(id: string): Airport | undefined {
@@ -42,7 +61,7 @@ export function getAirport(id: string): Airport | undefined {
 // Recommended check-in buffer (minutes before departure to BE at the airport).
 export const CHECKIN_BUFFER = {
   domestic: 120,       // محلية
-  international: 180,   // دولية
+  international: 180,  // دولية
 };
 
 // Extra safety margin added to the drive so the car leaves a bit early.

@@ -807,10 +807,10 @@ import { AIRPORTS } from '../data/rides';
   const SB_KEY = 'sb_publishable_PLSnpvCT-sAyUMtymNgTwA_QmL2suw4';
   const SB_H = { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}`, 'Content-Type': 'application/json' };
 
-  // ── distance & pricing helpers (أسعار 2026) ──
-  const BASE_FARE   = 20;   // ج.م — عداد الانطلاق
-  const RATE_PER_KM = 10;   // ج.م / كم — طريق فعلي
-  const MIN_FARE    = 25;   // ج.م — الحد الأدنى
+  // ── distance & pricing helpers (أسعار 2026 — محدّث مع ارتفاع الوقود) ──
+  const BASE_FARE   = 25;   // ج.م — عداد الانطلاق
+  const RATE_PER_KM = 12;   // ج.م / كم — طريق فعلي
+  const MIN_FARE    = 35;   // ج.م — الحد الأدنى
 
   function haversineKm(lat1, lng1, lat2, lng2) {
     const R = 6371, dLat = (lat2-lat1)*Math.PI/180, dLng = (lng2-lng1)*Math.PI/180;

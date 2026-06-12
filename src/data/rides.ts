@@ -30,20 +30,22 @@ export interface Airport {
   driveMins: number;   // متوسط وقت القيادة من وسط دمياط
 }
 
+// ─── Airport flat fares from Damietta (updated June 2026) ─────────────────────
+// Calculated via tiered formula: 300 base + 11/km (≤150) + 10/km (151-400) + 9/km (400+)
 export const AIRPORTS: Airport[] = [
-  { id: 'port-said',  name: 'مطار بورسعيد',              lat: 31.282, lng: 32.236, flatFare: 220,  driveMins: 90  },
-  { id: 'cairo',      name: 'مطار القاهرة الدولي ✈️',    lat: 30.122, lng: 31.406, flatFare: 600,  driveMins: 200 },
-  { id: 'alex',       name: 'مطار برج العرب (إسكندرية)', lat: 30.917, lng: 29.696, flatFare: 750,  driveMins: 230 },
-  { id: 'sharm',      name: 'مطار شرم الشيخ',             lat: 27.977, lng: 34.395, flatFare: 950,  driveMins: 310 },
-  { id: 'hurghada',   name: 'مطار الغردقة',               lat: 27.178, lng: 33.800, flatFare: 1050, driveMins: 360 },
-  { id: 'luxor',      name: 'مطار الأقصر',                lat: 25.671, lng: 32.706, flatFare: 1200, driveMins: 420 },
+  { id: 'port-said',  name: 'مطار بورسعيد',              lat: 31.282, lng: 32.236, flatFare: 1250, driveMins: 90  },
+  { id: 'cairo',      name: 'مطار القاهرة الدولي ✈️',    lat: 30.122, lng: 31.406, flatFare: 2450, driveMins: 200 },
+  { id: 'alex',       name: 'مطار برج العرب (إسكندرية)', lat: 30.917, lng: 29.696, flatFare: 2950, driveMins: 230 },
+  { id: 'sharm',      name: 'مطار شرم الشيخ',             lat: 27.977, lng: 34.395, flatFare: 5550, driveMins: 310 },
+  { id: 'hurghada',   name: 'مطار الغردقة',               lat: 27.178, lng: 33.800, flatFare: 5200, driveMins: 360 },
+  { id: 'luxor',      name: 'مطار الأقصر',                lat: 25.671, lng: 32.706, flatFare: 7150, driveMins: 420 },
 ];
 
-// Pricing constants
-export const BASE_FARE    = 15;   // ج.م fixed flag-fall
-export const RATE_PER_KM  = 7;    // ج.م per road-km
-export const ROAD_FACTOR  = 1.35; // roads ~35% longer than straight line
-export const MIN_FARE     = 20;   // ج.م minimum
+// ─── Local rides pricing (updated June 2026 — ارتفاع أسعار الوقود) ──────────
+export const BASE_FARE    = 25;   // ج.م — عداد الانطلاق
+export const RATE_PER_KM  = 12;   // ج.م / كم
+export const ROAD_FACTOR  = 1.35; // طرق مصرية ~35% أطول من الخط المستقيم
+export const MIN_FARE     = 35;   // ج.م — الحد الأدنى للرحلة
 
 export function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): number {
   const R = 6371;
