@@ -124,58 +124,83 @@ import { AIRPORTS } from '../data/rides';
   .intl-fare-badge.visible { display: block; }
   .intl-fare-badge__sub { font-size: 11px; font-weight: var(--weight-normal); color: #16a34a; margin-top: 2px; }
 
-  /* ── route selector ── */
+  /* ── route selector — InDriver style ── */
   .route-bar {
-    padding: var(--sp-6) var(--sp-6) 0;
-    display: grid;
-    grid-template-columns: 1fr auto 1fr;
+    margin: var(--sp-4) var(--sp-5) 0;
+    background: var(--color-bg);
+    border: 1.5px solid var(--color-border);
+    border-radius: var(--radius-xl);
+    overflow: visible;
+    box-shadow: var(--shadow-sm);
+  }
+  .route-row {
+    display: flex;
+    align-items: center;
     gap: var(--sp-3);
-    align-items: end;
+    padding: var(--sp-3) var(--sp-4);
+    position: relative;
   }
-  .route-pick { display: flex; flex-direction: column; gap: var(--sp-2); }
-  .route-pick__label {
-    font-weight: var(--weight-black); font-size: var(--text-sm);
-    color: var(--color-text-faint); display: flex; align-items: center; gap: var(--sp-1);
+  .route-row + .route-row {
+    border-top: 1px solid var(--color-border);
   }
-  .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
-  .dot--from { background: var(--color-primary); }
-  .dot--to   { background: #ef4444; }
-  .route-pick__select {
-    width: 100%; padding: var(--sp-3) var(--sp-4);
-    border: 2px solid var(--color-border); border-radius: var(--radius-lg);
-    font-family: var(--font-body); font-size: var(--text-sm);
-    direction: rtl; background: var(--color-bg); color: var(--color-text);
-    outline: none; cursor: pointer; transition: border-color var(--ease); appearance: none;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
-    background-repeat: no-repeat; background-position: left 12px center;
+  .route-row__dots {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex-shrink: 0;
+    gap: 3px;
   }
-  .route-pick__select:focus { border-color: var(--color-primary); }
-  .route-pick__select--to:focus { border-color: #ef4444; }
-  .autocomplete-wrap { position: relative; display: flex; gap: 6px; align-items: center; }
+  .dot {
+    width: 12px; height: 12px;
+    border-radius: 50%; flex-shrink: 0;
+  }
+  .dot--from {
+    background: var(--color-primary);
+    box-shadow: 0 0 0 3px rgba(59,130,246,.2);
+  }
+  .dot--to {
+    background: #ef4444;
+    box-shadow: 0 0 0 3px rgba(239,68,68,.2);
+  }
+  .route-connector {
+    width: 2px; height: 16px;
+    background: var(--color-border);
+    border-radius: 1px;
+  }
+  .route-row__body { flex: 1; min-width: 0; }
+  .route-row__label {
+    font-size: 10px; font-weight: var(--weight-bold);
+    color: var(--color-text-faint); margin-bottom: 2px;
+    text-transform: uppercase; letter-spacing: 0.05em;
+  }
   .route-pick__input {
-    width: 100%; padding: var(--sp-3) var(--sp-4);
-    border: 2px solid var(--color-border); border-radius: var(--radius-lg);
-    font-family: var(--font-body); font-size: var(--text-sm);
-    direction: rtl; background: var(--color-bg); color: var(--color-text);
-    outline: none; transition: border-color var(--ease);
+    width: 100%; padding: 0;
+    border: none; outline: none;
+    font-family: var(--font-body); font-size: var(--text-base);
+    font-weight: var(--weight-semi);
+    direction: rtl; background: transparent; color: var(--color-text);
   }
-  .route-pick__input:focus { border-color: var(--color-primary); }
-  .route-pick__input--to:focus { border-color: #ef4444; }
+  .route-pick__input::placeholder { color: var(--color-text-faint); font-weight: var(--weight-normal); }
+  .route-pick__input--to::placeholder { color: var(--color-text-faint); }
   .loc-btn {
-    width: 36px; height: 36px; flex-shrink: 0;
-    border: 2px solid var(--color-border); border-radius: var(--radius);
-    background: var(--color-bg); cursor: pointer; font-size: 1rem;
+    width: 34px; height: 34px; flex-shrink: 0;
+    border: 1.5px solid var(--color-border); border-radius: var(--radius);
+    background: var(--color-bg-soft); cursor: pointer; font-size: 0.9rem;
     display: flex; align-items: center; justify-content: center; transition: all 0.2s;
   }
   .loc-btn:hover { background: var(--color-primary-light); border-color: var(--color-primary); }
   .swap-btn {
-    width: 38px; height: 38px; border-radius: var(--radius-full);
-    background: var(--color-bg); border: 2px solid var(--color-border);
+    position: absolute;
+    left: var(--sp-4); top: 50%; transform: translateY(-50%);
+    width: 30px; height: 30px; border-radius: var(--radius-full);
+    background: var(--color-bg); border: 1.5px solid var(--color-border);
     cursor: pointer; display: flex; align-items: center; justify-content: center;
-    font-size: 1rem; transition: all var(--ease); color: var(--color-primary); flex-shrink: 0;
-    margin-bottom: 3px;
+    font-size: 0.85rem; transition: all var(--ease); color: var(--color-primary); z-index: 2;
+    box-shadow: var(--shadow-sm);
   }
-  .swap-btn:hover { background: var(--color-primary-light); border-color: var(--color-primary); transform: rotate(180deg); }
+  .swap-btn:hover { background: var(--color-primary-light); border-color: var(--color-primary); transform: translateY(-50%) rotate(180deg); }
+  /* autocomplete-wrap stays transparent */
+  .autocomplete-wrap { display: flex; align-items: center; gap: var(--sp-2); }
 
   /* ── route summary strip ── */
   .route-summary {
@@ -500,17 +525,32 @@ import { AIRPORTS } from '../data/rides';
           ══════════════════════════════════════ -->
           <div id="local-panel">
             <div class="route-bar">
-              <div class="route-pick">
-                <span class="route-pick__label"><span class="dot dot--from"></span> من أين؟</span>
-                <div class="autocomplete-wrap">
-                  <input id="from-area" type="text" class="route-pick__input" placeholder="اكتب عنوانك أو اسم المنطقة..." autocomplete="off" />
-                  <button class="loc-btn" id="btn-my-loc" type="button" title="موقعي الحالي">📍</button>
+              <!-- FROM row -->
+              <div class="route-row">
+                <div class="route-row__dots">
+                  <span class="dot dot--from"></span>
+                </div>
+                <div class="route-row__body">
+                  <div class="route-row__label">من</div>
+                  <div class="autocomplete-wrap">
+                    <input id="from-area" type="text" class="route-pick__input" placeholder="نقطة الانطلاق — اكتب الحي أو المنطقة" autocomplete="off" />
+                    <button class="loc-btn" id="btn-my-loc" type="button" title="موقعي الحالي">📍</button>
+                  </div>
                 </div>
               </div>
-              <button id="swap-btn" class="swap-btn" title="تبديل" type="button">⇄</button>
-              <div class="route-pick">
-                <span class="route-pick__label"><span class="dot dot--to"></span> إلى أين؟</span>
-                <input id="to-area" type="text" class="route-pick__input route-pick__input--to" placeholder="الوجهة..." autocomplete="off" />
+              <!-- swap sits between the two rows -->
+              <div style="position:relative;height:0;">
+                <button id="swap-btn" class="swap-btn" title="تبديل" type="button">⇅</button>
+              </div>
+              <!-- TO row -->
+              <div class="route-row">
+                <div class="route-row__dots">
+                  <span class="dot dot--to"></span>
+                </div>
+                <div class="route-row__body">
+                  <div class="route-row__label">إلى</div>
+                  <input id="to-area" type="text" class="route-pick__input route-pick__input--to" placeholder="الوجهة — ابحث عن الحي أو المنطقة" autocomplete="off" />
+                </div>
               </div>
             </div>
 
