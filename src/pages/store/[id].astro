@@ -7,8 +7,6 @@ export function getStaticPaths() {
 }
 
 const { store } = Astro.props;
-const AREAS = ['دمياط الجديدة', 'دمياط', 'كفر سعد', 'فارسكور', 'منية النصر', 'رأس البر', 'الزرقا'];
-
 // Static menu for client fallback — serialised to JSON island
 const staticMenuJson = JSON.stringify(
   store.menu.map((sec, si) => ({
@@ -257,6 +255,8 @@ const staticMenuJson = JSON.stringify(
     .cart { display: none; }
     .cart-fab[data-count]:not([data-count="0"]) { display: flex; }
   }
+  /* ensure Google Places dropdown appears above everything */
+  .pac-container { z-index: 9999 !important; direction: rtl; font-family: var(--font-body); }
 </style>
 
 <Layout
@@ -343,9 +343,7 @@ const staticMenuJson = JSON.stringify(
         </div>
         <div class="field">
           <label class="field__label" for="co-area">المنطقة</label>
-          <select class="field__select" id="co-area">
-            {AREAS.map(a => <option value={a} selected={a === store.area}>{a}</option>)}
-          </select>
+          <input type="text" class="field__input" id="co-area" placeholder="ابحث عن منطقتك أو حيّك..." autocomplete="off" />
         </div>
         <div class="field">
           <label class="field__label" for="co-address">العنوان بالتفصيل</label>
@@ -441,6 +439,43 @@ const staticMenuJson = JSON.stringify(
     const SB_URL = 'https://vtikgyiopkjnrwlqnmfx.supabase.co';
     const SB_KEY = 'sb_publishable_PLSnpvCT-sAyUMtymNgTwA_QmL2suw4';
     const SB_H   = { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}` };
+
+    // ── Google Places for co-area ──
+    const GMAPS_KEY = 'AIzaSyAKvFfBYNDcTZgvZZH5s_lQbOc24LNjLsY';
+    let coAreaPlace: { name: string; lat: number; lng: number } | null = null;
+
+    function loadGoogleMapsForStore(): Promise<void> {
+      return new Promise((resolve) => {
+        if ((window as any).google?.maps) { resolve(); return; }
+        (window as any).__storeGmInit = resolve;
+        const s = document.createElement('script');
+        s.src = `https://maps.googleapis.com/maps/api/js?key=${GMAPS_KEY}&libraries=places&callback=__storeGmInit&language=ar`;
+        s.async = true;
+        document.head.appendChild(s);
+      });
+    }
+
+    async function initCoAreaAutocomplete(): Promise<void> {
+      await loadGoogleMapsForStore();
+      const G = (window as any).google.maps;
+      const damiettaBounds = new G.LatLngBounds(
+        { lat: 31.25, lng: 31.55 },
+        { lat: 31.60, lng: 32.05 }
+      );
+      const ac = new G.places.Autocomplete(document.getElementById('co-area'), {
+        bounds: damiettaBounds,
+        componentRestrictions: { country: 'eg' },
+        strictBounds: false,
+        fields: ['geometry', 'name', 'formatted_address'],
+      });
+      ac.addListener('place_changed', () => {
+        const p = ac.getPlace();
+        if (!p?.geometry?.location) return;
+        coAreaPlace = { name: p.name || p.formatted_address, lat: p.geometry.location.lat(), lng: p.geometry.location.lng() };
+      });
+    }
+
+    initCoAreaAutocomplete();
 
     // Read static fallback from JSON island
     const staticMenuData = JSON.parse(
@@ -767,7 +802,7 @@ const staticMenuJson = JSON.stringify(
       const confirmBtn = sheet.querySelector('[data-confirm]') as HTMLButtonElement;
       const name    = (document.getElementById('co-name') as HTMLInputElement).value.trim();
       const phone   = (document.getElementById('co-phone') as HTMLInputElement).value.trim();
-      const area    = (document.getElementById('co-area') as HTMLSelectElement).value;
+      const area    = (document.getElementById('co-area') as HTMLInputElement).value;
       const address = (document.getElementById('co-address') as HTMLTextAreaElement).value.trim();
       const pay     = (sheet.querySelector('input[name="pay"]:checked') as HTMLInputElement).value;
       const deliveryMode = (sheet.querySelector('input[name="delivery-time"]:checked') as HTMLInputElement)?.value || 'now';
