@@ -173,18 +173,23 @@ const PRICING: PricingPlan[] = [
     border-radius: var(--radius-2xl);
     background: linear-gradient(135deg, var(--color-primary-light), #DBEAFE);
     aspect-ratio: 4 / 3;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 5rem;
     position: relative;
     overflow: hidden;
+    box-shadow: var(--shadow-md);
+  }
+
+  .split__map {
+    width: 100%;
+    height: 100%;
+    min-height: 320px;
+    border-radius: var(--radius-2xl);
   }
 
   .split__visual-badge {
     position: absolute;
     bottom: var(--sp-6);
     left: var(--sp-6);
+    z-index: 999;
     background: var(--color-bg);
     border-radius: var(--radius-lg);
     padding: var(--sp-3) var(--sp-5);
@@ -357,8 +362,8 @@ const PRICING: PricingPlan[] = [
           </ul>
           <a href={svc.ctaHref} class="btn btn--accent">{svc.cta}</a>
         </div>
-        <div class="split__visual" role="img" aria-label={svc.title}>
-          {svc.emoji}
+        <div class="split__visual">
+          <div id={`map-${svc.id}`} class="split__map"></div>
           <div class="split__visual-badge">
             <div class="split__visual-badge-num">{svc.badge}</div>
             <div class="split__visual-badge-label">{svc.badgeLabel}</div>
@@ -411,4 +416,110 @@ const PRICING: PricingPlan[] = [
       </div>
     </div>
   </section>
+
 </Layout>
+
+<script>
+  // Load Leaflet and render the two service maps
+  function loadLeaflet() {
+    return new Promise<void>((resolve) => {
+      if ((window as any).L) { resolve(); return; }
+      const link = document.createElement('link');
+      link.rel = 'stylesheet';
+      link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+      document.head.appendChild(link);
+      const s = document.createElement('script');
+      s.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+      s.onload = () => resolve();
+      document.head.appendChild(s);
+    });
+  }
+
+  function emoji(icon: string, color: string) {
+    return (window as any).L.divIcon({
+      html: `<div style="background:${color};width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;border:3px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.3)">${icon}</div>`,
+      className: '',
+      iconSize: [34, 34],
+      iconAnchor: [17, 17],
+    });
+  }
+
+  async function initMaps() {
+    await loadLeaflet();
+    const L = (window as any).L;
+
+    // ── LOCAL MAP: Damietta areas ──
+    const localEl = document.getElementById('map-local');
+    if (localEl) {
+      const m = L.map('map-local', { zoomControl: false, dragging: false, scrollWheelZoom: false, doubleClickZoom: false, touchZoom: false })
+        .setView([31.41, 31.80], 11);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap',
+        maxZoom: 19,
+      }).addTo(m);
+
+      const areas = [
+        { name: 'وسط دمياط',       lat: 31.418, lng: 31.814, icon: '🏠' },
+        { name: 'دمياط الجديدة',    lat: 31.392, lng: 31.755, icon: '🏢' },
+        { name: 'رأس البر',         lat: 31.490, lng: 31.829, icon: '🏖️' },
+        { name: 'الشيخ زغلول',     lat: 31.436, lng: 31.762, icon: '📍' },
+        { name: 'كفر سعد',          lat: 31.402, lng: 31.732, icon: '📍' },
+        { name: 'فارسكور',          lat: 31.328, lng: 31.672, icon: '📍' },
+        { name: 'الزرقا',           lat: 31.312, lng: 31.874, icon: '📍' },
+        { name: 'المنطقة الصناعية', lat: 31.381, lng: 31.765, icon: '🏭' },
+      ];
+      areas.forEach(a => {
+        L.marker([a.lat, a.lng], { icon: emoji(a.icon, '#3b82f6') })
+          .addTo(m)
+          .bindTooltip(a.name, { permanent: false, direction: 'top' });
+      });
+    }
+
+    // ── AIRPORT MAP: Damietta → airports ──
+    const airportEl = document.getElementById('map-airport');
+    if (airportEl) {
+      const m = L.map('map-airport', { zoomControl: false, dragging: false, scrollWheelZoom: false, doubleClickZoom: false, touchZoom: false })
+        .setView([29.5, 31.5], 6);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap',
+        maxZoom: 19,
+      }).addTo(m);
+
+      // Damietta origin
+      L.marker([31.418, 31.814], { icon: emoji('🏠', '#3b82f6') })
+        .addTo(m).bindTooltip('دمياط', { permanent: true, direction: 'right', className: 'leaflet-tooltip' });
+
+      const airports = [
+        { name: 'مطار بورسعيد',    lat: 31.282, lng: 32.236, fare: 220  },
+        { name: 'مطار القاهرة',    lat: 30.122, lng: 31.406, fare: 600  },
+        { name: 'مطار الإسكندرية', lat: 30.917, lng: 29.696, fare: 750  },
+        { name: 'مطار شرم الشيخ', lat: 27.977, lng: 34.395, fare: 950  },
+        { name: 'مطار الغردقة',   lat: 27.178, lng: 33.800, fare: 1050 },
+        { name: 'مطار الأقصر',    lat: 25.671, lng: 32.706, fare: 1200 },
+      ];
+      airports.forEach(a => {
+        // Draw line from Damietta to each airport
+        L.polyline([[31.418, 31.814], [a.lat, a.lng]], {
+          color: '#3b82f6', weight: 1.5, opacity: 0.5, dashArray: '5,5',
+        }).addTo(m);
+        L.marker([a.lat, a.lng], { icon: emoji('✈️', '#ef4444') })
+          .addTo(m)
+          .bindTooltip(`${a.name}<br>${a.fare.toLocaleString('ar-EG')} ج.م`, { direction: 'top', className: 'leaflet-tooltip' });
+      });
+    }
+  }
+
+  // Init when visible (IntersectionObserver for performance)
+  let started = false;
+  const obs = new IntersectionObserver((entries) => {
+    if (entries.some(e => e.isIntersecting) && !started) {
+      started = true;
+      initMaps();
+    }
+  }, { rootMargin: '200px' });
+
+  ['map-local', 'map-airport'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) obs.observe(el);
+  });
+</script>
