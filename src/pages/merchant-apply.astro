@@ -88,7 +88,7 @@ import Layout from '../components/layout.astro';
             </div>
             <div class="form-group form-group--full">
               <label for="biz-address">عنوان النشاط بالتفصيل <span class="req">*</span></label>
-              <input class="form-input" id="biz-address" type="text" placeholder="الشارع، المنطقة، المدينة"/>
+              <input class="form-input" id="biz-address" type="text" placeholder="ابحث: الشارع، الحي، المنطقة، المدينة..." autocomplete="off" />
             </div>
             <div class="form-group">
               <label for="biz-phone">جوال النشاط (للعملاء) <span class="req">*</span></label>
@@ -371,5 +371,33 @@ async function submitApplication() {
     btn.disabled = false; btn.textContent = '📤 إرسال الطلب';
   }
 }
+
+// ── Google Places Autocomplete for business address ──
+(function() {
+  const GMAPS_KEY = 'AIzaSyAKvFfBYNDcTZgvZZH5s_lQbOc24LNjLsY';
+  function loadPlaces() {
+    if (window.google?.maps) { initBizAC(); return; }
+    window.__merchantGmInit = initBizAC;
+    const s = document.createElement('script');
+    s.src = `https://maps.googleapis.com/maps/api/js?key=${GMAPS_KEY}&libraries=places&callback=__merchantGmInit&language=ar&region=EG`;
+    s.async = true;
+    document.head.appendChild(s);
+  }
+  function initBizAC() {
+    const G = window.google.maps;
+    const input = document.getElementById('biz-address');
+    if (!input) return;
+    const ac = new G.places.Autocomplete(input, {
+      componentRestrictions: { country: 'eg' },
+      types: ['geocode'],
+      fields: ['formatted_address', 'name', 'geometry'],
+    });
+    ac.addListener('place_changed', () => {
+      const p = ac.getPlace();
+      if (p?.formatted_address) input.value = p.formatted_address;
+    });
+  }
+  document.addEventListener('DOMContentLoaded', loadPlaces);
+})();
 </script>
 </Layout>
