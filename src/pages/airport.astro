@@ -303,10 +303,10 @@ import { AIRPORTS, priceForDistance, VEHICLE_TYPES } from '../data/airports';
             <option value="60">ساعة كاملة (+٩٠ ج.م)</option>
           </select>
         </div>
-        <div class="field" id="wait-airport-field" hidden>
-          <label class="field__label" for="wait-airport">انتظار في المطار (للمرافقين)</label>
+        <div class="field" id="wait-airport-field">
+          <label class="field__label" for="wait-airport">انتظار السائق في ساحة المطار</label>
           <select class="field__select" id="wait-airport">
-            <option value="0">بدون انتظار</option>
+            <option value="0">بدون انتظار — يتركني وينصرف</option>
             <option value="30">٣٠ دقيقة — مجاناً</option>
             <option value="60">ساعة (+٤٠ ج.م)</option>
             <option value="90">ساعة ونص (+٨٠ ج.م)</option>
@@ -396,7 +396,7 @@ import { AIRPORTS, priceForDistance, VEHICLE_TYPES } from '../data/airports';
           <div class="row" id="p-bags-row" hidden><span>شنط إضافية</span><span id="p-bags">—</span></div>
           <div class="row" id="p-comp-row" hidden><span id="p-comp-label">مرافق رايح جاي</span><span id="p-comp">—</span></div>
           <div class="row" id="p-wpick-row" hidden><span>انتظار عند الاستلام</span><span id="p-wpick">—</span></div>
-          <div class="row" id="p-wair-row" hidden><span>انتظار في المطار</span><span id="p-wair">—</span></div>
+          <div class="row" id="p-wair-row" hidden><span>انتظار في ساحة المطار</span><span id="p-wair">—</span></div>
           <div class="total"><span>الإجمالي</span><b id="p-total">— <small>ج.م</small></b></div>
         </div>
 
@@ -700,13 +700,7 @@ import { AIRPORTS, priceForDistance, VEHICLE_TYPES } from '../data/airports';
       });
     });
 
-    // ── Show/hide airport waiting based on companions ──
-    document.getElementById('companions')?.addEventListener('input', () => {
-      const n = Number((document.getElementById('companions') as HTMLInputElement).value) || 0;
-      const row = document.getElementById('wait-airport-field') as HTMLElement;
-      row.hidden = n === 0;
-      render();
-    });
+    document.getElementById('companions')?.addEventListener('input', () => { render(); });
 
     form.addEventListener('input', render);
     form.addEventListener('change', render);
