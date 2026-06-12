@@ -319,13 +319,24 @@ import PageHero from '../components/PageHero.astro';
   const SB_KEY = 'sb_publishable_PLSnpvCT-sAyUMtymNgTwA_QmL2suw4';
   const SB_H   = { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}` };
 
+  // ── Supabase Realtime ──
+  let _sb = null;
+  (function loadSbClient() {
+    const s = document.createElement('script');
+    s.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js';
+    s.onload = () => { _sb = window.supabase.createClient(SB_URL, SB_KEY); };
+    document.head.appendChild(s);
+  })();
+
   const form  = document.getElementById('track-form');
   const input = document.getElementById('track-input');
   const result = document.getElementById('track-result');
   const resultId = document.getElementById('result-id');
 
   let lastStatus = null;
-  let driverPollTimer = null;
+  let driverPollTimer = null;  // fallback
+  let _orderChannel   = null;  // Realtime channel for order status
+  let _locationChannel = null; // Realtime channel for driver GPS
   let map = null;
   let driverMarker = null;
   let storeMarker = null;
@@ -495,6 +506,68 @@ import PageHero from '../components/PageHero.astro';
     } catch {}
   }
 
+  function subscribeDriverLocation(driverPhone) {
+    if (_locationChannel) { _locationChannel.unsubscribe(); _locationChannel = null; }
+    if (driverPollTimer)  { clearInterval(driverPollTimer); driverPollTimer  = null; }
+
+    function tryLocationRealtime() {
+      if (!_sb || !driverPhone) {
+        driverPollTimer = setInterval(() => pollDriverLocation(driverPhone), 4000);
+        return;
+      }
+      _locationChannel = _sb.channel(`drv-loc-${driverPhone}`)
+        .on('postgres_changes', {
+          event: 'UPDATE', schema: 'public', table: 'driver_locations',
+          filter: `driver_phone=eq.${driverPhone}`,
+        }, payload => {
+          const loc = payload.new;
+          if (loc.lat && loc.lng) updateDriverOnMap(Number(loc.lat), Number(loc.lng));
+        })
+        .subscribe(status => {
+          if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+            if (!driverPollTimer)
+              driverPollTimer = setInterval(() => pollDriverLocation(driverPhone), 4000);
+          }
+          if (status === 'SUBSCRIBED') {
+            clearInterval(driverPollTimer); driverPollTimer = null;
+          }
+        });
+    }
+
+    if (_sb) tryLocationRealtime();
+    else setTimeout(tryLocationRealtime, 1500);
+  }
+
+  function subscribeOrderUpdates(code) {
+    if (_orderChannel) { _orderChannel.unsubscribe(); _orderChannel = null; }
+
+    function tryOrderRealtime() {
+      if (!_sb) return; // fallback pollTimer already running
+      _orderChannel = _sb.channel(`order-${code}`)
+        .on('postgres_changes', {
+          event: 'UPDATE', schema: 'public', table: 'orders',
+          filter: `code=eq.${code}`,
+        }, payload => {
+          renderOrder(payload.new);
+          if (payload.new.status === 'delivered' || payload.new.status === 'rejected') {
+            _orderChannel?.unsubscribe(); _orderChannel = null;
+          }
+        })
+        .subscribe(status => {
+          if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+            // Realtime فشل → polling كـ fallback
+          }
+          if (status === 'SUBSCRIBED') {
+            // Realtime يعمل → أوقف الـ polling إذا كان شغّالاً
+            clearInterval(window._trackPollTimer);
+          }
+        });
+    }
+
+    if (_sb) tryOrderRealtime();
+    else setTimeout(tryOrderRealtime, 1500);
+  }
+
   // ── Rating ──
   let currentOrder = null;
 
@@ -589,7 +662,7 @@ import PageHero from '../components/PageHero.astro';
     delivered:'تم التسليم', rejected:'مرفوض',
   };
 
-  let pollTimer = null;
+  // pollTimer replaced by window._trackPollTimer (fallback) + _orderChannel (Realtime)
 
   function renderTimeline(status, order) {
     const KEYS = ['pending', 'preparing', 'on_the_way', 'delivered'];
@@ -677,11 +750,13 @@ import PageHero from '../components/PageHero.astro';
     if (o.status === 'on_the_way' && o.driver_phone && o.store_lat && o.store_lng) {
       initTrackMap(Number(o.store_lat), Number(o.store_lng));
       pollDriverLocation(o.driver_phone);
-      if (!driverPollTimer) {
-        driverPollTimer = setInterval(() => pollDriverLocation(o.driver_phone), 4000);
+      // subscribe once
+      if (!_locationChannel && !driverPollTimer) {
+        subscribeDriverLocation(o.driver_phone);
       }
     } else if (o.status === 'delivered' || o.status === 'rejected') {
-      if (driverPollTimer) { clearInterval(driverPollTimer); driverPollTimer = null; }
+      if (_locationChannel) { _locationChannel.unsubscribe(); _locationChannel = null; }
+      if (driverPollTimer)  { clearInterval(driverPollTimer);  driverPollTimer  = null; }
     }
 
     maybeShowRating(o);
@@ -711,6 +786,9 @@ import PageHero from '../components/PageHero.astro';
     // Reset per-order state
     lastStatus = null;
     if (driverPollTimer) { clearInterval(driverPollTimer); driverPollTimer = null; }
+    if (_orderChannel)   { _orderChannel.unsubscribe();    _orderChannel   = null; }
+    if (_locationChannel){ _locationChannel.unsubscribe(); _locationChannel = null; }
+    clearInterval(window._trackPollTimer);
     map = null; driverMarker = null; storeMarker = null; storeLLng = null;
     document.getElementById('track-map-card').classList.remove('visible');
     document.getElementById('rate-card').classList.remove('visible');
@@ -721,19 +799,21 @@ import PageHero from '../components/PageHero.astro';
     if (order) renderOrder(order);
     else showEmpty(code);
 
-    // Live polling while a non-terminal order is shown
-    if (pollTimer) clearInterval(pollTimer);
-    if (order && order.status !== 'delivered' && order.status !== 'rejected') {
-      pollTimer = setInterval(async () => {
-        const fresh = await fetchOrder(code);
-        if (fresh) {
-          renderOrder(fresh);
-          if (fresh.status === 'delivered' || fresh.status === 'rejected') {
-            clearInterval(pollTimer); pollTimer = null;
-          }
+    if (!order || order.status === 'delivered' || order.status === 'rejected') return;
+
+    // ── Realtime subscription (فوري) ──
+    subscribeOrderUpdates(code);
+
+    // ── Fallback polling كل 8 ثوان في حالة فشل Realtime ──
+    window._trackPollTimer = setInterval(async () => {
+      const fresh = await fetchOrder(code);
+      if (fresh) {
+        renderOrder(fresh);
+        if (fresh.status === 'delivered' || fresh.status === 'rejected') {
+          clearInterval(window._trackPollTimer);
         }
-      }, 5000);
-    }
+      }
+    }, 8000);
   }
 
   form.addEventListener('submit', (e) => {

@@ -205,3 +205,10 @@ CREATE TABLE IF NOT EXISTS ratings (
 
 CREATE INDEX idx_ratings_driver_phone  ON ratings(driver_phone);
 CREATE INDEX idx_ratings_created_at    ON ratings(created_at DESC);
+
+
+-- ── Enable Supabase Realtime on live-traffic tables ───────────
+-- Run this in Supabase → SQL Editor AFTER creating tables above:
+ALTER PUBLICATION supabase_realtime ADD TABLE rides;
+ALTER PUBLICATION supabase_realtime ADD TABLE orders;
+ALTER PUBLICATION supabase_realtime ADD TABLE driver_locations;

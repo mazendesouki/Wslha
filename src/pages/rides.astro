@@ -807,6 +807,15 @@ import { AIRPORTS } from '../data/rides';
   const SB_KEY = 'sb_publishable_PLSnpvCT-sAyUMtymNgTwA_QmL2suw4';
   const SB_H = { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}`, 'Content-Type': 'application/json' };
 
+  // ── Supabase Realtime ──
+  let _sb = null;
+  (function loadSbClient() {
+    const s = document.createElement('script');
+    s.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js';
+    s.onload = () => { _sb = window.supabase.createClient(SB_URL, SB_KEY); };
+    document.head.appendChild(s);
+  })();
+
   // ── distance & pricing helpers (أسعار 2026 — محدّث مع ارتفاع الوقود) ──
   const BASE_FARE   = 25;   // ج.م — عداد الانطلاق
   const RATE_PER_KM = 12;   // ج.م / كم — طريق فعلي
@@ -1048,8 +1057,9 @@ import { AIRPORTS } from '../data/rides';
   }
 
   // ── ride state ──
-  let activeRideId = null;
-  let ridePoller   = null;
+  let activeRideId  = null;
+  let ridePoller    = null;   // fallback REST poll
+  let _rideChannel  = null;   // Supabase Realtime channel
   let _currentFrom = null, _currentTo = null, _currentEta = 0;
   let _driverShown = false, _onRide = false;
 
@@ -1081,31 +1091,60 @@ import { AIRPORTS } from '../data/rides';
       const res = await fetch(`${SB_URL}/rest/v1/rides?id=eq.${activeRideId}&select=*`, { headers: SB_H });
       const rows = await res.json();
       if (!Array.isArray(rows) || rows.length === 0) return;
-      const ride = rows[0];
-
-      if ((ride.status === 'accepted' || ride.status === 'in_progress' || ride.status === 'completed') && !_driverShown) {
-        _driverShown = true;
-        showDriverFound(ride);
-      }
-      if (ride.status === 'in_progress' && !_onRide) {
-        _onRide = true;
-        document.getElementById('driver-card-status').textContent = 'في الطريق للوجهة 🚗';
-        advanceStatus('onride');
-      }
-      if (ride.status === 'completed') {
-        stopPoller();
-        advanceStatus('done');
-        setTimeout(() => showFinalSuccess(ride), 1800);
-      }
-      if (ride.status === 'cancelled') {
-        stopPoller();
-        resetToBooking();
-      }
+      handleRideUpdate(rows[0]);
     } catch {}
   }
 
   function stopPoller() {
     if (ridePoller) { clearInterval(ridePoller); ridePoller = null; }
+    if (_rideChannel) { _rideChannel.unsubscribe(); _rideChannel = null; }
+  }
+
+  function handleRideUpdate(ride) {
+    if ((ride.status === 'accepted' || ride.status === 'in_progress' || ride.status === 'completed') && !_driverShown) {
+      _driverShown = true;
+      showDriverFound(ride);
+    }
+    if (ride.status === 'in_progress' && !_onRide) {
+      _onRide = true;
+      document.getElementById('driver-card-status').textContent = 'في الطريق للوجهة 🚗';
+      advanceStatus('onride');
+    }
+    if (ride.status === 'completed') {
+      stopPoller();
+      advanceStatus('done');
+      setTimeout(() => showFinalSuccess(ride), 1800);
+    }
+    if (ride.status === 'cancelled') {
+      stopPoller();
+      resetToBooking();
+    }
+  }
+
+  function subscribeRideStatus(rideId) {
+    stopPoller();
+    if (!rideId) return;
+
+    function tryRealtime() {
+      if (!_sb) { ridePoller = setInterval(pollRideStatus, 2500); return; }
+      _rideChannel = _sb.channel(`ride-${rideId}`)
+        .on('postgres_changes', {
+          event: 'UPDATE', schema: 'public', table: 'rides',
+          filter: `id=eq.${rideId}`,
+        }, payload => handleRideUpdate(payload.new))
+        .subscribe(status => {
+          if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+            // Realtime فشل → fallback polling
+            if (!ridePoller) ridePoller = setInterval(pollRideStatus, 2500);
+          }
+          if (status === 'SUBSCRIBED') {
+            clearInterval(ridePoller); ridePoller = null;
+          }
+        });
+    }
+
+    if (_sb) tryRealtime();
+    else setTimeout(tryRealtime, 1500);
   }
 
   function showSearching(fromName, toName, fare) {
@@ -1291,7 +1330,7 @@ import { AIRPORTS } from '../data/rides';
     showSearching(from.name, to.name, fare);
 
     if (activeRideId) {
-      ridePoller = setInterval(pollRideStatus, 2000);
+      subscribeRideStatus(activeRideId);
     } else {
       setTimeout(() => {
         _driverShown = true;
@@ -1451,7 +1490,7 @@ import { AIRPORTS } from '../data/rides';
     showSearching(fromArea.name, airport.name, airport.flatFare);
 
     if (activeRideId) {
-      ridePoller = setInterval(pollRideStatus, 2000);
+      subscribeRideStatus(activeRideId);
     } else {
       setTimeout(() => {
         _driverShown = true;
