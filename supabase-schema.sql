@@ -207,6 +207,23 @@ CREATE INDEX idx_ratings_driver_phone  ON ratings(driver_phone);
 CREATE INDEX idx_ratings_created_at    ON ratings(created_at DESC);
 
 
+-- ── Push Notification Subscriptions ─────────────────────────
+CREATE TABLE IF NOT EXISTS push_subscriptions (
+  id           TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+  phone        TEXT NOT NULL,
+  role         TEXT NOT NULL DEFAULT 'customer', -- customer, driver, merchant
+  store_id     TEXT,
+  subscription JSONB NOT NULL,
+  created_at   TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at   TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  FOREIGN KEY (phone) REFERENCES accounts(phone) ON DELETE CASCADE
+);
+
+CREATE INDEX idx_push_subs_phone  ON push_subscriptions(phone);
+CREATE INDEX idx_push_subs_role   ON push_subscriptions(role);
+CREATE INDEX idx_push_subs_store  ON push_subscriptions(store_id);
+
+
 -- ── Enable Supabase Realtime on live-traffic tables ───────────
 -- Run this in Supabase → SQL Editor AFTER creating tables above:
 ALTER PUBLICATION supabase_realtime ADD TABLE rides;

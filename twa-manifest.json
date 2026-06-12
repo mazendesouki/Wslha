@@ -1,0 +1,56 @@
+{
+  "packageId": "co.wslha.app",
+  "host": "wslha.co",
+  "name": "وصّلها — توصيل سريع في دمياط",
+  "launcherName": "وصّلها",
+  "display": "standalone",
+  "orientation": "portrait",
+  "themeColor": "#3B6EF8",
+  "navigationColor": "#3B6EF8",
+  "navigationColorDark": "#2952D9",
+  "navigationDividerColor": "#3B6EF8",
+  "navigationDividerColorDark": "#2952D9",
+  "backgroundColor": "#2952D9",
+  "enableNotifications": true,
+  "startUrl": "/",
+  "iconUrl": "https://wslha.co/icon-512.png",
+  "maskableIconUrl": "https://wslha.co/icon-maskable-512.png",
+  "appVersion": "1.0.0",
+  "appVersionCode": 1,
+  "signingKey": {
+    "path": "./wslha.keystore",
+    "alias": "wslha",
+    "keypassword": "REPLACE_KEYPASS",
+    "storepassword": "REPLACE_STOREPASS"
+  },
+  "isChromeOSOnly": false,
+  "isMetaQuest": false,
+  "fullScopeUrl": "https://wslha.co/",
+  "minSdkVersion": 19,
+  "shortcuts": [
+    {
+      "name": "المتاجر",
+      "shortName": "المتاجر",
+      "url": "/stores",
+      "chooseIconFromWebManifest": true
+    },
+    {
+      "name": "تتبّع طلبي",
+      "shortName": "تتبّع",
+      "url": "/track",
+      "chooseIconFromWebManifest": true
+    }
+  ],
+  "generatorApp": "bubblewrap-cli",
+  "webManifestUrl": "https://wslha.co/site.webmanifest",
+  "fallbackType": "customtabs",
+  "features": {
+    "locationDelegation": { "enabled": false },
+    "playBilling": { "enabled": false }
+  },
+  "alphaDependencies": { "enabled": false },
+  "enableSiteSettingsShortcut": true,
+  "isSplashScreenFadeOutEnabled": true,
+  "splashScreenFadeOutDuration": 300,
+  "retainedBundles": []
+}

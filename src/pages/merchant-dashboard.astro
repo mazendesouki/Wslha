@@ -596,7 +596,7 @@ import Layout from '../components/layout.astro';
   };
 
   // ── Toast ──
-  function toast(msg: string, ms = 2500) {
+  function toast(msg: string, ms = 2600) {
     const t = document.getElementById('toast')!;
     t.textContent = msg; t.classList.add('show');
     setTimeout(() => t.classList.remove('show'), ms);
@@ -644,6 +644,82 @@ import Layout from '../components/layout.astro';
       });
       return r.ok ? await r.json() : null;
     } catch { return null; }
+  }
+
+  // ── Realtime ──
+  let _sb: any = null;
+  let _ordersChannel: any = null;
+
+  function loadSupabaseSDK(): Promise<void> {
+    return new Promise((resolve) => {
+      if ((window as any).supabase) {
+        _sb = (window as any).supabase.createClient(SB_URL, SB_KEY);
+        resolve(); return;
+      }
+      const s = document.createElement('script');
+      s.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js';
+      s.onload = () => { _sb = (window as any).supabase.createClient(SB_URL, SB_KEY); resolve(); };
+      s.onerror = () => resolve();
+      document.head.appendChild(s);
+    });
+  }
+
+  function subscribeOrders() {
+    if (!_sb || !currentStore) { startOrdersPolling(); return; }
+    if (_ordersChannel) { try { _sb.removeChannel(_ordersChannel); } catch {} }
+
+    _ordersChannel = _sb
+      .channel(`merchant-orders-${currentStore.id}`)
+      .on('postgres_changes', {
+        event: 'INSERT', schema: 'public', table: 'orders',
+        filter: `store_id=eq.${currentStore.id}`,
+      }, (payload: any) => {
+        const o = payload.new || {};
+        playChime();
+        toast('🔔 طلب جديد وصل!', 4000);
+        showBrowserNotification(
+          '🛎️ طلب جديد في ' + (currentStore.name || 'متجرك'),
+          `${o.customer_name || 'عميل جديد'} · ${o.total || 0} ج.م`,
+          '/merchant-dashboard'
+        );
+        loadOrders(false);
+      })
+      .on('postgres_changes', {
+        event: 'UPDATE', schema: 'public', table: 'orders',
+        filter: `store_id=eq.${currentStore.id}`,
+      }, () => loadOrders(false))
+      .subscribe((status: string) => {
+        if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+          if (!ordersPollTimer) startOrdersPolling();
+        } else if (status === 'SUBSCRIBED') {
+          if (ordersPollTimer) { clearInterval(ordersPollTimer); ordersPollTimer = null; }
+        }
+      });
+  }
+
+  async function requestNotificationPermission() {
+    if (!('Notification' in window)) return;
+    if (Notification.permission === 'default') {
+      await Notification.requestPermission();
+    }
+  }
+
+  function showBrowserNotification(title: string, body: string, url = '/merchant-dashboard') {
+    if (!('Notification' in window) || Notification.permission !== 'granted') return;
+    try {
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.ready.then(reg => {
+          reg.showNotification(title, {
+            body, icon: '/icon-192.png', badge: '/icon-192.png',
+            tag: 'wslha-order', dir: 'rtl', lang: 'ar',
+            data: { url },
+          } as any);
+        });
+      } else {
+        const n = new Notification(title, { body, icon: '/icon-192.png', dir: 'rtl', lang: 'ar' });
+        n.onclick = () => { window.focus(); n.close(); };
+      }
+    } catch {}
   }
 
   // ── State ──
@@ -747,9 +823,10 @@ import Layout from '../components/layout.astro';
     // Load sections & products
     await loadMenu();
 
-    // Load orders + start live polling
+    // Load orders + start Realtime (with polling fallback)
     await loadOrders();
-    startOrdersPolling();
+    loadSupabaseSDK().then(() => subscribeOrders());
+    requestNotificationPermission();
 
     // Tabs
     document.querySelectorAll('.tab-btn').forEach(btn => {
