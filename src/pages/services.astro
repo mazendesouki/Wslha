@@ -47,14 +47,14 @@ const SERVICES: Service[] = [
 ];
 
 const PARTNERS = [
-  { emoji: '🍕', name: 'المطاعم',       category: 'طعام وشراب'       },
-  { emoji: '💊', name: 'الصيدليات',     category: 'أدوية وصحة'       },
-  { emoji: '🛒', name: 'السوبرماركت',   category: 'بقالة ومنزل'      },
-  { emoji: '☕', name: 'المقاهي',       category: 'مشروبات وحلويات'   },
-  { emoji: '👗', name: 'الملابس',       category: 'أزياء وأكسسوار'   },
-  { emoji: '📱', name: 'الإلكترونيات', category: 'تقنية وكمبيوتر'    },
-  { emoji: '💐', name: 'الزهور',        category: 'هدايا وورود'       },
-  { emoji: '📦', name: 'متاجر أخرى',   category: 'وأكثر...'          },
+  { emoji: '🥩', name: 'مشويات الكيلاني',      category: 'مشويات وكباب'        },
+  { emoji: '🦐', name: 'أكلة سمك',              category: 'مأكولات بحرية'       },
+  { emoji: '🍰', name: 'حلويات البدري',          category: 'حلويات شرقية منذ 1910'},
+  { emoji: '🛒', name: 'هايبر فتح الله ماركت',  category: 'سوبرماركت وبقالة'    },
+  { emoji: '💊', name: 'صيدلية العزبي',          category: 'صيدليات — خط 19600'  },
+  { emoji: '🥬', name: 'خضار وفاكهة النيل',     category: 'طازج من كفر سعد'     },
+  { emoji: '🍕', name: 'بيتزا إيطاليانو دمياط', category: 'بيتزا ومعجنات'       },
+  { emoji: '🧆', name: 'فول وفلافل الشبراوي',   category: 'فطار شعبي — الحي الثالث' },
 ];
 
 interface PricingPlan {
@@ -80,7 +80,7 @@ const PRICING: PricingPlan[] = [
     name: 'توصيل محلي', price: '20', unit: 'ج.م / طلب',
     desc: 'يحددها حسب موقعك والمسافة',
     features: ['توصيل خلال 30 دقيقة', 'من أي مكان في المدينة', 'تتبع المندوب لحظياً', 'دفع نقدي أو إلكتروني', 'خدمة 24/7'],
-    cta: 'اطلب الآن', featured: true, variant: 'accent', href: '/order',
+    cta: 'اطلب الآن', featured: true, variant: 'accent', href: '/stores',
   },
   {
     name: 'توصيل المطار', price: '1,250', unit: 'ج.م / رحلة',
@@ -388,7 +388,7 @@ const PRICING: PricingPlan[] = [
   <!-- Partners -->
   <section class="section partners" id="partners" aria-labelledby="partners-title">
     <div class="container">
-      <SectionHeader badge="ماذا نوصّل؟" title="نوصّل لك كل شيء" subtitle="من أي مكان في دمياط لباب بيتك" id="partners-title" />
+      <SectionHeader badge="🛍️ المتاجر الشريكة" title="تسوّق من متاجر دمياط الجديدة" subtitle="مطاعم — سوبرماركت — صيدليات — حلويات — خضار وفاكهة — إلكترونيات" id="partners-title" />
       <ul class="partners__grid" role="list">
         {PARTNERS.map(p => (
           <li class="partner-card">

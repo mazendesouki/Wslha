@@ -1,7 +1,9 @@
 // Real merchants in New Damietta (دمياط الجديدة) — verified from ElMenus, YellowPages, MenuEgypt
-// Prices in EGP — updated June 2026 against live Egyptian market rates
-// Market reference (June 2026): فراخ بيضاء ~83/كجم · لحمة بلدي 450–480 · بلطي 80–84 ·
-// جمبري ممتاز 760–860 · بيض كرتونة ~165 · لبن لتر ~45 · طماطم ~24 · بطاطس ~18
+// Prices in EGP — updated June 2026 against live Egyptian market rates (verified sources)
+// Market reference (June 2026 — Al-Ahram, Masrawy, Dostor, El-Masry El-Youm):
+//   فراخ بلدي بالتجزئة: 73-78 ج.م/كجم · لحمة بتلو مفروم: 370-400 · بلطي: 76-80 ·
+//   جمبري متوسط: 200-400 · بيض كرتونة 30: 121-125 · طماطم: 12-20 · بطاطس: 10-13 ·
+//   سكر: 36 · أرز: 35 · زيت عباد الشمس 2.25 لتر: 100-117
 
 export interface Product {
   id: string;
@@ -73,13 +75,13 @@ export const STORES: Store[] = [
       { section: 'مشويات', items: [
         { id: 'kl1', name: 'كباب حلة (10 أصابع)', desc: 'لحم ضأن مفروم مشوي على الفحم', price: 240, emoji: '🥩' },
         { id: 'kl2', name: 'كفتة مشوية (8 قطع)', desc: 'كفتة بلدية مع بصل وطماطم', price: 195, emoji: '🥩' },
-        { id: 'kl3', name: 'ربع فراخ مشوي', desc: 'فراخ بلدي مشوي مع توابل خاصة', price: 105, emoji: '🍗' },
-        { id: 'kl4', name: 'نص فراخ مشوي', desc: 'نص فراخ كامل مع سلطة', price: 195, emoji: '🍗' },
-        { id: 'kl5', name: 'شيش طاووق', desc: 'صدور دجاج مع توابل الكيلاني الخاصة', price: 165, emoji: '🍢' },
+        { id: 'kl3', name: 'ربع فراخ مشوي', desc: 'فراخ بلدي مشوي مع توابل خاصة', price: 95, emoji: '🍗' },
+        { id: 'kl4', name: 'نص فراخ مشوي', desc: 'نص فراخ كامل مع سلطة', price: 175, emoji: '🍗' },
+        { id: 'kl5', name: 'شيش طاووق', desc: 'صدور دجاج مع توابل الكيلاني الخاصة', price: 155, emoji: '🍢' },
       ]},
       { section: 'وجبات عائلية', items: [
-        { id: 'kl6', name: 'مشكل مشاوي (4 أشخاص)', desc: 'كباب + كفتة + فراخ + أرز + سلطة + عيش', price: 620, emoji: '🍽️' },
-        { id: 'kl7', name: 'فراخ كاملة مشوية', desc: 'فراخ بلدي كاملة مع أرز وسلطة', price: 380, emoji: '🐓' },
+        { id: 'kl6', name: 'مشكل مشاوي (4 أشخاص)', desc: 'كباب + كفتة + فراخ + أرز + سلطة + عيش', price: 580, emoji: '🍽️' },
+        { id: 'kl7', name: 'فراخ كاملة مشوية', desc: 'فراخ بلدي كاملة مع أرز وسلطة', price: 340, emoji: '🐓' },
       ]},
       { section: 'إضافات', items: [
         { id: 'kl8', name: 'أرز بخاري', price: 40, emoji: '🍚' },
@@ -114,7 +116,7 @@ export const STORES: Store[] = [
       { section: 'مشويات', items: [
         { id: 'fb1', name: 'ريش غنم مشوية (½ كيلو)', desc: 'ريش ضأن طازج مشوي على الفحم', price: 320, emoji: '🥩' },
         { id: 'fb2', name: 'كباب بالعظم', desc: 'كباب لحم مع العظم مشوي', price: 260, emoji: '🥩' },
-        { id: 'fb3', name: 'فراخ بلدي مشوية', desc: 'فراخ بلدي كاملة بالأعشاب', price: 390, emoji: '🍗' },
+        { id: 'fb3', name: 'فراخ بلدي مشوية', desc: 'فراخ بلدي كاملة بالأعشاب', price: 350, emoji: '🍗' },
         { id: 'fb4', name: 'ورقة سيخ كباب + سلطة + عيش', price: 155, emoji: '🥙' },
       ]},
       { section: 'أطباق مصرية', items: [
@@ -150,16 +152,16 @@ export const STORES: Store[] = [
     tagline: 'جمبري دمياط الشهير — طازج من البحر مباشرة',
     menu: [
       { section: 'أطباق رئيسية', items: [
-        { id: 'as1', name: 'جمبري مشوي (½ كيلو)', desc: 'جمبري بحري طازج مشوي بالزبدة والثوم', price: 295, emoji: '🦐' },
-        { id: 'as2', name: 'جمبري مقلي (½ كيلو)', desc: 'مقرمش ومتبل مع صوص الثوم', price: 275, emoji: '🦐' },
-        { id: 'as3', name: 'سمك بلطي طازج (كيلو)', desc: 'مقلي أو مشوي — مع طحينة وأرز صيادية', price: 175, emoji: '🐟' },
-        { id: 'as4', name: 'سمك دنيس مشوي', desc: 'دنيس طازج بالليمون والأعشاب', price: 235, emoji: '🐠' },
-        { id: 'as5', name: 'كاليماري مقلي', desc: 'حلقات كاليماري مقرمشة', price: 210, emoji: '🦑' },
-        { id: 'as6', name: 'صينية جمبري بالكريمة', desc: 'جمبري بالكريمة والجبنة في الفرن', price: 340, emoji: '🦐' },
+        { id: 'as1', name: 'جمبري مشوي (½ كيلو)', desc: 'جمبري بحري طازج مشوي بالزبدة والثوم', price: 260, emoji: '🦐' },
+        { id: 'as2', name: 'جمبري مقلي (½ كيلو)', desc: 'مقرمش ومتبل مع صوص الثوم', price: 240, emoji: '🦐' },
+        { id: 'as3', name: 'سمك بلطي طازج (كيلو)', desc: 'مقلي أو مشوي — مع طحينة وأرز صيادية', price: 155, emoji: '🐟' },
+        { id: 'as4', name: 'سمك دنيس مشوي', desc: 'دنيس طازج بالليمون والأعشاب', price: 210, emoji: '🐠' },
+        { id: 'as5', name: 'كاليماري مقلي', desc: 'حلقات كاليماري مقرمشة', price: 195, emoji: '🦑' },
+        { id: 'as6', name: 'صينية جمبري بالكريمة', desc: 'جمبري بالكريمة والجبنة في الفرن', price: 295, emoji: '🦐' },
       ]},
       { section: 'وجبات مشكل', items: [
-        { id: 'as7', name: 'مشكل بحري للاتنين', desc: 'جمبري + سمك + كاليماري + أرز + سلطة', price: 510, emoji: '🍽️' },
-        { id: 'as8', name: 'طبق سمك للواحد', desc: 'سمك + أرز صيادية + سلطة + طحينة', price: 165, emoji: '🍽️' },
+        { id: 'as7', name: 'مشكل بحري للاتنين', desc: 'جمبري + سمك + كاليماري + أرز + سلطة', price: 460, emoji: '🍽️' },
+        { id: 'as8', name: 'طبق سمك للواحد', desc: 'سمك + أرز صيادية + سلطة + طحينة', price: 145, emoji: '🍽️' },
       ]},
       { section: 'مقبلات وإضافات', items: [
         { id: 'as9', name: 'أرز صيادية', price: 45, emoji: '🍚' },
@@ -232,18 +234,18 @@ export const STORES: Store[] = [
         { id: 'fm5', name: 'قشطة دمياطي كيلو', price: 175, emoji: '🍶' },
       ]},
       { section: 'بقالة أساسية', items: [
-        { id: 'fm6', name: 'أرز مصري بلدي 5 كيلو', price: 155, emoji: '🍚' },
-        { id: 'fm7', name: 'زيت عباد شمس 2.25 لتر', price: 168, emoji: '🛢️' },
-        { id: 'fm8', name: 'سكر أبيض كيلو', price: 38, emoji: '🍬' },
-        { id: 'fm9', name: 'دقيق فاخر 5 كيلو', price: 120, emoji: '🌾' },
+        { id: 'fm6', name: 'أرز مصري بلدي 5 كيلو', price: 175, emoji: '🍚' },
+        { id: 'fm7', name: 'زيت عباد شمس 2.25 لتر', price: 112, emoji: '🛢️' },
+        { id: 'fm8', name: 'سكر أبيض كيلو', price: 37, emoji: '🍬' },
+        { id: 'fm9', name: 'دقيق فاخر 5 كيلو', price: 125, emoji: '🌾' },
         { id: 'fm10', name: 'طماطم معلبة (2 علبة)', price: 30, emoji: '🥫' },
         { id: 'fm11', name: 'مكرونة سباغيتي 500 جم', price: 24, emoji: '🍝' },
         { id: 'fm12', name: 'عدس أحمر كيلو', price: 48, emoji: '🫘' },
       ]},
       { section: 'لحوم ودواجن', items: [
-        { id: 'fm13', name: 'فراخ كاملة طازجة (كيلو)', price: 85, emoji: '🍗' },
-        { id: 'fm14', name: 'لحمة بتلو مفروم (كيلو)', price: 460, emoji: '🥩' },
-        { id: 'fm15', name: 'فيليه سمك (كيلو)', price: 195, emoji: '🐟' },
+        { id: 'fm13', name: 'فراخ كاملة طازجة (كيلو)', price: 78, emoji: '🍗' },
+        { id: 'fm14', name: 'لحمة بتلو مفروم (كيلو)', price: 390, emoji: '🥩' },
+        { id: 'fm15', name: 'فيليه سمك بلطي (كيلو)', price: 165, emoji: '🐟' },
       ]},
       { section: 'مواد تنظيف', items: [
         { id: 'fm16', name: 'أريال أوتوماتيك 3 كيلو', price: 192, emoji: '🧼' },
@@ -274,13 +276,13 @@ export const STORES: Store[] = [
     tagline: 'سوبرماركت الحي الأول — قريب منك دايماً',
     menu: [
       { section: 'ألبان وبيض', items: [
-        { id: 'cv1', name: 'بيض بلدي (كرتونة 30)', price: 165, emoji: '🥚' },
+        { id: 'cv1', name: 'بيض بلدي (كرتونة 30)', price: 125, emoji: '🥚' },
         { id: 'cv2', name: 'لبن فريش كيلو', price: 48, emoji: '🥛' },
         { id: 'cv3', name: 'جبنة قريش كيلو', price: 95, emoji: '🧀' },
         { id: 'cv4', name: 'زبدة أنكور (200 جم)', price: 72, emoji: '🧈' },
       ]},
       { section: 'بقالة', items: [
-        { id: 'cv5', name: 'أرز أبو بنت 5 كيلو', price: 150, emoji: '🍚' },
+        { id: 'cv5', name: 'أرز أبو بنت 5 كيلو', price: 175, emoji: '🍚' },
         { id: 'cv6', name: 'شاي ليبتون (100 كيس)', price: 95, emoji: '🍵' },
         { id: 'cv7', name: 'قهوة نسكافيه كلاسيك (200 جم)', price: 185, emoji: '☕' },
         { id: 'cv8', name: 'ملح طعام كيلو', price: 12, emoji: '🧂' },
@@ -318,8 +320,8 @@ export const STORES: Store[] = [
     tagline: 'صيدليتك الموثوقة في دمياط — خط ساخن 19121',
     menu: [
       { section: 'مسكنات وأدوية بدون روشتة', items: [
-        { id: 'tp1', name: 'بنادول إكسترا 24 قرص', price: 44, emoji: '💊' },
-        { id: 'tp2', name: 'باراسيتامول 500 (20 قرص)', price: 20, emoji: '💊' },
+        { id: 'tp1', name: 'بنادول إكسترا 24 قرص', price: 58, emoji: '💊' },
+        { id: 'tp2', name: 'باراسيتامول 500 (20 قرص)', price: 34, emoji: '💊' },
         { id: 'tp3', name: 'نوروفين إكسبرس', price: 68, emoji: '💊' },
         { id: 'tp4', name: 'فيتامين سي 1000 فوار (20 قرص)', price: 72, emoji: '🍊' },
         { id: 'tp5', name: 'أوميجا 3 (30 كبسولة)', price: 150, emoji: '💊' },
@@ -361,9 +363,9 @@ export const STORES: Store[] = [
     tagline: 'سلسلة العزبي — أكبر صيدليات مصر · خط 19600',
     menu: [
       { section: 'أدوية بدون روشتة', items: [
-        { id: 'ez1', name: 'بنادول إكسترا 24 قرص', price: 44, emoji: '💊' },
-        { id: 'ez2', name: 'كاتافلام 25 مجم', price: 58, emoji: '💊' },
-        { id: 'ez3', name: 'باراسيتامول 500 (20 قرص)', price: 20, emoji: '💊' },
+        { id: 'ez1', name: 'بنادول إكسترا 24 قرص', price: 58, emoji: '💊' },
+        { id: 'ez2', name: 'كاتافلام 25 مجم', price: 75, emoji: '💊' },
+        { id: 'ez3', name: 'باراسيتامول 500 (20 قرص)', price: 34, emoji: '💊' },
         { id: 'ez4', name: 'فيتامين سي 1000 فوار', price: 72, emoji: '🍊' },
         { id: 'ez5', name: 'أوميجا 3 (30 كبسولة)', price: 150, emoji: '💊' },
       ]},
@@ -481,11 +483,11 @@ export const STORES: Store[] = [
     tagline: 'مباشرة من مزارع كفر سعد — طازج كل صباح',
     menu: [
       { section: 'خضروات', items: [
-        { id: 'np1', name: 'طماطم (كيلو)', price: 24, emoji: '🍅' },
-        { id: 'np2', name: 'بطاطس (كيلو)', price: 18, emoji: '🥔' },
-        { id: 'np3', name: 'بصل أبيض (كيلو)', price: 20, emoji: '🧅' },
-        { id: 'np4', name: 'خيار (كيلو)', price: 18, emoji: '🥒' },
-        { id: 'np5', name: 'جزر (كيلو)', price: 18, emoji: '🥕' },
+        { id: 'np1', name: 'طماطم (كيلو)', price: 16, emoji: '🍅' },
+        { id: 'np2', name: 'بطاطس (كيلو)', price: 12, emoji: '🥔' },
+        { id: 'np3', name: 'بصل أبيض (كيلو)', price: 18, emoji: '🧅' },
+        { id: 'np4', name: 'خيار (كيلو)', price: 15, emoji: '🥒' },
+        { id: 'np5', name: 'جزر (كيلو)', price: 16, emoji: '🥕' },
         { id: 'np6', name: 'فلفل رومي أخضر (كيلو)', price: 38, emoji: '🫑' },
         { id: 'np7', name: 'ملوخية (كيلو)', price: 32, emoji: '🥬' },
         { id: 'np8', name: 'كوسة (كيلو)', price: 22, emoji: '🥬' },
