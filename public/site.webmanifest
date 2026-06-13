@@ -32,10 +32,10 @@
       "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
     },
     {
-      "name": "لوحة المتجر",
-      "short_name": "المتجر",
-      "description": "استقبل الطلبات على التابلت",
-      "url": "/merchant-dashboard?source=pwa",
+      "name": "لوحة الطلبات",
+      "short_name": "الطلبات",
+      "description": "استقبل طلبات المطعم على التابلت",
+      "url": "/restaurant-orders?source=pwa",
       "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
     },
     {

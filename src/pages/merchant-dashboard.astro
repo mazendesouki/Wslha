@@ -478,10 +478,17 @@ import Layout from '../components/layout.astro';
       <div id="tab-orders" class="tab-panel">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--sp-5);flex-wrap:wrap;gap:var(--sp-3);">
           <h2 style="font-weight:var(--weight-black);font-size:var(--text-lg);">الطلبات المباشرة 📡</h2>
-          <label style="display:flex;align-items:center;gap:var(--sp-2);font-size:var(--text-sm);cursor:pointer;">
-            <input type="checkbox" id="sound-toggle" checked style="width:18px;height:18px;accent-color:var(--color-primary);" />
-            🔔 تنبيه صوتي للطلبات الجديدة
-          </label>
+          <div style="display:flex;gap:var(--sp-3);align-items:center;flex-wrap:wrap;">
+            <a href="/restaurant-orders" target="_blank"
+               style="display:inline-flex;align-items:center;gap:6px;background:#16a34a;color:#fff;border:none;border-radius:var(--radius-lg);padding:var(--sp-2) var(--sp-4);font-weight:var(--weight-black);font-size:var(--text-sm);text-decoration:none;transition:background .2s;"
+               onmouseover="this.style.background='#15803d'" onmouseout="this.style.background='#16a34a'">
+              🖥️ فتح لوحة الطلبات الكاملة
+            </a>
+            <label style="display:flex;align-items:center;gap:var(--sp-2);font-size:var(--text-sm);cursor:pointer;">
+              <input type="checkbox" id="sound-toggle" checked style="width:18px;height:18px;accent-color:var(--color-primary);" />
+              🔔 تنبيه صوتي
+            </label>
+          </div>
         </div>
 
         <!-- New / incoming orders (need merchant action) -->
