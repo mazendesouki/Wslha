@@ -463,7 +463,7 @@ async function submitApplication() {
     commercial_reg_date:  document.getElementById('creg-date').value,
     commercial_reg_url:   uploads['creg'] || null,
     national_id_number:   document.getElementById('nat-id-num').value.trim(),
-    national_id_expiry:   document.getElementById('nat-id-expiry').value,
+    national_id_expiry:   document.getElementById('nat-id-expiry').value || null,
     national_id_url:      uploads['natid'] || null,
     tax_card_number:      document.getElementById('tax-num').value.trim(),
     tax_card_url:         uploads['tax'] || null,
@@ -471,11 +471,16 @@ async function submitApplication() {
     created_at:           new Date().toISOString(),
   };
   try {
-    await fetch(`${SB_URL}/rest/v1/merchant_applications`, {
+    const mRes = await fetch(`${SB_URL}/rest/v1/merchant_applications`, {
       method: 'POST',
       headers: { ...SB_H, 'Content-Type': 'application/json', Prefer: 'return=minimal' },
       body: JSON.stringify(payload),
     });
+    if (!mRes.ok) {
+      let detail = '';
+      try { const j = await mRes.json(); detail = j.message || j.hint || j.details || JSON.stringify(j); } catch { detail = await mRes.text().catch(() => ''); }
+      throw new Error(`فشل الحفظ في قاعدة البيانات (${mRes.status}): ${detail}`);
+    }
     await fetch(`${SB_URL}/rest/v1/accounts?phone=eq.${encodeURIComponent(USER.phone)}`, {
       method: 'PATCH',
       headers: { ...SB_H, 'Content-Type': 'application/json', Prefer: 'return=minimal' },

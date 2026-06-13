@@ -671,7 +671,7 @@ async function submitApplication() {
     vehicle_model:      document.getElementById('veh-model').value.trim(),
     vehicle_color:      document.getElementById('veh-color').value.trim(),
     vehicle_year:       document.getElementById('veh-year').value,
-    vehicle_purchase_date: document.getElementById('veh-purchase').value,
+    vehicle_purchase_date: document.getElementById('veh-purchase').value || null,
     vehicle_ownership:  document.querySelector('input[name="ownership"]:checked')?.value || 'owned',
     vehicle_front_url:  uploads['veh-front'] || null,
     vehicle_back_url:   uploads['veh-back']  || null,
@@ -691,6 +691,11 @@ async function submitApplication() {
       headers: { ...SB_H, 'Content-Type': 'application/json', Prefer: 'return=minimal' },
       body: JSON.stringify(payload),
     });
+    if (!res.ok) {
+      let detail = '';
+      try { const j = await res.json(); detail = j.message || j.hint || j.details || JSON.stringify(j); } catch { detail = await res.text().catch(() => ''); }
+      throw new Error(`فشل الحفظ في قاعدة البيانات (${res.status}): ${detail}`);
+    }
     // Update account role to driver and status to pending
     await fetch(`${SB_URL}/rest/v1/accounts?phone=eq.${encodeURIComponent(USER.phone)}`, {
       method: 'PATCH',

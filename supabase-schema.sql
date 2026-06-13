@@ -93,6 +93,13 @@ CREATE TABLE IF NOT EXISTS driver_applications (
 CREATE INDEX idx_driver_applications_phone ON driver_applications(phone);
 CREATE INDEX idx_driver_applications_status ON driver_applications(status);
 
+-- RLS for driver_applications: allow anon insert (applicants aren't authenticated yet)
+ALTER TABLE driver_applications ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "allow_anon_insert_driver_app" ON driver_applications;
+CREATE POLICY "allow_anon_insert_driver_app" ON driver_applications FOR INSERT WITH CHECK (true);
+DROP POLICY IF EXISTS "allow_anon_select_driver_app" ON driver_applications;
+CREATE POLICY "allow_anon_select_driver_app" ON driver_applications FOR SELECT USING (true);
+
 
 -- ── Merchant Applications ────────────────────────────────────
 CREATE TABLE IF NOT EXISTS merchant_applications (
@@ -130,6 +137,13 @@ CREATE TABLE IF NOT EXISTS merchant_applications (
 
 CREATE INDEX idx_merchant_applications_phone ON merchant_applications(phone);
 CREATE INDEX idx_merchant_applications_status ON merchant_applications(status);
+
+-- RLS for merchant_applications: allow anon insert
+ALTER TABLE merchant_applications ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "allow_anon_insert_merchant_app" ON merchant_applications;
+CREATE POLICY "allow_anon_insert_merchant_app" ON merchant_applications FOR INSERT WITH CHECK (true);
+DROP POLICY IF EXISTS "allow_anon_select_merchant_app" ON merchant_applications;
+CREATE POLICY "allow_anon_select_merchant_app" ON merchant_applications FOR SELECT USING (true);
 
 
 -- ── Supabase Storage: Create 'documents' bucket ───────────────
