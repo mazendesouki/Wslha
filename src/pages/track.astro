@@ -650,6 +650,37 @@ import PageHero from '../components/PageHero.astro';
 
   document.getElementById('rate-submit').addEventListener('click', submitRating);
 
+  // ── Timeline label/icon sets per order type ──
+  const TL_KEYS = ['tl-pending', 'tl-preparing', 'tl-on_the_way', 'tl-delivered'];
+  const TL_STORE = [
+    { icon: '📋', label: 'استلام الطلب' },
+    { icon: '👨‍🍳', label: 'جاري التجهيز' },
+    { icon: '🛵', label: 'في الطريق' },
+    { icon: '✅', label: 'تم التسليم' },
+  ];
+  const TL_AIRPORT = [
+    { icon: '✅', label: 'تأكيد الحجز' },
+    { icon: '🚗', label: 'السائق في الطريق' },
+    { icon: '🛣️', label: 'متجه للمطار' },
+    { icon: '🛫', label: 'الوصول للمطار' },
+  ];
+  function applyTimelineLabels(set) {
+    TL_KEYS.forEach((id, i) => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      const icon = el.querySelector('.tl-step__icon');
+      const label = el.querySelector('.tl-step__label');
+      if (icon)  icon.textContent  = set[i].icon;
+      if (label) label.textContent = set[i].label;
+    });
+  }
+  function setInfoLabels(labels) {
+    ['lbl-from', 'lbl-to', 'lbl-driver', 'lbl-total'].forEach((id, i) => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = labels[i];
+    });
+  }
+
   // Status → ordered timeline steps
   const STEPS = [
     { key: 'pending',    title: 'تم استلام الطلب',          desc: 'بانتظار تأكيد المتجر' },
@@ -732,6 +763,8 @@ import PageHero from '../components/PageHero.astro';
 
     resultId.textContent = o.code || o.id;
     document.getElementById('result-name').textContent = `${o.store_emoji || '📦'} طلب من ${o.store_name || ''}`;
+    applyTimelineLabels(TL_STORE);
+    setInfoLabels(['من', 'إلى', 'المندوب', 'الإجمالي']);
     const badge = document.getElementById('result-status');
     badge.textContent = STATUS_BADGE[o.status] || o.status;
 
@@ -770,6 +803,83 @@ import PageHero from '../components/PageHero.astro';
     document.getElementById('result-empty').style.display = 'block';
   }
 
+  // ── Local (offline) orders saved by the booking pages ──
+  function findLocalOrder(code) {
+    try {
+      const arr = JSON.parse(localStorage.getItem('wslha_orders') || '[]');
+      return arr.find((o) => o.id === code || o.code === code) || null;
+    } catch { return null; }
+  }
+
+  function renderLocalAirport(o) {
+    currentOrder = o;
+    document.getElementById('result-empty').style.display = 'none';
+    document.getElementById('result-timeline').style.display = '';
+    document.querySelector('.result__info').style.display = '';
+
+    resultId.textContent = o.id;
+    document.getElementById('result-name').textContent = `${o.icon || '✈️'} ${o.type || 'توصيل مطار'}`;
+    applyTimelineLabels(TL_AIRPORT);
+    setInfoLabels(['نقطة الانطلاق', 'المطار', 'شركة الطيران', 'الإجمالي']);
+
+    // Determine current stage from the saved schedule
+    const now = Date.now();
+    const tDriver = o.driverArrivalTime ? new Date(o.driverArrivalTime).getTime() : null;
+    const tDepart = o.departTime ? new Date(o.departTime).getTime() : null;
+    const tArrive = o.arriveTime ? new Date(o.arriveTime).getTime() : null;
+    let idx = 0;
+    if (tArrive && now >= tArrive) idx = 3;
+    else if (tDepart && now >= tDepart) idx = 2;
+    else if (tDriver && now >= tDriver) idx = 1;
+
+    TL_KEYS.forEach((id, i) => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.className = 'tl-step';
+      if (i < idx)       el.classList.add('tl-step--done');
+      else if (i === idx) el.classList.add('tl-step--active');
+      else                el.classList.add('tl-step--wait');
+    });
+    document.getElementById('tl-progress').style.width = (idx <= 0 ? 0 : Math.round((idx / 3) * 100)) + '%';
+
+    const badges = ['مؤكد', 'السائق قادم', 'في الطريق', 'وصل المطار'];
+    document.getElementById('result-status').textContent = badges[idx];
+
+    // ETA card → flight departure time
+    const fmt = (d) => new Date(d).toLocaleString('ar-EG', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+    const etaWindow = document.getElementById('eta-window');
+    const etaLabel  = document.getElementById('eta-label');
+    const etaBadge  = document.getElementById('eta-badge');
+    if (idx >= 3) {
+      etaWindow.textContent = 'وصلت المطار 🛫';
+      etaLabel.textContent  = 'رحلة سعيدة!';
+      etaBadge.textContent  = '✅ تم';
+      etaBadge.style.background = '#dbeafe'; etaBadge.style.color = '#1e40af';
+    } else if (o.flightTime) {
+      etaWindow.textContent = fmt(o.flightTime);
+      etaLabel.textContent  = 'موعد إقلاع الطائرة';
+      etaBadge.textContent  = '✈️ رحلتك';
+      etaBadge.style.background = '#dbeafe'; etaBadge.style.color = '#1d4ed8';
+    } else {
+      etaWindow.textContent = '—';
+      etaLabel.textContent  = 'موعد الرحلة';
+      etaBadge.textContent  = '✈️';
+    }
+
+    // Info grid
+    const fromPoint = o.address ? o.address.split(' — ')[0]
+      : (o.route ? o.route.split('←')[0].trim() : '—');
+    document.getElementById('info-from').textContent   = fromPoint || '—';
+    document.getElementById('info-to').textContent     = o.airport || '—';
+    document.getElementById('info-driver').textContent = `${o.airline || ''} ${o.flightNo || ''}`.trim() || '—';
+    document.getElementById('info-total').textContent  = o.price || `${o.total || 0} ج.م`;
+
+    // Delivery-only modules are not relevant to airport trips
+    document.getElementById('track-map-card').classList.remove('visible');
+    document.getElementById('rate-card').classList.remove('visible');
+    document.getElementById('rate-thanks').classList.remove('visible');
+  }
+
   async function fetchOrder(code) {
     try {
       const r = await fetch(`${SB_URL}/rest/v1/orders?code=eq.${encodeURIComponent(code)}&limit=1`, { headers: SB_H });
@@ -794,6 +904,13 @@ import PageHero from '../components/PageHero.astro';
     document.getElementById('rate-card').classList.remove('visible');
     document.getElementById('rate-thanks').classList.remove('visible');
     try { if ('Notification' in window && Notification.permission === 'default') Notification.requestPermission(); } catch {}
+
+    // Airport trips are stored locally (no store/delivery backend) — render their own timeline
+    const localOrder = findLocalOrder(code);
+    if (localOrder && localOrder.kind === 'airport') {
+      renderLocalAirport(localOrder);
+      return;
+    }
 
     const order = await fetchOrder(code);
     if (order) renderOrder(order);
@@ -831,8 +948,12 @@ import PageHero from '../components/PageHero.astro';
   } else {
     try {
       const orders = JSON.parse(localStorage.getItem('wslha_orders') || '[]');
-      const last = orders.find((o) => o.kind === 'store' && o.code);
-      if (last) { input.value = last.code; track(last.code); }
+      const last = orders.find((o) => (o.kind === 'store' && o.code) || (o.kind === 'airport' && o.id));
+      if (last) {
+        const ref = last.code || last.id;
+        input.value = ref;
+        track(ref);
+      }
     } catch {}
   }
 </script>
@@ -921,10 +1042,10 @@ import PageHero from '../components/PageHero.astro';
         <ol class="timeline" id="result-timeline" style="display:none" aria-hidden="true"></ol>
 
         <dl class="result__info">
-          <div><dt class="result__info-label">من</dt>          <dd class="result__info-value" id="info-from">—</dd></div>
-          <div><dt class="result__info-label">إلى</dt>         <dd class="result__info-value" id="info-to">—</dd></div>
-          <div><dt class="result__info-label">المندوب</dt>     <dd class="result__info-value" id="info-driver">—</dd></div>
-          <div><dt class="result__info-label">الإجمالي</dt>    <dd class="result__info-value" id="info-total">—</dd></div>
+          <div><dt class="result__info-label" id="lbl-from">من</dt>          <dd class="result__info-value" id="info-from">—</dd></div>
+          <div><dt class="result__info-label" id="lbl-to">إلى</dt>         <dd class="result__info-value" id="info-to">—</dd></div>
+          <div><dt class="result__info-label" id="lbl-driver">المندوب</dt>     <dd class="result__info-value" id="info-driver">—</dd></div>
+          <div><dt class="result__info-label" id="lbl-total">الإجمالي</dt>    <dd class="result__info-value" id="info-total">—</dd></div>
         </dl>
 
         <!-- Live driver map -->

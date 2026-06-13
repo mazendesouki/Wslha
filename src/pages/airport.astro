@@ -519,7 +519,7 @@ import { AIRPORTS, priceForDistance, VEHICLE_TYPES } from '../data/airports';
 
     <div class="air-success__actions">
       <a href="/orders" class="btn btn--primary">📋 طلباتي</a>
-      <a href="/track"  class="btn btn--outline">📡 تتبع الطلب</a>
+      <a href="/track"  class="btn btn--outline" id="air-success-track">📡 تتبع الطلب</a>
     </div>
   </section>
 
@@ -870,6 +870,7 @@ import { AIRPORTS, priceForDistance, VEHICLE_TYPES } from '../data/airports';
 
       // Success
       $('air-success-id').textContent = orderId;
+      ($('air-success-track') as HTMLAnchorElement).href = `/track?q=${encodeURIComponent(orderId)}`;
       $('air-success-card').innerHTML = `
         <div class="air-success__card-header">✈️ تفاصيل الرحلة</div>
         <div class="row"><span class="row-label">المطار</span><span class="row-val">${selectedAirport!.name}</span></div>
