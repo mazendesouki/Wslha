@@ -30,12 +30,18 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site ?? 'https://wslha.co
   <meta property="og:type"        content="website">
   <meta property="og:url"         content={canonicalURL}>
 
-  <!-- Icons -->
+  <!-- Icons & PWA -->
   <link rel="icon" href="/favicon.ico" sizes="any">
   <link rel="icon" href="/icon.svg"    type="image/svg+xml">
   <link rel="apple-touch-icon"    href="/apple-touch-icon.png">
   <link rel="manifest"            href="/site.webmanifest">
   <meta name="theme-color"        content="#3B6EF8">
+
+  <!-- iOS standalone web-app -->
+  <meta name="mobile-web-app-capable"             content="yes">
+  <meta name="apple-mobile-web-app-capable"       content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title"         content="وصّلها">
 
   <!-- Disable Netlify Identity widget -->
   <meta name="netlify-identity-widget" content="disabled">
@@ -47,6 +53,17 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site ?? 'https://wslha.co
 
   <!-- Base styles -->
   <link rel="stylesheet" href="/global.css">
+
+  <!-- Capture beforeinstallprompt ASAP (Chrome/Edge/Samsung) -->
+  <script is:inline>
+    window.__pwaPrompt = null;
+    window.addEventListener('beforeinstallprompt', function(e) {
+      e.preventDefault();
+      window.__pwaPrompt = e;
+      var fab = document.getElementById('pwa-fab');
+      if (fab) fab.hidden = false;
+    });
+  </script>
 
   <style is:global>
     /* ── Layout utilities ──────────────────────────────────── */
@@ -153,7 +170,7 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site ?? 'https://wslha.co
   </main>
 
   <a
-    href="https://wa.me/201000000000"
+    href="https://wa.me/201102667324"
     class="whatsapp-float"
     aria-label="تواصل معنا عبر واتساب"
     rel="noopener noreferrer"
@@ -163,5 +180,353 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site ?? 'https://wslha.co
   </a>
 
   <Footer />
+
+  <!-- ── زرار + مودال تثبيت التطبيق (يعمل على كل المتصفحات) ── -->
+  <div id="pwa-fab-wrap" class="pwa-fab-wrap" hidden>
+    <button id="pwa-fab-dismiss" class="pwa-fab-dismiss" aria-label="إغلاق" onclick="document.getElementById('pwa-fab-wrap').hidden=true;try{localStorage.setItem('wslha_dismissed','1')}catch(e){}">✕</button>
+    <button id="pwa-fab" class="pwa-fab" aria-label="تثبيت التطبيق">
+      <svg class="pwa-fab__icon" width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path d="M12 3v10m0 0l-4-4m4 4l4-4" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M4 16v2.5A2.5 2.5 0 0 0 6.5 21h11a2.5 2.5 0 0 0 2.5-2.5V16" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+      </svg>
+      <span class="pwa-fab__text">تثبيت التطبيق</span>
+    </button>
+  </div>
+
+  <!-- مودال تعليمات Safari/Firefox -->
+  <div id="pwa-modal" class="pwa-modal" hidden role="dialog" aria-modal="true" aria-label="تثبيت التطبيق">
+    <div class="pwa-modal__box">
+      <button class="pwa-modal__close" id="pwa-modal-close" aria-label="إغلاق" onclick="document.getElementById('pwa-modal').hidden=true">✕</button>
+      <div class="pwa-modal__icon">
+        <img src="/icon-192.png" width="56" height="56" alt="وصّلها" style="border-radius:14px;display:inline-block">
+      </div>
+      <h2 class="pwa-modal__title">ثبّت تطبيق وصّلها</h2>
+      <p class="pwa-modal__sub">أسرع وأسهل — أيقونة مباشرة على شاشتك</p>
+      <ol class="pwa-modal__steps" id="pwa-steps"></ol>
+    </div>
+  </div>
+
+  <style is:global>
+    .pwa-fab-wrap {
+      position: fixed;
+      bottom: 80px;
+      left: 16px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      z-index: 1000;
+    }
+    .pwa-fab-wrap[hidden] { display: none; }
+    .pwa-fab {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: #3B6EF8;
+      color: #fff;
+      border: none;
+      border-radius: 999px;
+      padding: 10px 18px 10px 14px;
+      font-family: var(--font-body, sans-serif);
+      font-size: 14px;
+      font-weight: 700;
+      box-shadow: 0 4px 16px rgba(59,110,248,.4);
+      cursor: pointer;
+      transition: transform .2s;
+      touch-action: manipulation;
+    }
+    .pwa-fab:active { transform: scale(.94); }
+    .pwa-fab__icon { display: block; flex-shrink: 0; }
+    .pwa-fab-dismiss {
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      background: rgba(0,0,0,.45);
+      color: #fff;
+      border: none;
+      font-size: 13px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      touch-action: manipulation;
+      flex-shrink: 0;
+    }
+
+    .pwa-modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.55);
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      z-index: 2000;
+      padding: 16px;
+    }
+    .pwa-modal[hidden] { display: none; }
+    .pwa-modal__box {
+      background: #fff;
+      border-radius: 20px 20px 16px 16px;
+      padding: 28px 24px 32px;
+      width: 100%;
+      max-width: 420px;
+      text-align: center;
+      position: relative;
+      direction: rtl;
+    }
+    .pwa-modal__close {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      background: #e8e8e8;
+      border: none;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      font-size: 16px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+    }
+    .pwa-modal__icon { font-size: 48px; margin-bottom: 8px; }
+    .pwa-modal__title { font-size: 20px; font-weight: 800; color: #1a1a2e; margin: 0 0 6px; }
+    .pwa-modal__sub { font-size: 14px; color: #666; margin: 0 0 20px; }
+    .pwa-modal__steps {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      text-align: right;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .pwa-modal__steps li {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: #f7f8ff;
+      border-radius: 12px;
+      padding: 12px 14px;
+      font-size: 14px;
+      font-weight: 600;
+      color: #1a1a2e;
+    }
+    .pwa-modal__extra { margin-top: 16px; }
+    .pwa-chrome-btn {
+      display: block;
+      background: #3B6EF8;
+      color: #fff;
+      text-decoration: none;
+      border-radius: 12px;
+      padding: 14px;
+      font-weight: 700;
+      font-size: 15px;
+      text-align: center;
+    }
+    .pwa-modal__steps li span.step-num {
+      background: #3B6EF8;
+      color: #fff;
+      border-radius: 50%;
+      width: 26px;
+      height: 26px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      font-weight: 800;
+      flex-shrink: 0;
+    }
+  </style>
+
+  <script is:inline>
+    // ── Service worker registration ──────────────────────────
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function () {
+        navigator.serviceWorker.register('/sw.js').catch(function () {});
+      });
+    }
+
+    // ── Universal PWA install ────────────────────────────────
+    (function () {
+      var wrap  = document.getElementById('pwa-fab-wrap');
+      var fab   = document.getElementById('pwa-fab');
+      var modal = document.getElementById('pwa-modal');
+      var steps = document.getElementById('pwa-steps');
+      var closeBtn = document.getElementById('pwa-modal-close');
+
+      function showFab() { if (wrap) wrap.hidden = false; }
+      function hideFab() { if (wrap) wrap.hidden = true; }
+
+      function isInstalled() {
+        return window.matchMedia('(display-mode: standalone)').matches ||
+               window.navigator.standalone === true ||
+               localStorage.getItem('wslha_installed') === '1';
+      }
+
+      function isDismissed() {
+        return localStorage.getItem('wslha_dismissed') === '1';
+      }
+
+      if (isInstalled() || isDismissed()) return;
+
+      // ── Detect browser ────────────────────────────────────
+      var ua = navigator.userAgent;
+      var isIOS = /iP(hone|ad|od)/.test(ua);
+      var isSafari = isIOS && /WebKit/.test(ua) && !/CriOS|FxiOS|OPiOS/.test(ua);
+      var isFirefox = /Firefox\//.test(ua) && !/Seamonkey/.test(ua);
+      var isChromeLike = 'onbeforeinstallprompt' in window || window.__pwaPrompt !== undefined;
+
+      function makeStep(num, text) {
+        var li = document.createElement('li');
+        li.innerHTML = '<span class="step-num">' + num + '</span><span>' + text + '</span>';
+        return li;
+      }
+
+      function showModal(stepsArr, extraHTML) {
+        if (!steps || !modal) return;
+        steps.innerHTML = '';
+        stepsArr.forEach(function(t, i) { steps.appendChild(makeStep(i + 1, t)); });
+        var extra = modal.querySelector('.pwa-modal__extra');
+        if (extra) extra.remove();
+        if (extraHTML) {
+          var div = document.createElement('div');
+          div.className = 'pwa-modal__extra';
+          div.innerHTML = extraHTML;
+          steps.after(div);
+        }
+        modal.hidden = false;
+      }
+
+      function hideModal() {
+        if (modal) modal.hidden = true;
+      }
+
+      if (closeBtn) closeBtn.addEventListener('click', hideModal);
+      if (modal) modal.addEventListener('click', function(e) {
+        if (e.target === modal) hideModal();
+      });
+
+      // ── Chrome/Edge/Samsung: use native prompt ────────────
+      if (window.__pwaPrompt) showFab();
+
+      window.addEventListener('beforeinstallprompt', function(e) {
+        e.preventDefault();
+        window.__pwaPrompt = e;
+        showFab();
+      });
+
+      if (fab) fab.addEventListener('click', function () {
+        if (window.__pwaPrompt) {
+          // Chrome/Edge: trigger native dialog
+          hideFab();
+          window.__pwaPrompt.prompt();
+          window.__pwaPrompt.userChoice.then(function(c) {
+            if (c.outcome === 'accepted') {
+              try { localStorage.setItem('wslha_installed', '1'); } catch(x) {}
+            } else {
+              showFab();
+            }
+            window.__pwaPrompt = null;
+          });
+        } else if (isSafari) {
+          // Safari iOS: manual instructions
+          showModal([
+            'اضغط على زر المشاركة 🔗 في شريط Safari أسفل الشاشة',
+            'اختر "إضافة إلى الشاشة الرئيسية" 📲',
+            'اضغط "إضافة" في الأعلى ✅'
+          ]);
+        } else if (isFirefox) {
+          showModal(
+            ['Firefox لا يدعم تثبيت التطبيقات 😔', 'افتح الموقع في Chrome لتثبيت التطبيق 🌐'],
+            '<a href="intent://wslha-941c8.web.app#Intent;scheme=https;package=com.android.chrome;end" class="pwa-chrome-btn">افتح في Chrome ↗</a>'
+          );
+        } else {
+          // Other browsers
+          showModal([
+            'افتح قائمة المتصفح (النقاط الثلاث ⋮)',
+            'اختر "إضافة إلى الشاشة الرئيسية" 📲',
+            'اضغط "إضافة" أو "تثبيت" ✅'
+          ]);
+        }
+      });
+
+      // ── Show FAB for Safari/Firefox even without beforeinstallprompt
+      if (!window.__pwaPrompt && (isSafari || isFirefox || (!isChromeLike))) {
+        showFab();
+      }
+
+      window.addEventListener('appinstalled', function () {
+        try { localStorage.setItem('wslha_installed', '1'); } catch(x) {}
+        hideFab();
+        hideModal();
+        window.__pwaPrompt = null;
+      });
+    })();
+
+    // ── Native (Capacitor) progressive enhancement ───────────
+    // Runs only inside the packaged Android/iOS app. On the web this
+    // block is inert, so the same build serves browser + native.
+    (function () {
+      var Cap = window.Capacitor;
+      if (!Cap || !Cap.isNativePlatform || !Cap.isNativePlatform()) return;
+
+      var P = Cap.Plugins || {};
+
+      // Status bar to brand colour.
+      if (P.StatusBar) {
+        try {
+          P.StatusBar.setBackgroundColor({ color: '#2952D9' });
+          P.StatusBar.setStyle({ style: 'LIGHT' });
+        } catch (e) {}
+      }
+
+      // Hide the splash once the page is interactive.
+      if (P.SplashScreen) {
+        try { P.SplashScreen.hide(); } catch (e) {}
+      }
+
+      // Request notification permission (+ register push if available).
+      if (P.PushNotifications) {
+        try {
+          P.PushNotifications.requestPermissions().then(function (r) {
+            if (r && r.receive === 'granted') P.PushNotifications.register();
+          });
+        } catch (e) {}
+      }
+      if (P.LocalNotifications) {
+        try { P.LocalNotifications.requestPermissions(); } catch (e) {}
+      }
+
+      // Bridge web notification calls to native local notifications so
+      // status/order alerts still fire inside the WebView.
+      if (P.LocalNotifications) {
+        window.wslhaNativeNotify = function (title, body) {
+          try {
+            P.LocalNotifications.schedule({
+              notifications: [{
+                id: Date.now() % 100000,
+                title: title || 'وصّلها',
+                body: body || '',
+                smallIcon: 'ic_stat_icon',
+              }],
+            });
+          } catch (e) {}
+        };
+      }
+
+      // Hardware back button: go back in history, else stay (don't exit abruptly).
+      if (P.App) {
+        try {
+          P.App.addListener('backButton', function (info) {
+            if (info && info.canGoBack) window.history.back();
+            else if (P.App.exitApp) P.App.exitApp();
+          });
+        } catch (e) {}
+      }
+    })();
+  </script>
 </body>
 </html>

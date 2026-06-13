@@ -1,0 +1,17 @@
+{
+  "hosting": {
+    "public": "dist",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "redirects": [
+      {
+        "source": "/**",
+        "destination": "https://wslha.co/:splat",
+        "type": 301
+      }
+    ]
+  }
+}

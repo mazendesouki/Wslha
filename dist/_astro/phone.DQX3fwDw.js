@@ -1,0 +1,1 @@
+const e=/^01[0125][0-9]{8}$/;function i(s){let t=(s||"").replace(/[\s\-()]/g,"");return t.startsWith("+20")?t="0"+t.slice(3):t.startsWith("0020")?t="0"+t.slice(4):t.startsWith("20")&&t.length===12&&(t="0"+t.slice(2)),t}function n(s){return e.test(i(s))}const a="يرجى إدخال رقم جوال مصري صحيح: 11 رقمًا يبدأ بـ 010 أو 011 أو 012 أو 015.";export{a as E,n as i,i as n};

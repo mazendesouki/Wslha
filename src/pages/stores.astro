@@ -1,0 +1,366 @@
+---
+import Layout from '../components/layout.astro';
+import PageHero from '../components/PageHero.astro';
+import { STORES, CATEGORIES } from '../data/stores';
+---
+
+<style>
+  .market {
+    max-width: var(--container);
+    margin: 0 auto;
+    padding: var(--sp-8) var(--sp-6) var(--sp-20);
+  }
+
+  /* Search bar */
+  .search-bar {
+    display: flex; gap: var(--sp-3); align-items: center;
+    background: var(--color-bg);
+    border: 2px solid var(--color-border);
+    border-radius: var(--radius-full);
+    padding: var(--sp-3) var(--sp-5);
+    margin-bottom: var(--sp-6);
+    transition: border-color var(--ease);
+  }
+  .search-bar:focus-within { border-color: var(--color-primary); }
+  .search-bar__icon { font-size: 1.1rem; flex-shrink: 0; }
+  .search-bar__input {
+    flex: 1; border: none; outline: none;
+    font-family: var(--font-body); font-size: var(--text-base);
+    color: var(--color-text); background: transparent; direction: rtl;
+  }
+  .search-bar__input::placeholder { color: var(--color-text-faint); }
+  .search-bar__clear {
+    background: none; border: none; cursor: pointer;
+    color: var(--color-text-faint); font-size: 1rem; padding: 0;
+    display: none;
+  }
+  .search-bar__clear.visible { display: block; }
+
+  /* Search results dropdown */
+  .search-results {
+    background: var(--color-bg); border: 1.5px solid var(--color-border);
+    border-radius: var(--radius-xl); box-shadow: var(--shadow-md);
+    margin-top: -var(--sp-3); margin-bottom: var(--sp-5);
+    display: none; max-height: 340px; overflow-y: auto;
+  }
+  .search-results.visible { display: block; }
+  .search-result-item {
+    display: flex; align-items: center; gap: var(--sp-3);
+    padding: var(--sp-3) var(--sp-5); border-bottom: 1px solid var(--color-border);
+    cursor: pointer; transition: background 0.15s; text-decoration: none; color: inherit;
+  }
+  .search-result-item:last-child { border-bottom: none; }
+  .search-result-item:hover { background: var(--color-primary-light); }
+  .sri-emoji { font-size: 1.4rem; flex-shrink: 0; }
+  .sri-name  { font-weight: var(--weight-bold); font-size: var(--text-sm); }
+  .sri-meta  { font-size: 11px; color: var(--color-text-faint); }
+  .sri-price { font-weight: var(--weight-black); color: #16a34a; margin-right: auto; font-size: var(--text-sm); white-space: nowrap; }
+  .search-loading { padding: var(--sp-4); text-align: center; color: var(--color-text-faint); font-size: var(--text-sm); }
+
+  /* Category filter */
+  .cats {
+    display: flex; gap: var(--sp-2); overflow-x: auto;
+    padding-bottom: var(--sp-2); margin-bottom: var(--sp-7);
+    scrollbar-width: thin;
+  }
+  .cat-chip {
+    display: inline-flex; align-items: center; gap: var(--sp-2);
+    padding: var(--sp-2) var(--sp-5); border-radius: var(--radius-full);
+    border: 2px solid var(--color-border); background: var(--color-bg);
+    font-family: var(--font-body); font-weight: var(--weight-bold);
+    font-size: var(--text-sm); color: var(--color-text-muted);
+    white-space: nowrap; cursor: pointer; transition: all var(--ease);
+  }
+  .cat-chip:hover { border-color: var(--color-primary); color: var(--color-primary); }
+  .cat-chip.is-active { background: var(--color-primary); border-color: var(--color-primary); color: #fff; }
+
+  /* Results count */
+  .results-bar {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: var(--sp-4); font-size: var(--text-sm); color: var(--color-text-faint);
+  }
+  .results-bar strong { color: var(--color-text); }
+
+  /* Store grid */
+  .stores-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--sp-5);
+  }
+
+  .store-card {
+    display: flex; flex-direction: column;
+    background: var(--color-bg);
+    border: 1.5px solid var(--color-border);
+    border-radius: var(--radius-xl);
+    overflow: hidden;
+    transition: border-color var(--ease), box-shadow var(--ease), transform var(--ease);
+    text-decoration: none; color: inherit;
+  }
+  .store-card:hover {
+    border-color: var(--color-primary);
+    box-shadow: var(--shadow-md);
+    transform: translateY(-3px);
+  }
+
+  .store-card__cover {
+    height: 110px;
+    background: linear-gradient(135deg, var(--color-primary-light), #dbeafe);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 3.2rem; position: relative;
+  }
+  .store-card__badge {
+    position: absolute; top: var(--sp-2); left: var(--sp-2);
+    background: var(--color-bg); border-radius: var(--radius-full);
+    padding: 2px var(--sp-3); font-size: 11px; font-weight: var(--weight-bold);
+    box-shadow: var(--shadow-sm);
+  }
+  .store-card__open {
+    position: absolute; top: var(--sp-2); right: var(--sp-2);
+    background: #dcfce7; color: #16a34a; border-radius: var(--radius-full);
+    padding: 2px var(--sp-3); font-size: 10px; font-weight: var(--weight-bold);
+    display: flex; align-items: center; gap: 4px;
+  }
+  .store-card__open::before { content:''; width:6px; height:6px; border-radius:50%; background:#16a34a; }
+
+  .store-card__body { padding: var(--sp-4) var(--sp-5); flex: 1; display: flex; flex-direction: column; }
+  .store-card__cat  { font-size: 11px; color: var(--color-primary); font-weight: var(--weight-bold); margin-bottom: 2px; }
+  .store-card__name { font-size: var(--text-base); font-weight: var(--weight-black); margin-bottom: 3px; line-height: 1.3; }
+  .store-card__addr { font-size: 11px; color: var(--color-text-faint); margin-bottom: var(--sp-3); }
+  .store-card__tagline { font-size: var(--text-xs); color: var(--color-text-muted); line-height: 1.6; margin-bottom: var(--sp-3); flex: 1; }
+
+  .store-card__meta {
+    display: flex; gap: var(--sp-3); font-size: 11px; color: var(--color-text-muted);
+    border-top: 1px solid var(--color-border); padding-top: var(--sp-3);
+    flex-wrap: wrap;
+  }
+  .store-card__rating { color: #d97706; font-weight: var(--weight-black); }
+  .store-card__cta {
+    margin-top: var(--sp-3); display: block; text-align: center;
+    padding: var(--sp-3); border-radius: var(--radius);
+    background: var(--color-primary); color: #fff;
+    font-weight: var(--weight-black); font-size: var(--text-sm);
+    transition: background var(--ease);
+  }
+  .store-card:hover .store-card__cta { background: var(--color-primary-dark); }
+
+  .no-results {
+    grid-column: 1 / -1; text-align: center;
+    padding: var(--sp-16); color: var(--color-text-muted);
+  }
+  .no-results__icon { font-size: 3rem; margin-bottom: var(--sp-3); }
+
+  /* Merchant CTA */
+  .merchant-cta {
+    margin-top: var(--sp-12);
+    background: linear-gradient(135deg, #1e3a5f, #1d4ed8);
+    border-radius: var(--radius-2xl); padding: var(--sp-8) var(--sp-10);
+    display: flex; align-items: center; gap: var(--sp-8); color: #fff;
+  }
+  .merchant-cta__icon { font-size: 4rem; flex-shrink: 0; }
+  .merchant-cta__title { font-size: var(--text-2xl); font-weight: var(--weight-black); margin-bottom: var(--sp-2); }
+  .merchant-cta__sub   { opacity: 0.85; font-size: var(--text-sm); margin-bottom: var(--sp-5); line-height: 1.7; }
+  .merchant-cta__btn {
+    display: inline-flex; align-items: center; gap: var(--sp-2);
+    background: #fff; color: #1d4ed8; border-radius: var(--radius-lg);
+    padding: var(--sp-3) var(--sp-6); font-weight: var(--weight-black);
+    font-size: var(--text-sm); text-decoration: none; transition: all 0.2s;
+  }
+  .merchant-cta__btn:hover { background: #eff6ff; transform: translateY(-1px); }
+
+  @media (max-width: 900px) {
+    .stores-grid { grid-template-columns: repeat(2, 1fr); }
+    .merchant-cta { flex-direction: column; text-align: center; gap: var(--sp-5); }
+  }
+  @media (max-width: 560px) {
+    .stores-grid { grid-template-columns: 1fr; }
+  }
+</style>
+
+<Layout
+  title="المتاجر المحلية — دمياط الجديدة"
+  description="تسوّق من متاجر ومطاعم دمياط الجديدة — أسعار 2026 شفافة، توصيل سريع"
+  page="stores"
+>
+  <PageHero
+    badge="🛍️ المتاجر المحلية"
+    title="تسوّق من متاجر دمياط الجديدة"
+    subtitle="مطاعم — سوبر ماركت — صيدليات — حلويات — خضار — إلكترونيات · أسعار 2026 شفافة"
+  />
+
+  <div class="market">
+
+    <!-- Search -->
+    <div class="search-bar" id="search-bar">
+      <span class="search-bar__icon">🔍</span>
+      <input class="search-bar__input" type="search" id="product-search"
+        placeholder="ابحث عن منتج أو متجر... مثل: بيتزا، أرز، كنافة"
+        autocomplete="off" dir="rtl">
+      <button class="search-bar__clear" id="search-clear" title="مسح البحث">✕</button>
+    </div>
+    <div id="search-results" class="search-results"></div>
+
+    <!-- Category filter -->
+    <div class="cats" role="tablist" aria-label="تصنيفات المتاجر">
+      {CATEGORIES.map((c, i) => (
+        <button
+          class:list={['cat-chip', i === 0 && 'is-active']}
+          data-cat={c.id}
+          role="tab"
+          aria-selected={i === 0 ? 'true' : 'false'}
+        >
+          <span aria-hidden="true">{c.emoji}</span>{c.label}
+        </button>
+      ))}
+    </div>
+
+    <!-- Results count -->
+    <div class="results-bar">
+      <span id="count-label"><strong>{STORES.length}</strong> متجر متاح في دمياط الجديدة</span>
+      <span style="font-size:11px;">أسعار محدّثة 2026</span>
+    </div>
+
+    <!-- Stores grid -->
+    <div class="stores-grid" id="stores-grid">
+      {STORES.map(s => (
+        <a href={`/store/${s.id}`} class="store-card" data-cat={s.categoryId}
+           data-name={s.name} data-area={s.area}>
+          <div class="store-card__cover">
+            <span aria-hidden="true">{s.emoji}</span>
+            <span class="store-card__badge">🚚 {s.deliveryFee} ج.م</span>
+            <span class="store-card__open">مفتوح</span>
+          </div>
+          <div class="store-card__body">
+            <p class="store-card__cat">{s.category}</p>
+            <h2 class="store-card__name">{s.name}</h2>
+            {s.address && <p class="store-card__addr">📍 {s.address}</p>}
+            <p class="store-card__tagline">{s.tagline}</p>
+            <div class="store-card__meta">
+              <span class="store-card__rating">★ {s.rating.toFixed(1)} ({s.reviews.toLocaleString('ar-EG')})</span>
+              <span>⏱️ {s.deliveryTime}</span>
+              <span>حد أدنى {s.minOrder > 0 ? s.minOrder + ' ج.م' : 'لا يوجد'}</span>
+            </div>
+            <span class="store-card__cta">تصفّح المنتجات والأسعار ←</span>
+          </div>
+        </a>
+      ))}
+      <div class="no-results" id="no-results" hidden>
+        <div class="no-results__icon">🔍</div>
+        <p>لا توجد نتائج لهذا التصنيف</p>
+      </div>
+    </div>
+
+    <!-- Merchant CTA -->
+    <div class="merchant-cta">
+      <div class="merchant-cta__icon">🏪</div>
+      <div>
+        <h2 class="merchant-cta__title">هل تملك متجراً في دمياط؟</h2>
+        <p class="merchant-cta__sub">
+          سجّل متجرك مجاناً وابدأ في استقبال الطلبات اليوم.<br>
+          لوحة تحكم كاملة لإدارة المنتجات والأسعار والطلبات.
+        </p>
+        <a href="/merchant-dashboard" class="merchant-cta__btn">🚀 سجّل متجرك الآن</a>
+      </div>
+    </div>
+
+  </div>
+</Layout>
+
+<script define:vars={{ STORES }}>
+  // ── Category filtering ──
+  const chips   = document.querySelectorAll('.cat-chip');
+  const cards   = document.querySelectorAll('.store-card');
+  const noRes   = document.getElementById('no-results');
+  const countLbl= document.getElementById('count-label');
+
+  function filterByCategory(cat) {
+    let visible = 0;
+    cards.forEach(card => {
+      const show = cat === 'all' || card.dataset.cat === cat;
+      card.style.display = show ? '' : 'none';
+      if (show) visible++;
+    });
+    noRes.hidden = visible > 0;
+    countLbl.innerHTML = `<strong>${visible}</strong> متجر متاح في دمياط الجديدة`;
+  }
+
+  chips.forEach(chip => {
+    chip.addEventListener('click', () => {
+      chips.forEach(c => { c.classList.remove('is-active'); c.setAttribute('aria-selected', 'false'); });
+      chip.classList.add('is-active');
+      chip.setAttribute('aria-selected', 'true');
+      filterByCategory(chip.dataset.cat);
+      // Clear search when switching category
+      document.getElementById('product-search').value = '';
+      document.getElementById('search-results').classList.remove('visible');
+      document.getElementById('search-clear').classList.remove('visible');
+      cards.forEach(c => c.style.display = '');
+      filterByCategory(chip.dataset.cat);
+    });
+  });
+
+  // ── Product search (client-side across static menu data) ──
+  const ALL_PRODUCTS = [];
+  STORES.forEach(store => {
+    store.menu.forEach(section => {
+      section.items.forEach(item => {
+        ALL_PRODUCTS.push({ ...item, storeName: store.name, storeId: store.id, storeEmoji: store.emoji });
+      });
+    });
+  });
+
+  const searchInp = document.getElementById('product-search');
+  const searchRes = document.getElementById('search-results');
+  const clearBtn  = document.getElementById('search-clear');
+
+  function doSearch(q) {
+    if (!q || q.length < 2) {
+      searchRes.classList.remove('visible');
+      clearBtn.classList.remove('visible');
+      return;
+    }
+    clearBtn.classList.add('visible');
+    const lower = q.toLowerCase();
+    const hits = ALL_PRODUCTS.filter(p =>
+      p.name.includes(q) || p.name.toLowerCase().includes(lower) ||
+      (p.desc && (p.desc.includes(q) || p.desc.toLowerCase().includes(lower))) ||
+      p.storeName.includes(q)
+    ).slice(0, 12);
+
+    if (!hits.length) {
+      searchRes.innerHTML = '<div class="search-loading">لا توجد نتائج — جرّب كلمة أخرى</div>';
+    } else {
+      searchRes.innerHTML = hits.map(p => `
+        <a href="/store/${p.storeId}" class="search-result-item">
+          <span class="sri-emoji">${p.emoji}</span>
+          <div>
+            <div class="sri-name">${p.name}</div>
+            <div class="sri-meta">${p.storeEmoji} ${p.storeName}${p.desc ? ' · ' + p.desc.slice(0, 40) : ''}</div>
+          </div>
+          <span class="sri-price">${p.price} ج.م</span>
+        </a>`).join('');
+    }
+    searchRes.classList.add('visible');
+  }
+
+  let searchTimer;
+  searchInp.addEventListener('input', () => {
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(() => doSearch(searchInp.value.trim()), 250);
+  });
+
+  clearBtn.addEventListener('click', () => {
+    searchInp.value = '';
+    searchRes.classList.remove('visible');
+    clearBtn.classList.remove('visible');
+    searchInp.focus();
+  });
+
+  // Close search results when clicking outside
+  document.addEventListener('click', e => {
+    if (!document.getElementById('search-bar').contains(e.target) &&
+        !searchRes.contains(e.target)) {
+      searchRes.classList.remove('visible');
+    }
+  });
+</script>

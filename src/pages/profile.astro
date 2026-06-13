@@ -1,0 +1,1437 @@
+---
+import Layout from '../components/layout.astro';
+---
+
+<Layout title="حسابي — وصّلها" currentPage="profile">
+
+<style>
+  /* ── Layout ─────────────────────────────────────────────────── */
+  .profile-wrap {
+    min-height: calc(100vh - var(--nav-height));
+    background: var(--color-bg-soft);
+  }
+
+  /* ── Loading ────────────────────────────────────────────────── */
+  .profile-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--sp-4);
+    min-height: 60vh;
+    color: var(--color-text-muted);
+  }
+  .profile-loading__spinner {
+    width: 44px;
+    height: 44px;
+    border: 3px solid var(--color-border);
+    border-top-color: var(--color-primary);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── Header ─────────────────────────────────────────────────── */
+  .profile-header {
+    background: linear-gradient(135deg, var(--color-primary) 0%, #2952D9 100%);
+    color: #fff;
+    padding: var(--sp-10) var(--sp-6) var(--sp-12);
+    position: relative;
+    overflow: hidden;
+  }
+  .profile-header::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.04'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+    pointer-events: none;
+  }
+  .profile-header__inner {
+    max-width: var(--container);
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    gap: var(--sp-6);
+    position: relative;
+  }
+  .profile-avatar {
+    width: 90px;
+    height: 90px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.25);
+    border: 3px solid rgba(255,255,255,0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2.2rem;
+    font-weight: var(--weight-black);
+    color: #fff;
+    flex-shrink: 0;
+    backdrop-filter: blur(8px);
+    letter-spacing: -1px;
+  }
+  .profile-header__info { flex: 1; min-width: 0; }
+  .profile-header__name {
+    font-size: var(--text-2xl);
+    font-weight: var(--weight-black);
+    color: #fff;
+    margin: 0 0 var(--sp-1);
+    line-height: 1.2;
+  }
+  .profile-header__phone {
+    font-size: var(--text-base);
+    color: rgba(255,255,255,0.8);
+    margin: 0 0 var(--sp-3);
+    direction: ltr;
+    text-align: right;
+  }
+  .profile-header__badges {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-2);
+    flex-wrap: wrap;
+  }
+  .role-badge {
+    padding: 3px var(--sp-3);
+    border-radius: var(--radius-full);
+    font-size: var(--text-xs);
+    font-weight: var(--weight-bold);
+    background: rgba(255,255,255,0.2);
+    color: #fff;
+    border: 1px solid rgba(255,255,255,0.4);
+  }
+  .role-badge--driver { background: rgba(22,163,74,0.3); border-color: rgba(22,163,74,0.6); }
+  .profile-header__city,
+  .profile-header__since {
+    font-size: var(--text-xs);
+    color: rgba(255,255,255,0.7);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  /* ── Stats ──────────────────────────────────────────────────── */
+  .profile-stats-wrap {
+    max-width: var(--container);
+    margin: -36px auto 0;
+    padding: 0 var(--sp-6);
+    position: relative;
+    z-index: 2;
+  }
+  .profile-stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: var(--sp-3);
+  }
+  .stat-card {
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: var(--sp-4) var(--sp-3);
+    text-align: center;
+    box-shadow: var(--shadow-sm);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--sp-1);
+  }
+  .stat-card__icon { font-size: 1.5rem; }
+  .stat-card__value {
+    font-size: var(--text-xl);
+    font-weight: var(--weight-black);
+    color: var(--color-primary);
+    line-height: 1;
+  }
+  .stat-card__label {
+    font-size: var(--text-xs);
+    color: var(--color-text-muted);
+    font-weight: var(--weight-semi);
+  }
+
+  /* ── Tabs ───────────────────────────────────────────────────── */
+  .profile-body {
+    max-width: var(--container);
+    margin: var(--sp-8) auto var(--sp-16);
+    padding: 0 var(--sp-6);
+  }
+  .profile-tabs-nav {
+    display: flex;
+    gap: 0;
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: var(--sp-1);
+    margin-bottom: var(--sp-6);
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .profile-tabs-nav::-webkit-scrollbar { display: none; }
+  .profile-tab {
+    flex: 1;
+    min-width: max-content;
+    padding: var(--sp-2) var(--sp-4);
+    border-radius: calc(var(--radius-lg) - 4px);
+    border: none;
+    background: transparent;
+    font-family: var(--font-body);
+    font-size: var(--text-sm);
+    font-weight: var(--weight-bold);
+    color: var(--color-text-muted);
+    cursor: pointer;
+    transition: all var(--ease);
+    white-space: nowrap;
+  }
+  .profile-tab.is-active {
+    background: var(--color-primary);
+    color: #fff;
+    box-shadow: var(--shadow-sm);
+  }
+  .profile-tab:not(.is-active):hover {
+    background: var(--color-bg-soft);
+    color: var(--color-text);
+  }
+  .tab-panel { display: none; }
+  .tab-panel.is-active { display: block; }
+
+  /* ── Card base ──────────────────────────────────────────────── */
+  .card {
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    overflow: hidden;
+  }
+  .card__header {
+    padding: var(--sp-4) var(--sp-5);
+    border-bottom: 1px solid var(--color-border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .card__title {
+    font-size: var(--text-base);
+    font-weight: var(--weight-black);
+    color: var(--color-text);
+    margin: 0;
+  }
+  .card__body { padding: var(--sp-5); }
+
+  /* ── Info tab ───────────────────────────────────────────────── */
+  .info-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--sp-4);
+    margin-bottom: var(--sp-6);
+  }
+  .info-field { display: flex; flex-direction: column; gap: var(--sp-1); }
+  .info-field__label {
+    font-size: var(--text-xs);
+    font-weight: var(--weight-bold);
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .info-field__value {
+    font-size: var(--text-base);
+    font-weight: var(--weight-semi);
+    color: var(--color-text);
+    padding: var(--sp-2) var(--sp-3);
+    background: var(--color-bg-soft);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    min-height: 42px;
+    display: flex;
+    align-items: center;
+  }
+  .info-field__value--empty { color: var(--color-text-faint); font-style: italic; }
+
+  /* Edit form */
+  .edit-form { display: flex; flex-direction: column; gap: var(--sp-4); }
+  .form-group { display: flex; flex-direction: column; gap: var(--sp-2); }
+  .form-label { font-size: var(--text-sm); font-weight: var(--weight-bold); color: var(--color-text); }
+  .form-input {
+    padding: var(--sp-3) var(--sp-4);
+    border: 1.5px solid var(--color-border);
+    border-radius: var(--radius);
+    font-family: var(--font-body);
+    font-size: var(--text-base);
+    color: var(--color-text);
+    background: var(--color-bg);
+    transition: border-color var(--ease);
+    width: 100%;
+    box-sizing: border-box;
+  }
+  .form-input:focus { outline: none; border-color: var(--color-primary); }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-4); }
+  .btn-save {
+    padding: var(--sp-3) var(--sp-6);
+    background: var(--color-primary);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius);
+    font-family: var(--font-body);
+    font-size: var(--text-base);
+    font-weight: var(--weight-bold);
+    cursor: pointer;
+    transition: background var(--ease), transform var(--ease);
+    align-self: flex-start;
+  }
+  .btn-save:hover { background: #2952D9; transform: translateY(-1px); }
+  .save-success {
+    display: none;
+    color: #16A34A;
+    font-size: var(--text-sm);
+    font-weight: var(--weight-bold);
+    padding: var(--sp-2) var(--sp-3);
+    background: #DCFCE7;
+    border-radius: var(--radius);
+  }
+
+  /* Security card */
+  .security-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--sp-4) 0;
+    border-bottom: 1px solid var(--color-border);
+  }
+  .security-row:last-child { border-bottom: none; }
+  .security-row__info {}
+  .security-row__label {
+    font-size: var(--text-sm);
+    font-weight: var(--weight-bold);
+    color: var(--color-text);
+  }
+  .security-row__desc {
+    font-size: var(--text-xs);
+    color: var(--color-text-muted);
+    margin-top: 2px;
+  }
+  .btn-danger {
+    padding: var(--sp-2) var(--sp-4);
+    background: #FEE2E2;
+    color: #DC2626;
+    border: 1.5px solid #FECACA;
+    border-radius: var(--radius);
+    font-family: var(--font-body);
+    font-size: var(--text-sm);
+    font-weight: var(--weight-bold);
+    cursor: pointer;
+    transition: all var(--ease);
+  }
+  .btn-danger:hover { background: #DC2626; color: #fff; }
+
+  /* ── Orders tab ─────────────────────────────────────────────── */
+  .orders-filters {
+    display: flex;
+    gap: var(--sp-2);
+    margin-bottom: var(--sp-4);
+    flex-wrap: wrap;
+  }
+  .orders-filter {
+    padding: var(--sp-2) var(--sp-4);
+    border: 1.5px solid var(--color-border);
+    border-radius: var(--radius-full);
+    background: var(--color-bg);
+    font-family: var(--font-body);
+    font-size: var(--text-sm);
+    font-weight: var(--weight-bold);
+    color: var(--color-text-muted);
+    cursor: pointer;
+    transition: all var(--ease);
+  }
+  .orders-filter:hover { border-color: var(--color-primary); color: var(--color-primary); }
+  .orders-filter.is-active { background: var(--color-primary); border-color: var(--color-primary); color: #fff; }
+
+  .order-card {
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: var(--sp-4) var(--sp-5);
+    display: flex;
+    align-items: flex-start;
+    gap: var(--sp-4);
+    box-shadow: var(--shadow-sm);
+    transition: box-shadow var(--ease), transform var(--ease);
+    margin-bottom: var(--sp-3);
+  }
+  .order-card:hover { box-shadow: var(--shadow-md); transform: translateY(-1px); }
+  .order-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: var(--radius);
+    background: var(--color-primary-light);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.4rem;
+    flex-shrink: 0;
+  }
+  .order-main { flex: 1; min-width: 0; }
+  .order-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--sp-2);
+    margin-bottom: var(--sp-1);
+  }
+  .order-id {
+    font-size: var(--text-xs);
+    color: var(--color-text-faint);
+    font-weight: var(--weight-semi);
+    direction: ltr;
+  }
+  .order-status-badge {
+    padding: 2px var(--sp-3);
+    border-radius: var(--radius-full);
+    font-size: var(--text-xs);
+    font-weight: var(--weight-bold);
+  }
+  .status--delivered  { background: #DCFCE7; color: #16A34A; }
+  .status--pending    { background: #FEF9C3; color: #CA8A04; }
+  .status--active,
+  .status--on_the_way,
+  .status--accepted,
+  .status--in_progress { background: #DBEAFE; color: #2563EB; }
+  .status--cancelled,
+  .status--rejected   { background: #FEE2E2; color: #DC2626; }
+  .status--preparing  { background: #FEF3C7; color: #D97706; }
+  .status--completed  { background: #DCFCE7; color: #16A34A; }
+
+  .order-store {
+    font-size: var(--text-base);
+    font-weight: var(--weight-bold);
+    color: var(--color-text);
+    margin-bottom: 2px;
+  }
+  .order-items {
+    font-size: var(--text-xs);
+    color: var(--color-text-muted);
+    margin-bottom: var(--sp-2);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .order-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--sp-2);
+  }
+  .order-date { font-size: var(--text-xs); color: var(--color-text-faint); }
+  .order-total {
+    font-size: var(--text-base);
+    font-weight: var(--weight-black);
+    color: var(--color-primary);
+  }
+
+  /* ── Rides tab ──────────────────────────────────────────────── */
+  .ride-card {
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: var(--sp-4) var(--sp-5);
+    box-shadow: var(--shadow-sm);
+    margin-bottom: var(--sp-3);
+    transition: box-shadow var(--ease), transform var(--ease);
+  }
+  .ride-card:hover { box-shadow: var(--shadow-md); transform: translateY(-1px); }
+  .ride-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--sp-3);
+  }
+  .ride-route {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-2);
+    flex: 1;
+  }
+  .ride-route__icon { font-size: 1.2rem; }
+  .ride-route__text {
+    font-size: var(--text-sm);
+    font-weight: var(--weight-bold);
+    color: var(--color-text);
+  }
+  .ride-route__arrow {
+    color: var(--color-primary);
+    font-weight: var(--weight-black);
+    margin: 0 var(--sp-1);
+  }
+  .ride-meta {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-4);
+    flex-wrap: wrap;
+  }
+  .ride-meta__item {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: var(--text-xs);
+    color: var(--color-text-muted);
+  }
+  .ride-fare {
+    font-size: var(--text-lg);
+    font-weight: var(--weight-black);
+    color: var(--color-primary);
+  }
+
+  /* ── Statistics tab ─────────────────────────────────────────── */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--sp-4);
+    margin-bottom: var(--sp-6);
+  }
+  .stats-card {
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: var(--sp-5);
+    box-shadow: var(--shadow-sm);
+    text-align: center;
+  }
+  .stats-card__num {
+    font-size: var(--text-3xl);
+    font-weight: var(--weight-black);
+    color: var(--color-primary);
+    line-height: 1;
+    margin-bottom: var(--sp-1);
+  }
+  .stats-card__label {
+    font-size: var(--text-sm);
+    color: var(--color-text-muted);
+    font-weight: var(--weight-semi);
+  }
+  .stats-card--green .stats-card__num { color: #16A34A; }
+  .stats-card--orange .stats-card__num { color: #D97706; }
+
+  /* Category breakdown */
+  .category-list { display: flex; flex-direction: column; gap: var(--sp-3); }
+  .category-row {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-3);
+  }
+  .category-row__label {
+    width: 100px;
+    font-size: var(--text-sm);
+    font-weight: var(--weight-semi);
+    color: var(--color-text);
+    flex-shrink: 0;
+    text-align: right;
+  }
+  .category-bar-wrap {
+    flex: 1;
+    height: 10px;
+    background: var(--color-bg-soft);
+    border-radius: var(--radius-full);
+    overflow: hidden;
+  }
+  .category-bar {
+    height: 100%;
+    border-radius: var(--radius-full);
+    background: var(--color-primary);
+    transition: width 0.8s cubic-bezier(.4,0,.2,1);
+  }
+  .category-bar--green { background: #16A34A; }
+  .category-bar--orange { background: #D97706; }
+  .category-bar--purple { background: #9333EA; }
+  .category-row__count {
+    font-size: var(--text-sm);
+    font-weight: var(--weight-bold);
+    color: var(--color-text-muted);
+    width: 50px;
+    text-align: left;
+  }
+
+  /* Monthly table */
+  .monthly-table { width: 100%; border-collapse: collapse; }
+  .monthly-table th {
+    padding: var(--sp-2) var(--sp-3);
+    text-align: right;
+    font-size: var(--text-xs);
+    font-weight: var(--weight-bold);
+    color: var(--color-text-muted);
+    background: var(--color-bg-soft);
+    border-bottom: 1px solid var(--color-border);
+  }
+  .monthly-table td {
+    padding: var(--sp-3);
+    text-align: right;
+    font-size: var(--text-sm);
+    color: var(--color-text);
+    border-bottom: 1px solid var(--color-border);
+  }
+  .monthly-table tr:last-child td { border-bottom: none; }
+  .monthly-table tr:hover td { background: var(--color-bg-soft); }
+
+  /* Empty state */
+  .empty-state {
+    text-align: center;
+    padding: var(--sp-12) var(--sp-6);
+    color: var(--color-text-muted);
+  }
+  .empty-state__icon { font-size: 3rem; margin-bottom: var(--sp-3); }
+  .empty-state__title {
+    font-size: var(--text-lg);
+    font-weight: var(--weight-bold);
+    color: var(--color-text);
+    margin-bottom: var(--sp-2);
+  }
+  .empty-state__text { font-size: var(--text-sm); }
+
+  /* Toast */
+  .toast {
+    position: fixed;
+    bottom: var(--sp-8);
+    left: 50%;
+    transform: translateX(-50%) translateY(60px);
+    background: #1E293B;
+    color: #fff;
+    padding: var(--sp-3) var(--sp-5);
+    border-radius: var(--radius-full);
+    font-size: var(--text-sm);
+    font-weight: var(--weight-bold);
+    z-index: 9999;
+    transition: transform 0.3s ease;
+    white-space: nowrap;
+  }
+  .toast.is-visible { transform: translateX(-50%) translateY(0); }
+
+  /* ── Responsive ─────────────────────────────────────────────── */
+  @media (max-width: 700px) {
+    .profile-header { padding: var(--sp-8) var(--sp-4) var(--sp-12); }
+    .profile-avatar { width: 68px; height: 68px; font-size: 1.6rem; }
+    .profile-header__name { font-size: var(--text-xl); }
+    .profile-stats-wrap { padding: 0 var(--sp-4); }
+    .profile-stats { grid-template-columns: repeat(2, 1fr); }
+    .profile-body { padding: 0 var(--sp-4); margin-top: var(--sp-6); }
+    .info-grid { grid-template-columns: 1fr; }
+    .form-row { grid-template-columns: 1fr; }
+    .stats-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (max-width: 400px) {
+    .profile-stats { grid-template-columns: 1fr 1fr; gap: var(--sp-2); }
+    .stat-card { padding: var(--sp-3) var(--sp-2); }
+  }
+</style>
+
+<div class="profile-wrap" id="main-content">
+
+  <!-- Loading skeleton -->
+  <div id="profile-loading" class="profile-loading">
+    <div class="profile-loading__spinner"></div>
+    <p>جاري تحميل ملفك الشخصي…</p>
+  </div>
+
+  <!-- Main profile content -->
+  <div id="profile-content" hidden>
+
+    <!-- ── Hero header ─────────────────────────────────────── -->
+    <div class="profile-header">
+      <div class="profile-header__inner">
+        <div class="profile-avatar" id="prof-avatar">م</div>
+        <div class="profile-header__info">
+          <h1 class="profile-header__name" id="prof-name">—</h1>
+          <p class="profile-header__phone" id="prof-phone">—</p>
+          <div class="profile-header__badges">
+            <span class="role-badge" id="prof-role-badge">عميل</span>
+            <span class="profile-header__city" id="prof-city"></span>
+            <span class="profile-header__since" id="prof-since"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Stats row ───────────────────────────────────────── -->
+    <div class="profile-stats-wrap">
+      <div class="profile-stats">
+        <div class="stat-card">
+          <span class="stat-card__icon">🛵</span>
+          <span class="stat-card__value" id="stat-orders">0</span>
+          <span class="stat-card__label">إجمالي الطلبات</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-card__icon">💰</span>
+          <span class="stat-card__value" id="stat-spent">0 ج.م</span>
+          <span class="stat-card__label">إجمالي الإنفاق</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-card__icon">🚗</span>
+          <span class="stat-card__value" id="stat-rides">0</span>
+          <span class="stat-card__label">رحلاتي</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-card__icon">📅</span>
+          <span class="stat-card__value" id="stat-month">0</span>
+          <span class="stat-card__label">هذا الشهر</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Tabs body ───────────────────────────────────────── -->
+    <div class="profile-body">
+
+      <!-- Tab nav -->
+      <nav class="profile-tabs-nav" role="tablist" aria-label="أقسام الملف الشخصي">
+        <button class="profile-tab is-active" data-tab="info"  role="tab" aria-selected="true"  aria-controls="tab-info">👤 معلوماتي</button>
+        <button class="profile-tab"           data-tab="orders" role="tab" aria-selected="false" aria-controls="tab-orders">🛵 الطلبات</button>
+        <button class="profile-tab"           data-tab="rides"  role="tab" aria-selected="false" aria-controls="tab-rides">🚗 المشاوير</button>
+        <button class="profile-tab"           data-tab="stats"  role="tab" aria-selected="false" aria-controls="tab-stats">📊 الإحصائيات</button>
+      </nav>
+
+      <!-- ── Tab: معلوماتي ──────────────────────────────────── -->
+      <div class="tab-panel is-active" id="tab-info" role="tabpanel">
+        <!-- Personal info display -->
+        <div class="card" style="margin-bottom:var(--sp-4)">
+          <div class="card__header">
+            <h2 class="card__title">البيانات الشخصية</h2>
+            <button class="btn-save" id="edit-toggle-btn" type="button">✏️ تعديل</button>
+          </div>
+          <div class="card__body">
+            <!-- Read view -->
+            <div id="info-view">
+              <div class="info-grid">
+                <div class="info-field">
+                  <span class="info-field__label">الاسم الكامل</span>
+                  <span class="info-field__value" id="view-name">—</span>
+                </div>
+                <div class="info-field">
+                  <span class="info-field__label">رقم الجوال</span>
+                  <span class="info-field__value" id="view-phone" style="direction:ltr;justify-content:flex-end">—</span>
+                </div>
+                <div class="info-field">
+                  <span class="info-field__label">البريد الإلكتروني</span>
+                  <span class="info-field__value" id="view-email">—</span>
+                </div>
+                <div class="info-field">
+                  <span class="info-field__label">اسم المستخدم</span>
+                  <span class="info-field__value" id="view-username">—</span>
+                </div>
+                <div class="info-field">
+                  <span class="info-field__label">المدينة</span>
+                  <span class="info-field__value" id="view-city">—</span>
+                </div>
+                <div class="info-field">
+                  <span class="info-field__label">نوع الحساب</span>
+                  <span class="info-field__value" id="view-role">—</span>
+                </div>
+                <div class="info-field" style="grid-column:span 2">
+                  <span class="info-field__label">تاريخ الانضمام</span>
+                  <span class="info-field__value" id="view-created">—</span>
+                </div>
+              </div>
+            </div>
+            <!-- Edit view -->
+            <div id="info-edit" hidden>
+              <form class="edit-form" id="profile-edit-form" novalidate>
+                <div class="form-row">
+                  <div class="form-group">
+                    <label class="form-label" for="edit-name">الاسم الكامل</label>
+                    <input class="form-input" id="edit-name" type="text" placeholder="اسمك الكامل" autocomplete="name">
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label" for="edit-username">اسم المستخدم</label>
+                    <input class="form-input" id="edit-username" type="text" placeholder="username" dir="ltr" autocomplete="username">
+                  </div>
+                </div>
+                <div class="form-row">
+                  <div class="form-group">
+                    <label class="form-label" for="edit-email">البريد الإلكتروني</label>
+                    <input class="form-input" id="edit-email" type="email" placeholder="email@example.com" dir="ltr" autocomplete="email">
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label" for="edit-city">المدينة</label>
+                    <input class="form-input" id="edit-city" type="text" placeholder="مثال: دمياط الجديدة">
+                  </div>
+                </div>
+                <div style="display:flex;gap:var(--sp-3);align-items:center;flex-wrap:wrap">
+                  <button class="btn-save" type="submit">💾 حفظ التغييرات</button>
+                  <button class="btn-save" type="button" id="edit-cancel-btn" style="background:var(--color-bg-soft);color:var(--color-text);border:1.5px solid var(--color-border)">إلغاء</button>
+                  <span class="save-success" id="save-success-msg">✅ تم الحفظ بنجاح!</span>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+
+        <!-- Account & security -->
+        <div class="card">
+          <div class="card__header">
+            <h2 class="card__title">الحساب والأمان</h2>
+          </div>
+          <div class="card__body">
+            <div class="security-row">
+              <div class="security-row__info">
+                <div class="security-row__label">رقم الجوال</div>
+                <div class="security-row__desc" id="sec-phone">—</div>
+              </div>
+              <span style="font-size:var(--text-xs);color:#16A34A;font-weight:var(--weight-bold)">✓ مُحقق</span>
+            </div>
+            <div class="security-row">
+              <div class="security-row__info">
+                <div class="security-row__label">كلمة المرور</div>
+                <div class="security-row__desc">محمية بكلمة مرور قوية</div>
+              </div>
+              <a href="/login" class="btn-danger" style="text-decoration:none">تغيير</a>
+            </div>
+            <div class="security-row">
+              <div class="security-row__info">
+                <div class="security-row__label">تسجيل الخروج</div>
+                <div class="security-row__desc">الخروج من حسابك على هذا الجهاز</div>
+              </div>
+              <button class="btn-danger" id="logout-btn" type="button">خروج</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Tab: الطلبات ──────────────────────────────────── -->
+      <div class="tab-panel" id="tab-orders" role="tabpanel" hidden>
+        <div class="orders-filters" id="order-filters">
+          <button class="orders-filter is-active" data-filter="all">الكل</button>
+          <button class="orders-filter" data-filter="active">نشط</button>
+          <button class="orders-filter" data-filter="delivered">مُسلَّم</button>
+          <button class="orders-filter" data-filter="cancelled">ملغي</button>
+        </div>
+        <div id="orders-list">
+          <div class="empty-state">
+            <div class="empty-state__icon">🛵</div>
+            <div class="empty-state__title">لا توجد طلبات بعد</div>
+            <div class="empty-state__text">طلباتك ستظهر هنا بعد أول عملية توصيل</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Tab: المشاوير ─────────────────────────────────── -->
+      <div class="tab-panel" id="tab-rides" role="tabpanel" hidden>
+        <div id="rides-list">
+          <div class="empty-state">
+            <div class="empty-state__icon">🚗</div>
+            <div class="empty-state__title">لا توجد رحلات بعد</div>
+            <div class="empty-state__text">رحلاتك ستظهر هنا بعد أول مشوار</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Tab: الإحصائيات ───────────────────────────────── -->
+      <div class="tab-panel" id="tab-stats" role="tabpanel" hidden>
+        <!-- Summary numbers -->
+        <div class="stats-grid" style="margin-bottom:var(--sp-6)">
+          <div class="stats-card">
+            <div class="stats-card__num" id="st-total-orders">0</div>
+            <div class="stats-card__label">إجمالي الطلبات</div>
+          </div>
+          <div class="stats-card stats-card--green">
+            <div class="stats-card__num" id="st-total-spent">0</div>
+            <div class="stats-card__label">إجمالي الإنفاق (ج.م)</div>
+          </div>
+          <div class="stats-card stats-card--orange">
+            <div class="stats-card__num" id="st-avg-order">0</div>
+            <div class="stats-card__label">متوسط قيمة الطلب (ج.م)</div>
+          </div>
+          <div class="stats-card">
+            <div class="stats-card__num" id="st-total-rides">0</div>
+            <div class="stats-card__label">إجمالي الرحلات</div>
+          </div>
+          <div class="stats-card stats-card--green">
+            <div class="stats-card__num" id="st-delivered">0</div>
+            <div class="stats-card__label">طلبات مُسلَّمة</div>
+          </div>
+          <div class="stats-card stats-card--orange">
+            <div class="stats-card__num" id="st-this-month">0</div>
+            <div class="stats-card__label">طلبات هذا الشهر</div>
+          </div>
+        </div>
+
+        <!-- Category breakdown -->
+        <div class="card" style="margin-bottom:var(--sp-4)">
+          <div class="card__header">
+            <h2 class="card__title">🍕 الإنفاق حسب نوع الخدمة</h2>
+          </div>
+          <div class="card__body">
+            <div class="category-list" id="category-breakdown">
+              <p style="color:var(--color-text-muted);font-size:var(--text-sm)">لا توجد بيانات كافية بعد</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Top stores -->
+        <div class="card" style="margin-bottom:var(--sp-4)">
+          <div class="card__header">
+            <h2 class="card__title">⭐ المحلات المفضلة</h2>
+          </div>
+          <div class="card__body">
+            <div id="top-stores">
+              <p style="color:var(--color-text-muted);font-size:var(--text-sm)">لا توجد بيانات كافية بعد</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Monthly breakdown table -->
+        <div class="card">
+          <div class="card__header">
+            <h2 class="card__title">📅 الإنفاق الشهري</h2>
+          </div>
+          <div class="card__body" style="padding:0;overflow:hidden">
+            <table class="monthly-table">
+              <thead>
+                <tr>
+                  <th>الشهر</th>
+                  <th>عدد الطلبات</th>
+                  <th>إجمالي الإنفاق</th>
+                  <th>متوسط الطلب</th>
+                </tr>
+              </thead>
+              <tbody id="monthly-tbody">
+                <tr><td colspan="4" style="text-align:center;color:var(--color-text-muted)">لا توجد بيانات بعد</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /.profile-body -->
+  </div><!-- /#profile-content -->
+</div><!-- /.profile-wrap -->
+
+<!-- Toast -->
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script is:inline>
+(function () {
+  /* ── Constants ─────────────────────────────────────────────── */
+  const SB_URL = 'https://vtikgyiopkjnrwlqnmfx.supabase.co';
+  const SB_KEY = 'sb_publishable_PLSnpvCT-sAyUMtymNgTwA_QmL2suw4';
+  const SB_H   = { apikey: SB_KEY, Authorization: 'Bearer ' + SB_KEY };
+
+  const STATUS_AR = {
+    pending:     'قيد الانتظار',
+    preparing:   'قيد التحضير',
+    on_the_way:  'في الطريق',
+    delivered:   'تم التسليم',
+    rejected:    'مرفوض',
+    cancelled:   'ملغي',
+    accepted:    'تم القبول',
+    in_progress: 'جارية',
+    completed:   'مكتملة',
+    active:      'نشط',
+  };
+  const STATUS_CLASS = {
+    pending:     'status--pending',
+    preparing:   'status--preparing',
+    on_the_way:  'status--active',
+    delivered:   'status--delivered',
+    rejected:    'status--cancelled',
+    cancelled:   'status--cancelled',
+    accepted:    'status--active',
+    in_progress: 'status--active',
+    completed:   'status--completed',
+    active:      'status--active',
+  };
+  const MONTHS_AR = ['يناير','فبراير','مارس','أبريل','مايو','يونيو',
+                     'يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
+
+  /* ── Helpers ───────────────────────────────────────────────── */
+  function fmt(n) { return Number(n || 0).toLocaleString('ar-EG'); }
+  function fmtDate(iso) {
+    if (!iso) return '—';
+    const d = new Date(iso);
+    return d.toLocaleDateString('ar-EG', { year:'numeric', month:'long', day:'numeric' });
+  }
+  function fmtDateTime(iso) {
+    if (!iso) return '—';
+    const d = new Date(iso);
+    return d.toLocaleDateString('ar-EG', { year:'numeric', month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' });
+  }
+  function initials(name) {
+    if (!name) return 'م';
+    const parts = name.trim().split(/\s+/);
+    return parts.length >= 2
+      ? parts[0][0] + parts[1][0]
+      : parts[0].slice(0, 2);
+  }
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('is-visible');
+    setTimeout(() => t.classList.remove('is-visible'), 3000);
+  }
+  function $(id) { return document.getElementById(id); }
+
+  /* ── Auth guard ────────────────────────────────────────────── */
+  let user;
+  try {
+    const raw = localStorage.getItem('wslha_user');
+    user = raw ? JSON.parse(raw) : null;
+  } catch { user = null; }
+  if (!user || !user.phone) {
+    window.location.href = '/login?next=/profile';
+    return;
+  }
+
+  /* ── State ─────────────────────────────────────────────────── */
+  let allOrders = [];
+  let allRides  = [];
+  let currentOrderFilter = 'all';
+
+  /* ── Supabase fetchers (4 s timeout each) ─────────────────── */
+  function sbFetch(url) {
+    const ctrl = new AbortController();
+    const tid  = setTimeout(() => ctrl.abort(), 4000);
+    return fetch(url, { headers: SB_H, signal: ctrl.signal })
+      .then(r => { clearTimeout(tid); return r.ok ? r.json() : null; })
+      .catch(() => null);
+  }
+  async function fetchOrders(phone) {
+    const data = await sbFetch(
+      SB_URL + '/rest/v1/orders?customer_phone=eq.' + encodeURIComponent(phone) +
+      '&order=created_at.desc&limit=100');
+    return Array.isArray(data) ? data : [];
+  }
+  async function fetchRides(phone) {
+    const data = await sbFetch(
+      SB_URL + '/rest/v1/rides?customer_phone=eq.' + encodeURIComponent(phone) +
+      '&order=created_at.desc&limit=100');
+    return Array.isArray(data) ? data : [];
+  }
+  async function fetchAccount(phone) {
+    const data = await sbFetch(
+      SB_URL + '/rest/v1/accounts?phone=eq.' + encodeURIComponent(phone) + '&select=*&limit=1');
+    return Array.isArray(data) ? (data[0] || null) : null;
+  }
+
+  /* ── Render helpers ────────────────────────────────────────── */
+  function renderHeader(acc) {
+    const name   = acc.name     || user.name   || '—';
+    const phone  = acc.phone    || user.phone  || '—';
+    const role   = acc.role     || user.role   || 'customer';
+    const city   = acc.city     || user.city   || '';
+    const since  = acc.created_at || acc.createdAt || '';
+
+    $('prof-avatar').textContent = initials(name);
+    $('prof-name').textContent   = name;
+    $('prof-phone').textContent  = phone;
+
+    const badge = $('prof-role-badge');
+    badge.textContent = role === 'driver' ? '🚗 سائق' : '👤 عميل';
+    if (role === 'driver') badge.classList.add('role-badge--driver');
+
+    if (city) {
+      $('prof-city').textContent = '📍 ' + city;
+      $('prof-city').hidden = false;
+    }
+    if (since) {
+      $('prof-since').textContent = '🗓 عضو منذ ' + fmtDate(since);
+    }
+
+    // Info view fields
+    $('view-name').textContent     = name;
+    $('view-phone').textContent    = phone;
+    $('view-email').textContent    = acc.email    || '';
+    if (!acc.email)    $('view-email').classList.add('info-field__value--empty'),    $('view-email').textContent    = 'غير محدد';
+    $('view-username').textContent = acc.username || '';
+    if (!acc.username) $('view-username').classList.add('info-field__value--empty'), $('view-username').textContent = 'غير محدد';
+    $('view-city').textContent     = city || 'غير محدد';
+    if (!city)         $('view-city').classList.add('info-field__value--empty');
+    $('view-role').textContent     = role === 'driver' ? 'سائق توصيل' : 'عميل';
+    $('view-created').textContent  = fmtDate(since);
+    $('sec-phone').textContent     = phone;
+
+    // Pre-fill edit form
+    $('edit-name').value     = name !== '—' ? name : '';
+    $('edit-username').value = acc.username || '';
+    $('edit-email').value    = acc.email    || '';
+    $('edit-city').value     = city;
+  }
+
+  function renderStats(orders, rides) {
+    const now = new Date();
+    const thisMonth = orders.filter(o => {
+      const d = new Date(o.created_at || o.date || 0);
+      return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
+    });
+    const totalSpent = orders
+      .filter(o => o.status === 'delivered' || o.status === 'completed')
+      .reduce((s, o) => s + (Number(o.total) || 0), 0);
+
+    $('stat-orders').textContent = orders.length;
+    $('stat-spent').textContent  = fmt(Math.round(totalSpent)) + ' ج.م';
+    $('stat-rides').textContent  = rides.length;
+    $('stat-month').textContent  = thisMonth.length;
+  }
+
+  function orderStatusGroup(status) {
+    if (!status) return 'active';
+    if (['delivered','completed'].includes(status)) return 'delivered';
+    if (['rejected','cancelled'].includes(status)) return 'cancelled';
+    return 'active';
+  }
+
+  function buildOrderCard(o) {
+    const status   = o.status || 'pending';
+    const group    = orderStatusGroup(status);
+    const label    = STATUS_AR[status] || status;
+    const cls      = STATUS_CLASS[status] || 'status--pending';
+    const store    = o.store_name || o.type || 'طلب توصيل';
+    const icon     = o.icon || '🛵';
+    const itemsStr = (() => {
+      if (!o.items && !o.items_summary) return '';
+      if (o.items_summary) return o.items_summary;
+      try {
+        const items = typeof o.items === 'string' ? JSON.parse(o.items) : o.items;
+        if (Array.isArray(items)) return items.map(i => (i.emoji||'') + ' ' + i.name).join(' · ');
+      } catch {}
+      return '';
+    })();
+    const total    = o.total ? fmt(o.total) + ' ج.م' : (o.price || '—');
+    const date     = fmtDateTime(o.created_at || o.date);
+    const id       = o.id || o.code || '';
+
+    const div = document.createElement('div');
+    div.className = 'order-card';
+    div.dataset.group = group;
+    div.innerHTML = `
+      <div class="order-icon">${icon}</div>
+      <div class="order-main">
+        <div class="order-top">
+          <span class="order-id">${id}</span>
+          <span class="order-status-badge ${cls}">${label}</span>
+        </div>
+        <div class="order-store">${store}</div>
+        ${itemsStr ? `<div class="order-items">${itemsStr}</div>` : ''}
+        <div class="order-footer">
+          <span class="order-date">${date}</span>
+          <span class="order-total">${total}</span>
+        </div>
+      </div>`;
+    return div;
+  }
+
+  function renderOrders(orders) {
+    const list = $('orders-list');
+    if (!orders.length) {
+      list.innerHTML = `<div class="empty-state">
+        <div class="empty-state__icon">🛵</div>
+        <div class="empty-state__title">لا توجد طلبات بعد</div>
+        <div class="empty-state__text">طلباتك ستظهر هنا بعد أول عملية توصيل</div>
+      </div>`;
+      return;
+    }
+    list.innerHTML = '';
+    orders.forEach(o => list.appendChild(buildOrderCard(o)));
+    applyOrderFilter(currentOrderFilter);
+  }
+
+  function applyOrderFilter(filter) {
+    currentOrderFilter = filter;
+    const cards = $('orders-list').querySelectorAll('.order-card');
+    let visible = 0;
+    cards.forEach(c => {
+      const show = filter === 'all' || c.dataset.group === filter;
+      c.style.display = show ? '' : 'none';
+      if (show) visible++;
+    });
+    if (visible === 0) {
+      let msg = $('orders-empty-msg');
+      if (!msg) {
+        msg = document.createElement('div');
+        msg.id = 'orders-empty-msg';
+        msg.className = 'empty-state';
+        msg.innerHTML = '<div class="empty-state__icon">📭</div><div class="empty-state__title">لا توجد طلبات في هذه الفئة</div>';
+        $('orders-list').appendChild(msg);
+      }
+      msg.style.display = '';
+    } else {
+      const msg = $('orders-empty-msg');
+      if (msg) msg.style.display = 'none';
+    }
+  }
+
+  function renderRides(rides) {
+    const list = $('rides-list');
+    if (!rides.length) {
+      list.innerHTML = `<div class="empty-state">
+        <div class="empty-state__icon">🚗</div>
+        <div class="empty-state__title">لا توجد رحلات بعد</div>
+        <div class="empty-state__text">رحلاتك ستظهر هنا بعد أول مشوار</div>
+      </div>`;
+      return;
+    }
+    list.innerHTML = '';
+    rides.forEach(r => {
+      const status  = r.status || 'pending';
+      const label   = STATUS_AR[status] || status;
+      const cls     = STATUS_CLASS[status] || 'status--pending';
+      const from    = r.from_area || '—';
+      const to      = r.to_area   || '—';
+      const fare    = r.fare ? fmt(r.fare) + ' ج.م' : '—';
+      const dist    = r.distance_km ? r.distance_km + ' كم' : '';
+      const eta     = r.eta_minutes ? r.eta_minutes + ' دقيقة' : '';
+      const date    = fmtDateTime(r.created_at || r.accepted_at);
+      const driver  = r.driver_name ? '👨‍✈️ ' + r.driver_name : '';
+
+      const div = document.createElement('div');
+      div.className = 'ride-card';
+      div.innerHTML = `
+        <div class="ride-top">
+          <div class="ride-route">
+            <span class="ride-route__icon">📍</span>
+            <span class="ride-route__text">${from}</span>
+            <span class="ride-route__arrow">→</span>
+            <span class="ride-route__text">${to}</span>
+          </div>
+          <span class="order-status-badge ${cls}">${label}</span>
+        </div>
+        <div class="ride-meta">
+          <span class="ride-meta__item">📅 ${date}</span>
+          ${dist ? `<span class="ride-meta__item">📏 ${dist}</span>` : ''}
+          ${eta  ? `<span class="ride-meta__item">⏱ ${eta}</span>` : ''}
+          ${driver ? `<span class="ride-meta__item">${driver}</span>` : ''}
+          <span class="ride-fare" style="margin-right:auto">${fare}</span>
+        </div>`;
+      list.appendChild(div);
+    });
+  }
+
+  function renderStatisticsTab(orders, rides) {
+    const delivered = orders.filter(o => ['delivered','completed'].includes(o.status));
+    const totalSpent = delivered.reduce((s, o) => s + (Number(o.total) || 0), 0);
+    const avgOrder   = delivered.length ? Math.round(totalSpent / delivered.length) : 0;
+    const now = new Date();
+    const thisMonth = orders.filter(o => {
+      const d = new Date(o.created_at || 0);
+      return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
+    });
+
+    $('st-total-orders').textContent = orders.length;
+    $('st-total-spent').textContent  = fmt(Math.round(totalSpent));
+    $('st-avg-order').textContent    = fmt(avgOrder);
+    $('st-total-rides').textContent  = rides.length;
+    $('st-delivered').textContent    = delivered.length;
+    $('st-this-month').textContent   = thisMonth.length;
+
+    // Category breakdown (by store_name or type)
+    const catMap = {};
+    orders.forEach(o => {
+      const key = o.store_name || o.type || 'توصيل';
+      catMap[key] = (catMap[key] || 0) + (Number(o.total) || 0);
+    });
+    if (rides.length) catMap['مشاوير'] = (catMap['مشاوير'] || 0) + rides.reduce((s, r) => s + (Number(r.fare) || 0), 0);
+
+    const catEntries = Object.entries(catMap).sort((a, b) => b[1] - a[1]).slice(0, 6);
+    const maxCat = catEntries[0] ? catEntries[0][1] : 1;
+    const colors = ['', '--green', '--orange', '--purple', '', '--green'];
+    const catHtml = catEntries.length
+      ? catEntries.map(([name, amt], i) => `
+          <div class="category-row">
+            <span class="category-row__label">${name}</span>
+            <div class="category-bar-wrap">
+              <div class="category-bar${colors[i] || ''}" style="width:${Math.round(amt/maxCat*100)}%"></div>
+            </div>
+            <span class="category-row__count">${fmt(Math.round(amt))} ج</span>
+          </div>`).join('')
+      : '<p style="color:var(--color-text-muted);font-size:var(--text-sm)">لا توجد بيانات كافية بعد</p>';
+    $('category-breakdown').innerHTML = catHtml;
+
+    // Top stores
+    const storeMap = {};
+    orders.forEach(o => {
+      if (!o.store_name) return;
+      if (!storeMap[o.store_name]) storeMap[o.store_name] = { count: 0, spent: 0 };
+      storeMap[o.store_name].count++;
+      storeMap[o.store_name].spent += Number(o.total) || 0;
+    });
+    const topStores = Object.entries(storeMap).sort((a, b) => b[1].count - a[1].count).slice(0, 5);
+    $('top-stores').innerHTML = topStores.length
+      ? `<div class="category-list">${topStores.map(([name, s], i) =>
+          `<div class="category-row">
+            <span class="category-row__label">${['🥇','🥈','🥉','4️⃣','5️⃣'][i]} ${name}</span>
+            <div class="category-bar-wrap">
+              <div class="category-bar" style="width:${Math.round(s.count/topStores[0][1].count*100)}%"></div>
+            </div>
+            <span class="category-row__count">${s.count} طلب</span>
+          </div>`).join('')}</div>`
+      : '<p style="color:var(--color-text-muted);font-size:var(--text-sm)">لا توجد بيانات كافية بعد</p>';
+
+    // Monthly breakdown
+    const monthMap = {};
+    orders.forEach(o => {
+      const d = new Date(o.created_at || 0);
+      const key = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+      if (!monthMap[key]) monthMap[key] = { label: MONTHS_AR[d.getMonth()] + ' ' + d.getFullYear(), count: 0, spent: 0 };
+      monthMap[key].count++;
+      monthMap[key].spent += Number(o.total) || 0;
+    });
+    const monthRows = Object.entries(monthMap).sort((a, b) => b[0].localeCompare(a[0])).slice(0, 12);
+    $('monthly-tbody').innerHTML = monthRows.length
+      ? monthRows.map(([, m]) => {
+          const avg = m.count ? Math.round(m.spent / m.count) : 0;
+          return `<tr>
+            <td>${m.label}</td>
+            <td>${m.count}</td>
+            <td>${fmt(Math.round(m.spent))} ج.م</td>
+            <td>${fmt(avg)} ج.م</td>
+          </tr>`;
+        }).join('')
+      : '<tr><td colspan="4" style="text-align:center;color:var(--color-text-muted)">لا توجد بيانات بعد</td></tr>';
+  }
+
+  /* ── Tab switching ─────────────────────────────────────────── */
+  document.querySelectorAll('.profile-tab').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const tab = btn.dataset.tab;
+      document.querySelectorAll('.profile-tab').forEach(b => {
+        b.classList.toggle('is-active', b.dataset.tab === tab);
+        b.setAttribute('aria-selected', String(b.dataset.tab === tab));
+      });
+      document.querySelectorAll('.tab-panel').forEach(p => {
+        const show = p.id === 'tab-' + tab;
+        p.classList.toggle('is-active', show);
+        p.hidden = !show;
+      });
+    });
+  });
+
+  /* ── Order filters ─────────────────────────────────────────── */
+  document.querySelectorAll('.orders-filter').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.orders-filter').forEach(b => b.classList.remove('is-active'));
+      btn.classList.add('is-active');
+      applyOrderFilter(btn.dataset.filter);
+    });
+  });
+
+  /* ── Edit profile form ─────────────────────────────────────── */
+  let cachedAccount = null;
+
+  $('edit-toggle-btn').addEventListener('click', () => {
+    $('info-view').hidden = true;
+    $('info-edit').hidden = false;
+    $('edit-toggle-btn').hidden = true;
+  });
+  $('edit-cancel-btn').addEventListener('click', () => {
+    $('info-view').hidden = false;
+    $('info-edit').hidden = true;
+    $('edit-toggle-btn').hidden = false;
+    $('save-success-msg').style.display = 'none';
+  });
+
+  $('profile-edit-form').addEventListener('submit', async e => {
+    e.preventDefault();
+    const name     = $('edit-name').value.trim();
+    const username = $('edit-username').value.trim().toLowerCase();
+    const email    = $('edit-email').value.trim().toLowerCase();
+    const city     = $('edit-city').value.trim();
+    if (!name) { showToast('الاسم مطلوب'); return; }
+
+    // Update Supabase
+    try {
+      const patch = { name, city: city || null, email: email || null, username: username || null };
+      await fetch(SB_URL + '/rest/v1/accounts?phone=eq.' + encodeURIComponent(user.phone), {
+        method: 'PATCH',
+        headers: { ...SB_H, 'Content-Type': 'application/json', Prefer: 'return=minimal' },
+        body: JSON.stringify(patch),
+      });
+    } catch {}
+
+    // Update localStorage
+    try {
+      const stored = JSON.parse(localStorage.getItem('wslha_user') || '{}');
+      stored.name = name; stored.city = city;
+      localStorage.setItem('wslha_user', JSON.stringify(stored));
+    } catch {}
+
+    // Update accounts cache
+    try {
+      const accs = JSON.parse(localStorage.getItem('wslha_accounts') || '[]');
+      const idx  = accs.findIndex(a => a.phone === user.phone);
+      if (idx >= 0) {
+        accs[idx] = { ...accs[idx], name, city, email: email || accs[idx].email, username: username || accs[idx].username };
+        localStorage.setItem('wslha_accounts', JSON.stringify(accs));
+      }
+    } catch {}
+
+    // Refresh UI
+    if (cachedAccount) {
+      cachedAccount.name     = name;
+      cachedAccount.city     = city;
+      cachedAccount.email    = email;
+      cachedAccount.username = username;
+    }
+    renderHeader(cachedAccount || { name, phone: user.phone, city, email, username, role: user.role });
+
+    $('save-success-msg').style.display = 'inline-flex';
+    setTimeout(() => {
+      $('info-view').hidden  = false;
+      $('info-edit').hidden  = true;
+      $('edit-toggle-btn').hidden = false;
+      $('save-success-msg').style.display = 'none';
+    }, 1800);
+    showToast('✅ تم حفظ بياناتك بنجاح');
+  });
+
+  /* ── Logout ────────────────────────────────────────────────── */
+  $('logout-btn').addEventListener('click', () => {
+    localStorage.removeItem('wslha_user');
+    window.location.href = '/';
+  });
+
+  /* ── Init ──────────────────────────────────────────────────── */
+  function buildAccFromLocal(phone) {
+    try {
+      const accounts = JSON.parse(localStorage.getItem('wslha_accounts') || '[]');
+      const found = accounts.find(a => a.phone === phone);
+      if (found) return found;
+    } catch {}
+    return { phone, name: user.name || '', role: user.role || 'customer', city: user.city || '', createdAt: user.loginAt || '' };
+  }
+
+  function mergeOrders(sbOrders, lsOrders) {
+    const ids = new Set(sbOrders.map(o => o.id));
+    const extra = lsOrders.filter(o => !ids.has(o.id));
+    return [...sbOrders, ...extra].sort((a, b) =>
+      new Date(b.created_at || b.date || 0) - new Date(a.created_at || a.date || 0));
+  }
+
+  function showContent(acc, orders, rides) {
+    cachedAccount = acc;
+    allOrders = orders;
+    allRides  = rides;
+    renderHeader(acc);
+    renderStats(orders, rides);
+    renderOrders(orders);
+    renderRides(rides);
+    renderStatisticsTab(orders, rides);
+    $('profile-loading').hidden  = true;
+    $('profile-content').hidden  = false;
+  }
+
+  function init() {
+    const phone = user.phone;
+
+    // ── Step 1: render immediately from localStorage (instant) ──
+    let lsOrders = [];
+    try { lsOrders = JSON.parse(localStorage.getItem('wslha_orders') || '[]'); } catch {}
+    const lsAcc = buildAccFromLocal(phone);
+    showContent(lsAcc, mergeOrders([], lsOrders), []);
+
+    // ── Step 2: fetch from Supabase in background and refresh ──
+    Promise.all([fetchAccount(phone), fetchOrders(phone), fetchRides(phone)])
+      .then(([sbAcc, sbOrders, sbRides]) => {
+        const acc    = sbAcc || lsAcc;
+        const orders = mergeOrders(sbOrders, lsOrders);
+        showContent(acc, orders, sbRides);
+      })
+      .catch(err => console.warn('[profile] Supabase refresh failed', err));
+  }
+
+  init();
+})();
+</script>
+
+</Layout>
