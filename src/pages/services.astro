@@ -24,9 +24,9 @@ const SERVICES: Service[] = [
     label:      '🛵 توصيل محلي',
     title:      'من أي متجر لباب بيتك',
     desc:       'نوصّل طلباتك من المطاعم والمتاجر والصيدليات وأي مكان تريده، مباشرة لبابك خلال 30 دقيقة فقط.',
-    features:   ['توصيل خلال 30 دقيقة', 'تتبع المندوب لحظة بلحظة', 'مئات المتاجر الشريكة', 'دفع عند الاستلام أو إلكتروني', 'خدمة 24 ساعة / 7 أيام'],
-    cta:        '🛍️ تصفّح المتاجر',
-    ctaHref:    '/stores',
+    features:   ['توصيل خلال 30 دقيقة', 'تتبع المندوب لحظة بلحظة', 'من أي مكان في المدينة', 'دفع عند الاستلام أو إلكتروني', 'خدمة 24 ساعة / 7 أيام'],
+    cta:        '🛍️ اطلب الآن',
+    ctaHref:    '/order',
     badge:      '30',
     badgeLabel: 'دقيقة توصيل',
     variant:    'light',
@@ -77,10 +77,10 @@ const PRICING: PricingPlan[] = [
     cta: 'احجز مشوار', featured: false, variant: 'outline', href: '/rides',
   },
   {
-    name: 'توصيل المتاجر', price: '20', unit: 'ج.م / طلب',
-    desc: 'يحددها كل متجر بحسب موقعك',
-    features: ['توصيل خلال 30 دقيقة', 'مئات المتاجر الشريكة', 'تتبع المندوب لحظياً', 'دفع نقدي أو إلكتروني', 'خدمة 24/7'],
-    cta: 'تصفّح المتاجر', featured: true, variant: 'accent', href: '/stores',
+    name: 'توصيل محلي', price: '20', unit: 'ج.م / طلب',
+    desc: 'يحددها حسب موقعك والمسافة',
+    features: ['توصيل خلال 30 دقيقة', 'من أي مكان في المدينة', 'تتبع المندوب لحظياً', 'دفع نقدي أو إلكتروني', 'خدمة 24/7'],
+    cta: 'اطلب الآن', featured: true, variant: 'accent', href: '/order',
   },
   {
     name: 'توصيل المطار', price: '1,250', unit: 'ج.م / رحلة',
@@ -388,7 +388,7 @@ const PRICING: PricingPlan[] = [
   <!-- Partners -->
   <section class="section partners" id="partners" aria-labelledby="partners-title">
     <div class="container">
-      <SectionHeader badge="شركاؤنا" title="المتاجر الشريكة" subtitle="اطلب من متاجرك المفضلة مباشرة" id="partners-title" />
+      <SectionHeader badge="ماذا نوصّل؟" title="نوصّل لك كل شيء" subtitle="من أي مكان في دمياط لباب بيتك" id="partners-title" />
       <ul class="partners__grid" role="list">
         {PARTNERS.map(p => (
           <li class="partner-card">

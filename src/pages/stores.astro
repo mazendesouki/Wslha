@@ -182,6 +182,10 @@ import { STORES, CATEGORIES } from '../data/stores';
   description="تسوّق من متاجر ومطاعم دمياط الجديدة — أسعار 2026 شفافة، توصيل سريع"
   page="stores"
 >
+  <!-- المتاجر مخفية مؤقتاً — إعادة توجيه للصفحة الرئيسية -->
+  <script is:inline>window.location.replace('/');</script>
+  <noscript><meta http-equiv="refresh" content="0; url=/" /></noscript>
+
   <PageHero
     badge="🛍️ المتاجر المحلية"
     title="تسوّق من متاجر دمياط الجديدة"

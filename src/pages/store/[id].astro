@@ -273,6 +273,10 @@ const staticMenuJson = JSON.stringify(
   description={`اطلب من ${store.name} في ${store.area} — ${store.tagline}`}
   page="stores"
 >
+  <!-- المتاجر مخفية مؤقتاً — إعادة توجيه للصفحة الرئيسية -->
+  <script is:inline>window.location.replace('/');</script>
+  <noscript><meta http-equiv="refresh" content="0; url=/" /></noscript>
+
   <header
     class="store-head"
     data-store-id={store.id}
