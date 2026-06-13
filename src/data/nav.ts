@@ -6,7 +6,6 @@ export interface NavLink {
 
 export const NAV_LINKS: NavLink[] = [
   { label: 'الرئيسية',     href: '/',          page: 'home'     },
-  { label: 'المتاجر',      href: '/stores',     page: 'stores'   },
   { label: 'مشاوير',       href: '/rides',      page: 'rides'    },
   { label: 'توصيل المطار', href: '/airport',    page: 'airport'  },
   { label: 'خدماتنا',      href: '/services',   page: 'services' },
@@ -23,7 +22,6 @@ export const FOOTER_LINKS = {
     { label: 'تواصل معنا',  href: '/contact'  },
   ],
   services: [
-    { label: 'المتاجر المحلية', href: '/stores'   },
     { label: 'توصيل المطار',   href: '/airport'  },
     { label: 'مشاوير دمياط',   href: '/rides'    },
     { label: 'الأسعار',        href: '/services#pricing' },
