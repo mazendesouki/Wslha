@@ -161,10 +161,40 @@ import PageHero from '../components/PageHero.astro';
   .tl-step--active .tl-step__icon { border-color: var(--color-accent); background: var(--color-accent-dark);
     box-shadow: 0 0 0 6px rgba(245,184,0,.2); animation: tl-pulse .9s ease-in-out infinite; }
   .tl-step--wait .tl-step__icon   { filter: grayscale(1); opacity: .4; }
+
+  /* ── Airport green "balloon" glow for done + active ── */
+  .tl-step--done .tl-step__icon {
+    border-color: #16a34a;
+    background: linear-gradient(135deg, #22c55e, #16a34a);
+    box-shadow: 0 4px 14px rgba(22,163,74,.35);
+    filter: grayscale(0);
+  }
+  .tl-step--active .tl-step__icon {
+    border-color: #16a34a;
+    background: linear-gradient(135deg, #22c55e, #16a34a);
+    animation: tl-balloon .9s ease-in-out infinite;
+    filter: grayscale(0);
+  }
+  /* override default (store) active style when inside airport mode */
+  .airport-mode .tl-step--active .tl-step__icon {
+    border-color: #16a34a;
+    background: linear-gradient(135deg, #22c55e, #16a34a);
+    animation: tl-balloon .9s ease-in-out infinite;
+  }
+
   @keyframes tl-pulse {
     0%,100% { box-shadow: 0 0 0 4px rgba(245,184,0,.25); }
     50%      { box-shadow: 0 0 0 10px rgba(245,184,0,0); }
   }
+  @keyframes tl-balloon {
+    0%   { box-shadow: 0 4px 14px rgba(22,163,74,.35), 0 0 0 0   rgba(34,197,94,.5); }
+    50%  { box-shadow: 0 4px 14px rgba(22,163,74,.35), 0 0 0 12px rgba(34,197,94,0); }
+    100% { box-shadow: 0 4px 14px rgba(22,163,74,.35), 0 0 0 0   rgba(34,197,94,.5); }
+  }
+
+  /* Progress bar green in airport mode */
+  .airport-mode .timeline-hs__progress { background: #22c55e; }
+  .airport-mode .result__header        { background: linear-gradient(135deg, #16a34a, #15803d); }
   .tl-step__label { font-size: 11px; font-weight: var(--weight-semi); text-align: center;
     color: var(--color-text-muted); max-width: 70px; line-height: 1.3; }
   .tl-step--done .tl-step__label, .tl-step--active .tl-step__label { color: var(--color-text); }
@@ -761,6 +791,7 @@ import PageHero from '../components/PageHero.astro';
     document.getElementById('result-timeline').style.display = '';
     document.querySelector('.result__info').style.display = '';
 
+    result.classList.remove('airport-mode');
     resultId.textContent = o.code || o.id;
     document.getElementById('result-name').textContent = `${o.store_emoji || '📦'} طلب من ${o.store_name || ''}`;
     applyTimelineLabels(TL_STORE);
@@ -811,59 +842,95 @@ import PageHero from '../components/PageHero.astro';
     } catch { return null; }
   }
 
+  let _airportAutoTimer = null;
+
+  function calcAirportIdx(o) {
+    const now = Date.now();
+    const tDriver = o.driverArrivalTime ? new Date(o.driverArrivalTime).getTime() : null;
+    const tDepart = o.departTime        ? new Date(o.departTime).getTime()        : null;
+    const tArrive = o.arriveTime        ? new Date(o.arriveTime).getTime()        : null;
+    if (tArrive && now >= tArrive)                    return 3;
+    if (tDepart && now >= tDepart)                    return 2;
+    if (tDriver && now >= tDriver)                    return 1;
+    return 0;
+  }
+
+  function applyAirportStep(idx) {
+    TL_KEYS.forEach((id, i) => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.className = 'tl-step';
+      if (i < idx)        el.classList.add('tl-step--done');
+      else if (i === idx) el.classList.add('tl-step--active');
+      else                el.classList.add('tl-step--wait');
+    });
+    document.getElementById('tl-progress').style.width =
+      (idx <= 0 ? 0 : Math.round((idx / 3) * 100)) + '%';
+
+    const badges   = ['✅ مؤكد', '🚗 السائق قادم', '🛣️ في الطريق', '🛫 وصل المطار'];
+    const badgeBgs = ['#dcfce7', '#dbeafe', '#fef3c7', '#dcfce7'];
+    const badgeClr = ['#15803d', '#1d4ed8', '#92400e', '#15803d'];
+    const badge = document.getElementById('result-status');
+    badge.textContent = badges[idx];
+    badge.style.background = badgeBgs[idx];
+    badge.style.color = badgeClr[idx];
+  }
+
   function renderLocalAirport(o) {
     currentOrder = o;
     document.getElementById('result-empty').style.display = 'none';
     document.getElementById('result-timeline').style.display = '';
     document.querySelector('.result__info').style.display = '';
 
+    // Switch track card to airport mode (green theme)
+    result.classList.add('airport-mode');
+
     resultId.textContent = o.id;
     document.getElementById('result-name').textContent = `${o.icon || '✈️'} ${o.type || 'توصيل مطار'}`;
     applyTimelineLabels(TL_AIRPORT);
     setInfoLabels(['نقطة الانطلاق', 'المطار', 'شركة الطيران', 'الإجمالي']);
 
-    // Determine current stage from the saved schedule
-    const now = Date.now();
-    const tDriver = o.driverArrivalTime ? new Date(o.driverArrivalTime).getTime() : null;
-    const tDepart = o.departTime ? new Date(o.departTime).getTime() : null;
-    const tArrive = o.arriveTime ? new Date(o.arriveTime).getTime() : null;
-    let idx = 0;
-    if (tArrive && now >= tArrive) idx = 3;
-    else if (tDepart && now >= tDepart) idx = 2;
-    else if (tDriver && now >= tDriver) idx = 1;
-
-    TL_KEYS.forEach((id, i) => {
-      const el = document.getElementById(id);
-      if (!el) return;
-      el.className = 'tl-step';
-      if (i < idx)       el.classList.add('tl-step--done');
-      else if (i === idx) el.classList.add('tl-step--active');
-      else                el.classList.add('tl-step--wait');
-    });
-    document.getElementById('tl-progress').style.width = (idx <= 0 ? 0 : Math.round((idx / 3) * 100)) + '%';
-
-    const badges = ['مؤكد', 'السائق قادم', 'في الطريق', 'وصل المطار'];
-    document.getElementById('result-status').textContent = badges[idx];
+    // Apply current stage
+    let idx = calcAirportIdx(o);
+    applyAirportStep(idx);
 
     // ETA card → flight departure time
-    const fmt = (d) => new Date(d).toLocaleString('ar-EG', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+    const fmtDT = (d) => new Date(d).toLocaleString('ar-EG',
+      { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
     const etaWindow = document.getElementById('eta-window');
     const etaLabel  = document.getElementById('eta-label');
     const etaBadge  = document.getElementById('eta-badge');
-    if (idx >= 3) {
-      etaWindow.textContent = 'وصلت المطار 🛫';
-      etaLabel.textContent  = 'رحلة سعيدة!';
-      etaBadge.textContent  = '✅ تم';
-      etaBadge.style.background = '#dbeafe'; etaBadge.style.color = '#1e40af';
-    } else if (o.flightTime) {
-      etaWindow.textContent = fmt(o.flightTime);
-      etaLabel.textContent  = 'موعد إقلاع الطائرة';
-      etaBadge.textContent  = '✈️ رحلتك';
-      etaBadge.style.background = '#dbeafe'; etaBadge.style.color = '#1d4ed8';
-    } else {
-      etaWindow.textContent = '—';
-      etaLabel.textContent  = 'موعد الرحلة';
-      etaBadge.textContent  = '✈️';
+    function updateETA(curIdx) {
+      if (curIdx >= 3) {
+        etaWindow.textContent = '🛫 وصلت المطار';
+        etaLabel.textContent  = 'رحلة سعيدة!';
+        etaBadge.textContent  = '✅ تم';
+        etaBadge.style.background = '#dcfce7'; etaBadge.style.color = '#15803d';
+      } else if (o.flightTime) {
+        etaWindow.textContent = fmtDT(o.flightTime);
+        etaLabel.textContent  = 'موعد إقلاع الطائرة';
+        etaBadge.textContent  = '✈️ رحلتك';
+        etaBadge.style.background = '#dbeafe'; etaBadge.style.color = '#1d4ed8';
+      } else {
+        etaWindow.textContent = '—';
+        etaLabel.textContent  = 'موعد الرحلة';
+        etaBadge.textContent  = '✈️';
+      }
+    }
+    updateETA(idx);
+
+    // Auto-advance: re-check every 30 s until final step
+    if (_airportAutoTimer) clearInterval(_airportAutoTimer);
+    if (idx < 3) {
+      _airportAutoTimer = setInterval(() => {
+        const newIdx = calcAirportIdx(o);
+        if (newIdx !== idx) {
+          idx = newIdx;
+          applyAirportStep(idx);
+          updateETA(idx);
+          if (idx >= 3) { clearInterval(_airportAutoTimer); _airportAutoTimer = null; }
+        }
+      }, 30_000);
     }
 
     // Info grid
@@ -904,6 +971,8 @@ import PageHero from '../components/PageHero.astro';
     document.getElementById('rate-card').classList.remove('visible');
     document.getElementById('rate-thanks').classList.remove('visible');
     try { if ('Notification' in window && Notification.permission === 'default') Notification.requestPermission(); } catch {}
+
+    if (_airportAutoTimer) { clearInterval(_airportAutoTimer); _airportAutoTimer = null; }
 
     // Airport trips are stored locally (no store/delivery backend) — render their own timeline
     const localOrder = findLocalOrder(code);
