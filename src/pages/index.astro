@@ -67,11 +67,7 @@ const HOW_STEPS = [
   { num: '٤', icon: '🏠', title: 'استلم بأمان', desc: 'تتبع لحظي حتى وصولك' },
 ];
 
-const REVIEWS = [
-  { name: 'أحمد محمد', rating: 5, text: 'خدمة ممتازة وسريعة جداً، السائق كان محترفاً والسعر معقول.' },
-  { name: 'فاطمة علي',  rating: 5, text: 'أفضل خدمة توصيل في دمياط، دائماً في الموعد وبدون أي مشاكل.' },
-  { name: 'محمود سعيد', rating: 5, text: 'استخدمت الخدمة لتوصيل المطار، كانت تجربة رائعة ومريحة.' },
-];
+
 ---
 
 <style>
@@ -702,33 +698,6 @@ const REVIEWS = [
           </li>
         ))}
       </ol>
-    </div>
-  </section>
-
-  <!-- ── Reviews ── -->
-  <section class="section reviews" aria-labelledby="reviews-title">
-    <div class="container">
-      <SectionHeader
-        badge="آراء العملاء"
-        title="ماذا يقول عملاؤنا"
-        subtitle="آلاف العملاء يثقون في وصّلها يومياً"
-        id="reviews-title"
-      />
-      <div class="reviews__grid">
-        {REVIEWS.map(r => (
-          <article class="review-card">
-            <div class="review-card__stars" aria-label={`تقييم ${r.rating} من 5`}>{'★'.repeat(r.rating)}</div>
-            <p class="review-card__text">"{r.text}"</p>
-            <div class="review-card__author">
-              <div class="review-card__avatar" aria-hidden="true">{r.name[0]}</div>
-              <div>
-                <div class="review-card__name">{r.name}</div>
-                <div class="review-card__meta">عميل موثوق • دمياط الجديدة</div>
-              </div>
-            </div>
-          </article>
-        ))}
-      </div>
     </div>
   </section>
 
