@@ -23,10 +23,10 @@ interface Milestone {
 }
 
 const MILESTONES: Milestone[] = [
-  { year: '2024', title: 'انطلاق وصّلها',      desc: 'بدأنا رحلتنا بخدمة التوصيل المحلي في دمياط الجديدة.' },
-  { year: '2024', title: 'توصيل المطار',       desc: 'أضفنا خدمة التوصيل من وإلى مطار برج العرب باحترافية.' },
-  { year: '2024', title: 'المتاجر الشريكة',    desc: 'توسّعنا بشراكات مع مئات المتاجر والمطاعم في دمياط.'  },
-  { year: '2025', title: 'التوسّع المحافظاتي', desc: 'نخطط للوصول إلى محافظات جديدة وخدمات أوسع.'          },
+  { year: '2026', title: 'انطلاق وصّلها',      desc: 'بدأنا رحلتنا بخدمة التوصيل المحلي في دمياط الجديدة.' },
+  { year: '2026', title: 'توصيل المطار',       desc: 'أضفنا خدمة التوصيل من وإلى مطار برج العرب باحترافية.' },
+  { year: '2026', title: 'المتاجر الشريكة',    desc: 'توسّعنا بشراكات مع المتاجر والمطاعم في دمياط.'        },
+  { year: '2027', title: 'التوسّع التدريجي',   desc: 'نخطط للوصول إلى مناطق جديدة وتقديم خدمات أوسع.'      },
 ];
 
 const STATS = [
@@ -66,13 +66,20 @@ const STATS = [
   }
 
   .story__visual {
-    background: linear-gradient(135deg, var(--color-primary-light), #DBEAFE);
+    background: linear-gradient(135deg, #EFF6FF, #DBEAFE);
     border-radius: var(--radius-2xl);
     aspect-ratio: 1 / 1;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 7rem;
+    padding: var(--sp-10);
+  }
+
+  .story__visual svg {
+    width: 100%;
+    height: 100%;
+    max-width: 320px;
+    max-height: 320px;
   }
 
   /* ── Stats band ──────────────────────────────────────────── */
@@ -237,7 +244,45 @@ const STATS = [
           ونظام تتبع لحظي، لنوصّل أكثر من مجرد طرود — نوصّل الثقة والراحة.
         </p>
       </div>
-      <div class="story__visual" role="img" aria-label="وصّلها">📦</div>
+      <div class="story__visual" role="img" aria-label="صندوق توصيل">
+        <svg viewBox="0 0 240 240" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <!-- Box body -->
+          <path d="M40 90 L120 60 L200 90 L200 180 L120 210 L40 180 Z" fill="#E8F0FE" stroke="#93C5FD" stroke-width="2.5" stroke-linejoin="round"/>
+          <!-- Box top left face -->
+          <path d="M40 90 L120 120 L120 210 L40 180 Z" fill="#BFDBFE" stroke="#93C5FD" stroke-width="2.5" stroke-linejoin="round"/>
+          <!-- Box top right face -->
+          <path d="M200 90 L120 120 L120 210 L200 180 Z" fill="#DBEAFE" stroke="#93C5FD" stroke-width="2.5" stroke-linejoin="round"/>
+          <!-- Box top face -->
+          <path d="M40 90 L120 60 L200 90 L120 120 Z" fill="#EFF6FF" stroke="#93C5FD" stroke-width="2.5" stroke-linejoin="round"/>
+          <!-- Tape strip on top -->
+          <path d="M90 75 L150 105" stroke="#93C5FD" stroke-width="5" stroke-linecap="round"/>
+          <!-- Up arrow left -->
+          <g transform="translate(62, 120)">
+            <line x1="0" y1="30" x2="0" y2="5" stroke="#3B82F6" stroke-width="3" stroke-linecap="round"/>
+            <polyline points="-8,14 0,4 8,14" fill="none" stroke="#3B82F6" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+          </g>
+          <!-- Up arrow left 2 -->
+          <g transform="translate(82, 128)">
+            <line x1="0" y1="30" x2="0" y2="5" stroke="#3B82F6" stroke-width="3" stroke-linecap="round"/>
+            <polyline points="-8,14 0,4 8,14" fill="none" stroke="#3B82F6" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+          </g>
+          <!-- Up arrow right -->
+          <g transform="translate(155, 120)">
+            <line x1="0" y1="30" x2="0" y2="5" stroke="#3B82F6" stroke-width="3" stroke-linecap="round"/>
+            <polyline points="-8,14 0,4 8,14" fill="none" stroke="#3B82F6" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+          </g>
+          <!-- Up arrow right 2 -->
+          <g transform="translate(175, 128)">
+            <line x1="0" y1="30" x2="0" y2="5" stroke="#3B82F6" stroke-width="3" stroke-linecap="round"/>
+            <polyline points="-8,14 0,4 8,14" fill="none" stroke="#3B82F6" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+          </g>
+          <!-- Label on right face -->
+          <rect x="133" y="138" width="44" height="28" rx="3" fill="white" stroke="#BFDBFE" stroke-width="1.5"/>
+          <line x1="139" y1="147" x2="171" y2="147" stroke="#BFDBFE" stroke-width="1.5"/>
+          <line x1="139" y1="153" x2="165" y2="153" stroke="#BFDBFE" stroke-width="1.5"/>
+          <line x1="139" y1="159" x2="168" y2="159" stroke="#BFDBFE" stroke-width="1.5"/>
+        </svg>
+      </div>
     </div>
   </section>
 
@@ -273,7 +318,7 @@ const STATS = [
   <!-- Journey -->
   <section class="section journey" aria-labelledby="journey-title">
     <div class="container">
-      <SectionHeader badge="رحلتنا" title="محطات في طريقنا" subtitle="من البداية وحتى اليوم" id="journey-title" />
+      <SectionHeader badge="رحلتنا" title="محطات رئيسية على طول الطريق" subtitle="من هذا العام إلى التوسع التدريجي" id="journey-title" />
       <ol class="journey__list">
         {MILESTONES.map(m => (
           <li class="journey__item">

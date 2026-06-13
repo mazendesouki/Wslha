@@ -16,8 +16,16 @@ const { currentPage } = Astro.props;
 
       <!-- Logo -->
       <a href="/" class="nav__logo" aria-label="وصّلها — الصفحة الرئيسية">
-        <span class="nav__logo-name" aria-hidden="true">وصّلها</span>
-        <span class="nav__logo-tagline">خدمة التوصيل — دمياط الجديدة</span>
+        <div class="nav__logo-mark" aria-hidden="true">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/>
+            <path d="M12 8 L8 16 L12 13 L16 16 L12 8"/>
+          </svg>
+        </div>
+        <div class="nav__logo-text">
+          <span class="nav__logo-name" aria-hidden="true">وصّلها</span>
+          <span class="nav__logo-tagline">دمياط الجديدة</span>
+        </div>
       </a>
 
       <!-- Desktop links -->
@@ -39,7 +47,7 @@ const { currentPage } = Astro.props;
       <div class="nav__actions">
 
         <!-- Driver CTA -->
-        <a href="/driver" class="nav__driver">
+        <a href="/driver" class="nav__driver" id="nav-driver-btn">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
             <circle cx="12" cy="12" r="10"/>
             <path d="M14.5 4.5 C14.5 4.5 16 8 14.5 12 C13 16 12 19.5 12 19.5"/>
@@ -48,6 +56,19 @@ const { currentPage } = Astro.props;
             <path d="M4.5 14.5 h15"/>
           </svg>
           انضم كسائق
+        </a>
+
+        <!-- Merchant CTA -->
+        <a href="/merchant-apply" class="nav__merchant" id="nav-merchant-btn">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path d="M5 9l4 4-2 8H3V9z"/>
+            <path d="M11 9l-4 4 2 8h4V9z"/>
+            <path d="M3 9h18l-2 8H5l2-8z"/>
+            <path d="M21 9v12H3V9"/>
+            <circle cx="9" cy="15" r="1"/>
+            <circle cx="15" cy="15" r="1"/>
+          </svg>
+          انضم كتاجر
         </a>
 
         <!-- Profile dropdown -->
@@ -70,28 +91,33 @@ const { currentPage } = Astro.props;
               <span class="nav__dropdown-phone" id="dropdown-phone">—</span>
             </div>
 
-            <a href="/orders" class="nav__dropdown-item" role="menuitem">
+            <!-- Logged-in menu items -->
+            <a href="/profile" class="nav__dropdown-item" id="dropdown-profile" role="menuitem" hidden>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 10-16 0"/></svg>
+              حسابي
+            </a>
+            <a href="/orders" class="nav__dropdown-item" id="dropdown-orders" role="menuitem" hidden>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/></svg>
               طلباتي
             </a>
-            <a href="/track" class="nav__dropdown-item" role="menuitem">
+            <a href="/track" class="nav__dropdown-item" id="dropdown-track" role="menuitem" hidden>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg>
               تتبع الطلب
             </a>
 
-            <div class="nav__dropdown-divider"></div>
-
+            <!-- Login (only when not logged in) -->
+            <div class="nav__dropdown-divider" id="dropdown-divider" hidden></div>
             <a href="/login" class="nav__dropdown-item" id="dropdown-login" role="menuitem">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
               تسجيل الدخول
             </a>
+
+            <!-- Logout (only when logged in) -->
+            <div class="nav__dropdown-divider" id="dropdown-logout-divider" hidden></div>
             <button class="nav__dropdown-item nav__dropdown-logout" id="dropdown-logout" role="menuitem" hidden type="button">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
               تسجيل الخروج
             </button>
-            <a href="/driver" class="nav__dropdown-item nav__dropdown-driver" role="menuitem">
-              🚗 حساب سائق جديد
-            </a>
           </div>
         </div>
 
@@ -122,9 +148,13 @@ const { currentPage } = Astro.props;
           </li>
         ))}
       </ul>
+      <div class="nav__mobile-user-links" id="nav-mobile-user-links" hidden>
+        <a href="/orders" class="nav__mobile-link" id="nav-mobile-orders">📋 طلباتي</a>
+        <a href="/track" class="nav__mobile-link" id="nav-mobile-track">📡 تتبع الطلب</a>
+      </div>
       <div class="nav__mobile-actions">
-        <a href="/login" class="btn btn--outline" style="width:100%;justify-content:center;">تسجيل الدخول</a>
-        <a href="/driver" class="btn btn--accent" style="width:100%;justify-content:center;">🚗 انضم كسائق</a>
+        <a href="/login" class="btn btn--outline" style="width:100%;justify-content:center;" id="nav-mobile-login">تسجيل الدخول</a>
+        <a href="/merchant-apply" class="btn btn--accent" style="width:100%;justify-content:center;background:#f59e0b;" id="nav-mobile-merchant">🏪 انضم كتاجر</a>
       </div>
     </div>
   </div>
@@ -141,25 +171,65 @@ const { currentPage } = Astro.props;
   const dropdownUserInfo= document.getElementById('dropdown-user-info') as HTMLElement;
   const dropdownLogin   = document.getElementById('dropdown-login')   as HTMLElement;
   const dropdownLogout  = document.getElementById('dropdown-logout')  as HTMLButtonElement;
+  const navMerchantBtn   = document.getElementById('nav-merchant-btn')  as HTMLElement;
+  const navMobileMerchant= document.getElementById('nav-mobile-merchant') as HTMLElement;
 
   function updateProfileUI(): void {
     try {
       const raw  = localStorage.getItem('wslha_user');
       const user = raw ? JSON.parse(raw) : null;
-      if (user && (user.name || user.phone)) {
-        profileName.textContent        = user.name || user.phone;
-        dropdownName.textContent       = user.name  || '—';
-        dropdownPhone.textContent      = user.phone || '';
-        dropdownUserInfo.removeAttribute('hidden');
-        dropdownLogin.setAttribute('hidden', '');
-        dropdownLogout.removeAttribute('hidden');
+      // Strict check: must have phone (the real identifier)
+      const isLoggedIn = !!(user && user.phone && user.phone.length > 5);
+
+      if (isLoggedIn) {
+        // ── User is logged in ─────────────────────────
+        profileName.textContent  = user.name || user.phone;
+        dropdownName.textContent = user.name || '—';
+        dropdownPhone.textContent= user.phone || '';
+
+        show('dropdown-user-info');
+        show('dropdown-profile');
+        show('dropdown-orders');
+        show('dropdown-track');
+        show('dropdown-divider');
+        show('dropdown-logout-divider');
+        show('dropdown-logout');
+        hide('dropdown-login');
+        show('nav-mobile-user-links');
+        hide('nav-mobile-login');
+
+        if (user.role === 'merchant') {
+          hide('nav-merchant-btn');
+          hide('nav-mobile-merchant');
+        } else {
+          show('nav-merchant-btn');
+          show('nav-mobile-merchant');
+        }
       } else {
         profileName.textContent = 'دخول';
-        dropdownUserInfo.setAttribute('hidden', '');
-        dropdownLogin.removeAttribute('hidden');
-        dropdownLogout.setAttribute('hidden', '');
+
+        hide('dropdown-user-info');
+        hide('dropdown-profile');
+        hide('dropdown-orders');
+        hide('dropdown-track');
+        hide('dropdown-divider');
+        hide('dropdown-logout-divider');
+        hide('dropdown-logout');
+        show('dropdown-login');
+        hide('nav-mobile-user-links');
+        show('nav-mobile-login');
+
+        show('nav-merchant-btn');
+        show('nav-mobile-merchant');
       }
     } catch { /* storage unavailable */ }
+  }
+
+  function show(id: string): void {
+    document.getElementById(id)?.removeAttribute('hidden');
+  }
+  function hide(id: string): void {
+    document.getElementById(id)?.setAttribute('hidden', '');
   }
 
   updateProfileUI();
@@ -235,14 +305,14 @@ const { currentPage } = Astro.props;
     z-index: 200;
     background: var(--color-bg);
     border-bottom: 1px solid var(--color-border);
-    box-shadow: var(--shadow-sm);
+    box-shadow: 0 1px 12px rgba(0,0,0,0.07);
   }
 
   .nav__inner {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: var(--sp-3);
+    gap: var(--sp-4);
     padding: 0 var(--sp-6);
     max-width: var(--container);
     margin: 0 auto;
@@ -252,56 +322,87 @@ const { currentPage } = Astro.props;
   /* ── Logo ───────────────────────────────────────────── */
   .nav__logo {
     display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    line-height: 1.1;
+    align-items: center;
+    gap: var(--sp-3);
     flex-shrink: 0;
     text-decoration: none;
   }
 
+  .nav__logo-mark {
+    width: 38px; height: 38px;
+    border-radius: var(--radius-lg);
+    background: linear-gradient(135deg, var(--color-primary) 0%, #7c3aed 100%);
+    color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    box-shadow: 0 2px 8px rgba(37, 99, 235, 0.35);
+  }
+
+  .nav__logo-text {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.15;
+  }
+
   .nav__logo-name {
-    font-size: var(--text-2xl);
+    font-size: var(--text-xl);
     font-weight: var(--weight-black);
-    background: linear-gradient(135deg, var(--color-primary), #a855f7);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+    color: var(--color-text);
+    letter-spacing: -0.3px;
   }
 
   .nav__logo-tagline {
-    font-size: var(--text-xs);
+    font-size: 10px;
     color: var(--color-text-faint);
     font-weight: var(--weight-semi);
     white-space: nowrap;
+    letter-spacing: 0.3px;
   }
 
   /* ── Desktop links ──────────────────────────────────── */
   .nav__links {
     display: flex;
-    align-items: center;
+    align-items: stretch;
     list-style: none;
     flex: 1;
     justify-content: center;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     gap: 0;
     margin: 0;
     padding: 0;
+    height: 100%;
   }
 
+  .nav__links li { display: flex; align-items: stretch; }
+
   .nav__link {
-    display: block;
-    padding: var(--sp-2) 0.6rem;
-    border-radius: var(--radius-sm);
+    display: flex;
+    align-items: center;
+    padding: 0 0.75rem;
     font-size: var(--text-sm);
     font-weight: var(--weight-semi);
-    color: var(--color-text);
+    color: var(--color-text-muted);
     transition: color var(--ease);
     white-space: nowrap;
     text-decoration: none;
+    position: relative;
   }
 
-  .nav__link:hover,
-  .nav__link--active { color: var(--color-primary); }
+  .nav__link::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0.75rem; right: 0.75rem;
+    height: 2.5px;
+    background: var(--color-primary);
+    border-radius: 2px 2px 0 0;
+    transform: scaleX(0);
+    transition: transform 0.2s ease;
+  }
+
+  .nav__link:hover { color: var(--color-text); }
+  .nav__link:hover::after { transform: scaleX(0.5); }
+  .nav__link--active { color: var(--color-primary); font-weight: var(--weight-bold); }
+  .nav__link--active::after { transform: scaleX(1); }
 
   /* ── Actions bar ────────────────────────────────────── */
   .nav__actions {
@@ -315,18 +416,39 @@ const { currentPage } = Astro.props;
   .nav__driver {
     display: flex;
     align-items: center;
-    gap: var(--sp-1);
-    padding: var(--sp-2) var(--sp-3);
+    gap: 5px;
+    padding: 7px var(--sp-4);
     background: #16A34A;
     color: #fff;
-    border-radius: var(--radius);
+    border-radius: var(--radius-full);
     font-size: var(--text-sm);
     font-weight: var(--weight-bold);
     text-decoration: none;
-    transition: background var(--ease), transform var(--ease);
+    transition: background var(--ease), box-shadow var(--ease), transform var(--ease);
     white-space: nowrap;
+    box-shadow: 0 1px 6px rgba(22,163,74,0.3);
   }
-  .nav__driver:hover { background: #15803D; transform: translateY(-1px); }
+  .nav__driver:hover { background: #15803D; transform: translateY(-1px); box-shadow: 0 3px 10px rgba(22,163,74,0.4); }
+  .nav__driver[hidden] { display: none; }
+
+  /* Merchant button */
+  .nav__merchant {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 7px var(--sp-4);
+    background: #f59e0b;
+    color: #fff;
+    border-radius: var(--radius-full);
+    font-size: var(--text-sm);
+    font-weight: var(--weight-bold);
+    text-decoration: none;
+    transition: background var(--ease), box-shadow var(--ease), transform var(--ease);
+    white-space: nowrap;
+    box-shadow: 0 1px 6px rgba(245,158,11,0.3);
+  }
+  .nav__merchant:hover { background: #d97706; transform: translateY(-1px); box-shadow: 0 3px 10px rgba(245,158,11,0.4); }
+  .nav__merchant[hidden] { display: none; }
 
   /* ── Profile dropdown ───────────────────────────────── */
   .nav__profile { position: relative; }
@@ -411,6 +533,9 @@ const { currentPage } = Astro.props;
 
   .nav__dropdown-logout { color: #DC2626; }
   .nav__dropdown-logout:hover { background: #FEE2E2; color: #B91C1C; }
+
+  /* Ensure hidden always works regardless of display rules */
+  [hidden] { display: none !important; }
 
   .nav__dropdown-driver { color: #16A34A; font-weight: var(--weight-bold); }
   .nav__dropdown-driver:hover { background: #DCFCE7; }
@@ -500,11 +625,22 @@ const { currentPage } = Astro.props;
     border-top: 1px solid var(--color-border);
   }
 
+  #nav-mobile-merchant[hidden] { display: none; }
+  .nav__mobile-user-links {
+    border-top: 1px solid var(--color-border);
+    padding-top: var(--sp-2);
+    margin-top: calc(-1 * var(--sp-4));
+    display: flex;
+    flex-direction: column;
+  }
+  .nav__mobile-user-links[hidden] { display: none; }
+
   /* ── Responsive ─────────────────────────────────────── */
   @media (max-width: 900px) {
-    .nav__links  { display: none; }
-    .nav__driver { display: none; }
-    .nav__burger { display: flex; }
+    .nav__links   { display: none; }
+    .nav__driver  { display: none; }
+    .nav__merchant { display: none; }
+    .nav__burger  { display: flex; }
   }
 
   @media (max-width: 600px) {

@@ -71,19 +71,22 @@ interface PricingPlan {
 
 const PRICING: PricingPlan[] = [
   {
-    name: 'توصيل محلي', price: '25', unit: 'ج.م / طلب',   desc: 'داخل المدينة',
-    features: ['توصيل خلال 30 دقيقة', 'تتبع لحظي', 'دفع نقدي أو إلكتروني', 'تأمين على الطلب'],
-    cta: 'اطلب الآن', featured: false, variant: 'outline', href: '/stores',
+    name: 'مشاوير', price: '35', unit: 'ج.م / رحلة',
+    desc: '25 ج.م + 12 ج.م/كم · بحد أدنى 35 ج.م',
+    features: ['حساب تلقائي حسب المسافة', 'من وإلى أي موقع في دمياط', 'تتبع لحظي للسيارة', 'دفع نقدي أو إلكتروني'],
+    cta: 'احجز مشوار', featured: false, variant: 'outline', href: '/rides',
   },
   {
-    name: 'باقة شهرية', price: '199', unit: 'ج.م / شهر',  desc: 'للعملاء المنتظمين',
-    features: ['20 طلب توصيل شهرياً', 'أولوية في التوصيل', 'خصم 20% على الإضافي', 'دعم أولوية', 'تقارير شهرية'],
-    cta: 'اشترك الآن', featured: true, variant: 'accent', href: '/order',
+    name: 'توصيل المتاجر', price: '20', unit: 'ج.م / طلب',
+    desc: 'يحددها كل متجر بحسب موقعك',
+    features: ['توصيل خلال 30 دقيقة', 'مئات المتاجر الشريكة', 'تتبع المندوب لحظياً', 'دفع نقدي أو إلكتروني', 'خدمة 24/7'],
+    cta: 'تصفّح المتاجر', featured: true, variant: 'accent', href: '/stores',
   },
   {
-    name: 'توصيل مطار', price: '150', unit: 'ج.م / رحلة', desc: 'من دمياط للمطارات',
-    features: ['كل مطارات مصر', 'حساب الوقت تلقائياً', 'سيارة مريحة', 'سعر ثابت حسب المسافة'],
-    cta: 'احجز الآن', featured: false, variant: 'primary', href: '/airport',
+    name: 'توصيل المطار', price: '1,250', unit: 'ج.م / رحلة',
+    desc: 'ابتداءً من مطار بورسعيد (85 كم) · القاهرة 2,450 ج.م',
+    features: ['كل مطارات مصر', 'سيدان / SUV / ميكروباص', 'سعر ثابت حسب المسافة', 'حجز مسبق بتفاصيل الرحلة'],
+    cta: 'احجز رحلتك', featured: false, variant: 'primary', href: '/airport',
   },
 ];
 ---
@@ -173,18 +176,23 @@ const PRICING: PricingPlan[] = [
     border-radius: var(--radius-2xl);
     background: linear-gradient(135deg, var(--color-primary-light), #DBEAFE);
     aspect-ratio: 4 / 3;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 5rem;
     position: relative;
     overflow: hidden;
+    box-shadow: var(--shadow-md);
+  }
+
+  .split__map {
+    width: 100%;
+    height: 100%;
+    min-height: 320px;
+    border-radius: var(--radius-2xl);
   }
 
   .split__visual-badge {
     position: absolute;
     bottom: var(--sp-6);
     left: var(--sp-6);
+    z-index: 999;
     background: var(--color-bg);
     border-radius: var(--radius-lg);
     padding: var(--sp-3) var(--sp-5);
@@ -318,6 +326,15 @@ const PRICING: PricingPlan[] = [
   .pricing-card__btn--accent { background: var(--color-accent); color: var(--color-text); }
   .pricing-card__btn--accent:hover { background: var(--color-accent-dark); transform: translateY(-1px); }
 
+  .pricing__note {
+    max-width: 960px;
+    margin: var(--sp-8) auto 0;
+    text-align: center;
+    font-size: var(--text-xs);
+    color: var(--color-text-faint);
+    line-height: 1.8;
+  }
+
   /* ── Responsive ──────────────────────────────────────────── */
   @media (max-width: 900px) {
     .split__inner  { grid-template-columns: 1fr; gap: var(--sp-10); }
@@ -357,8 +374,8 @@ const PRICING: PricingPlan[] = [
           </ul>
           <a href={svc.ctaHref} class="btn btn--accent">{svc.cta}</a>
         </div>
-        <div class="split__visual" role="img" aria-label={svc.title}>
-          {svc.emoji}
+        <div class="split__visual">
+          <div id={`map-${svc.id}`} class="split__map"></div>
           <div class="split__visual-badge">
             <div class="split__visual-badge-num">{svc.badge}</div>
             <div class="split__visual-badge-label">{svc.badgeLabel}</div>
@@ -394,7 +411,7 @@ const PRICING: PricingPlan[] = [
             class:list={['pricing-card', plan.featured && 'pricing-card--featured']}
             role="listitem"
           >
-            {plan.featured && <span class="pricing-card__popular">الأكثر طلباً</span>}
+            {plan.featured && <span class="pricing-card__popular">⭐ الأكثر طلباً</span>}
             <p class="pricing-card__name">{plan.name}</p>
             <p class="pricing-card__price">
               {plan.price} <span class="pricing-card__unit">{plan.unit}</span>
@@ -409,6 +426,153 @@ const PRICING: PricingPlan[] = [
           </div>
         ))}
       </div>
+      <p class="pricing__note">
+        * أسعار المطار: 300 ج.م ثابتة + 11 ج.م/كم (أقل من 150 كم) · 10 ج.م/كم (150–400 كم) · 9 ج.م/كم (فوق 400 كم)
+        <br />احجز مباشرة لترى السعر الدقيق حسب المطار ونوع السيارة.
+      </p>
     </div>
   </section>
+
 </Layout>
+
+<script>
+  const GMAPS_KEY = 'AIzaSyAKvFfBYNDcTZgvZZH5s_lQbOc24LNjLsY';
+
+  function loadGoogleMaps(): Promise<void> {
+    return new Promise((resolve) => {
+      if ((window as any).google?.maps) { resolve(); return; }
+      (window as any).__gmInit = resolve;
+      const s = document.createElement('script');
+      s.src = `https://maps.googleapis.com/maps/api/js?key=${GMAPS_KEY}&callback=__gmInit&language=ar`;
+      s.async = true;
+      document.head.appendChild(s);
+    });
+  }
+
+  function markerIcon(label: string, color: string) {
+    return {
+      path: (window as any).google.maps.SymbolPath.CIRCLE,
+      fillColor: color,
+      fillOpacity: 1,
+      strokeColor: '#ffffff',
+      strokeWeight: 3,
+      scale: 10,
+      label: { text: label, color: '#fff', fontSize: '12px', fontWeight: 'bold' },
+    };
+  }
+
+  async function initMaps() {
+    await loadGoogleMaps();
+    const G = (window as any).google.maps;
+
+    // ── LOCAL MAP: Damietta areas ──
+    const localEl = document.getElementById('map-local');
+    if (localEl) {
+      const map = new G.Map(localEl, {
+        center: { lat: 31.41, lng: 31.80 },
+        zoom: 11,
+        disableDefaultUI: true,
+        gestureHandling: 'none',
+        mapTypeControl: false,
+        styles: [{ featureType: 'poi', elementType: 'labels', stylers: [{ visibility: 'off' }] }],
+      });
+
+      const areas = [
+        { name: 'وسط دمياط',       lat: 31.418, lng: 31.814 },
+        { name: 'دمياط الجديدة',    lat: 31.392, lng: 31.755 },
+        { name: 'رأس البر',         lat: 31.490, lng: 31.829 },
+        { name: 'الشيخ زغلول',      lat: 31.436, lng: 31.762 },
+        { name: 'كفر سعد',          lat: 31.402, lng: 31.732 },
+        { name: 'فارسكور',          lat: 31.328, lng: 31.672 },
+        { name: 'الزرقا',           lat: 31.312, lng: 31.874 },
+        { name: 'المنطقة الصناعية', lat: 31.381, lng: 31.765 },
+      ];
+
+      const iw = new G.InfoWindow();
+      areas.forEach((a, i) => {
+        const marker = new G.Marker({
+          position: { lat: a.lat, lng: a.lng },
+          map,
+          title: a.name,
+          icon: { path: G.SymbolPath.CIRCLE, fillColor: '#3b82f6', fillOpacity: 1, strokeColor: '#fff', strokeWeight: 2, scale: 9 },
+          label: { text: String(i + 1), color: '#fff', fontSize: '11px', fontWeight: 'bold' },
+        });
+        marker.addListener('click', () => {
+          iw.setContent(`<div style="font-family:sans-serif;font-weight:bold;direction:rtl">${a.name}</div>`);
+          iw.open(map, marker);
+        });
+      });
+    }
+
+    // ── AIRPORT MAP: Damietta → airports ──
+    const airportEl = document.getElementById('map-airport');
+    if (airportEl) {
+      const map = new G.Map(airportEl, {
+        center: { lat: 29.0, lng: 31.5 },
+        zoom: 6,
+        disableDefaultUI: true,
+        gestureHandling: 'none',
+        mapTypeControl: false,
+        styles: [{ featureType: 'poi', elementType: 'labels', stylers: [{ visibility: 'off' }] }],
+      });
+
+      const DAMIETTA = { lat: 31.418, lng: 31.814 };
+
+      // Damietta home marker
+      new G.Marker({
+        position: DAMIETTA, map,
+        title: 'دمياط',
+        icon: { path: G.SymbolPath.CIRCLE, fillColor: '#3b82f6', fillOpacity: 1, strokeColor: '#fff', strokeWeight: 3, scale: 11 },
+        label: { text: '🏠', fontSize: '14px' },
+        zIndex: 10,
+      });
+
+      const airports = [
+        { name: 'بورسعيد',    lat: 31.282, lng: 32.236, fare: 1250  },
+        { name: 'القاهرة',    lat: 30.122, lng: 31.406, fare: 2450  },
+        { name: 'الإسكندرية', lat: 30.917, lng: 29.696, fare: 2950  },
+        { name: 'شرم الشيخ',  lat: 27.977, lng: 34.395, fare: 5550  },
+        { name: 'الغردقة',    lat: 27.178, lng: 33.800, fare: 5200  },
+        { name: 'الأقصر',     lat: 25.671, lng: 32.706, fare: 7150  },
+      ];
+
+      const iw2 = new G.InfoWindow();
+      airports.forEach(a => {
+        // Dashed polyline from Damietta
+        new G.Polyline({
+          path: [DAMIETTA, { lat: a.lat, lng: a.lng }],
+          map,
+          strokeColor: '#3b82f6',
+          strokeOpacity: 0,
+          icons: [{ icon: { path: 'M 0,-1 0,1', strokeOpacity: 0.6, scale: 3 }, offset: '0', repeat: '12px' }],
+        });
+
+        const marker = new G.Marker({
+          position: { lat: a.lat, lng: a.lng },
+          map,
+          title: `مطار ${a.name}`,
+          icon: { path: G.SymbolPath.CIRCLE, fillColor: '#ef4444', fillOpacity: 1, strokeColor: '#fff', strokeWeight: 2, scale: 9 },
+          label: { text: '✈', color: '#fff', fontSize: '12px' },
+        });
+        marker.addListener('click', () => {
+          iw2.setContent(`<div style="font-family:sans-serif;direction:rtl;text-align:right"><strong>مطار ${a.name}</strong><br><span style="color:#16a34a;font-size:13px">${a.fare.toLocaleString('ar-EG')} ج.م</span></div>`);
+          iw2.open(map, marker);
+        });
+      });
+    }
+  }
+
+  // Lazy-init on scroll
+  let started = false;
+  const obs = new IntersectionObserver((entries) => {
+    if (entries.some(e => e.isIntersecting) && !started) {
+      started = true;
+      initMaps();
+    }
+  }, { rootMargin: '200px' });
+
+  ['map-local', 'map-airport'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) obs.observe(el);
+  });
+</script>

@@ -1,9 +1,7 @@
 ---
 import Layout from '../components/layout.astro';
 import PageHero from '../components/PageHero.astro';
-import { AIRPORTS, priceForDistance } from '../data/airports';
-
-const AREAS = ['دمياط الجديدة', 'دمياط', 'كفر سعد', 'فارسكور', 'منية النصر', 'رأس البر', 'الزرقا'];
+import { AIRPORTS, priceForDistance, VEHICLE_TYPES } from '../data/airports';
 ---
 
 <style>
@@ -124,6 +122,61 @@ const AREAS = ['دمياط الجديدة', 'دمياط', 'كفر سعد', 'فا
     .air-summary { position: static; }
     .air-row { grid-template-columns: 1fr; }
   }
+  /* ensure Google Places dropdown appears above everything */
+  .pac-container { z-index: 9999 !important; direction: rtl; font-family: var(--font-body); }
+  .loc-wrap { display: flex; align-items: center; gap: 8px; }
+  .loc-wrap .field__input { flex: 1; }
+  .loc-btn {
+    width: 38px; height: 38px; flex-shrink: 0;
+    border: 1.5px solid var(--color-border); border-radius: var(--radius);
+    background: var(--color-bg-soft); cursor: pointer; font-size: 0.95rem;
+    display: flex; align-items: center; justify-content: center; transition: all 0.2s;
+  }
+  .loc-btn:hover { background: var(--color-primary-light); border-color: var(--color-primary); }
+  /* Airport search dropdown */
+  .airport-wrap { position: relative; }
+  .airport-list {
+    position: absolute; top: calc(100% + 4px); left: 0; right: 0;
+    background: var(--color-bg); border: 1.5px solid var(--color-primary);
+    border-radius: var(--radius); max-height: 220px; overflow-y: auto;
+    z-index: 1000; list-style: none; margin: 0;
+    box-shadow: var(--shadow-md); display: none;
+  }
+  .airport-list.is-open { display: block; }
+  .airport-list li {
+    padding: var(--sp-3) var(--sp-4); cursor: pointer; font-size: var(--text-sm);
+    border-bottom: 1px solid var(--color-border); display: flex; justify-content: space-between; align-items: center;
+  }
+  .airport-list li:last-child { border-bottom: none; }
+  .airport-list li:hover, .airport-list li.focused { background: var(--color-primary-light); color: var(--color-primary); }
+  .airport-list__code { font-weight: var(--weight-black); font-size: 11px; color: var(--color-primary); background: var(--color-primary-light); padding: 2px 6px; border-radius: 4px; }
+  .airport-list__km { color: var(--color-text-faint); font-size: 11px; }
+  .airport-selected { border-color: var(--color-primary) !important; }
+
+  /* vehicle cards */
+  .veh-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--sp-3); }
+  .veh-card {
+    display: flex; flex-direction: column; align-items: center; gap: 4px;
+    padding: var(--sp-4) var(--sp-3); border: 2px solid var(--color-border);
+    border-radius: var(--radius-lg); background: var(--color-bg-soft);
+    cursor: pointer; transition: all 0.2s; font-family: var(--font-body);
+    text-align: center;
+  }
+  .veh-card--active { border-color: var(--color-primary); background: var(--color-primary-light); }
+  .veh-card:hover:not(.veh-card--active) { border-color: var(--color-primary); }
+  .veh-card__icon { font-size: 1.8rem; }
+  .veh-card__name { font-weight: var(--weight-black); font-size: var(--text-sm); color: var(--color-text); }
+  .veh-card__desc { font-size: 10px; color: var(--color-text-faint); }
+  .veh-card__cap { font-size: 10px; color: var(--color-text-muted); margin-top: 2px; }
+  .veh-card--active .veh-card__name { color: var(--color-primary); }
+  @media (max-width: 480px) { .veh-grid { grid-template-columns: 1fr; } }
+  /* timeline new items */
+  .tl-item--depart .tl-dot { border-color: #16a34a; }
+  .tl-item--arrive .tl-dot { border-color: #0ea5e9; }
+  .tl-item--checkin .tl-dot { border-color: #f59e0b; }
+  .tl-badge { display: inline-block; font-size: 10px; padding: 1px 6px; border-radius: 99px; }
+  .tl-badge--ok { background: #dcfce7; color: #16a34a; }
+  .tl-badge--warn { background: #fef3c7; color: #92400e; }
 </style>
 
 <Layout
@@ -141,9 +194,9 @@ const AREAS = ['دمياط الجديدة', 'دمياط', 'كفر سعد', 'فا
 
     <!-- Form -->
     <form class="air-form" id="air-form">
-      <!-- 1: Trip -->
-      <h2 class="air-form__step"><span class="air-form__num">1</span> تفاصيل الرحلة</h2>
 
+      <!-- قسم 1: نوع الرحلة -->
+      <h2 class="air-form__step"><span class="air-form__num">1</span> نوع الرحلة</h2>
       <div class="field">
         <span class="field__label">نوع الرحلة</span>
         <div class="trip-type">
@@ -153,23 +206,51 @@ const AREAS = ['دمياط الجديدة', 'دمياط', 'كفر سعد', 'فا
         <p class="field__hint">نستخدمها لحساب الوقت اللازم للوصول قبل الإقلاع.</p>
       </div>
 
+      <hr class="air-divider">
+
+      <!-- قسم 2: اختيار السيارة -->
+      <h2 class="air-form__step"><span class="air-form__num">2</span> اختيار السيارة</h2>
+      <div class="veh-grid">
+        <button type="button" class="veh-card veh-card--active" data-veh="sedan">
+          <span class="veh-card__icon">🚗</span>
+          <span class="veh-card__name">سيدان</span>
+          <span class="veh-card__desc">تويوتا / هيونداي</span>
+          <span class="veh-card__cap">👤 ٣ ركاب • 🧳 ٢ شنطة</span>
+        </button>
+        <button type="button" class="veh-card" data-veh="suv">
+          <span class="veh-card__icon">🚙</span>
+          <span class="veh-card__name">SUV / كروز</span>
+          <span class="veh-card__desc">لاند كروزر / باترول</span>
+          <span class="veh-card__cap">👥 ٦ ركاب • 🧳 ٤ شنط</span>
+        </button>
+        <button type="button" class="veh-card" data-veh="van">
+          <span class="veh-card__icon">🚐</span>
+          <span class="veh-card__name">ميكروباص</span>
+          <span class="veh-card__desc">H1 / سبرينتر</span>
+          <span class="veh-card__cap">👥 ١٠ ركاب • 🧳 ٨ شنط</span>
+        </button>
+      </div>
+      <p class="field__hint" id="veh-hint">تم اختيار السيدان — ٣ ركاب بحد أقصى، شنطتان مجانيتان</p>
+
+      <hr class="air-divider">
+
+      <!-- قسم 3: نقطة البداية والوصول -->
+      <h2 class="air-form__step"><span class="air-form__num">3</span> نقطة البداية والوصول</h2>
+
       <div class="air-row">
         <div class="field">
           <label class="field__label" for="from-area">نقطة البداية (منطقتك)</label>
-          <select class="field__select" id="from-area">
-            {AREAS.map(a => <option value={a} selected={a === 'دمياط الجديدة'}>{a}</option>)}
-          </select>
+          <div class="loc-wrap">
+            <input type="text" class="field__input" id="from-area" placeholder="اكتب منطقتك أو حيّك في دمياط..." autocomplete="off" />
+            <button type="button" class="loc-btn" id="btn-air-loc" title="موقعي الحالي">📍</button>
+          </div>
         </div>
         <div class="field">
-          <label class="field__label" for="airport">المطار (نقطة النهاية)</label>
-          <select class="field__select" id="airport">
-            <option value="" disabled selected>اختر المطار</option>
-            {AIRPORTS.map(a => (
-              <option value={a.id} data-distance={a.distanceKm} data-drive={a.driveMinutes} data-name={a.name}>
-                {a.name} ({a.code}) — {a.distanceKm} كم
-              </option>
-            ))}
-          </select>
+          <label class="field__label" for="airport-input">المطار (نقطة النهاية)</label>
+          <div class="airport-wrap">
+            <input type="text" class="field__input" id="airport-input" placeholder="ابحث: القاهرة، شرم، الغردقة..." autocomplete="off" />
+            <ul class="airport-list" id="airport-list" role="listbox"></ul>
+          </div>
         </div>
       </div>
 
@@ -186,8 +267,57 @@ const AREAS = ['دمياط الجديدة', 'دمياط', 'كفر سعد', 'فا
 
       <hr class="air-divider">
 
-      <!-- 2: Flight info -->
-      <h2 class="air-form__step"><span class="air-form__num">2</span> بيانات الطيران</h2>
+      <!-- قسم 4: الركاب والأمتعة -->
+      <h2 class="air-form__step"><span class="air-form__num">4</span> الركاب والأمتعة</h2>
+
+      <div class="air-row">
+        <div class="field">
+          <label class="field__label" for="passengers">عدد المسافرين (يطيرون)</label>
+          <input class="field__input" id="passengers" type="number" min="1" max="3" value="1">
+        </div>
+        <div class="field">
+          <label class="field__label" for="companions">مرافق رايح جاي 🔄</label>
+          <input class="field__input" id="companions" type="number" min="0" max="9" value="0">
+          <p class="field__hint">شخص يرافق ويرجع مع السيارة — ٢٥٠ ج.م للفرد</p>
+        </div>
+      </div>
+      <div class="field">
+        <label class="field__label" for="bags">شنط كبيرة (تُسجَّل في الطائرة)</label>
+        <input class="field__input" id="bags" type="number" min="0" max="2" value="1">
+        <p class="field__hint" id="bags-hint">شنطتان مجانيتان مع السيدان • كل شنطة إضافية ٢٥ ج.م</p>
+      </div>
+
+      <hr class="air-divider">
+
+      <!-- قسم 5: أوقات الانتظار -->
+      <h2 class="air-form__step"><span class="air-form__num">5</span> أوقات الانتظار</h2>
+
+      <div class="air-row">
+        <div class="field">
+          <label class="field__label" for="wait-pickup">انتظار السائق عند الاستلام</label>
+          <select class="field__select" id="wait-pickup">
+            <option value="0">بدون انتظار (سأكون جاهزاً)</option>
+            <option value="15">١٥ دقيقة — مجاناً</option>
+            <option value="30">٣٠ دقيقة (+٣٠ ج.م)</option>
+            <option value="45">٤٥ دقيقة (+٦٠ ج.م)</option>
+            <option value="60">ساعة كاملة (+٩٠ ج.م)</option>
+          </select>
+        </div>
+        <div class="field" id="wait-airport-field">
+          <label class="field__label" for="wait-airport">انتظار السائق في ساحة المطار</label>
+          <select class="field__select" id="wait-airport">
+            <option value="0">بدون انتظار — يتركني وينصرف</option>
+            <option value="30">٣٠ دقيقة — مجاناً</option>
+            <option value="60">ساعة (+٤٠ ج.م)</option>
+            <option value="90">ساعة ونص (+٨٠ ج.م)</option>
+          </select>
+        </div>
+      </div>
+
+      <hr class="air-divider">
+
+      <!-- قسم 6: بيانات الطيران -->
+      <h2 class="air-form__step"><span class="air-form__num">6</span> بيانات الطيران</h2>
       <div class="air-row">
         <div class="field">
           <label class="field__label" for="airline">شركة الطيران</label>
@@ -198,26 +328,15 @@ const AREAS = ['دمياط الجديدة', 'دمياط', 'كفر سعد', 'فا
           <input class="field__input" id="flight-no" type="text" placeholder="MS 712">
         </div>
       </div>
-      <div class="air-row">
-        <div class="field">
-          <label class="field__label" for="terminal">رقم الصالة / المبنى</label>
-          <input class="field__input" id="terminal" type="text" placeholder="مثال: مبنى 2">
-        </div>
-        <div class="field">
-          <label class="field__label" for="passengers">عدد المسافرين</label>
-          <input class="field__input" id="passengers" type="number" min="1" max="15" value="1">
-        </div>
-      </div>
       <div class="field">
-        <label class="field__label" for="bags">عدد الشنط</label>
-        <input class="field__input" id="bags" type="number" min="0" max="30" value="2">
-        <p class="field__hint">٤ شنط مجاناً، وكل شنطة إضافية ١٥ ج.م.</p>
+        <label class="field__label" for="terminal">رقم الصالة / المبنى</label>
+        <input class="field__input" id="terminal" type="text" placeholder="مثال: مبنى 2">
       </div>
 
       <hr class="air-divider">
 
-      <!-- 3: Traveler -->
-      <h2 class="air-form__step"><span class="air-form__num">3</span> بيانات المسافر</h2>
+      <!-- قسم 7: بيانات المسافر -->
+      <h2 class="air-form__step"><span class="air-form__num">7</span> بيانات المسافر</h2>
       <div class="air-row">
         <div class="field">
           <label class="field__label" for="trav-name">اسم المسافر</label>
@@ -239,30 +358,45 @@ const AREAS = ['دمياط الجديدة', 'دمياط', 'كفر سعد', 'فا
       <div class="air-summary__body">
         <ol class="timeline" id="timeline">
           <li class="tl-empty" id="tl-empty">أدخل وقت إقلاع الطائرة لعرض الجدول الزمني المقترح.</li>
-          <li class="tl-item" id="tl-pickup" hidden>
+          <li class="tl-item" id="tl-driver" hidden>
             <span class="tl-dot"></span>
-            <p class="tl-label">🚗 المغادرة من نقطة البداية</p>
-            <p class="tl-time" data-pickup>—</p>
-            <p class="tl-sub" id="tl-pickup-sub"></p>
+            <p class="tl-label">🚗 وصول السائق للاستلام</p>
+            <p class="tl-time" id="tl-driver-time">—</p>
+            <p class="tl-sub" id="tl-driver-sub"></p>
           </li>
-          <li class="tl-item" id="tl-arrive" hidden>
+          <li class="tl-item tl-item--depart" id="tl-depart" hidden>
+            <span class="tl-dot"></span>
+            <p class="tl-label">🏁 المغادرة من نقطة البداية</p>
+            <p class="tl-time" id="tl-depart-time">—</p>
+            <p class="tl-sub" id="tl-depart-sub"></p>
+          </li>
+          <li class="tl-item tl-item--arrive" id="tl-arrive" hidden>
             <span class="tl-dot"></span>
             <p class="tl-label">🛄 الوصول إلى المطار</p>
-            <p class="tl-time" data-arrive>—</p>
+            <p class="tl-time" id="tl-arrive-time">—</p>
             <p class="tl-sub" id="tl-arrive-sub"></p>
+          </li>
+          <li class="tl-item tl-item--checkin" id="tl-checkin" hidden>
+            <span class="tl-dot"></span>
+            <p class="tl-label">🎫 آخر موعد لتسجيل الأمتعة</p>
+            <p class="tl-time" id="tl-checkin-time">—</p>
+            <p class="tl-sub" id="tl-checkin-sub"></p>
           </li>
           <li class="tl-item tl-item--flight" id="tl-flight" hidden>
             <span class="tl-dot"></span>
             <p class="tl-label">✈️ إقلاع الطائرة</p>
-            <p class="tl-time" data-flight>—</p>
+            <p class="tl-time" id="tl-flight-time">—</p>
           </li>
         </ol>
 
         <div class="air-prices">
           <div class="row"><span>المسافة</span><span id="p-distance">—</span></div>
           <div class="row"><span>سعر المسافة</span><span id="p-base">—</span></div>
-          <div class="row" id="p-van-row" hidden><span>مركبة أكبر (٥+ ركاب)</span><span id="p-van">—</span></div>
+          <div class="row" id="p-veh-row" hidden><span id="p-veh-label">رسوم السيارة</span><span id="p-veh">—</span></div>
           <div class="row" id="p-bags-row" hidden><span>شنط إضافية</span><span id="p-bags">—</span></div>
+          <div class="row" id="p-comp-row" hidden><span id="p-comp-label">مرافق رايح جاي</span><span id="p-comp">—</span></div>
+          <div class="row" id="p-wpick-row" hidden><span>انتظار عند الاستلام</span><span id="p-wpick">—</span></div>
+          <div class="row" id="p-wair-row" hidden><span>انتظار في ساحة المطار</span><span id="p-wair">—</span></div>
           <div class="total"><span>الإجمالي</span><b id="p-total">— <small>ج.م</small></b></div>
         </div>
 
@@ -272,6 +406,9 @@ const AREAS = ['دمياط الجديدة', 'دمياط', 'كفر سعد', 'فا
       </div>
     </aside>
   </div>
+
+  <script type="application/json" id="airports-json" set:html={JSON.stringify(AIRPORTS)}></script>
+  <script type="application/json" id="vehicles-json" set:html={JSON.stringify(VEHICLE_TYPES)}></script>
 
   <!-- Success -->
   <section class="air-success" id="air-success" role="alert" aria-live="polite" tabindex="-1">
@@ -287,19 +424,129 @@ const AREAS = ['دمياط الجديدة', 'دمياط', 'كفر سعد', 'فا
   </section>
 
   <script>
-    import { priceForDistance, CHECKIN_BUFFER, SAFETY_MARGIN } from '../data/airports';
+    import { priceForDistance, CHECKIN_BUFFER, SAFETY_MARGIN, VEHICLE_TYPES, EXTRA_BAG_FEE, COMPANION_FEE, WAIT_PICKUP_FREE, WAIT_PICKUP_PER15, WAIT_AIRPORT_FREE, WAIT_AIRPORT_PER30 } from '../data/airports';
     import { isEgyptianMobile, normalizeEgyptianPhone, EG_PHONE_ERROR } from '../utils/phone';
+
+    const GMAPS_KEY = 'AIzaSyAKvFfBYNDcTZgvZZH5s_lQbOc24LNjLsY';
 
     const $ = (id: string) => document.getElementById(id)!;
     const form = $('air-form') as HTMLFormElement;
-    const airportSel = $('airport') as HTMLSelectElement;
     const flightInput = $('flight-time') as HTMLInputElement;
+
+    // ── Vehicle selection ──
+    interface VehicleType { id: string; name: string; maxTravelers: number; maxBags: number; freeBags: number; surcharge: number; }
+    const VEHICLES_DATA: VehicleType[] = JSON.parse((document.getElementById('vehicles-json') as HTMLScriptElement).textContent || '[]');
+    let selectedVehicle: VehicleType = VEHICLES_DATA[0] || { id: 'sedan', name: 'سيدان', maxTravelers: 3, maxBags: 2, freeBags: 2, surcharge: 0 };
+
+    // ── Airport search ──
+    interface AirportItem { id: string; name: string; code: string; distanceKm: number; driveMinutes: number; }
+    const AIRPORTS_DATA: AirportItem[] = JSON.parse((document.getElementById('airports-json') as HTMLScriptElement).textContent || '[]');
+    let selectedAirport: AirportItem | null = null;
+
+    const airportInput = $('airport-input') as HTMLInputElement;
+    const airportList = $('airport-list') as HTMLUListElement;
+
+    function filterAirports(q: string): AirportItem[] {
+      if (!q.trim()) return AIRPORTS_DATA;
+      const s = q.trim().toLowerCase();
+      return AIRPORTS_DATA.filter(a =>
+        a.name.includes(q) || a.code.toLowerCase().includes(s) || a.name.toLowerCase().includes(s)
+      );
+    }
+
+    function renderAirportList(items: AirportItem[]) {
+      airportList.innerHTML = '';
+      if (!items.length) {
+        airportList.innerHTML = '<li style="color:var(--color-text-faint);cursor:default">لا توجد نتائج</li>';
+      } else {
+        items.forEach(a => {
+          const li = document.createElement('li');
+          li.innerHTML = `<span>${a.name}</span><span><span class="airport-list__code">${a.code}</span> <span class="airport-list__km">${a.distanceKm} كم</span></span>`;
+          li.addEventListener('mousedown', (e) => {
+            e.preventDefault();
+            selectAirport(a);
+          });
+          airportList.appendChild(li);
+        });
+      }
+      airportList.classList.add('is-open');
+    }
+
+    function selectAirport(a: AirportItem) {
+      selectedAirport = a;
+      airportInput.value = `${a.name} (${a.code})`;
+      airportInput.classList.add('airport-selected');
+      airportList.classList.remove('is-open');
+      render();
+    }
+
+    airportInput.addEventListener('input', () => {
+      selectedAirport = null;
+      airportInput.classList.remove('airport-selected');
+      renderAirportList(filterAirports(airportInput.value));
+      render();
+    });
+    airportInput.addEventListener('focus', () => {
+      renderAirportList(filterAirports(airportInput.value));
+    });
+    airportInput.addEventListener('blur', () => {
+      setTimeout(() => airportList.classList.remove('is-open'), 150);
+    });
     const errBox = $('air-error') as HTMLElement;
 
-    const BAG_FREE = 4;
-    const BAG_FEE = 15;
-    const VAN_THRESHOLD = 5;
-    const VAN_SURCHARGE = 0.40;
+    // ── Google Places for from-area ──
+    let fromAreaPlace: { name: string; lat: number; lng: number } | null = null;
+
+    function loadGoogleMaps(): Promise<void> {
+      return new Promise((resolve) => {
+        if ((window as any).google?.maps) { resolve(); return; }
+        (window as any).__airGmInit = resolve;
+        const s = document.createElement('script');
+        s.src = `https://maps.googleapis.com/maps/api/js?key=${GMAPS_KEY}&libraries=places&callback=__airGmInit&language=ar&region=EG`;
+        s.async = true;
+        document.head.appendChild(s);
+      });
+    }
+
+    async function initFromAreaAutocomplete(): Promise<void> {
+      await loadGoogleMaps();
+      const G = (window as any).google.maps;
+      const damiettaBounds = new G.LatLngBounds(
+        { lat: 31.25, lng: 31.55 },
+        { lat: 31.60, lng: 32.05 }
+      );
+      const ac = new G.places.Autocomplete(document.getElementById('from-area'), {
+        bounds: damiettaBounds,
+        componentRestrictions: { country: 'eg' },
+        strictBounds: false,
+        types: ['geocode'],
+        fields: ['geometry', 'name', 'formatted_address'],
+      });
+      ac.addListener('place_changed', () => {
+        const p = ac.getPlace();
+        if (!p?.geometry?.location) return;
+        fromAreaPlace = { name: p.name || p.formatted_address, lat: p.geometry.location.lat(), lng: p.geometry.location.lng() };
+        render();
+      });
+    }
+
+    initFromAreaAutocomplete();
+
+    document.getElementById('btn-air-loc')?.addEventListener('click', () => {
+      if (!navigator.geolocation) return;
+      const btn = document.getElementById('btn-air-loc')!;
+      btn.textContent = '⏳';
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          fromAreaPlace = { name: 'موقعي الحالي', lat: pos.coords.latitude, lng: pos.coords.longitude };
+          (document.getElementById('from-area') as HTMLInputElement).value = 'موقعي الحالي';
+          btn.textContent = '✅';
+          render();
+          setTimeout(() => { btn.textContent = '📍'; }, 2000);
+        },
+        () => { btn.textContent = '📍'; }
+      );
+    });
 
     // Minimum datetime = now + 2h
     const min = new Date(Date.now() + 2 * 3600 * 1000);
@@ -319,32 +566,49 @@ const AREAS = ['دمياط الجديدة', 'دمياط', 'كفر سعد', 'فا
     }
 
     interface Calc {
-      distance: number; drive: number; base: number; van: number; bags: number; total: number;
-      flight?: Date; arrive?: Date; pickup?: Date; buffer: number;
+      distance: number; drive: number;
+      base: number; vehSurcharge: number; extraBags: number; companionFee: number; waitPickupFee: number; waitAirportFee: number;
+      total: number; buffer: number;
+      flight?: Date; arrive?: Date; depart?: Date; driverArrival?: Date; checkinDeadline?: Date;
     }
 
     function calc(): Calc {
-      const opt = airportSel.selectedOptions[0];
-      const distance = opt ? Number(opt.dataset.distance) : 0;
-      const drive = opt ? Number(opt.dataset.drive) : 0;
+      const distance = selectedAirport ? selectedAirport.distanceKm : 0;
+      const drive = selectedAirport ? selectedAirport.driveMinutes : 0;
       const trip = (form.querySelector('input[name="trip"]:checked') as HTMLInputElement).value as 'domestic' | 'international';
       const buffer = trip === 'international' ? CHECKIN_BUFFER.international : CHECKIN_BUFFER.domestic;
-      const passengers = Math.max(1, Number((($('passengers') as HTMLInputElement).value) || 1));
-      const bags = Math.max(0, Number((($('bags') as HTMLInputElement).value) || 0));
+      const bags = Math.max(0, Number(($('bags') as HTMLInputElement).value) || 0);
+      const companions = Math.max(0, Number(($('companions') as HTMLInputElement).value) || 0);
+      const waitPickupMins = Number(($('wait-pickup') as HTMLSelectElement).value) || 0;
+      const waitAirportMins = Number(($('wait-airport') as HTMLSelectElement).value) || 0;
 
       const base = distance ? priceForDistance(distance) : 0;
-      const van = passengers >= VAN_THRESHOLD ? Math.ceil(base * VAN_SURCHARGE / 10) * 10 : 0;
-      const bagFee = Math.max(0, bags - BAG_FREE) * BAG_FEE;
-      const total = base + van + bagFee;
+      const vehSurcharge = selectedVehicle.surcharge;
+      const extraBags = Math.max(0, bags - selectedVehicle.freeBags) * EXTRA_BAG_FEE;
+      const companionFee = companions * COMPANION_FEE;
+      const waitPickupFee = Math.max(0, Math.floor((waitPickupMins - WAIT_PICKUP_FREE) / 15)) * WAIT_PICKUP_PER15;
+      const waitAirportFee = Math.max(0, Math.floor((waitAirportMins - WAIT_AIRPORT_FREE) / 30)) * WAIT_AIRPORT_PER30;
+      const total = base + vehSurcharge + extraBags + companionFee + waitPickupFee + waitAirportFee;
 
-      const result: Calc = { distance, drive, base, van, bags: bagFee, total, buffer };
+      const result: Calc = { distance, drive, base, vehSurcharge, extraBags, companionFee, waitPickupFee, waitAirportFee, total, buffer };
 
       if (flightInput.value && distance) {
         const flight = new Date(flightInput.value);
         if (!isNaN(flight.getTime())) {
+          // checkin deadline: international 60 min before, domestic 40 min before
+          const checkinClose = trip === 'international' ? 60 : 40;
+          const checkinDeadline = new Date(flight.getTime() - checkinClose * 60000);
+          // arrive at airport = flight_time - buffer (with safety margin buffer)
           const arrive = new Date(flight.getTime() - buffer * 60000);
-          const pickup = new Date(arrive.getTime() - (drive + SAFETY_MARGIN) * 60000);
-          result.flight = flight; result.arrive = arrive; result.pickup = pickup;
+          // depart from pickup = arrive - drive - safety
+          const depart = new Date(arrive.getTime() - (drive + SAFETY_MARGIN) * 60000);
+          // driver arrives at pickup = depart - waitPickup
+          const driverArrival = new Date(depart.getTime() - waitPickupMins * 60000);
+          result.flight = flight;
+          result.arrive = arrive;
+          result.depart = depart;
+          result.driverArrival = driverArrival;
+          result.checkinDeadline = checkinDeadline;
         }
       }
       return result;
@@ -352,35 +616,91 @@ const AREAS = ['دمياط الجديدة', 'دمياط', 'كفر سعد', 'فا
 
     function render(): void {
       const c = calc();
-      const opt = airportSel.selectedOptions[0];
-      const fromArea = ($('from-area') as HTMLSelectElement).value;
+      const fromArea = fromAreaPlace?.name || (document.getElementById('from-area') as HTMLInputElement).value || '';
 
       // Route
-      $('sum-route').textContent = opt && opt.value
-        ? `${fromArea} ← ${opt.dataset.name}`
+      $('sum-route').textContent = selectedAirport
+        ? `${fromArea} ← ${selectedAirport.name}`
         : 'اختر المطار ووقت الإقلاع';
 
       // Timeline
       const hasTime = !!c.flight;
       $('tl-empty').hidden = hasTime;
-      ['tl-pickup', 'tl-arrive', 'tl-flight'].forEach(id => ($(id) as HTMLElement).hidden = !hasTime);
+      ['tl-driver', 'tl-depart', 'tl-arrive', 'tl-checkin', 'tl-flight'].forEach(id => ($(id) as HTMLElement).hidden = !hasTime);
+
       if (hasTime) {
-        (document.querySelector('[data-pickup]') as HTMLElement).textContent = fmtDateTime(c.pickup!);
-        (document.querySelector('[data-arrive]') as HTMLElement).textContent = fmtDateTime(c.arrive!);
-        (document.querySelector('[data-flight]') as HTMLElement).textContent = fmtDateTime(c.flight!);
-        $('tl-pickup-sub').textContent = `زمن الطريق ~${minutesToText(c.drive)} + هامش أمان`;
-        $('tl-arrive-sub').textContent = `قبل الإقلاع بـ ${minutesToText(c.buffer)}`;
+        // Driver arrival
+        if (c.driverArrival) {
+          $('tl-driver-time').textContent = fmtDateTime(c.driverArrival);
+          $('tl-driver-sub').textContent = 'موعد وصول السائق لاستلامك';
+        }
+        // Depart
+        if (c.depart) {
+          $('tl-depart-time').textContent = fmtDateTime(c.depart);
+          $('tl-depart-sub').textContent = `زمن الطريق ~${minutesToText(c.drive)} + هامش أمان`;
+        }
+        // Arrive
+        if (c.arrive) {
+          $('tl-arrive-time').textContent = fmtDateTime(c.arrive);
+          $('tl-arrive-sub').textContent = `قبل الإقلاع بـ ${minutesToText(c.buffer)}`;
+        }
+        // Checkin deadline
+        if (c.checkinDeadline) {
+          $('tl-checkin-time').textContent = fmtDateTime(c.checkinDeadline);
+          $('tl-checkin-sub').textContent = 'آخر موعد لتسليم الأمتعة عند الكاونتر';
+        }
+        // Flight
+        $('tl-flight-time').textContent = fmtDateTime(c.flight!);
       }
 
       // Prices
       $('p-distance').textContent = c.distance ? `${c.distance} كم` : '—';
       $('p-base').textContent = c.base ? `${c.base} ج.م` : '—';
-      const vanRow = $('p-van-row'); vanRow.hidden = c.van === 0;
-      $('p-van').textContent = `${c.van} ج.م`;
-      const bagsRow = $('p-bags-row'); bagsRow.hidden = c.bags === 0;
-      $('p-bags').textContent = `${c.bags} ج.م`;
+
+      const vehRow = $('p-veh-row') as HTMLElement;
+      vehRow.hidden = c.vehSurcharge === 0;
+      $('p-veh').textContent = `${c.vehSurcharge} ج.م`;
+
+      const bagsRow = $('p-bags-row') as HTMLElement;
+      bagsRow.hidden = c.extraBags === 0;
+      $('p-bags').textContent = `${c.extraBags} ج.م`;
+
+      const compRow = $('p-comp-row') as HTMLElement;
+      compRow.hidden = c.companionFee === 0;
+      $('p-comp').textContent = `${c.companionFee} ج.م`;
+
+      const wpickRow = $('p-wpick-row') as HTMLElement;
+      wpickRow.hidden = c.waitPickupFee === 0;
+      $('p-wpick').textContent = `${c.waitPickupFee} ج.م`;
+
+      const wairRow = $('p-wair-row') as HTMLElement;
+      wairRow.hidden = c.waitAirportFee === 0;
+      $('p-wair').textContent = `${c.waitAirportFee} ج.م`;
+
       $('p-total').innerHTML = c.total ? `${c.total} <small>ج.م</small>` : '— <small>ج.م</small>';
     }
+
+    // ── Vehicle card click handlers ──
+    document.querySelectorAll('.veh-card').forEach(card => {
+      card.addEventListener('click', () => {
+        document.querySelectorAll('.veh-card').forEach(c => c.classList.remove('veh-card--active'));
+        card.classList.add('veh-card--active');
+        const vehId = (card as HTMLElement).dataset.veh!;
+        selectedVehicle = VEHICLES_DATA.find(v => v.id === vehId) || VEHICLES_DATA[0];
+        // update bags max and hint
+        const bagsInput = $('bags') as HTMLInputElement;
+        bagsInput.max = String(selectedVehicle.maxBags);
+        if (Number(bagsInput.value) > selectedVehicle.maxBags) bagsInput.value = String(selectedVehicle.maxBags);
+        const travInput = $('passengers') as HTMLInputElement;
+        travInput.max = String(selectedVehicle.maxTravelers);
+        if (Number(travInput.value) > selectedVehicle.maxTravelers) travInput.value = String(selectedVehicle.maxTravelers);
+        $('veh-hint').textContent = `تم اختيار ${selectedVehicle.name} — ${selectedVehicle.maxTravelers} ركاب بحد أقصى، ${selectedVehicle.freeBags} شنط كبيرة مجانية`;
+        $('bags-hint').textContent = `الحد الأقصى للعربية ${selectedVehicle.maxBags} شنطة كبيرة • ${selectedVehicle.freeBags} شنط مجانية`;
+        render();
+      });
+    });
+
+    document.getElementById('companions')?.addEventListener('input', () => { render(); });
 
     form.addEventListener('input', render);
     form.addEventListener('change', render);
@@ -390,40 +710,55 @@ const AREAS = ['دمياط الجديدة', 'دمياط', 'كفر سعد', 'فا
       const c = calc();
       const fail = (msg: string) => { errBox.textContent = msg; errBox.classList.add('is-visible'); errBox.scrollIntoView({ block: 'center', behavior: 'smooth' }); };
 
-      if (!airportSel.value) return fail('يرجى اختيار المطار.');
+      if (!selectedAirport) return fail('يرجى اختيار المطار من القائمة.');
       if (!flightInput.value || !c.flight) return fail('يرجى إدخال تاريخ ووقت إقلاع الطائرة.');
-      if (c.pickup && c.pickup.getTime() < Date.now()) return fail('وقت الإقلاع قريب جداً — يرجى الحجز قبل موعد كافٍ.');
+      if (c.depart && c.depart.getTime() < Date.now()) return fail('وقت الإقلاع قريب جداً — يرجى الحجز قبل موعد كافٍ.');
+
+      const pax = Number(($('passengers') as HTMLInputElement).value) || 1;
+      const comp = Number(($('companions') as HTMLInputElement).value) || 0;
+      if (pax + comp > selectedVehicle.maxTravelers) return fail(`هذه السيارة تتسع لـ ${selectedVehicle.maxTravelers} ركاب فقط (مسافرون + مرافقون).`);
+      const bagsVal = Number(($('bags') as HTMLInputElement).value) || 0;
+      if (bagsVal > selectedVehicle.maxBags) return fail(`هذه السيارة تتسع لـ ${selectedVehicle.maxBags} شنطة كبيرة فقط.`);
+
       const name = ($('trav-name') as HTMLInputElement).value.trim();
       const phone = ($('trav-phone') as HTMLInputElement).value.trim();
       if (name.length < 2) return fail('يرجى إدخال اسم المسافر.');
       if (!isEgyptianMobile(phone)) return fail(EG_PHONE_ERROR);
       errBox.classList.remove('is-visible');
 
-      const opt = airportSel.selectedOptions[0];
-      const fromArea = ($('from-area') as HTMLSelectElement).value;
+      const fromArea = fromAreaPlace?.name || (document.getElementById('from-area') as HTMLInputElement).value || '';
       const orderId = 'WSL-' + new Date().getFullYear() + '-' + Math.floor(100000 + Math.random() * 900000);
+      const waitPickupMins = Number(($('wait-pickup') as HTMLSelectElement).value) || 0;
+      const waitAirportMins = Number(($('wait-airport') as HTMLSelectElement).value) || 0;
 
       const order = {
         id: orderId,
         type: 'توصيل مطار',
         icon: '✈️',
-        route: `${fromArea} ← ${opt.dataset.name}`,
+        route: `${fromArea} ← ${selectedAirport!.name}`,
         date: 'الآن',
         price: `${c.total} ج.م`,
         status: 'active',
         kind: 'airport',
-        airport: opt.dataset.name,
+        airport: selectedAirport!.name,
         flightTime: c.flight!.toISOString(),
-        pickupTime: c.pickup!.toISOString(),
-        arriveTime: c.arrive!.toISOString(),
+        driverArrivalTime: c.driverArrival?.toISOString(),
+        departTime: c.depart?.toISOString(),
+        arriveTime: c.arrive?.toISOString(),
+        checkinDeadline: c.checkinDeadline?.toISOString(),
         airline: ($('airline') as HTMLInputElement).value,
         flightNo: ($('flight-no') as HTMLInputElement).value,
         terminal: ($('terminal') as HTMLInputElement).value,
-        passengers: ($('passengers') as HTMLInputElement).value,
-        bags: ($('bags') as HTMLInputElement).value,
+        vehicle: selectedVehicle.id,
+        vehicleName: selectedVehicle.name,
+        passengers: pax,
+        companions: comp,
+        bags: bagsVal,
+        waitPickup: waitPickupMins,
+        waitAirport: waitAirportMins,
         recipient: name,
         phone: normalizeEgyptianPhone(phone),
-        address: `${fromArea} — ${($('address') as HTMLTextAreaElement).value}`,
+        address: `${fromArea} — ${($('address') as HTMLTextAreaElement).value.trim()}`,
         createdAt: new Date().toISOString(),
       };
 
@@ -436,12 +771,16 @@ const AREAS = ['دمياط الجديدة', 'دمياط', 'كفر سعد', 'فا
       // Success
       $('air-success-id').textContent = orderId;
       $('air-success-card').innerHTML = `
-        <div class="row"><span>المطار</span><span>${opt.dataset.name}</span></div>
-        <div class="row"><span>المغادرة من بيتك</span><span>${fmtDateTime(c.pickup!)}</span></div>
-        <div class="row"><span>الوصول للمطار</span><span>${fmtDateTime(c.arrive!)}</span></div>
+        <div class="row"><span>المطار</span><span>${selectedAirport!.name}</span></div>
+        <div class="row"><span>السيارة</span><span>${selectedVehicle.name}</span></div>
+        ${c.driverArrival ? `<div class="row"><span>وصول السائق للاستلام</span><span>${fmtDateTime(c.driverArrival)}</span></div>` : ''}
+        ${c.depart ? `<div class="row"><span>المغادرة من نقطة البداية</span><span>${fmtDateTime(c.depart)}</span></div>` : ''}
+        ${c.arrive ? `<div class="row"><span>الوصول للمطار</span><span>${fmtDateTime(c.arrive)}</span></div>` : ''}
         <div class="row"><span>إقلاع الطائرة</span><span>${fmtDateTime(c.flight!)}</span></div>
         <div class="row"><span>الرحلة</span><span>${order.airline || '—'} ${order.flightNo || ''}</span></div>
-        <div class="row"><span>المسافرون / الشنط</span><span>${order.passengers} / ${order.bags}</span></div>
+        <div class="row"><span>المسافرون</span><span>${pax}</span></div>
+        ${comp > 0 ? `<div class="row"><span>مرافقون رايح جاي</span><span>${comp}</span></div>` : ''}
+        <div class="row"><span>الشنط الكبيرة</span><span>${bagsVal}</span></div>
         <div class="row"><span>الإجمالي</span><span>${c.total} ج.م</span></div>`;
 
       ($('air-wrap') as HTMLElement).style.display = 'none';

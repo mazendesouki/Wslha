@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>غير متصل | وصّلها</title>
+  <link rel="icon" href="/icon.svg" type="image/svg+xml">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Cairo', system-ui, -apple-system, sans-serif;
+      background: linear-gradient(160deg, #3B6EF8 0%, #2952D9 100%);
+      color: #fff;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 24px;
+    }
+    .card {
+      max-width: 360px;
+    }
+    .icon {
+      width: 96px; height: 96px;
+      margin: 0 auto 24px;
+      background: rgba(255,255,255,.12);
+      border-radius: 28px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 48px;
+    }
+    h1 { font-size: 24px; margin-bottom: 12px; }
+    p { font-size: 16px; line-height: 1.7; opacity: .9; margin-bottom: 24px; }
+    button {
+      font-family: inherit;
+      font-size: 16px;
+      font-weight: 700;
+      background: #fff;
+      color: #2952D9;
+      border: none;
+      border-radius: 14px;
+      padding: 14px 32px;
+      cursor: pointer;
+    }
+    button:active { transform: scale(.97); }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="icon">📡</div>
+    <h1>لا يوجد اتصال بالإنترنت</h1>
+    <p>تأكد من اتصالك بالشبكة وحاول مرة أخرى. بعض الصفحات التي زرتها مسبقًا متاحة بدون إنترنت.</p>
+    <button onclick="location.reload()">إعادة المحاولة</button>
+  </div>
+</body>
+</html>

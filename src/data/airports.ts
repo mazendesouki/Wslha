@@ -1,13 +1,13 @@
 // Egyptian airports served from Damietta governorate.
-// Distance/drive-time are approximate road estimates from Damietta city.
-// Price is distance-based (see priceFor()).
+// Pricing model updated June 2026 for current Egyptian fuel costs.
 
+// ─── Airports ────────────────────────────────────────────────────────────────
 export interface Airport {
   id: string;
   name: string;
   city: string;
-  code: string;       // IATA
-  distanceKm: number; // road distance from Damietta
+  code: string;
+  distanceKm: number;
   driveMinutes: number;
 }
 
@@ -26,24 +26,73 @@ export const AIRPORTS: Airport[] = [
   { id: 'atz', name: 'مطار أسيوط',                 city: 'أسيوط',        code: 'ATZ', distanceKm: 620, driveMinutes: 450 },
 ];
 
-// Distance-based pricing: base fee + per-km rate, rounded up to nearest 10 EGP.
-export const AIRPORT_BASE_FEE = 150;   // ج.م
-export const AIRPORT_RATE_PER_KM = 6;  // ج.م / كم
-
-export function priceForDistance(distanceKm: number): number {
-  const raw = AIRPORT_BASE_FEE + distanceKm * AIRPORT_RATE_PER_KM;
-  return Math.ceil(raw / 10) * 10;
-}
-
 export function getAirport(id: string): Airport | undefined {
   return AIRPORTS.find(a => a.id === id);
 }
 
-// Recommended check-in buffer (minutes before departure to BE at the airport).
-export const CHECKIN_BUFFER = {
-  domestic: 120,       // محلية
-  international: 180,   // دولية
-};
+// ─── Vehicle types ────────────────────────────────────────────────────────────
+export interface VehicleType {
+  id: string;
+  name: string;
+  icon: string;
+  desc: string;
+  maxTravelers: number; // max seated passengers (excl. driver)
+  freeBags: number;     // large bags included in base price
+  maxBags: number;      // physical maximum large bags
+  surcharge: number;    // EGP added on top of distance price
+}
 
-// Extra safety margin added to the drive so the car leaves a bit early.
-export const SAFETY_MARGIN = 20; // minutes
+export const VEHICLE_TYPES: VehicleType[] = [
+  {
+    id: 'sedan', name: 'سيدان', icon: '🚗',
+    desc: 'تويوتا / هيونداي',
+    maxTravelers: 3, freeBags: 2, maxBags: 2, surcharge: 0,
+  },
+  {
+    id: 'suv', name: 'SUV / كروز', icon: '🚙',
+    desc: 'لاند كروزر / باترول',
+    maxTravelers: 6, freeBags: 4, maxBags: 6, surcharge: 400,
+  },
+  {
+    id: 'van', name: 'ميكروباص', icon: '🚐',
+    desc: 'H1 / سبرينتر',
+    maxTravelers: 10, freeBags: 8, maxBags: 20, surcharge: 800,
+  },
+];
+
+// ─── Distance-based pricing 2026 ─────────────────────────────────────────────
+// base 300 EGP + tiered per-km rate (driver goes & returns — fuel cost baked in)
+// ≤150 km : 11 EGP/km  |  151-400 km : 10 EGP/km  |  401 km+ : 9 EGP/km
+export const AIRPORT_BASE_FEE = 300;
+
+export function priceForDistance(distanceKm: number): number {
+  const TIERS: { upTo: number; rate: number }[] = [
+    { upTo: 150,      rate: 11 },
+    { upTo: 400,      rate: 10 },
+    { upTo: Infinity, rate: 9  },
+  ];
+  let cost = AIRPORT_BASE_FEE;
+  let covered = 0;
+  for (const tier of TIERS) {
+    if (distanceKm <= covered) break;
+    const km = Math.min(distanceKm, tier.upTo) - covered;
+    cost += km * tier.rate;
+    covered = tier.upTo;
+  }
+  return Math.ceil(cost / 50) * 50;
+}
+
+// ─── Extra fees ───────────────────────────────────────────────────────────────
+export const EXTRA_BAG_FEE      = 25;  // ج.م per bag over vehicle's free allowance
+export const COMPANION_FEE      = 250; // ج.م per returning companion (round trip)
+export const WAIT_PICKUP_FREE   = 15;  // free minutes waiting at pickup
+export const WAIT_PICKUP_PER15  = 30;  // ج.م per each additional 15 min at pickup
+export const WAIT_AIRPORT_FREE  = 30;  // free minutes at airport
+export const WAIT_AIRPORT_PER30 = 40;  // ج.م per each additional 30 min at airport
+
+// ─── Timing constants ─────────────────────────────────────────────────────────
+export const CHECKIN_BUFFER = {
+  domestic: 120,      // minutes before departure: must be at airport
+  international: 180,
+};
+export const SAFETY_MARGIN = 20; // extra minutes added to drive time
