@@ -164,7 +164,9 @@ import { AIRPORTS, priceForDistance, VEHICLE_TYPES } from '../data/airports';
     box-shadow: var(--shadow-sm);
   }
 
-  .air-success__card-header {
+  /* card-header + rows are injected at runtime via innerHTML, so they must be
+     :global — Astro's scoped [data-astro-cid] attribute is NOT added to JS-inserted nodes */
+  .air-success__card :global(.air-success__card-header) {
     background: linear-gradient(135deg, var(--color-primary), #1d4ed8);
     color: #fff;
     padding: var(--sp-4) var(--sp-5);
@@ -175,7 +177,7 @@ import { AIRPORTS, priceForDistance, VEHICLE_TYPES } from '../data/airports';
     gap: var(--sp-2);
   }
 
-  .air-success__card .row {
+  .air-success__card :global(.row) {
     display: grid;
     grid-template-columns: 1fr 1.4fr;
     align-items: center;
@@ -184,23 +186,23 @@ import { AIRPORTS, priceForDistance, VEHICLE_TYPES } from '../data/airports';
     border-bottom: 1px solid var(--color-border);
     font-size: var(--text-sm);
   }
-  .air-success__card .row:last-child { border-bottom: none; }
-  .air-success__card .row-label {
+  .air-success__card :global(.row:last-child) { border-bottom: none; }
+  .air-success__card :global(.row-label) {
     color: var(--color-text-muted);
     font-weight: var(--weight-semi);
     white-space: nowrap;
   }
-  .air-success__card .row-val {
+  .air-success__card :global(.row-val) {
     font-weight: var(--weight-bold);
     color: var(--color-text);
     text-align: left;
   }
-  .air-success__card .row--total {
+  .air-success__card :global(.row--total) {
     background: var(--color-primary-light);
     font-size: var(--text-base);
   }
-  .air-success__card .row--total .row-label { color: var(--color-primary); font-weight: var(--weight-black); }
-  .air-success__card .row--total .row-val   { color: var(--color-primary); font-size: var(--text-lg); }
+  .air-success__card :global(.row--total .row-label) { color: var(--color-primary); font-weight: var(--weight-black); }
+  .air-success__card :global(.row--total .row-val)   { color: var(--color-primary); font-size: var(--text-lg); }
 
   .air-success__actions {
     display: flex;
