@@ -111,7 +111,7 @@ const HOW_STEPS = [
   }
 
   /* ── Text side ── */
-  .hero__text { color: #fff; }
+  .hero__text { color: #fff; min-width: 0; overflow-wrap: break-word; }
 
   .hero__badge {
     display: inline-flex;
@@ -145,15 +145,15 @@ const HOW_STEPS = [
   }
 
   .hero__title {
-    font-size: clamp(3rem, 5vw, 4.5rem);
+    font-size: clamp(2.5rem, 4vw, 3.5rem);
     font-weight: var(--weight-black);
-    line-height: 1.05;
+    line-height: 1.1;
     margin-bottom: var(--sp-4);
-    letter-spacing: -1px;
+    letter-spacing: -0.5px;
   }
 
   .hero__subtitle {
-    font-size: var(--text-xl);
+    font-size: clamp(1.1rem, 2vw, 1.35rem);
     font-weight: var(--weight-semi);
     margin-bottom: var(--sp-3);
     opacity: 0.92;
@@ -179,7 +179,8 @@ const HOW_STEPS = [
   .hero__trust {
     display: flex;
     align-items: center;
-    gap: var(--sp-4);
+    flex-wrap: wrap;
+    gap: var(--sp-3) var(--sp-4);
     opacity: 0.75;
     font-size: var(--text-sm);
   }
