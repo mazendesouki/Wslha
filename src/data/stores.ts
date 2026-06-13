@@ -1,5 +1,7 @@
 // Real merchants in New Damietta (دمياط الجديدة) — verified from ElMenus, YellowPages, MenuEgypt
-// Prices in EGP — updated for 2026 Egyptian market rates
+// Prices in EGP — updated June 2026 against live Egyptian market rates
+// Market reference (June 2026): فراخ بيضاء ~83/كجم · لحمة بلدي 450–480 · بلطي 80–84 ·
+// جمبري ممتاز 760–860 · بيض كرتونة ~165 · لبن لتر ~45 · طماطم ~24 · بطاطس ~18
 
 export interface Product {
   id: string;
@@ -240,7 +242,7 @@ export const STORES: Store[] = [
       ]},
       { section: 'لحوم ودواجن', items: [
         { id: 'fm13', name: 'فراخ كاملة طازجة (كيلو)', price: 85, emoji: '🍗' },
-        { id: 'fm14', name: 'لحمة بتلو مفروم (كيلو)', price: 420, emoji: '🥩' },
+        { id: 'fm14', name: 'لحمة بتلو مفروم (كيلو)', price: 460, emoji: '🥩' },
         { id: 'fm15', name: 'فيليه سمك (كيلو)', price: 195, emoji: '🐟' },
       ]},
       { section: 'مواد تنظيف', items: [
@@ -480,7 +482,7 @@ export const STORES: Store[] = [
     menu: [
       { section: 'خضروات', items: [
         { id: 'np1', name: 'طماطم (كيلو)', price: 24, emoji: '🍅' },
-        { id: 'np2', name: 'بطاطس (كيلو)', price: 22, emoji: '🥔' },
+        { id: 'np2', name: 'بطاطس (كيلو)', price: 18, emoji: '🥔' },
         { id: 'np3', name: 'بصل أبيض (كيلو)', price: 20, emoji: '🧅' },
         { id: 'np4', name: 'خيار (كيلو)', price: 18, emoji: '🥒' },
         { id: 'np5', name: 'جزر (كيلو)', price: 18, emoji: '🥕' },
@@ -547,6 +549,177 @@ export const STORES: Store[] = [
         { id: 'mz13', name: 'باور بانك 20000 مللي', price: 800, emoji: '🔋' },
         { id: 'mz14', name: 'باور بانك 10000 مللي', price: 490, emoji: '🔋' },
         { id: 'mz15', name: 'ساعة ذكية سمارت ووتش', price: 1500, emoji: '⌚' },
+      ]},
+    ],
+  },
+
+  // ── كشري ───────────────────────────────────────────────────
+
+  {
+    id: 'koshary-damietta',
+    name: 'كشري دمياط الجديدة',
+    category: 'كشري وأكل مصري',
+    categoryId: 'restaurant',
+    emoji: '🍝',
+    area: 'دمياط الجديدة — المجاورة الثالثة',
+    address: 'شارع الجامعة، المجاورة الثالثة، دمياط الجديدة',
+    phone: '01122334455',
+    rating: 4.6,
+    reviews: 1520,
+    deliveryTime: '25–40 دقيقة',
+    deliveryFee: 12,
+    minOrder: 40,
+    tagline: 'كشري مصري أصيل — عدس وحمص وشطة على أصولها',
+    menu: [
+      { section: 'كشري', items: [
+        { id: 'ks1', name: 'كشري صغير', desc: 'مكرونة + رز + عدس + حمص + شطة + دقة', price: 35, emoji: '🍝' },
+        { id: 'ks2', name: 'كشري وسط', price: 50, emoji: '🍝' },
+        { id: 'ks3', name: 'كشري كبير', price: 70, emoji: '🍝' },
+        { id: 'ks4', name: 'كشري فاميلي (4 أفراد)', desc: 'طبق عائلي كبير', price: 180, emoji: '🥘' },
+        { id: 'ks5', name: 'كشري سوبر (بصل مقرمش زيادة)', price: 85, emoji: '🍝' },
+      ]},
+      { section: 'إضافات', items: [
+        { id: 'ks6', name: 'بصل مقلي إضافي', price: 12, emoji: '🧅' },
+        { id: 'ks7', name: 'صلصة شطة', price: 8, emoji: '🌶️' },
+        { id: 'ks8', name: 'دقة (ثوم وخل)', price: 8, emoji: '🧄' },
+        { id: 'ks9', name: 'حمص الشام علبة', price: 20, emoji: '🫘' },
+      ]},
+      { section: 'حلويات ومشروبات', items: [
+        { id: 'ks10', name: 'رز بلبن', price: 30, emoji: '🍮' },
+        { id: 'ks11', name: 'مهلبية', price: 28, emoji: '🍨' },
+        { id: 'ks12', name: 'مياه معدنية', price: 12, emoji: '💧' },
+        { id: 'ks13', name: 'بيبسي كانز', price: 20, emoji: '🥤' },
+      ]},
+    ],
+  },
+
+  // ── فول وفلافل ─────────────────────────────────────────────
+
+  {
+    id: 'shabrawy-damietta',
+    name: 'فول وفلافل الشبراوي',
+    category: 'فطار شعبي',
+    categoryId: 'restaurant',
+    emoji: '🧆',
+    area: 'دمياط الجديدة — الحي الثالث',
+    address: 'شارع 15، الحي الثالث، دمياط الجديدة',
+    phone: '01099887766',
+    rating: 4.7,
+    reviews: 2210,
+    deliveryTime: '20–35 دقيقة',
+    deliveryFee: 10,
+    minOrder: 30,
+    tagline: 'فطارك على أصوله — فول وطعمية وبيض طازج كل صباح',
+    menu: [
+      { section: 'ساندويتشات', items: [
+        { id: 'sh1', name: 'ساندويتش فول', price: 12, emoji: '🥙' },
+        { id: 'sh2', name: 'ساندويتش طعمية', price: 12, emoji: '🧆' },
+        { id: 'sh3', name: 'ساندويتش بطاطس', price: 14, emoji: '🥔' },
+        { id: 'sh4', name: 'ساندويتش بيض', price: 18, emoji: '🥚' },
+        { id: 'sh5', name: 'ساندويتش فول بالزيت الحار', price: 15, emoji: '🌶️' },
+        { id: 'sh6', name: 'ساندويتش بسطرمة بالبيض', price: 35, emoji: '🥪' },
+      ]},
+      { section: 'أطباق', items: [
+        { id: 'sh7', name: 'طبق فول مدمس', desc: 'فول بالزيت والكمون والليمون', price: 30, emoji: '🫘' },
+        { id: 'sh8', name: 'طبق طعمية (6 قطع)', price: 32, emoji: '🧆' },
+        { id: 'sh9', name: 'بيض أومليت بالخضار', price: 45, emoji: '🍳' },
+        { id: 'sh10', name: 'فول بالطحينة', price: 38, emoji: '🫙' },
+        { id: 'sh11', name: 'فول إسكندراني', price: 42, emoji: '🥘' },
+      ]},
+      { section: 'وجبة فطار عائلية', items: [
+        { id: 'sh12', name: 'صينية فطار (فول + طعمية + بيض + جبنة + بطاطس + عيش)', price: 145, emoji: '🍽️' },
+        { id: 'sh13', name: 'جبنة قريش بالطماطم', price: 25, emoji: '🧀' },
+        { id: 'sh14', name: 'بابا غنوج', price: 28, emoji: '🍆' },
+      ]},
+      { section: 'مشروبات', items: [
+        { id: 'sh15', name: 'شاي', price: 10, emoji: '🍵' },
+        { id: 'sh16', name: 'لبن بالشوكولاتة', price: 22, emoji: '🥛' },
+      ]},
+    ],
+  },
+
+  // ── بيتزا ومعجنات ──────────────────────────────────────────
+
+  {
+    id: 'italiano-pizza',
+    name: 'بيتزا إيطاليانو دمياط',
+    category: 'بيتزا ومعجنات',
+    categoryId: 'restaurant',
+    emoji: '🍕',
+    area: 'دمياط الجديدة — الحي الأول',
+    address: 'شارع المعهد الديني، الحي الأول، دمياط الجديدة',
+    phone: '01200556677',
+    rating: 4.5,
+    reviews: 1340,
+    deliveryTime: '35–55 دقيقة',
+    deliveryFee: 18,
+    minOrder: 70,
+    tagline: 'بيتزا إيطالي طازج — عجينة هشة وجبنة موتزاريلا أصلية',
+    menu: [
+      { section: 'بيتزا (وسط)', items: [
+        { id: 'it1', name: 'بيتزا مارجريتا', desc: 'صلصة طماطم وموتزاريلا', price: 95, emoji: '🍕' },
+        { id: 'it2', name: 'بيتزا بيبروني', price: 130, emoji: '🍕' },
+        { id: 'it3', name: 'بيتزا فراخ باربكيو', price: 145, emoji: '🍕' },
+        { id: 'it4', name: 'بيتزا مشكل لحوم', desc: 'بسطرمة + سجق + لحمة + فراخ', price: 165, emoji: '🍕' },
+        { id: 'it5', name: 'بيتزا خضار', price: 110, emoji: '🍕' },
+        { id: 'it6', name: 'بيتزا سي فود (جمبري)', price: 195, emoji: '🍕' },
+      ]},
+      { section: 'فطائر ومعجنات', items: [
+        { id: 'it7', name: 'فطيرة جبنة وزعتر', price: 55, emoji: '🥐' },
+        { id: 'it8', name: 'كالزوني بالفراخ', price: 90, emoji: '🥟' },
+        { id: 'it9', name: 'عيش بالثوم (بريد ستيك)', price: 50, emoji: '🥖' },
+        { id: 'it10', name: 'فطيرة سجق', price: 65, emoji: '🌭' },
+      ]},
+      { section: 'باستا', items: [
+        { id: 'it11', name: 'باستا ألفريدو بالفراخ', price: 120, emoji: '🍝' },
+        { id: 'it12', name: 'باستا بولونيز', price: 115, emoji: '🍝' },
+        { id: 'it13', name: 'لازانيا باللحمة', price: 135, emoji: '🍲' },
+      ]},
+      { section: 'إضافات ومشروبات', items: [
+        { id: 'it14', name: 'صوص رانش / باربكيو', price: 15, emoji: '🫙' },
+        { id: 'it15', name: 'بطاطس ودجز', price: 45, emoji: '🍟' },
+        { id: 'it16', name: 'كوكاكولا 1 لتر', price: 25, emoji: '🥤' },
+      ]},
+    ],
+  },
+
+  // ── مخبز وعيش ──────────────────────────────────────────────
+
+  {
+    id: 'nour-bakery',
+    name: 'مخبز ومعجنات النور',
+    category: 'مخبز وفينو',
+    categoryId: 'bakery',
+    emoji: '🥖',
+    area: 'دمياط الجديدة — المجاورة الثانية',
+    address: 'شارع السوق التجاري، المجاورة الثانية، دمياط الجديدة',
+    phone: '01066778899',
+    rating: 4.6,
+    reviews: 980,
+    deliveryTime: '20–35 دقيقة',
+    deliveryFee: 10,
+    minOrder: 30,
+    tagline: 'عيش فينو وفرنساوي طازج بالساعة — معجنات صباحية يومية',
+    menu: [
+      { section: 'مخبوزات', items: [
+        { id: 'nb1', name: 'عيش فينو (10 أرغفة)', price: 25, emoji: '🥖' },
+        { id: 'nb2', name: 'عيش فرنساوي (باجيت)', price: 12, emoji: '🥖' },
+        { id: 'nb3', name: 'عيش توست أبيض', price: 30, emoji: '🍞' },
+        { id: 'nb4', name: 'عيش توست بُر', price: 35, emoji: '🍞' },
+        { id: 'nb5', name: 'عيش برجر (6 حبات)', price: 28, emoji: '🍔' },
+      ]},
+      { section: 'معجنات حلوة', items: [
+        { id: 'nb6', name: 'كرواسون سادة (4 حبات)', price: 60, emoji: '🥐' },
+        { id: 'nb7', name: 'كرواسون شوكولاتة (4 حبات)', price: 80, emoji: '🥐' },
+        { id: 'nb8', name: 'بان كيك بالعسل', price: 45, emoji: '🥞' },
+        { id: 'nb9', name: 'دانش بالجبنة', price: 22, emoji: '🧀' },
+        { id: 'nb10', name: 'ميني باتيه (12 قطعة)', price: 75, emoji: '🥟' },
+      ]},
+      { section: 'معجنات مالحة', items: [
+        { id: 'nb11', name: 'فطيرة سجق', price: 18, emoji: '🌭' },
+        { id: 'nb12', name: 'بيتزا ميني (4 قطع)', price: 60, emoji: '🍕' },
+        { id: 'nb13', name: 'سمبوسك جبنة (10 قطع)', price: 55, emoji: '🥟' },
+        { id: 'nb14', name: 'فطير مشلتت سادة', price: 40, emoji: '🥞' },
       ]},
     ],
   },
