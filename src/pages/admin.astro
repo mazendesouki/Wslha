@@ -1034,10 +1034,8 @@ function toggleReject(type) {
 async function confirmApprove(type) {
   const phone = type === 'driver' ? currentDriverPhone : currentMerchantPhone;
   if (!confirm(`اعتماد هذا الطلب؟`)) return;
-  const now = new Date().toISOString();
   const table = type === 'driver' ? 'driver_applications' : 'merchant_applications';
-  const ok1 = await sbPatch(`${table}?phone=eq.${encodeURIComponent(phone)}`,
-    { status:'approved', reviewed_by: ADMIN.phone, reviewed_at: now });
+  const ok1 = await sbPatch(`${table}?phone=eq.${encodeURIComponent(phone)}`, { status:'approved' });
   const patch = { status:'approved' };
   if (type === 'driver') patch.role = 'driver';
   const ok2 = await sbPatch(`accounts?phone=eq.${encodeURIComponent(phone)}`, patch);
@@ -1046,7 +1044,7 @@ async function confirmApprove(type) {
     closeModal(`${type}-modal`);
     type === 'driver' ? loadDriverApps() : loadMerchantApps();
     loadDash();
-  } else showToast('❌ حدث خطأ', '#DC2626');
+  } else showToast('❌ حدث خطأ في تحديث قاعدة البيانات', '#DC2626');
 }
 
 async function confirmReject(type) {
@@ -1054,17 +1052,15 @@ async function confirmReject(type) {
   const reason = document.getElementById(`${type}-reject-reason`).value.trim();
   if (!reason) { showToast('⚠️ أدخل سبب الرفض', '#D97706'); return; }
   if (!confirm('رفض هذا الطلب؟')) return;
-  const now = new Date().toISOString();
   const table = type === 'driver' ? 'driver_applications' : 'merchant_applications';
-  const ok1 = await sbPatch(`${table}?phone=eq.${encodeURIComponent(phone)}`,
-    { status:'rejected', reviewed_by: ADMIN.phone, reviewed_at: now, rejection_reason: reason });
+  const ok1 = await sbPatch(`${table}?phone=eq.${encodeURIComponent(phone)}`, { status:'rejected' });
   const ok2 = await sbPatch(`accounts?phone=eq.${encodeURIComponent(phone)}`, { status:'rejected' });
   if (ok1 && ok2) {
     showToast('تم الرفض', '#DC2626');
     closeModal(`${type}-modal`);
     type === 'driver' ? loadDriverApps() : loadMerchantApps();
     loadDash();
-  } else showToast('❌ حدث خطأ', '#DC2626');
+  } else showToast('❌ حدث خطأ في تحديث قاعدة البيانات', '#DC2626');
 }
 
 /* ═══════════════════ ORDERS ════════════════════════════════ */
