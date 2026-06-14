@@ -507,16 +507,15 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site ?? 'https://wslha.co
         }
       });
 
-      // Chrome/Edge/Samsung: capture event, show banner after short delay
+      // Chrome/Edge/Samsung: capture native prompt when it fires
       window.addEventListener('beforeinstallprompt', function(e) {
         e.preventDefault();
         window.__pwaPrompt = e;
-        setTimeout(showBanner, 1500);
       });
-      if (window.__pwaPrompt) setTimeout(showBanner, 1500);
+      if (window.__pwaPrompt) {/* already captured by head script */}
 
-      // Safari / Firefox / others: show banner after delay too
-      if (isSafari || isFF) setTimeout(showBanner, 1500);
+      // Show banner for ALL visitors after 2 seconds — button behaviour adapts per browser
+      setTimeout(showBanner, 2000);
 
       window.addEventListener('appinstalled', function() {
         try { localStorage.setItem('wslha_installed', '1'); } catch(x) {}
