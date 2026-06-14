@@ -613,15 +613,16 @@ import { AIRPORTS, priceForDistance, VEHICLE_TYPES } from '../data/airports';
     async function initFromAreaAutocomplete(): Promise<void> {
       await loadGoogleMaps();
       const G = (window as any).google.maps;
-      const damiettaBounds = new G.LatLngBounds(
-        { lat: 31.25, lng: 31.55 },
-        { lat: 31.60, lng: 32.05 }
+      // Soft bias toward Damietta — user can search anywhere in Egypt
+      const damiettaBias = new G.LatLngBounds(
+        { lat: 31.20, lng: 31.50 },
+        { lat: 31.65, lng: 32.10 }
       );
       const ac = new G.places.Autocomplete(document.getElementById('from-area'), {
-        bounds: damiettaBounds,
+        bounds: damiettaBias,
         componentRestrictions: { country: 'eg' },
         strictBounds: false,
-        types: ['geocode'],
+        types: [],                   // all types: streets, cafes, buildings...
         fields: ['geometry', 'name', 'formatted_address'],
       });
       ac.addListener('place_changed', () => {

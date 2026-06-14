@@ -285,6 +285,7 @@ import { POPULAR_PLACES, PLACES, PLACE_CATEGORIES, CATEGORY_COLORS } from '../da
     border-radius: var(--radius-xl);
     box-shadow: var(--shadow-md);
     overflow: hidden;
+    position: relative; /* needed for pin-overlay absolute positioning */
   }
 
   .map-header {
@@ -600,6 +601,114 @@ import { POPULAR_PLACES, PLACES, PLACE_CATEGORIES, CATEGORY_COLORS } from '../da
   }
   .qp-mode__btn.active { border-color: var(--color-primary); background: var(--color-primary); color: #fff; }
 
+  /* ── Pin mode overlay ───────────────────────────────────────────── */
+  .pin-overlay {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    z-index: 10;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    pointer-events: none;
+    padding: var(--sp-4);
+  }
+  .pin-overlay__bar {
+    background: rgba(255,255,255,0.95);
+    border-radius: var(--radius-xl);
+    padding: var(--sp-3) var(--sp-5);
+    font-weight: var(--weight-bold);
+    font-size: var(--text-sm);
+    box-shadow: var(--shadow-md);
+    pointer-events: auto;
+    display: flex;
+    align-items: center;
+    gap: var(--sp-3);
+    backdrop-filter: blur(8px);
+  }
+  .pin-overlay__actions {
+    display: flex;
+    gap: var(--sp-2);
+    pointer-events: auto;
+  }
+  .pin-overlay__btn {
+    padding: var(--sp-3) var(--sp-5);
+    border-radius: var(--radius-lg);
+    font-family: var(--font-body);
+    font-weight: var(--weight-black);
+    font-size: var(--text-sm);
+    cursor: pointer;
+    border: none;
+    transition: all .2s;
+  }
+  .pin-overlay__btn--cancel  { background: rgba(255,255,255,.9); color: var(--color-text); }
+  .pin-overlay__btn--confirm { background: var(--color-primary); color: #fff; box-shadow: 0 4px 12px rgba(59,130,246,.4); }
+  .pin-overlay__btn--confirm:disabled { opacity: .5; cursor: not-allowed; }
+
+  /* ── Recent places ───────────────────────────────────────────────── */
+  .recents-wrap { margin-bottom: var(--sp-3); }
+  .recents-label {
+    font-size: var(--text-xs);
+    font-weight: var(--weight-bold);
+    color: var(--color-text-muted);
+    margin-bottom: var(--sp-2);
+    text-transform: uppercase;
+    letter-spacing: .04em;
+  }
+  .recent-chips { display: flex; gap: var(--sp-2); flex-wrap: wrap; }
+  .recent-chip {
+    display: flex; align-items: center; gap: 5px;
+    padding: var(--sp-1) var(--sp-3);
+    border-radius: var(--radius-full);
+    border: 1px solid var(--color-border);
+    background: var(--color-bg);
+    font-size: 11px;
+    color: var(--color-text-muted);
+    cursor: pointer;
+    font-family: var(--font-body);
+    max-width: 180px;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    transition: all .15s;
+  }
+  .recent-chip:hover { border-color: var(--color-primary); color: var(--color-primary); }
+
+  /* ── Category quick chips ────────────────────────────────────────── */
+  .cat-chips-label {
+    font-size: var(--text-xs);
+    font-weight: var(--weight-bold);
+    color: var(--color-text-muted);
+    margin-bottom: var(--sp-2);
+    margin-top: var(--sp-3);
+  }
+  .cat-chips { display: flex; gap: var(--sp-2); flex-wrap: wrap; margin-bottom: var(--sp-3); }
+  .cat-chip {
+    padding: var(--sp-1) var(--sp-3);
+    border-radius: var(--radius-full);
+    border: 1.5px solid var(--color-border);
+    background: var(--color-bg);
+    font-size: 12px;
+    font-weight: var(--weight-bold);
+    color: var(--color-text);
+    cursor: pointer;
+    font-family: var(--font-body);
+    transition: all .15s;
+    display: flex; align-items: center; gap: 4px;
+  }
+  .cat-chip:hover { border-color: var(--color-primary); background: var(--color-primary-light); }
+
+  /* pin buttons next to inputs */
+  .pin-btn {
+    width: 36px; height: 36px; flex-shrink: 0;
+    border: 1.5px solid var(--color-border); border-radius: var(--radius);
+    background: var(--color-bg-soft); cursor: pointer; font-size: 0.95rem;
+    display: flex; align-items: center; justify-content: center;
+    transition: all .2s; title: "اختر من الخريطة";
+    color: var(--color-text-muted);
+  }
+  .pin-btn:hover { background: #fef3c7; border-color: #f59e0b; }
+
   /* ── Map Legend ──────────────────────────────────────────────────── */
   .map-legend-bar {
     display: flex;
@@ -671,6 +780,29 @@ import { POPULAR_PLACES, PLACES, PLACE_CATEGORIES, CATEGORY_COLORS } from '../da
                   <button class="qp-mode__btn active" id="qp-mode-from" type="button">🔵 نقطة الانطلاق</button>
                   <button class="qp-mode__btn"        id="qp-mode-to"   type="button">🔴 الوجهة</button>
                 </div>
+                <!-- recent searches -->
+                <div class="recents-wrap" id="recents-wrap" style="display:none">
+                  <div class="recents-label">🕐 أماكن حديثة</div>
+                  <div class="recent-chips" id="recent-list"></div>
+                </div>
+
+                <!-- category shortcuts — full Egypt search -->
+                <div class="cat-chips-label">🔍 بحث سريع في مصر كلها</div>
+                <div class="cat-chips">
+                  <button class="cat-chip" type="button" data-cat="cafe"       data-type="cafe">☕ كافيهات</button>
+                  <button class="cat-chip" type="button" data-cat="restaurant" data-type="restaurant">🍕 مطاعم</button>
+                  <button class="cat-chip" type="button" data-cat="beach"      data-type="natural_feature">🏖️ شواطئ</button>
+                  <button class="cat-chip" type="button" data-cat="bank"       data-type="bank">🏦 بنوك</button>
+                  <button class="cat-chip" type="button" data-cat="hospital"   data-type="hospital">🏥 مستشفيات</button>
+                  <button class="cat-chip" type="button" data-cat="pharmacy"   data-type="pharmacy">💊 صيدليات</button>
+                  <button class="cat-chip" type="button" data-cat="grocery"    data-type="grocery_or_supermarket">🛒 سوبرماركت</button>
+                  <button class="cat-chip" type="button" data-cat="school"     data-type="school">🎓 جامعات</button>
+                  <button class="cat-chip" type="button" data-cat="park"       data-type="park">🌳 حدائق</button>
+                  <button class="cat-chip" type="button" data-cat="gas"        data-type="gas_station">⛽ وقود</button>
+                </div>
+
+                <!-- دمياط الجديدة landmarks tabs -->
+                <div class="cat-chips-label">📍 أماكن دمياط الجديدة</div>
                 <!-- category tabs -->
                 <div class="qp-tabs" id="qp-tabs">
                   <button class="qp-tab active" data-cat="all" type="button">الكل</button>
@@ -709,8 +841,9 @@ import { POPULAR_PLACES, PLACES, PLACE_CATEGORIES, CATEGORY_COLORS } from '../da
                 <div class="route-row__body">
                   <div class="route-row__label">من</div>
                   <div class="autocomplete-wrap">
-                    <input id="from-area" type="text" class="route-pick__input" placeholder="نقطة الانطلاق — اكتب الحي أو المنطقة" autocomplete="off" />
+                    <input id="from-area" type="text" class="route-pick__input" placeholder="ابحث: كافيه، مطعم، شارع، حي... في مصر كلها" autocomplete="off" />
                     <button class="loc-btn" id="btn-my-loc" type="button" title="موقعي الحالي">📍</button>
+                    <button class="pin-btn" id="btn-pin-from" type="button" title="اختر من الخريطة">🗺️</button>
                   </div>
                 </div>
               </div>
@@ -725,7 +858,10 @@ import { POPULAR_PLACES, PLACES, PLACE_CATEGORIES, CATEGORY_COLORS } from '../da
                 </div>
                 <div class="route-row__body">
                   <div class="route-row__label">إلى</div>
-                  <input id="to-area" type="text" class="route-pick__input route-pick__input--to" placeholder="الوجهة — ابحث عن الحي أو المنطقة" autocomplete="off" />
+                  <div class="autocomplete-wrap">
+                    <input id="to-area" type="text" class="route-pick__input route-pick__input--to" placeholder="الوجهة — كافيه، مول، مستشفى، شارع..." autocomplete="off" />
+                    <button class="pin-btn" id="btn-pin-to" type="button" title="اختر الوجهة من الخريطة">🗺️</button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -937,6 +1073,16 @@ import { POPULAR_PLACES, PLACES, PLACE_CATEGORIES, CATEGORY_COLORS } from '../da
             <span>اختر منطقة الانطلاق والوصول لعرض المسار</span>
           </div>
           <div id="ride-map" style="display:none"></div>
+          <!-- inDrive-style pin overlay -->
+          <div class="pin-overlay" id="pin-overlay">
+            <div class="pin-overlay__bar">
+              <span id="pin-mode-label">📍 اضغط على الخريطة لتحديد الموقع</span>
+            </div>
+            <div class="pin-overlay__actions">
+              <button class="pin-overlay__btn pin-overlay__btn--cancel"  id="btn-pin-cancel"  type="button">✕ إلغاء</button>
+              <button class="pin-overlay__btn pin-overlay__btn--confirm" id="btn-pin-confirm" type="button" disabled>✓ تأكيد الموقع</button>
+            </div>
+          </div>
           <!-- Map legend -->
           <div class="map-legend-bar" id="map-legend" style="display:none">
             {PLACE_CATEGORIES.map(c => (
@@ -1051,16 +1197,20 @@ import { POPULAR_PLACES, PLACES, PLACE_CATEGORIES, CATEGORY_COLORS } from '../da
   async function initPlaces() {
     await loadGoogleMaps();
     const G = window.google.maps;
-    const damiettaBounds = new G.LatLngBounds(
-      { lat: 31.25, lng: 31.55 },
-      { lat: 31.60, lng: 32.05 }
+
+    // ── Full Egypt search — no bounds restriction, all place types ──────
+    // Soft bias toward Damietta (non-strict) so nearby results appear first
+    // but any place in Egypt can be found (cafes, beaches, shops, banks...)
+    const damiettaBias = new G.LatLngBounds(
+      { lat: 31.20, lng: 31.50 },
+      { lat: 31.65, lng: 32.10 }
     );
     const opts = {
-      bounds: damiettaBounds,
+      bounds: damiettaBias,         // soft bias only — user can search anywhere
       componentRestrictions: { country: 'eg' },
-      strictBounds: false,
-      types: ['geocode'],
-      fields: ['geometry', 'name', 'formatted_address'],
+      strictBounds: false,          // allow results outside Damietta
+      types: [],                    // empty = all types (cafes, stores, streets, everything)
+      fields: ['geometry', 'name', 'formatted_address', 'types'],
     };
 
     const acFrom = new G.places.Autocomplete(document.getElementById('from-area'), opts);
@@ -1070,17 +1220,22 @@ import { POPULAR_PLACES, PLACES, PLACE_CATEGORIES, CATEGORY_COLORS } from '../da
       const p = acFrom.getPlace();
       if (!p?.geometry?.location) return;
       fromPlace = { name: p.name || p.formatted_address, lat: p.geometry.location.lat(), lng: p.geometry.location.lng() };
+      saveRecentPlace({ name: fromPlace.name, lat: fromPlace.lat, lng: fromPlace.lng });
       updateUI();
     });
     acTo.addListener('place_changed', () => {
       const p = acTo.getPlace();
       if (!p?.geometry?.location) return;
       toPlace = { name: p.name || p.formatted_address, lat: p.geometry.location.lat(), lng: p.geometry.location.lng() };
+      saveRecentPlace({ name: toPlace.name, lat: toPlace.lat, lng: toPlace.lng });
       updateUI();
     });
 
     const acIntlFrom = new G.places.Autocomplete(document.getElementById('intl-from-area'), {
-      ...opts,
+      bounds: damiettaBias,
+      componentRestrictions: { country: 'eg' },
+      strictBounds: false,
+      types: [],
       fields: ['geometry', 'name', 'formatted_address'],
     });
     acIntlFrom.addListener('place_changed', () => {
@@ -1090,26 +1245,150 @@ import { POPULAR_PLACES, PLACES, PLACE_CATEGORIES, CATEGORY_COLORS } from '../da
       updateIntlUI();
     });
 
-    // GPS "my location" button
+    // GPS "my location" button — also reverse-geocodes to real address name
     document.getElementById('btn-my-loc')?.addEventListener('click', () => {
       if (!navigator.geolocation) return;
       const btn = document.getElementById('btn-my-loc');
       btn.textContent = '⏳';
       navigator.geolocation.getCurrentPosition(
-        (pos) => {
+        async (pos) => {
+          const { latitude: lat, longitude: lng } = pos.coords;
           btn.textContent = '✅';
-          fromPlace = { name: 'موقعي الحالي', lat: pos.coords.latitude, lng: pos.coords.longitude };
-          document.getElementById('from-area').value = 'موقعي الحالي';
+          // try to get a human-readable address
+          let name = 'موقعي الحالي';
+          try {
+            const geo = new G.Geocoder();
+            const res = await new Promise((ok, fail) =>
+              geo.geocode({ location: { lat, lng }, language: 'ar' }, (r, s) => s === 'OK' ? ok(r) : fail())
+            );
+            if (res[0]) name = res[0].formatted_address;
+          } catch {}
+          fromPlace = { name, lat, lng };
+          document.getElementById('from-area').value = name;
+          saveRecentPlace({ name, lat, lng });
           updateUI();
           setTimeout(() => { btn.textContent = '📍'; }, 2000);
         },
         () => { btn.textContent = '📍'; }
       );
     });
+
+    // ── Map-tap to pick location (inDrive style) ──────────────────────
+    document.getElementById('btn-pin-from')?.addEventListener('click', () => activatePinMode('from'));
+    document.getElementById('btn-pin-to')?.addEventListener('click', () => activatePinMode('to'));
+    document.getElementById('btn-pin-cancel')?.addEventListener('click', () => deactivatePinMode());
+    document.getElementById('btn-pin-confirm')?.addEventListener('click', () => confirmPin());
   }
 
-  // Start loading Places API immediately (for autocomplete)
-  initPlaces();
+  // ── Recent places (localStorage) ─────────────────────────────────────
+  function saveRecentPlace(p) {
+    try {
+      let recents = JSON.parse(localStorage.getItem('wslha_recent_places') || '[]');
+      recents = [p, ...recents.filter(r => r.name !== p.name)].slice(0, 8);
+      localStorage.setItem('wslha_recent_places', JSON.stringify(recents));
+      renderRecents();
+    } catch {}
+  }
+  function loadRecentPlaces() {
+    try { return JSON.parse(localStorage.getItem('wslha_recent_places') || '[]'); } catch { return []; }
+  }
+  function renderRecents() {
+    const list = loadRecentPlaces();
+    const el = document.getElementById('recent-list');
+    if (!el) return;
+    if (!list.length) { el.parentElement.style.display = 'none'; return; }
+    el.parentElement.style.display = 'block';
+    el.innerHTML = list.map(p => `
+      <button class="recent-chip" type="button" data-lat="${p.lat}" data-lng="${p.lng}" data-name="${p.name}">
+        🕐 <span>${p.name}</span>
+      </button>
+    `).join('');
+    el.querySelectorAll('.recent-chip').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const lat = parseFloat(btn.dataset.lat), lng = parseFloat(btn.dataset.lng), name = btn.dataset.name;
+        if (qpMode === 'from') { fromPlace = { name, lat, lng }; document.getElementById('from-area').value = name; }
+        else                   { toPlace   = { name, lat, lng }; document.getElementById('to-area').value   = name; }
+        updateUI();
+      });
+    });
+  }
+  renderRecents();
+
+  // ── Category quick-search (cafe, restaurant, beach, bank…) ───────────
+  const CAT_QUERIES = [
+    { id: 'cafe',       label: '☕ كافيهات',      type: 'cafe'              },
+    { id: 'restaurant', label: '🍕 مطاعم',         type: 'restaurant'        },
+    { id: 'hospital',   label: '🏥 مستشفيات',      type: 'hospital'          },
+    { id: 'bank',       label: '🏦 بنوك',           type: 'bank'              },
+    { id: 'pharmacy',   label: '💊 صيدليات',        type: 'pharmacy'          },
+    { id: 'grocery',    label: '🛒 سوبرماركت',      type: 'grocery_or_supermarket' },
+    { id: 'beach',      label: '🏖️ شواطئ',          type: 'natural_feature'   },
+    { id: 'school',     label: '🎓 جامعات ومدارس', type: 'school'            },
+    { id: 'park',       label: '🌳 حدائق',          type: 'park'              },
+    { id: 'gas',        label: '⛽ محطات وقود',    type: 'gas_station'       },
+  ];
+
+  document.querySelectorAll('.cat-chip').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const type = btn.dataset.type;
+      const input = qpMode === 'from'
+        ? document.getElementById('from-area')
+        : document.getElementById('to-area');
+      input.focus();
+      input.value = CAT_QUERIES.find(c => c.id === btn.dataset.cat)?.label.replace(/^[^ ]+ /, '') || '';
+      // Trigger an autocomplete search for this type via Places
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+  });
+
+  // ── Map pin mode (inDrive-style tap-to-pick) ──────────────────────────
+  let pinMode = null; // 'from' | 'to' | null
+  let pinMarker = null;
+
+  function activatePinMode(mode) {
+    pinMode = mode;
+    qpMode = mode;
+    // show pin overlay
+    document.getElementById('pin-overlay').style.display = 'flex';
+    document.getElementById('pin-mode-label').textContent =
+      mode === 'from' ? '📍 اضغط لتحديد نقطة الانطلاق' : '📍 اضغط لتحديد الوجهة';
+    document.getElementById('btn-pin-confirm').disabled = true;
+    // ensure map is visible
+    initMap();
+  }
+
+  function deactivatePinMode() {
+    pinMode = null;
+    document.getElementById('pin-overlay').style.display = 'none';
+    if (pinMarker) { pinMarker.setMap(null); pinMarker = null; }
+  }
+
+  async function confirmPin() {
+    if (!pinMarker) return;
+    const lat = pinMarker.getPosition().lat();
+    const lng = pinMarker.getPosition().lng();
+    let name = `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+    // reverse geocode
+    try {
+      const G = window.google.maps;
+      const res = await new Promise((ok, fail) =>
+        new G.Geocoder().geocode({ location: { lat, lng }, language: 'ar' }, (r, s) => s === 'OK' ? ok(r) : fail())
+      );
+      if (res[0]) name = res[0].formatted_address;
+    } catch {}
+    if (pinMode === 'from') {
+      fromPlace = { name, lat, lng };
+      document.getElementById('from-area').value = name;
+    } else {
+      toPlace = { name, lat, lng };
+      document.getElementById('to-area').value = name;
+    }
+    saveRecentPlace({ name, lat, lng });
+    deactivatePinMode();
+    updateUI();
+  }
+
+  // map click handler — set during map init (below)
 
   // ── Quick Pick Panel ─────────────────────────────────────────────────
   let qpMode = 'from'; // 'from' | 'to'
@@ -1279,6 +1558,28 @@ import { POPULAR_PLACES, PLACES, PLACE_CATEGORIES, CATEGORY_COLORS } from '../da
         ],
       });
       gmapsReady = true;
+
+      // Map click → pin mode (inDrive style)
+      map.addListener('click', async (e) => {
+        if (!pinMode) return;
+        const G = window.google.maps;
+        const lat = e.latLng.lat(), lng = e.latLng.lng();
+        if (pinMarker) pinMarker.setMap(null);
+        const color = pinMode === 'from' ? '#3b82f6' : '#ef4444';
+        pinMarker = new G.Marker({
+          position: { lat, lng }, map, zIndex: 9999,
+          animation: G.Animation.DROP,
+          icon: {
+            path: 'M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z',
+            fillColor: color, fillOpacity: 1, strokeColor: '#fff', strokeWeight: 2,
+            scale: 2, anchor: new G.Point(12, 22),
+          },
+        });
+        document.getElementById('btn-pin-confirm').disabled = false;
+        document.getElementById('pin-mode-label').textContent =
+          pinMode === 'from' ? '📍 نقطة الانطلاق محددة — اضغط تأكيد' : '📍 الوجهة محددة — اضغط تأكيد';
+      });
+
       // Add all New Damietta landmarks
       addLandmarkMarkers();
       return true;
