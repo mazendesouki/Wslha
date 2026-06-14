@@ -650,6 +650,7 @@ async function submitApplication() {
   }
   btn.disabled = true; btn.textContent = '⏳ جاري الإرسال…';
   const payload = {
+    id:                 crypto.randomUUID(),
     phone:              USER.phone,
     status:             'pending',
     full_name:          document.getElementById('full-name').value.trim(),
