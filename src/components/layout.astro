@@ -286,29 +286,29 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site ?? 'https://wslha.co
       var steps      = document.getElementById('pwa-steps');
       var modalClose = document.getElementById('pwa-modal-close');
 
-      // امسح مفاتيح localStorage القديمة
-      try { localStorage.removeItem('wslha_dismissed'); } catch(x) {}
+      // امسح كل مفاتيح localStorage القديمة
+      try {
+        localStorage.removeItem('wslha_dismissed');
+        localStorage.removeItem('wslha_installed');
+        localStorage.removeItem('wslha_dismissed_at');
+        localStorage.removeItem('wslha_da');
+      } catch(x) {}
 
       function hide(el) { if (el) el.classList.add('pwa-hidden'); }
 
-      // أخفِ إذا مثبّت أو رُفض مؤخراً
-      var dismissed = parseInt(localStorage.getItem('wslha_da') || '0', 10);
-      var installed = localStorage.getItem('wslha_installed') === '1'
-        || window.matchMedia('(display-mode: standalone)').matches
-        || !!window.navigator.standalone;
-      if (installed || (dismissed && Date.now() - dismissed < 3*86400000)) {
-        hide(banner); return;
-      }
+      // أخفِ فقط لو التطبيق مفتوح من الشاشة الرئيسية (مثبّت فعلاً)
+      var inStandalone = window.matchMedia('(display-mode: standalone)').matches
+                      || !!window.navigator.standalone;
+      if (inStandalone) { hide(banner); return; }
 
       var ua = navigator.userAgent;
       var isIOS    = /iP(hone|ad|od)/.test(ua);
       var isSafari = isIOS && /WebKit/.test(ua) && !/CriOS|FxiOS/.test(ua);
       var isFF     = /Firefox\//.test(ua);
 
-      // زر الإغلاق
+      // زر الإغلاق — يخفي البانر للجلسة فقط (يرجع عند إعادة الفتح)
       if (closeBtn) closeBtn.addEventListener('click', function() {
         hide(banner);
-        try { localStorage.setItem('wslha_da', String(Date.now())); } catch(x) {}
       });
 
       // زر التثبيت
