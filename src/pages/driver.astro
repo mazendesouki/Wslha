@@ -354,16 +354,46 @@ import Layout from '../components/layout.astro';
         <div class="card__head">صور السيارة الأربع الجوانب</div>
         <div class="card__body">
           <div class="form-grid">
-            {[['front','الواجهة الأمامية','🚗'],['back','الخلف','🚗'],['right','الجانب الأيمن','🚗'],['left','الجانب الأيسر','🚗']].map(([id,label,icon]) => `
             <div class="form-group">
-              <label>${label} <span class="req">*</span></label>
-              <div class="upload-zone" id="zone-veh-${id}">
-                <div class="upload-zone__icon">${icon}</div>
-                <div class="upload-zone__text">${label}</div>
-                <input type="file" accept="image/*" onchange="handleUpload(this,'veh-${id}','zone-veh-${id}')"/>
+              <label>الواجهة الأمامية <span class="req">*</span></label>
+              <div class="upload-zone" id="zone-veh-front">
+                <div class="upload-zone__icon">🚗</div>
+                <div class="upload-zone__text">الواجهة الأمامية</div>
+                <input type="file" accept="image/*" onchange="handleUpload(this,'veh-front','zone-veh-front')"/>
               </div>
-              <img id="prev-veh-${id}" class="upload-preview" alt=""/>
-            </div>`).join('')}
+              <img id="prev-veh-front" class="upload-preview" alt=""/>
+              <div class="upload-name" id="name-veh-front"></div>
+            </div>
+            <div class="form-group">
+              <label>الخلف <span class="req">*</span></label>
+              <div class="upload-zone" id="zone-veh-back">
+                <div class="upload-zone__icon">🚗</div>
+                <div class="upload-zone__text">الخلف</div>
+                <input type="file" accept="image/*" onchange="handleUpload(this,'veh-back','zone-veh-back')"/>
+              </div>
+              <img id="prev-veh-back" class="upload-preview" alt=""/>
+              <div class="upload-name" id="name-veh-back"></div>
+            </div>
+            <div class="form-group">
+              <label>الجانب الأيمن <span class="req">*</span></label>
+              <div class="upload-zone" id="zone-veh-right">
+                <div class="upload-zone__icon">🚗</div>
+                <div class="upload-zone__text">الجانب الأيمن</div>
+                <input type="file" accept="image/*" onchange="handleUpload(this,'veh-right','zone-veh-right')"/>
+              </div>
+              <img id="prev-veh-right" class="upload-preview" alt=""/>
+              <div class="upload-name" id="name-veh-right"></div>
+            </div>
+            <div class="form-group">
+              <label>الجانب الأيسر <span class="req">*</span></label>
+              <div class="upload-zone" id="zone-veh-left">
+                <div class="upload-zone__icon">🚗</div>
+                <div class="upload-zone__text">الجانب الأيسر</div>
+                <input type="file" accept="image/*" onchange="handleUpload(this,'veh-left','zone-veh-left')"/>
+              </div>
+              <img id="prev-veh-left" class="upload-preview" alt=""/>
+              <div class="upload-name" id="name-veh-left"></div>
+            </div>
           </div>
         </div>
       </div>
