@@ -405,6 +405,13 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site ?? 'https://wslha.co
 
     // ── Universal PWA install banner ─────────────────────────
     (function () {
+      // مسح مفتاح الإلغاء القديم — كان يمنع ظهور البانر للأبد
+      try {
+        if (localStorage.getItem('wslha_dismissed') === '1') {
+          localStorage.removeItem('wslha_dismissed');
+        }
+      } catch(x) {}
+
       var banner     = document.getElementById('pwa-banner');
       var closeBtn   = document.getElementById('pwa-banner-close');
       var installBtn = document.getElementById('pwa-install-btn');
