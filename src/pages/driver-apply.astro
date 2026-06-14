@@ -521,7 +521,6 @@ async function submitApplication() {
   }
   btn.disabled = true; btn.textContent = '⏳ جاري الإرسال…';
   const payload = {
-    id: `drv-${Date.now()}`,
     phone:              USER.phone,
     status:             'pending',
     full_name:          document.getElementById('full-name').value.trim(),
@@ -562,6 +561,11 @@ async function submitApplication() {
       headers: { ...SB_H, 'Content-Type': 'application/json', Prefer: 'return=minimal' },
       body: JSON.stringify(payload),
     });
+    if (!res.ok) {
+      let detail = '';
+      try { const j = await res.json(); detail = j.message || j.hint || j.details || JSON.stringify(j); } catch { detail = await res.text().catch(() => ''); }
+      throw new Error(`فشل الحفظ (${res.status}): ${detail}`);
+    }
     // Update account status to pending
     await fetch(`${SB_URL}/rest/v1/accounts?phone=eq.${encodeURIComponent(USER.phone)}`, {
       method: 'PATCH',
@@ -571,7 +575,7 @@ async function submitApplication() {
     document.getElementById(`step-${currentStep}`).classList.add('hidden');
     document.getElementById('step-success').classList.remove('hidden');
   } catch(e) {
-    err.textContent = '❌ حدث خطأ أثناء الإرسال. تحقق من اتصالك وحاول مجدداً.';
+    err.textContent = '❌ ' + (e.message || 'حدث خطأ أثناء الإرسال. تحقق من اتصالك وحاول مجدداً.');
     err.style.display = 'block';
     btn.disabled = false; btn.textContent = '📤 إرسال الطلب';
   }

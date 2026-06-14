@@ -650,7 +650,6 @@ async function submitApplication() {
   }
   btn.disabled = true; btn.textContent = '⏳ جاري الإرسال…';
   const payload = {
-    id: `drv-${Date.now()}`,
     phone:              USER.phone,
     status:             'pending',
     full_name:          document.getElementById('full-name').value.trim(),
