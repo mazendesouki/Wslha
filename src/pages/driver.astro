@@ -436,6 +436,8 @@ const SB_H   = { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}` };
 let USER;
 try { USER = JSON.parse(localStorage.getItem('wslha_user') || 'null'); } catch {}
 
+let currentStep = 0;
+
 function normPhone(p) {
   p = p.replace(/\s+/g, '');
   if (p.startsWith('+2')) return p;
@@ -513,7 +515,10 @@ async function registerAndProceed() {
         headers: { ...SB_H, 'Content-Type': 'application/json', Prefer: 'return=minimal' },
         body: JSON.stringify({ phone: phone14, name, password: pass, role: 'driver', status: 'pending', city }),
       });
-      if (!createRes.ok) throw new Error('create failed');
+      if (!createRes.ok) {
+        let d = ''; try { const j = await createRes.json(); d = j.message || j.hint || JSON.stringify(j); } catch { d = await createRes.text().catch(() => ''); }
+        throw new Error(`فشل إنشاء الحساب (${createRes.status}): ${d}`);
+      }
       USER = { phone: phone14, name, role: 'driver', status: 'pending', city };
     }
 
@@ -529,14 +534,13 @@ async function registerAndProceed() {
     currentStep = 0;
     goStep(1);
   } catch(e) {
-    err.textContent = '❌ حدث خطأ. تحقق من الاتصال وحاول مجدداً.';
+    err.textContent = '❌ ' + (e.message || 'حدث خطأ. تحقق من الاتصال وحاول مجدداً.');
     err.style.display = 'block';
     btn.disabled = false; btn.textContent = 'التالي ← البيانات الشخصية';
   }
 }
 
 // Step navigation
-let currentStep = 0;
 function goStep(n) {
   const cur = document.getElementById(`step-${currentStep}`);
   if (cur) cur.classList.add('hidden');
@@ -709,7 +713,7 @@ async function submitApplication() {
     document.getElementById(`step-${currentStep}`).classList.add('hidden');
     document.getElementById('step-success').classList.remove('hidden');
   } catch(e) {
-    err.textContent = '❌ حدث خطأ أثناء الإرسال. تحقق من اتصالك وحاول مجدداً.';
+    err.textContent = '❌ ' + (e.message || 'حدث خطأ أثناء الإرسال. تحقق من اتصالك وحاول مجدداً.');
     err.style.display = 'block';
     btn.disabled = false; btn.textContent = '📤 إرسال الطلب';
   }
