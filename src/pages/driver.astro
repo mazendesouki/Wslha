@@ -448,12 +448,29 @@ import Layout from '../components/layout.astro';
     <!-- ── Success ─────────────────────────────────────────── -->
     <div class="form-step hidden" id="step-success">
       <div class="success-state">
-        <div class="success-state__icon">🎉</div>
-        <h2 class="success-state__title">تم إرسال طلبك بنجاح!</h2>
-        <p class="success-state__text">سيقوم فريق وصّلها بمراجعة وثائقك في غضون 2-3 أيام عمل. ستتلقى إشعاراً فور اتخاذ القرار.</p>
-        <a href="/" class="btn-next" style="text-decoration:none;display:inline-block">العودة للرئيسية</a>
+        <div class="success-state__icon" style="animation:pop-in .5s cubic-bezier(.175,.885,.32,1.275) both">✅</div>
+        <h2 class="success-state__title" style="color:#16A34A">تم الإرسال بنجاح!</h2>
+        <div style="background:#DCFCE7;border:1.5px solid #86EFAC;border-radius:16px;padding:1.5rem 2rem;max-width:500px;margin:0 auto 1.5rem;text-align:right">
+          <div style="font-size:1.1rem;font-weight:900;color:#15803D;margin-bottom:.75rem">🎉 شكراً لتقديمك طلب الانضمام!</div>
+          <p style="font-size:.95rem;color:#166534;line-height:1.8;margin-bottom:.75rem">تم استلام طلبك وجاري مراجعته من قِبَل فريق وصّلها.</p>
+          <div style="display:flex;align-items:center;gap:.5rem;background:#fff;border-radius:10px;padding:.75rem 1rem;border:1px solid #86EFAC">
+            <span style="font-size:1.4rem">⏱️</span>
+            <div>
+              <div style="font-size:.78rem;color:#64748B;font-weight:700">مدة المراجعة</div>
+              <div style="font-size:.95rem;font-weight:900;color:#15803D">١ إلى ٣ أيام عمل</div>
+            </div>
+          </div>
+        </div>
+        <p class="success-state__text" style="margin-bottom:1.5rem">سنتواصل معك على رقم جوالك المسجل بمجرد اتخاذ القرار. يمكنك متابعة حالة طلبك من الصفحة الرئيسية.</p>
+        <div style="display:flex;gap:1rem;justify-content:center;flex-wrap:wrap">
+          <a href="/" class="btn-next" style="text-decoration:none;display:inline-block">🏠 العودة للرئيسية</a>
+          <a href="/login" class="btn-next" style="text-decoration:none;display:inline-block;background:#16A34A">👤 تسجيل الدخول</a>
+        </div>
       </div>
     </div>
+    <style>
+      @keyframes pop-in{0%{transform:scale(0);opacity:0}100%{transform:scale(1);opacity:1}}
+    </style>
   </div>
 </div>
 
