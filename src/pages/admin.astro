@@ -304,7 +304,7 @@
     <div class="section" id="sec-drivers">
       <div class="tab-bar" id="drivers-main-tabs">
         <button class="tab-btn active" data-dmain="accounts">🚗 السائقون النشطون</button>
-        <button class="tab-btn" data-dmain="apps">📋 طلبات الاعتماد</button>
+        <button class="tab-btn" data-dmain="apps">📋 طلبات الاعتماد <span id="dmain-pending-cnt" style="display:none;background:#DC2626;color:#fff;font-size:.65rem;padding:1px 6px;border-radius:99px;margin-right:4px"></span></button>
       </div>
 
       <!-- Drivers accounts sub-section -->
@@ -753,8 +753,16 @@ const sectionTitles = {
   stores:'إدارة المتاجر', finance:'التقارير المالية', settings:'الإعدادات'
 };
 let currentSection = 'dash';
-function loadDriversSection() { loadDriverAccounts(); }
-function loadMerchantsSection() { loadMerchantAccounts(); }
+function loadDriversSection() {
+  const activeTab = document.querySelector('#drivers-main-tabs .tab-btn.active');
+  if (activeTab?.dataset.dmain === 'apps') loadDriverApps();
+  else loadDriverAccounts();
+}
+function loadMerchantsSection() {
+  const activeTab = document.querySelector('#merchants-main-tabs .tab-btn.active');
+  if (activeTab?.dataset.mmain === 'apps') loadMerchantApps();
+  else loadMerchantAccounts();
+}
 const loaders = { dash:loadDash, users:loadUsers, drivers:loadDriversSection,
   merchants:loadMerchantsSection, orders:loadOrders, rides:loadRides, stores:loadStores,
   messages:loadMessages, finance:loadFinance };
@@ -975,6 +983,9 @@ function renderDriverApps() {
   const rows = allDriverApps.filter(a => currentDriverTab==='all' || a.status===currentDriverTab);
   const pending = allDriverApps.filter(a => a.status==='pending').length;
   document.getElementById('dt-pending-cnt').textContent = pending ? `(${pending})` : '';
+  // Update main tab badge
+  const mainBadge = document.getElementById('dmain-pending-cnt');
+  if (mainBadge) { mainBadge.textContent = pending; mainBadge.style.display = pending ? '' : 'none'; }
   const titles = { pending:'طلبات الاعتماد المعلقة', approved:'السائقون المعتمدون', rejected:'طلبات مرفوضة', all:'جميع الطلبات' };
   document.getElementById('drivers-tab-title').textContent = titles[currentDriverTab]||'';
   const html = rows.map(a => `
@@ -1674,6 +1685,14 @@ async function autoRefreshDash() {
       showToast(`🔔 طلب اعتماد جديد! (${pendingTotal} معلق)`, '#3B6EF8');
     }
     prevPendingCount = pendingTotal;
+
+    // Always silently refresh pending driver/merchant counts for badges
+    const dAppsQuiet = await sbGet('driver_applications?select=id,status&status=eq.pending');
+    const mAppsQuiet = await sbGet('merchant_applications?select=id,status&status=eq.pending');
+    const dPending = (dAppsQuiet||[]).length;
+    const mPending = (mAppsQuiet||[]).length;
+    const mainBadge = document.getElementById('dmain-pending-cnt');
+    if (mainBadge) { mainBadge.textContent = dPending; mainBadge.style.display = dPending ? '' : 'none'; }
 
     // If currently viewing a section, refresh it too
     if (loaders[currentSection] && currentSection !== 'dash') loaders[currentSection]();
