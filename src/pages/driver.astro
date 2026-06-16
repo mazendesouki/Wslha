@@ -496,34 +496,37 @@ async function registerAndProceed() {
   const pass  = (document.getElementById('reg-password').value || '').trim();
   const city  = document.getElementById('reg-city').value;
   const err   = document.getElementById('reg-err');
+  const btn   = document.getElementById('reg-next-btn');
   err.style.display = 'none';
 
-  if (!name || name.split(' ').length < 2) {
-    err.textContent = '⚠️ يرجى إدخال الاسم رباعياً على الأقل'; err.style.display = 'block'; return;
+  if (!name || name.trim().split(/\s+/).filter(Boolean).length < 2) {
+    err.textContent = '⚠️ يرجى إدخال الاسم الكامل (اسمان على الأقل)'; err.style.display = 'block'; return;
   }
   if (!phone.match(/^(01[0-9]{9}|002[0-9]{11}|\+2[0-9]{11})$/)) {
-    err.textContent = '⚠️ رقم الجوال غير صحيح'; err.style.display = 'block'; return;
+    err.textContent = '⚠️ رقم الجوال غير صحيح (مثال: 01012345678)'; err.style.display = 'block'; return;
   }
   if (pass.length < 6) {
     err.textContent = '⚠️ كلمة المرور يجب أن تكون 6 أحرف على الأقل'; err.style.display = 'block'; return;
   }
 
   const phone14 = normPhone(phone);
-  const btn = document.getElementById('reg-next-btn');
   btn.disabled = true; btn.textContent = '⏳ جاري التحقق...';
 
+  const timeout = ms => new Promise((_, rej) => setTimeout(() => rej(new Error('انتهت مهلة الاتصال، تحقق من الإنترنت وحاول مجدداً')), ms));
+
   try {
-    // Check if account exists
-    const checkRes = await fetch(
-      `${SB_URL}/rest/v1/accounts?phone=eq.${encodeURIComponent(phone14)}&select=phone,name,role,status,city`,
-      { headers: SB_H }
-    );
-    const existing = await checkRes.json();
+    // Check if account already exists (search both phone formats)
+    const localPhone = phone14.startsWith('+20') ? '0' + phone14.slice(3) : phone14;
+    const orFilter = `or=(phone.eq.${encodeURIComponent(phone14)},phone.eq.${encodeURIComponent(localPhone)})`;
+    const checkRes = await Promise.race([
+      fetch(`${SB_URL}/rest/v1/accounts?${orFilter}&select=phone,name,role,status,city&limit=1`, { headers: SB_H }),
+      timeout(10000)
+    ]);
+    const existing = checkRes.ok ? await checkRes.json() : [];
 
     if (Array.isArray(existing) && existing.length > 0) {
       const acc = existing[0];
       if (acc.role === 'driver') {
-        // Already a driver → go to dashboard
         localStorage.setItem('wslha_user', JSON.stringify({
           phone: acc.phone, name: acc.name || name, role: 'driver',
           status: acc.status || 'pending', city: acc.city || city,
@@ -531,30 +534,35 @@ async function registerAndProceed() {
         window.location.href = '/driver-dashboard';
         return;
       }
-      // Existing account with different role: switch to driver
-      await fetch(`${SB_URL}/rest/v1/accounts?phone=eq.${encodeURIComponent(phone14)}`, {
-        method: 'PATCH',
-        headers: { ...SB_H, 'Content-Type': 'application/json', Prefer: 'return=minimal' },
-        body: JSON.stringify({ role: 'driver', status: 'pending' }),
-      });
+      // Existing account with different role: upgrade to driver
+      await Promise.race([
+        fetch(`${SB_URL}/rest/v1/accounts?phone=eq.${encodeURIComponent(acc.phone)}`, {
+          method: 'PATCH',
+          headers: { ...SB_H, 'Content-Type': 'application/json', Prefer: 'return=minimal' },
+          body: JSON.stringify({ role: 'driver', status: 'pending' }),
+        }),
+        timeout(10000)
+      ]);
       USER = { phone: acc.phone, name: acc.name || name, role: 'driver', status: 'pending', city: acc.city || city };
     } else {
       // Create new account
-      const createRes = await fetch(`${SB_URL}/rest/v1/accounts`, {
-        method: 'POST',
-        headers: { ...SB_H, 'Content-Type': 'application/json', Prefer: 'return=minimal' },
-        body: JSON.stringify({ phone: phone14, name, password: pass, role: 'driver', status: 'pending', city }),
-      });
+      const createRes = await Promise.race([
+        fetch(`${SB_URL}/rest/v1/accounts`, {
+          method: 'POST',
+          headers: { ...SB_H, 'Content-Type': 'application/json', Prefer: 'return=minimal' },
+          body: JSON.stringify({ id: crypto.randomUUID(), phone: phone14, name, password: pass, role: 'driver', status: 'pending', city }),
+        }),
+        timeout(10000)
+      ]);
       if (!createRes.ok) {
-        let d = ''; try { const j = await createRes.json(); d = j.message || j.hint || JSON.stringify(j); } catch { d = await createRes.text().catch(() => ''); }
+        let d = '';
+        try { const j = await createRes.json(); d = j.message || j.hint || j.details || JSON.stringify(j); } catch { d = await createRes.text().catch(() => ''); }
         throw new Error(`فشل إنشاء الحساب (${createRes.status}): ${d}`);
       }
       USER = { phone: phone14, name, role: 'driver', status: 'pending', city };
     }
 
     localStorage.setItem('wslha_user', JSON.stringify(USER));
-
-    // Show steps nav and proceed to step 1
     document.getElementById('step-0').classList.add('hidden');
     document.getElementById('steps-nav').style.display = 'flex';
     document.getElementById('disp-phone').value = USER.phone;
