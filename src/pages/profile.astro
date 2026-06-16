@@ -101,6 +101,19 @@ import Layout from '../components/layout.astro';
     border: 1px solid rgba(255,255,255,0.4);
   }
   .role-badge--driver { background: rgba(22,163,74,0.3); border-color: rgba(22,163,74,0.6); }
+  .status-chip {
+    padding: 3px var(--sp-3);
+    border-radius: var(--radius-full);
+    font-size: var(--text-xs);
+    font-weight: var(--weight-bold);
+    border: 1px solid transparent;
+    display: none;
+  }
+  .status-chip--active   { background: rgba(22,163,74,0.25);  border-color: rgba(22,163,74,0.5);  color: #86EFAC; }
+  .status-chip--pending  { background: rgba(202,138,4,0.25);  border-color: rgba(202,138,4,0.5);  color: #FDE68A; }
+  .status-chip--approved { background: rgba(59,130,246,0.25); border-color: rgba(59,130,246,0.5); color: #93C5FD; }
+  .status-chip--rejected { background: rgba(220,38,38,0.25);  border-color: rgba(220,38,38,0.5);  color: #FCA5A5; }
+  .status-chip--banned   { background: rgba(100,116,139,0.25);border-color: rgba(100,116,139,0.5);color: #CBD5E1; }
   .profile-header__city,
   .profile-header__since {
     font-size: var(--text-xs);
@@ -640,6 +653,8 @@ import Layout from '../components/layout.astro';
           <p class="profile-header__phone" id="prof-phone">—</p>
           <div class="profile-header__badges">
             <span class="role-badge" id="prof-role-badge">عميل</span>
+            <span class="status-chip" id="prof-acct-chip"></span>
+            <span class="status-chip" id="prof-app-chip"></span>
             <span class="profile-header__city" id="prof-city"></span>
             <span class="profile-header__since" id="prof-since"></span>
           </div>
@@ -756,6 +771,24 @@ import Layout from '../components/layout.astro';
                 </div>
               </form>
             </div>
+          </div>
+        </div>
+
+        <!-- Driver status card (only shown for drivers) -->
+        <div class="card" id="driver-status-card" style="display:none;margin-bottom:var(--sp-4)">
+          <div class="card__header">
+            <h2 class="card__title">🚗 حالة حساب السائق</h2>
+          </div>
+          <div class="card__body" style="display:flex;flex-direction:column;gap:var(--sp-3)">
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:var(--sp-3);background:var(--color-bg-soft);border-radius:var(--radius);border:1px solid var(--color-border)">
+              <span style="font-size:var(--text-sm);font-weight:var(--weight-bold);color:var(--color-text)">حالة الحساب</span>
+              <span id="driver-acct-status-label" style="font-size:var(--text-sm);font-weight:var(--weight-bold)">—</span>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:var(--sp-3);background:var(--color-bg-soft);border-radius:var(--radius);border:1px solid var(--color-border)">
+              <span style="font-size:var(--text-sm);font-weight:var(--weight-bold);color:var(--color-text)">حالة الطلب</span>
+              <span id="driver-app-status-label" style="font-size:var(--text-sm);font-weight:var(--weight-bold)">—</span>
+            </div>
+            <div id="driver-order-eligibility" style="display:none;padding:var(--sp-3);border-radius:var(--radius);font-size:var(--text-sm);font-weight:var(--weight-bold);text-align:center"></div>
           </div>
         </div>
 
@@ -999,13 +1032,88 @@ import Layout from '../components/layout.astro';
       '&order=created_at.desc&limit=100');
     return Array.isArray(data) ? data : [];
   }
+  function localPhone(phone) {
+    return phone.startsWith('+20') ? '0' + phone.slice(3) : phone;
+  }
+  function intlPhone(phone) {
+    return phone.startsWith('0') ? '+20' + phone.slice(1) : phone;
+  }
+  function phoneOrFilter(phone) {
+    const intl  = intlPhone(phone);
+    const local = localPhone(phone);
+    return 'or=(phone.eq.' + encodeURIComponent(intl) + ',phone.eq.' + encodeURIComponent(local) + ')';
+  }
+
   async function fetchAccount(phone) {
     const data = await sbFetch(
-      SB_URL + '/rest/v1/accounts?phone=eq.' + encodeURIComponent(phone) + '&select=*&limit=1');
+      SB_URL + '/rest/v1/accounts?' + phoneOrFilter(phone) + '&select=*&limit=1');
+    return Array.isArray(data) ? (data[0] || null) : null;
+  }
+  async function fetchDriverApp(phone) {
+    const data = await sbFetch(
+      SB_URL + '/rest/v1/driver_applications?' + phoneOrFilter(phone) +
+      '&select=status,rejection_reason&order=created_at.desc&limit=1');
     return Array.isArray(data) ? (data[0] || null) : null;
   }
 
   /* ── Render helpers ────────────────────────────────────────── */
+  const ACCT_STATUS_AR = { active:'نشط', pending:'معلق', approved:'معتمد', rejected:'مرفوض', banned:'محظور' };
+  const ACCT_STATUS_CLASS = { active:'status-chip--active', pending:'status-chip--pending', approved:'status-chip--approved', rejected:'status-chip--rejected', banned:'status-chip--banned' };
+  const APP_STATUS_AR = { pending:'قيد المراجعة', approved:'معتمد ✓', rejected:'مرفوض' };
+  const APP_STATUS_CLASS = { pending:'status-chip--pending', approved:'status-chip--approved', rejected:'status-chip--rejected' };
+
+  function renderStatusChips(acctStatus, appStatus) {
+    var acctChip = $('prof-acct-chip');
+    var appChip  = $('prof-app-chip');
+    if (acctStatus) {
+      acctChip.textContent = '⚙ ' + (ACCT_STATUS_AR[acctStatus] || acctStatus);
+      acctChip.className = 'status-chip ' + (ACCT_STATUS_CLASS[acctStatus] || '');
+      acctChip.style.display = 'inline-flex';
+    } else {
+      acctChip.style.display = 'none';
+    }
+    if (appStatus) {
+      appChip.textContent = '📋 ' + (APP_STATUS_AR[appStatus] || appStatus);
+      appChip.className = 'status-chip ' + (APP_STATUS_CLASS[appStatus] || '');
+      appChip.style.display = 'inline-flex';
+    } else {
+      appChip.style.display = 'none';
+    }
+  }
+
+  function renderDriverStatusCard(acctStatus, appData) {
+    $('driver-status-card').style.display = '';
+    var acctLabel = $('driver-acct-status-label');
+    var appLabel  = $('driver-app-status-label');
+    var eligDiv   = $('driver-order-eligibility');
+
+    var acctColor = { active:'#16A34A', pending:'#CA8A04', approved:'#2563EB', rejected:'#DC2626', banned:'#64748B' };
+    acctLabel.textContent = ACCT_STATUS_AR[acctStatus] || acctStatus || '—';
+    acctLabel.style.color = acctColor[acctStatus] || 'var(--color-text)';
+
+    var appStatus = appData ? appData.status : null;
+    var appColor  = { pending:'#CA8A04', approved:'#2563EB', rejected:'#DC2626' };
+    appLabel.textContent = APP_STATUS_AR[appStatus] || (appData ? appStatus : 'لم يُرفع طلب');
+    appLabel.style.color = appColor[appStatus] || 'var(--color-text-muted)';
+    if (appData && appData.rejection_reason && appStatus === 'rejected') {
+      appLabel.title = appData.rejection_reason;
+    }
+
+    var canReceive = acctStatus === 'active' && appStatus === 'approved';
+    eligDiv.style.display = '';
+    if (canReceive) {
+      eligDiv.textContent = '✅ مؤهل لاستقبال الطلبات';
+      eligDiv.style.background = '#DCFCE7';
+      eligDiv.style.color = '#16A34A';
+      eligDiv.style.border = '1px solid #BBF7D0';
+    } else {
+      eligDiv.textContent = '⛔ غير مؤهل — يجب أن يكون الحساب نشطاً والطلب معتمداً';
+      eligDiv.style.background = '#FEE2E2';
+      eligDiv.style.color = '#DC2626';
+      eligDiv.style.border = '1px solid #FECACA';
+    }
+  }
+
   function renderHeader(acc) {
     const name   = acc.name     || user.name   || '—';
     const phone  = acc.phone    || user.phone  || '—';
@@ -1398,7 +1506,7 @@ import Layout from '../components/layout.astro';
       new Date(b.created_at || b.date || 0) - new Date(a.created_at || a.date || 0));
   }
 
-  function showContent(acc, orders, rides) {
+  function showContent(acc, orders, rides, acctStatus, appData) {
     cachedAccount = acc;
     allOrders = orders;
     allRides  = rides;
@@ -1407,6 +1515,13 @@ import Layout from '../components/layout.astro';
     renderOrders(orders);
     renderRides(rides);
     renderStatisticsTab(orders, rides);
+
+    var role = (acc && acc.role) || user.role || 'customer';
+    if (role === 'driver' && acctStatus) {
+      renderStatusChips(acctStatus, appData ? appData.status : null);
+      renderDriverStatusCard(acctStatus, appData);
+    }
+
     $('profile-loading').hidden  = true;
     $('profile-content').hidden  = false;
   }
@@ -1418,16 +1533,25 @@ import Layout from '../components/layout.astro';
     let lsOrders = [];
     try { lsOrders = JSON.parse(localStorage.getItem('wslha_orders') || '[]'); } catch {}
     const lsAcc = buildAccFromLocal(phone);
-    showContent(lsAcc, mergeOrders([], lsOrders), []);
+    showContent(lsAcc, mergeOrders([], lsOrders), [], null, null);
 
     // ── Step 2: fetch from Supabase in background and refresh ──
-    Promise.all([fetchAccount(phone), fetchOrders(phone), fetchRides(phone)])
-      .then(([sbAcc, sbOrders, sbRides]) => {
-        const acc    = sbAcc || lsAcc;
-        const orders = mergeOrders(sbOrders, lsOrders);
-        showContent(acc, orders, sbRides);
+    var role = user.role || 'customer';
+    var fetches = [fetchAccount(phone), fetchOrders(phone), fetchRides(phone)];
+    if (role === 'driver') fetches.push(fetchDriverApp(phone));
+
+    Promise.all(fetches)
+      .then(function(results) {
+        var sbAcc    = results[0];
+        var sbOrders = results[1];
+        var sbRides  = results[2];
+        var appData  = results[3] || null;
+        var acc      = sbAcc || lsAcc;
+        var orders   = mergeOrders(sbOrders, lsOrders);
+        var acctStatus = acc ? (acc.status || null) : null;
+        showContent(acc, orders, sbRides, acctStatus, appData);
       })
-      .catch(err => console.warn('[profile] Supabase refresh failed', err));
+      .catch(function(err) { console.warn('[profile] Supabase refresh failed', err); });
   }
 
   init();
