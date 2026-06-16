@@ -293,42 +293,104 @@
 
     <!-- ═══════════════════ DRIVERS ═════════════════════════ -->
     <div class="section" id="sec-drivers">
-      <div class="tab-bar" id="drivers-tabs">
-        <button class="tab-btn active" data-dtab="pending">⏳ معلق <span id="dt-pending-cnt"></span></button>
-        <button class="tab-btn" data-dtab="approved">✅ معتمد</button>
-        <button class="tab-btn" data-dtab="rejected">❌ مرفوض</button>
-        <button class="tab-btn" data-dtab="all">الكل</button>
+      <div class="tab-bar" id="drivers-main-tabs">
+        <button class="tab-btn active" data-dmain="accounts">🚗 السائقون النشطون</button>
+        <button class="tab-btn" data-dmain="apps">📋 طلبات الاعتماد</button>
       </div>
-      <div class="card">
-        <div class="card__head"><span class="card__title" id="drivers-tab-title">طلبات الاعتماد المعلقة</span>
-          <button class="btn btn--ghost btn--sm" onclick="loadDriverApps()">🔄</button>
+
+      <!-- Drivers accounts sub-section -->
+      <div id="drivers-accounts-section">
+        <div class="filters-bar">
+          <input class="search-input" id="drivers-acct-search" type="search" placeholder="🔍 بحث بالاسم أو الجوال…"/>
+          <select class="filter-select" id="drivers-acct-status">
+            <option value="">جميع الحالات</option>
+            <option value="active">نشط</option>
+            <option value="pending">معلق</option>
+            <option value="approved">معتمد</option>
+            <option value="banned">محظور</option>
+          </select>
+          <button class="btn btn--primary" onclick="loadDriverAccounts()">🔄 تحديث</button>
         </div>
-        <div class="tbl-wrap">
-          <table>
-            <thead><tr><th>الاسم</th><th>الجوال</th><th>السيارة</th><th>تاريخ التقديم</th><th>الحالة</th><th>مراجعة</th></tr></thead>
-            <tbody id="drivers-tbody"><tr><td colspan="6" style="text-align:center;color:#94A3B8;padding:2rem">جاري التحميل…</td></tr></tbody>
-          </table>
+        <div class="card">
+          <div class="tbl-wrap">
+            <table>
+              <thead><tr><th>#</th><th>الاسم</th><th>الجوال</th><th>المدينة</th><th>الحالة</th><th>تاريخ الانضمام</th><th>إجراءات</th></tr></thead>
+              <tbody id="drivers-acct-tbody"><tr><td colspan="7" style="text-align:center;color:#94A3B8;padding:2rem">جاري التحميل…</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Drivers applications sub-section -->
+      <div id="drivers-apps-section" style="display:none">
+        <div class="tab-bar" id="drivers-tabs">
+          <button class="tab-btn active" data-dtab="pending">⏳ معلق <span id="dt-pending-cnt"></span></button>
+          <button class="tab-btn" data-dtab="approved">✅ معتمد</button>
+          <button class="tab-btn" data-dtab="rejected">❌ مرفوض</button>
+          <button class="tab-btn" data-dtab="all">الكل</button>
+        </div>
+        <div class="card">
+          <div class="card__head"><span class="card__title" id="drivers-tab-title">طلبات الاعتماد المعلقة</span>
+            <button class="btn btn--ghost btn--sm" onclick="loadDriverApps()">🔄</button>
+          </div>
+          <div class="tbl-wrap">
+            <table>
+              <thead><tr><th>الاسم</th><th>الجوال</th><th>السيارة</th><th>تاريخ التقديم</th><th>الحالة</th><th>مراجعة</th></tr></thead>
+              <tbody id="drivers-tbody"><tr><td colspan="6" style="text-align:center;color:#94A3B8;padding:2rem">جاري التحميل…</td></tr></tbody>
+            </table>
+          </div>
         </div>
       </div>
     </div>
 
     <!-- ═══════════════════ MERCHANTS ═══════════════════════ -->
     <div class="section" id="sec-merchants">
-      <div class="tab-bar" id="merchants-tabs">
-        <button class="tab-btn active" data-mtab="pending">⏳ معلق <span id="mt-pending-cnt"></span></button>
-        <button class="tab-btn" data-mtab="approved">✅ معتمد</button>
-        <button class="tab-btn" data-mtab="rejected">❌ مرفوض</button>
-        <button class="tab-btn" data-mtab="all">الكل</button>
+      <div class="tab-bar" id="merchants-main-tabs">
+        <button class="tab-btn active" data-mmain="accounts">🏪 التجار النشطون</button>
+        <button class="tab-btn" data-mmain="apps">📋 طلبات الاعتماد</button>
       </div>
-      <div class="card">
-        <div class="card__head"><span class="card__title" id="merchants-tab-title">طلبات الاعتماد المعلقة</span>
-          <button class="btn btn--ghost btn--sm" onclick="loadMerchantApps()">🔄</button>
+
+      <!-- Merchants accounts sub-section -->
+      <div id="merchants-accounts-section">
+        <div class="filters-bar">
+          <input class="search-input" id="merchants-acct-search" type="search" placeholder="🔍 بحث بالاسم أو الجوال…"/>
+          <select class="filter-select" id="merchants-acct-status">
+            <option value="">جميع الحالات</option>
+            <option value="active">نشط</option>
+            <option value="pending">معلق</option>
+            <option value="approved">معتمد</option>
+            <option value="banned">محظور</option>
+          </select>
+          <button class="btn btn--primary" onclick="loadMerchantAccounts()">🔄 تحديث</button>
         </div>
-        <div class="tbl-wrap">
-          <table>
-            <thead><tr><th>الاسم التجاري</th><th>الجوال</th><th>نوع النشاط</th><th>تاريخ التقديم</th><th>الحالة</th><th>مراجعة</th></tr></thead>
-            <tbody id="merchants-tbody"><tr><td colspan="6" style="text-align:center;color:#94A3B8;padding:2rem">جاري التحميل…</td></tr></tbody>
-          </table>
+        <div class="card">
+          <div class="tbl-wrap">
+            <table>
+              <thead><tr><th>#</th><th>الاسم</th><th>الجوال</th><th>المدينة</th><th>الحالة</th><th>تاريخ الانضمام</th><th>إجراءات</th></tr></thead>
+              <tbody id="merchants-acct-tbody"><tr><td colspan="7" style="text-align:center;color:#94A3B8;padding:2rem">جاري التحميل…</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Merchants applications sub-section -->
+      <div id="merchants-apps-section" style="display:none">
+        <div class="tab-bar" id="merchants-tabs">
+          <button class="tab-btn active" data-mtab="pending">⏳ معلق <span id="mt-pending-cnt"></span></button>
+          <button class="tab-btn" data-mtab="approved">✅ معتمد</button>
+          <button class="tab-btn" data-mtab="rejected">❌ مرفوض</button>
+          <button class="tab-btn" data-mtab="all">الكل</button>
+        </div>
+        <div class="card">
+          <div class="card__head"><span class="card__title" id="merchants-tab-title">طلبات الاعتماد المعلقة</span>
+            <button class="btn btn--ghost btn--sm" onclick="loadMerchantApps()">🔄</button>
+          </div>
+          <div class="tbl-wrap">
+            <table>
+              <thead><tr><th>الاسم التجاري</th><th>الجوال</th><th>نوع النشاط</th><th>تاريخ التقديم</th><th>الحالة</th><th>مراجعة</th></tr></thead>
+              <tbody id="merchants-tbody"><tr><td colspan="6" style="text-align:center;color:#94A3B8;padding:2rem">جاري التحميل…</td></tr></tbody>
+            </table>
+          </div>
         </div>
       </div>
     </div>
@@ -682,8 +744,10 @@ const sectionTitles = {
   stores:'إدارة المتاجر', finance:'التقارير المالية', settings:'الإعدادات'
 };
 let currentSection = 'dash';
-const loaders = { dash:loadDash, users:loadUsers, drivers:loadDriverApps,
-  merchants:loadMerchantApps, orders:loadOrders, rides:loadRides, stores:loadStores,
+function loadDriversSection() { loadDriverAccounts(); }
+function loadMerchantsSection() { loadMerchantAccounts(); }
+const loaders = { dash:loadDash, users:loadUsers, drivers:loadDriversSection,
+  merchants:loadMerchantsSection, orders:loadOrders, rides:loadRides, stores:loadStores,
   messages:loadMessages, finance:loadFinance };
 
 document.querySelectorAll('.nav-item').forEach(btn => {
@@ -841,6 +905,57 @@ async function deleteUser(phone) {
 /* ═══════════════════ DRIVERS ═══════════════════════════════ */
 let allDriverApps = [], currentDriverPhone = '';
 let currentDriverTab = 'pending';
+let allDriverAccounts = [];
+
+/* ── Driver main tabs (accounts / apps) ─── */
+document.querySelectorAll('#drivers-main-tabs .tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('#drivers-main-tabs .tab-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const tab = btn.dataset.dmain;
+    document.getElementById('drivers-accounts-section').style.display = tab === 'accounts' ? '' : 'none';
+    document.getElementById('drivers-apps-section').style.display    = tab === 'apps'     ? '' : 'none';
+    if (tab === 'accounts') loadDriverAccounts();
+    else loadDriverApps();
+  });
+});
+
+async function loadDriverAccounts() {
+  const data = await sbGet('accounts?role=eq.driver&select=*&order=created_at.desc&limit=500');
+  allDriverAccounts = data || [];
+  renderDriverAccounts();
+}
+function renderDriverAccounts() {
+  const search = document.getElementById('drivers-acct-search').value.trim().toLowerCase();
+  const status = document.getElementById('drivers-acct-status').value;
+  let rows = allDriverAccounts;
+  if (search) rows = rows.filter(u => (u.name||'').toLowerCase().includes(search)||(u.phone||'').includes(search));
+  if (status) rows = rows.filter(u => (u.status||'active') === status);
+  const html = rows.map((u,i) => `
+    <tr>
+      <td style="color:#94A3B8;font-size:.78rem">${i+1}</td>
+      <td style="font-weight:700">${u.name||'—'}</td>
+      <td style="direction:ltr;font-size:.85rem">${u.phone||'—'}</td>
+      <td style="font-size:.82rem">${u.city||'—'}</td>
+      <td>${badge(u.status||'active')}</td>
+      <td style="font-size:.78rem">${fmtDate(u.created_at||u.createdAt)}</td>
+      <td>
+        <div class="btn-row" style="flex-wrap:nowrap;align-items:center">
+          <select class="filter-select" style="font-size:.72rem;padding:.25rem .45rem;min-width:80px" onchange="changeUserStatus('${u.phone}',this.value);this.value='${u.status||'active'}'">
+            <option value="active"   ${(u.status||'active')==='active'  ?'selected':''}>نشط</option>
+            <option value="pending"  ${(u.status||'')==='pending' ?'selected':''}>معلق</option>
+            <option value="approved" ${(u.status||'')==='approved'?'selected':''}>معتمد</option>
+            <option value="banned"   ${(u.status||'')==='banned'  ?'selected':''}>محظور</option>
+          </select>
+          <button class="btn btn--ghost btn--sm" onclick="openDriverModal('${u.phone}')">📋 ملف</button>
+          <button class="btn btn--red btn--sm" onclick="deleteUser('${u.phone}')">حذف</button>
+        </div>
+      </td>
+    </tr>`).join('') || '<tr><td colspan="7" style="text-align:center;color:#94A3B8;padding:2rem">لا يوجد سائقون</td></tr>';
+  document.getElementById('drivers-acct-tbody').innerHTML = html;
+}
+document.getElementById('drivers-acct-search').addEventListener('input', renderDriverAccounts);
+document.getElementById('drivers-acct-status').addEventListener('change', renderDriverAccounts);
 
 async function loadDriverApps() {
   const data = await sbGet('driver_applications?select=*&order=created_at.desc&limit=200');
@@ -943,6 +1058,59 @@ async function openDriverModal(phone) {
 }
 
 /* ═══════════════════ MERCHANTS ═════════════════════════════ */
+let allMerchantAccounts = [];
+
+/* ── Merchant main tabs ─── */
+document.querySelectorAll('#merchants-main-tabs .tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('#merchants-main-tabs .tab-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const tab = btn.dataset.mmain;
+    document.getElementById('merchants-accounts-section').style.display = tab === 'accounts' ? '' : 'none';
+    document.getElementById('merchants-apps-section').style.display     = tab === 'apps'     ? '' : 'none';
+    if (tab === 'accounts') loadMerchantAccounts();
+    else loadMerchantApps();
+  });
+});
+
+async function loadMerchantAccounts() {
+  const data = await sbGet('accounts?role=eq.merchant&select=*&order=created_at.desc&limit=500');
+  allMerchantAccounts = data || [];
+  renderMerchantAccounts();
+}
+function renderMerchantAccounts() {
+  const search = document.getElementById('merchants-acct-search').value.trim().toLowerCase();
+  const status = document.getElementById('merchants-acct-status').value;
+  let rows = allMerchantAccounts;
+  if (search) rows = rows.filter(u => (u.name||'').toLowerCase().includes(search)||(u.phone||'').includes(search));
+  if (status) rows = rows.filter(u => (u.status||'active') === status);
+  const html = rows.map((u,i) => `
+    <tr>
+      <td style="color:#94A3B8;font-size:.78rem">${i+1}</td>
+      <td style="font-weight:700">${u.name||'—'}</td>
+      <td style="direction:ltr;font-size:.85rem">${u.phone||'—'}</td>
+      <td style="font-size:.82rem">${u.city||'—'}</td>
+      <td>${badge(u.status||'active')}</td>
+      <td style="font-size:.78rem">${fmtDate(u.created_at||u.createdAt)}</td>
+      <td>
+        <div class="btn-row" style="flex-wrap:nowrap;align-items:center">
+          <select class="filter-select" style="font-size:.72rem;padding:.25rem .45rem;min-width:80px" onchange="changeUserStatus('${u.phone}',this.value);this.value='${u.status||'active'}'">
+            <option value="active"   ${(u.status||'active')==='active'  ?'selected':''}>نشط</option>
+            <option value="pending"  ${(u.status||'')==='pending' ?'selected':''}>معلق</option>
+            <option value="approved" ${(u.status||'')==='approved'?'selected':''}>معتمد</option>
+            <option value="banned"   ${(u.status||'')==='banned'  ?'selected':''}>محظور</option>
+          </select>
+          <button class="btn btn--ghost btn--sm" onclick="openMerchantModal('${u.phone}')">📋 ملف</button>
+          <button class="btn btn--red btn--sm" onclick="deleteUser('${u.phone}')">حذف</button>
+        </div>
+      </td>
+    </tr>`).join('') || '<tr><td colspan="7" style="text-align:center;color:#94A3B8;padding:2rem">لا يوجد تجار</td></tr>';
+  document.getElementById('merchants-acct-tbody').innerHTML = html;
+}
+document.getElementById('merchants-acct-search').addEventListener('input', renderMerchantAccounts);
+document.getElementById('merchants-acct-status').addEventListener('change', renderMerchantAccounts);
+
+/* ── Original merchants section marker ─── */
 let allMerchantApps = [], currentMerchantPhone = '';
 let currentMerchantTab = 'pending';
 
