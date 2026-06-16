@@ -563,6 +563,26 @@ async function registerAndProceed() {
     }
 
     localStorage.setItem('wslha_user', JSON.stringify(USER));
+
+    // Create preliminary application immediately so admin can see it
+    const existingApp = await sbGetApp(USER.phone);
+    if (!existingApp) {
+      await Promise.race([
+        fetch(`${SB_URL}/rest/v1/driver_applications`, {
+          method: 'POST',
+          headers: { ...SB_H, 'Content-Type': 'application/json', Prefer: 'return=minimal' },
+          body: JSON.stringify({
+            id: crypto.randomUUID(),
+            phone: USER.phone,
+            full_name: USER.name,
+            status: 'pending',
+            created_at: new Date().toISOString(),
+          }),
+        }),
+        timeout(8000)
+      ]);
+    }
+
     document.getElementById('step-0').classList.add('hidden');
     document.getElementById('steps-nav').style.display = 'flex';
     document.getElementById('disp-phone').value = USER.phone;
@@ -576,6 +596,16 @@ async function registerAndProceed() {
     err.style.display = 'block';
     btn.disabled = false; btn.textContent = 'التالي ← البيانات الشخصية';
   }
+}
+
+async function sbGetApp(phone) {
+  const localPhone = phone.startsWith('+20') ? '0' + phone.slice(3) : phone;
+  const orFilter = `or=(phone.eq.${encodeURIComponent(phone)},phone.eq.${encodeURIComponent(localPhone)})`;
+  try {
+    const r = await fetch(`${SB_URL}/rest/v1/driver_applications?${orFilter}&select=id&limit=1`, { headers: SB_H });
+    const d = r.ok ? await r.json() : [];
+    return Array.isArray(d) && d.length > 0 ? d[0] : null;
+  } catch { return null; }
 }
 
 // Step navigation
@@ -728,15 +758,26 @@ async function submitApplication() {
     created_at:         new Date().toISOString(),
   };
   try {
-    const res = await fetch(`${SB_URL}/rest/v1/driver_applications`, {
-      method: 'POST',
+    // PATCH the existing preliminary record (created at step 0)
+    const localPhone = USER.phone.startsWith('+20') ? '0' + USER.phone.slice(3) : USER.phone;
+    const orFilter = `or=(phone.eq.${encodeURIComponent(USER.phone)},phone.eq.${encodeURIComponent(localPhone)})`;
+    const res = await fetch(`${SB_URL}/rest/v1/driver_applications?${orFilter}`, {
+      method: 'PATCH',
       headers: { ...SB_H, 'Content-Type': 'application/json', Prefer: 'return=minimal' },
       body: JSON.stringify(payload),
     });
     if (!res.ok) {
-      let detail = '';
-      try { const j = await res.json(); detail = j.message || j.hint || j.details || JSON.stringify(j); } catch { detail = await res.text().catch(() => ''); }
-      throw new Error(`فشل الحفظ في قاعدة البيانات (${res.status}): ${detail}`);
+      // No existing record (edge case) — create fresh
+      const res2 = await fetch(`${SB_URL}/rest/v1/driver_applications`, {
+        method: 'POST',
+        headers: { ...SB_H, 'Content-Type': 'application/json', Prefer: 'return=minimal' },
+        body: JSON.stringify({ id: crypto.randomUUID(), ...payload }),
+      });
+      if (!res2.ok) {
+        let detail = '';
+        try { const j = await res2.json(); detail = j.message || j.hint || j.details || JSON.stringify(j); } catch { detail = await res2.text().catch(() => ''); }
+        throw new Error(`فشل الحفظ في قاعدة البيانات (${res2.status}): ${detail}`);
+      }
     }
     // Update account role to driver and status to pending
     await fetch(`${SB_URL}/rest/v1/accounts?phone=eq.${encodeURIComponent(USER.phone)}`, {
