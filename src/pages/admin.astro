@@ -1228,68 +1228,77 @@ async function deleteStore(id) {
 }
 
 /* ═══════════════════ MESSAGES ══════════════════════════════ */
-let currentMsg: any = null;
+let currentMsg = null;
 
 async function loadMessages() {
-  const filter = (document.getElementById('msg-filter') as HTMLSelectElement).value;
+  const filterEl = document.getElementById('msg-filter');
+  const filter = filterEl ? filterEl.value : '';
   const q = filter ? `messages?status=eq.${filter}&order=created_at.desc` : 'messages?order=created_at.desc';
   const rows = await sbGet(q);
-  const tbody = document.getElementById('messages-tbody')!;
-  if (!rows?.length) { tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#94A3B8;padding:2rem">لا توجد رسائل</td></tr>'; return; }
+  const tbody = document.getElementById('messages-tbody');
+  if (!tbody) return;
+  if (!rows || !rows.length) { tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#94A3B8;padding:2rem">لا توجد رسائل</td></tr>'; return; }
 
-  const unread = rows.filter((r:any) => r.status === 'unread').length;
-  const badge = document.getElementById('badge-messages')!;
-  if (unread > 0) { badge.textContent = String(unread); badge.classList.remove('hidden'); }
-  else badge.classList.add('hidden');
+  const unread = rows.filter(r => r.status === 'unread').length;
+  const msgBadge = document.getElementById('badge-messages');
+  if (msgBadge) {
+    if (unread > 0) { msgBadge.textContent = String(unread); msgBadge.classList.remove('hidden'); }
+    else msgBadge.classList.add('hidden');
+  }
 
-  const statusLabel: Record<string,string> = { unread:'غير مقروء', read:'مقروء', replied:'تم الرد' };
-  const statusColor: Record<string,string> = { unread:'#F59E0B', read:'#3B82F6', replied:'#16A34A' };
+  const statusLabel = { unread:'غير مقروء', read:'مقروء', replied:'تم الرد' };
+  const statusColor = { unread:'#F59E0B', read:'#3B82F6', replied:'#16A34A' };
 
-  tbody.innerHTML = rows.map((m: any) => `
+  tbody.innerHTML = rows.map(m => `
     <tr style="${m.status === 'unread' ? 'background:rgba(245,158,11,.07)' : ''}">
       <td style="font-weight:700">${m.name}</td>
       <td>${m.phone}</td>
       <td style="color:#3B82F6">${m.email || '—'}</td>
       <td>${m.subject}</td>
-      <td><span style="padding:2px 8px;border-radius:99px;font-size:.75rem;font-weight:700;background:${statusColor[m.status]}22;color:${statusColor[m.status]}">${statusLabel[m.status] || m.status}</span></td>
+      <td><span style="padding:2px 8px;border-radius:99px;font-size:.75rem;font-weight:700;background:${(statusColor[m.status]||'#94A3B8')}22;color:${statusColor[m.status]||'#94A3B8'}">${statusLabel[m.status] || m.status}</span></td>
       <td style="font-size:.78rem;color:#64748B">${new Date(m.created_at).toLocaleDateString('ar-EG')}</td>
       <td><button onclick="openMsg(${JSON.stringify(JSON.stringify(m))})" style="padding:.3rem .7rem;background:#3B6EF8;color:#fff;border:none;border-radius:5px;font-size:.78rem;cursor:pointer">عرض</button></td>
     </tr>`).join('');
 }
 
-function openMsg(jsonStr: string) {
+function openMsg(jsonStr) {
   currentMsg = JSON.parse(jsonStr);
   const m = currentMsg;
-  (document.getElementById('msg-modal-subject') as HTMLElement).textContent = m.subject;
-  (document.getElementById('msg-modal-name') as HTMLElement).textContent = m.name;
-  (document.getElementById('msg-modal-phone') as HTMLElement).textContent = m.phone;
-  (document.getElementById('msg-modal-email') as HTMLElement).textContent = m.email || '—';
-  (document.getElementById('msg-modal-date') as HTMLElement).textContent = new Date(m.created_at).toLocaleString('ar-EG');
-  (document.getElementById('msg-modal-body') as HTMLElement).textContent = m.message;
-  const modal = document.getElementById('msg-modal')!;
-  modal.style.display = 'flex';
+  document.getElementById('msg-modal-subject').textContent = m.subject;
+  document.getElementById('msg-modal-name').textContent = m.name;
+  document.getElementById('msg-modal-phone').textContent = m.phone;
+  document.getElementById('msg-modal-email').textContent = m.email || '—';
+  document.getElementById('msg-modal-date').textContent = new Date(m.created_at).toLocaleString('ar-EG');
+  document.getElementById('msg-modal-body').textContent = m.message;
+  const modal = document.getElementById('msg-modal');
+  if (modal) modal.style.display = 'flex';
   if (m.status === 'unread') updateMsgStatus(m.id, 'read');
 }
 
-async function updateMsgStatus(id: string, status: string) {
-  await sbFetch(`${SB_URL}/rest/v1/messages?id=eq.${id}`, {
-    method: 'PATCH', headers: { ...SB_H, 'Content-Type':'application/json', Prefer:'return=minimal' },
+async function updateMsgStatus(id, status) {
+  await fetch(`${SB_URL}/rest/v1/messages?id=eq.${id}`, {
+    method: 'PATCH', headers: { ...SB_H, Prefer:'return=minimal' },
     body: JSON.stringify({ status }),
   });
-  if (currentMsg?.id === id) currentMsg.status = status;
+  if (currentMsg && currentMsg.id === id) currentMsg.status = status;
   loadMessages();
 }
 
-document.getElementById('msg-mark-read')?.addEventListener('click', () => { if (currentMsg) updateMsgStatus(currentMsg.id, 'read'); });
-document.getElementById('msg-mark-replied')?.addEventListener('click', () => { if (currentMsg) updateMsgStatus(currentMsg.id, 'replied'); });
-document.getElementById('msg-reply-email')?.addEventListener('click', () => {
-  if (!currentMsg?.email) { showToast('لا يوجد بريد إلكتروني', '#F59E0B'); return; }
+const msgMarkRead = document.getElementById('msg-mark-read');
+const msgMarkReplied = document.getElementById('msg-mark-replied');
+const msgReplyEmail = document.getElementById('msg-reply-email');
+const msgFilter = document.getElementById('msg-filter');
+const msgModalEl = document.getElementById('msg-modal');
+if (msgMarkRead) msgMarkRead.addEventListener('click', () => { if (currentMsg) updateMsgStatus(currentMsg.id, 'read'); });
+if (msgMarkReplied) msgMarkReplied.addEventListener('click', () => { if (currentMsg) updateMsgStatus(currentMsg.id, 'replied'); });
+if (msgReplyEmail) msgReplyEmail.addEventListener('click', () => {
+  if (!currentMsg || !currentMsg.email) { showToast('لا يوجد بريد إلكتروني', '#F59E0B'); return; }
   window.open(`mailto:${currentMsg.email}?subject=رد: ${currentMsg.subject}`);
   updateMsgStatus(currentMsg.id, 'replied');
 });
-document.getElementById('msg-filter')?.addEventListener('change', loadMessages);
-document.getElementById('msg-modal')?.addEventListener('click', (e) => {
-  if (e.target === document.getElementById('msg-modal')) (document.getElementById('msg-modal') as HTMLElement).style.display = 'none';
+if (msgFilter) msgFilter.addEventListener('change', loadMessages);
+if (msgModalEl) msgModalEl.addEventListener('click', (e) => {
+  if (e.target === msgModalEl) msgModalEl.style.display = 'none';
 });
 
 /* ═══════════════════ FINANCE ═══════════════════════════════ */
