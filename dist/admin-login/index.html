@@ -4,12 +4,19 @@
     const SB_KEY = 'sb_publishable_PLSnpvCT-sAyUMtymNgTwA_QmL2suw4';
     const SB_H   = { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}` };
 
-    function norm(p) {
+    function toIntl(p) {
       if (!p) return '';
       p = p.trim().replace(/\s+/g,'');
-      if (p.startsWith('+20')) p = '0' + p.slice(3);
-      else if (p.startsWith('0020')) p = '0' + p.slice(4);
-      else if (p.startsWith('20') && p.length === 12) p = '0' + p.slice(2);
+      if (p.startsWith('00')) return '+' + p.slice(2);
+      if (p.startsWith('01') && p.length === 11) return '+20' + p.slice(1);
+      if (p.startsWith('1') && p.length === 10) return '+20' + p;
+      return p;
+    }
+    function toLocal(p) {
+      if (!p) return '';
+      p = p.trim().replace(/\s+/g,'');
+      if (p.startsWith('+20')) return '0' + p.slice(3);
+      if (p.startsWith('0020')) return '0' + p.slice(4);
       return p;
     }
 
@@ -19,10 +26,12 @@
       const btn = document.getElementById('submit-btn');
       err.style.display = 'none';
 
-      const phone    = norm(document.getElementById('phone').value);
+      const raw      = document.getElementById('phone').value;
+      const intl     = toIntl(raw);
+      const local    = toLocal(intl);
       const password = document.getElementById('password').value;
 
-      if (!phone || !password) {
+      if (!raw || !password) {
         err.textContent = 'يرجى إدخال الجوال وكلمة المرور';
         err.style.display = 'block'; return;
       }
@@ -30,8 +39,9 @@
       btn.disabled = true; btn.textContent = 'جاري التحقق…';
 
       try {
+        const orFilter = `or=(phone.eq.${encodeURIComponent(intl)},phone.eq.${encodeURIComponent(local)})`;
         const res  = await fetch(
-          `${SB_URL}/rest/v1/accounts?phone=eq.${encodeURIComponent(phone)}&select=*&limit=1`,
+          `${SB_URL}/rest/v1/accounts?${orFilter}&select=*&limit=1`,
           { headers: SB_H }
         );
         const rows = res.ok ? await res.json() : [];
@@ -55,7 +65,6 @@
       }
     });
 
-    // Redirect if already logged in as admin
     try {
       const a = JSON.parse(localStorage.getItem('wslha_admin') || 'null');
       if (a?.role === 'admin') window.location.href = '/admin';
