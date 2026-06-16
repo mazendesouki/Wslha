@@ -53,6 +53,11 @@
     .topbar__burger{display:none;background:none;border:1.5px solid var(--bdr);border-radius:var(--radius);padding:.4rem .6rem;font-size:1.1rem}
     .topbar__title{font-size:1.1rem;font-weight:900;color:#1E293B;flex:1}
     .topbar__date{font-size:.78rem;color:var(--tx3)}
+    .live-badge{display:flex;align-items:center;gap:.35rem;font-size:.72rem;font-weight:700;color:var(--green);background:var(--green-l);padding:.25rem .65rem;border-radius:99px;white-space:nowrap}
+    .live-dot{width:7px;height:7px;border-radius:50%;background:var(--green);animation:pulse-dot 1.4s ease-in-out infinite}
+    @keyframes pulse-dot{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.7)}}
+    .live-badge.syncing .live-dot{background:var(--orange);animation:spin-dot 1s linear infinite}
+    @keyframes spin-dot{to{transform:rotate(360deg)}}
     .content{padding:1.5rem;flex:1}
     .section{display:none}
     .section.active{display:block}
@@ -229,6 +234,10 @@
   <div class="topbar">
     <button class="topbar__burger" id="burger">☰</button>
     <h1 class="topbar__title" id="topbar-title">لوحة التحكم</h1>
+    <div class="live-badge" id="live-badge" title="تحديث تلقائي كل 30 ثانية">
+      <span class="live-dot"></span>
+      <span id="live-label">مباشر</span>
+    </div>
     <span class="topbar__date" id="topbar-date"></span>
   </div>
 
@@ -1614,8 +1623,79 @@ document.getElementById('create-admin-form').addEventListener('submit', async e 
   }
 });
 
+/* ── Auto-refresh ───────────────────────────────────────────── */
+const REFRESH_INTERVAL = 30000; // 30 seconds
+let refreshTimer = null;
+let prevPendingCount = 0;
+
+function setSyncing(on) {
+  const badge = document.getElementById('live-badge');
+  const label = document.getElementById('live-label');
+  if (!badge || !label) return;
+  if (on) { badge.classList.add('syncing'); label.textContent = 'يتم التحديث…'; }
+  else     { badge.classList.remove('syncing'); label.textContent = 'مباشر'; }
+}
+
+async function autoRefreshDash() {
+  setSyncing(true);
+  try {
+    // Lightweight KPI-only refresh
+    const [users, orders, stores, dApps, mApps] = await Promise.all([
+      sbGet('accounts?select=phone,role,status'),
+      sbGet('orders?select=id,status,total,created_at'),
+      sbGet('stores?select=id,is_active'),
+      sbGet('driver_applications?select=id,phone,status,full_name'),
+      sbGet('merchant_applications?select=id,phone,status,business_name'),
+    ]);
+    const today = new Date().toISOString().slice(0,10);
+    const todayOrd  = (orders||[]).filter(o => (o.created_at||'').startsWith(today));
+    const revenue   = todayOrd.filter(o => o.status==='delivered').reduce((s,o)=>s+(Number(o.total)||0),0);
+    const pendingD  = (dApps||[]).filter(a=>a.status==='pending');
+    const pendingM  = (mApps||[]).filter(a=>a.status==='pending');
+    const pendingTotal = pendingD.length + pendingM.length;
+
+    // Update KPIs
+    const set = (id,v) => { const el=document.getElementById(id); if(el) el.textContent=fmt(v); };
+    set('kpi-users',    (users||[]).length);
+    set('kpi-drivers',  (users||[]).filter(u=>u.role==='driver'&&u.status==='approved').length);
+    set('kpi-today-orders', todayOrd.length);
+    set('kpi-revenue',  revenue);
+    set('kpi-stores',   (stores||[]).filter(s=>s.is_active).length);
+    set('kpi-pending',  pendingTotal);
+
+    // Update sidebar badges
+    const db = document.getElementById('badge-drivers');
+    const mb = document.getElementById('badge-merchants');
+    if (db) { db.textContent = pendingD.length; db.classList.toggle('hidden', pendingD.length===0); }
+    if (mb) { mb.textContent = pendingM.length; mb.classList.toggle('hidden', pendingM.length===0); }
+
+    // Alert if new pending apps appeared
+    if (pendingTotal > prevPendingCount && prevPendingCount !== 0) {
+      showToast(`🔔 طلب اعتماد جديد! (${pendingTotal} معلق)`, '#3B6EF8');
+    }
+    prevPendingCount = pendingTotal;
+
+    // If currently viewing a section, refresh it too
+    if (loaders[currentSection] && currentSection !== 'dash') loaders[currentSection]();
+
+  } catch(e) { /* silent fail */ }
+  setSyncing(false);
+}
+
+function startAutoRefresh() {
+  if (refreshTimer) clearInterval(refreshTimer);
+  refreshTimer = setInterval(autoRefreshDash, REFRESH_INTERVAL);
+}
+
+// Pause refresh on tab hidden, resume when visible
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) clearInterval(refreshTimer);
+  else { autoRefreshDash(); startAutoRefresh(); }
+});
+
 /* ── Init ───────────────────────────────────────────────────── */
 loadDash();
+startAutoRefresh();
 </script>
 </body>
 </html>
