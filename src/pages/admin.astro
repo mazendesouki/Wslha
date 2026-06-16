@@ -800,10 +800,14 @@ function renderUsers() {
       <td style="font-size:.82rem">${u.city||'—'}</td>
       <td style="font-size:.78rem">${fmtDate(u.created_at||u.createdAt)}</td>
       <td>
-        <div class="btn-row">
-          ${u.status==='banned'
-            ? `<button class="btn btn--green btn--sm" onclick="changeUserStatus('${u.phone}','active')">تفعيل</button>`
-            : `<button class="btn btn--orange btn--sm" onclick="changeUserStatus('${u.phone}','banned')">حظر</button>`}
+        <div class="btn-row" style="flex-wrap:nowrap;align-items:center">
+          <select class="filter-select" style="font-size:.72rem;padding:.25rem .45rem;min-width:80px" onchange="changeUserStatus('${u.phone}',this.value);this.value='${u.status||'active'}'">
+            <option value="active"  ${(u.status||'active')==='active'  ?'selected':''}>نشط</option>
+            <option value="pending" ${(u.status||'')==='pending' ?'selected':''}>معلق</option>
+            <option value="approved"${(u.status||'')==='approved'?'selected':''}>معتمد</option>
+            <option value="rejected"${(u.status||'')==='rejected'?'selected':''}>مرفوض</option>
+            <option value="banned"  ${(u.status||'')==='banned'  ?'selected':''}>محظور</option>
+          </select>
           ${u.role !== 'admin' ? `<button class="btn btn--ghost btn--sm" onclick="makeAdmin('${u.phone}')">مشرف</button>` : ''}
           <button class="btn btn--red btn--sm" onclick="deleteUser('${u.phone}')">حذف</button>
         </div>
@@ -816,9 +820,9 @@ document.getElementById('users-role-filter').addEventListener('change', renderUs
 document.getElementById('users-status-filter').addEventListener('change', renderUsers);
 
 async function changeUserStatus(phone, status) {
-  if (!confirm(`هل أنت متأكد من تغيير الحالة إلى "${STATUS_AR[status]||status}"؟`)) return;
+  if (!status) return;
   const ok = await sbPatch(`accounts?phone=eq.${encodeURIComponent(phone)}`, { status });
-  if (ok) { showToast('✅ تم تحديث الحالة', '#16A34A'); loadUsers(); }
+  if (ok) { showToast(`✅ تم تغيير الحالة إلى "${STATUS_AR[status]||status}"`, '#16A34A'); loadUsers(); }
   else showToast('❌ حدث خطأ', '#DC2626');
 }
 async function makeAdmin(phone) {
