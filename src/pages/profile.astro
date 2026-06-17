@@ -1751,23 +1751,26 @@ import Layout from '../components/layout.astro';
   }
 
   function showContent(acc, orders, rides, acctStatus, appData) {
-    cachedAccount = acc;
-    allOrders = orders;
-    allRides  = rides;
-    renderHeader(acc);
-    renderStats(orders, rides);
-    renderOrders(orders);
-    renderRides(rides);
-    renderStatisticsTab(orders, rides);
-
-    var role = (acc && acc.role) || user.role || 'customer';
-    if (role === 'driver' && acctStatus) {
-      renderStatusChips(acctStatus, appData ? appData.status : null);
-      renderDriverStatusCard(acctStatus, appData);
+    try {
+      cachedAccount = acc;
+      allOrders = orders;
+      allRides  = rides;
+      try { renderHeader(acc); }              catch(e) { console.warn('[profile] renderHeader', e); }
+      try { renderStats(orders, rides); }     catch(e) { console.warn('[profile] renderStats', e); }
+      try { renderOrders(orders); }           catch(e) { console.warn('[profile] renderOrders', e); }
+      try { renderRides(rides); }             catch(e) { console.warn('[profile] renderRides', e); }
+      try { renderStatisticsTab(orders, rides); } catch(e) { console.warn('[profile] renderStatTab', e); }
+      var role = (acc && acc.role) || user.role || 'customer';
+      if (role === 'driver' && acctStatus) {
+        try { renderStatusChips(acctStatus, appData ? appData.status : null); } catch(e) {}
+        try { renderDriverStatusCard(acctStatus, appData); } catch(e) {}
+      }
+    } catch(e) {
+      console.error('[profile] showContent', e);
+    } finally {
+      $('profile-loading').hidden = true;
+      $('profile-content').hidden = false;
     }
-
-    $('profile-loading').hidden = true;
-    $('profile-content').hidden = false;
   }
 
   function init() {
