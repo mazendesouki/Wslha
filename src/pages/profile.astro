@@ -1065,6 +1065,8 @@ import Layout from '../components/layout.astro';
   function renderStatusChips(acctStatus, appStatus) {
     var acctChip = $('prof-acct-chip');
     var appChip  = $('prof-app-chip');
+    // If account is approved but no explicit app record, infer app as approved
+    var effectiveApp = appStatus || (acctStatus === 'approved' ? 'approved' : null);
     if (acctStatus) {
       acctChip.textContent = '⚙ ' + (ACCT_STATUS_AR[acctStatus] || acctStatus);
       acctChip.className = 'status-chip ' + (ACCT_STATUS_CLASS[acctStatus] || '');
@@ -1072,9 +1074,9 @@ import Layout from '../components/layout.astro';
     } else {
       acctChip.style.display = 'none';
     }
-    if (appStatus) {
-      appChip.textContent = '📋 ' + (APP_STATUS_AR[appStatus] || appStatus);
-      appChip.className = 'status-chip ' + (APP_STATUS_CLASS[appStatus] || '');
+    if (effectiveApp) {
+      appChip.textContent = '📋 ' + (APP_STATUS_AR[effectiveApp] || effectiveApp);
+      appChip.className = 'status-chip ' + (APP_STATUS_CLASS[effectiveApp] || '');
       appChip.style.display = 'inline-flex';
     } else {
       appChip.style.display = 'none';
@@ -1099,7 +1101,16 @@ import Layout from '../components/layout.astro';
       appLabel.title = appData.rejection_reason;
     }
 
-    var canReceive = acctStatus === 'active' && appStatus === 'approved';
+    // approved account status = admin approved directly on accounts table (same as active + approved app)
+    var effectiveAppStatus = appStatus || (acctStatus === 'approved' ? 'approved' : null);
+    var canReceive = (acctStatus === 'active' || acctStatus === 'approved') && effectiveAppStatus === 'approved';
+
+    // Update app label if inferred from account status
+    if (!appStatus && acctStatus === 'approved') {
+      appLabel.textContent = APP_STATUS_AR['approved'] || 'معتمد';
+      appLabel.style.color = '#2563EB';
+    }
+
     eligDiv.style.display = '';
     if (canReceive) {
       eligDiv.textContent = '✅ مؤهل لاستقبال الطلبات';
