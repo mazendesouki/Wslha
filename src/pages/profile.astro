@@ -615,6 +615,56 @@ import Layout from '../components/layout.astro';
   }
   .toast.is-visible { transform: translateX(-50%) translateY(0); }
 
+  /* ── Phone-change panel ────────────────────────────────────── */
+  .phone-change-panel {
+    display: none;
+    padding: var(--sp-4) var(--sp-5);
+    background: var(--color-bg-soft);
+    border-top: 1px solid var(--color-border);
+  }
+  .phone-change-panel.is-open { display: block; }
+  .pc-step { display: none; }
+  .pc-step.is-active { display: block; }
+  .pc-title {
+    font-size: var(--text-sm);
+    font-weight: var(--weight-black);
+    color: var(--color-text);
+    margin-bottom: var(--sp-3);
+  }
+  .pc-otp-group {
+    display: flex;
+    gap: var(--sp-2);
+    justify-content: center;
+    direction: ltr;
+    margin: var(--sp-4) 0;
+  }
+  .pc-otp-box {
+    width: 44px; height: 52px;
+    border: 2px solid var(--color-border);
+    border-radius: var(--radius);
+    font-family: var(--font-body);
+    font-size: 1.4rem; font-weight: var(--weight-black);
+    text-align: center; color: var(--color-text); background: var(--color-bg);
+    outline: none; transition: border-color var(--ease);
+    caret-color: transparent;
+  }
+  .pc-otp-box:focus { border-color: var(--color-primary); background: var(--color-primary-light); }
+  .pc-otp-box.filled { border-color: var(--color-primary); }
+  .pc-otp-box.shake { animation: shake .35s ease; border-color: #ef4444; }
+  .pc-err {
+    color: #DC2626; font-size: var(--text-xs); font-weight: var(--weight-bold);
+    margin: var(--sp-2) 0; display: none;
+  }
+  .pc-err.is-visible { display: block; }
+  .pc-btns { display: flex; gap: var(--sp-3); align-items: center; margin-top: var(--sp-3); }
+  .pc-hint { font-size: var(--text-xs); color: var(--color-text-muted); margin-bottom: var(--sp-3); }
+  .pc-new-phone-badge {
+    display: inline-block;
+    background: var(--color-primary-light); color: var(--color-primary);
+    padding: 2px var(--sp-2); border-radius: var(--radius); font-weight: var(--weight-bold);
+    direction: ltr;
+  }
+
   /* ── Responsive ─────────────────────────────────────────────── */
   @media (max-width: 700px) {
     .profile-header { padding: var(--sp-8) var(--sp-4) var(--sp-12); }
@@ -803,7 +853,39 @@ import Layout from '../components/layout.astro';
                 <div class="security-row__label">رقم الجوال</div>
                 <div class="security-row__desc" id="sec-phone">—</div>
               </div>
-              <span style="font-size:var(--text-xs);color:#16A34A;font-weight:var(--weight-bold)">✓ مُحقق</span>
+              <button class="btn-danger" id="change-phone-btn" type="button" style="background:#EFF6FF;color:#2563EB;border-color:#BFDBFE">تغيير</button>
+            </div>
+            <!-- Phone change panel -->
+            <div class="phone-change-panel" id="phone-change-panel">
+              <!-- Step 1: enter new phone -->
+              <div class="pc-step is-active" id="pc-step1">
+                <div class="pc-title">📱 تغيير رقم الجوال</div>
+                <div class="pc-hint">أدخل رقم الجوال الجديد وسنرسل إليه كود التحقق</div>
+                <input class="form-input" id="pc-new-phone" type="tel" inputmode="numeric" placeholder="01XXXXXXXXX" dir="ltr" maxlength="13">
+                <div class="pc-err" id="pc-err1"></div>
+                <div class="pc-btns">
+                  <button class="btn-save" id="pc-send-btn" type="button">إرسال كود التحقق</button>
+                  <button class="btn-save" id="pc-cancel-btn" type="button" style="background:var(--color-bg-soft);color:var(--color-text);border:1.5px solid var(--color-border)">إلغاء</button>
+                </div>
+              </div>
+              <!-- Step 2: OTP verification -->
+              <div class="pc-step" id="pc-step2">
+                <div class="pc-title">🔐 أدخل كود التحقق</div>
+                <div class="pc-hint">أُرسل الكود إلى <span class="pc-new-phone-badge" id="pc-phone-badge"></span></div>
+                <div class="pc-otp-group" id="pc-otp-group">
+                  <input type="text" class="pc-otp-box" inputmode="numeric" pattern="[0-9]" maxlength="1" autocomplete="one-time-code">
+                  <input type="text" class="pc-otp-box" inputmode="numeric" pattern="[0-9]" maxlength="1">
+                  <input type="text" class="pc-otp-box" inputmode="numeric" pattern="[0-9]" maxlength="1">
+                  <input type="text" class="pc-otp-box" inputmode="numeric" pattern="[0-9]" maxlength="1">
+                  <input type="text" class="pc-otp-box" inputmode="numeric" pattern="[0-9]" maxlength="1">
+                  <input type="text" class="pc-otp-box" inputmode="numeric" pattern="[0-9]" maxlength="1">
+                </div>
+                <div class="pc-err" id="pc-err2"></div>
+                <div class="pc-btns">
+                  <button class="btn-save" id="pc-verify-btn" type="button">تأكيد التغيير</button>
+                  <button class="btn-save" id="pc-back-btn" type="button" style="background:var(--color-bg-soft);color:var(--color-text);border:1.5px solid var(--color-border)">رجوع</button>
+                </div>
+              </div>
             </div>
             <div class="security-row">
               <div class="security-row__info">
@@ -1499,6 +1581,213 @@ import Layout from '../components/layout.astro';
     localStorage.removeItem('wslha_user');
     window.location.href = '/';
   });
+
+  /* ── Phone change ──────────────────────────────────────────── */
+  (function () {
+    var panel      = $('phone-change-panel');
+    var step1      = $('pc-step1');
+    var step2      = $('pc-step2');
+    var err1       = $('pc-err1');
+    var err2       = $('pc-err2');
+    var newPhoneIn = $('pc-new-phone');
+    var phoneBadge = $('pc-phone-badge');
+    var otpBoxes   = Array.from(document.querySelectorAll('.pc-otp-box'));
+    var pcNewPhone = '';
+
+    function showErr(el, msg) { el.textContent = msg; el.classList.add('is-visible'); }
+    function hideErr(el) { el.textContent = ''; el.classList.remove('is-visible'); }
+
+    function normalizePhone(p) {
+      p = p.replace(/\s/g, '');
+      if (p.startsWith('01') && p.length === 11) return '+2' + p;
+      if (p.startsWith('+201') && p.length === 13) return p;
+      return null;
+    }
+
+    async function sendOTP(phone) {
+      var arr = new Uint32Array(1);
+      crypto.getRandomValues(arr);
+      var code = String(100000 + (arr[0] % 900000));
+      await fetch(SB_URL + '/rest/v1/otps?phone=eq.' + encodeURIComponent(phone), {
+        method: 'DELETE', headers: SB_H,
+      }).catch(function(){});
+      await fetch(SB_URL + '/rest/v1/otps', {
+        method: 'POST',
+        headers: { ...SB_H, Prefer: 'return=minimal' },
+        body: JSON.stringify({ phone: phone, code: code }),
+      });
+      // Dev notice: auto-fill OTP by clicking badge
+      phoneBadge.title = 'كود التطوير: ' + code;
+      phoneBadge.style.cursor = 'pointer';
+      phoneBadge.onclick = function () {
+        otpBoxes.forEach(function (b, i) { b.value = code[i] || ''; b.classList.toggle('filled', !!code[i]); });
+        doVerify();
+      };
+    }
+
+    async function verifyOTP(phone, token) {
+      var res = await fetch(SB_URL + '/rest/v1/rpc/verify_otp', {
+        method: 'POST', headers: SB_H,
+        body: JSON.stringify({ p_phone: phone, p_code: token }),
+      });
+      if (!res.ok) return false;
+      var json = await res.json();
+      return json === true || json === 'true' || json?.verified === true;
+    }
+
+    function goStep2() {
+      hideErr(err2);
+      otpBoxes.forEach(function (b) { b.value = ''; b.classList.remove('filled', 'shake'); });
+      step1.classList.remove('is-active');
+      step2.classList.add('is-active');
+      phoneBadge.textContent = pcNewPhone;
+      setTimeout(function () { otpBoxes[0] && otpBoxes[0].focus(); }, 100);
+    }
+
+    function resetPanel() {
+      panel.classList.remove('is-open');
+      step1.classList.add('is-active');
+      step2.classList.remove('is-active');
+      hideErr(err1); hideErr(err2);
+      newPhoneIn.value = '';
+      otpBoxes.forEach(function (b) { b.value = ''; b.classList.remove('filled', 'shake'); });
+      pcNewPhone = '';
+    }
+
+    $('change-phone-btn').addEventListener('click', function () {
+      panel.classList.toggle('is-open');
+      if (panel.classList.contains('is-open')) {
+        step1.classList.add('is-active');
+        step2.classList.remove('is-active');
+        setTimeout(function () { newPhoneIn.focus(); }, 50);
+      }
+    });
+    $('pc-cancel-btn').addEventListener('click', resetPanel);
+    $('pc-back-btn').addEventListener('click', function () {
+      step2.classList.remove('is-active');
+      step1.classList.add('is-active');
+      hideErr(err2);
+    });
+
+    $('pc-send-btn').addEventListener('click', async function () {
+      hideErr(err1);
+      var raw = newPhoneIn.value.trim();
+      var normalized = normalizePhone(raw);
+      if (!normalized) { showErr(err1, 'أدخل رقم جوال مصري صحيح (01XXXXXXXXX)'); return; }
+
+      // Check it's not the same as current phone
+      var curPhoneLocal = user.phone.startsWith('+20') ? '0' + user.phone.slice(3) : user.phone;
+      var normLocal = normalized.startsWith('+20') ? '0' + normalized.slice(3) : normalized;
+      if (normLocal === curPhoneLocal) { showErr(err1, 'هذا هو رقمك الحالي بالفعل'); return; }
+
+      // Check number not already in use
+      var checkLocal = normLocal;
+      var checkIntl  = normalized;
+      var existing = await fetch(
+        SB_URL + '/rest/v1/accounts?or=(phone.eq.' + encodeURIComponent(checkIntl) + ',phone.eq.' + encodeURIComponent(checkLocal) + ')&select=id&limit=1',
+        { headers: SB_H }
+      ).then(function (r) { return r.ok ? r.json() : []; }).catch(function () { return []; });
+      if (existing.length > 0) { showErr(err1, 'هذا الرقم مسجّل بالفعل لحساب آخر'); return; }
+
+      pcNewPhone = normalized;
+      var btn = $('pc-send-btn');
+      btn.disabled = true; btn.textContent = 'جاري الإرسال…';
+      try {
+        await sendOTP(pcNewPhone);
+        goStep2();
+      } catch (e) {
+        showErr(err1, 'فشل الإرسال، حاول مرة أخرى');
+      } finally {
+        btn.disabled = false; btn.textContent = 'إرسال كود التحقق';
+      }
+    });
+
+    async function doVerify() {
+      var btn = $('pc-verify-btn');
+      var allFilled = otpBoxes.every(function (b) { return b.value.length === 1; });
+      if (!allFilled) return;
+      var token = otpBoxes.map(function (b) { return b.value; }).join('');
+      btn.disabled = true; btn.textContent = 'جاري التحقق…';
+      hideErr(err2);
+
+      try {
+        var ok = await verifyOTP(pcNewPhone, token);
+        if (!ok) {
+          otpBoxes.forEach(function (b) { b.classList.remove('shake'); void b.offsetWidth; b.classList.add('shake'); b.value = ''; b.classList.remove('filled'); });
+          otpBoxes[0] && otpBoxes[0].focus();
+          showErr(err2, 'الكود غير صحيح أو انتهت صلاحيته');
+          btn.disabled = false; btn.textContent = 'تأكيد التغيير';
+          return;
+        }
+
+        // Update phone in accounts table — use OR filter to find current account
+        var local  = user.phone.startsWith('+20') ? '0' + user.phone.slice(3) : user.phone;
+        var intl   = user.phone.startsWith('0')   ? '+2' + user.phone : user.phone;
+        var patchRes = await fetch(
+          SB_URL + '/rest/v1/accounts?or=(phone.eq.' + encodeURIComponent(intl) + ',phone.eq.' + encodeURIComponent(local) + ')',
+          {
+            method: 'PATCH',
+            headers: { ...SB_H, 'Content-Type': 'application/json', Prefer: 'return=minimal' },
+            body: JSON.stringify({ phone: pcNewPhone }),
+          }
+        );
+
+        if (!patchRes.ok) { showErr(err2, 'فشل تحديث الرقم، حاول مرة أخرى'); btn.disabled = false; btn.textContent = 'تأكيد التغيير'; return; }
+
+        // Update localStorage
+        try {
+          var stored = JSON.parse(localStorage.getItem('wslha_user') || '{}');
+          stored.phone = pcNewPhone;
+          localStorage.setItem('wslha_user', JSON.stringify(stored));
+        } catch {}
+
+        user.phone = pcNewPhone;
+        if (cachedAccount) cachedAccount.phone = pcNewPhone;
+
+        // Refresh displayed phone
+        $('prof-phone').textContent = pcNewPhone;
+        $('view-phone').textContent = pcNewPhone;
+        $('sec-phone').textContent  = pcNewPhone;
+
+        resetPanel();
+        showToast('✅ تم تغيير رقم الجوال بنجاح');
+      } catch (e) {
+        showErr(err2, 'حدث خطأ، حاول مرة أخرى');
+        btn.disabled = false; btn.textContent = 'تأكيد التغيير';
+      }
+    }
+
+    $('pc-verify-btn').addEventListener('click', doVerify);
+
+    // OTP box behavior
+    otpBoxes.forEach(function (box, i) {
+      box.addEventListener('keydown', function (e) {
+        if (e.key === 'Backspace') {
+          if (!box.value && i > 0) { otpBoxes[i-1].focus(); otpBoxes[i-1].value = ''; otpBoxes[i-1].classList.remove('filled'); }
+          box.value = ''; box.classList.remove('filled');
+          e.preventDefault();
+        }
+        if (e.key === 'ArrowRight' && i > 0) otpBoxes[i-1].focus();
+        if (e.key === 'ArrowLeft'  && i < 5) otpBoxes[i+1].focus();
+      });
+      box.addEventListener('input', function () {
+        var v = box.value.replace(/\D/g, '').slice(-1);
+        box.value = v;
+        box.classList.toggle('filled', !!v);
+        if (v && i < 5) otpBoxes[i+1].focus();
+        if (otpBoxes.every(function (b) { return b.value.length === 1; })) setTimeout(doVerify, 120);
+      });
+      box.addEventListener('paste', function (e) {
+        e.preventDefault();
+        var digits = (e.clipboardData ? e.clipboardData.getData('text') : '').replace(/\D/g, '').slice(0, 6);
+        digits.split('').forEach(function (d, j) { if (otpBoxes[j]) { otpBoxes[j].value = d; otpBoxes[j].classList.add('filled'); } });
+        var next = Math.min(digits.length, 5);
+        otpBoxes[next] && otpBoxes[next].focus();
+        if (digits.length === 6) setTimeout(doVerify, 120);
+      });
+      box.addEventListener('focus', function () { box.select(); });
+    });
+  })();
 
   /* ── Init ──────────────────────────────────────────────────── */
   function buildAccFromLocal(phone) {
