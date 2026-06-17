@@ -5,10 +5,14 @@ import Layout from '../components/layout.astro';
 <Layout title="حسابي — وصّلها" currentPage="profile">
 
 <style>
-  /* ── Layout ─────────────────────────────────────────────────── */
+  /* ── Reset / Base ───────────────────────────────────────────── */
+  *, *::before, *::after { box-sizing: border-box; }
+
+  /* ── Page wrapper ───────────────────────────────────────────── */
   .profile-wrap {
     min-height: calc(100vh - var(--nav-height));
-    background: var(--color-bg-soft);
+    background: #F0F4FF;
+    padding: 0 0 var(--sp-16);
   }
 
   /* ── Loading ────────────────────────────────────────────────── */
@@ -24,200 +28,263 @@ import Layout from '../components/layout.astro';
   .profile-loading__spinner {
     width: 44px;
     height: 44px;
-    border: 3px solid var(--color-border);
-    border-top-color: var(--color-primary);
+    border: 3px solid #D0D8F0;
+    border-top-color: #3B5BDB;
     border-radius: 50%;
     animation: spin 0.8s linear infinite;
   }
   @keyframes spin { to { transform: rotate(360deg); } }
 
-  /* ── Header ─────────────────────────────────────────────────── */
-  .profile-header {
-    background: linear-gradient(135deg, var(--color-primary) 0%, #2952D9 100%);
-    color: #fff;
-    padding: var(--sp-10) var(--sp-6) var(--sp-12);
-    position: relative;
-    overflow: hidden;
+  /* ── Page title bar ─────────────────────────────────────────── */
+  .page-title-bar {
+    background: #fff;
+    border-bottom: 1px solid #E2E8F0;
+    padding: var(--sp-4) var(--sp-5);
+    position: sticky;
+    top: 0;
+    z-index: 10;
   }
-  .profile-header::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.04'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
-    pointer-events: none;
-  }
-  .profile-header__inner {
+  .page-title-bar__inner {
     max-width: var(--container);
     margin: 0 auto;
+  }
+  .page-title-bar__text {
+    font-size: var(--text-lg);
+    font-weight: var(--weight-black);
+    color: #1E293B;
+    margin: 0;
+  }
+
+  /* ── Inner container ────────────────────────────────────────── */
+  .profile-inner {
+    max-width: var(--container);
+    margin: 0 auto;
+    padding: var(--sp-5) var(--sp-5) 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-4);
+  }
+
+  /* ── Hero card ──────────────────────────────────────────────── */
+  .hero-card {
+    background: #fff;
+    border-radius: 20px;
+    box-shadow: 0 2px 16px rgba(59,91,219,0.08);
+    overflow: hidden;
+    border-top: 4px solid #3B5BDB;
+  }
+  .hero-card__body {
+    padding: var(--sp-5) var(--sp-5);
     display: flex;
     align-items: center;
-    gap: var(--sp-6);
-    position: relative;
+    gap: var(--sp-5);
+    direction: rtl;
   }
-  .profile-avatar {
-    width: 90px;
-    height: 90px;
+
+  /* Avatar */
+  .hero-avatar-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--sp-2);
+    flex-shrink: 0;
+  }
+  .hero-avatar {
+    width: 80px;
+    height: 80px;
     border-radius: 50%;
-    background: rgba(255,255,255,0.25);
-    border: 3px solid rgba(255,255,255,0.5);
+    background: linear-gradient(135deg, #3B5BDB, #7048E8);
+    padding: 3px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 2.2rem;
-    font-weight: var(--weight-black);
-    color: #fff;
     flex-shrink: 0;
-    backdrop-filter: blur(8px);
-    letter-spacing: -1px;
   }
-  .profile-header__info { flex: 1; min-width: 0; }
-  .profile-header__name {
-    font-size: var(--text-2xl);
+  .hero-avatar__inner {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background: #EEF2FF;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.8rem;
     font-weight: var(--weight-black);
-    color: #fff;
+    color: #3B5BDB;
+    letter-spacing: -1px;
+    border: 2px solid #fff;
+  }
+  .hero-role-emoji {
+    font-size: 1.1rem;
+    line-height: 1;
+  }
+
+  /* Hero info */
+  .hero-info {
+    flex: 1;
+    min-width: 0;
+  }
+  .hero-info__name {
+    font-size: var(--text-xl);
+    font-weight: var(--weight-black);
+    color: #1E293B;
     margin: 0 0 var(--sp-1);
     line-height: 1.2;
   }
-  .profile-header__phone {
-    font-size: var(--text-base);
-    color: rgba(255,255,255,0.8);
+  .hero-info__phone {
+    font-size: var(--text-sm);
+    color: #64748B;
     margin: 0 0 var(--sp-3);
     direction: ltr;
     text-align: right;
+    font-feature-settings: "tnum";
   }
-  .profile-header__badges {
+  .hero-info__chips {
     display: flex;
     align-items: center;
     gap: var(--sp-2);
     flex-wrap: wrap;
+    margin-bottom: var(--sp-2);
   }
   .role-badge {
-    padding: 3px var(--sp-3);
-    border-radius: var(--radius-full);
+    padding: 4px 12px;
+    border-radius: 50px;
     font-size: var(--text-xs);
     font-weight: var(--weight-bold);
-    background: rgba(255,255,255,0.2);
-    color: #fff;
-    border: 1px solid rgba(255,255,255,0.4);
+    background: #EEF2FF;
+    color: #3B5BDB;
+    border: 1px solid #C7D2FE;
   }
-  .role-badge--driver { background: rgba(22,163,74,0.3); border-color: rgba(22,163,74,0.6); }
+  .role-badge--driver {
+    background: #ECFDF5;
+    color: #059669;
+    border-color: #A7F3D0;
+  }
   .status-chip {
-    padding: 3px var(--sp-3);
-    border-radius: var(--radius-full);
+    padding: 4px 12px;
+    border-radius: 50px;
     font-size: var(--text-xs);
     font-weight: var(--weight-bold);
     border: 1px solid transparent;
     display: none;
   }
-  .status-chip--active   { background: rgba(22,163,74,0.25);  border-color: rgba(22,163,74,0.5);  color: #86EFAC; }
-  .status-chip--pending  { background: rgba(202,138,4,0.25);  border-color: rgba(202,138,4,0.5);  color: #FDE68A; }
-  .status-chip--approved { background: rgba(59,130,246,0.25); border-color: rgba(59,130,246,0.5); color: #93C5FD; }
-  .status-chip--rejected { background: rgba(220,38,38,0.25);  border-color: rgba(220,38,38,0.5);  color: #FCA5A5; }
-  .status-chip--banned   { background: rgba(100,116,139,0.25);border-color: rgba(100,116,139,0.5);color: #CBD5E1; }
-  .profile-header__city,
-  .profile-header__since {
+  .status-chip--active   { background: #ECFDF5;  border-color: #A7F3D0;  color: #059669; }
+  .status-chip--pending  { background: #FFFBEB;  border-color: #FDE68A;  color: #D97706; }
+  .status-chip--approved { background: #EEF2FF;  border-color: #C7D2FE;  color: #3B5BDB; }
+  .status-chip--rejected { background: #FEF2F2;  border-color: #FECACA;  color: #DC2626; }
+  .status-chip--banned   { background: #F8FAFC;  border-color: #CBD5E1;  color: #64748B; }
+  .hero-info__meta {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-3);
+    flex-wrap: wrap;
+  }
+  .hero-meta-item {
     font-size: var(--text-xs);
-    color: rgba(255,255,255,0.7);
+    color: #94A3B8;
     display: flex;
     align-items: center;
     gap: 4px;
   }
 
-  /* ── Stats ──────────────────────────────────────────────────── */
-  .profile-stats-wrap {
-    max-width: var(--container);
-    margin: -36px auto 0;
-    padding: 0 var(--sp-6);
-    position: relative;
-    z-index: 2;
-  }
-  .profile-stats {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
+  /* ── Stats strip ────────────────────────────────────────────── */
+  .stats-strip {
+    display: flex;
     gap: var(--sp-3);
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding-bottom: 2px;
   }
-  .stat-card {
-    background: var(--color-bg);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-lg);
-    padding: var(--sp-4) var(--sp-3);
-    text-align: center;
-    box-shadow: var(--shadow-sm);
+  .stats-strip::-webkit-scrollbar { display: none; }
+  .stat-box {
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 2px 16px rgba(59,91,219,0.08);
+    padding: var(--sp-4) var(--sp-4);
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: var(--sp-1);
+    min-width: 100px;
+    flex: 1 0 100px;
+    text-align: center;
   }
-  .stat-card__icon { font-size: 1.5rem; }
-  .stat-card__value {
+  .stat-box__icon { font-size: 1.4rem; line-height: 1; }
+  .stat-box__value {
     font-size: var(--text-xl);
     font-weight: var(--weight-black);
-    color: var(--color-primary);
+    color: #3B5BDB;
     line-height: 1;
   }
-  .stat-card__label {
-    font-size: var(--text-xs);
-    color: var(--color-text-muted);
+  .stat-box__label {
+    font-size: 0.7rem;
+    color: #94A3B8;
     font-weight: var(--weight-semi);
+    white-space: nowrap;
   }
 
-  /* ── Tabs ───────────────────────────────────────────────────── */
-  .profile-body {
-    max-width: var(--container);
-    margin: var(--sp-8) auto var(--sp-16);
-    padding: 0 var(--sp-6);
-  }
+  /* ── Tab nav ────────────────────────────────────────────────── */
   .profile-tabs-nav {
     display: flex;
     gap: 0;
-    background: var(--color-bg);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-lg);
-    padding: var(--sp-1);
-    margin-bottom: var(--sp-6);
+    border-bottom: 2px solid #E2E8F0;
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
+    background: transparent;
+    margin-bottom: 0;
   }
   .profile-tabs-nav::-webkit-scrollbar { display: none; }
   .profile-tab {
-    flex: 1;
-    min-width: max-content;
-    padding: var(--sp-2) var(--sp-4);
-    border-radius: calc(var(--radius-lg) - 4px);
+    padding: var(--sp-3) var(--sp-5);
     border: none;
+    border-bottom: 3px solid transparent;
+    margin-bottom: -2px;
     background: transparent;
     font-family: var(--font-body);
     font-size: var(--text-sm);
     font-weight: var(--weight-bold);
-    color: var(--color-text-muted);
+    color: #94A3B8;
     cursor: pointer;
-    transition: all var(--ease);
+    transition: color 0.2s, border-color 0.2s;
     white-space: nowrap;
+    flex-shrink: 0;
   }
   .profile-tab.is-active {
-    background: var(--color-primary);
-    color: #fff;
-    box-shadow: var(--shadow-sm);
+    color: #3B5BDB;
+    border-bottom-color: #3B5BDB;
   }
   .profile-tab:not(.is-active):hover {
-    background: var(--color-bg-soft);
-    color: var(--color-text);
+    color: #475569;
+    border-bottom-color: #CBD5E1;
   }
   .tab-panel { display: none; }
   .tab-panel.is-active { display: block; }
 
-  /* ── Card base ──────────────────────────────────────────────── */
-  .card {
-    background: var(--color-bg);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-sm);
+  /* ── Tabs + content wrapper ─────────────────────────────────── */
+  .tabs-wrapper {
+    background: #fff;
+    border-radius: 20px;
+    box-shadow: 0 2px 16px rgba(59,91,219,0.08);
     overflow: hidden;
   }
+  .tabs-wrapper__nav { padding: 0 var(--sp-2); border-bottom: 2px solid #E2E8F0; }
+  .tabs-wrapper__nav .profile-tabs-nav { border-bottom: none; margin-bottom: 0; }
+  .tabs-wrapper__body { padding: var(--sp-5); }
+
+  /* ── Card base ──────────────────────────────────────────────── */
+  .card {
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 2px 16px rgba(59,91,219,0.08);
+    overflow: hidden;
+    margin-bottom: var(--sp-4);
+  }
+  .card:last-child { margin-bottom: 0; }
   .card__header {
     padding: var(--sp-4) var(--sp-5);
-    border-bottom: 1px solid var(--color-border);
+    border-bottom: 1px solid #F1F5F9;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -225,115 +292,149 @@ import Layout from '../components/layout.astro';
   .card__title {
     font-size: var(--text-base);
     font-weight: var(--weight-black);
-    color: var(--color-text);
+    color: #1E293B;
     margin: 0;
   }
   .card__body { padding: var(--sp-5); }
+  .card__body--no-pad { padding: 0; overflow: hidden; }
 
   /* ── Info tab ───────────────────────────────────────────────── */
   .info-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: var(--sp-4);
-    margin-bottom: var(--sp-6);
+    margin-bottom: var(--sp-5);
   }
   .info-field { display: flex; flex-direction: column; gap: var(--sp-1); }
   .info-field__label {
     font-size: var(--text-xs);
     font-weight: var(--weight-bold);
-    color: var(--color-text-muted);
+    color: #94A3B8;
     text-transform: uppercase;
     letter-spacing: 0.05em;
   }
   .info-field__value {
     font-size: var(--text-base);
     font-weight: var(--weight-semi);
-    color: var(--color-text);
+    color: #1E293B;
     padding: var(--sp-2) var(--sp-3);
-    background: var(--color-bg-soft);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius);
+    background: #F8FAFF;
+    border: 1px solid #E2E8F0;
+    border-radius: 10px;
     min-height: 42px;
     display: flex;
     align-items: center;
   }
-  .info-field__value--empty { color: var(--color-text-faint); font-style: italic; }
+  .info-field__value--empty { color: #CBD5E1; font-style: italic; }
 
   /* Edit form */
   .edit-form { display: flex; flex-direction: column; gap: var(--sp-4); }
   .form-group { display: flex; flex-direction: column; gap: var(--sp-2); }
-  .form-label { font-size: var(--text-sm); font-weight: var(--weight-bold); color: var(--color-text); }
+  .form-label { font-size: var(--text-sm); font-weight: var(--weight-bold); color: #334155; }
   .form-input {
     padding: var(--sp-3) var(--sp-4);
-    border: 1.5px solid var(--color-border);
-    border-radius: var(--radius);
+    border: 1.5px solid #E2E8F0;
+    border-radius: 10px;
     font-family: var(--font-body);
     font-size: var(--text-base);
-    color: var(--color-text);
-    background: var(--color-bg);
-    transition: border-color var(--ease);
+    color: #1E293B;
+    background: #fff;
+    transition: border-color 0.18s;
     width: 100%;
-    box-sizing: border-box;
   }
-  .form-input:focus { outline: none; border-color: var(--color-primary); }
+  .form-input:focus { outline: none; border-color: #3B5BDB; box-shadow: 0 0 0 3px rgba(59,91,219,0.1); }
   .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-4); }
   .btn-save {
     padding: var(--sp-3) var(--sp-6);
-    background: var(--color-primary);
+    background: #3B5BDB;
     color: #fff;
     border: none;
-    border-radius: var(--radius);
+    border-radius: 10px;
     font-family: var(--font-body);
     font-size: var(--text-base);
     font-weight: var(--weight-bold);
     cursor: pointer;
-    transition: background var(--ease), transform var(--ease);
+    transition: background 0.18s, transform 0.1s;
     align-self: flex-start;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--sp-2);
   }
-  .btn-save:hover { background: #2952D9; transform: translateY(-1px); }
+  .btn-save:hover { background: #3451C5; transform: translateY(-1px); }
   .save-success {
     display: none;
-    color: #16A34A;
+    color: #059669;
     font-size: var(--text-sm);
     font-weight: var(--weight-bold);
     padding: var(--sp-2) var(--sp-3);
-    background: #DCFCE7;
-    border-radius: var(--radius);
+    background: #ECFDF5;
+    border-radius: 8px;
   }
 
-  /* Security card */
+  /* ── Security rows ──────────────────────────────────────────── */
   .security-row {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: var(--sp-4) 0;
-    border-bottom: 1px solid var(--color-border);
+    padding: var(--sp-4) var(--sp-5);
+    border-bottom: 1px solid #F1F5F9;
   }
   .security-row:last-child { border-bottom: none; }
-  .security-row__info {}
   .security-row__label {
     font-size: var(--text-sm);
     font-weight: var(--weight-bold);
-    color: var(--color-text);
+    color: #1E293B;
   }
   .security-row__desc {
     font-size: var(--text-xs);
-    color: var(--color-text-muted);
+    color: #94A3B8;
     margin-top: 2px;
+    direction: ltr;
   }
-  .btn-danger {
+  .btn-outline {
     padding: var(--sp-2) var(--sp-4);
-    background: #FEE2E2;
-    color: #DC2626;
-    border: 1.5px solid #FECACA;
-    border-radius: var(--radius);
+    background: #F0F4FF;
+    color: #3B5BDB;
+    border: 1.5px solid #C7D2FE;
+    border-radius: 8px;
     font-family: var(--font-body);
     font-size: var(--text-sm);
     font-weight: var(--weight-bold);
     cursor: pointer;
-    transition: all var(--ease);
+    transition: all 0.18s;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
   }
-  .btn-danger:hover { background: #DC2626; color: #fff; }
+  .btn-outline:hover { background: #EEF2FF; border-color: #3B5BDB; }
+  .btn-danger {
+    padding: var(--sp-2) var(--sp-4);
+    background: #FEF2F2;
+    color: #DC2626;
+    border: 1.5px solid #FECACA;
+    border-radius: 8px;
+    font-family: var(--font-body);
+    font-size: var(--text-sm);
+    font-weight: var(--weight-bold);
+    cursor: pointer;
+    transition: all 0.18s;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+  }
+  .btn-danger:hover { background: #DC2626; color: #fff; border-color: #DC2626; }
+
+  /* ── Driver status card ─────────────────────────────────────── */
+  .driver-status-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--sp-3) var(--sp-4);
+    background: #F8FAFF;
+    border: 1px solid #E2E8F0;
+    border-radius: 10px;
+  }
 
   /* ── Orders tab ─────────────────────────────────────────────── */
   .orders-filters {
@@ -344,37 +445,37 @@ import Layout from '../components/layout.astro';
   }
   .orders-filter {
     padding: var(--sp-2) var(--sp-4);
-    border: 1.5px solid var(--color-border);
-    border-radius: var(--radius-full);
-    background: var(--color-bg);
+    border: 1.5px solid #E2E8F0;
+    border-radius: 50px;
+    background: #fff;
     font-family: var(--font-body);
     font-size: var(--text-sm);
     font-weight: var(--weight-bold);
-    color: var(--color-text-muted);
+    color: #64748B;
     cursor: pointer;
-    transition: all var(--ease);
+    transition: all 0.18s;
   }
-  .orders-filter:hover { border-color: var(--color-primary); color: var(--color-primary); }
-  .orders-filter.is-active { background: var(--color-primary); border-color: var(--color-primary); color: #fff; }
+  .orders-filter:hover { border-color: #3B5BDB; color: #3B5BDB; }
+  .orders-filter.is-active { background: #3B5BDB; border-color: #3B5BDB; color: #fff; }
 
   .order-card {
-    background: var(--color-bg);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-lg);
+    background: #fff;
+    border: 1px solid #F1F5F9;
+    border-radius: 14px;
     padding: var(--sp-4) var(--sp-5);
     display: flex;
     align-items: flex-start;
     gap: var(--sp-4);
-    box-shadow: var(--shadow-sm);
-    transition: box-shadow var(--ease), transform var(--ease);
+    box-shadow: 0 1px 6px rgba(59,91,219,0.05);
+    transition: box-shadow 0.18s, transform 0.1s;
     margin-bottom: var(--sp-3);
   }
-  .order-card:hover { box-shadow: var(--shadow-md); transform: translateY(-1px); }
+  .order-card:hover { box-shadow: 0 4px 20px rgba(59,91,219,0.12); transform: translateY(-1px); }
   .order-icon {
     width: 48px;
     height: 48px;
-    border-radius: var(--radius);
-    background: var(--color-primary-light);
+    border-radius: 12px;
+    background: #EEF2FF;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -389,177 +490,86 @@ import Layout from '../components/layout.astro';
     gap: var(--sp-2);
     margin-bottom: var(--sp-1);
   }
-  .order-id {
-    font-size: var(--text-xs);
-    color: var(--color-text-faint);
-    font-weight: var(--weight-semi);
-    direction: ltr;
-  }
+  .order-id { font-size: var(--text-xs); color: #CBD5E1; font-weight: var(--weight-semi); direction: ltr; }
   .order-status-badge {
-    padding: 2px var(--sp-3);
-    border-radius: var(--radius-full);
+    padding: 3px 10px;
+    border-radius: 50px;
     font-size: var(--text-xs);
     font-weight: var(--weight-bold);
   }
-  .status--delivered  { background: #DCFCE7; color: #16A34A; }
-  .status--pending    { background: #FEF9C3; color: #CA8A04; }
+  .status--delivered  { background: #ECFDF5; color: #059669; }
+  .status--pending    { background: #FFFBEB; color: #D97706; }
   .status--active,
   .status--on_the_way,
   .status--accepted,
-  .status--in_progress { background: #DBEAFE; color: #2563EB; }
+  .status--in_progress { background: #EEF2FF; color: #3B5BDB; }
   .status--cancelled,
-  .status--rejected   { background: #FEE2E2; color: #DC2626; }
-  .status--preparing  { background: #FEF3C7; color: #D97706; }
-  .status--completed  { background: #DCFCE7; color: #16A34A; }
+  .status--rejected   { background: #FEF2F2; color: #DC2626; }
+  .status--preparing  { background: #FFFBEB; color: #D97706; }
+  .status--completed  { background: #ECFDF5; color: #059669; }
 
-  .order-store {
-    font-size: var(--text-base);
-    font-weight: var(--weight-bold);
-    color: var(--color-text);
-    margin-bottom: 2px;
-  }
-  .order-items {
-    font-size: var(--text-xs);
-    color: var(--color-text-muted);
-    margin-bottom: var(--sp-2);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-  .order-footer {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--sp-2);
-  }
-  .order-date { font-size: var(--text-xs); color: var(--color-text-faint); }
-  .order-total {
-    font-size: var(--text-base);
-    font-weight: var(--weight-black);
-    color: var(--color-primary);
-  }
+  .order-store { font-size: var(--text-base); font-weight: var(--weight-bold); color: #1E293B; margin-bottom: 2px; }
+  .order-items { font-size: var(--text-xs); color: #94A3B8; margin-bottom: var(--sp-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .order-footer { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-2); }
+  .order-date { font-size: var(--text-xs); color: #CBD5E1; }
+  .order-total { font-size: var(--text-base); font-weight: var(--weight-black); color: #3B5BDB; }
 
   /* ── Rides tab ──────────────────────────────────────────────── */
   .ride-card {
-    background: var(--color-bg);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-lg);
+    background: #fff;
+    border: 1px solid #F1F5F9;
+    border-radius: 14px;
     padding: var(--sp-4) var(--sp-5);
-    box-shadow: var(--shadow-sm);
+    box-shadow: 0 1px 6px rgba(59,91,219,0.05);
     margin-bottom: var(--sp-3);
-    transition: box-shadow var(--ease), transform var(--ease);
+    transition: box-shadow 0.18s, transform 0.1s;
   }
-  .ride-card:hover { box-shadow: var(--shadow-md); transform: translateY(-1px); }
-  .ride-top {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: var(--sp-3);
-  }
-  .ride-route {
-    display: flex;
-    align-items: center;
-    gap: var(--sp-2);
-    flex: 1;
-  }
-  .ride-route__icon { font-size: 1.2rem; }
-  .ride-route__text {
-    font-size: var(--text-sm);
-    font-weight: var(--weight-bold);
-    color: var(--color-text);
-  }
-  .ride-route__arrow {
-    color: var(--color-primary);
-    font-weight: var(--weight-black);
-    margin: 0 var(--sp-1);
-  }
-  .ride-meta {
-    display: flex;
-    align-items: center;
-    gap: var(--sp-4);
-    flex-wrap: wrap;
-  }
-  .ride-meta__item {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    font-size: var(--text-xs);
-    color: var(--color-text-muted);
-  }
-  .ride-fare {
-    font-size: var(--text-lg);
-    font-weight: var(--weight-black);
-    color: var(--color-primary);
-  }
+  .ride-card:hover { box-shadow: 0 4px 20px rgba(59,91,219,0.12); transform: translateY(-1px); }
+  .ride-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--sp-3); }
+  .ride-route { display: flex; align-items: center; gap: var(--sp-2); flex: 1; }
+  .ride-route__icon { font-size: 1.1rem; }
+  .ride-route__text { font-size: var(--text-sm); font-weight: var(--weight-bold); color: #1E293B; }
+  .ride-route__arrow { color: #3B5BDB; font-weight: var(--weight-black); margin: 0 var(--sp-1); }
+  .ride-meta { display: flex; align-items: center; gap: var(--sp-4); flex-wrap: wrap; }
+  .ride-meta__item { display: flex; align-items: center; gap: 4px; font-size: var(--text-xs); color: #94A3B8; }
+  .ride-fare { font-size: var(--text-lg); font-weight: var(--weight-black); color: #3B5BDB; }
 
   /* ── Statistics tab ─────────────────────────────────────────── */
   .stats-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: var(--sp-4);
-    margin-bottom: var(--sp-6);
+    margin-bottom: var(--sp-4);
   }
   .stats-card {
-    background: var(--color-bg);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-lg);
+    background: #fff;
+    border: 1px solid #F1F5F9;
+    border-radius: 14px;
     padding: var(--sp-5);
-    box-shadow: var(--shadow-sm);
+    box-shadow: 0 1px 6px rgba(59,91,219,0.05);
     text-align: center;
   }
   .stats-card__num {
     font-size: var(--text-3xl);
     font-weight: var(--weight-black);
-    color: var(--color-primary);
+    color: #3B5BDB;
     line-height: 1;
     margin-bottom: var(--sp-1);
   }
-  .stats-card__label {
-    font-size: var(--text-sm);
-    color: var(--color-text-muted);
-    font-weight: var(--weight-semi);
-  }
-  .stats-card--green .stats-card__num { color: #16A34A; }
+  .stats-card__label { font-size: var(--text-sm); color: #94A3B8; font-weight: var(--weight-semi); }
+  .stats-card--green .stats-card__num { color: #059669; }
   .stats-card--orange .stats-card__num { color: #D97706; }
 
   /* Category breakdown */
   .category-list { display: flex; flex-direction: column; gap: var(--sp-3); }
-  .category-row {
-    display: flex;
-    align-items: center;
-    gap: var(--sp-3);
-  }
-  .category-row__label {
-    width: 100px;
-    font-size: var(--text-sm);
-    font-weight: var(--weight-semi);
-    color: var(--color-text);
-    flex-shrink: 0;
-    text-align: right;
-  }
-  .category-bar-wrap {
-    flex: 1;
-    height: 10px;
-    background: var(--color-bg-soft);
-    border-radius: var(--radius-full);
-    overflow: hidden;
-  }
-  .category-bar {
-    height: 100%;
-    border-radius: var(--radius-full);
-    background: var(--color-primary);
-    transition: width 0.8s cubic-bezier(.4,0,.2,1);
-  }
-  .category-bar--green { background: #16A34A; }
+  .category-row { display: flex; align-items: center; gap: var(--sp-3); }
+  .category-row__label { width: 100px; font-size: var(--text-sm); font-weight: var(--weight-semi); color: #334155; flex-shrink: 0; text-align: right; }
+  .category-bar-wrap { flex: 1; height: 10px; background: #F1F5F9; border-radius: 50px; overflow: hidden; }
+  .category-bar { height: 100%; border-radius: 50px; background: #3B5BDB; transition: width 0.8s cubic-bezier(.4,0,.2,1); }
+  .category-bar--green { background: #059669; }
   .category-bar--orange { background: #D97706; }
-  .category-bar--purple { background: #9333EA; }
-  .category-row__count {
-    font-size: var(--text-sm);
-    font-weight: var(--weight-bold);
-    color: var(--color-text-muted);
-    width: 50px;
-    text-align: left;
-  }
+  .category-bar--purple { background: #7C3AED; }
+  .category-row__count { font-size: var(--text-sm); font-weight: var(--weight-bold); color: #94A3B8; width: 56px; text-align: left; }
 
   /* Monthly table */
   .monthly-table { width: 100%; border-collapse: collapse; }
@@ -568,36 +578,27 @@ import Layout from '../components/layout.astro';
     text-align: right;
     font-size: var(--text-xs);
     font-weight: var(--weight-bold);
-    color: var(--color-text-muted);
-    background: var(--color-bg-soft);
-    border-bottom: 1px solid var(--color-border);
+    color: #94A3B8;
+    background: #F8FAFF;
+    border-bottom: 1px solid #E2E8F0;
   }
   .monthly-table td {
     padding: var(--sp-3);
     text-align: right;
     font-size: var(--text-sm);
-    color: var(--color-text);
-    border-bottom: 1px solid var(--color-border);
+    color: #334155;
+    border-bottom: 1px solid #F1F5F9;
   }
   .monthly-table tr:last-child td { border-bottom: none; }
-  .monthly-table tr:hover td { background: var(--color-bg-soft); }
+  .monthly-table tr:hover td { background: #F8FAFF; }
 
   /* Empty state */
-  .empty-state {
-    text-align: center;
-    padding: var(--sp-12) var(--sp-6);
-    color: var(--color-text-muted);
-  }
+  .empty-state { text-align: center; padding: var(--sp-12) var(--sp-6); color: #94A3B8; }
   .empty-state__icon { font-size: 3rem; margin-bottom: var(--sp-3); }
-  .empty-state__title {
-    font-size: var(--text-lg);
-    font-weight: var(--weight-bold);
-    color: var(--color-text);
-    margin-bottom: var(--sp-2);
-  }
+  .empty-state__title { font-size: var(--text-lg); font-weight: var(--weight-bold); color: #475569; margin-bottom: var(--sp-2); }
   .empty-state__text { font-size: var(--text-sm); }
 
-  /* Toast */
+  /* ── Toast ──────────────────────────────────────────────────── */
   .toast {
     position: fixed;
     bottom: var(--sp-8);
@@ -606,7 +607,7 @@ import Layout from '../components/layout.astro';
     background: #1E293B;
     color: #fff;
     padding: var(--sp-3) var(--sp-5);
-    border-radius: var(--radius-full);
+    border-radius: 50px;
     font-size: var(--text-sm);
     font-weight: var(--weight-bold);
     z-index: 9999;
@@ -615,12 +616,12 @@ import Layout from '../components/layout.astro';
   }
   .toast.is-visible { transform: translateX(-50%) translateY(0); }
 
-  /* ── Phone-change panel ────────────────────────────────────── */
+  /* ── Phone-change panel ─────────────────────────────────────── */
   .phone-change-panel {
     display: none;
     padding: var(--sp-4) var(--sp-5);
-    background: var(--color-bg-soft);
-    border-top: 1px solid var(--color-border);
+    background: #F8FAFF;
+    border-top: 1px solid #E2E8F0;
   }
   .phone-change-panel.is-open { display: block; }
   .pc-step { display: none; }
@@ -628,7 +629,7 @@ import Layout from '../components/layout.astro';
   .pc-title {
     font-size: var(--text-sm);
     font-weight: var(--weight-black);
-    color: var(--color-text);
+    color: #1E293B;
     margin-bottom: var(--sp-3);
   }
   .pc-otp-group {
@@ -640,46 +641,52 @@ import Layout from '../components/layout.astro';
   }
   .pc-otp-box {
     width: 44px; height: 52px;
-    border: 2px solid var(--color-border);
-    border-radius: var(--radius);
+    border: 2px solid #E2E8F0;
+    border-radius: 10px;
     font-family: var(--font-body);
     font-size: 1.4rem; font-weight: var(--weight-black);
-    text-align: center; color: var(--color-text); background: var(--color-bg);
-    outline: none; transition: border-color var(--ease);
+    text-align: center; color: #1E293B; background: #fff;
+    outline: none; transition: border-color 0.18s;
     caret-color: transparent;
   }
-  .pc-otp-box:focus { border-color: var(--color-primary); background: var(--color-primary-light); }
-  .pc-otp-box.filled { border-color: var(--color-primary); }
+  .pc-otp-box:focus { border-color: #3B5BDB; background: #F0F4FF; }
+  .pc-otp-box.filled { border-color: #3B5BDB; }
   .pc-otp-box.shake { animation: shake .35s ease; border-color: #ef4444; }
+  @keyframes shake {
+    0%,100% { transform: translateX(0); }
+    20%,60%  { transform: translateX(-5px); }
+    40%,80%  { transform: translateX(5px); }
+  }
   .pc-err {
     color: #DC2626; font-size: var(--text-xs); font-weight: var(--weight-bold);
     margin: var(--sp-2) 0; display: none;
   }
   .pc-err.is-visible { display: block; }
-  .pc-btns { display: flex; gap: var(--sp-3); align-items: center; margin-top: var(--sp-3); }
-  .pc-hint { font-size: var(--text-xs); color: var(--color-text-muted); margin-bottom: var(--sp-3); }
+  .pc-btns { display: flex; gap: var(--sp-3); align-items: center; margin-top: var(--sp-3); flex-wrap: wrap; }
+  .pc-hint { font-size: var(--text-xs); color: #94A3B8; margin-bottom: var(--sp-3); }
   .pc-new-phone-badge {
     display: inline-block;
-    background: var(--color-primary-light); color: var(--color-primary);
-    padding: 2px var(--sp-2); border-radius: var(--radius); font-weight: var(--weight-bold);
+    background: #EEF2FF; color: #3B5BDB;
+    padding: 2px 8px; border-radius: 6px; font-weight: var(--weight-bold);
     direction: ltr;
   }
 
   /* ── Responsive ─────────────────────────────────────────────── */
   @media (max-width: 700px) {
-    .profile-header { padding: var(--sp-8) var(--sp-4) var(--sp-12); }
-    .profile-avatar { width: 68px; height: 68px; font-size: 1.6rem; }
-    .profile-header__name { font-size: var(--text-xl); }
-    .profile-stats-wrap { padding: 0 var(--sp-4); }
-    .profile-stats { grid-template-columns: repeat(2, 1fr); }
-    .profile-body { padding: 0 var(--sp-4); margin-top: var(--sp-6); }
+    .profile-inner { padding: var(--sp-3) var(--sp-3) 0; }
+    .hero-card__body { flex-direction: column; align-items: flex-start; gap: var(--sp-3); }
+    .hero-avatar-wrap { flex-direction: row; gap: var(--sp-3); }
+    .hero-avatar { width: 64px; height: 64px; }
+    .hero-avatar__inner { font-size: 1.4rem; }
+    .hero-info__name { font-size: var(--text-lg); }
     .info-grid { grid-template-columns: 1fr; }
     .form-row { grid-template-columns: 1fr; }
     .stats-grid { grid-template-columns: repeat(2, 1fr); }
+    .tabs-wrapper__body { padding: var(--sp-4) var(--sp-3); }
+    .stat-box { min-width: 80px; padding: var(--sp-3); }
   }
   @media (max-width: 400px) {
-    .profile-stats { grid-template-columns: 1fr 1fr; gap: var(--sp-2); }
-    .stat-card { padding: var(--sp-3) var(--sp-2); }
+    .stat-box { min-width: 72px; }
   }
 </style>
 
@@ -694,323 +701,343 @@ import Layout from '../components/layout.astro';
   <!-- Main profile content -->
   <div id="profile-content" hidden>
 
-    <!-- ── Hero header ─────────────────────────────────────── -->
-    <div class="profile-header">
-      <div class="profile-header__inner">
-        <div class="profile-avatar" id="prof-avatar">م</div>
-        <div class="profile-header__info">
-          <h1 class="profile-header__name" id="prof-name">—</h1>
-          <p class="profile-header__phone" id="prof-phone">—</p>
-          <div class="profile-header__badges">
-            <span class="role-badge" id="prof-role-badge">عميل</span>
-            <span class="status-chip" id="prof-acct-chip"></span>
-            <span class="status-chip" id="prof-app-chip"></span>
-            <span class="profile-header__city" id="prof-city"></span>
-            <span class="profile-header__since" id="prof-since"></span>
-          </div>
-        </div>
+    <!-- ── Page title bar ──────────────────────────────────── -->
+    <div class="page-title-bar">
+      <div class="page-title-bar__inner">
+        <h1 class="page-title-bar__text">ملفي الشخصي</h1>
       </div>
     </div>
 
-    <!-- ── Stats row ───────────────────────────────────────── -->
-    <div class="profile-stats-wrap">
-      <div class="profile-stats">
-        <div class="stat-card">
-          <span class="stat-card__icon">🛵</span>
-          <span class="stat-card__value" id="stat-orders">0</span>
-          <span class="stat-card__label">إجمالي الطلبات</span>
-        </div>
-        <div class="stat-card">
-          <span class="stat-card__icon">💰</span>
-          <span class="stat-card__value" id="stat-spent">0 ج.م</span>
-          <span class="stat-card__label">إجمالي الإنفاق</span>
-        </div>
-        <div class="stat-card">
-          <span class="stat-card__icon">🚗</span>
-          <span class="stat-card__value" id="stat-rides">0</span>
-          <span class="stat-card__label">رحلاتي</span>
-        </div>
-        <div class="stat-card">
-          <span class="stat-card__icon">📅</span>
-          <span class="stat-card__value" id="stat-month">0</span>
-          <span class="stat-card__label">هذا الشهر</span>
+    <div class="profile-inner">
+
+      <!-- ── Profile hero card ───────────────────────────── -->
+      <div class="hero-card">
+        <div class="hero-card__body">
+          <!-- Avatar (right in RTL) -->
+          <div class="hero-avatar-wrap">
+            <div class="hero-avatar">
+              <div class="hero-avatar__inner" id="prof-avatar">م</div>
+            </div>
+            <span class="hero-role-emoji" id="prof-role-badge">👤 عميل</span>
+          </div>
+          <!-- Info (left in RTL) -->
+          <div class="hero-info">
+            <h2 class="hero-info__name" id="prof-name">—</h2>
+            <p class="hero-info__phone" id="prof-phone">—</p>
+            <div class="hero-info__chips">
+              <span class="status-chip" id="prof-acct-chip"></span>
+              <span class="status-chip" id="prof-app-chip"></span>
+            </div>
+            <div class="hero-info__meta">
+              <span class="hero-meta-item" id="prof-city"></span>
+              <span class="hero-meta-item" id="prof-since"></span>
+            </div>
+          </div>
         </div>
       </div>
-    </div>
 
-    <!-- ── Tabs body ───────────────────────────────────────── -->
-    <div class="profile-body">
+      <!-- ── Stats strip ─────────────────────────────────── -->
+      <div class="stats-strip">
+        <div class="stat-box">
+          <span class="stat-box__icon">🛵</span>
+          <span class="stat-box__value" id="stat-orders">0</span>
+          <span class="stat-box__label">إجمالي الطلبات</span>
+        </div>
+        <div class="stat-box">
+          <span class="stat-box__icon">💰</span>
+          <span class="stat-box__value" id="stat-spent">0 ج.م</span>
+          <span class="stat-box__label">إجمالي الإنفاق</span>
+        </div>
+        <div class="stat-box">
+          <span class="stat-box__icon">🚗</span>
+          <span class="stat-box__value" id="stat-rides">0</span>
+          <span class="stat-box__label">رحلاتي</span>
+        </div>
+        <div class="stat-box">
+          <span class="stat-box__icon">📅</span>
+          <span class="stat-box__value" id="stat-month">0</span>
+          <span class="stat-box__label">هذا الشهر</span>
+        </div>
+      </div>
 
-      <!-- Tab nav -->
-      <nav class="profile-tabs-nav" role="tablist" aria-label="أقسام الملف الشخصي">
-        <button class="profile-tab is-active" data-tab="info"  role="tab" aria-selected="true"  aria-controls="tab-info">👤 معلوماتي</button>
-        <button class="profile-tab"           data-tab="orders" role="tab" aria-selected="false" aria-controls="tab-orders">🛵 الطلبات</button>
-        <button class="profile-tab"           data-tab="rides"  role="tab" aria-selected="false" aria-controls="tab-rides">🚗 المشاوير</button>
-        <button class="profile-tab"           data-tab="stats"  role="tab" aria-selected="false" aria-controls="tab-stats">📊 الإحصائيات</button>
-      </nav>
+      <!-- ── Tabs + content ──────────────────────────────── -->
+      <div class="tabs-wrapper">
+        <div class="tabs-wrapper__nav">
+          <nav class="profile-tabs-nav" role="tablist" aria-label="أقسام الملف الشخصي">
+            <button class="profile-tab is-active" data-tab="info"   role="tab" aria-selected="true"  aria-controls="tab-info">👤 معلوماتي</button>
+            <button class="profile-tab"           data-tab="orders" role="tab" aria-selected="false" aria-controls="tab-orders">🛵 الطلبات</button>
+            <button class="profile-tab"           data-tab="rides"  role="tab" aria-selected="false" aria-controls="tab-rides">🚗 المشاوير</button>
+            <button class="profile-tab"           data-tab="stats"  role="tab" aria-selected="false" aria-controls="tab-stats">📊 الإحصائيات</button>
+          </nav>
+        </div>
+        <div class="tabs-wrapper__body">
 
-      <!-- ── Tab: معلوماتي ──────────────────────────────────── -->
-      <div class="tab-panel is-active" id="tab-info" role="tabpanel">
-        <!-- Personal info display -->
-        <div class="card" style="margin-bottom:var(--sp-4)">
-          <div class="card__header">
-            <h2 class="card__title">البيانات الشخصية</h2>
-            <button class="btn-save" id="edit-toggle-btn" type="button">✏️ تعديل</button>
-          </div>
-          <div class="card__body">
-            <!-- Read view -->
-            <div id="info-view">
-              <div class="info-grid">
-                <div class="info-field">
-                  <span class="info-field__label">الاسم الكامل</span>
-                  <span class="info-field__value" id="view-name">—</span>
-                </div>
-                <div class="info-field">
-                  <span class="info-field__label">رقم الجوال</span>
-                  <span class="info-field__value" id="view-phone" style="direction:ltr;justify-content:flex-end">—</span>
-                </div>
-                <div class="info-field">
-                  <span class="info-field__label">البريد الإلكتروني</span>
-                  <span class="info-field__value" id="view-email">—</span>
-                </div>
-                <div class="info-field">
-                  <span class="info-field__label">اسم المستخدم</span>
-                  <span class="info-field__value" id="view-username">—</span>
-                </div>
-                <div class="info-field">
-                  <span class="info-field__label">المدينة</span>
-                  <span class="info-field__value" id="view-city">—</span>
-                </div>
-                <div class="info-field">
-                  <span class="info-field__label">نوع الحساب</span>
-                  <span class="info-field__value" id="view-role">—</span>
-                </div>
-                <div class="info-field" style="grid-column:span 2">
-                  <span class="info-field__label">تاريخ الانضمام</span>
-                  <span class="info-field__value" id="view-created">—</span>
-                </div>
+          <!-- ── Tab: معلوماتي ──────────────────────────── -->
+          <div class="tab-panel is-active" id="tab-info" role="tabpanel">
+
+            <!-- Personal info card -->
+            <div class="card">
+              <div class="card__header">
+                <h2 class="card__title">البيانات الشخصية</h2>
+                <button class="btn-save" id="edit-toggle-btn" type="button">✏️ تعديل</button>
               </div>
-            </div>
-            <!-- Edit view -->
-            <div id="info-edit" hidden>
-              <form class="edit-form" id="profile-edit-form" novalidate>
-                <div class="form-row">
-                  <div class="form-group">
-                    <label class="form-label" for="edit-name">الاسم الكامل</label>
-                    <input class="form-input" id="edit-name" type="text" placeholder="اسمك الكامل" autocomplete="name">
+              <div class="card__body">
+                <!-- Read view -->
+                <div id="info-view">
+                  <div class="info-grid">
+                    <div class="info-field">
+                      <span class="info-field__label">الاسم الكامل</span>
+                      <span class="info-field__value" id="view-name">—</span>
+                    </div>
+                    <div class="info-field">
+                      <span class="info-field__label">رقم الجوال</span>
+                      <span class="info-field__value" id="view-phone" style="direction:ltr;justify-content:flex-end">—</span>
+                    </div>
+                    <div class="info-field">
+                      <span class="info-field__label">البريد الإلكتروني</span>
+                      <span class="info-field__value" id="view-email">—</span>
+                    </div>
+                    <div class="info-field">
+                      <span class="info-field__label">اسم المستخدم</span>
+                      <span class="info-field__value" id="view-username">—</span>
+                    </div>
+                    <div class="info-field">
+                      <span class="info-field__label">المدينة</span>
+                      <span class="info-field__value" id="view-city">—</span>
+                    </div>
+                    <div class="info-field">
+                      <span class="info-field__label">نوع الحساب</span>
+                      <span class="info-field__value" id="view-role">—</span>
+                    </div>
+                    <div class="info-field" style="grid-column:span 2">
+                      <span class="info-field__label">تاريخ الانضمام</span>
+                      <span class="info-field__value" id="view-created">—</span>
+                    </div>
                   </div>
-                  <div class="form-group">
-                    <label class="form-label" for="edit-username">اسم المستخدم</label>
-                    <input class="form-input" id="edit-username" type="text" placeholder="username" dir="ltr" autocomplete="username">
+                </div>
+                <!-- Edit view -->
+                <div id="info-edit" hidden>
+                  <form class="edit-form" id="profile-edit-form" novalidate>
+                    <div class="form-row">
+                      <div class="form-group">
+                        <label class="form-label" for="edit-name">الاسم الكامل</label>
+                        <input class="form-input" id="edit-name" type="text" placeholder="اسمك الكامل" autocomplete="name">
+                      </div>
+                      <div class="form-group">
+                        <label class="form-label" for="edit-username">اسم المستخدم</label>
+                        <input class="form-input" id="edit-username" type="text" placeholder="username" dir="ltr" autocomplete="username">
+                      </div>
+                    </div>
+                    <div class="form-row">
+                      <div class="form-group">
+                        <label class="form-label" for="edit-email">البريد الإلكتروني</label>
+                        <input class="form-input" id="edit-email" type="email" placeholder="email@example.com" dir="ltr" autocomplete="email">
+                      </div>
+                      <div class="form-group">
+                        <label class="form-label" for="edit-city">المدينة</label>
+                        <input class="form-input" id="edit-city" type="text" placeholder="مثال: دمياط الجديدة">
+                      </div>
+                    </div>
+                    <div style="display:flex;gap:var(--sp-3);align-items:center;flex-wrap:wrap">
+                      <button class="btn-save" type="submit">💾 حفظ التغييرات</button>
+                      <button class="btn-save" type="button" id="edit-cancel-btn" style="background:#F8FAFF;color:#334155;border:1.5px solid #E2E8F0">إلغاء</button>
+                      <span class="save-success" id="save-success-msg">✅ تم الحفظ بنجاح!</span>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            </div>
+
+            <!-- Driver status card (only shown for drivers) -->
+            <div class="card" id="driver-status-card" style="display:none">
+              <div class="card__header">
+                <h2 class="card__title">🚗 حالة حساب السائق</h2>
+              </div>
+              <div class="card__body" style="display:flex;flex-direction:column;gap:var(--sp-3)">
+                <div class="driver-status-row">
+                  <span style="font-size:var(--text-sm);font-weight:var(--weight-bold);color:#334155">حالة الحساب</span>
+                  <span id="driver-acct-status-label" style="font-size:var(--text-sm);font-weight:var(--weight-bold)">—</span>
+                </div>
+                <div class="driver-status-row">
+                  <span style="font-size:var(--text-sm);font-weight:var(--weight-bold);color:#334155">حالة الطلب</span>
+                  <span id="driver-app-status-label" style="font-size:var(--text-sm);font-weight:var(--weight-bold)">—</span>
+                </div>
+                <div id="driver-order-eligibility" style="display:none;padding:var(--sp-3);border-radius:10px;font-size:var(--text-sm);font-weight:var(--weight-bold);text-align:center"></div>
+              </div>
+            </div>
+
+            <!-- Account & security -->
+            <div class="card">
+              <div class="card__header">
+                <h2 class="card__title">الحساب والأمان</h2>
+              </div>
+              <div class="card__body--no-pad">
+                <div class="security-row">
+                  <div class="security-row__info">
+                    <div class="security-row__label">رقم الجوال</div>
+                    <div class="security-row__desc" id="sec-phone">—</div>
+                  </div>
+                  <button class="btn-outline" id="change-phone-btn" type="button">تغيير</button>
+                </div>
+                <!-- Phone change panel -->
+                <div class="phone-change-panel" id="phone-change-panel">
+                  <!-- Step 1: enter new phone -->
+                  <div class="pc-step is-active" id="pc-step1">
+                    <div class="pc-title">📱 تغيير رقم الجوال</div>
+                    <div class="pc-hint">أدخل رقم الجوال الجديد وسنرسل إليه كود التحقق</div>
+                    <input class="form-input" id="pc-new-phone" type="tel" inputmode="numeric" placeholder="01XXXXXXXXX" dir="ltr" maxlength="13">
+                    <div class="pc-err" id="pc-err1"></div>
+                    <div class="pc-btns">
+                      <button class="btn-save" id="pc-send-btn" type="button">إرسال كود التحقق</button>
+                      <button class="btn-save" id="pc-cancel-btn" type="button" style="background:#F8FAFF;color:#334155;border:1.5px solid #E2E8F0">إلغاء</button>
+                    </div>
+                  </div>
+                  <!-- Step 2: OTP verification -->
+                  <div class="pc-step" id="pc-step2">
+                    <div class="pc-title">🔐 أدخل كود التحقق</div>
+                    <div class="pc-hint">أُرسل الكود إلى <span class="pc-new-phone-badge" id="pc-phone-badge"></span></div>
+                    <div class="pc-otp-group" id="pc-otp-group">
+                      <input type="text" class="pc-otp-box" inputmode="numeric" pattern="[0-9]" maxlength="1" autocomplete="one-time-code">
+                      <input type="text" class="pc-otp-box" inputmode="numeric" pattern="[0-9]" maxlength="1">
+                      <input type="text" class="pc-otp-box" inputmode="numeric" pattern="[0-9]" maxlength="1">
+                      <input type="text" class="pc-otp-box" inputmode="numeric" pattern="[0-9]" maxlength="1">
+                      <input type="text" class="pc-otp-box" inputmode="numeric" pattern="[0-9]" maxlength="1">
+                      <input type="text" class="pc-otp-box" inputmode="numeric" pattern="[0-9]" maxlength="1">
+                    </div>
+                    <div class="pc-err" id="pc-err2"></div>
+                    <div class="pc-btns">
+                      <button class="btn-save" id="pc-verify-btn" type="button">تأكيد التغيير</button>
+                      <button class="btn-save" id="pc-back-btn" type="button" style="background:#F8FAFF;color:#334155;border:1.5px solid #E2E8F0">رجوع</button>
+                    </div>
                   </div>
                 </div>
-                <div class="form-row">
-                  <div class="form-group">
-                    <label class="form-label" for="edit-email">البريد الإلكتروني</label>
-                    <input class="form-input" id="edit-email" type="email" placeholder="email@example.com" dir="ltr" autocomplete="email">
+                <div class="security-row">
+                  <div class="security-row__info">
+                    <div class="security-row__label">كلمة المرور</div>
+                    <div class="security-row__desc">محمية بكلمة مرور قوية</div>
                   </div>
-                  <div class="form-group">
-                    <label class="form-label" for="edit-city">المدينة</label>
-                    <input class="form-input" id="edit-city" type="text" placeholder="مثال: دمياط الجديدة">
+                  <a href="/login" class="btn-outline" style="text-decoration:none">تغيير</a>
+                </div>
+                <div class="security-row">
+                  <div class="security-row__info">
+                    <div class="security-row__label">تسجيل الخروج</div>
+                    <div class="security-row__desc">الخروج من حسابك على هذا الجهاز</div>
                   </div>
-                </div>
-                <div style="display:flex;gap:var(--sp-3);align-items:center;flex-wrap:wrap">
-                  <button class="btn-save" type="submit">💾 حفظ التغييرات</button>
-                  <button class="btn-save" type="button" id="edit-cancel-btn" style="background:var(--color-bg-soft);color:var(--color-text);border:1.5px solid var(--color-border)">إلغاء</button>
-                  <span class="save-success" id="save-success-msg">✅ تم الحفظ بنجاح!</span>
-                </div>
-              </form>
-            </div>
-          </div>
-        </div>
-
-        <!-- Driver status card (only shown for drivers) -->
-        <div class="card" id="driver-status-card" style="display:none;margin-bottom:var(--sp-4)">
-          <div class="card__header">
-            <h2 class="card__title">🚗 حالة حساب السائق</h2>
-          </div>
-          <div class="card__body" style="display:flex;flex-direction:column;gap:var(--sp-3)">
-            <div style="display:flex;align-items:center;justify-content:space-between;padding:var(--sp-3);background:var(--color-bg-soft);border-radius:var(--radius);border:1px solid var(--color-border)">
-              <span style="font-size:var(--text-sm);font-weight:var(--weight-bold);color:var(--color-text)">حالة الحساب</span>
-              <span id="driver-acct-status-label" style="font-size:var(--text-sm);font-weight:var(--weight-bold)">—</span>
-            </div>
-            <div style="display:flex;align-items:center;justify-content:space-between;padding:var(--sp-3);background:var(--color-bg-soft);border-radius:var(--radius);border:1px solid var(--color-border)">
-              <span style="font-size:var(--text-sm);font-weight:var(--weight-bold);color:var(--color-text)">حالة الطلب</span>
-              <span id="driver-app-status-label" style="font-size:var(--text-sm);font-weight:var(--weight-bold)">—</span>
-            </div>
-            <div id="driver-order-eligibility" style="display:none;padding:var(--sp-3);border-radius:var(--radius);font-size:var(--text-sm);font-weight:var(--weight-bold);text-align:center"></div>
-          </div>
-        </div>
-
-        <!-- Account & security -->
-        <div class="card">
-          <div class="card__header">
-            <h2 class="card__title">الحساب والأمان</h2>
-          </div>
-          <div class="card__body">
-            <div class="security-row">
-              <div class="security-row__info">
-                <div class="security-row__label">رقم الجوال</div>
-                <div class="security-row__desc" id="sec-phone">—</div>
-              </div>
-              <button class="btn-danger" id="change-phone-btn" type="button" style="background:#EFF6FF;color:#2563EB;border-color:#BFDBFE">تغيير</button>
-            </div>
-            <!-- Phone change panel -->
-            <div class="phone-change-panel" id="phone-change-panel">
-              <!-- Step 1: enter new phone -->
-              <div class="pc-step is-active" id="pc-step1">
-                <div class="pc-title">📱 تغيير رقم الجوال</div>
-                <div class="pc-hint">أدخل رقم الجوال الجديد وسنرسل إليه كود التحقق</div>
-                <input class="form-input" id="pc-new-phone" type="tel" inputmode="numeric" placeholder="01XXXXXXXXX" dir="ltr" maxlength="13">
-                <div class="pc-err" id="pc-err1"></div>
-                <div class="pc-btns">
-                  <button class="btn-save" id="pc-send-btn" type="button">إرسال كود التحقق</button>
-                  <button class="btn-save" id="pc-cancel-btn" type="button" style="background:var(--color-bg-soft);color:var(--color-text);border:1.5px solid var(--color-border)">إلغاء</button>
-                </div>
-              </div>
-              <!-- Step 2: OTP verification -->
-              <div class="pc-step" id="pc-step2">
-                <div class="pc-title">🔐 أدخل كود التحقق</div>
-                <div class="pc-hint">أُرسل الكود إلى <span class="pc-new-phone-badge" id="pc-phone-badge"></span></div>
-                <div class="pc-otp-group" id="pc-otp-group">
-                  <input type="text" class="pc-otp-box" inputmode="numeric" pattern="[0-9]" maxlength="1" autocomplete="one-time-code">
-                  <input type="text" class="pc-otp-box" inputmode="numeric" pattern="[0-9]" maxlength="1">
-                  <input type="text" class="pc-otp-box" inputmode="numeric" pattern="[0-9]" maxlength="1">
-                  <input type="text" class="pc-otp-box" inputmode="numeric" pattern="[0-9]" maxlength="1">
-                  <input type="text" class="pc-otp-box" inputmode="numeric" pattern="[0-9]" maxlength="1">
-                  <input type="text" class="pc-otp-box" inputmode="numeric" pattern="[0-9]" maxlength="1">
-                </div>
-                <div class="pc-err" id="pc-err2"></div>
-                <div class="pc-btns">
-                  <button class="btn-save" id="pc-verify-btn" type="button">تأكيد التغيير</button>
-                  <button class="btn-save" id="pc-back-btn" type="button" style="background:var(--color-bg-soft);color:var(--color-text);border:1.5px solid var(--color-border)">رجوع</button>
+                  <button class="btn-danger" id="logout-btn" type="button">خروج</button>
                 </div>
               </div>
             </div>
-            <div class="security-row">
-              <div class="security-row__info">
-                <div class="security-row__label">كلمة المرور</div>
-                <div class="security-row__desc">محمية بكلمة مرور قوية</div>
+          </div>
+
+          <!-- ── Tab: الطلبات ──────────────────────────── -->
+          <div class="tab-panel" id="tab-orders" role="tabpanel" hidden>
+            <div class="orders-filters" id="order-filters">
+              <button class="orders-filter is-active" data-filter="all">الكل</button>
+              <button class="orders-filter" data-filter="active">نشط</button>
+              <button class="orders-filter" data-filter="delivered">مُسلَّم</button>
+              <button class="orders-filter" data-filter="cancelled">ملغي</button>
+            </div>
+            <div id="orders-list">
+              <div class="empty-state">
+                <div class="empty-state__icon">🛵</div>
+                <div class="empty-state__title">لا توجد طلبات بعد</div>
+                <div class="empty-state__text">طلباتك ستظهر هنا بعد أول عملية توصيل</div>
               </div>
-              <a href="/login" class="btn-danger" style="text-decoration:none">تغيير</a>
             </div>
-            <div class="security-row">
-              <div class="security-row__info">
-                <div class="security-row__label">تسجيل الخروج</div>
-                <div class="security-row__desc">الخروج من حسابك على هذا الجهاز</div>
+          </div>
+
+          <!-- ── Tab: المشاوير ─────────────────────────── -->
+          <div class="tab-panel" id="tab-rides" role="tabpanel" hidden>
+            <div id="rides-list">
+              <div class="empty-state">
+                <div class="empty-state__icon">🚗</div>
+                <div class="empty-state__title">لا توجد رحلات بعد</div>
+                <div class="empty-state__text">رحلاتك ستظهر هنا بعد أول مشوار</div>
               </div>
-              <button class="btn-danger" id="logout-btn" type="button">خروج</button>
             </div>
           </div>
-        </div>
-      </div>
 
-      <!-- ── Tab: الطلبات ──────────────────────────────────── -->
-      <div class="tab-panel" id="tab-orders" role="tabpanel" hidden>
-        <div class="orders-filters" id="order-filters">
-          <button class="orders-filter is-active" data-filter="all">الكل</button>
-          <button class="orders-filter" data-filter="active">نشط</button>
-          <button class="orders-filter" data-filter="delivered">مُسلَّم</button>
-          <button class="orders-filter" data-filter="cancelled">ملغي</button>
-        </div>
-        <div id="orders-list">
-          <div class="empty-state">
-            <div class="empty-state__icon">🛵</div>
-            <div class="empty-state__title">لا توجد طلبات بعد</div>
-            <div class="empty-state__text">طلباتك ستظهر هنا بعد أول عملية توصيل</div>
-          </div>
-        </div>
-      </div>
+          <!-- ── Tab: الإحصائيات ───────────────────────── -->
+          <div class="tab-panel" id="tab-stats" role="tabpanel" hidden>
+            <!-- Summary numbers -->
+            <div class="stats-grid">
+              <div class="stats-card">
+                <div class="stats-card__num" id="st-total-orders">0</div>
+                <div class="stats-card__label">إجمالي الطلبات</div>
+              </div>
+              <div class="stats-card stats-card--green">
+                <div class="stats-card__num" id="st-total-spent">0</div>
+                <div class="stats-card__label">إجمالي الإنفاق (ج.م)</div>
+              </div>
+              <div class="stats-card stats-card--orange">
+                <div class="stats-card__num" id="st-avg-order">0</div>
+                <div class="stats-card__label">متوسط قيمة الطلب (ج.م)</div>
+              </div>
+              <div class="stats-card">
+                <div class="stats-card__num" id="st-total-rides">0</div>
+                <div class="stats-card__label">إجمالي الرحلات</div>
+              </div>
+              <div class="stats-card stats-card--green">
+                <div class="stats-card__num" id="st-delivered">0</div>
+                <div class="stats-card__label">طلبات مُسلَّمة</div>
+              </div>
+              <div class="stats-card stats-card--orange">
+                <div class="stats-card__num" id="st-this-month">0</div>
+                <div class="stats-card__label">طلبات هذا الشهر</div>
+              </div>
+            </div>
 
-      <!-- ── Tab: المشاوير ─────────────────────────────────── -->
-      <div class="tab-panel" id="tab-rides" role="tabpanel" hidden>
-        <div id="rides-list">
-          <div class="empty-state">
-            <div class="empty-state__icon">🚗</div>
-            <div class="empty-state__title">لا توجد رحلات بعد</div>
-            <div class="empty-state__text">رحلاتك ستظهر هنا بعد أول مشوار</div>
-          </div>
-        </div>
-      </div>
+            <!-- Category breakdown -->
+            <div class="card">
+              <div class="card__header">
+                <h2 class="card__title">🍕 الإنفاق حسب نوع الخدمة</h2>
+              </div>
+              <div class="card__body">
+                <div class="category-list" id="category-breakdown">
+                  <p style="color:#94A3B8;font-size:var(--text-sm)">لا توجد بيانات كافية بعد</p>
+                </div>
+              </div>
+            </div>
 
-      <!-- ── Tab: الإحصائيات ───────────────────────────────── -->
-      <div class="tab-panel" id="tab-stats" role="tabpanel" hidden>
-        <!-- Summary numbers -->
-        <div class="stats-grid" style="margin-bottom:var(--sp-6)">
-          <div class="stats-card">
-            <div class="stats-card__num" id="st-total-orders">0</div>
-            <div class="stats-card__label">إجمالي الطلبات</div>
-          </div>
-          <div class="stats-card stats-card--green">
-            <div class="stats-card__num" id="st-total-spent">0</div>
-            <div class="stats-card__label">إجمالي الإنفاق (ج.م)</div>
-          </div>
-          <div class="stats-card stats-card--orange">
-            <div class="stats-card__num" id="st-avg-order">0</div>
-            <div class="stats-card__label">متوسط قيمة الطلب (ج.م)</div>
-          </div>
-          <div class="stats-card">
-            <div class="stats-card__num" id="st-total-rides">0</div>
-            <div class="stats-card__label">إجمالي الرحلات</div>
-          </div>
-          <div class="stats-card stats-card--green">
-            <div class="stats-card__num" id="st-delivered">0</div>
-            <div class="stats-card__label">طلبات مُسلَّمة</div>
-          </div>
-          <div class="stats-card stats-card--orange">
-            <div class="stats-card__num" id="st-this-month">0</div>
-            <div class="stats-card__label">طلبات هذا الشهر</div>
-          </div>
-        </div>
+            <!-- Top stores -->
+            <div class="card">
+              <div class="card__header">
+                <h2 class="card__title">⭐ المحلات المفضلة</h2>
+              </div>
+              <div class="card__body">
+                <div id="top-stores">
+                  <p style="color:#94A3B8;font-size:var(--text-sm)">لا توجد بيانات كافية بعد</p>
+                </div>
+              </div>
+            </div>
 
-        <!-- Category breakdown -->
-        <div class="card" style="margin-bottom:var(--sp-4)">
-          <div class="card__header">
-            <h2 class="card__title">🍕 الإنفاق حسب نوع الخدمة</h2>
-          </div>
-          <div class="card__body">
-            <div class="category-list" id="category-breakdown">
-              <p style="color:var(--color-text-muted);font-size:var(--text-sm)">لا توجد بيانات كافية بعد</p>
+            <!-- Monthly breakdown table -->
+            <div class="card">
+              <div class="card__header">
+                <h2 class="card__title">📅 الإنفاق الشهري</h2>
+              </div>
+              <div class="card__body--no-pad">
+                <table class="monthly-table">
+                  <thead>
+                    <tr>
+                      <th>الشهر</th>
+                      <th>عدد الطلبات</th>
+                      <th>إجمالي الإنفاق</th>
+                      <th>متوسط الطلب</th>
+                    </tr>
+                  </thead>
+                  <tbody id="monthly-tbody">
+                    <tr><td colspan="4" style="text-align:center;color:#94A3B8">لا توجد بيانات بعد</td></tr>
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
-        </div>
 
-        <!-- Top stores -->
-        <div class="card" style="margin-bottom:var(--sp-4)">
-          <div class="card__header">
-            <h2 class="card__title">⭐ المحلات المفضلة</h2>
-          </div>
-          <div class="card__body">
-            <div id="top-stores">
-              <p style="color:var(--color-text-muted);font-size:var(--text-sm)">لا توجد بيانات كافية بعد</p>
-            </div>
-          </div>
-        </div>
+        </div><!-- /.tabs-wrapper__body -->
+      </div><!-- /.tabs-wrapper -->
 
-        <!-- Monthly breakdown table -->
-        <div class="card">
-          <div class="card__header">
-            <h2 class="card__title">📅 الإنفاق الشهري</h2>
-          </div>
-          <div class="card__body" style="padding:0;overflow:hidden">
-            <table class="monthly-table">
-              <thead>
-                <tr>
-                  <th>الشهر</th>
-                  <th>عدد الطلبات</th>
-                  <th>إجمالي الإنفاق</th>
-                  <th>متوسط الطلب</th>
-                </tr>
-              </thead>
-              <tbody id="monthly-tbody">
-                <tr><td colspan="4" style="text-align:center;color:var(--color-text-muted)">لا توجد بيانات بعد</td></tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-
-    </div><!-- /.profile-body -->
+    </div><!-- /.profile-inner -->
   </div><!-- /#profile-content -->
 </div><!-- /.profile-wrap -->
 
@@ -1070,6 +1097,7 @@ import Layout from '../components/layout.astro';
       ? parts[0][0] + parts[1][0]
       : parts[0].slice(0, 2);
   }
+  function displayPhone(p) { return p && p.startsWith('+20') ? '0' + p.slice(3) : p || '—'; }
   function showToast(msg) {
     const t = document.getElementById('toast');
     t.textContent = msg;
@@ -1216,7 +1244,7 @@ import Layout from '../components/layout.astro';
 
     $('prof-avatar').textContent = initials(name);
     $('prof-name').textContent   = name;
-    $('prof-phone').textContent  = phone;
+    $('prof-phone').textContent  = displayPhone(phone);
 
     const badge = $('prof-role-badge');
     badge.textContent = role === 'driver' ? '🚗 سائق' : '👤 عميل';
@@ -1232,7 +1260,7 @@ import Layout from '../components/layout.astro';
 
     // Info view fields
     $('view-name').textContent     = name;
-    $('view-phone').textContent    = phone;
+    $('view-phone').textContent    = displayPhone(phone);
     $('view-email').textContent    = acc.email    || '';
     if (!acc.email)    $('view-email').classList.add('info-field__value--empty'),    $('view-email').textContent    = 'غير محدد';
     $('view-username').textContent = acc.username || '';
@@ -1241,7 +1269,7 @@ import Layout from '../components/layout.astro';
     if (!city)         $('view-city').classList.add('info-field__value--empty');
     $('view-role').textContent     = role === 'driver' ? 'سائق توصيل' : 'عميل';
     $('view-created').textContent  = fmtDate(since);
-    $('sec-phone').textContent     = phone;
+    $('sec-phone').textContent     = displayPhone(phone);
 
     // Pre-fill edit form
     $('edit-name').value     = name !== '—' ? name : '';
@@ -1745,9 +1773,9 @@ import Layout from '../components/layout.astro';
         if (cachedAccount) cachedAccount.phone = pcNewPhone;
 
         // Refresh displayed phone
-        $('prof-phone').textContent = pcNewPhone;
-        $('view-phone').textContent = pcNewPhone;
-        $('sec-phone').textContent  = pcNewPhone;
+        $('prof-phone').textContent = displayPhone(pcNewPhone);
+        $('view-phone').textContent = displayPhone(pcNewPhone);
+        $('sec-phone').textContent  = displayPhone(pcNewPhone);
 
         resetPanel();
         showToast('✅ تم تغيير رقم الجوال بنجاح');
