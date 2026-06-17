@@ -204,11 +204,14 @@ import PageHero from '../components/PageHero.astro';
     return '+2' + p; // 01xxxxxxxxx → +201xxxxxxxxx
   }
 
-  // ── Supabase account lookup ──
+  // ── Supabase account lookup (both phone formats) ──
   async function fetchAccount(phone: string) {
     try {
+      const local = phone.startsWith('+20') ? '0' + phone.slice(3) : phone;
+      const intl  = phone.startsWith('01')  ? '+2' + phone : phone;
+      const orFilter = `or=(phone.eq.${encodeURIComponent(intl)},phone.eq.${encodeURIComponent(local)})`;
       const res = await fetch(
-        `${SB_URL}/rest/v1/accounts?phone=eq.${encodeURIComponent(phone)}&select=*&limit=1`,
+        `${SB_URL}/rest/v1/accounts?${orFilter}&select=*&limit=1`,
         { headers: SB_H }
       );
       if (!res.ok) return null;
@@ -317,8 +320,10 @@ import PageHero from '../components/PageHero.astro';
         return;
       }
 
-      goToOTP(normalized);
-      await sendOTP(normalized);
+      // Use the phone exactly as stored in DB to keep everything consistent
+      const canonicalPhone = account.phone || normalized;
+      goToOTP(canonicalPhone);
+      await sendOTP(canonicalPhone);
     } catch (e: any) {
       showErr(errBox1, e.message || 'حدث خطأ، حاول مرة أخرى.');
     } finally {
