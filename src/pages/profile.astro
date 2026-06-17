@@ -708,6 +708,7 @@ import Layout from '../components/layout.astro';
         <span class="pf-stat__num" id="stat-month">0</span>
         <span class="pf-stat__lbl">📅 الشهر</span>
       </div>
+    </div><!-- /.pf-stats -->
 
     <!-- ── Tabs ───────────────────────────────────────────── -->
     <div class="pf-body">
@@ -953,6 +954,7 @@ import Layout from '../components/layout.astro';
               <p style="color:var(--color-text-muted);font-size:var(--text-sm)">لا توجد بيانات كافية بعد</p>
             </div>
           </div>
+        </div><!-- /.card category-breakdown -->
 
         <div class="card" style="margin-bottom:var(--sp-4)">
           <div class="card__header"><h2 class="card__title">⭐ المحلات المفضلة</h2></div>
@@ -1040,7 +1042,6 @@ import Layout from '../components/layout.astro';
     const parts = name.trim().split(/\s+/);
     return parts.length >= 2 ? parts[0][0] + parts[1][0] : parts[0].slice(0, 2);
   }
-  function displayPhone(p) { return p && p.startsWith('+20') ? '0' + p.slice(3) : p || '—'; }
   function showToast(msg) {
     const t = document.getElementById('toast');
     t.textContent = msg;
@@ -1079,15 +1080,17 @@ import Layout from '../components/layout.astro';
       .catch(() => null);
   }
   async function fetchOrders(phone) {
-    const data = await sbFetch(
-      SB_URL + '/rest/v1/orders?customer_phone=eq.' + encodeURIComponent(phone) +
-      '&order=created_at.desc&limit=100');
+    const intl  = intlPhone(phone);
+    const local = localPhone(phone);
+    const filter = 'or=(customer_phone.eq.' + encodeURIComponent(intl) + ',customer_phone.eq.' + encodeURIComponent(local) + ')';
+    const data = await sbFetch(SB_URL + '/rest/v1/orders?' + filter + '&order=created_at.desc&limit=100');
     return Array.isArray(data) ? data : [];
   }
   async function fetchRides(phone) {
-    const data = await sbFetch(
-      SB_URL + '/rest/v1/rides?customer_phone=eq.' + encodeURIComponent(phone) +
-      '&order=created_at.desc&limit=100');
+    const intl  = intlPhone(phone);
+    const local = localPhone(phone);
+    const filter = 'or=(customer_phone.eq.' + encodeURIComponent(intl) + ',customer_phone.eq.' + encodeURIComponent(local) + ')';
+    const data = await sbFetch(SB_URL + '/rest/v1/rides?' + filter + '&order=created_at.desc&limit=100');
     return Array.isArray(data) ? data : [];
   }
   function localPhone(phone) {
