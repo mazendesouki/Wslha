@@ -174,6 +174,10 @@ import Layout from '../components/layout.astro';
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     gap: var(--sp-3);
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding-bottom: 2px;
   }
   .pf-stat {
     background: #fff;
@@ -219,16 +223,19 @@ import Layout from '../components/layout.astro';
     flex-shrink: 0;
     padding: var(--sp-3) var(--sp-4);
     border: none;
+    border-bottom: 3px solid transparent;
+    margin-bottom: -2px;
     background: transparent;
     font-family: var(--font-body);
     font-size: var(--text-sm);
     font-weight: var(--weight-bold);
-    color: var(--color-text-muted);
+    color: #94A3B8;
     cursor: pointer;
     border-bottom: 3px solid transparent;
     margin-bottom: -2px;
     transition: color 0.2s, border-color 0.2s;
     white-space: nowrap;
+    flex-shrink: 0;
   }
   .profile-tab.is-active { color: #4338CA; border-bottom-color: #4338CA; }
   .profile-tab:not(.is-active):hover { color: var(--color-text); background: #F5F7FF; }
@@ -253,6 +260,19 @@ import Layout from '../components/layout.astro';
     overflow: hidden;
     margin-bottom: var(--sp-4);
   }
+  .tabs-wrapper__nav { padding: 0 var(--sp-2); border-bottom: 2px solid #E2E8F0; }
+  .tabs-wrapper__nav .profile-tabs-nav { border-bottom: none; margin-bottom: 0; }
+  .tabs-wrapper__body { padding: var(--sp-5); }
+
+  /* ── Card base ──────────────────────────────────────────────── */
+  .card {
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 2px 16px rgba(59,91,219,0.08);
+    overflow: hidden;
+    margin-bottom: var(--sp-4);
+  }
+  .card:last-child { margin-bottom: 0; }
   .card__header {
     padding: var(--sp-4) var(--sp-5);
     border-bottom: 1px solid #EEF2FF;
@@ -263,10 +283,11 @@ import Layout from '../components/layout.astro';
   .card__title {
     font-size: var(--text-base);
     font-weight: var(--weight-black);
-    color: var(--color-text);
+    color: #1E293B;
     margin: 0;
   }
   .card__body { padding: var(--sp-5); }
+  .card__body--no-pad { padding: 0; overflow: hidden; }
 
   /* ── Info tab ────────────────────────────────────────────────── */
   .info-grid {
@@ -286,7 +307,7 @@ import Layout from '../components/layout.astro';
   .info-field__value {
     font-size: var(--text-sm);
     font-weight: var(--weight-semi);
-    color: var(--color-text);
+    color: #1E293B;
     padding: var(--sp-2) var(--sp-3);
     background: #F5F7FF;
     border: 1.5px solid #E0E7FF;
@@ -295,12 +316,12 @@ import Layout from '../components/layout.astro';
     display: flex;
     align-items: center;
   }
-  .info-field__value--empty { color: var(--color-text-faint); font-style: italic; }
+  .info-field__value--empty { color: #CBD5E1; font-style: italic; }
 
   /* Edit form */
   .edit-form { display: flex; flex-direction: column; gap: var(--sp-4); }
   .form-group { display: flex; flex-direction: column; gap: var(--sp-2); }
-  .form-label { font-size: var(--text-sm); font-weight: var(--weight-bold); color: var(--color-text); }
+  .form-label { font-size: var(--text-sm); font-weight: var(--weight-bold); color: #334155; }
   .form-input {
     padding: var(--sp-3) var(--sp-4);
     border: 1.5px solid #C7D2FE;
@@ -311,7 +332,6 @@ import Layout from '../components/layout.astro';
     background: #fff;
     transition: border-color 0.2s;
     width: 100%;
-    box-sizing: border-box;
   }
   .form-input:focus { outline: none; border-color: #4338CA; box-shadow: 0 0 0 3px rgba(67,56,202,0.1); }
   .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-4); }
@@ -320,13 +340,17 @@ import Layout from '../components/layout.astro';
     background: #4338CA;
     color: #fff;
     border: none;
-    border-radius: var(--radius);
+    border-radius: 10px;
     font-family: var(--font-body);
     font-size: var(--text-base);
     font-weight: var(--weight-bold);
     cursor: pointer;
     transition: background 0.2s, transform 0.2s;
     align-self: flex-start;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--sp-2);
   }
   .btn-save:hover { background: #3730A3; transform: translateY(-1px); }
   .save-success {
@@ -380,12 +404,13 @@ import Layout from '../components/layout.astro';
   .security-row__label {
     font-size: var(--text-sm);
     font-weight: var(--weight-bold);
-    color: var(--color-text);
+    color: #1E293B;
   }
   .security-row__desc {
     font-size: var(--text-xs);
-    color: var(--color-text-muted);
+    color: #94A3B8;
     margin-top: 2px;
+    direction: ltr;
   }
   .btn-outline {
     padding: var(--sp-2) var(--sp-4);
@@ -416,7 +441,6 @@ import Layout from '../components/layout.astro';
     text-decoration: none;
     display: inline-block;
   }
-  .btn-danger:hover { background: #DC2626; color: #fff; }
 
   /* ── Phone-change panel ──────────────────────────────────────── */
   .phone-change-panel {
@@ -612,6 +636,8 @@ import Layout from '../components/layout.astro';
     .info-grid { grid-template-columns: 1fr; }
     .form-row { grid-template-columns: 1fr; }
     .stats-grid { grid-template-columns: repeat(2, 1fr); }
+    .tabs-wrapper__body { padding: var(--sp-4) var(--sp-3); }
+    .stat-box { min-width: 80px; padding: var(--sp-3); }
   }
   @media (max-width: 420px) {
     .pf-hero-card { gap: var(--sp-3); }
@@ -682,7 +708,6 @@ import Layout from '../components/layout.astro';
         <span class="pf-stat__num" id="stat-month">0</span>
         <span class="pf-stat__lbl">📅 الشهر</span>
       </div>
-    </div>
 
     <!-- ── Tabs ───────────────────────────────────────────── -->
     <div class="pf-body">
@@ -847,7 +872,6 @@ import Layout from '../components/layout.astro';
                 <div class="security-row__label">تسجيل الخروج</div>
                 <div class="security-row__desc">الخروج من حسابك على هذا الجهاز</div>
               </div>
-              <button class="btn-danger" id="logout-btn" type="button">خروج</button>
             </div>
           </div>
         </div>
@@ -928,7 +952,6 @@ import Layout from '../components/layout.astro';
               <p style="color:var(--color-text-muted);font-size:var(--text-sm)">لا توجد بيانات كافية بعد</p>
             </div>
           </div>
-        </div>
 
         <div class="card" style="margin-bottom:var(--sp-4)">
           <div class="card__header"><h2 class="card__title">⭐ المحلات المفضلة</h2></div>
@@ -1016,6 +1039,7 @@ import Layout from '../components/layout.astro';
     const parts = name.trim().split(/\s+/);
     return parts.length >= 2 ? parts[0][0] + parts[1][0] : parts[0].slice(0, 2);
   }
+  function displayPhone(p) { return p && p.startsWith('+20') ? '0' + p.slice(3) : p || '—'; }
   function showToast(msg) {
     const t = document.getElementById('toast');
     t.textContent = msg;
