@@ -105,6 +105,24 @@ const { currentPage } = Astro.props;
               تتبع الطلب
             </a>
 
+            <!-- Driver dashboard (only for drivers) -->
+            <div class="nav__dropdown-divider" id="dropdown-driver-divider" hidden></div>
+            <a href="/driver-dashboard" class="nav__dropdown-item nav__dropdown-driver" id="dropdown-driver-dash" role="menuitem" hidden>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 17 L3 17 L3 11 L12 3 L21 11 L21 17 L15 17"/><rect x="9" y="12" width="6" height="5" rx="1"/></svg>
+              لوحة السائق
+            </a>
+
+            <!-- Merchant dashboard (only for merchants) -->
+            <div class="nav__dropdown-divider" id="dropdown-merchant-divider" hidden></div>
+            <a href="/merchant-dashboard" class="nav__dropdown-item nav__dropdown-merchant" id="dropdown-merchant-dash" role="menuitem" hidden>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+              لوحة التاجر
+            </a>
+            <a href="/restaurant-orders" class="nav__dropdown-item nav__dropdown-orders-dash" id="dropdown-restaurant-orders" role="menuitem" hidden>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 12h6M9 16h4"/></svg>
+              📡 إدارة الطلبات
+            </a>
+
             <!-- Login (only when not logged in) -->
             <div class="nav__dropdown-divider" id="dropdown-divider" hidden></div>
             <a href="/login" class="nav__dropdown-item" id="dropdown-login" role="menuitem">
@@ -151,6 +169,9 @@ const { currentPage } = Astro.props;
       <div class="nav__mobile-user-links" id="nav-mobile-user-links" hidden>
         <a href="/orders" class="nav__mobile-link" id="nav-mobile-orders">📋 طلباتي</a>
         <a href="/track" class="nav__mobile-link" id="nav-mobile-track">📡 تتبع الطلب</a>
+        <a href="/driver-dashboard" class="nav__mobile-link" id="nav-mobile-driver-dash" hidden>🚗 لوحة السائق</a>
+        <a href="/merchant-dashboard" class="nav__mobile-link" id="nav-mobile-merchant-dash" hidden>🏪 لوحة التاجر</a>
+        <a href="/restaurant-orders" class="nav__mobile-link" id="nav-mobile-restaurant-orders" hidden>📡 إدارة الطلبات</a>
       </div>
       <div class="nav__mobile-actions">
         <a href="/login" class="btn btn--outline" style="width:100%;justify-content:center;" id="nav-mobile-login">تسجيل الدخول</a>
@@ -198,12 +219,45 @@ const { currentPage } = Astro.props;
         show('nav-mobile-user-links');
         hide('nav-mobile-login');
 
-        if (user.role === 'merchant') {
+        if (user.role === 'driver') {
+          // Driver: show driver dashboard link, hide merchant buttons
+          show('dropdown-driver-divider');
+          show('dropdown-driver-dash');
+          hide('dropdown-merchant-divider');
+          hide('dropdown-merchant-dash');
+          hide('dropdown-restaurant-orders');
+          hide('nav-mobile-merchant-dash');
+          hide('nav-mobile-restaurant-orders');
+          show('nav-mobile-driver-dash');
           hide('nav-merchant-btn');
           hide('nav-mobile-merchant');
+          show('nav-driver-btn');
+        } else if (user.role === 'merchant') {
+          // Merchant: show merchant dashboard + orders, hide driver/join buttons
+          hide('dropdown-driver-divider');
+          hide('dropdown-driver-dash');
+          show('dropdown-merchant-divider');
+          show('dropdown-merchant-dash');
+          show('dropdown-restaurant-orders');
+          show('nav-mobile-merchant-dash');
+          show('nav-mobile-restaurant-orders');
+          hide('nav-mobile-driver-dash');
+          hide('nav-merchant-btn');
+          hide('nav-mobile-merchant');
+          hide('nav-driver-btn');
         } else {
+          // Regular customer
+          hide('dropdown-driver-divider');
+          hide('dropdown-driver-dash');
+          hide('dropdown-merchant-divider');
+          hide('dropdown-merchant-dash');
+          hide('dropdown-restaurant-orders');
+          hide('nav-mobile-driver-dash');
+          hide('nav-mobile-merchant-dash');
+          hide('nav-mobile-restaurant-orders');
           show('nav-merchant-btn');
           show('nav-mobile-merchant');
+          show('nav-driver-btn');
         }
       } else {
         profileName.textContent = 'دخول';
@@ -215,12 +269,18 @@ const { currentPage } = Astro.props;
         hide('dropdown-divider');
         hide('dropdown-logout-divider');
         hide('dropdown-logout');
+        hide('dropdown-driver-divider');
+        hide('dropdown-driver-dash');
+        hide('dropdown-merchant-divider');
+        hide('dropdown-merchant-dash');
+        hide('dropdown-restaurant-orders');
         show('dropdown-login');
         hide('nav-mobile-user-links');
         show('nav-mobile-login');
 
         show('nav-merchant-btn');
         show('nav-mobile-merchant');
+        show('nav-driver-btn');
       }
     } catch { /* storage unavailable */ }
   }
@@ -539,6 +599,12 @@ const { currentPage } = Astro.props;
 
   .nav__dropdown-driver { color: #16A34A; font-weight: var(--weight-bold); }
   .nav__dropdown-driver:hover { background: #DCFCE7; }
+
+  .nav__dropdown-merchant { color: #D97706; font-weight: var(--weight-bold); }
+  .nav__dropdown-merchant:hover { background: #FEF3C7; }
+
+  .nav__dropdown-orders-dash { color: #2563EB; font-weight: var(--weight-bold); }
+  .nav__dropdown-orders-dash:hover { background: #DBEAFE; }
 
   /* ── Hamburger ──────────────────────────────────────── */
   .nav__burger {
