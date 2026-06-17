@@ -1267,6 +1267,9 @@ import PageHero from '../components/PageHero.astro';
       if (effectiveAppStatus !== 'approved') {
         document.getElementById('toggle-btn').disabled = true;
         document.getElementById('toggle-btn').title = 'يجب اعتماد طلبك أولاً';
+      } else {
+        // Auto-activate: go online immediately when driver is approved
+        await goOnline();
       }
     } catch(e) { console.error('loadApprovalStatus error', e); }
   }
@@ -1418,78 +1421,74 @@ import PageHero from '../components/PageHero.astro';
     ]);
   }
 
+  /* ── Go online (shared by auto-activate and toggle) ── */
+  async function goOnline() {
+    isOnline = true;
+    const btn   = document.getElementById('toggle-btn');
+    const label = document.getElementById('toggle-label');
+    const text  = document.getElementById('toggle-text');
+    btn.classList.replace('offline', 'online');
+    text.textContent  = 'تشغيل';
+    label.textContent = 'متصل الآن';
+    label.className   = 'toggle-label online-text';
+    showState('waiting');
+
+    if (navigator.geolocation) {
+      geoWatchId = navigator.geolocation.watchPosition(
+        pos => { driverLat = pos.coords.latitude; driverLng = pos.coords.longitude; updateDriverMarker(); },
+        () => {}, { enableHighAccuracy: true, maximumAge: 3000 }
+      );
+    }
+    await upsertLocation(true);
+
+    function startRealtime() {
+      if (!_sb) return;
+      ridesChannel = _sb.channel('driver-new-rides')
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'rides' }, payload => {
+          const ride = payload.new;
+          if (ride.status === 'pending' && !ride.driver_phone && isOnline && !currentRide && !currentOrder) {
+            const reqEl = document.getElementById('ride-request');
+            if (!reqEl.classList.contains('visible') || pendingRide?.id !== ride.id) showRideRequest(ride);
+          }
+        })
+        .subscribe(status => {
+          if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+            if (!pollInterval) pollInterval = setInterval(() => { pollRides(); pollOrders(); }, 4000);
+          }
+          if (status === 'SUBSCRIBED') { clearInterval(pollInterval); pollInterval = null; }
+        });
+      ordersChannel = _sb.channel('driver-new-orders')
+        .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'orders' }, payload => {
+          const order = payload.new;
+          if (order.status === 'preparing' && !order.driver_phone && isOnline && !currentRide && !currentOrder) {
+            const reqEl = document.getElementById('ride-request');
+            if (!reqEl.classList.contains('visible') || pendingOrder?.id !== order.id) {
+              if (!pendingRide) showOrderRequest(order);
+            }
+          }
+        })
+        .subscribe();
+    }
+
+    if (_sb) {
+      startRealtime();
+    } else {
+      setTimeout(() => {
+        if (_sb) startRealtime();
+        else pollInterval = setInterval(() => { pollRides(); pollOrders(); }, 2500);
+      }, 1500);
+    }
+
+    window._gpsInterval = setInterval(() => upsertLocation(true), 3000);
+  }
+
   /* ── Toggle online/offline ── */
   document.getElementById('toggle-btn').addEventListener('click', async () => {
     if (!driver) return;
     isOnline = !isOnline;
-    const btn   = document.getElementById('toggle-btn');
-    const label = document.getElementById('toggle-label');
-    const text  = document.getElementById('toggle-text');
 
     if (isOnline) {
-      btn.classList.replace('offline', 'online');
-      text.textContent  = 'تشغيل';
-      label.textContent = 'متصل الآن';
-      label.className   = 'toggle-label online-text';
-      showState('waiting');
-
-      if (navigator.geolocation) {
-        geoWatchId = navigator.geolocation.watchPosition(
-          pos => { driverLat = pos.coords.latitude; driverLng = pos.coords.longitude; updateDriverMarker(); },
-          () => {}, { enableHighAccuracy: true, maximumAge: 3000 }
-        );
-      }
-      await upsertLocation(true);
-
-      // ── Supabase Realtime: فوري بدون polling ──
-      function startRealtime() {
-        if (!_sb) return;
-
-        ridesChannel = _sb.channel('driver-new-rides')
-          .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'rides' }, payload => {
-            const ride = payload.new;
-            if (ride.status === 'pending' && !ride.driver_phone && isOnline && !currentRide && !currentOrder) {
-              const reqEl = document.getElementById('ride-request');
-              if (!reqEl.classList.contains('visible') || pendingRide?.id !== ride.id) {
-                showRideRequest(ride);
-              }
-            }
-          })
-          .subscribe(status => {
-            // إذا فشل الـ Realtime → fallback للـ polling
-            if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
-              if (!pollInterval) pollInterval = setInterval(() => { pollRides(); pollOrders(); }, 4000);
-            }
-            if (status === 'SUBSCRIBED') {
-              clearInterval(pollInterval); pollInterval = null;
-            }
-          });
-
-        ordersChannel = _sb.channel('driver-new-orders')
-          .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'orders' }, payload => {
-            const order = payload.new;
-            if (order.status === 'preparing' && !order.driver_phone && isOnline && !currentRide && !currentOrder) {
-              const reqEl = document.getElementById('ride-request');
-              if (!reqEl.classList.contains('visible') || pendingOrder?.id !== order.id) {
-                if (!pendingRide) showOrderRequest(order);
-              }
-            }
-          })
-          .subscribe();
-      }
-
-      // انتظر تحميل مكتبة Supabase ثم اشترك
-      if (_sb) {
-        startRealtime();
-      } else {
-        // مكتبة لم تُحمّل بعد — انتظر ثانية ثم حاول
-        setTimeout(() => {
-          if (_sb) startRealtime();
-          else pollInterval = setInterval(() => { pollRides(); pollOrders(); }, 2500); // fallback
-        }, 1500);
-      }
-
-      window._gpsInterval = setInterval(() => upsertLocation(true), 3000);
+      await goOnline();
       showToast('أنت الآن متصل — انتظر الطلبات');
     } else {
       btn.classList.replace('online', 'offline');
