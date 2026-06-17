@@ -219,6 +219,8 @@ import PageHero from '../components/PageHero.astro';
     display: flex; align-items: center; justify-content: center; gap: var(--sp-2);
   }
   .action-btn:last-child { margin-bottom: 0; }
+  .action-btn.arrive  { background: #dbeafe; color: #1d4ed8; border: 1.5px solid #93c5fd; }
+  .action-btn.arrive:hover  { background: #bfdbfe; transform: translateY(-1px); }
   .action-btn.pickup  { background: var(--color-primary); color: #fff; }
   .action-btn.pickup:hover  { background: #1d4ed8; transform: translateY(-1px); }
   .action-btn.complete { background: #16a34a; color: #fff; }
@@ -531,7 +533,8 @@ import PageHero from '../components/PageHero.astro';
 
           <div class="action-card">
             <div class="action-card__title">الإجراءات</div>
-            <button class="action-btn pickup" id="btn-pickup" type="button">✓ التقطت الراكب</button>
+            <button class="action-btn arrive" id="btn-arrive" type="button">📍 وصلت لنقطة الاستلام</button>
+            <button class="action-btn pickup" id="btn-pickup" type="button" disabled>✓ التقطت الراكب / الطلب</button>
             <button class="action-btn" id="btn-complete" type="button" disabled>✓ وصلت للوجهة</button>
           </div>
         </div>
@@ -999,12 +1002,16 @@ import PageHero from '../components/PageHero.astro';
     document.getElementById('active-fare').textContent = String(o.delivery_fee ?? 20);
     document.getElementById('active-trip-status').textContent = 'توجّه للمتجر لاستلام الطلب';
 
+    const arriveBtn3  = document.getElementById('btn-arrive');
     const pickupBtn   = document.getElementById('btn-pickup');
     const completeBtn = document.getElementById('btn-complete');
+    arriveBtn3.textContent  = '📍 وصلت للمتجر';
+    arriveBtn3.disabled     = false;
+    arriveBtn3.classList.add('arrive');
     pickupBtn.textContent   = '📦 استلمت الطلب من المتجر';
     completeBtn.textContent = '✅ سلّمت الطلب للعميل';
-    pickupBtn.disabled   = false;
-    completeBtn.disabled = true;
+    pickupBtn.disabled      = true;
+    completeBtn.disabled    = true;
     pickupBtn.classList.add('pickup');
     completeBtn.classList.remove('complete');
 
@@ -1050,11 +1057,15 @@ import PageHero from '../components/PageHero.astro';
     document.getElementById('active-fare').textContent = currentRide.fare;
     document.getElementById('active-trip-status').textContent = 'في الطريق للإستلام';
 
+    const arriveBtn2  = document.getElementById('btn-arrive');
     const pickupBtn   = document.getElementById('btn-pickup');
     const completeBtn = document.getElementById('btn-complete');
-    pickupBtn.disabled   = false;
-    completeBtn.disabled = true;
+    arriveBtn2.textContent = '📍 وصلت لنقطة الاستلام';
+    arriveBtn2.disabled    = false;
+    arriveBtn2.classList.add('arrive');
+    pickupBtn.disabled     = true;
     pickupBtn.classList.add('pickup');
+    completeBtn.disabled   = true;
     completeBtn.classList.remove('complete');
 
     showState('active');
@@ -1065,6 +1076,22 @@ import PageHero from '../components/PageHero.astro';
   /* ── Reject ── */
   document.getElementById('reject-btn').addEventListener('click', () => {
     hideRideRequest(); pendingRide = null; pendingOrder = null;
+  });
+
+  /* ── Arrived at pickup point ── */
+  document.getElementById('btn-arrive').addEventListener('click', async () => {
+    const arriveBtn  = document.getElementById('btn-arrive');
+    const pickupBtn  = document.getElementById('btn-pickup');
+    if (currentRide) {
+      await patchRide(currentRide.id, { status: 'arrived' });
+      currentRide.status = 'arrived';
+      document.getElementById('active-trip-status').textContent = 'وصلت — انتظر الراكب 📍';
+    }
+    // For deliveries: no DB update needed, just unlock pickup button
+    arriveBtn.disabled = true;
+    arriveBtn.classList.remove('arrive');
+    pickupBtn.disabled = false;
+    showToast(currentRide ? 'وصلت لنقطة الاستلام — انتظر الراكب' : 'وصلت للمتجر — استلم الطلب');
   });
 
   /* ── Picked up ── */
@@ -1098,13 +1125,17 @@ import PageHero from '../components/PageHero.astro';
   });
 
   function resetActionButtons() {
-    const pickupBtn   = document.getElementById('btn-pickup');
+    const arriveBtn  = document.getElementById('btn-arrive');
+    const pickupBtn  = document.getElementById('btn-pickup');
     const completeBtn = document.getElementById('btn-complete');
-    pickupBtn.textContent   = '✓ التقطت الراكب';
-    completeBtn.textContent = '✓ وصلت للوجهة';
-    pickupBtn.disabled   = false;
-    completeBtn.disabled = true;
+    arriveBtn.textContent   = '📍 وصلت لنقطة الاستلام';
+    arriveBtn.disabled      = false;
+    arriveBtn.classList.add('arrive');
+    pickupBtn.textContent   = '✓ التقطت الراكب / الطلب';
+    pickupBtn.disabled      = true;
     pickupBtn.classList.add('pickup');
+    completeBtn.textContent = '✓ وصلت للوجهة';
+    completeBtn.disabled    = true;
     completeBtn.classList.remove('complete');
     // Restore reject button for next trip
     document.getElementById('reject-btn').style.display = '';

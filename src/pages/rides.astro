@@ -378,6 +378,16 @@ import { POPULAR_PLACES, PLACES, PLACE_CATEGORIES, CATEGORY_COLORS } from '../da
   .btn-filled { padding: var(--sp-3) var(--sp-5); background: var(--color-primary); border-radius: var(--radius-lg); color: #fff; font-family: var(--font-body); font-weight: var(--weight-bold); font-size: var(--text-sm); cursor: pointer; border: none; text-decoration: none; display: inline-flex; align-items: center; gap: var(--sp-2); transition: all var(--ease); }
   .btn-filled:hover { background: var(--color-primary-dark); }
 
+  /* ── rating card ── */
+  .rating-card { background: var(--color-bg); border: 1px solid var(--color-border); border-radius: var(--radius-xl); box-shadow: var(--shadow-md); padding: var(--sp-8) var(--sp-6); text-align: center; }
+  .rating-stars-row { display: flex; justify-content: center; gap: var(--sp-3); margin: var(--sp-4) 0; }
+  .star-btn { background: none; border: none; font-size: 2rem; cursor: pointer; transition: transform 0.15s; padding: 0; line-height: 1; }
+  .star-btn:hover { transform: scale(1.2); }
+  .rating-comment-box { width: 100%; border: 1.5px solid var(--color-border); border-radius: var(--radius-lg); padding: var(--sp-3); font-family: var(--font-body); font-size: var(--text-sm); resize: none; margin-bottom: var(--sp-4); box-sizing: border-box; }
+  .rating-comment-box:focus { outline: none; border-color: var(--color-primary); }
+  .payment-reminder { background: #FEF9C3; border: 1.5px solid #FDE047; border-radius: var(--radius-lg); padding: var(--sp-3) var(--sp-4); font-size: var(--text-sm); color: #92400E; margin-bottom: var(--sp-4); text-align: right; }
+  .rating-actions { display: flex; gap: var(--sp-3); justify-content: center; flex-wrap: wrap; }
+
   /* ── searching state ── */
   .searching-card {
     background: var(--color-bg); border: 1px solid var(--color-border);
@@ -1004,7 +1014,27 @@ import { POPULAR_PLACES, PLACES, PLACE_CATEGORIES, CATEGORY_COLORS } from '../da
 
         </div>
 
-        <!-- Success card -->
+        <!-- Rating card (shown right after ride completes) -->
+        <div id="rating-card" class="rating-card" style="display:none">
+          <div class="success-card__icon">⭐</div>
+          <h2 class="success-card__title">كيف كانت رحلتك؟</h2>
+          <p class="success-card__sub" id="rating-driver-name">قيّم تجربتك مع السائق</p>
+          <div class="rating-stars-row" id="rating-stars-row">
+            <button class="star-btn" data-val="1" type="button">☆</button>
+            <button class="star-btn" data-val="2" type="button">☆</button>
+            <button class="star-btn" data-val="3" type="button">☆</button>
+            <button class="star-btn" data-val="4" type="button">☆</button>
+            <button class="star-btn" data-val="5" type="button">☆</button>
+          </div>
+          <div id="payment-reminder" class="payment-reminder" style="display:none"></div>
+          <textarea id="rating-comment" class="rating-comment-box" placeholder="اكتب تعليقك (اختياري)..." rows="2"></textarea>
+          <div class="rating-actions">
+            <button id="submit-rating-btn" class="btn-filled" type="button" disabled>إرسال التقييم</button>
+            <button id="skip-rating-btn" class="btn-outline" type="button">تخطي</button>
+          </div>
+        </div>
+
+        <!-- Success card (shown after rating) -->
         <div id="success-card" class="success-card">
           <div class="success-card__icon">✅</div>
           <h2 class="success-card__title">انتهت الرحلة!</h2>
@@ -1750,15 +1780,74 @@ import { POPULAR_PLACES, PLACES, PLACE_CATEGORIES, CATEGORY_COLORS } from '../da
     } catch {}
   }
 
+  let _locationChannel = null;
+
   function stopPoller() {
     if (ridePoller) { clearInterval(ridePoller); ridePoller = null; }
     if (_rideChannel) { _rideChannel.unsubscribe(); _rideChannel = null; }
+    if (_locationChannel) { _locationChannel.unsubscribe(); _locationChannel = null; }
+    clearInterval(window._locPoller); window._locPoller = null;
+  }
+
+  function updateRealDriverMarker(lat, lng) {
+    if (!lat || !lng) return;
+    // Stop the simulated animation — real GPS takes over
+    if (window._liveInterval) { clearInterval(window._liveInterval); window._liveInterval = null; }
+    const G = window.google?.maps;
+    if (!G || !map) return;
+    const pos = { lat: Number(lat), lng: Number(lng) };
+    if (driverMarker) {
+      driverMarker.setPosition(pos);
+    } else {
+      driverMarker = new G.Marker({
+        position: pos, map, title: 'السائق', zIndex: 999,
+        icon: { path: G.SymbolPath.FORWARD_CLOSED_ARROW, fillColor: '#16a34a', fillOpacity: 1, strokeColor: '#fff', strokeWeight: 2, scale: 7 },
+      });
+      document.getElementById('live-badge').style.display = 'inline-flex';
+    }
+  }
+
+  function subscribeDriverLocation(driverPhone) {
+    if (!driverPhone) return;
+    async function pollLocation() {
+      try {
+        const p = encodeURIComponent(driverPhone);
+        const res = await fetch(`${SB_URL}/rest/v1/driver_locations?driver_phone=eq.${p}&select=lat,lng&limit=1`, { headers: SB_H });
+        const rows = await res.json();
+        if (Array.isArray(rows) && rows[0]) updateRealDriverMarker(rows[0].lat, rows[0].lng);
+      } catch {}
+    }
+    function tryLocRealtime() {
+      if (!_sb) {
+        window._locPoller = setInterval(pollLocation, 3000);
+        return;
+      }
+      _locationChannel = _sb.channel('loc-' + driverPhone)
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'driver_locations',
+          filter: `driver_phone=eq.${driverPhone}` },
+          payload => { const l = payload.new; if (l?.lat && l?.lng) updateRealDriverMarker(l.lat, l.lng); })
+        .subscribe(status => {
+          if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+            if (!window._locPoller) window._locPoller = setInterval(pollLocation, 3000);
+          }
+          if (status === 'SUBSCRIBED') { clearInterval(window._locPoller); window._locPoller = null; }
+        });
+    }
+    if (_sb) tryLocRealtime();
+    else setTimeout(tryLocRealtime, 1500);
+    // Initial fetch immediately
+    pollLocation();
   }
 
   function handleRideUpdate(ride) {
-    if ((ride.status === 'accepted' || ride.status === 'in_progress' || ride.status === 'completed') && !_driverShown) {
+    if ((ride.status === 'accepted' || ride.status === 'arrived' || ride.status === 'in_progress' || ride.status === 'completed') && !_driverShown) {
       _driverShown = true;
       showDriverFound(ride);
+    }
+    if (ride.status === 'arrived' && !window._st_arrived) {
+      window._st_arrived = true;
+      advanceStatus('arrived');
+      document.getElementById('driver-card-status').textContent = 'السائق وصل إليك 📍';
     }
     if (ride.status === 'in_progress' && !_onRide) {
       _onRide = true;
@@ -1768,7 +1857,7 @@ import { POPULAR_PLACES, PLACES, PLACE_CATEGORIES, CATEGORY_COLORS } from '../da
     if (ride.status === 'completed') {
       stopPoller();
       advanceStatus('done');
-      setTimeout(() => showFinalSuccess(ride), 1800);
+      setTimeout(() => showRatingScreen(ride), 1800);
     }
     if (ride.status === 'cancelled') {
       stopPoller();
@@ -1824,17 +1913,42 @@ import { POPULAR_PLACES, PLACES, PLACE_CATEGORIES, CATEGORY_COLORS } from '../da
     document.getElementById('driver-card-to').textContent   = ride.to_area;
     document.getElementById('driver-card-fare').textContent = ride.fare;
     advanceStatus('assigned');
+    // Subscribe to real GPS from driver_locations
+    if (ride.driver_phone) subscribeDriverLocation(ride.driver_phone);
     if (window._routeCoords && _currentFrom && _currentTo) {
       startLiveTracking(_currentFrom, _currentTo, _currentEta);
     }
   }
 
-  function showFinalSuccess(ride) {
+  let _selectedRating = 0;
+
+  function showRatingScreen(ride) {
     document.getElementById('driver-card').classList.remove('visible');
     document.getElementById('ride-status').classList.remove('visible');
+    window._completedRide = ride;
+    _selectedRating = 0;
+    document.querySelectorAll('.star-btn').forEach(b => { b.textContent = '☆'; });
+    document.getElementById('submit-rating-btn').disabled = true;
+    document.getElementById('rating-comment').value = '';
+    document.getElementById('rating-driver-name').textContent = ride.driver_name ? `قيّم تجربتك مع ${ride.driver_name}` : 'قيّم تجربتك مع السائق';
+
+    const payEl = document.getElementById('payment-reminder');
+    if (ride.payment === 'wallet') {
+      payEl.innerHTML = `💳 يرجى إرسال <strong>${ride.fare} ج.م</strong> للسائق عبر فودافون كاش / إنستاباي`;
+      payEl.style.display = '';
+    } else {
+      payEl.innerHTML = `💵 يرجى دفع <strong>${ride.fare} ج.م</strong> نقداً للسائق`;
+      payEl.style.display = '';
+    }
+    document.getElementById('rating-card').style.display = 'block';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function showSuccessAfterRating(ride) {
+    document.getElementById('rating-card').style.display = 'none';
     const details = [
       ['من', ride.from_area], ['إلى', ride.to_area],
-      ['المسافة', (ride.distance_km * 1.35).toFixed(1) + ' كم'],
+      ['المسافة', (ride.distance_km ? (ride.distance_km * 1.35).toFixed(1) : '—') + ' كم'],
       ['السائق', ride.driver_name || '—'],
       ['السعر', ride.fare + ' ج.م', true],
     ];
@@ -1844,10 +1958,49 @@ import { POPULAR_PLACES, PLACES, PLACE_CATEGORIES, CATEGORY_COLORS } from '../da
     document.getElementById('success-card').classList.add('visible');
   }
 
+  document.querySelectorAll('.star-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      _selectedRating = Number(btn.dataset.val);
+      document.querySelectorAll('.star-btn').forEach((b, i) => {
+        b.textContent = i < _selectedRating ? '⭐' : '☆';
+      });
+      document.getElementById('submit-rating-btn').disabled = false;
+    });
+  });
+
+  document.getElementById('submit-rating-btn').addEventListener('click', async () => {
+    const ride = window._completedRide;
+    if (!ride || !_selectedRating) return;
+    try {
+      await fetch(`${SB_URL}/rest/v1/ratings`, {
+        method: 'POST',
+        headers: { ...SB_H, Prefer: 'return=minimal' },
+        body: JSON.stringify({
+          id: 'rat-' + Date.now(),
+          driver_phone: ride.driver_phone || '',
+          customer_phone: ride.customer_phone || '',
+          rating: _selectedRating,
+          comment: document.getElementById('rating-comment').value.trim() || null,
+          service_type: 'ride',
+          ride_id: ride.id,
+          created_at: new Date().toISOString(),
+        }),
+      });
+    } catch {}
+    showSuccessAfterRating(ride);
+  });
+
+  document.getElementById('skip-rating-btn').addEventListener('click', () => {
+    if (window._completedRide) showSuccessAfterRating(window._completedRide);
+  });
+
   function resetToBooking() {
     stopPoller();
     activeRideId = null; _driverShown = false; _onRide = false;
+    window._completedRide = null; _selectedRating = 0;
     if (window._liveInterval) { clearInterval(window._liveInterval); window._liveInterval = null; }
+    document.getElementById('rating-card').style.display = 'none';
+    document.getElementById('success-card').classList.remove('visible');
     document.getElementById('searching-card').classList.remove('visible');
     document.getElementById('driver-card').classList.remove('visible');
     document.getElementById('booking-card').style.display = '';
@@ -1857,6 +2010,8 @@ import { POPULAR_PLACES, PLACES, PLACE_CATEGORIES, CATEGORY_COLORS } from '../da
     ['st-confirmed','st-assigned','st-arrived','st-onride','st-done']
       .forEach(id => document.getElementById(id).className = 'status-step');
     window._st_assigned = window._st_arrived = window._st_onride = false;
+    document.querySelectorAll('.star-btn').forEach(b => { b.textContent = '☆'; });
+    document.getElementById('submit-rating-btn').disabled = true;
   }
 
   document.getElementById('cancel-ride-btn').addEventListener('click', async () => {
