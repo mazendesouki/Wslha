@@ -1213,6 +1213,9 @@ window.submitApp = async function() {
   btn.textContent = '⏳ جاري الإرسال…';
   showErr('err-submit', '');
 
+  var plateNum = ($('v-plate').value || '').trim();
+  var hwText   = ($('v-hw-text').value || '').trim();
+
   var payload = {
     phone:              USER.phone,
     status:             'pending',
@@ -1225,7 +1228,7 @@ window.submitApp = async function() {
     license_number:     $('d-lic-num').value.trim(),
     license_expiry:     $('d-lic-exp').value,
     license_photo_url:  uploads['license'] || null,
-    vehicle_reg_number: $('d-vreg-num').value.trim(),
+    vehicle_reg_number: $('d-vreg-num').value.trim() || plateNum,
     vehicle_reg_expiry: $('d-vreg-exp').value,
     vehicle_reg_photo_url: uploads['vreg'] || null,
     insurance_expiry:   $('d-ins-exp').value,
@@ -1235,7 +1238,6 @@ window.submitApp = async function() {
     vehicle_model:      $('v-model').value.trim(),
     vehicle_color:      $('v-color').value.trim(),
     vehicle_year:       $('v-year').value,
-    vehicle_plate:      $('v-plate').value.trim(),
     vehicle_purchase_date: $('v-purchase').value || null,
     vehicle_ownership:  (document.querySelector('input[name="ownership"]:checked') || {}).value || 'owned',
     vehicle_front_url:  uploads['veh-front'] || null,
@@ -1243,35 +1245,48 @@ window.submitApp = async function() {
     vehicle_right_url:  uploads['veh-right'] || null,
     vehicle_left_url:   uploads['veh-left']  || null,
     plate_photo_url:    uploads['plate']     || null,
-    handwritten_text:   $('v-hw-text').value.trim(),
+    handwritten_text:   (plateNum ? 'لوحة: ' + plateNum + ' — ' : '') + hwText,
+    handwritten_photo_url: uploads['plate']  || null,
     good_conduct_url:   uploads['conduct']   || null,
     uses_drugs:         (document.querySelector('input[name="drugs"]:checked') || {}).value || 'no',
-    updated_at:         new Date().toISOString(),
+    created_at:         new Date().toISOString(),
   };
 
   try {
-    var lp = localPhone(USER.phone);
-    var of = orFilter(USER.phone);
+    // Step 1: find existing preliminary record
+    var existingApp = await getApp(USER.phone);
 
-    // PATCH existing preliminary record
-    var res = await fetch(SB_URL + '/rest/v1/driver_applications?' + of, {
-      method: 'PATCH',
-      headers: Object.assign({}, SB_H, { 'Content-Type': 'application/json', Prefer: 'return=minimal' }),
-      body: JSON.stringify(payload),
-    });
+    var saved = false;
 
-    if (!res.ok) {
-      // Fallback: POST fresh record
-      var res2 = await fetch(SB_URL + '/rest/v1/driver_applications', {
+    if (existingApp && existingApp.id) {
+      // Step 2a: PATCH by ID — guaranteed to update exactly 1 row
+      var resPatch = await fetch(SB_URL + '/rest/v1/driver_applications?id=eq.' + encodeURIComponent(existingApp.id), {
+        method: 'PATCH',
+        headers: Object.assign({}, SB_H, { 'Content-Type': 'application/json', Prefer: 'return=minimal' }),
+        body: JSON.stringify(payload),
+      });
+      if (resPatch.ok) {
+        saved = true;
+      } else {
+        var pErr = '';
+        try { var pe = await resPatch.json(); pErr = pe.message || pe.hint || pe.details || ''; } catch {}
+        console.warn('PATCH failed:', resPatch.status, pErr);
+      }
+    }
+
+    if (!saved) {
+      // Step 2b: POST new record
+      var resPost = await fetch(SB_URL + '/rest/v1/driver_applications', {
         method: 'POST',
         headers: Object.assign({}, SB_H, { 'Content-Type': 'application/json', Prefer: 'return=minimal' }),
         body: JSON.stringify(Object.assign({ id: crypto.randomUUID() }, payload)),
       });
-      if (!res2.ok) {
+      if (!resPost.ok) {
         var detail = '';
-        try { var jj = await res2.json(); detail = jj.message || jj.hint || jj.details || ''; } catch { detail = await res2.text().catch(function(){ return ''; }); }
-        throw new Error('فشل الحفظ (' + res2.status + '): ' + detail);
+        try { var jj = await resPost.json(); detail = jj.message || jj.hint || jj.details || ''; } catch { detail = await resPost.text().catch(function(){ return ''; }); }
+        throw new Error('فشل حفظ الطلب (' + resPost.status + '): ' + detail);
       }
+      saved = true;
     }
 
     // Show success
