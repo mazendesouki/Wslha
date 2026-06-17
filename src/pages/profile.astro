@@ -5,186 +5,219 @@ import Layout from '../components/layout.astro';
 <Layout title="حسابي — وصّلها" currentPage="profile">
 
 <style>
-  /* ── Layout ─────────────────────────────────────────────────── */
+  /* ── Page ───────────────────────────────────────────────────── */
   .profile-wrap {
     min-height: calc(100vh - var(--nav-height));
-    background: var(--color-bg-soft);
+    background: #EEF2FF;
+    padding-bottom: var(--sp-16);
   }
 
   /* ── Loading ────────────────────────────────────────────────── */
   .profile-loading {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: var(--sp-4);
-    min-height: 60vh;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: var(--sp-4); min-height: 60vh;
     color: var(--color-text-muted);
   }
   .profile-loading__spinner {
-    width: 44px;
-    height: 44px;
-    border: 3px solid var(--color-border);
-    border-top-color: var(--color-primary);
+    width: 44px; height: 44px;
+    border: 3px solid #C7D2FE;
+    border-top-color: #4338CA;
     border-radius: 50%;
     animation: spin 0.8s linear infinite;
   }
   @keyframes spin { to { transform: rotate(360deg); } }
 
-  /* ── Header ─────────────────────────────────────────────────── */
-  .profile-header {
-    background: linear-gradient(135deg, var(--color-primary) 0%, #2952D9 100%);
-    color: #fff;
-    padding: var(--sp-10) var(--sp-6) var(--sp-12);
+  /* ── Top bar ─────────────────────────────────────────────────── */
+  .pf-topbar {
+    background: linear-gradient(135deg, #4338CA 0%, #7C3AED 100%);
+    padding: var(--sp-6) var(--sp-5) var(--sp-14);
+    text-align: center;
+  }
+  .pf-topbar__title {
+    font-size: var(--text-lg);
+    font-weight: var(--weight-black);
+    color: rgba(255,255,255,0.9);
+    margin: 0;
+  }
+
+  /* ── Hero card ───────────────────────────────────────────────── */
+  .pf-hero-wrap {
+    max-width: var(--container);
+    margin: -48px auto 0;
+    padding: 0 var(--sp-4);
+    position: relative;
+    z-index: 2;
+  }
+  .pf-hero-card {
+    background: #fff;
+    border-radius: 22px;
+    padding: var(--sp-5);
+    display: flex;
+    align-items: flex-start;
+    gap: var(--sp-4);
+    box-shadow: 0 8px 32px rgba(67,56,202,0.15);
     position: relative;
     overflow: hidden;
   }
-  .profile-header::before {
+  .pf-hero-card::after {
     content: '';
     position: absolute;
-    inset: 0;
-    background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.04'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
-    pointer-events: none;
+    top: 0; left: 0; right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #4338CA, #7C3AED, #DB2777);
   }
-  .profile-header__inner {
-    max-width: var(--container);
-    margin: 0 auto;
+
+  /* Avatar */
+  .pf-avatar-wrap {
+    flex-shrink: 0;
     display: flex;
+    flex-direction: column;
     align-items: center;
-    gap: var(--sp-6);
-    position: relative;
+    gap: var(--sp-2);
   }
-  .profile-avatar {
-    width: 90px;
-    height: 90px;
+  .pf-avatar {
+    width: 76px; height: 76px;
     border-radius: 50%;
-    background: rgba(255,255,255,0.25);
-    border: 3px solid rgba(255,255,255,0.5);
+    background: linear-gradient(135deg, #4338CA 0%, #7C3AED 100%);
+    color: #fff;
+    font-size: 1.7rem;
+    font-weight: var(--weight-black);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 2.2rem;
-    font-weight: var(--weight-black);
-    color: #fff;
-    flex-shrink: 0;
-    backdrop-filter: blur(8px);
+    box-shadow: 0 4px 14px rgba(67,56,202,0.35);
     letter-spacing: -1px;
   }
-  .profile-header__info { flex: 1; min-width: 0; }
-  .profile-header__name {
-    font-size: var(--text-2xl);
+  .role-badge {
+    font-size: 10px;
     font-weight: var(--weight-black);
-    color: #fff;
+    color: #4338CA;
+    background: #EEF2FF;
+    padding: 3px 10px;
+    border-radius: 20px;
+    border: 1px solid #C7D2FE;
+    white-space: nowrap;
+  }
+  .role-badge--driver { color: #059669; background: #ECFDF5; border-color: #A7F3D0; }
+
+  /* Hero info */
+  .pf-hero-info { flex: 1; min-width: 0; }
+  .pf-hero-name {
+    font-size: var(--text-xl);
+    font-weight: var(--weight-black);
+    color: var(--color-text);
     margin: 0 0 var(--sp-1);
     line-height: 1.2;
   }
-  .profile-header__phone {
-    font-size: var(--text-base);
-    color: rgba(255,255,255,0.8);
-    margin: 0 0 var(--sp-3);
+  .pf-hero-phone {
+    font-size: var(--text-sm);
+    color: var(--color-text-muted);
+    margin: 0 0 var(--sp-2);
     direction: ltr;
     text-align: right;
+    font-weight: var(--weight-semi);
   }
-  .profile-header__badges {
+  .pf-chips {
     display: flex;
-    align-items: center;
-    gap: var(--sp-2);
     flex-wrap: wrap;
+    gap: var(--sp-1);
+    margin-bottom: var(--sp-2);
   }
-  .role-badge {
-    padding: 3px var(--sp-3);
-    border-radius: var(--radius-full);
-    font-size: var(--text-xs);
-    font-weight: var(--weight-bold);
-    background: rgba(255,255,255,0.2);
-    color: #fff;
-    border: 1px solid rgba(255,255,255,0.4);
-  }
-  .role-badge--driver { background: rgba(22,163,74,0.3); border-color: rgba(22,163,74,0.6); }
   .status-chip {
-    padding: 3px var(--sp-3);
-    border-radius: var(--radius-full);
-    font-size: var(--text-xs);
-    font-weight: var(--weight-bold);
+    padding: 2px 10px;
+    border-radius: 20px;
+    font-size: 10px;
+    font-weight: var(--weight-black);
     border: 1px solid transparent;
     display: none;
   }
-  .status-chip--active   { background: rgba(22,163,74,0.25);  border-color: rgba(22,163,74,0.5);  color: #86EFAC; }
-  .status-chip--pending  { background: rgba(202,138,4,0.25);  border-color: rgba(202,138,4,0.5);  color: #FDE68A; }
-  .status-chip--approved { background: rgba(59,130,246,0.25); border-color: rgba(59,130,246,0.5); color: #93C5FD; }
-  .status-chip--rejected { background: rgba(220,38,38,0.25);  border-color: rgba(220,38,38,0.5);  color: #FCA5A5; }
-  .status-chip--banned   { background: rgba(100,116,139,0.25);border-color: rgba(100,116,139,0.5);color: #CBD5E1; }
-  .profile-header__city,
-  .profile-header__since {
+  .status-chip--active   { background: #ECFDF5; border-color: #A7F3D0; color: #059669; }
+  .status-chip--pending  { background: #FFFBEB; border-color: #FDE68A; color: #D97706; }
+  .status-chip--approved { background: #EEF2FF; border-color: #C7D2FE; color: #4338CA; }
+  .status-chip--rejected { background: #FEF2F2; border-color: #FECACA; color: #DC2626; }
+  .status-chip--banned   { background: #F8FAFC; border-color: #CBD5E1; color: #64748B; }
+  .pf-meta { display: flex; flex-direction: column; gap: 2px; }
+  .pf-meta-item {
     font-size: var(--text-xs);
-    color: rgba(255,255,255,0.7);
+    color: var(--color-text-faint);
     display: flex;
     align-items: center;
     gap: 4px;
   }
 
-  /* ── Stats ──────────────────────────────────────────────────── */
-  .profile-stats-wrap {
-    max-width: var(--container);
-    margin: -36px auto 0;
-    padding: 0 var(--sp-6);
-    position: relative;
-    z-index: 2;
+  /* Edit FAB button */
+  .pf-edit-fab {
+    position: absolute;
+    top: var(--sp-4);
+    left: var(--sp-4);
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    background: #EEF2FF;
+    border: 1.5px solid #C7D2FE;
+    color: #4338CA;
+    font-size: 0.95rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    flex-shrink: 0;
   }
-  .profile-stats {
+  .pf-edit-fab:hover { background: #4338CA; color: #fff; }
+
+  /* ── Stats strip ─────────────────────────────────────────────── */
+  .pf-stats {
+    max-width: var(--container);
+    margin: var(--sp-4) auto 0;
+    padding: 0 var(--sp-4);
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     gap: var(--sp-3);
   }
-  .stat-card {
-    background: var(--color-bg);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-lg);
-    padding: var(--sp-4) var(--sp-3);
+  .pf-stat {
+    background: #fff;
+    border-radius: 16px;
+    padding: var(--sp-4) var(--sp-2);
     text-align: center;
-    box-shadow: var(--shadow-sm);
+    box-shadow: 0 2px 10px rgba(0,0,0,0.06);
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: var(--sp-1);
+    gap: 4px;
   }
-  .stat-card__icon { font-size: 1.5rem; }
-  .stat-card__value {
-    font-size: var(--text-xl);
+  .pf-stat__num {
+    font-size: var(--text-lg);
     font-weight: var(--weight-black);
-    color: var(--color-primary);
     line-height: 1;
   }
-  .stat-card__label {
-    font-size: var(--text-xs);
-    color: var(--color-text-muted);
-    font-weight: var(--weight-semi);
-  }
+  .pf-stat__lbl { font-size: 10px; color: var(--color-text-muted); font-weight: var(--weight-semi); }
+  .pf-stat--blue .pf-stat__num   { color: #4338CA; }
+  .pf-stat--green .pf-stat__num  { color: #059669; }
+  .pf-stat--purple .pf-stat__num { color: #7C3AED; }
+  .pf-stat--amber .pf-stat__num  { color: #D97706; }
 
-  /* ── Tabs ───────────────────────────────────────────────────── */
-  .profile-body {
+  /* ── Tab nav ─────────────────────────────────────────────────── */
+  .pf-body {
     max-width: var(--container);
-    margin: var(--sp-8) auto var(--sp-16);
-    padding: 0 var(--sp-6);
+    margin: var(--sp-5) auto 0;
+    padding: 0 var(--sp-4);
   }
   .profile-tabs-nav {
     display: flex;
     gap: 0;
-    background: var(--color-bg);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-lg);
-    padding: var(--sp-1);
-    margin-bottom: var(--sp-6);
+    background: #fff;
+    border-radius: 16px 16px 0 0;
+    border-bottom: 2px solid #E0E7FF;
     overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
+    padding: 0 var(--sp-2);
+    margin-bottom: 0;
   }
   .profile-tabs-nav::-webkit-scrollbar { display: none; }
   .profile-tab {
-    flex: 1;
-    min-width: max-content;
-    padding: var(--sp-2) var(--sp-4);
-    border-radius: calc(var(--radius-lg) - 4px);
+    flex-shrink: 0;
+    padding: var(--sp-3) var(--sp-4);
     border: none;
     background: transparent;
     font-family: var(--font-body);
@@ -192,32 +225,37 @@ import Layout from '../components/layout.astro';
     font-weight: var(--weight-bold);
     color: var(--color-text-muted);
     cursor: pointer;
-    transition: all var(--ease);
+    border-bottom: 3px solid transparent;
+    margin-bottom: -2px;
+    transition: color 0.2s, border-color 0.2s;
     white-space: nowrap;
   }
-  .profile-tab.is-active {
-    background: var(--color-primary);
-    color: #fff;
-    box-shadow: var(--shadow-sm);
-  }
-  .profile-tab:not(.is-active):hover {
-    background: var(--color-bg-soft);
-    color: var(--color-text);
-  }
+  .profile-tab.is-active { color: #4338CA; border-bottom-color: #4338CA; }
+  .profile-tab:not(.is-active):hover { color: var(--color-text); background: #F5F7FF; }
   .tab-panel { display: none; }
   .tab-panel.is-active { display: block; }
 
-  /* ── Card base ──────────────────────────────────────────────── */
+  /* Tab panel wrapper */
+  .pf-tab-body {
+    background: #fff;
+    border-radius: 0 0 16px 16px;
+    box-shadow: 0 4px 16px rgba(67,56,202,0.08);
+    padding: var(--sp-5);
+    margin-bottom: var(--sp-4);
+  }
+
+  /* ── Cards ───────────────────────────────────────────────────── */
   .card {
-    background: var(--color-bg);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-sm);
+    background: #fff;
+    border: 1px solid #E0E7FF;
+    border-radius: 16px;
+    box-shadow: 0 2px 10px rgba(67,56,202,0.06);
     overflow: hidden;
+    margin-bottom: var(--sp-4);
   }
   .card__header {
     padding: var(--sp-4) var(--sp-5);
-    border-bottom: 1px solid var(--color-border);
+    border-bottom: 1px solid #EEF2FF;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -230,30 +268,30 @@ import Layout from '../components/layout.astro';
   }
   .card__body { padding: var(--sp-5); }
 
-  /* ── Info tab ───────────────────────────────────────────────── */
+  /* ── Info tab ────────────────────────────────────────────────── */
   .info-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: var(--sp-4);
-    margin-bottom: var(--sp-6);
+    margin-bottom: var(--sp-4);
   }
   .info-field { display: flex; flex-direction: column; gap: var(--sp-1); }
   .info-field__label {
-    font-size: var(--text-xs);
-    font-weight: var(--weight-bold);
-    color: var(--color-text-muted);
+    font-size: 10px;
+    font-weight: var(--weight-black);
+    color: #818CF8;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.07em;
   }
   .info-field__value {
-    font-size: var(--text-base);
+    font-size: var(--text-sm);
     font-weight: var(--weight-semi);
     color: var(--color-text);
     padding: var(--sp-2) var(--sp-3);
-    background: var(--color-bg-soft);
-    border: 1px solid var(--color-border);
+    background: #F5F7FF;
+    border: 1.5px solid #E0E7FF;
     border-radius: var(--radius);
-    min-height: 42px;
+    min-height: 40px;
     display: flex;
     align-items: center;
   }
@@ -265,21 +303,21 @@ import Layout from '../components/layout.astro';
   .form-label { font-size: var(--text-sm); font-weight: var(--weight-bold); color: var(--color-text); }
   .form-input {
     padding: var(--sp-3) var(--sp-4);
-    border: 1.5px solid var(--color-border);
+    border: 1.5px solid #C7D2FE;
     border-radius: var(--radius);
     font-family: var(--font-body);
     font-size: var(--text-base);
     color: var(--color-text);
-    background: var(--color-bg);
-    transition: border-color var(--ease);
+    background: #fff;
+    transition: border-color 0.2s;
     width: 100%;
     box-sizing: border-box;
   }
-  .form-input:focus { outline: none; border-color: var(--color-primary); }
+  .form-input:focus { outline: none; border-color: #4338CA; box-shadow: 0 0 0 3px rgba(67,56,202,0.1); }
   .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-4); }
   .btn-save {
     padding: var(--sp-3) var(--sp-6);
-    background: var(--color-primary);
+    background: #4338CA;
     color: #fff;
     border: none;
     border-radius: var(--radius);
@@ -287,30 +325,58 @@ import Layout from '../components/layout.astro';
     font-size: var(--text-base);
     font-weight: var(--weight-bold);
     cursor: pointer;
-    transition: background var(--ease), transform var(--ease);
+    transition: background 0.2s, transform 0.2s;
     align-self: flex-start;
   }
-  .btn-save:hover { background: #2952D9; transform: translateY(-1px); }
+  .btn-save:hover { background: #3730A3; transform: translateY(-1px); }
   .save-success {
     display: none;
-    color: #16A34A;
+    color: #059669;
     font-size: var(--text-sm);
     font-weight: var(--weight-bold);
     padding: var(--sp-2) var(--sp-3);
-    background: #DCFCE7;
+    background: #ECFDF5;
     border-radius: var(--radius);
+    border: 1px solid #A7F3D0;
   }
 
-  /* Security card */
+  /* ── Driver status card ──────────────────────────────────────── */
+  .driver-status-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--sp-3) var(--sp-4);
+    background: #F5F7FF;
+    border: 1px solid #E0E7FF;
+    border-radius: 12px;
+    margin-bottom: var(--sp-3);
+  }
+  .driver-status-row__label {
+    font-size: var(--text-sm);
+    font-weight: var(--weight-bold);
+    color: var(--color-text-muted);
+  }
+  .driver-status-row__val {
+    font-size: var(--text-sm);
+    font-weight: var(--weight-black);
+  }
+  .driver-eligibility {
+    padding: var(--sp-3) var(--sp-4);
+    border-radius: 12px;
+    font-size: var(--text-sm);
+    font-weight: var(--weight-black);
+    text-align: center;
+  }
+
+  /* ── Security card ───────────────────────────────────────────── */
   .security-row {
     display: flex;
     align-items: center;
     justify-content: space-between;
     padding: var(--sp-4) 0;
-    border-bottom: 1px solid var(--color-border);
+    border-bottom: 1px solid #EEF2FF;
   }
   .security-row:last-child { border-bottom: none; }
-  .security-row__info {}
   .security-row__label {
     font-size: var(--text-sm);
     font-weight: var(--weight-bold);
@@ -321,9 +387,24 @@ import Layout from '../components/layout.astro';
     color: var(--color-text-muted);
     margin-top: 2px;
   }
+  .btn-outline {
+    padding: var(--sp-2) var(--sp-4);
+    background: #EEF2FF;
+    color: #4338CA;
+    border: 1.5px solid #C7D2FE;
+    border-radius: var(--radius);
+    font-family: var(--font-body);
+    font-size: var(--text-sm);
+    font-weight: var(--weight-bold);
+    cursor: pointer;
+    transition: all 0.2s;
+    text-decoration: none;
+    display: inline-block;
+  }
+  .btn-outline:hover { background: #4338CA; color: #fff; }
   .btn-danger {
     padding: var(--sp-2) var(--sp-4);
-    background: #FEE2E2;
+    background: #FEF2F2;
     color: #DC2626;
     border: 1.5px solid #FECACA;
     border-radius: var(--radius);
@@ -331,11 +412,53 @@ import Layout from '../components/layout.astro';
     font-size: var(--text-sm);
     font-weight: var(--weight-bold);
     cursor: pointer;
-    transition: all var(--ease);
+    transition: all 0.2s;
+    text-decoration: none;
+    display: inline-block;
   }
   .btn-danger:hover { background: #DC2626; color: #fff; }
 
-  /* ── Orders tab ─────────────────────────────────────────────── */
+  /* ── Phone-change panel ──────────────────────────────────────── */
+  .phone-change-panel {
+    display: none;
+    padding: var(--sp-4) var(--sp-5);
+    background: #F5F7FF;
+    border-top: 1px solid #E0E7FF;
+  }
+  .phone-change-panel.is-open { display: block; }
+  .pc-step { display: none; }
+  .pc-step.is-active { display: block; }
+  .pc-title { font-size: var(--text-sm); font-weight: var(--weight-black); color: var(--color-text); margin-bottom: var(--sp-3); }
+  .pc-hint { font-size: var(--text-xs); color: var(--color-text-muted); margin-bottom: var(--sp-3); }
+  .pc-otp-group {
+    display: flex; gap: var(--sp-2); justify-content: center;
+    direction: ltr; margin: var(--sp-4) 0;
+  }
+  .pc-otp-box {
+    width: 44px; height: 52px;
+    border: 2px solid #C7D2FE;
+    border-radius: var(--radius);
+    font-family: var(--font-body);
+    font-size: 1.4rem; font-weight: var(--weight-black);
+    text-align: center; color: var(--color-text); background: #fff;
+    outline: none; transition: border-color 0.2s;
+    caret-color: transparent;
+  }
+  .pc-otp-box:focus { border-color: #4338CA; background: #EEF2FF; }
+  .pc-otp-box.filled { border-color: #4338CA; }
+  .pc-otp-box.shake { animation: shake .35s ease; border-color: #ef4444; }
+  @keyframes shake { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-6px)} 60%{transform:translateX(6px)} 80%{transform:translateX(-3px)} }
+  .pc-err { color: #DC2626; font-size: var(--text-xs); font-weight: var(--weight-bold); margin: var(--sp-2) 0; display: none; }
+  .pc-err.is-visible { display: block; }
+  .pc-btns { display: flex; gap: var(--sp-3); align-items: center; margin-top: var(--sp-3); flex-wrap: wrap; }
+  .pc-new-phone-badge {
+    display: inline-block;
+    background: #EEF2FF; color: #4338CA;
+    padding: 2px var(--sp-2); border-radius: var(--radius);
+    font-weight: var(--weight-bold); direction: ltr;
+  }
+
+  /* ── Orders tab ──────────────────────────────────────────────── */
   .orders-filters {
     display: flex;
     gap: var(--sp-2);
@@ -344,422 +467,279 @@ import Layout from '../components/layout.astro';
   }
   .orders-filter {
     padding: var(--sp-2) var(--sp-4);
-    border: 1.5px solid var(--color-border);
-    border-radius: var(--radius-full);
-    background: var(--color-bg);
+    border: 1.5px solid #C7D2FE;
+    border-radius: 20px;
+    background: #fff;
     font-family: var(--font-body);
     font-size: var(--text-sm);
     font-weight: var(--weight-bold);
-    color: var(--color-text-muted);
+    color: #4338CA;
     cursor: pointer;
-    transition: all var(--ease);
+    transition: all 0.2s;
   }
-  .orders-filter:hover { border-color: var(--color-primary); color: var(--color-primary); }
-  .orders-filter.is-active { background: var(--color-primary); border-color: var(--color-primary); color: #fff; }
+  .orders-filter.is-active { background: #4338CA; border-color: #4338CA; color: #fff; }
+  .orders-filter:hover:not(.is-active) { background: #EEF2FF; }
 
   .order-card {
-    background: var(--color-bg);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-lg);
-    padding: var(--sp-4) var(--sp-5);
+    background: #F5F7FF;
+    border: 1px solid #E0E7FF;
+    border-radius: 14px;
+    padding: var(--sp-4);
     display: flex;
     align-items: flex-start;
-    gap: var(--sp-4);
-    box-shadow: var(--shadow-sm);
-    transition: box-shadow var(--ease), transform var(--ease);
+    gap: var(--sp-3);
     margin-bottom: var(--sp-3);
+    transition: box-shadow 0.2s, transform 0.2s;
   }
-  .order-card:hover { box-shadow: var(--shadow-md); transform: translateY(-1px); }
+  .order-card:hover { box-shadow: 0 4px 16px rgba(67,56,202,0.12); transform: translateY(-1px); }
   .order-icon {
-    width: 48px;
-    height: 48px;
-    border-radius: var(--radius);
-    background: var(--color-primary-light);
+    width: 44px; height: 44px;
+    border-radius: 12px;
+    background: #EEF2FF;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.4rem;
+    font-size: 1.3rem;
     flex-shrink: 0;
   }
   .order-main { flex: 1; min-width: 0; }
-  .order-top {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--sp-2);
-    margin-bottom: var(--sp-1);
-  }
-  .order-id {
-    font-size: var(--text-xs);
-    color: var(--color-text-faint);
-    font-weight: var(--weight-semi);
-    direction: ltr;
-  }
+  .order-top { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-2); margin-bottom: var(--sp-1); }
+  .order-id { font-size: var(--text-xs); color: var(--color-text-faint); direction: ltr; }
   .order-status-badge {
-    padding: 2px var(--sp-3);
-    border-radius: var(--radius-full);
-    font-size: var(--text-xs);
-    font-weight: var(--weight-bold);
+    padding: 2px 10px;
+    border-radius: 20px;
+    font-size: 10px;
+    font-weight: var(--weight-black);
   }
-  .status--delivered  { background: #DCFCE7; color: #16A34A; }
-  .status--pending    { background: #FEF9C3; color: #CA8A04; }
+  .status--delivered  { background: #ECFDF5; color: #059669; }
+  .status--pending    { background: #FFFBEB; color: #D97706; }
   .status--active,
   .status--on_the_way,
   .status--accepted,
-  .status--in_progress { background: #DBEAFE; color: #2563EB; }
+  .status--in_progress { background: #EEF2FF; color: #4338CA; }
   .status--cancelled,
-  .status--rejected   { background: #FEE2E2; color: #DC2626; }
-  .status--preparing  { background: #FEF3C7; color: #D97706; }
-  .status--completed  { background: #DCFCE7; color: #16A34A; }
-
-  .order-store {
-    font-size: var(--text-base);
-    font-weight: var(--weight-bold);
-    color: var(--color-text);
-    margin-bottom: 2px;
-  }
-  .order-items {
-    font-size: var(--text-xs);
-    color: var(--color-text-muted);
-    margin-bottom: var(--sp-2);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-  .order-footer {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--sp-2);
-  }
+  .status--rejected   { background: #FEF2F2; color: #DC2626; }
+  .status--preparing  { background: #FFFBEB; color: #D97706; }
+  .status--completed  { background: #ECFDF5; color: #059669; }
+  .order-store { font-size: var(--text-sm); font-weight: var(--weight-bold); color: var(--color-text); margin-bottom: 2px; }
+  .order-items { font-size: var(--text-xs); color: var(--color-text-muted); margin-bottom: var(--sp-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .order-footer { display: flex; align-items: center; justify-content: space-between; }
   .order-date { font-size: var(--text-xs); color: var(--color-text-faint); }
-  .order-total {
-    font-size: var(--text-base);
-    font-weight: var(--weight-black);
-    color: var(--color-primary);
-  }
+  .order-total { font-size: var(--text-base); font-weight: var(--weight-black); color: #4338CA; }
 
-  /* ── Rides tab ──────────────────────────────────────────────── */
+  /* ── Rides tab ───────────────────────────────────────────────── */
   .ride-card {
-    background: var(--color-bg);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-lg);
-    padding: var(--sp-4) var(--sp-5);
-    box-shadow: var(--shadow-sm);
+    background: #F5F7FF;
+    border: 1px solid #E0E7FF;
+    border-radius: 14px;
+    padding: var(--sp-4);
     margin-bottom: var(--sp-3);
-    transition: box-shadow var(--ease), transform var(--ease);
+    transition: box-shadow 0.2s, transform 0.2s;
   }
-  .ride-card:hover { box-shadow: var(--shadow-md); transform: translateY(-1px); }
-  .ride-top {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: var(--sp-3);
-  }
-  .ride-route {
-    display: flex;
-    align-items: center;
-    gap: var(--sp-2);
-    flex: 1;
-  }
-  .ride-route__icon { font-size: 1.2rem; }
-  .ride-route__text {
-    font-size: var(--text-sm);
-    font-weight: var(--weight-bold);
-    color: var(--color-text);
-  }
-  .ride-route__arrow {
-    color: var(--color-primary);
-    font-weight: var(--weight-black);
-    margin: 0 var(--sp-1);
-  }
-  .ride-meta {
-    display: flex;
-    align-items: center;
-    gap: var(--sp-4);
-    flex-wrap: wrap;
-  }
-  .ride-meta__item {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    font-size: var(--text-xs);
-    color: var(--color-text-muted);
-  }
-  .ride-fare {
-    font-size: var(--text-lg);
-    font-weight: var(--weight-black);
-    color: var(--color-primary);
-  }
+  .ride-card:hover { box-shadow: 0 4px 16px rgba(67,56,202,0.12); transform: translateY(-1px); }
+  .ride-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--sp-3); }
+  .ride-route { display: flex; align-items: center; gap: var(--sp-2); flex: 1; }
+  .ride-route__icon { font-size: 1.1rem; }
+  .ride-route__text { font-size: var(--text-sm); font-weight: var(--weight-bold); color: var(--color-text); }
+  .ride-route__arrow { color: #4338CA; font-weight: var(--weight-black); margin: 0 var(--sp-1); }
+  .ride-meta { display: flex; align-items: center; gap: var(--sp-3); flex-wrap: wrap; }
+  .ride-meta__item { display: flex; align-items: center; gap: 4px; font-size: var(--text-xs); color: var(--color-text-muted); }
+  .ride-fare { font-size: var(--text-base); font-weight: var(--weight-black); color: #4338CA; margin-right: auto; }
 
-  /* ── Statistics tab ─────────────────────────────────────────── */
+  /* ── Stats tab ───────────────────────────────────────────────── */
   .stats-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: var(--sp-4);
-    margin-bottom: var(--sp-6);
+    gap: var(--sp-3);
+    margin-bottom: var(--sp-5);
   }
   .stats-card {
-    background: var(--color-bg);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-lg);
-    padding: var(--sp-5);
-    box-shadow: var(--shadow-sm);
+    background: #F5F7FF;
+    border: 1px solid #E0E7FF;
+    border-radius: 14px;
+    padding: var(--sp-4);
     text-align: center;
   }
-  .stats-card__num {
-    font-size: var(--text-3xl);
-    font-weight: var(--weight-black);
-    color: var(--color-primary);
-    line-height: 1;
-    margin-bottom: var(--sp-1);
-  }
-  .stats-card__label {
-    font-size: var(--text-sm);
-    color: var(--color-text-muted);
-    font-weight: var(--weight-semi);
-  }
-  .stats-card--green .stats-card__num { color: #16A34A; }
+  .stats-card__num { font-size: var(--text-2xl); font-weight: var(--weight-black); color: #4338CA; margin-bottom: 4px; }
+  .stats-card__label { font-size: var(--text-xs); color: var(--color-text-muted); font-weight: var(--weight-semi); }
+  .stats-card--green .stats-card__num { color: #059669; }
   .stats-card--orange .stats-card__num { color: #D97706; }
 
-  /* Category breakdown */
   .category-list { display: flex; flex-direction: column; gap: var(--sp-3); }
-  .category-row {
-    display: flex;
-    align-items: center;
-    gap: var(--sp-3);
-  }
-  .category-row__label {
-    width: 100px;
-    font-size: var(--text-sm);
-    font-weight: var(--weight-semi);
-    color: var(--color-text);
-    flex-shrink: 0;
-    text-align: right;
-  }
-  .category-bar-wrap {
-    flex: 1;
-    height: 10px;
-    background: var(--color-bg-soft);
-    border-radius: var(--radius-full);
-    overflow: hidden;
-  }
-  .category-bar {
-    height: 100%;
-    border-radius: var(--radius-full);
-    background: var(--color-primary);
-    transition: width 0.8s cubic-bezier(.4,0,.2,1);
-  }
-  .category-bar--green { background: #16A34A; }
+  .category-row { display: flex; align-items: center; gap: var(--sp-3); }
+  .category-row__label { width: 90px; font-size: var(--text-sm); font-weight: var(--weight-semi); color: var(--color-text); flex-shrink: 0; text-align: right; }
+  .category-bar-wrap { flex: 1; height: 8px; background: #E0E7FF; border-radius: 99px; overflow: hidden; }
+  .category-bar { height: 100%; border-radius: 99px; background: #4338CA; transition: width 0.8s cubic-bezier(.4,0,.2,1); }
+  .category-bar--green  { background: #059669; }
   .category-bar--orange { background: #D97706; }
-  .category-bar--purple { background: #9333EA; }
-  .category-row__count {
-    font-size: var(--text-sm);
-    font-weight: var(--weight-bold);
-    color: var(--color-text-muted);
-    width: 50px;
-    text-align: left;
-  }
+  .category-bar--purple { background: #7C3AED; }
+  .category-row__count { font-size: var(--text-xs); font-weight: var(--weight-bold); color: var(--color-text-muted); width: 50px; text-align: left; }
 
-  /* Monthly table */
   .monthly-table { width: 100%; border-collapse: collapse; }
-  .monthly-table th {
-    padding: var(--sp-2) var(--sp-3);
-    text-align: right;
-    font-size: var(--text-xs);
-    font-weight: var(--weight-bold);
-    color: var(--color-text-muted);
-    background: var(--color-bg-soft);
-    border-bottom: 1px solid var(--color-border);
-  }
-  .monthly-table td {
-    padding: var(--sp-3);
-    text-align: right;
-    font-size: var(--text-sm);
-    color: var(--color-text);
-    border-bottom: 1px solid var(--color-border);
-  }
+  .monthly-table th { padding: var(--sp-2) var(--sp-3); text-align: right; font-size: var(--text-xs); font-weight: var(--weight-bold); color: #818CF8; background: #F5F7FF; border-bottom: 1px solid #E0E7FF; }
+  .monthly-table td { padding: var(--sp-3); text-align: right; font-size: var(--text-sm); color: var(--color-text); border-bottom: 1px solid #EEF2FF; }
   .monthly-table tr:last-child td { border-bottom: none; }
-  .monthly-table tr:hover td { background: var(--color-bg-soft); }
+  .monthly-table tr:hover td { background: #F5F7FF; }
 
-  /* Empty state */
-  .empty-state {
-    text-align: center;
-    padding: var(--sp-12) var(--sp-6);
-    color: var(--color-text-muted);
-  }
-  .empty-state__icon { font-size: 3rem; margin-bottom: var(--sp-3); }
-  .empty-state__title {
-    font-size: var(--text-lg);
-    font-weight: var(--weight-bold);
-    color: var(--color-text);
-    margin-bottom: var(--sp-2);
-  }
+  /* ── Empty state ─────────────────────────────────────────────── */
+  .empty-state { text-align: center; padding: var(--sp-12) var(--sp-6); color: var(--color-text-muted); }
+  .empty-state__icon { font-size: 2.8rem; margin-bottom: var(--sp-3); }
+  .empty-state__title { font-size: var(--text-lg); font-weight: var(--weight-bold); color: var(--color-text); margin-bottom: var(--sp-2); }
   .empty-state__text { font-size: var(--text-sm); }
 
-  /* Toast */
+  /* ── Toast ───────────────────────────────────────────────────── */
   .toast {
     position: fixed;
     bottom: var(--sp-8);
     left: 50%;
     transform: translateX(-50%) translateY(60px);
-    background: #1E293B;
+    background: #312E81;
     color: #fff;
     padding: var(--sp-3) var(--sp-5);
-    border-radius: var(--radius-full);
+    border-radius: 99px;
     font-size: var(--text-sm);
     font-weight: var(--weight-bold);
     z-index: 9999;
     transition: transform 0.3s ease;
     white-space: nowrap;
+    box-shadow: 0 4px 16px rgba(49,46,129,0.4);
   }
   .toast.is-visible { transform: translateX(-50%) translateY(0); }
 
-  /* ── Phone-change panel ────────────────────────────────────── */
-  .phone-change-panel {
-    display: none;
-    padding: var(--sp-4) var(--sp-5);
-    background: var(--color-bg-soft);
-    border-top: 1px solid var(--color-border);
-  }
-  .phone-change-panel.is-open { display: block; }
-  .pc-step { display: none; }
-  .pc-step.is-active { display: block; }
-  .pc-title {
-    font-size: var(--text-sm);
-    font-weight: var(--weight-black);
-    color: var(--color-text);
-    margin-bottom: var(--sp-3);
-  }
-  .pc-otp-group {
-    display: flex;
-    gap: var(--sp-2);
-    justify-content: center;
-    direction: ltr;
-    margin: var(--sp-4) 0;
-  }
-  .pc-otp-box {
-    width: 44px; height: 52px;
-    border: 2px solid var(--color-border);
-    border-radius: var(--radius);
-    font-family: var(--font-body);
-    font-size: 1.4rem; font-weight: var(--weight-black);
-    text-align: center; color: var(--color-text); background: var(--color-bg);
-    outline: none; transition: border-color var(--ease);
-    caret-color: transparent;
-  }
-  .pc-otp-box:focus { border-color: var(--color-primary); background: var(--color-primary-light); }
-  .pc-otp-box.filled { border-color: var(--color-primary); }
-  .pc-otp-box.shake { animation: shake .35s ease; border-color: #ef4444; }
-  .pc-err {
-    color: #DC2626; font-size: var(--text-xs); font-weight: var(--weight-bold);
-    margin: var(--sp-2) 0; display: none;
-  }
-  .pc-err.is-visible { display: block; }
-  .pc-btns { display: flex; gap: var(--sp-3); align-items: center; margin-top: var(--sp-3); }
-  .pc-hint { font-size: var(--text-xs); color: var(--color-text-muted); margin-bottom: var(--sp-3); }
-  .pc-new-phone-badge {
-    display: inline-block;
-    background: var(--color-primary-light); color: var(--color-primary);
-    padding: 2px var(--sp-2); border-radius: var(--radius); font-weight: var(--weight-bold);
-    direction: ltr;
-  }
-
-  /* ── Responsive ─────────────────────────────────────────────── */
-  @media (max-width: 700px) {
-    .profile-header { padding: var(--sp-8) var(--sp-4) var(--sp-12); }
-    .profile-avatar { width: 68px; height: 68px; font-size: 1.6rem; }
-    .profile-header__name { font-size: var(--text-xl); }
-    .profile-stats-wrap { padding: 0 var(--sp-4); }
-    .profile-stats { grid-template-columns: repeat(2, 1fr); }
-    .profile-body { padding: 0 var(--sp-4); margin-top: var(--sp-6); }
+  /* ── Responsive ──────────────────────────────────────────────── */
+  @media (max-width: 680px) {
+    .pf-stats { grid-template-columns: repeat(2, 1fr); }
     .info-grid { grid-template-columns: 1fr; }
     .form-row { grid-template-columns: 1fr; }
     .stats-grid { grid-template-columns: repeat(2, 1fr); }
   }
-  @media (max-width: 400px) {
-    .profile-stats { grid-template-columns: 1fr 1fr; gap: var(--sp-2); }
-    .stat-card { padding: var(--sp-3) var(--sp-2); }
+  @media (max-width: 420px) {
+    .pf-hero-card { gap: var(--sp-3); }
+    .pf-avatar { width: 64px; height: 64px; font-size: 1.4rem; }
+    .pf-stats { gap: var(--sp-2); }
   }
 </style>
 
 <div class="profile-wrap" id="main-content">
 
-  <!-- Loading skeleton -->
+  <!-- Loading -->
   <div id="profile-loading" class="profile-loading">
     <div class="profile-loading__spinner"></div>
-    <p>جاري تحميل ملفك الشخصي…</p>
+    <p>جاري تحميل حسابك…</p>
   </div>
 
-  <!-- Main profile content -->
+  <!-- Main content -->
   <div id="profile-content" hidden>
 
-    <!-- ── Hero header ─────────────────────────────────────── -->
-    <div class="profile-header">
-      <div class="profile-header__inner">
-        <div class="profile-avatar" id="prof-avatar">م</div>
-        <div class="profile-header__info">
-          <h1 class="profile-header__name" id="prof-name">—</h1>
-          <p class="profile-header__phone" id="prof-phone">—</p>
-          <div class="profile-header__badges">
-            <span class="role-badge" id="prof-role-badge">عميل</span>
+    <!-- Top gradient bar -->
+    <div class="pf-topbar">
+      <p class="pf-topbar__title">ملفي الشخصي</p>
+    </div>
+
+    <!-- ── Hero card ──────────────────────────────────────── -->
+    <div class="pf-hero-wrap">
+      <div class="pf-hero-card">
+        <!-- Avatar -->
+        <div class="pf-avatar-wrap">
+          <div class="pf-avatar" id="prof-avatar">م</div>
+          <span class="role-badge" id="prof-role-badge">👤 عميل</span>
+        </div>
+
+        <!-- Info -->
+        <div class="pf-hero-info">
+          <h1 class="pf-hero-name" id="prof-name">—</h1>
+          <p class="pf-hero-phone" id="prof-phone">—</p>
+          <div class="pf-chips">
             <span class="status-chip" id="prof-acct-chip"></span>
             <span class="status-chip" id="prof-app-chip"></span>
-            <span class="profile-header__city" id="prof-city"></span>
-            <span class="profile-header__since" id="prof-since"></span>
+          </div>
+          <div class="pf-meta">
+            <span class="pf-meta-item" id="prof-city" hidden></span>
+            <span class="pf-meta-item" id="prof-since"></span>
           </div>
         </div>
+
+        <!-- Edit FAB -->
+        <button class="pf-edit-fab" id="edit-toggle-btn" type="button" title="تعديل البيانات">✏️</button>
       </div>
     </div>
 
-    <!-- ── Stats row ───────────────────────────────────────── -->
-    <div class="profile-stats-wrap">
-      <div class="profile-stats">
-        <div class="stat-card">
-          <span class="stat-card__icon">🛵</span>
-          <span class="stat-card__value" id="stat-orders">0</span>
-          <span class="stat-card__label">إجمالي الطلبات</span>
-        </div>
-        <div class="stat-card">
-          <span class="stat-card__icon">💰</span>
-          <span class="stat-card__value" id="stat-spent">0 ج.م</span>
-          <span class="stat-card__label">إجمالي الإنفاق</span>
-        </div>
-        <div class="stat-card">
-          <span class="stat-card__icon">🚗</span>
-          <span class="stat-card__value" id="stat-rides">0</span>
-          <span class="stat-card__label">رحلاتي</span>
-        </div>
-        <div class="stat-card">
-          <span class="stat-card__icon">📅</span>
-          <span class="stat-card__value" id="stat-month">0</span>
-          <span class="stat-card__label">هذا الشهر</span>
-        </div>
+    <!-- ── Stats strip ────────────────────────────────────── -->
+    <div class="pf-stats">
+      <div class="pf-stat pf-stat--blue">
+        <span class="pf-stat__num" id="stat-orders">0</span>
+        <span class="pf-stat__lbl">🛵 طلبات</span>
+      </div>
+      <div class="pf-stat pf-stat--green">
+        <span class="pf-stat__num" id="stat-spent">0 ج.م</span>
+        <span class="pf-stat__lbl">💰 إنفاق</span>
+      </div>
+      <div class="pf-stat pf-stat--purple">
+        <span class="pf-stat__num" id="stat-rides">0</span>
+        <span class="pf-stat__lbl">🚗 رحلات</span>
+      </div>
+      <div class="pf-stat pf-stat--amber">
+        <span class="pf-stat__num" id="stat-month">0</span>
+        <span class="pf-stat__lbl">📅 الشهر</span>
       </div>
     </div>
 
-    <!-- ── Tabs body ───────────────────────────────────────── -->
-    <div class="profile-body">
+    <!-- ── Tabs ───────────────────────────────────────────── -->
+    <div class="pf-body">
 
-      <!-- Tab nav -->
-      <nav class="profile-tabs-nav" role="tablist" aria-label="أقسام الملف الشخصي">
-        <button class="profile-tab is-active" data-tab="info"  role="tab" aria-selected="true"  aria-controls="tab-info">👤 معلوماتي</button>
-        <button class="profile-tab"           data-tab="orders" role="tab" aria-selected="false" aria-controls="tab-orders">🛵 الطلبات</button>
-        <button class="profile-tab"           data-tab="rides"  role="tab" aria-selected="false" aria-controls="tab-rides">🚗 المشاوير</button>
-        <button class="profile-tab"           data-tab="stats"  role="tab" aria-selected="false" aria-controls="tab-stats">📊 الإحصائيات</button>
+      <nav class="profile-tabs-nav" role="tablist">
+        <button class="profile-tab is-active" data-tab="info"   role="tab" aria-selected="true">👤 معلوماتي</button>
+        <button class="profile-tab"           data-tab="orders" role="tab" aria-selected="false">🛵 الطلبات</button>
+        <button class="profile-tab"           data-tab="rides"  role="tab" aria-selected="false">🚗 المشاوير</button>
+        <button class="profile-tab"           data-tab="stats"  role="tab" aria-selected="false">📊 إحصاء</button>
       </nav>
 
-      <!-- ── Tab: معلوماتي ──────────────────────────────────── -->
+      <!-- ── Tab: معلوماتي ──────────────────────────────── -->
       <div class="tab-panel is-active" id="tab-info" role="tabpanel">
-        <!-- Personal info display -->
-        <div class="card" style="margin-bottom:var(--sp-4)">
+
+        <!-- Edit form card (hidden initially) -->
+        <div id="info-edit" class="card" hidden>
           <div class="card__header">
-            <h2 class="card__title">البيانات الشخصية</h2>
-            <button class="btn-save" id="edit-toggle-btn" type="button">✏️ تعديل</button>
+            <h2 class="card__title">✏️ تعديل البيانات</h2>
           </div>
           <div class="card__body">
-            <!-- Read view -->
-            <div id="info-view">
+            <form class="edit-form" id="profile-edit-form" novalidate>
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label" for="edit-name">الاسم الكامل</label>
+                  <input class="form-input" id="edit-name" type="text" placeholder="اسمك الكامل" autocomplete="name">
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="edit-username">اسم المستخدم</label>
+                  <input class="form-input" id="edit-username" type="text" placeholder="username" dir="ltr">
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label" for="edit-email">البريد الإلكتروني</label>
+                  <input class="form-input" id="edit-email" type="email" placeholder="email@example.com" dir="ltr">
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="edit-city">المدينة</label>
+                  <input class="form-input" id="edit-city" type="text" placeholder="مثال: دمياط الجديدة">
+                </div>
+              </div>
+              <div style="display:flex;gap:var(--sp-3);align-items:center;flex-wrap:wrap">
+                <button class="btn-save" type="submit">💾 حفظ التغييرات</button>
+                <button class="btn-save" type="button" id="edit-cancel-btn" style="background:#F5F7FF;color:var(--color-text);border:1.5px solid #C7D2FE">إلغاء</button>
+                <span class="save-success" id="save-success-msg">✅ تم الحفظ!</span>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <!-- Read view -->
+        <div id="info-view">
+          <div class="card">
+            <div class="card__header">
+              <h2 class="card__title">البيانات الشخصية</h2>
+            </div>
+            <div class="card__body">
               <div class="info-grid">
                 <div class="info-field">
                   <span class="info-field__label">الاسم الكامل</span>
@@ -791,84 +771,52 @@ import Layout from '../components/layout.astro';
                 </div>
               </div>
             </div>
-            <!-- Edit view -->
-            <div id="info-edit" hidden>
-              <form class="edit-form" id="profile-edit-form" novalidate>
-                <div class="form-row">
-                  <div class="form-group">
-                    <label class="form-label" for="edit-name">الاسم الكامل</label>
-                    <input class="form-input" id="edit-name" type="text" placeholder="اسمك الكامل" autocomplete="name">
-                  </div>
-                  <div class="form-group">
-                    <label class="form-label" for="edit-username">اسم المستخدم</label>
-                    <input class="form-input" id="edit-username" type="text" placeholder="username" dir="ltr" autocomplete="username">
-                  </div>
-                </div>
-                <div class="form-row">
-                  <div class="form-group">
-                    <label class="form-label" for="edit-email">البريد الإلكتروني</label>
-                    <input class="form-input" id="edit-email" type="email" placeholder="email@example.com" dir="ltr" autocomplete="email">
-                  </div>
-                  <div class="form-group">
-                    <label class="form-label" for="edit-city">المدينة</label>
-                    <input class="form-input" id="edit-city" type="text" placeholder="مثال: دمياط الجديدة">
-                  </div>
-                </div>
-                <div style="display:flex;gap:var(--sp-3);align-items:center;flex-wrap:wrap">
-                  <button class="btn-save" type="submit">💾 حفظ التغييرات</button>
-                  <button class="btn-save" type="button" id="edit-cancel-btn" style="background:var(--color-bg-soft);color:var(--color-text);border:1.5px solid var(--color-border)">إلغاء</button>
-                  <span class="save-success" id="save-success-msg">✅ تم الحفظ بنجاح!</span>
-                </div>
-              </form>
-            </div>
           </div>
         </div>
 
-        <!-- Driver status card (only shown for drivers) -->
-        <div class="card" id="driver-status-card" style="display:none;margin-bottom:var(--sp-4)">
+        <!-- Driver status card -->
+        <div class="card" id="driver-status-card" style="display:none">
           <div class="card__header">
             <h2 class="card__title">🚗 حالة حساب السائق</h2>
           </div>
-          <div class="card__body" style="display:flex;flex-direction:column;gap:var(--sp-3)">
-            <div style="display:flex;align-items:center;justify-content:space-between;padding:var(--sp-3);background:var(--color-bg-soft);border-radius:var(--radius);border:1px solid var(--color-border)">
-              <span style="font-size:var(--text-sm);font-weight:var(--weight-bold);color:var(--color-text)">حالة الحساب</span>
-              <span id="driver-acct-status-label" style="font-size:var(--text-sm);font-weight:var(--weight-bold)">—</span>
+          <div class="card__body">
+            <div class="driver-status-row">
+              <span class="driver-status-row__label">حالة الحساب</span>
+              <span class="driver-status-row__val" id="driver-acct-status-label">—</span>
             </div>
-            <div style="display:flex;align-items:center;justify-content:space-between;padding:var(--sp-3);background:var(--color-bg-soft);border-radius:var(--radius);border:1px solid var(--color-border)">
-              <span style="font-size:var(--text-sm);font-weight:var(--weight-bold);color:var(--color-text)">حالة الطلب</span>
-              <span id="driver-app-status-label" style="font-size:var(--text-sm);font-weight:var(--weight-bold)">—</span>
+            <div class="driver-status-row">
+              <span class="driver-status-row__label">حالة الطلب</span>
+              <span class="driver-status-row__val" id="driver-app-status-label">—</span>
             </div>
-            <div id="driver-order-eligibility" style="display:none;padding:var(--sp-3);border-radius:var(--radius);font-size:var(--text-sm);font-weight:var(--weight-bold);text-align:center"></div>
+            <div class="driver-eligibility" id="driver-order-eligibility" style="display:none"></div>
           </div>
         </div>
 
-        <!-- Account & security -->
+        <!-- Security card -->
         <div class="card">
           <div class="card__header">
-            <h2 class="card__title">الحساب والأمان</h2>
+            <h2 class="card__title">🔒 الحساب والأمان</h2>
           </div>
           <div class="card__body">
             <div class="security-row">
-              <div class="security-row__info">
+              <div>
                 <div class="security-row__label">رقم الجوال</div>
                 <div class="security-row__desc" id="sec-phone">—</div>
               </div>
-              <button class="btn-danger" id="change-phone-btn" type="button" style="background:#EFF6FF;color:#2563EB;border-color:#BFDBFE">تغيير</button>
+              <button class="btn-outline" id="change-phone-btn" type="button">تغيير</button>
             </div>
             <!-- Phone change panel -->
             <div class="phone-change-panel" id="phone-change-panel">
-              <!-- Step 1: enter new phone -->
               <div class="pc-step is-active" id="pc-step1">
                 <div class="pc-title">📱 تغيير رقم الجوال</div>
-                <div class="pc-hint">أدخل رقم الجوال الجديد وسنرسل إليه كود التحقق</div>
+                <div class="pc-hint">أدخل الرقم الجديد وسنرسل إليه كود التحقق</div>
                 <input class="form-input" id="pc-new-phone" type="tel" inputmode="numeric" placeholder="01XXXXXXXXX" dir="ltr" maxlength="13">
                 <div class="pc-err" id="pc-err1"></div>
                 <div class="pc-btns">
                   <button class="btn-save" id="pc-send-btn" type="button">إرسال كود التحقق</button>
-                  <button class="btn-save" id="pc-cancel-btn" type="button" style="background:var(--color-bg-soft);color:var(--color-text);border:1.5px solid var(--color-border)">إلغاء</button>
+                  <button class="btn-save" id="pc-cancel-btn" type="button" style="background:#F5F7FF;color:var(--color-text);border:1.5px solid #C7D2FE">إلغاء</button>
                 </div>
               </div>
-              <!-- Step 2: OTP verification -->
               <div class="pc-step" id="pc-step2">
                 <div class="pc-title">🔐 أدخل كود التحقق</div>
                 <div class="pc-hint">أُرسل الكود إلى <span class="pc-new-phone-badge" id="pc-phone-badge"></span></div>
@@ -883,19 +831,19 @@ import Layout from '../components/layout.astro';
                 <div class="pc-err" id="pc-err2"></div>
                 <div class="pc-btns">
                   <button class="btn-save" id="pc-verify-btn" type="button">تأكيد التغيير</button>
-                  <button class="btn-save" id="pc-back-btn" type="button" style="background:var(--color-bg-soft);color:var(--color-text);border:1.5px solid var(--color-border)">رجوع</button>
+                  <button class="btn-save" id="pc-back-btn" type="button" style="background:#F5F7FF;color:var(--color-text);border:1.5px solid #C7D2FE">رجوع</button>
                 </div>
               </div>
             </div>
             <div class="security-row">
-              <div class="security-row__info">
+              <div>
                 <div class="security-row__label">كلمة المرور</div>
                 <div class="security-row__desc">محمية بكلمة مرور قوية</div>
               </div>
-              <a href="/login" class="btn-danger" style="text-decoration:none">تغيير</a>
+              <a href="/login" class="btn-outline" style="text-decoration:none">تغيير</a>
             </div>
             <div class="security-row">
-              <div class="security-row__info">
+              <div>
                 <div class="security-row__label">تسجيل الخروج</div>
                 <div class="security-row__desc">الخروج من حسابك على هذا الجهاز</div>
               </div>
@@ -903,40 +851,50 @@ import Layout from '../components/layout.astro';
             </div>
           </div>
         </div>
-      </div>
 
-      <!-- ── Tab: الطلبات ──────────────────────────────────── -->
+      </div><!-- /tab-info -->
+
+      <!-- ── Tab: الطلبات ──────────────────────────────── -->
       <div class="tab-panel" id="tab-orders" role="tabpanel" hidden>
-        <div class="orders-filters" id="order-filters">
-          <button class="orders-filter is-active" data-filter="all">الكل</button>
-          <button class="orders-filter" data-filter="active">نشط</button>
-          <button class="orders-filter" data-filter="delivered">مُسلَّم</button>
-          <button class="orders-filter" data-filter="cancelled">ملغي</button>
-        </div>
-        <div id="orders-list">
-          <div class="empty-state">
-            <div class="empty-state__icon">🛵</div>
-            <div class="empty-state__title">لا توجد طلبات بعد</div>
-            <div class="empty-state__text">طلباتك ستظهر هنا بعد أول عملية توصيل</div>
+        <div class="card">
+          <div class="card__body" style="padding-bottom:0">
+            <div class="orders-filters" id="order-filters">
+              <button class="orders-filter is-active" data-filter="all">الكل</button>
+              <button class="orders-filter" data-filter="active">نشط</button>
+              <button class="orders-filter" data-filter="delivered">مُسلَّم</button>
+              <button class="orders-filter" data-filter="cancelled">ملغي</button>
+            </div>
+          </div>
+          <div class="card__body" style="padding-top:0">
+            <div id="orders-list">
+              <div class="empty-state">
+                <div class="empty-state__icon">🛵</div>
+                <div class="empty-state__title">لا توجد طلبات بعد</div>
+                <div class="empty-state__text">طلباتك ستظهر هنا بعد أول عملية توصيل</div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
-      <!-- ── Tab: المشاوير ─────────────────────────────────── -->
+      <!-- ── Tab: المشاوير ─────────────────────────────── -->
       <div class="tab-panel" id="tab-rides" role="tabpanel" hidden>
-        <div id="rides-list">
-          <div class="empty-state">
-            <div class="empty-state__icon">🚗</div>
-            <div class="empty-state__title">لا توجد رحلات بعد</div>
-            <div class="empty-state__text">رحلاتك ستظهر هنا بعد أول مشوار</div>
+        <div class="card">
+          <div class="card__body">
+            <div id="rides-list">
+              <div class="empty-state">
+                <div class="empty-state__icon">🚗</div>
+                <div class="empty-state__title">لا توجد رحلات بعد</div>
+                <div class="empty-state__text">رحلاتك ستظهر هنا بعد أول مشوار</div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
-      <!-- ── Tab: الإحصائيات ───────────────────────────────── -->
+      <!-- ── Tab: الإحصائيات ───────────────────────────── -->
       <div class="tab-panel" id="tab-stats" role="tabpanel" hidden>
-        <!-- Summary numbers -->
-        <div class="stats-grid" style="margin-bottom:var(--sp-6)">
+        <div class="stats-grid" style="margin-bottom:var(--sp-4)">
           <div class="stats-card">
             <div class="stats-card__num" id="st-total-orders">0</div>
             <div class="stats-card__label">إجمالي الطلبات</div>
@@ -963,11 +921,8 @@ import Layout from '../components/layout.astro';
           </div>
         </div>
 
-        <!-- Category breakdown -->
         <div class="card" style="margin-bottom:var(--sp-4)">
-          <div class="card__header">
-            <h2 class="card__title">🍕 الإنفاق حسب نوع الخدمة</h2>
-          </div>
+          <div class="card__header"><h2 class="card__title">🍕 الإنفاق حسب نوع الخدمة</h2></div>
           <div class="card__body">
             <div class="category-list" id="category-breakdown">
               <p style="color:var(--color-text-muted);font-size:var(--text-sm)">لا توجد بيانات كافية بعد</p>
@@ -975,11 +930,8 @@ import Layout from '../components/layout.astro';
           </div>
         </div>
 
-        <!-- Top stores -->
         <div class="card" style="margin-bottom:var(--sp-4)">
-          <div class="card__header">
-            <h2 class="card__title">⭐ المحلات المفضلة</h2>
-          </div>
+          <div class="card__header"><h2 class="card__title">⭐ المحلات المفضلة</h2></div>
           <div class="card__body">
             <div id="top-stores">
               <p style="color:var(--color-text-muted);font-size:var(--text-sm)">لا توجد بيانات كافية بعد</p>
@@ -987,11 +939,8 @@ import Layout from '../components/layout.astro';
           </div>
         </div>
 
-        <!-- Monthly breakdown table -->
         <div class="card">
-          <div class="card__header">
-            <h2 class="card__title">📅 الإنفاق الشهري</h2>
-          </div>
+          <div class="card__header"><h2 class="card__title">📅 الإنفاق الشهري</h2></div>
           <div class="card__body" style="padding:0;overflow:hidden">
             <table class="monthly-table">
               <thead>
@@ -1010,11 +959,10 @@ import Layout from '../components/layout.astro';
         </div>
       </div>
 
-    </div><!-- /.profile-body -->
+    </div><!-- /.pf-body -->
   </div><!-- /#profile-content -->
 </div><!-- /.profile-wrap -->
 
-<!-- Toast -->
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <script is:inline>
@@ -1066,9 +1014,7 @@ import Layout from '../components/layout.astro';
   function initials(name) {
     if (!name) return 'م';
     const parts = name.trim().split(/\s+/);
-    return parts.length >= 2
-      ? parts[0][0] + parts[1][0]
-      : parts[0].slice(0, 2);
+    return parts.length >= 2 ? parts[0][0] + parts[1][0] : parts[0].slice(0, 2);
   }
   function showToast(msg) {
     const t = document.getElementById('toast');
@@ -1077,6 +1023,11 @@ import Layout from '../components/layout.astro';
     setTimeout(() => t.classList.remove('is-visible'), 3000);
   }
   function $(id) { return document.getElementById(id); }
+  /* Show phone in local 01XXXXXXXXX format */
+  function displayPhone(p) {
+    if (!p || p === '—') return p || '—';
+    return p.startsWith('+20') ? '0' + p.slice(3) : p;
+  }
 
   /* ── Auth guard ────────────────────────────────────────────── */
   let user;
@@ -1094,7 +1045,7 @@ import Layout from '../components/layout.astro';
   let allRides  = [];
   let currentOrderFilter = 'all';
 
-  /* ── Supabase fetchers (4 s timeout each) ─────────────────── */
+  /* ── Supabase fetchers ─────────────────────────────────────── */
   function sbFetch(url) {
     const ctrl = new AbortController();
     const tid  = setTimeout(() => ctrl.abort(), 4000);
@@ -1125,7 +1076,6 @@ import Layout from '../components/layout.astro';
     const local = localPhone(phone);
     return 'or=(phone.eq.' + encodeURIComponent(intl) + ',phone.eq.' + encodeURIComponent(local) + ')';
   }
-
   async function fetchAccount(phone) {
     const data = await sbFetch(
       SB_URL + '/rest/v1/accounts?' + phoneOrFilter(phone) + '&select=*&limit=1');
@@ -1138,16 +1088,16 @@ import Layout from '../components/layout.astro';
     return Array.isArray(data) ? (data[0] || null) : null;
   }
 
-  /* ── Render helpers ────────────────────────────────────────── */
+  /* ── Status labels ─────────────────────────────────────────── */
   const ACCT_STATUS_AR = { active:'نشط', pending:'معلق', approved:'معتمد', rejected:'مرفوض', banned:'محظور' };
   const ACCT_STATUS_CLASS = { active:'status-chip--active', pending:'status-chip--pending', approved:'status-chip--approved', rejected:'status-chip--rejected', banned:'status-chip--banned' };
   const APP_STATUS_AR = { pending:'قيد المراجعة', approved:'معتمد ✓', rejected:'مرفوض' };
   const APP_STATUS_CLASS = { pending:'status-chip--pending', approved:'status-chip--approved', rejected:'status-chip--rejected' };
 
+  /* ── renderStatusChips ─────────────────────────────────────── */
   function renderStatusChips(acctStatus, appStatus) {
     var acctChip = $('prof-acct-chip');
     var appChip  = $('prof-app-chip');
-    // If account is approved but no explicit app record, infer app as approved
     var effectiveApp = appStatus || (acctStatus === 'approved' ? 'approved' : null);
     if (acctStatus) {
       acctChip.textContent = '⚙ ' + (ACCT_STATUS_AR[acctStatus] || acctStatus);
@@ -1165,91 +1115,84 @@ import Layout from '../components/layout.astro';
     }
   }
 
+  /* ── renderDriverStatusCard ────────────────────────────────── */
   function renderDriverStatusCard(acctStatus, appData) {
     $('driver-status-card').style.display = '';
     var acctLabel = $('driver-acct-status-label');
     var appLabel  = $('driver-app-status-label');
     var eligDiv   = $('driver-order-eligibility');
 
-    var acctColor = { active:'#16A34A', pending:'#CA8A04', approved:'#2563EB', rejected:'#DC2626', banned:'#64748B' };
+    var acctColor = { active:'#059669', pending:'#D97706', approved:'#4338CA', rejected:'#DC2626', banned:'#64748B' };
     acctLabel.textContent = ACCT_STATUS_AR[acctStatus] || acctStatus || '—';
     acctLabel.style.color = acctColor[acctStatus] || 'var(--color-text)';
 
     var appStatus = appData ? appData.status : null;
-    var appColor  = { pending:'#CA8A04', approved:'#2563EB', rejected:'#DC2626' };
-    appLabel.textContent = APP_STATUS_AR[appStatus] || (appData ? appStatus : 'لم يُرفع طلب');
-    appLabel.style.color = appColor[appStatus] || 'var(--color-text-muted)';
+    // If acctStatus='approved' with no driver_applications record → admin approved directly → treat as approved
+    var effectiveAppStatus = appStatus || (acctStatus === 'approved' ? 'approved' : null);
+    var canReceive = (acctStatus === 'active' || acctStatus === 'approved') && effectiveAppStatus === 'approved';
+
+    if (!appStatus && acctStatus === 'approved') {
+      appLabel.textContent = '✓ معتمد (تلقائي)';
+      appLabel.style.color = '#4338CA';
+    } else {
+      var appColor = { pending:'#D97706', approved:'#4338CA', rejected:'#DC2626' };
+      appLabel.textContent = APP_STATUS_AR[appStatus] || (appData ? appStatus : 'لم يُرفع طلب');
+      appLabel.style.color = appColor[appStatus] || 'var(--color-text-muted)';
+    }
     if (appData && appData.rejection_reason && appStatus === 'rejected') {
       appLabel.title = appData.rejection_reason;
     }
 
-    // approved account status = admin approved directly on accounts table (same as active + approved app)
-    var effectiveAppStatus = appStatus || (acctStatus === 'approved' ? 'approved' : null);
-    var canReceive = (acctStatus === 'active' || acctStatus === 'approved') && effectiveAppStatus === 'approved';
-
-    // Update app label if inferred from account status
-    if (!appStatus && acctStatus === 'approved') {
-      appLabel.textContent = APP_STATUS_AR['approved'] || 'معتمد';
-      appLabel.style.color = '#2563EB';
-    }
-
     eligDiv.style.display = '';
+    eligDiv.className = 'driver-eligibility';
     if (canReceive) {
       eligDiv.textContent = '✅ مؤهل لاستقبال الطلبات';
-      eligDiv.style.background = '#DCFCE7';
-      eligDiv.style.color = '#16A34A';
-      eligDiv.style.border = '1px solid #BBF7D0';
+      eligDiv.style.cssText = 'display:block;background:#ECFDF5;color:#059669;border:1px solid #A7F3D0;padding:12px;border-radius:12px;font-weight:700;font-size:var(--text-sm);text-align:center;margin-top:8px';
     } else {
-      eligDiv.textContent = '⛔ غير مؤهل — يجب أن يكون الحساب نشطاً والطلب معتمداً';
-      eligDiv.style.background = '#FEE2E2';
-      eligDiv.style.color = '#DC2626';
-      eligDiv.style.border = '1px solid #FECACA';
+      eligDiv.textContent = '⛔ غير مؤهل — الحساب قيد المراجعة';
+      eligDiv.style.cssText = 'display:block;background:#FEF2F2;color:#DC2626;border:1px solid #FECACA;padding:12px;border-radius:12px;font-weight:700;font-size:var(--text-sm);text-align:center;margin-top:8px';
     }
   }
 
+  /* ── renderHeader ──────────────────────────────────────────── */
   function renderHeader(acc) {
-    const name   = acc.name     || user.name   || '—';
-    const phone  = acc.phone    || user.phone  || '—';
-    const role   = acc.role     || user.role   || 'customer';
-    const city   = acc.city     || user.city   || '';
-    const since  = acc.created_at || acc.createdAt || '';
+    const name  = acc.name        || user.name   || '—';
+    const phone = acc.phone       || user.phone  || '—';
+    const role  = acc.role        || user.role   || 'customer';
+    const city  = acc.city        || user.city   || '';
+    const since = acc.created_at  || acc.createdAt || '';
 
     $('prof-avatar').textContent = initials(name);
     $('prof-name').textContent   = name;
-    $('prof-phone').textContent  = phone;
+    $('prof-phone').textContent  = displayPhone(phone);
 
     const badge = $('prof-role-badge');
     badge.textContent = role === 'driver' ? '🚗 سائق' : '👤 عميل';
     if (role === 'driver') badge.classList.add('role-badge--driver');
 
-    if (city) {
-      $('prof-city').textContent = '📍 ' + city;
-      $('prof-city').hidden = false;
-    }
-    if (since) {
-      $('prof-since').textContent = '🗓 عضو منذ ' + fmtDate(since);
-    }
+    const cityEl = $('prof-city');
+    if (city) { cityEl.textContent = '📍 ' + city; cityEl.hidden = false; }
+    if (since) $('prof-since').textContent = '🗓 عضو منذ ' + fmtDate(since);
 
-    // Info view fields
     $('view-name').textContent     = name;
-    $('view-phone').textContent    = phone;
+    $('view-phone').textContent    = displayPhone(phone);
     $('view-email').textContent    = acc.email    || '';
-    if (!acc.email)    $('view-email').classList.add('info-field__value--empty'),    $('view-email').textContent    = 'غير محدد';
+    if (!acc.email)    { $('view-email').classList.add('info-field__value--empty');    $('view-email').textContent    = 'غير محدد'; }
     $('view-username').textContent = acc.username || '';
-    if (!acc.username) $('view-username').classList.add('info-field__value--empty'), $('view-username').textContent = 'غير محدد';
+    if (!acc.username) { $('view-username').classList.add('info-field__value--empty'); $('view-username').textContent = 'غير محدد'; }
     $('view-city').textContent     = city || 'غير محدد';
     if (!city)         $('view-city').classList.add('info-field__value--empty');
     $('view-role').textContent     = role === 'driver' ? 'سائق توصيل' : 'عميل';
     $('view-created').textContent  = fmtDate(since);
-    $('sec-phone').textContent     = phone;
+    $('sec-phone').textContent     = displayPhone(phone);
 
-    // Pre-fill edit form
     $('edit-name').value     = name !== '—' ? name : '';
     $('edit-username').value = acc.username || '';
     $('edit-email').value    = acc.email    || '';
     $('edit-city').value     = city;
   }
 
+  /* ── renderStats ───────────────────────────────────────────── */
   function renderStats(orders, rides) {
     const now = new Date();
     const thisMonth = orders.filter(o => {
@@ -1266,6 +1209,7 @@ import Layout from '../components/layout.astro';
     $('stat-month').textContent  = thisMonth.length;
   }
 
+  /* ── Orders ────────────────────────────────────────────────── */
   function orderStatusGroup(status) {
     if (!status) return 'active';
     if (['delivered','completed'].includes(status)) return 'delivered';
@@ -1289,9 +1233,9 @@ import Layout from '../components/layout.astro';
       } catch {}
       return '';
     })();
-    const total    = o.total ? fmt(o.total) + ' ج.م' : (o.price || '—');
-    const date     = fmtDateTime(o.created_at || o.date);
-    const id       = o.id || o.code || '';
+    const total = o.total ? fmt(o.total) + ' ج.م' : (o.price || '—');
+    const date  = fmtDateTime(o.created_at || o.date);
+    const id    = o.id || o.code || '';
 
     const div = document.createElement('div');
     div.className = 'order-card';
@@ -1353,6 +1297,7 @@ import Layout from '../components/layout.astro';
     }
   }
 
+  /* ── Rides ─────────────────────────────────────────────────── */
   function renderRides(rides) {
     const list = $('rides-list');
     if (!rides.length) {
@@ -1365,16 +1310,16 @@ import Layout from '../components/layout.astro';
     }
     list.innerHTML = '';
     rides.forEach(r => {
-      const status  = r.status || 'pending';
-      const label   = STATUS_AR[status] || status;
-      const cls     = STATUS_CLASS[status] || 'status--pending';
-      const from    = r.from_area || '—';
-      const to      = r.to_area   || '—';
-      const fare    = r.fare ? fmt(r.fare) + ' ج.م' : '—';
-      const dist    = r.distance_km ? r.distance_km + ' كم' : '';
-      const eta     = r.eta_minutes ? r.eta_minutes + ' دقيقة' : '';
-      const date    = fmtDateTime(r.created_at || r.accepted_at);
-      const driver  = r.driver_name ? '👨‍✈️ ' + r.driver_name : '';
+      const status = r.status || 'pending';
+      const label  = STATUS_AR[status] || status;
+      const cls    = STATUS_CLASS[status] || 'status--pending';
+      const from   = r.from_area || '—';
+      const to     = r.to_area   || '—';
+      const fare   = r.fare ? fmt(r.fare) + ' ج.م' : '—';
+      const dist   = r.distance_km ? r.distance_km + ' كم' : '';
+      const eta    = r.eta_minutes ? r.eta_minutes + ' دقيقة' : '';
+      const date   = fmtDateTime(r.created_at || r.accepted_at);
+      const driver = r.driver_name ? '👨‍✈️ ' + r.driver_name : '';
 
       const div = document.createElement('div');
       div.className = 'ride-card';
@@ -1390,17 +1335,18 @@ import Layout from '../components/layout.astro';
         </div>
         <div class="ride-meta">
           <span class="ride-meta__item">📅 ${date}</span>
-          ${dist ? `<span class="ride-meta__item">📏 ${dist}</span>` : ''}
-          ${eta  ? `<span class="ride-meta__item">⏱ ${eta}</span>` : ''}
+          ${dist   ? `<span class="ride-meta__item">📏 ${dist}</span>` : ''}
+          ${eta    ? `<span class="ride-meta__item">⏱ ${eta}</span>` : ''}
           ${driver ? `<span class="ride-meta__item">${driver}</span>` : ''}
-          <span class="ride-fare" style="margin-right:auto">${fare}</span>
+          <span class="ride-fare">${fare}</span>
         </div>`;
       list.appendChild(div);
     });
   }
 
+  /* ── Statistics ────────────────────────────────────────────── */
   function renderStatisticsTab(orders, rides) {
-    const delivered = orders.filter(o => ['delivered','completed'].includes(o.status));
+    const delivered  = orders.filter(o => ['delivered','completed'].includes(o.status));
     const totalSpent = delivered.reduce((s, o) => s + (Number(o.total) || 0), 0);
     const avgOrder   = delivered.length ? Math.round(totalSpent / delivered.length) : 0;
     const now = new Date();
@@ -1416,18 +1362,16 @@ import Layout from '../components/layout.astro';
     $('st-delivered').textContent    = delivered.length;
     $('st-this-month').textContent   = thisMonth.length;
 
-    // Category breakdown (by store_name or type)
     const catMap = {};
     orders.forEach(o => {
       const key = o.store_name || o.type || 'توصيل';
       catMap[key] = (catMap[key] || 0) + (Number(o.total) || 0);
     });
     if (rides.length) catMap['مشاوير'] = (catMap['مشاوير'] || 0) + rides.reduce((s, r) => s + (Number(r.fare) || 0), 0);
-
     const catEntries = Object.entries(catMap).sort((a, b) => b[1] - a[1]).slice(0, 6);
     const maxCat = catEntries[0] ? catEntries[0][1] : 1;
     const colors = ['', '--green', '--orange', '--purple', '', '--green'];
-    const catHtml = catEntries.length
+    $('category-breakdown').innerHTML = catEntries.length
       ? catEntries.map(([name, amt], i) => `
           <div class="category-row">
             <span class="category-row__label">${name}</span>
@@ -1437,9 +1381,7 @@ import Layout from '../components/layout.astro';
             <span class="category-row__count">${fmt(Math.round(amt))} ج</span>
           </div>`).join('')
       : '<p style="color:var(--color-text-muted);font-size:var(--text-sm)">لا توجد بيانات كافية بعد</p>';
-    $('category-breakdown').innerHTML = catHtml;
 
-    // Top stores
     const storeMap = {};
     orders.forEach(o => {
       if (!o.store_name) return;
@@ -1459,7 +1401,6 @@ import Layout from '../components/layout.astro';
           </div>`).join('')}</div>`
       : '<p style="color:var(--color-text-muted);font-size:var(--text-sm)">لا توجد بيانات كافية بعد</p>';
 
-    // Monthly breakdown
     const monthMap = {};
     orders.forEach(o => {
       const d = new Date(o.created_at || 0);
@@ -1472,12 +1413,7 @@ import Layout from '../components/layout.astro';
     $('monthly-tbody').innerHTML = monthRows.length
       ? monthRows.map(([, m]) => {
           const avg = m.count ? Math.round(m.spent / m.count) : 0;
-          return `<tr>
-            <td>${m.label}</td>
-            <td>${m.count}</td>
-            <td>${fmt(Math.round(m.spent))} ج.م</td>
-            <td>${fmt(avg)} ج.م</td>
-          </tr>`;
+          return `<tr><td>${m.label}</td><td>${m.count}</td><td>${fmt(Math.round(m.spent))} ج.م</td><td>${fmt(avg)} ج.م</td></tr>`;
         }).join('')
       : '<tr><td colspan="4" style="text-align:center;color:var(--color-text-muted)">لا توجد بيانات بعد</td></tr>';
   }
@@ -1530,24 +1466,21 @@ import Layout from '../components/layout.astro';
     const city     = $('edit-city').value.trim();
     if (!name) { showToast('الاسم مطلوب'); return; }
 
-    // Update Supabase
     try {
       const patch = { name, city: city || null, email: email || null, username: username || null };
-      await fetch(SB_URL + '/rest/v1/accounts?phone=eq.' + encodeURIComponent(user.phone), {
+      await fetch(SB_URL + '/rest/v1/accounts?' + phoneOrFilter(user.phone), {
         method: 'PATCH',
         headers: { ...SB_H, 'Content-Type': 'application/json', Prefer: 'return=minimal' },
         body: JSON.stringify(patch),
       });
     } catch {}
 
-    // Update localStorage
     try {
       const stored = JSON.parse(localStorage.getItem('wslha_user') || '{}');
       stored.name = name; stored.city = city;
       localStorage.setItem('wslha_user', JSON.stringify(stored));
     } catch {}
 
-    // Update accounts cache
     try {
       const accs = JSON.parse(localStorage.getItem('wslha_accounts') || '[]');
       const idx  = accs.findIndex(a => a.phone === user.phone);
@@ -1557,13 +1490,7 @@ import Layout from '../components/layout.astro';
       }
     } catch {}
 
-    // Refresh UI
-    if (cachedAccount) {
-      cachedAccount.name     = name;
-      cachedAccount.city     = city;
-      cachedAccount.email    = email;
-      cachedAccount.username = username;
-    }
+    if (cachedAccount) { cachedAccount.name = name; cachedAccount.city = city; cachedAccount.email = email; cachedAccount.username = username; }
     renderHeader(cachedAccount || { name, phone: user.phone, city, email, username, role: user.role });
 
     $('save-success-msg').style.display = 'inline-flex';
@@ -1616,7 +1543,6 @@ import Layout from '../components/layout.astro';
         headers: { ...SB_H, Prefer: 'return=minimal' },
         body: JSON.stringify({ phone: phone, code: code }),
       });
-      // Dev notice: auto-fill OTP by clicking badge
       phoneBadge.title = 'كود التطوير: ' + code;
       phoneBadge.style.cursor = 'pointer';
       phoneBadge.onclick = function () {
@@ -1632,7 +1558,7 @@ import Layout from '../components/layout.astro';
       });
       if (!res.ok) return false;
       var json = await res.json();
-      return json === true || json === 'true' || json?.verified === true;
+      return json === true || json === 'true' || (json && json.verified === true);
     }
 
     function goStep2() {
@@ -1640,7 +1566,7 @@ import Layout from '../components/layout.astro';
       otpBoxes.forEach(function (b) { b.value = ''; b.classList.remove('filled', 'shake'); });
       step1.classList.remove('is-active');
       step2.classList.add('is-active');
-      phoneBadge.textContent = pcNewPhone;
+      phoneBadge.textContent = displayPhone(pcNewPhone);
       setTimeout(function () { otpBoxes[0] && otpBoxes[0].focus(); }, 100);
     }
 
@@ -1675,14 +1601,12 @@ import Layout from '../components/layout.astro';
       var normalized = normalizePhone(raw);
       if (!normalized) { showErr(err1, 'أدخل رقم جوال مصري صحيح (01XXXXXXXXX)'); return; }
 
-      // Check it's not the same as current phone
-      var curPhoneLocal = user.phone.startsWith('+20') ? '0' + user.phone.slice(3) : user.phone;
-      var normLocal = normalized.startsWith('+20') ? '0' + normalized.slice(3) : normalized;
-      if (normLocal === curPhoneLocal) { showErr(err1, 'هذا هو رقمك الحالي بالفعل'); return; }
+      var curLocal = user.phone.startsWith('+20') ? '0' + user.phone.slice(3) : user.phone;
+      var newLocal = normalized.startsWith('+20') ? '0' + normalized.slice(3) : normalized;
+      if (newLocal === curLocal) { showErr(err1, 'هذا هو رقمك الحالي بالفعل'); return; }
 
-      // Check number not already in use
-      var checkLocal = normLocal;
       var checkIntl  = normalized;
+      var checkLocal = newLocal;
       var existing = await fetch(
         SB_URL + '/rest/v1/accounts?or=(phone.eq.' + encodeURIComponent(checkIntl) + ',phone.eq.' + encodeURIComponent(checkLocal) + ')&select=id&limit=1',
         { headers: SB_H }
@@ -1720,9 +1644,8 @@ import Layout from '../components/layout.astro';
           return;
         }
 
-        // Update phone in accounts table — use OR filter to find current account
-        var local  = user.phone.startsWith('+20') ? '0' + user.phone.slice(3) : user.phone;
-        var intl   = user.phone.startsWith('0')   ? '+2' + user.phone : user.phone;
+        var local = user.phone.startsWith('+20') ? '0' + user.phone.slice(3) : user.phone;
+        var intl  = user.phone.startsWith('0')   ? '+2' + user.phone : user.phone;
         var patchRes = await fetch(
           SB_URL + '/rest/v1/accounts?or=(phone.eq.' + encodeURIComponent(intl) + ',phone.eq.' + encodeURIComponent(local) + ')',
           {
@@ -1731,10 +1654,8 @@ import Layout from '../components/layout.astro';
             body: JSON.stringify({ phone: pcNewPhone }),
           }
         );
-
         if (!patchRes.ok) { showErr(err2, 'فشل تحديث الرقم، حاول مرة أخرى'); btn.disabled = false; btn.textContent = 'تأكيد التغيير'; return; }
 
-        // Update localStorage
         try {
           var stored = JSON.parse(localStorage.getItem('wslha_user') || '{}');
           stored.phone = pcNewPhone;
@@ -1744,10 +1665,10 @@ import Layout from '../components/layout.astro';
         user.phone = pcNewPhone;
         if (cachedAccount) cachedAccount.phone = pcNewPhone;
 
-        // Refresh displayed phone
-        $('prof-phone').textContent = pcNewPhone;
-        $('view-phone').textContent = pcNewPhone;
-        $('sec-phone').textContent  = pcNewPhone;
+        var dp = displayPhone(pcNewPhone);
+        $('prof-phone').textContent = dp;
+        $('view-phone').textContent = dp;
+        $('sec-phone').textContent  = dp;
 
         resetPanel();
         showToast('✅ تم تغيير رقم الجوال بنجاح');
@@ -1759,7 +1680,6 @@ import Layout from '../components/layout.astro';
 
     $('pc-verify-btn').addEventListener('click', doVerify);
 
-    // OTP box behavior
     otpBoxes.forEach(function (box, i) {
       box.addEventListener('keydown', function (e) {
         if (e.key === 'Backspace') {
@@ -1793,7 +1713,7 @@ import Layout from '../components/layout.astro';
   function buildAccFromLocal(phone) {
     try {
       const accounts = JSON.parse(localStorage.getItem('wslha_accounts') || '[]');
-      const found = accounts.find(a => a.phone === phone);
+      const found = accounts.find(a => a.phone === phone || localPhone(a.phone) === localPhone(phone));
       if (found) return found;
     } catch {}
     return { phone, name: user.name || '', role: user.role || 'customer', city: user.city || '', createdAt: user.loginAt || '' };
@@ -1822,20 +1742,18 @@ import Layout from '../components/layout.astro';
       renderDriverStatusCard(acctStatus, appData);
     }
 
-    $('profile-loading').hidden  = true;
-    $('profile-content').hidden  = false;
+    $('profile-loading').hidden = true;
+    $('profile-content').hidden = false;
   }
 
   function init() {
     const phone = user.phone;
 
-    // ── Step 1: render immediately from localStorage (instant) ──
     let lsOrders = [];
     try { lsOrders = JSON.parse(localStorage.getItem('wslha_orders') || '[]'); } catch {}
     const lsAcc = buildAccFromLocal(phone);
     showContent(lsAcc, mergeOrders([], lsOrders), [], null, null);
 
-    // ── Step 2: fetch from Supabase in background and refresh ──
     var role = user.role || 'customer';
     var fetches = [fetchAccount(phone), fetchOrders(phone), fetchRides(phone)];
     if (role === 'driver') fetches.push(fetchDriverApp(phone));
@@ -1847,11 +1765,11 @@ import Layout from '../components/layout.astro';
         var sbRides  = results[2];
         var appData  = results[3] || null;
         var acc      = sbAcc || lsAcc;
-        var orders   = mergeOrders(sbOrders, lsOrders);
+        var orders   = mergeOrders(sbOrders || [], lsOrders);
         var acctStatus = acc ? (acc.status || null) : null;
-        showContent(acc, orders, sbRides, acctStatus, appData);
+        showContent(acc, orders, sbRides || [], acctStatus, appData);
       })
-      .catch(function(err) { console.warn('[profile] Supabase refresh failed', err); });
+      .catch(function(err) { console.warn('[profile] refresh failed', err); });
   }
 
   init();
