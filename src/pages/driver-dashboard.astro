@@ -1224,9 +1224,21 @@ import PageHero from '../components/PageHero.astro';
       const banner = document.getElementById('approval-banner');
       if (!banner) return;
 
-      if (!appStatus) {
+      // Handle banned account first
+      if (acctStatus === 'banned') {
+        banner.innerHTML = `<div class="approval-banner rejected"><div class="approval-banner__icon">🚫</div><div><div class="approval-banner__title">حسابك محظور</div><div class="approval-banner__sub">يرجى التواصل مع الدعم. <a href="/contact" style="color:#991B1B;font-weight:700">تواصل معنا</a></div></div></div>`;
+        banner.style.display = 'block';
+        document.getElementById('toggle-btn').disabled = true;
+        return;
+      }
+
+      // If account itself is approved treat as approved (admin may approve directly on accounts table)
+      const effectiveAppStatus = appStatus || (acctStatus === 'approved' ? 'approved' : null);
+
+      if (!effectiveAppStatus) {
         banner.innerHTML = `<div class="approval-banner pending"><div class="approval-banner__icon">📋</div><div><div class="approval-banner__title">لم تقدّم طلب انضمام بعد</div><div class="approval-banner__sub">قدّم طلبك لبدء العمل كسائق. <a href="/driver" style="color:var(--color-primary);font-weight:700">تقديم الطلب الآن</a></div></div></div>`;
         banner.style.display = 'block';
+        document.getElementById('toggle-btn').disabled = true;
         return;
       }
 
@@ -1248,19 +1260,11 @@ import PageHero from '../components/PageHero.astro';
         },
       };
 
-      // Handle banned account
-      if (acctStatus === 'banned') {
-        banner.innerHTML = `<div class="approval-banner rejected"><div class="approval-banner__icon">🚫</div><div><div class="approval-banner__title">حسابك محظور</div><div class="approval-banner__sub">يرجى التواصل مع الدعم. <a href="/contact" style="color:#991B1B;font-weight:700">تواصل معنا</a></div></div></div>`;
-        banner.style.display = 'block';
-        document.getElementById('toggle-btn').disabled = true;
-        return;
-      }
-
-      const c = configs[appStatus] || configs.pending;
+      const c = configs[effectiveAppStatus] || configs.pending;
       banner.innerHTML = `<div class="approval-banner ${c.cls}"><div class="approval-banner__icon">${c.icon}</div><div><div class="approval-banner__title">${c.title}</div><div class="approval-banner__sub">${c.sub}</div></div></div>`;
       banner.style.display = 'block';
 
-      if (appStatus !== 'approved') {
+      if (effectiveAppStatus !== 'approved') {
         document.getElementById('toggle-btn').disabled = true;
         document.getElementById('toggle-btn').title = 'يجب اعتماد طلبك أولاً';
       }
