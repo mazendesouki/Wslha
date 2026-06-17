@@ -647,6 +647,27 @@ import PageHero from '../components/PageHero.astro';
   const SB_KEY = 'sb_publishable_PLSnpvCT-sAyUMtymNgTwA_QmL2suw4';
   const SB_H = { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}`, 'Content-Type': 'application/json' };
 
+  // Commission rates (loaded from app_settings, defaults to 15%)
+  const RATES = { ride: 0.15, delivery: 0.15, airport: 0.15 };
+
+  async function loadCommissionRates() {
+    try {
+      const res = await fetch(`${SB_URL}/rest/v1/app_settings?key=in.(commission_ride,commission_delivery,commission_airport)&select=key,value`, { headers: SB_H });
+      const rows = await res.json();
+      if (Array.isArray(rows)) {
+        rows.forEach(r => {
+          const val = parseFloat(r.value) / 100;
+          if (!isNaN(val) && val >= 0 && val < 1) {
+            if (r.key === 'commission_ride')     RATES.ride     = val;
+            if (r.key === 'commission_delivery') RATES.delivery = val;
+            if (r.key === 'commission_airport')  RATES.airport  = val;
+          }
+        });
+      }
+    } catch {}
+  }
+  loadCommissionRates();
+
   // Supabase Realtime client
   let _sb = null;
   try {
@@ -1417,37 +1438,46 @@ import PageHero from '../components/PageHero.astro';
   /* ── Award points & update wallet on trip completion ── */
   async function recordCompletion(type, referenceId, fare) {
     if (!driver) return;
-    const commission  = Math.round(fare * 0.15);
-    const driverEarn  = fare - commission;
+    const rate         = type === 'airport' ? RATES.airport : type === 'delivery' ? RATES.delivery : RATES.ride;
+    const commission   = Math.round(fare * rate);
+    const driverEarn   = fare - commission;
     const pointsEarned = type === 'airport' ? 50 : type === 'delivery' ? 20 : 10;
     const phone = driver.phone;
+    const now   = new Date().toISOString();
     const txId  = `wtx-${Date.now()}`;
     const ptId  = `ptx-${Date.now()}`;
+    const typeLabel = type === 'delivery' ? 'توصيل' : type === 'airport' ? 'مطار' : 'رحلة';
 
-    // Upsert wallet (add driver earnings)
     await Promise.allSettled([
+      // Upsert driver wallet
       fetch(`${SB_URL}/rest/v1/wallets`, {
         method: 'POST',
         headers: { ...SB_H, Prefer: 'resolution=merge-duplicates,return=minimal' },
-        body: JSON.stringify({ phone, balance: driverEarn, updated_at: new Date().toISOString() }),
+        body: JSON.stringify({ phone, balance: driverEarn, updated_at: now }),
       }),
-      // Insert wallet transaction (earning)
+      // Driver earning transaction
       fetch(`${SB_URL}/rest/v1/wallet_transactions`, {
         method: 'POST',
         headers: { ...SB_H, Prefer: 'return=minimal' },
-        body: JSON.stringify({ id: txId, phone, amount: driverEarn, type: 'earning', reference_id: referenceId, note: `أرباح ${type === 'delivery' ? 'توصيل' : 'مشوار'} — بعد خصم العمولة`, created_at: new Date().toISOString() }),
+        body: JSON.stringify({ id: txId, phone, amount: driverEarn, type: 'earning', reference_id: referenceId, note: `أرباح ${typeLabel} — بعد خصم العمولة ${Math.round(rate*100)}%`, created_at: now }),
       }),
-      // Insert points transaction
+      // Platform commission transaction
+      fetch(`${SB_URL}/rest/v1/wallet_transactions`, {
+        method: 'POST',
+        headers: { ...SB_H, Prefer: 'return=minimal' },
+        body: JSON.stringify({ id: `pcom-${Date.now()}-${Math.random().toString(36).slice(2,6)}`, phone: 'platform', amount: commission, type: 'commission', reference_id: referenceId, note: `عمولة ${typeLabel} — ${Math.round(rate*100)}% من ${fare} ج.م`, created_at: now }),
+      }),
+      // Points transaction
       fetch(`${SB_URL}/rest/v1/point_transactions`, {
         method: 'POST',
         headers: { ...SB_H, Prefer: 'return=minimal' },
-        body: JSON.stringify({ id: ptId, phone, points: pointsEarned, type, reference_id: referenceId, created_at: new Date().toISOString() }),
+        body: JSON.stringify({ id: ptId, phone, points: pointsEarned, type, reference_id: referenceId, created_at: now }),
       }),
       // Upsert points total
       fetch(`${SB_URL}/rest/v1/points`, {
         method: 'POST',
         headers: { ...SB_H, Prefer: 'resolution=merge-duplicates,return=minimal' },
-        body: JSON.stringify({ phone, total_points: pointsEarned, updated_at: new Date().toISOString() }),
+        body: JSON.stringify({ phone, total_points: pointsEarned, updated_at: now }),
       }),
     ]);
   }

@@ -519,16 +519,31 @@
     <!-- ═══════════════════ FINANCE ═════════════════════════ -->
     <div class="section" id="sec-finance">
       <div class="kpi-grid" id="finance-kpis">
-        <div class="kpi kpi--blue"><div class="kpi__icon">💰</div><div class="kpi__val" id="fin-total-rev">—</div><div class="kpi__label">إجمالي الإيرادات (ج.م)</div></div>
+        <div class="kpi kpi--blue"><div class="kpi__icon">💰</div><div class="kpi__val" id="fin-total-rev">—</div><div class="kpi__label">إجمالي إيرادات الطلبات</div></div>
+        <div class="kpi kpi--green"><div class="kpi__icon">🏢</div><div class="kpi__val" id="fin-total-commission">—</div><div class="kpi__label">إجمالي عمولات التطبيق (ج.م)</div></div>
+        <div class="kpi kpi--orange"><div class="kpi__icon">🚗</div><div class="kpi__val" id="fin-ride-commission">—</div><div class="kpi__label">عمولات الرحلات (ج.م)</div></div>
+        <div class="kpi kpi--blue"><div class="kpi__icon">🛵</div><div class="kpi__val" id="fin-deliv-commission">—</div><div class="kpi__label">عمولات التوصيل (ج.م)</div></div>
         <div class="kpi kpi--green"><div class="kpi__icon">📦</div><div class="kpi__val" id="fin-total-orders">—</div><div class="kpi__label">إجمالي الطلبات المُسلَّمة</div></div>
         <div class="kpi kpi--orange"><div class="kpi__icon">🚖</div><div class="kpi__val" id="fin-total-rides">—</div><div class="kpi__label">إجمالي الرحلات المكتملة</div></div>
         <div class="kpi kpi--blue"><div class="kpi__icon">📈</div><div class="kpi__val" id="fin-avg-order">—</div><div class="kpi__label">متوسط قيمة الطلب (ج.م)</div></div>
       </div>
+
+      <!-- Commission log -->
+      <div class="card">
+        <div class="card__head"><span class="card__title">🏢 سجل عمولات التطبيق</span></div>
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr><th>التاريخ</th><th>النوع</th><th>المبلغ (ج.م)</th><th>الوصف</th><th>المرجع</th></tr></thead>
+            <tbody id="commission-tbody"><tr><td colspan="5" style="text-align:center;color:#94A3B8;padding:2rem">جاري التحميل…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
       <div class="card">
         <div class="card__head"><span class="card__title">📅 الإيرادات الشهرية</span></div>
         <div class="tbl-wrap">
           <table>
-            <thead><tr><th>الشهر</th><th>عدد الطلبات</th><th>الطلبات المُسلَّمة</th><th>إجمالي الإيرادات</th><th>متوسط الطلب</th><th>عدد الرحلات</th></tr></thead>
+            <thead><tr><th>الشهر</th><th>عدد الطلبات</th><th>المُسلَّمة</th><th>إيرادات الطلبات</th><th>عمولات التطبيق</th><th>الرحلات</th></tr></thead>
             <tbody id="finance-tbody"><tr><td colspan="6" style="text-align:center;color:#94A3B8;padding:2rem">جاري التحميل…</td></tr></tbody>
           </table>
         </div>
@@ -538,6 +553,38 @@
     <!-- ═══════════════════ SETTINGS ════════════════════════ -->
     <div class="section" id="sec-settings">
       <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:1.25rem">
+        <!-- Commission rates -->
+        <div class="card">
+          <div class="card__head"><span class="card__title">⚙️ نسب عمولة التطبيق</span></div>
+          <div class="card__body">
+            <p style="font-size:.8rem;color:#64748B;margin-bottom:1rem">تُطبَّق هذه النسب تلقائياً عند اكتمال كل رحلة أو توصيل. العمولة تُخصم من أرباح السائق وتُضاف لإيرادات المنصة.</p>
+            <div style="display:flex;flex-direction:column;gap:.85rem">
+              <div>
+                <label style="font-size:.78rem;font-weight:700;color:#64748B;display:block;margin-bottom:.3rem">🚗 عمولة الرحلات المحلية (%)</label>
+                <div style="display:flex;align-items:center;gap:.5rem">
+                  <input class="search-input" id="rate-ride" type="number" min="0" max="50" step="0.5" value="15" style="width:100px;text-align:center;font-weight:700;font-size:1.1rem"/>
+                  <span style="font-size:.82rem;color:#64748B">% من قيمة الرحلة</span>
+                </div>
+              </div>
+              <div>
+                <label style="font-size:.78rem;font-weight:700;color:#64748B;display:block;margin-bottom:.3rem">🛵 عمولة توصيل المتاجر (%)</label>
+                <div style="display:flex;align-items:center;gap:.5rem">
+                  <input class="search-input" id="rate-delivery" type="number" min="0" max="50" step="0.5" value="15" style="width:100px;text-align:center;font-weight:700;font-size:1.1rem"/>
+                  <span style="font-size:.82rem;color:#64748B">% من رسوم التوصيل</span>
+                </div>
+              </div>
+              <div>
+                <label style="font-size:.78rem;font-weight:700;color:#64748B;display:block;margin-bottom:.3rem">✈️ عمولة رحلات المطار (%)</label>
+                <div style="display:flex;align-items:center;gap:.5rem">
+                  <input class="search-input" id="rate-airport" type="number" min="0" max="50" step="0.5" value="15" style="width:100px;text-align:center;font-weight:700;font-size:1.1rem"/>
+                  <span style="font-size:.82rem;color:#64748B">% من قيمة الرحلة</span>
+                </div>
+              </div>
+              <button class="btn btn--primary" onclick="saveCommissionRates()" id="save-rates-btn">💾 حفظ النسب</button>
+              <div id="rates-msg" style="display:none;font-size:.82rem;font-weight:700;padding:.5rem .75rem;border-radius:6px"></div>
+            </div>
+          </div>
+        </div>
         <!-- Create admin account -->
         <div class="card">
           <div class="card__head"><span class="card__title">➕ إنشاء حساب مشرف جديد</span></div>
@@ -765,7 +812,7 @@ function loadMerchantsSection() {
 }
 const loaders = { dash:loadDash, users:loadUsers, drivers:loadDriversSection,
   merchants:loadMerchantsSection, orders:loadOrders, rides:loadRides, stores:loadStores,
-  messages:loadMessages, finance:loadFinance };
+  messages:loadMessages, finance:loadFinance, settings:loadSettingsSection };
 
 document.querySelectorAll('.nav-item').forEach(btn => {
   btn.addEventListener('click', () => {
@@ -1495,9 +1542,10 @@ if (msgModalEl) msgModalEl.addEventListener('click', (e) => {
 
 /* ═══════════════════ FINANCE ═══════════════════════════════ */
 async function loadFinance() {
-  const [orders, rides] = await Promise.all([
+  const [orders, rides, commissions] = await Promise.all([
     sbGet('orders?select=id,status,total,delivery_fee,created_at&order=created_at.desc&limit=1000'),
-    sbGet('rides?select=id,status,base_fare,created_at&order=created_at.desc&limit=500'),
+    sbGet('rides?select=id,status,fare,created_at&order=created_at.desc&limit=500'),
+    sbGet('wallet_transactions?phone=eq.platform&select=amount,type,note,reference_id,created_at&order=created_at.desc&limit=500'),
   ]);
   const delivered = (orders||[]).filter(o => o.status === 'delivered');
   const totalRev  = delivered.reduce((s,o) => s + (Number(o.total)||0), 0);
@@ -1505,17 +1553,39 @@ async function loadFinance() {
   const avgOrd    = totalOrd ? Math.round(totalRev / totalOrd) : 0;
   const doneRides = (rides||[]).filter(r => r.status==='completed');
 
-  document.getElementById('fin-total-rev').textContent   = fmt(totalRev);
-  document.getElementById('fin-total-orders').textContent = fmt(totalOrd);
-  document.getElementById('fin-total-rides').textContent  = fmt(doneRides.length);
-  document.getElementById('fin-avg-order').textContent    = fmt(avgOrd);
+  // Commission totals
+  const comms = (commissions||[]).filter(c => c.type === 'commission');
+  const totalComm = comms.reduce((s,c) => s + Math.abs(Number(c.amount)||0), 0);
+  const rideComm  = comms.filter(c => (c.note||'').includes('رحلة') && !(c.note||'').includes('مطار')).reduce((s,c) => s + Math.abs(Number(c.amount)||0), 0);
+  const delivComm = comms.filter(c => (c.note||'').includes('توصيل')).reduce((s,c) => s + Math.abs(Number(c.amount)||0), 0);
+
+  document.getElementById('fin-total-rev').textContent        = fmt(totalRev);
+  document.getElementById('fin-total-commission').textContent  = fmt(totalComm);
+  document.getElementById('fin-ride-commission').textContent   = fmt(rideComm);
+  document.getElementById('fin-deliv-commission').textContent  = fmt(delivComm);
+  document.getElementById('fin-total-orders').textContent     = fmt(totalOrd);
+  document.getElementById('fin-total-rides').textContent      = fmt(doneRides.length);
+  document.getElementById('fin-avg-order').textContent        = fmt(avgOrd);
+
+  // Commission log
+  document.getElementById('commission-tbody').innerHTML = comms.slice(0,30).map(c => {
+    const d = new Date(c.created_at||0).toLocaleDateString('ar-EG', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' });
+    const typeIcon = (c.note||'').includes('توصيل') ? '🛵' : (c.note||'').includes('مطار') ? '✈️' : '🚗';
+    return `<tr>
+      <td>${d}</td>
+      <td>${typeIcon} ${(c.note||'').includes('توصيل') ? 'توصيل' : (c.note||'').includes('مطار') ? 'مطار' : 'رحلة'}</td>
+      <td style="font-weight:700;color:#16A34A">+${fmt(Math.abs(Number(c.amount||0)))} ج.م</td>
+      <td style="font-size:.8rem;color:#64748B">${c.note||'—'}</td>
+      <td style="font-size:.75rem;color:#94A3B8;direction:ltr">${(c.reference_id||'').slice(0,12)||'—'}</td>
+    </tr>`;
+  }).join('') || '<tr><td colspan="5" style="text-align:center;color:#94A3B8;padding:2rem">لا توجد عمولات بعد</td></tr>';
 
   // Monthly breakdown
   const monthMap = {};
   (orders||[]).forEach(o => {
     const d   = new Date(o.created_at||0);
     const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
-    if (!monthMap[key]) monthMap[key] = { label: MONTHS_AR[d.getMonth()]+' '+d.getFullYear(), orders:0, delivered:0, revenue:0, rides:0 };
+    if (!monthMap[key]) monthMap[key] = { label: MONTHS_AR[d.getMonth()]+' '+d.getFullYear(), orders:0, delivered:0, revenue:0, commission:0, rides:0 };
     monthMap[key].orders++;
     if (o.status === 'delivered') { monthMap[key].delivered++; monthMap[key].revenue += Number(o.total)||0; }
   });
@@ -1524,6 +1594,11 @@ async function loadFinance() {
     const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
     if (monthMap[key]) monthMap[key].rides++;
   });
+  comms.forEach(c => {
+    const d   = new Date(c.created_at||0);
+    const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+    if (monthMap[key]) monthMap[key].commission += Math.abs(Number(c.amount)||0);
+  });
   const rows = Object.entries(monthMap).sort((a,b) => b[0].localeCompare(a[0])).slice(0,18);
   document.getElementById('finance-tbody').innerHTML = rows.map(([,m]) => `
     <tr>
@@ -1531,9 +1606,53 @@ async function loadFinance() {
       <td>${fmt(m.orders)}</td>
       <td>${fmt(m.delivered)}</td>
       <td style="font-weight:700;color:var(--pr)">${fmt(m.revenue)} ج.م</td>
-      <td>${m.delivered ? fmt(Math.round(m.revenue/m.delivered)) : '—'} ج.م</td>
+      <td style="font-weight:700;color:#16A34A">${fmt(Math.round(m.commission))} ج.م</td>
       <td>${fmt(m.rides)}</td>
     </tr>`).join('') || '<tr><td colspan="6" style="text-align:center;color:#94A3B8;padding:2rem">لا توجد بيانات</td></tr>';
+}
+
+/* ═══════════════════ SETTINGS — Commission rates ════════════ */
+async function loadCommissionRates() {
+  try {
+    const rows = await sbGet('app_settings?key=in.(commission_ride,commission_delivery,commission_airport)&select=key,value');
+    (rows||[]).forEach(r => {
+      if (r.key === 'commission_ride')     { const el = document.getElementById('rate-ride');     if(el) el.value = r.value; }
+      if (r.key === 'commission_delivery') { const el = document.getElementById('rate-delivery'); if(el) el.value = r.value; }
+      if (r.key === 'commission_airport')  { const el = document.getElementById('rate-airport');  if(el) el.value = r.value; }
+    });
+  } catch {}
+}
+
+async function saveCommissionRates() {
+  const btn = document.getElementById('save-rates-btn');
+  const msg = document.getElementById('rates-msg');
+  btn.disabled = true; btn.textContent = 'جاري الحفظ...';
+  const pairs = [
+    { key:'commission_ride',     value: document.getElementById('rate-ride').value },
+    { key:'commission_delivery', value: document.getElementById('rate-delivery').value },
+    { key:'commission_airport',  value: document.getElementById('rate-airport').value },
+  ];
+  try {
+    await Promise.all(pairs.map(p =>
+      fetch(`${SB_URL}/rest/v1/app_settings`, {
+        method: 'POST',
+        headers: { ...SB_H, Prefer: 'resolution=merge-duplicates,return=minimal' },
+        body: JSON.stringify({ key: p.key, value: p.value, updated_at: new Date().toISOString() }),
+      })
+    ));
+    msg.textContent = '✅ تم حفظ النسب بنجاح — ستطبق على الرحلات القادمة';
+    msg.style.cssText = 'display:block;background:#DCFCE7;color:#14532D;font-size:.82rem;font-weight:700;padding:.5rem .75rem;border-radius:6px';
+    showToast('✅ تم حفظ نسب العمولة', '#16A34A');
+  } catch {
+    msg.textContent = 'حدث خطأ، حاول مرة أخرى';
+    msg.style.cssText = 'display:block;background:#FEE2E2;color:#991B1B;font-size:.82rem;font-weight:700;padding:.5rem .75rem;border-radius:6px';
+  }
+  btn.disabled = false; btn.textContent = '💾 حفظ النسب';
+  setTimeout(() => { msg.style.display = 'none'; }, 4000);
+}
+
+async function loadSettingsSection() {
+  await loadCommissionRates();
 }
 
 /* ═══════════════════ SETTINGS ══════════════════════════════ */
@@ -1606,6 +1725,33 @@ CREATE TABLE IF NOT EXISTS merchant_applications (
   reviewed_by TEXT,
   reviewed_at TEXT,
   rejection_reason TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 4. Create app_settings table (commission rates)
+CREATE TABLE IF NOT EXISTS app_settings (
+  key TEXT PRIMARY KEY,
+  value TEXT,
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Seed default commission rates
+INSERT INTO app_settings (key, value) VALUES
+  ('commission_ride', '15'),
+  ('commission_delivery', '15'),
+  ('commission_airport', '15')
+ON CONFLICT (key) DO NOTHING;
+
+-- 5. wallet_transactions: platform phone key
+-- The phone 'platform' is used as the identifier for platform commission entries.
+-- Make sure wallet_transactions table exists with these columns:
+CREATE TABLE IF NOT EXISTS wallet_transactions (
+  id TEXT PRIMARY KEY,
+  phone TEXT,
+  amount NUMERIC,
+  type TEXT,
+  note TEXT,
+  reference_id TEXT,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );`;
 
