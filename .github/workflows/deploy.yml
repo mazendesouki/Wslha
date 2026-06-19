@@ -27,4 +27,4 @@ jobs:
       - name: Deploy to Firebase
         run: npx firebase-tools deploy --only hosting --project wslha-941c8 --non-interactive
         env:
-          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
+          FIREBASE_TOKEN: ${{ secrets.FIREBASE }}
