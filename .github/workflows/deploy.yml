@@ -24,7 +24,10 @@ jobs:
       - name: Build
         run: npm run build
 
+      - name: Install Firebase Tools
+        run: npm install -g firebase-tools@13
+
       - name: Deploy to Firebase Hosting
-        run: npx firebase-tools deploy --only hosting --project wslha-941c8 --non-interactive
+        run: firebase deploy --only hosting --project wslha-941c8 --non-interactive --token "$FIREBASE_TOKEN"
         env:
           FIREBASE_TOKEN: ${{ secrets.FIREBASE }}
