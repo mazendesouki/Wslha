@@ -433,6 +433,15 @@ import PageHero from '../components/PageHero.astro';
       const account = await fetchAccount(currentPhone);
       clearCountdown();
       try {
+        // If a different user was logged in, clear their orders so new user starts clean
+        const prevRaw = localStorage.getItem('wslha_user');
+        const prevUser = prevRaw ? JSON.parse(prevRaw) : null;
+        if (prevUser?.phone && prevUser.phone !== currentPhone) {
+          // Remove the old user's per-phone orders key AND any legacy key
+          localStorage.removeItem('wslha_orders_' + prevUser.phone);
+          localStorage.removeItem('wslha_orders');
+        }
+
         localStorage.setItem('wslha_user', JSON.stringify({
           name: account?.name || '', phone: currentPhone,
           role: account?.role || 'customer', city: account?.city || '',

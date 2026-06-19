@@ -913,9 +913,11 @@ const staticMenuJson = JSON.stringify(
       };
 
       try {
-        const existing = JSON.parse(localStorage.getItem('wslha_orders') || '[]');
+        const _u = JSON.parse(localStorage.getItem('wslha_user') || '{}');
+        const _k = _u.phone ? 'wslha_orders_' + _u.phone : 'wslha_orders';
+        const existing = JSON.parse(localStorage.getItem(_k) || '[]');
         existing.unshift(order);
-        localStorage.setItem('wslha_orders', JSON.stringify(existing));
+        localStorage.setItem(_k, JSON.stringify(existing));
       } catch { /* storage unavailable */ }
 
       cart = { storeId: STORE.id, storeName: STORE.name, deliveryFee: STORE.deliveryFee, minOrder: STORE.minOrder, items: [] };

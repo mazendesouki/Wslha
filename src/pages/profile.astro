@@ -1781,7 +1781,10 @@ import Layout from '../components/layout.astro';
     const phone = user.phone;
 
     let lsOrders = [];
-    try { lsOrders = JSON.parse(localStorage.getItem('wslha_orders') || '[]'); } catch {}
+    try {
+      const _pk = phone ? 'wslha_orders_' + phone : 'wslha_orders';
+      lsOrders = JSON.parse(localStorage.getItem(_pk) || '[]');
+    } catch {}
     const lsAcc = buildAccFromLocal(phone);
     showContent(lsAcc, mergeOrders([], lsOrders), [], null, null);
 

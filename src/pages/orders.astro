@@ -2,32 +2,6 @@
 import Layout from '../components/layout.astro';
 import PageHero from '../components/PageHero.astro';
 
-type OrderStatus = 'active' | 'delivered' | 'cancelled';
-
-interface Order {
-  id: string;
-  type: string;
-  icon: string;
-  route: string;
-  date: string;
-  price: string;
-  status: OrderStatus;
-}
-
-const STATUS_META: Record<OrderStatus, { label: string; className: string }> = {
-  active:    { label: 'قيد التوصيل', className: 'order-row__status--active'    },
-  delivered: { label: 'تم التسليم',  className: 'order-row__status--delivered' },
-  cancelled: { label: 'ملغي',        className: 'order-row__status--cancelled' },
-};
-
-const SAMPLE_ORDERS: Order[] = [
-  { id: 'WSL-2025-001234', type: 'توصيل محلي',   icon: '🛵', route: 'دمياط الجديدة → كفر سعد',  date: 'اليوم — 10:45 ص',   price: '25 ج.م',  status: 'active'    },
-  { id: 'WSL-2025-001198', type: 'توصيل سريع',   icon: '⚡', route: 'دمياط الجديدة → دمياط',    date: 'أمس — 06:20 م',     price: '45 ج.م',  status: 'delivered' },
-  { id: 'WSL-2025-001150', type: 'توصيل المطار', icon: '✈️', route: 'دمياط الجديدة → المطار',   date: '2 يونيو — 08:00 ص', price: '150 ج.م', status: 'delivered' },
-  { id: 'WSL-2025-001087', type: 'توصيل محلي',   icon: '🛵', route: 'دمياط → فارسكور',          date: '1 يونيو — 02:15 م', price: '45 ج.م',  status: 'delivered' },
-  { id: 'WSL-2025-001042', type: 'توصيل محلي',   icon: '🛵', route: 'دمياط الجديدة → رأس البر', date: '30 مايو — 11:30 ص', price: '25 ج.م',  status: 'cancelled' },
-];
-
 const FILTERS: { value: string; label: string }[] = [
   { value: 'all',       label: 'الكل'        },
   { value: 'active',    label: 'قيد التوصيل' },
@@ -209,19 +183,24 @@ const FILTERS: { value: string; label: string }[] = [
     } catch { return '—'; }
   }
 
+  function ordersKey(): string {
+    try {
+      const u = JSON.parse(localStorage.getItem('wslha_user') || '{}');
+      return u.phone ? 'wslha_orders_' + u.phone : 'wslha_orders';
+    } catch { return 'wslha_orders'; }
+  }
+
   function renderRealOrders(): void {
     try {
-      const saved = JSON.parse(localStorage.getItem('wslha_orders') || '[]') as Array<{
+      const saved = JSON.parse(localStorage.getItem(ordersKey()) || '[]') as Array<{
         id: string; type: string; icon: string; route: string;
         price: string; status: string; createdAt: string;
       }>;
-      if (!saved.length) return;
 
-      const list  = document.getElementById('orders-list') as HTMLElement;
-      const label = document.createElement('p');
-      label.className   = 'orders-section-label';
-      label.textContent = '▸ طلباتي الأخيرة';
-      list.insertAdjacentElement('beforebegin', label);
+      const list = document.getElementById('orders-list') as HTMLElement;
+      if (!saved.length) { applyFilter('all'); return; }
+
+      empty.classList.remove('is-visible');
 
       const statusMeta: Record<string, { label: string; cls: string }> = {
         active:    { label: 'قيد التوصيل', cls: 'order-row__status--active'    },
@@ -251,6 +230,7 @@ const FILTERS: { value: string; label: string }[] = [
           </div>`;
         list.prepend(article);
       });
+      applyFilter('all');
     } catch { /* storage unavailable */ }
   }
 
@@ -287,33 +267,13 @@ const FILTERS: { value: string; label: string }[] = [
       ))}
     </div>
 
-    <!-- List -->
-    <div class="orders-list" id="orders-list">
-      {SAMPLE_ORDERS.map(order => (
-        <article class="order-row" data-status={order.status}>
-          <div class="order-row__icon" aria-hidden="true">{order.icon}</div>
-          <div>
-            <p class="order-row__id">{order.id}</p>
-            <p class="order-row__meta">{order.type} · {order.route}</p>
-            <p class="order-row__date">{order.date}</p>
-          </div>
-          <div class="order-row__side">
-            <span class="order-row__price">{order.price}</span>
-            <span class:list={['order-row__status', STATUS_META[order.status].className]}>
-              {STATUS_META[order.status].label}
-            </span>
-            {order.status === 'active' && (
-              <a href={`/track?q=${order.id}`} class="order-row__track">تتبع ←</a>
-            )}
-          </div>
-        </article>
-      ))}
-    </div>
+    <!-- List (filled dynamically from localStorage by JS) -->
+    <div class="orders-list" id="orders-list"></div>
 
-    <!-- Empty state -->
-    <div class="orders-empty" id="orders-empty" role="status">
+    <!-- Empty state (shown by default until JS renders real orders) -->
+    <div class="orders-empty is-visible" id="orders-empty" role="status">
       <div class="orders-empty__icon" aria-hidden="true">📭</div>
-      <p class="orders-empty__text">لا توجد طلبات في هذه الفئة</p>
+      <p class="orders-empty__text">لا توجد طلبات بعد — ابدأ طلبك الأول!</p>
       <a href="/order" class="btn btn--primary">اطلب الآن</a>
     </div>
 

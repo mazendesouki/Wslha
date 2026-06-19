@@ -300,6 +300,14 @@ const CITIES = ['دمياط الجديدة', 'دمياط', 'كفر سعد', 'ف�
     }
 
     try {
+      // Clear old user's orders if a different user was previously logged in
+      const prevRaw = localStorage.getItem('wslha_user');
+      const prevUser = prevRaw ? JSON.parse(prevRaw) : null;
+      if (prevUser?.phone && prevUser.phone !== norm) {
+        localStorage.removeItem('wslha_orders_' + prevUser.phone);
+        localStorage.removeItem('wslha_orders');
+      }
+
       localStorage.setItem('wslha_user', JSON.stringify({
         name, username, phone: norm, email, city,
         role: 'customer',
