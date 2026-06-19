@@ -12,20 +12,6 @@ import Layout from '../components/layout.astro';
     padding-bottom: var(--sp-16);
   }
 
-  /* ── Loading ────────────────────────────────────────────────── */
-  .profile-loading {
-    display: flex; flex-direction: column;
-    align-items: center; justify-content: center;
-    gap: var(--sp-4); min-height: 60vh;
-    color: var(--color-text-muted);
-  }
-  .profile-loading__spinner {
-    width: 44px; height: 44px;
-    border: 3px solid #C7D2FE;
-    border-top-color: #4338CA;
-    border-radius: 50%;
-    animation: spin 0.8s linear infinite;
-  }
   @keyframes spin { to { transform: rotate(360deg); } }
 
   /* ── Top bar ─────────────────────────────────────────────────── */
@@ -647,11 +633,6 @@ import Layout from '../components/layout.astro';
 </style>
 
 <div class="profile-wrap">
-
-  <!-- Loading (hidden immediately — content shows from localStorage) -->
-  <div id="profile-loading" class="profile-loading" hidden>
-    <div class="profile-loading__spinner"></div>
-  </div>
 
   <!-- Main content -->
   <div id="profile-content">
@@ -1771,8 +1752,7 @@ import Layout from '../components/layout.astro';
     } catch(e) {
       console.error('[profile] showContent', e);
     } finally {
-      $('profile-loading').hidden = true;
-      $('profile-content').hidden = false;
+      if ($('profile-content')) $('profile-content').hidden = false;
     }
   }
 
