@@ -648,14 +648,13 @@ import Layout from '../components/layout.astro';
 
 <div class="profile-wrap">
 
-  <!-- Loading -->
-  <div id="profile-loading" class="profile-loading">
+  <!-- Loading (hidden immediately — content shows from localStorage) -->
+  <div id="profile-loading" class="profile-loading" hidden>
     <div class="profile-loading__spinner"></div>
-    <p>جاري تحميل حسابك…</p>
   </div>
 
   <!-- Main content -->
-  <div id="profile-content" hidden>
+  <div id="profile-content">
 
     <!-- Top gradient bar -->
     <div class="pf-topbar">
