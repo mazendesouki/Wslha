@@ -1,5 +1,6 @@
 {
   "hosting": {
+    "site": "wslha-941c8",
     "public": "dist",
     "ignore": [
       "firebase.json",
