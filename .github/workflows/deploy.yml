@@ -24,7 +24,10 @@ jobs:
       - name: Build
         run: npm run build
 
-      - name: Deploy to Firebase
-        run: npx firebase-tools deploy --only hosting --project wslha-941c8 --non-interactive
-        env:
-          FIREBASE_TOKEN: ${{ secrets.FIREBASE }}
+      - name: Deploy to Firebase Hosting
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE }}
+          projectId: wslha-941c8
+          channelId: live
