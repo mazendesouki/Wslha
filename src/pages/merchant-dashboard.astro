@@ -882,10 +882,10 @@ import Layout from '../components/layout.astro';
   async function loadStats() {
     const today = new Date().toISOString().split('T')[0];
     const [todayOrd, allProd] = await Promise.all([
-      sbGet(`orders?store_id=eq.${currentStore.id}&created_at=gte.${today}&select=total`),
+      sbGet(`orders?store_id=eq.${currentStore.id}&created_at=gte.${today}&status=in.(delivered,completed)&select=total,subtotal`),
       sbGet(`products?store_id=eq.${currentStore.id}&select=is_available`),
     ]);
-    const todayRevenue = (todayOrd || []).reduce((s: number, o: any) => s + (o.total || 0), 0);
+    const todayRevenue = (todayOrd || []).reduce((s: number, o: any) => s + (o.subtotal || o.total || 0), 0);
     const availCount   = (allProd || []).filter((p: any) => p.is_available).length;
     const totalCount   = (allProd || []).length;
     document.getElementById('stat-orders')!.textContent  = String((todayOrd || []).length);
