@@ -1,0 +1,42 @@
+From ce6b2c8e23ee805a1ea8cd0c19a5f984ef53be3b Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Sun, 21 Jun 2026 12:03:45 +0000
+Subject: [PATCH] =?UTF-8?q?fix(rides):=20remove=20ride=5Ftype=20field=20?=
+ =?UTF-8?q?=E2=80=94=20column=20missing=20from=20Supabase=20rides=20table?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+ride_type was not in the schema causing 400 errors on ride creation.
+Both local and airport ride payloads updated to omit the field.
+
+Co-Authored-By: Claude <noreply@anthropic.com>
+---
+ src/pages/rides.astro | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/src/pages/rides.astro b/src/pages/rides.astro
+index be5e474..3b459fc 100644
+--- a/src/pages/rides.astro
++++ b/src/pages/rides.astro
+@@ -2144,7 +2144,7 @@ import { POPULAR_PLACES, PLACES, PLACE_CATEGORIES, CATEGORY_COLORS } from '../da
+       to_area: to.name, to_lat: to.lat, to_lng: to.lng,
+       distance_km: roadKm, fare, eta_minutes: eta,
+       passengers: parseInt(pax), payment: pay, notes,
+-      status: 'pending', ride_type: 'local',
++      status: 'pending',
+     });
+     activeRideId = ride?.id || null;
+ 
+@@ -2321,7 +2321,7 @@ import { POPULAR_PLACES, PLACES, PLACE_CATEGORIES, CATEGORY_COLORS } from '../da
+       distance_km: 0, fare: airport.flatFare, eta_minutes: airport.driveMins,
+       passengers: parseInt(pax), payment: pay,
+       notes: `✈️ ${airport.name} — استلام: ${address} — شنط: ${luggage} — إقلاع: ${flightDate.toLocaleString('ar-EG')} — مغادرة البيت: ${departDate.toLocaleString('ar-EG')}${notes ? ' — ' + notes : ''}`,
+-      status: 'pending', ride_type: 'airport',
++      status: 'pending',
+     });
+     activeRideId = ride?.id || null;
+ 
+-- 
+2.43.0
+

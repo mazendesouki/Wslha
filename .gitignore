@@ -30,3 +30,8 @@ dist/
 .astro/
 
 .env.local
+
+.firebase/
+*.bundle
+*.patch
+apply-all.ps1

@@ -1,0 +1,1384 @@
+From 61c8cad66b7d4818956e4ff62ccf142fde51ca11 Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Sun, 21 Jun 2026 15:05:19 +0000
+Subject: [PATCH 1/4] fix(dashboard+profile): fix tabs, ratings reply, wallet
+ balance
+
+- Change <script> to <script is:inline> so switchTab/sendReply onclick
+  handlers are accessible from HTML attributes in Astro
+- Add loadRatingStat() called at startup to show numeric rating in stat card
+- Add sendReply() for drivers to reply to customer ratings
+- Add rating reply CSS and update ratings query to include id/driver_reply
+- Use add_wallet_balance RPC instead of upsert to accumulate wallet balance
+- Profile: replace stat-spent with stat-wallet card linking to /wallet page
+- Profile: add fetchWallet() and render balance in stat-wallet element
+
+Co-Authored-By: Claude <noreply@anthropic.com>
+---
+ .firebase/hosting.ZGlzdA.cache   | 93 ++++++++++++++++++++++++++++++++
+ src/pages/driver-dashboard.astro | 60 +++++++++++++++++----
+ src/pages/profile.astro          | 20 ++++---
+ 3 files changed, 158 insertions(+), 15 deletions(-)
+ create mode 100644 .firebase/hosting.ZGlzdA.cache
+
+diff --git a/.firebase/hosting.ZGlzdA.cache b/.firebase/hosting.ZGlzdA.cache
+new file mode 100644
+index 0000000..447af8c
+--- /dev/null
++++ b/.firebase/hosting.ZGlzdA.cache
+@@ -0,0 +1,93 @@
++_redirects,1780260906636,f61f27bd17de546264aa58f40f3aafaac7021e0ef69c17f6b1b4cd7664a037ec
++sw.js,1782054292937,837e9fe18f9e32911426d62d3d3b94d6bbfce7a93de272a7204c1f9f1c2cc45a
++robots.txt,1782054292937,6c85abcfe9018d0570fadcc78ea7e36fec9c549a7b6991d0262c8ab41e39b675
++manifest.webmanifest,1782054292937,f344deced15e9c3b1a61ce0df36f56c03679a4d53c49ff84aeccffd8972baba2
++offline.html,1782054292937,fc38f42e3e3339b709d63f14239c271b17b0b405013d66e04ccd8ec12dfc08a4
++site.webmanifest,1782054292937,cb0588313bd79efef155b6b063c9f3e34457e9945b2a237ffe77e0c5a6b55722
++icon.svg,1782054292936,2d658b0464f953c71bcd71957a0f7d652d96e8fcf8bfa3177be7879a452a223a
++icon-192.png,1782054292934,cb43184fe976b266dabeb3e83d68b1c9690938df43283db94d06e221b057592e
++global.css,1782054292934,b3b5c71b7d89f03745795d2a38b61793983adc9ea502ff7de213f49ea83a4042
++apple-touch-icon.png,1782054292931,404a63d5fe49c1e59ab424d924d77c14ac578dbc4d2445fd6c3f252e531bf5db
++index.html,1782054293719,e2152f10215a20d696a953ef2a321d0f3de25aacd864e8877375c5f08c55acfc
++track/index.html,1782054293839,dea54abe546e189214c0b9c26e44d0d9fdc30fa54dc8909936cb0e7df978bdb1
++wallet/index.html,1782054293839,823da38ac6c0446a6ced8f5cf020e4244a45161079af7ecf648886a771731096
++store/tarshubi-pharmacy/index.html,1782054293791,a1d81138020d03ff5274554804e81af97a6d05a5bfd18afee05fbe8f79edc74c
++store/shabrawy-damietta/index.html,1782054293803,033145d54b54c760ccb463a8889abc645c1706703df1f931391992cbc939d6a7
++store/nile-produce/index.html,1782054293799,d5947101a947f888bf74d331700c971ed56c9138321400509daaca598ec54a62
++store/koshary-damietta/index.html,1782054293803,d97c59ed734d75e3f681170c7bb21c9e53e299e16d13a5a231cbd09626d5efa9
++icon-maskable-512.png,1782054292935,710f7f24a72480152bb4b167ea43fe558337db69dad1eca9424ece8b41cb14a2
++store/kilani-grills/index.html,1782054293781,266bf6e817a01135c912b83f876c90558286796ca1ee4a9514a45198da594dd3
++store/nour-bakery/index.html,1782054293827,3e27d359bcf5c78ace5cf0853c29459dcade5876d68b7d5d18ecf48aa2be4dc4
++store/italiano-pizza/index.html,1782054293807,e5549cd474e7bdf146afb7b7d8692b7536d8f39c21458db2fa1bae26516c5c5d
++store/eldowar/index.html,1782054293783,6cbce829a626d3b614f0958b6b49fee1a1744026fc495eb19bf84bda69451958
++store/fathalla-market/index.html,1782054293787,ec6e75171ba04ee7b4ef94593643061dc3109ceb567f3dd3081a969a32fb6f9e
++store/fashour-sweets/index.html,1782054293799,74b53a41f12409a7449b3b694397361db44043063075fc52430ed93615c5c3c3
++restaurant-orders/index.html,1782054293759,f86ab28a8919976c91a1b35fe5d59336cb0f14167530f17811e582d6fd3fcf75
++store/elbadry-sweets/index.html,1782054293795,c4cebd994b62ebd816593ff1ac2e8818266aca7532f8a082a757b80266e3cabe
++store/mobile-zone/index.html,1782054293803,3eb37164f4c5cdfea7466feee6d9675837ba2ec1e6ce4b9ad04b65a653ec9def
++store/farhat-basha/index.html,1782054293781,58171d2c6362951823379429139dc5bb57a5e3f303ededbf3d9f848bc2babeaa
++store/carnival-market/index.html,1782054293787,bbb24eab01c8945bcae3dac4dfc037cef4702d383e7c38c0eea5043fa41228fe
++services/index.html,1782054293771,403b87bcaf00985184f76e275679b3af9fd28ec79376d671a8cab8d9cd416f2f
++store/ezaby-pharmacy/index.html,1782054293795,f50fad1a6afe0f763d4eee5bd584b0733b5ef645ccd29d9d524982f7838ccd6c
++orders/index.html,1782054293747,7805a446f71ed0da07680d420dd480ad122cf4e719747063abb5a718d699131f
++store/aklet-smak/index.html,1782054293783,a1636d77f3d4510d65b08f59bc5b234edef37a9e2a87e4dc6993db1ba558b130
++fonts/PacaembuVar-subset.woff2,1782054292934,5df8f52636e29150c10be75973b9a1fad1aeb4fe982c978c130cb5b41673fba0
++register/index.html,1782054293755,531d15a53241ab716b51f016125b616092861ceb5bb01906aa4678f3c2f6d2a8
++fonts/MulishVar-subset.woff2,1782054292934,cd310a379922ccdce8287e1006053f8cf39c5bfa4354751af76959106d5c0591
++order/index.html,1782054293743,e876703b6673600965c08a99759b5742c700294827cc61764d57a0f59cae5276
++images/corgi.jpg,1782054292936,2a2e62cdf1ecee27b9e1bc54685c497ad904545c89c273408a57d7d7cb8ea1ed
++contact/index.html,1782054293687,a03bd6c83b8852cd3be8847303fef8c97c3eeb78b854fc70f853c442028febef
++driver-apply/index.html,1782054293691,aa9b01a0f74b0a3729d010a655ec211467df1122f0a595a531ea5724a7c75226
++merchant-dashboard/index.html,1782054293735,92d3d0a57ef9e4cce3b58e76c0ae64744490d4e3865093b4e98142ab55af34b1
++airport/index.html,1782054293683,6e7a9f00db77ae17f6b51ba347618407f1102931e7215ac68e488acc82b6c995
++icon-512.png,1782054292935,c124df47cab7ce4942ea49f65c522585dafdfc3274c1c39d7cebc83123113ca8
++merchant-apply/index.html,1782054293731,e8686a4d62fe4ffc022eda8410e4d7f826d0cdfacb1620793edb67dcf57cb669
++login/index.html,1782054293723,da145700661a55f82e08a0136302848e5e6afe2148cc7015f065f157d7d9ff2b
++stores/index.html,1782054293835,7e28dbbf0ff51b76fede8b10f933e5152dcee3645851a13734c437090c24c557
++profile/index.html,1782054293751,7d3c443e54e9c123bd1d8599e1b7a5b8749e60ac560fd7c111296361f60ec37c
++driver-dashboard/index.html,1782054293703,10fd0820bb954826ded065a2df36a52eadabcc9335381850fafb634677c423b7
++driver/index.html,1782054293715,385a5a4f93973fb267243eced1934e04bc8941c385e00e13f703cb2122e36a1c
++admin-login/index.html,1782054293663,802a37a65b89e731fbb5d60f11d51be720cc18b0072955a083f73f8a31426260
++_astro/track.DiluaUsC.css,1782054293155,e3386d89b1b834e9252ab9ef5b9604902f90a1c77672cb56aca4816cb5fdee06
++_astro/wallet.DLncKDQE.css,1782054293155,fb727342342c4c07bc770ffedca24bf12d0f0600e7e794f7d59562d27ab6cddd
++_astro/stores.dmOYVK7U.css,1782054293155,00054bd6a2aad8a27a9179d33b9abab4c2e5765f32d00728360d62900f257ae7
++_astro/signals.module.DhYU5_ru.js,1782054293619,cd781b12e4c06da1141f7252b3ea89946f2371e9e43eda295af58ed177fb03ca
++_astro/services.tzy34qGK.css,1782054293155,6c3a8a0d124cbfb6bc51b8d23ca968c672badbb6fad7fbacfd7fb812ab0a1a97
++about/index.html,1782054293659,84be574011a84dddb08b08680324bb5f7e4385fa6e0749265de9e56cf16b5be6
++_astro/restaurant-orders.S6uHcpQ_.css,1782054293155,3bf4beef41beb5465ff0e2cc717fe414249bbf33a4fa731926122b902f6c9d0c
++_astro/register.1Ant8DrU.css,1782054293155,bb8d41a25b1ab545ea88e552e2d01246a8108527e7e2ffdd1837cfef977b9995
++_astro/rides.DWpELk7i.css,1782054293155,bea9c85877a850913a2672009727facdf15f263adf716ab33c8ee4a05d695e54
++_astro/phone.DQX3fwDw.js,1782054293619,8dee2999f88b3d63090f28e026c7343cc0a137f7f56bab12b2d60700b6acf4d3
++_astro/order.LU1z9qeu.css,1782054293155,aa2894a461f9b5c0420554bdc7517197614cab225bcad75525c6f6e2b23154ba
++_astro/merchant-apply.D2cFvz9c.css,1782054293155,534c6882feb087033f88d3fa52a7e675e4b851f268886c799a6b16dc142e2355
++_astro/profile.s4S4iYDe.css,1782054293155,dcd2d880a3036b761a1f6c29179a06646adc31a0dfea54385c6e2f7fb9914b60
++_astro/login.BjZtB_bP.css,1782054293155,c92a7aee7b578fdf69a5fda81e047a7c5cc96b11a7fde86fcb8e8757f3d97920
++_astro/merchant-dashboard.CD5Qk_kd.css,1782054293155,bfca88556b0e9742d30ae85309e4f80ec72ebec48aacaeea455a4f9ac1e75a44
++_astro/index.DKcUzpEp.css,1782054293155,c08a796a616da10ac947151d0a804ffc90011de6f1f5bc7744660243d2cf3700
++_astro/hoisted.DrIMktCk.js,1782054293619,50a185f1394124b5d4ddfca7d2e9c0395bbad5ff130fa19db3b405efeafa1065
++_astro/hoisted.yn5SOKMT.js,1782054293619,80c64e656c4cb4f5c45bd9996e251f46fd7ba8143c710bb2aeeebce769ef2175
++rides/index.html,1782054293767,8750802e2b2bd0d333a303f72684e12f4ffdbc521219174afee4edbc8d75b3e4
++_astro/hoisted.DBgZPpN5.js,1782054293619,d1e1ae02aec8e3197716d9d4e8159306fac47fbb52038f7b5ab506e0271f177c
++_astro/hoisted.DnTLV5xx.js,1782054293619,cad076d51b1b9d71651354ac6576ff6d8ea398605dfdb2421ea35750141fdfcf
++_astro/hoisted.CzDs7cc5.js,1782054293619,82b22c624899461caccac6b0dcb1331030f6877249b03557411a4debeef347e2
++_astro/hoisted.DKgrOZNz.js,1782054293619,42fccfcdd9f47307d736d4881365a6516ff1df379e69cbd6b4de742ddf72de7a
++_astro/hoisted.C0pImZEy.js,1782054293619,70bd9751dd153d2bf78c4050fca0ea7d3900e7ba38f81bf61be88c14fd68791a
++_astro/hoisted.CjTq087T.js,1782054293619,e76ac9c8bcc2cce4dffb962771e1e2c14353fc5ed580c4f84db1857a517c7d92
++_astro/hoisted.B73BLUXl.js,1782054293619,bc3ef9d00bf1f8050bff08284a5626492efd40dc9a0247e0f232b420a5094755
++_astro/hoisted.CSzUdnwh.js,1782054293619,5d5bf0b6aabade3edc6c3fc1e2a26fa5f9b0f425a8a02cb58b701a8424ffe348
++_astro/driver.BVUHj4nY.css,1782054293155,cbb32636b87ec1436a38cc592846ab6a26916ad0fbc4c9ef3e351ecc0814a0c6
++_astro/hoisted.CYcVDHGB.js,1782054293619,34a9bc1b7803b373d389822412b78b81540af33bf761d467838368bfa48ab9b6
++_astro/client.DPuBMxT4.js,1782054293619,57572f789d1654d385cbc6caa25bc35595c5297877b6af97f9c51ce33f248b36
++_astro/hoisted.3DcZpSv7.js,1782054293619,20877dc0fd41be0d0b143eaeaada96cfab6fb962c5d2214865502239b48ca4e6
++_astro/driver-dashboard.DO9kXG9N.css,1782054293155,53298d7d4e9a8cbefe86c7d0f710e0d37124e42b6592cd1ca4ed5d76e93fed48
++_astro/contact.QF3hXG1V.css,1782054293155,815c4ed3b14febf6359160dd1ffde33e523d86751c8bdf61e01f3d627c491302
++_astro/driver-apply.BokRrsJM.css,1782054293155,e87a09fef9994c3dedba397561a234cf337e08075e75b80922e836fdbfba15a8
++_astro/client.C7ddhMc0.js,1782054293619,8494c4e14cf2b0b6a0233ff7e0ed1a892f5d8ff7ece0941516c988111ab032bc
++_astro/airport.BTxs4Jqw.css,1782054293155,c2accbe5a333e33c25fe9b1927108723efc0495f0b956740e4f6eea8e31d04ab
++_astro/admin.Dxxnb3MI.css,1782054293155,db7262760786f949d86964a68ba31536d51217c8aa37a72c2ab77b7cd12a07c7
++_astro/about.BuQcfmej.css,1782054293155,ab89a6eabae808ccce402714228ddcc84ed4df689b8c608df8c2f111f332a2f3
++.well-known/assetlinks.json,1782054292931,5a97b3a75f7e27a0e0088b6b9aaec2e53c50025d543e56c79d665276376b6c54
++_astro/about.ViXxJ09N.css,1782054293155,a97c6255bf8c51236879da9656fb886314cb5111e0a8ea44a80050af1a3f3d1c
++_astro/_id_.Dl5Hb0HG.css,1782054293155,cd0fc814da1bc8a388b5f3938075891d56aef810a02711d10bd325d1140d810e
++admin/index.html,1782054293675,b1191e780457bac3fcc5e9d1543d2f67008b1169b32e3f6382f1613e50e48af2
++favicon.ico,1782054292931,af5ee7d2e7f2d4877c10b4354fa4d9ed757a88fd8f526293b7773c0c92794531
+diff --git a/src/pages/driver-dashboard.astro b/src/pages/driver-dashboard.astro
+index 80dcd9e..1bec854 100644
+--- a/src/pages/driver-dashboard.astro
++++ b/src/pages/driver-dashboard.astro
+@@ -390,6 +390,11 @@ import PageHero from '../components/PageHero.astro';
+   .rating-item__stars { font-size: var(--text-sm); }
+   .rating-item__date  { font-size: 10px; color: var(--color-text-faint); }
+   .rating-item__comment { font-size: var(--text-xs); color: var(--color-text-muted); margin-top: 2px; }
++  .rating-item__reply { margin-top:6px; padding:6px 10px; background:#eff6ff; border-radius:8px; font-size:var(--text-xs); color:#1e40af; border-right:3px solid #3b82f6; }
++  .rating-item__reply-label { font-size:10px; color:#64748b; margin-bottom:2px; }
++  .rating-reply-form { margin-top:6px; display:flex; gap:6px; }
++  .rating-reply-input { flex:1; padding:6px 10px; border:1.5px solid var(--color-border); border-radius:8px; font-size:var(--text-xs); resize:none; direction:rtl; font-family:var(--font-body); background:var(--color-bg); color:var(--color-text); }
++  .rating-reply-send { padding:6px 14px; background:var(--color-primary); color:#fff; border:none; border-radius:8px; font-size:var(--text-xs); cursor:pointer; }
+ 
+   /* ── Activity log ── */
+   .activity-item {
+@@ -459,7 +464,7 @@ import PageHero from '../components/PageHero.astro';
+       <div class="stats-strip">
+         <div class="stat-card"><div class="stat-card__val" id="stat-trips">0</div><div class="stat-card__key">رحلات اليوم</div></div>
+         <div class="stat-card"><div class="stat-card__val" id="stat-earn">0</div><div class="stat-card__key">ج.م اليوم</div></div>
+-        <div class="stat-card"><div class="stat-card__val" id="stat-rating">⭐</div><div class="stat-card__key">التقييم</div></div>
++        <div class="stat-card"><div class="stat-card__val" id="stat-rating">—</div><div class="stat-card__key">⭐ التقييم</div></div>
+       </div>
+ 
+       <!-- Tabs -->
+@@ -642,7 +647,7 @@ import PageHero from '../components/PageHero.astro';
+   <div class="toast" id="toast"></div>
+ </Layout>
+ 
+-<script>
++<script is:inline>
+   const SB_URL = 'https://vtikgyiopkjnrwlqnmfx.supabase.co';
+   const SB_KEY = 'sb_publishable_PLSnpvCT-sAyUMtymNgTwA_QmL2suw4';
+   const SB_H = { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}`, 'Content-Type': 'application/json' };
+@@ -694,6 +699,7 @@ import PageHero from '../components/PageHero.astro';
+     document.getElementById('driver-phone-bar').textContent = driver.phone || '';
+     // Load approval status and initial account data
+     loadApprovalStatus();
++    loadRatingStat();
+   }
+ 
+   /* ── Stats ── */
+@@ -1223,6 +1229,38 @@ import PageHero from '../components/PageHero.astro';
+   }
+ 
+   /* ── Load approval status ── */
++  async function loadRatingStat() {
++    if (!driver) return;
++    try {
++      const res = await fetch(`${SB_URL}/rest/v1/ratings?driver_phone=eq.${encodeURIComponent(driver.phone)}&select=rating&limit=100`, { headers: SB_H });
++      if (!res.ok) return;
++      const rts = await res.json();
++      const el = document.getElementById('stat-rating');
++      if (!el) return;
++      el.textContent = (Array.isArray(rts) && rts.length)
++        ? (rts.reduce((s, r) => s + r.rating, 0) / rts.length).toFixed(1)
++        : '—';
++    } catch {}
++  }
++
++  function sendReply(ratingId, btn) {
++    const form  = btn.closest('.rating-reply-form');
++    const input = form && form.querySelector('textarea');
++    if (!input) return;
++    const reply = input.value.trim();
++    if (!reply) { input.focus(); return; }
++    btn.disabled = true; btn.textContent = '...';
++    fetch(`${SB_URL}/rest/v1/ratings?id=eq.${ratingId}`, {
++      method: 'PATCH',
++      headers: { ...SB_H, Prefer: 'return=minimal' },
++      body: JSON.stringify({ driver_reply: reply }),
++    }).then(res => {
++      if (res.ok) {
++        form.outerHTML = `<div class="rating-item__reply"><div class="rating-item__reply-label">ردك:</div>${reply}</div>`;
++      } else { btn.disabled = false; btn.textContent = 'إرسال'; }
++    }).catch(() => { btn.disabled = false; btn.textContent = 'إرسال'; });
++  }
++
+   async function loadApprovalStatus() {
+     if (!driver) return;
+     try {
+@@ -1336,7 +1374,7 @@ import PageHero from '../components/PageHero.astro';
+       fetch(`${SB_URL}/rest/v1/wallet_transactions?phone=eq.${phone}&select=amount,type,note,created_at&order=created_at.desc&limit=10`, { headers: SB_H }),
+       fetch(`${SB_URL}/rest/v1/points?phone=eq.${phone}&select=total_points`, { headers: SB_H }),
+       fetch(`${SB_URL}/rest/v1/point_transactions?phone=eq.${phone}&select=points,type,created_at&order=created_at.desc&limit=10`, { headers: SB_H }),
+-      fetch(`${SB_URL}/rest/v1/ratings?driver_phone=eq.${driver.phone}&select=rating,comment,service_type,created_at&order=created_at.desc&limit=10`, { headers: SB_H }),
++      fetch(`${SB_URL}/rest/v1/ratings?driver_phone=eq.${driver.phone}&select=id,rating,comment,service_type,created_at,driver_reply&order=created_at.desc&limit=20`, { headers: SB_H }),
+     ]);
+ 
+     // Wallet
+@@ -1389,11 +1427,16 @@ import PageHero from '../components/PageHero.astro';
+         document.getElementById('rating-avg').textContent   = avg.toFixed(1);
+         document.getElementById('rating-stars').textContent = stars;
+         document.getElementById('rating-count').textContent = `${rts.length} تقييم`;
+-        document.getElementById('stat-rating').textContent  = `⭐ ${avg.toFixed(1)}`;
++        document.getElementById('stat-rating').textContent  = avg.toFixed(1);
+         document.getElementById('ratings-list').innerHTML = rts.map(r => {
+           const d = new Date(r.created_at).toLocaleDateString('ar-EG', { month: 'short', day: 'numeric' });
+           const s = '⭐'.repeat(r.rating) + '☆'.repeat(5 - r.rating);
+-          return `<div class="rating-item"><div class="rating-item__top"><span class="rating-item__stars">${s}</span><span class="rating-item__date">${d}</span></div>${r.comment ? `<div class="rating-item__comment">"${r.comment}"</div>` : ''}</div>`;
++          const typeIcon = r.service_type === 'delivery' ? '🛵' : r.service_type === 'airport' ? '✈️' : '🚗';
++          const commentHtml = r.comment ? `<div class="rating-item__comment">"${r.comment}"</div>` : '';
++          const replyHtml = r.driver_reply
++            ? `<div class="rating-item__reply"><div class="rating-item__reply-label">ردك:</div>${r.driver_reply}</div>`
++            : `<div class="rating-reply-form"><textarea class="rating-reply-input" rows="1" placeholder="اكتب ردك..."></textarea><button class="rating-reply-send" onclick="sendReply('${r.id}',this)">إرسال</button></div>`;
++          return `<div class="rating-item" id="rt-${r.id}"><div class="rating-item__top"><span class="rating-item__stars">${s}</span><span class="rating-item__date">${typeIcon} ${d}</span></div>${commentHtml}${replyHtml}</div>`;
+         }).join('');
+       }
+     } catch {}
+@@ -1449,11 +1492,10 @@ import PageHero from '../components/PageHero.astro';
+     const typeLabel = type === 'delivery' ? 'توصيل' : type === 'airport' ? 'مطار' : 'رحلة';
+ 
+     await Promise.allSettled([
+-      // Upsert driver wallet
+-      fetch(`${SB_URL}/rest/v1/wallets`, {
++      fetch(`${SB_URL}/rest/v1/rpc/add_wallet_balance`, {
+         method: 'POST',
+-        headers: { ...SB_H, Prefer: 'resolution=merge-duplicates,return=minimal' },
+-        body: JSON.stringify({ phone, balance: driverEarn, updated_at: now }),
++        headers: { ...SB_H },
++        body: JSON.stringify({ p_phone: phone, p_amount: driverEarn }),
+       }),
+       // Driver earning transaction
+       fetch(`${SB_URL}/rest/v1/wallet_transactions`, {
+diff --git a/src/pages/profile.astro b/src/pages/profile.astro
+index 1a00c53..0e870cb 100644
+--- a/src/pages/profile.astro
++++ b/src/pages/profile.astro
+@@ -676,9 +676,9 @@ import Layout from '../components/layout.astro';
+         <span class="pf-stat__num" id="stat-orders">0</span>
+         <span class="pf-stat__lbl">🛵 طلبات</span>
+       </div>
+-      <div class="pf-stat pf-stat--green">
+-        <span class="pf-stat__num" id="stat-spent">0 ج.م</span>
+-        <span class="pf-stat__lbl">💰 إنفاق</span>
++      <div class="pf-stat pf-stat--green" style="cursor:pointer" onclick="location.href='/wallet'">
++        <span class="pf-stat__num" id="stat-wallet">—</span>
++        <span class="pf-stat__lbl">💳 المحفظة</span>
+       </div>
+       <div class="pf-stat pf-stat--purple">
+         <span class="pf-stat__num" id="stat-rides">0</span>
+@@ -1089,6 +1089,12 @@ import Layout from '../components/layout.astro';
+       SB_URL + '/rest/v1/accounts?' + phoneOrFilter(phone) + '&select=*&limit=1');
+     return Array.isArray(data) ? (data[0] || null) : null;
+   }
++  async function fetchWallet(phone) {
++    const intl  = intlPhone(phone);
++    const local = localPhone(phone);
++    const data  = await sbFetch(SB_URL + '/rest/v1/wallets?or=(phone.eq.' + encodeURIComponent(intl) + ',phone.eq.' + encodeURIComponent(local) + ')&select=balance&limit=1');
++    return Array.isArray(data) && data[0] ? data[0] : null;
++  }
+   async function fetchDriverApp(phone) {
+     const data = await sbFetch(
+       SB_URL + '/rest/v1/driver_applications?' + phoneOrFilter(phone) +
+@@ -1212,7 +1218,6 @@ import Layout from '../components/layout.astro';
+       .reduce((s, o) => s + (Number(o.total) || 0), 0);
+ 
+     $('stat-orders').textContent = orders.length;
+-    $('stat-spent').textContent  = fmt(Math.round(totalSpent)) + ' ج.م';
+     $('stat-rides').textContent  = rides.length;
+     $('stat-month').textContent  = thisMonth.length;
+   }
+@@ -1768,7 +1773,7 @@ import Layout from '../components/layout.astro';
+     showContent(lsAcc, mergeOrders([], lsOrders), [], null, null);
+ 
+     var role = user.role || 'customer';
+-    var fetches = [fetchAccount(phone), fetchOrders(phone), fetchRides(phone)];
++    var fetches = [fetchAccount(phone), fetchOrders(phone), fetchRides(phone), fetchWallet(phone)];
+     if (role === 'driver') fetches.push(fetchDriverApp(phone));
+ 
+     Promise.all(fetches)
+@@ -1776,10 +1781,13 @@ import Layout from '../components/layout.astro';
+         var sbAcc    = results[0];
+         var sbOrders = results[1];
+         var sbRides  = results[2];
+-        var appData  = results[3] || null;
++        var wallet   = results[3] || null;
++        var appData  = results[4] || null;
+         var acc      = sbAcc || lsAcc;
+         var orders   = mergeOrders(sbOrders || [], lsOrders);
+         var acctStatus = acc ? (acc.status || null) : null;
++        var wEl = $('stat-wallet');
++        if (wEl) wEl.textContent = wallet ? (Math.round(wallet.balance || 0) + ' ج.م') : '0 ج.م';
+         showContent(acc, orders, sbRides || [], acctStatus, appData);
+       })
+       .catch(function(err) { console.warn('[profile] refresh failed', err); });
+-- 
+2.43.0
+
+
+From c1c542641d5d82202ea990f847954e11cae769f3 Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Sun, 21 Jun 2026 15:05:24 +0000
+Subject: [PATCH 2/4] chore: ignore .firebase cache directory
+
+---
+ .gitignore | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/.gitignore b/.gitignore
+index e25ea9e..ec80023 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -30,3 +30,4 @@ dist/
+ .astro/
+ 
+ .env.local
++.firebase/
+-- 
+2.43.0
+
+
+From 8c5fcce5cc7b1843b7f4232e24ac54c909fe5be1 Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Sun, 21 Jun 2026 15:13:06 +0000
+Subject: [PATCH 3/4] refactor: remove Firebase, migrate to Supabase + Vercel
+
+- Remove firebase.json and .firebaserc configuration files
+- Remove Firebase CLI from deployment workflow
+- Update package.json deploy script to use Vercel instead of Firebase
+- Update GitHub Actions workflow to deploy via Vercel with VERCEL_TOKEN
+- All data services now exclusively use Supabase REST API
+- Remove .firebase cache directory
+
+Migration:
+  - Data: Already using Supabase REST API
+  - Hosting: Now using Vercel (Astro-optimized deployment)
+  - Auth: Via Supabase if needed
+  - Storage: Supabase Storage available
+
+Co-Authored-By: Claude <noreply@anthropic.com>
+---
+ .firebase/hosting.ZGlzdA.cache | 93 ----------------------------------
+ .firebaserc                    |  5 --
+ .github/workflows/deploy.yml   | 11 ++--
+ firebase.json                  | 27 ----------
+ package.json                   |  2 +-
+ 5 files changed, 5 insertions(+), 133 deletions(-)
+ delete mode 100644 .firebase/hosting.ZGlzdA.cache
+ delete mode 100644 .firebaserc
+ delete mode 100644 firebase.json
+
+diff --git a/.firebase/hosting.ZGlzdA.cache b/.firebase/hosting.ZGlzdA.cache
+deleted file mode 100644
+index 447af8c..0000000
+--- a/.firebase/hosting.ZGlzdA.cache
++++ /dev/null
+@@ -1,93 +0,0 @@
+-_redirects,1780260906636,f61f27bd17de546264aa58f40f3aafaac7021e0ef69c17f6b1b4cd7664a037ec
+-sw.js,1782054292937,837e9fe18f9e32911426d62d3d3b94d6bbfce7a93de272a7204c1f9f1c2cc45a
+-robots.txt,1782054292937,6c85abcfe9018d0570fadcc78ea7e36fec9c549a7b6991d0262c8ab41e39b675
+-manifest.webmanifest,1782054292937,f344deced15e9c3b1a61ce0df36f56c03679a4d53c49ff84aeccffd8972baba2
+-offline.html,1782054292937,fc38f42e3e3339b709d63f14239c271b17b0b405013d66e04ccd8ec12dfc08a4
+-site.webmanifest,1782054292937,cb0588313bd79efef155b6b063c9f3e34457e9945b2a237ffe77e0c5a6b55722
+-icon.svg,1782054292936,2d658b0464f953c71bcd71957a0f7d652d96e8fcf8bfa3177be7879a452a223a
+-icon-192.png,1782054292934,cb43184fe976b266dabeb3e83d68b1c9690938df43283db94d06e221b057592e
+-global.css,1782054292934,b3b5c71b7d89f03745795d2a38b61793983adc9ea502ff7de213f49ea83a4042
+-apple-touch-icon.png,1782054292931,404a63d5fe49c1e59ab424d924d77c14ac578dbc4d2445fd6c3f252e531bf5db
+-index.html,1782054293719,e2152f10215a20d696a953ef2a321d0f3de25aacd864e8877375c5f08c55acfc
+-track/index.html,1782054293839,dea54abe546e189214c0b9c26e44d0d9fdc30fa54dc8909936cb0e7df978bdb1
+-wallet/index.html,1782054293839,823da38ac6c0446a6ced8f5cf020e4244a45161079af7ecf648886a771731096
+-store/tarshubi-pharmacy/index.html,1782054293791,a1d81138020d03ff5274554804e81af97a6d05a5bfd18afee05fbe8f79edc74c
+-store/shabrawy-damietta/index.html,1782054293803,033145d54b54c760ccb463a8889abc645c1706703df1f931391992cbc939d6a7
+-store/nile-produce/index.html,1782054293799,d5947101a947f888bf74d331700c971ed56c9138321400509daaca598ec54a62
+-store/koshary-damietta/index.html,1782054293803,d97c59ed734d75e3f681170c7bb21c9e53e299e16d13a5a231cbd09626d5efa9
+-icon-maskable-512.png,1782054292935,710f7f24a72480152bb4b167ea43fe558337db69dad1eca9424ece8b41cb14a2
+-store/kilani-grills/index.html,1782054293781,266bf6e817a01135c912b83f876c90558286796ca1ee4a9514a45198da594dd3
+-store/nour-bakery/index.html,1782054293827,3e27d359bcf5c78ace5cf0853c29459dcade5876d68b7d5d18ecf48aa2be4dc4
+-store/italiano-pizza/index.html,1782054293807,e5549cd474e7bdf146afb7b7d8692b7536d8f39c21458db2fa1bae26516c5c5d
+-store/eldowar/index.html,1782054293783,6cbce829a626d3b614f0958b6b49fee1a1744026fc495eb19bf84bda69451958
+-store/fathalla-market/index.html,1782054293787,ec6e75171ba04ee7b4ef94593643061dc3109ceb567f3dd3081a969a32fb6f9e
+-store/fashour-sweets/index.html,1782054293799,74b53a41f12409a7449b3b694397361db44043063075fc52430ed93615c5c3c3
+-restaurant-orders/index.html,1782054293759,f86ab28a8919976c91a1b35fe5d59336cb0f14167530f17811e582d6fd3fcf75
+-store/elbadry-sweets/index.html,1782054293795,c4cebd994b62ebd816593ff1ac2e8818266aca7532f8a082a757b80266e3cabe
+-store/mobile-zone/index.html,1782054293803,3eb37164f4c5cdfea7466feee6d9675837ba2ec1e6ce4b9ad04b65a653ec9def
+-store/farhat-basha/index.html,1782054293781,58171d2c6362951823379429139dc5bb57a5e3f303ededbf3d9f848bc2babeaa
+-store/carnival-market/index.html,1782054293787,bbb24eab01c8945bcae3dac4dfc037cef4702d383e7c38c0eea5043fa41228fe
+-services/index.html,1782054293771,403b87bcaf00985184f76e275679b3af9fd28ec79376d671a8cab8d9cd416f2f
+-store/ezaby-pharmacy/index.html,1782054293795,f50fad1a6afe0f763d4eee5bd584b0733b5ef645ccd29d9d524982f7838ccd6c
+-orders/index.html,1782054293747,7805a446f71ed0da07680d420dd480ad122cf4e719747063abb5a718d699131f
+-store/aklet-smak/index.html,1782054293783,a1636d77f3d4510d65b08f59bc5b234edef37a9e2a87e4dc6993db1ba558b130
+-fonts/PacaembuVar-subset.woff2,1782054292934,5df8f52636e29150c10be75973b9a1fad1aeb4fe982c978c130cb5b41673fba0
+-register/index.html,1782054293755,531d15a53241ab716b51f016125b616092861ceb5bb01906aa4678f3c2f6d2a8
+-fonts/MulishVar-subset.woff2,1782054292934,cd310a379922ccdce8287e1006053f8cf39c5bfa4354751af76959106d5c0591
+-order/index.html,1782054293743,e876703b6673600965c08a99759b5742c700294827cc61764d57a0f59cae5276
+-images/corgi.jpg,1782054292936,2a2e62cdf1ecee27b9e1bc54685c497ad904545c89c273408a57d7d7cb8ea1ed
+-contact/index.html,1782054293687,a03bd6c83b8852cd3be8847303fef8c97c3eeb78b854fc70f853c442028febef
+-driver-apply/index.html,1782054293691,aa9b01a0f74b0a3729d010a655ec211467df1122f0a595a531ea5724a7c75226
+-merchant-dashboard/index.html,1782054293735,92d3d0a57ef9e4cce3b58e76c0ae64744490d4e3865093b4e98142ab55af34b1
+-airport/index.html,1782054293683,6e7a9f00db77ae17f6b51ba347618407f1102931e7215ac68e488acc82b6c995
+-icon-512.png,1782054292935,c124df47cab7ce4942ea49f65c522585dafdfc3274c1c39d7cebc83123113ca8
+-merchant-apply/index.html,1782054293731,e8686a4d62fe4ffc022eda8410e4d7f826d0cdfacb1620793edb67dcf57cb669
+-login/index.html,1782054293723,da145700661a55f82e08a0136302848e5e6afe2148cc7015f065f157d7d9ff2b
+-stores/index.html,1782054293835,7e28dbbf0ff51b76fede8b10f933e5152dcee3645851a13734c437090c24c557
+-profile/index.html,1782054293751,7d3c443e54e9c123bd1d8599e1b7a5b8749e60ac560fd7c111296361f60ec37c
+-driver-dashboard/index.html,1782054293703,10fd0820bb954826ded065a2df36a52eadabcc9335381850fafb634677c423b7
+-driver/index.html,1782054293715,385a5a4f93973fb267243eced1934e04bc8941c385e00e13f703cb2122e36a1c
+-admin-login/index.html,1782054293663,802a37a65b89e731fbb5d60f11d51be720cc18b0072955a083f73f8a31426260
+-_astro/track.DiluaUsC.css,1782054293155,e3386d89b1b834e9252ab9ef5b9604902f90a1c77672cb56aca4816cb5fdee06
+-_astro/wallet.DLncKDQE.css,1782054293155,fb727342342c4c07bc770ffedca24bf12d0f0600e7e794f7d59562d27ab6cddd
+-_astro/stores.dmOYVK7U.css,1782054293155,00054bd6a2aad8a27a9179d33b9abab4c2e5765f32d00728360d62900f257ae7
+-_astro/signals.module.DhYU5_ru.js,1782054293619,cd781b12e4c06da1141f7252b3ea89946f2371e9e43eda295af58ed177fb03ca
+-_astro/services.tzy34qGK.css,1782054293155,6c3a8a0d124cbfb6bc51b8d23ca968c672badbb6fad7fbacfd7fb812ab0a1a97
+-about/index.html,1782054293659,84be574011a84dddb08b08680324bb5f7e4385fa6e0749265de9e56cf16b5be6
+-_astro/restaurant-orders.S6uHcpQ_.css,1782054293155,3bf4beef41beb5465ff0e2cc717fe414249bbf33a4fa731926122b902f6c9d0c
+-_astro/register.1Ant8DrU.css,1782054293155,bb8d41a25b1ab545ea88e552e2d01246a8108527e7e2ffdd1837cfef977b9995
+-_astro/rides.DWpELk7i.css,1782054293155,bea9c85877a850913a2672009727facdf15f263adf716ab33c8ee4a05d695e54
+-_astro/phone.DQX3fwDw.js,1782054293619,8dee2999f88b3d63090f28e026c7343cc0a137f7f56bab12b2d60700b6acf4d3
+-_astro/order.LU1z9qeu.css,1782054293155,aa2894a461f9b5c0420554bdc7517197614cab225bcad75525c6f6e2b23154ba
+-_astro/merchant-apply.D2cFvz9c.css,1782054293155,534c6882feb087033f88d3fa52a7e675e4b851f268886c799a6b16dc142e2355
+-_astro/profile.s4S4iYDe.css,1782054293155,dcd2d880a3036b761a1f6c29179a06646adc31a0dfea54385c6e2f7fb9914b60
+-_astro/login.BjZtB_bP.css,1782054293155,c92a7aee7b578fdf69a5fda81e047a7c5cc96b11a7fde86fcb8e8757f3d97920
+-_astro/merchant-dashboard.CD5Qk_kd.css,1782054293155,bfca88556b0e9742d30ae85309e4f80ec72ebec48aacaeea455a4f9ac1e75a44
+-_astro/index.DKcUzpEp.css,1782054293155,c08a796a616da10ac947151d0a804ffc90011de6f1f5bc7744660243d2cf3700
+-_astro/hoisted.DrIMktCk.js,1782054293619,50a185f1394124b5d4ddfca7d2e9c0395bbad5ff130fa19db3b405efeafa1065
+-_astro/hoisted.yn5SOKMT.js,1782054293619,80c64e656c4cb4f5c45bd9996e251f46fd7ba8143c710bb2aeeebce769ef2175
+-rides/index.html,1782054293767,8750802e2b2bd0d333a303f72684e12f4ffdbc521219174afee4edbc8d75b3e4
+-_astro/hoisted.DBgZPpN5.js,1782054293619,d1e1ae02aec8e3197716d9d4e8159306fac47fbb52038f7b5ab506e0271f177c
+-_astro/hoisted.DnTLV5xx.js,1782054293619,cad076d51b1b9d71651354ac6576ff6d8ea398605dfdb2421ea35750141fdfcf
+-_astro/hoisted.CzDs7cc5.js,1782054293619,82b22c624899461caccac6b0dcb1331030f6877249b03557411a4debeef347e2
+-_astro/hoisted.DKgrOZNz.js,1782054293619,42fccfcdd9f47307d736d4881365a6516ff1df379e69cbd6b4de742ddf72de7a
+-_astro/hoisted.C0pImZEy.js,1782054293619,70bd9751dd153d2bf78c4050fca0ea7d3900e7ba38f81bf61be88c14fd68791a
+-_astro/hoisted.CjTq087T.js,1782054293619,e76ac9c8bcc2cce4dffb962771e1e2c14353fc5ed580c4f84db1857a517c7d92
+-_astro/hoisted.B73BLUXl.js,1782054293619,bc3ef9d00bf1f8050bff08284a5626492efd40dc9a0247e0f232b420a5094755
+-_astro/hoisted.CSzUdnwh.js,1782054293619,5d5bf0b6aabade3edc6c3fc1e2a26fa5f9b0f425a8a02cb58b701a8424ffe348
+-_astro/driver.BVUHj4nY.css,1782054293155,cbb32636b87ec1436a38cc592846ab6a26916ad0fbc4c9ef3e351ecc0814a0c6
+-_astro/hoisted.CYcVDHGB.js,1782054293619,34a9bc1b7803b373d389822412b78b81540af33bf761d467838368bfa48ab9b6
+-_astro/client.DPuBMxT4.js,1782054293619,57572f789d1654d385cbc6caa25bc35595c5297877b6af97f9c51ce33f248b36
+-_astro/hoisted.3DcZpSv7.js,1782054293619,20877dc0fd41be0d0b143eaeaada96cfab6fb962c5d2214865502239b48ca4e6
+-_astro/driver-dashboard.DO9kXG9N.css,1782054293155,53298d7d4e9a8cbefe86c7d0f710e0d37124e42b6592cd1ca4ed5d76e93fed48
+-_astro/contact.QF3hXG1V.css,1782054293155,815c4ed3b14febf6359160dd1ffde33e523d86751c8bdf61e01f3d627c491302
+-_astro/driver-apply.BokRrsJM.css,1782054293155,e87a09fef9994c3dedba397561a234cf337e08075e75b80922e836fdbfba15a8
+-_astro/client.C7ddhMc0.js,1782054293619,8494c4e14cf2b0b6a0233ff7e0ed1a892f5d8ff7ece0941516c988111ab032bc
+-_astro/airport.BTxs4Jqw.css,1782054293155,c2accbe5a333e33c25fe9b1927108723efc0495f0b956740e4f6eea8e31d04ab
+-_astro/admin.Dxxnb3MI.css,1782054293155,db7262760786f949d86964a68ba31536d51217c8aa37a72c2ab77b7cd12a07c7
+-_astro/about.BuQcfmej.css,1782054293155,ab89a6eabae808ccce402714228ddcc84ed4df689b8c608df8c2f111f332a2f3
+-.well-known/assetlinks.json,1782054292931,5a97b3a75f7e27a0e0088b6b9aaec2e53c50025d543e56c79d665276376b6c54
+-_astro/about.ViXxJ09N.css,1782054293155,a97c6255bf8c51236879da9656fb886314cb5111e0a8ea44a80050af1a3f3d1c
+-_astro/_id_.Dl5Hb0HG.css,1782054293155,cd0fc814da1bc8a388b5f3938075891d56aef810a02711d10bd325d1140d810e
+-admin/index.html,1782054293675,b1191e780457bac3fcc5e9d1543d2f67008b1169b32e3f6382f1613e50e48af2
+-favicon.ico,1782054292931,af5ee7d2e7f2d4877c10b4354fa4d9ed757a88fd8f526293b7773c0c92794531
+diff --git a/.firebaserc b/.firebaserc
+deleted file mode 100644
+index 3808228..0000000
+--- a/.firebaserc
++++ /dev/null
+@@ -1,5 +0,0 @@
+-{
+-  "projects": {
+-    "default": "wslha-941c8"
+-  }
+-}
+diff --git a/.github/workflows/deploy.yml b/.github/workflows/deploy.yml
+index caa50f0..020c5f3 100644
+--- a/.github/workflows/deploy.yml
++++ b/.github/workflows/deploy.yml
+@@ -1,4 +1,4 @@
+-name: Deploy to Firebase Hosting
++name: Deploy to Vercel
+ 
+ on:
+   push:
+@@ -24,10 +24,7 @@ jobs:
+       - name: Build
+         run: npm run build
+ 
+-      - name: Install Firebase Tools
+-        run: npm install -g firebase-tools@13
+-
+-      - name: Deploy to Firebase Hosting
+-        run: firebase deploy --only hosting --project wslha-941c8 --non-interactive --token "$FIREBASE_TOKEN"
++      - name: Deploy to Vercel
++        run: npx vercel --prod --token "$VERCEL_TOKEN"
+         env:
+-          FIREBASE_TOKEN: ${{ secrets.FIREBASE }}
++          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+diff --git a/firebase.json b/firebase.json
+deleted file mode 100644
+index 9e2fb38..0000000
+--- a/firebase.json
++++ /dev/null
+@@ -1,27 +0,0 @@
+-{
+-  "hosting": {
+-    "site": "wslha-941c8",
+-    "public": "dist",
+-    "ignore": [
+-      "firebase.json",
+-      "**/.*",
+-      "**/node_modules/**"
+-    ],
+-    "cleanUrls": true,
+-    "trailingSlash": false,
+-    "headers": [
+-      {
+-        "source": "**/*.html",
+-        "headers": [
+-          { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
+-        ]
+-      },
+-      {
+-        "source": "**/*.@(js|css)",
+-        "headers": [
+-          { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
+-        ]
+-      }
+-    ]
+-  }
+-}
+diff --git a/package.json b/package.json
+index 4da0f24..0e11647 100644
+--- a/package.json
++++ b/package.json
+@@ -7,7 +7,7 @@
+     "start": "astro dev",
+     "build": "astro build",
+     "preview": "astro preview",
+-    "deploy": "astro build && firebase deploy --only hosting",
++    "deploy": "astro build && vercel --prod",
+     "icons": "node scripts/gen-brand-icons.mjs",
+     "assets": "npx @capacitor/assets generate --iconBackgroundColor #3B6EF8 --iconBackgroundColorDark #2952D9 --splashBackgroundColor #3B6EF8 --splashBackgroundColorDark #2952D9",
+     "app:sync": "astro build && npx cap sync",
+-- 
+2.43.0
+
+
+From 0e8b4d609809ee3b723a7f9d8d2e0d6c2522a1d0 Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Sun, 21 Jun 2026 15:23:39 +0000
+Subject: [PATCH 4/4] =?UTF-8?q?feat(db):=20comprehensive=20Supabase=20sche?=
+ =?UTF-8?q?ma=20=E2=80=94=20users,=20drivers,=20merchants,=20vehicles,=20m?=
+ =?UTF-8?q?aps,=20notifications?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+New tables:
+- accounts: enhanced with national_id, avatar, email, device_token, last_seen
+- drivers: full driver profile with vehicle info, docs, services, stats
+- merchants: full merchant profile with business docs, bank info, store settings
+- vehicles: vehicle registry linked to drivers with full documentation
+- driver_locations: enhanced with speed, accuracy, vehicle_type, order_id
+- location_history: historical GPS tracking per ride/order
+- service_requests: unified service request table (ride/delivery/airport/rental)
+- notifications: real-time notifications for all user roles
+- service_areas: 10 Damietta service zones with base fare and per-km pricing
+- promo_codes: discount codes with percentage/fixed amounts and usage limits
+- promo_usage: tracks who used which code
+- driver_earnings: detailed per-trip earnings with commission breakdown
+- store_products: menu/product catalog for merchant stores
+- user_documents: centralized document storage for all user types
+- support_tickets: customer support ticket system
+- admin_logs: audit trail of all admin actions
+
+RPC Functions:
+- get_admin_stats(): complete admin dashboard KPIs
+- get_driver_stats(phone): driver summary (trips, earnings, wallet, rating)
+- get_merchant_stats(phone): merchant summary (orders, revenue, wallet)
+- update_driver_stats_on_complete(phone): refresh driver aggregates
+- find_nearby_drivers(lat, lng, km): geospatial driver search for maps
+- validate_promo(code, phone, amount): promo code validation
+- send_notification(phone, role, type, title, body, data): create notification
+
+Co-Authored-By: Claude <noreply@anthropic.com>
+---
+ supabase-new-tables.sql | 784 ++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 784 insertions(+)
+ create mode 100644 supabase-new-tables.sql
+
+diff --git a/supabase-new-tables.sql b/supabase-new-tables.sql
+new file mode 100644
+index 0000000..237989e
+--- /dev/null
++++ b/supabase-new-tables.sql
+@@ -0,0 +1,784 @@
++-- ══════════════════════════════════════════════════════════════
++-- وصّلها — Supabase New Tables & API Services
++-- شغّل في: Supabase → SQL Editor
++-- ══════════════════════════════════════════════════════════════
++
++-- ────────────────────────────────────────────────────────────
++-- 1. USERS — ملف المستخدم الكامل
++-- ────────────────────────────────────────────────────────────
++ALTER TABLE accounts ADD COLUMN IF NOT EXISTS national_id      TEXT;
++ALTER TABLE accounts ADD COLUMN IF NOT EXISTS national_id_url  TEXT;
++ALTER TABLE accounts ADD COLUMN IF NOT EXISTS date_of_birth    DATE;
++ALTER TABLE accounts ADD COLUMN IF NOT EXISTS gender           TEXT CHECK (gender IN ('male','female')) DEFAULT 'male';
++ALTER TABLE accounts ADD COLUMN IF NOT EXISTS avatar_url       TEXT;
++ALTER TABLE accounts ADD COLUMN IF NOT EXISTS address          TEXT;
++ALTER TABLE accounts ADD COLUMN IF NOT EXISTS city             TEXT DEFAULT 'دمياط';
++ALTER TABLE accounts ADD COLUMN IF NOT EXISTS email            TEXT;
++ALTER TABLE accounts ADD COLUMN IF NOT EXISTS verified_at      TIMESTAMP WITH TIME ZONE;
++ALTER TABLE accounts ADD COLUMN IF NOT EXISTS last_seen        TIMESTAMP WITH TIME ZONE;
++ALTER TABLE accounts ADD COLUMN IF NOT EXISTS device_token     TEXT;   -- FCM / APNS token
++ALTER TABLE accounts ADD COLUMN IF NOT EXISTS notes            TEXT;   -- admin notes
++
++CREATE INDEX IF NOT EXISTS idx_accounts_role      ON accounts(role);
++CREATE INDEX IF NOT EXISTS idx_accounts_status    ON accounts(status);
++CREATE INDEX IF NOT EXISTS idx_accounts_city      ON accounts(city);
++CREATE INDEX IF NOT EXISTS idx_accounts_national  ON accounts(national_id);
++
++-- RLS
++ALTER TABLE accounts ENABLE ROW LEVEL SECURITY;
++DROP POLICY IF EXISTS "allow_anon_all_accounts" ON accounts;
++CREATE POLICY "allow_anon_all_accounts" ON accounts
++  FOR ALL TO anon, authenticated USING (true) WITH CHECK (true);
++
++
++-- ────────────────────────────────────────────────────────────
++-- 2. DRIVERS — ملف السائق الكامل
++-- ────────────────────────────────────────────────────────────
++CREATE TABLE IF NOT EXISTS drivers (
++  phone               TEXT PRIMARY KEY REFERENCES accounts(phone) ON DELETE CASCADE,
++  full_name           TEXT NOT NULL,
++  national_id         TEXT NOT NULL,
++  national_id_expiry  DATE,
++  national_id_front   TEXT,
++  national_id_back    TEXT,
++
++  -- رخصة القيادة
++  license_number      TEXT NOT NULL,
++  license_expiry      DATE,
++  license_photo       TEXT,
++
++  -- بيانات السيارة
++  vehicle_make        TEXT,   -- تويوتا، هيونداي
++  vehicle_model       TEXT,   -- كورولا، اكسنت
++  vehicle_year        INT,
++  vehicle_color       TEXT,
++  vehicle_plate       TEXT,
++  vehicle_type        TEXT DEFAULT 'sedan',  -- sedan, suv, van, motorcycle
++
++  -- وثائق السيارة
++  vehicle_reg_number  TEXT,
++  vehicle_reg_expiry  DATE,
++  vehicle_reg_photo   TEXT,
++  insurance_expiry    DATE,
++  insurance_photo     TEXT,
++  inspection_expiry   DATE,
++  inspection_photo    TEXT,
++
++  -- صور السيارة
++  vehicle_photo_front TEXT,
++  vehicle_photo_back  TEXT,
++  vehicle_photo_right TEXT,
++  vehicle_photo_left  TEXT,
++
++  -- السائق
++  driver_photo        TEXT,
++  good_conduct_url    TEXT,
++
++  -- الخدمات المتاحة
++  service_ride        BOOLEAN DEFAULT true,
++  service_delivery    BOOLEAN DEFAULT false,
++  service_airport     BOOLEAN DEFAULT false,
++
++  -- الإحصائيات
++  total_trips         INT DEFAULT 0,
++  total_earnings      DECIMAL(12,2) DEFAULT 0,
++  rating_avg          DECIMAL(3,2) DEFAULT 0,
++  rating_count        INT DEFAULT 0,
++
++  -- الحالة
++  status              TEXT DEFAULT 'approved',  -- approved, suspended, inactive
++  approved_at         TIMESTAMP WITH TIME ZONE,
++  approved_by         TEXT,   -- admin phone
++
++  created_at          TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
++  updated_at          TIMESTAMP WITH TIME ZONE DEFAULT NOW()
++);
++
++CREATE INDEX IF NOT EXISTS idx_drivers_status        ON drivers(status);
++CREATE INDEX IF NOT EXISTS idx_drivers_vehicle_type  ON drivers(vehicle_type);
++CREATE INDEX IF NOT EXISTS idx_drivers_service_ride  ON drivers(service_ride);
++
++ALTER TABLE drivers ENABLE ROW LEVEL SECURITY;
++DROP POLICY IF EXISTS "allow_anon_all_drivers" ON drivers;
++CREATE POLICY "allow_anon_all_drivers" ON drivers
++  FOR ALL TO anon, authenticated USING (true) WITH CHECK (true);
++
++
++-- ────────────────────────────────────────────────────────────
++-- 3. MERCHANTS — ملف التاجر الكامل
++-- ────────────────────────────────────────────────────────────
++CREATE TABLE IF NOT EXISTS merchants (
++  phone                 TEXT PRIMARY KEY REFERENCES accounts(phone) ON DELETE CASCADE,
++  business_name         TEXT NOT NULL,
++  business_name_en      TEXT,
++  business_type         TEXT NOT NULL,  -- restaurant, pharmacy, grocery, electronics
++  business_description  TEXT,
++  business_logo         TEXT,
++  business_cover        TEXT,
++
++  -- العنوان
++  address               TEXT,
++  area                  TEXT,
++  city                  TEXT DEFAULT 'دمياط',
++  lat                   DOUBLE PRECISION,
++  lng                   DOUBLE PRECISION,
++
++  -- وثائق تجارية
++  commercial_reg        TEXT,
++  commercial_reg_date   DATE,
++  commercial_reg_photo  TEXT,
++  tax_card              TEXT,
++  tax_card_photo        TEXT,
++  work_permit_photo     TEXT,
++  national_id           TEXT,
++  national_id_photo     TEXT,
++
++  -- معلومات البنك/السداد
++  bank_name             TEXT,
++  bank_iban             TEXT,
++  bank_account_name     TEXT,
++
++  -- إعدادات المتجر
++  delivery_fee          DECIMAL(8,2) DEFAULT 10,
++  min_order             DECIMAL(8,2) DEFAULT 0,
++  estimated_time        INT DEFAULT 30,  -- minutes
++  opens_at              TIME DEFAULT '08:00',
++  closes_at             TIME DEFAULT '23:00',
++  is_open               BOOLEAN DEFAULT true,
++  is_active             BOOLEAN DEFAULT true,
++
++  -- الإحصائيات
++  total_orders          INT DEFAULT 0,
++  total_revenue         DECIMAL(12,2) DEFAULT 0,
++  rating_avg            DECIMAL(3,2) DEFAULT 0,
++  rating_count          INT DEFAULT 0,
++
++  status                TEXT DEFAULT 'approved',  -- approved, suspended, inactive
++  approved_at           TIMESTAMP WITH TIME ZONE,
++  approved_by           TEXT,
++
++  created_at            TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
++  updated_at            TIMESTAMP WITH TIME ZONE DEFAULT NOW()
++);
++
++CREATE INDEX IF NOT EXISTS idx_merchants_status         ON merchants(status);
++CREATE INDEX IF NOT EXISTS idx_merchants_business_type  ON merchants(business_type);
++CREATE INDEX IF NOT EXISTS idx_merchants_city           ON merchants(city);
++CREATE INDEX IF NOT EXISTS idx_merchants_is_active      ON merchants(is_active);
++
++ALTER TABLE merchants ENABLE ROW LEVEL SECURITY;
++DROP POLICY IF EXISTS "allow_anon_all_merchants" ON merchants;
++CREATE POLICY "allow_anon_all_merchants" ON merchants
++  FOR ALL TO anon, authenticated USING (true) WITH CHECK (true);
++
++
++-- ────────────────────────────────────────────────────────────
++-- 4. VEHICLES — سجل السيارات
++-- ────────────────────────────────────────────────────────────
++CREATE TABLE IF NOT EXISTS vehicles (
++  id                TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
++  driver_phone      TEXT NOT NULL REFERENCES accounts(phone) ON DELETE CASCADE,
++
++  make              TEXT NOT NULL,   -- تويوتا
++  model             TEXT NOT NULL,   -- كورولا
++  year              INT NOT NULL,
++  color             TEXT NOT NULL,
++  plate             TEXT NOT NULL UNIQUE,
++  type              TEXT DEFAULT 'sedan',  -- sedan, suv, van, motorcycle, truck
++
++  -- وثائق
++  reg_number        TEXT,
++  reg_expiry        DATE,
++  reg_photo         TEXT,
++  insurance_expiry  DATE,
++  insurance_photo   TEXT,
++  inspection_expiry DATE,
++  inspection_photo  TEXT,
++
++  -- صور السيارة
++  photo_front       TEXT,
++  photo_back        TEXT,
++  photo_right       TEXT,
++  photo_left        TEXT,
++
++  is_primary        BOOLEAN DEFAULT true,   -- السيارة الرئيسية للسائق
++  is_active         BOOLEAN DEFAULT true,
++
++  created_at        TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
++  updated_at        TIMESTAMP WITH TIME ZONE DEFAULT NOW()
++);
++
++CREATE INDEX IF NOT EXISTS idx_vehicles_driver  ON vehicles(driver_phone);
++CREATE INDEX IF NOT EXISTS idx_vehicles_plate   ON vehicles(plate);
++CREATE INDEX IF NOT EXISTS idx_vehicles_type    ON vehicles(type);
++
++ALTER TABLE vehicles ENABLE ROW LEVEL SECURITY;
++DROP POLICY IF EXISTS "allow_anon_all_vehicles" ON vehicles;
++CREATE POLICY "allow_anon_all_vehicles" ON vehicles
++  FOR ALL TO anon, authenticated USING (true) WITH CHECK (true);
++
++
++-- ────────────────────────────────────────────────────────────
++-- 5. VEHICLE_LOCATIONS — مواقع السيارات اللحظية (محسّن)
++-- ────────────────────────────────────────────────────────────
++ALTER TABLE driver_locations ADD COLUMN IF NOT EXISTS speed        DOUBLE PRECISION DEFAULT 0;
++ALTER TABLE driver_locations ADD COLUMN IF NOT EXISTS accuracy     DOUBLE PRECISION DEFAULT 0;
++ALTER TABLE driver_locations ADD COLUMN IF NOT EXISTS vehicle_type TEXT DEFAULT 'sedan';
++ALTER TABLE driver_locations ADD COLUMN IF NOT EXISTS plate        TEXT;
++ALTER TABLE driver_locations ADD COLUMN IF NOT EXISTS order_id     TEXT;  -- active delivery order
++
++-- إضافة Realtime للمواقع
++ALTER PUBLICATION supabase_realtime ADD TABLE driver_locations;
++
++-- جدول سجل المسارات (تتبع التاريخي)
++CREATE TABLE IF NOT EXISTS location_history (
++  id           TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
++  driver_phone TEXT NOT NULL,
++  lat          DOUBLE PRECISION NOT NULL,
++  lng          DOUBLE PRECISION NOT NULL,
++  speed        DOUBLE PRECISION DEFAULT 0,
++  heading      DOUBLE PRECISION DEFAULT 0,
++  ride_id      TEXT,
++  order_id     TEXT,
++  recorded_at  TIMESTAMP WITH TIME ZONE DEFAULT NOW()
++);
++
++CREATE INDEX IF NOT EXISTS idx_loc_history_driver  ON location_history(driver_phone);
++CREATE INDEX IF NOT EXISTS idx_loc_history_ride    ON location_history(ride_id);
++CREATE INDEX IF NOT EXISTS idx_loc_history_order   ON location_history(order_id);
++CREATE INDEX IF NOT EXISTS idx_loc_history_time    ON location_history(recorded_at DESC);
++
++ALTER TABLE location_history ENABLE ROW LEVEL SECURITY;
++DROP POLICY IF EXISTS "allow_anon_all_loc_history" ON location_history;
++CREATE POLICY "allow_anon_all_loc_history" ON location_history
++  FOR ALL TO anon, authenticated USING (true) WITH CHECK (true);
++
++
++-- ────────────────────────────────────────────────────────────
++-- 6. SERVICE_REQUESTS — طلبات الخدمة الموحّدة
++-- ────────────────────────────────────────────────────────────
++CREATE TABLE IF NOT EXISTS service_requests (
++  id              TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
++  type            TEXT NOT NULL,  -- ride, delivery, airport, rental
++  status          TEXT DEFAULT 'pending',
++    -- pending → accepted → in_progress → completed | cancelled
++
++  -- العميل
++  customer_phone  TEXT NOT NULL,
++  customer_name   TEXT,
++
++  -- السائق (بعد القبول)
++  driver_phone    TEXT,
++  driver_name     TEXT,
++
++  -- التاجر (للتوصيل)
++  merchant_phone  TEXT,
++  store_id        TEXT,
++
++  -- المواقع
++  from_lat        DOUBLE PRECISION,
++  from_lng        DOUBLE PRECISION,
++  from_address    TEXT,
++  to_lat          DOUBLE PRECISION,
++  to_lng          DOUBLE PRECISION,
++  to_address      TEXT,
++
++  -- التسعير
++  base_fare       DECIMAL(8,2),
++  distance_km     DECIMAL(8,2),
++  fare            DECIMAL(8,2),
++  commission_pct  DECIMAL(5,2) DEFAULT 15,
++  commission_amt  DECIMAL(8,2),
++  driver_earn     DECIMAL(8,2),
++
++  -- التوقيت
++  scheduled_at    TIMESTAMP WITH TIME ZONE,
++  accepted_at     TIMESTAMP WITH TIME ZONE,
++  started_at      TIMESTAMP WITH TIME ZONE,
++  completed_at    TIMESTAMP WITH TIME ZONE,
++  cancelled_at    TIMESTAMP WITH TIME ZONE,
++  cancel_reason   TEXT,
++
++  notes           TEXT,
++  created_at      TIMESTAMP WITH TIME ZONE DEFAULT NOW()
++);
++
++CREATE INDEX IF NOT EXISTS idx_sr_customer  ON service_requests(customer_phone);
++CREATE INDEX IF NOT EXISTS idx_sr_driver    ON service_requests(driver_phone);
++CREATE INDEX IF NOT EXISTS idx_sr_status    ON service_requests(status);
++CREATE INDEX IF NOT EXISTS idx_sr_type      ON service_requests(type);
++CREATE INDEX IF NOT EXISTS idx_sr_created   ON service_requests(created_at DESC);
++
++ALTER TABLE service_requests ENABLE ROW LEVEL SECURITY;
++DROP POLICY IF EXISTS "allow_anon_all_service_req" ON service_requests;
++CREATE POLICY "allow_anon_all_service_req" ON service_requests
++  FOR ALL TO anon, authenticated USING (true) WITH CHECK (true);
++
++ALTER PUBLICATION supabase_realtime ADD TABLE service_requests;
++
++
++-- ────────────────────────────────────────────────────────────
++-- 7. NOTIFICATIONS — الإشعارات لجميع المستخدمين
++-- ────────────────────────────────────────────────────────────
++CREATE TABLE IF NOT EXISTS notifications (
++  id           TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
++  to_phone     TEXT NOT NULL,
++  role         TEXT DEFAULT 'customer',  -- customer, driver, merchant, admin
++  type         TEXT NOT NULL,
++    -- new_ride, ride_accepted, ride_completed, order_status,
++    -- payment, rating, system, promo
++  title        TEXT NOT NULL,
++  body         TEXT NOT NULL,
++  icon         TEXT DEFAULT '🔔',
++  data         JSONB,              -- extra payload (ride_id, order_id, etc.)
++  is_read      BOOLEAN DEFAULT false,
++  created_at   TIMESTAMP WITH TIME ZONE DEFAULT NOW()
++);
++
++CREATE INDEX IF NOT EXISTS idx_notif_phone    ON notifications(to_phone);
++CREATE INDEX IF NOT EXISTS idx_notif_unread   ON notifications(to_phone, is_read) WHERE is_read = false;
++CREATE INDEX IF NOT EXISTS idx_notif_created  ON notifications(created_at DESC);
++
++ALTER TABLE notifications ENABLE ROW LEVEL SECURITY;
++DROP POLICY IF EXISTS "allow_anon_all_notif" ON notifications;
++CREATE POLICY "allow_anon_all_notif" ON notifications
++  FOR ALL TO anon, authenticated USING (true) WITH CHECK (true);
++
++ALTER PUBLICATION supabase_realtime ADD TABLE notifications;
++
++
++-- ────────────────────────────────────────────────────────────
++-- 8. SERVICE_AREAS — مناطق الخدمة والخرائط
++-- ────────────────────────────────────────────────────────────
++CREATE TABLE IF NOT EXISTS service_areas (
++  id           TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
++  name         TEXT NOT NULL,        -- دمياط الجديدة، رأس البر
++  name_en      TEXT,
++  city         TEXT DEFAULT 'دمياط',
++  lat          DOUBLE PRECISION NOT NULL,
++  lng          DOUBLE PRECISION NOT NULL,
++  radius_km    DOUBLE PRECISION DEFAULT 5,  -- نطاق الخدمة بالكيلومتر
++  fare_base    DECIMAL(8,2) DEFAULT 20,     -- أجرة البداية
++  fare_per_km  DECIMAL(8,2) DEFAULT 5,      -- سعر الكيلومتر
++  is_active    BOOLEAN DEFAULT true,
++  sort_order   INT DEFAULT 0,
++  created_at   TIMESTAMP WITH TIME ZONE DEFAULT NOW()
++);
++
++INSERT INTO service_areas (id, name, name_en, lat, lng, radius_km, fare_base, fare_per_km, sort_order) VALUES
++  ('area-01', 'دمياط الجديدة',  'New Damietta',   31.4200, 31.8100, 10, 15, 4, 1),
++  ('area-02', 'دمياط القديمة',  'Old Damietta',   31.4165, 31.8140, 8,  12, 4, 2),
++  ('area-03', 'رأس البر',       'Ras El Bar',     31.4770, 31.8320, 6,  20, 5, 3),
++  ('area-04', 'كفر سعد',        'Kafr Saad',      31.3660, 31.7350, 8,  15, 4, 4),
++  ('area-05', 'فارسكور',        'Faraskour',      31.3315, 31.7143, 10, 18, 5, 5),
++  ('area-06', 'الزرقا',         'El Zarqa',       31.3442, 31.8350, 8,  15, 4, 6),
++  ('area-07', 'ميت أبو غالب',  'Meet Abu Ghalib', 31.3900, 31.7900, 6,  12, 4, 7),
++  ('area-08', 'شربين',          'Sherbin',        31.1872, 31.5355, 8,  20, 5, 8),
++  ('area-09', 'ميت سلسيل',     'Meet Salsil',    31.2700, 31.6900, 6,  18, 5, 9),
++  ('area-10', 'المطار',         'Airport',        31.3600, 31.7200, 5,  50, 8, 10)
++ON CONFLICT (id) DO NOTHING;
++
++ALTER TABLE service_areas ENABLE ROW LEVEL SECURITY;
++DROP POLICY IF EXISTS "allow_anon_select_areas" ON service_areas;
++CREATE POLICY "allow_anon_select_areas" ON service_areas
++  FOR SELECT TO anon, authenticated USING (true);
++
++
++-- ────────────────────────────────────────────────────────────
++-- 9. PROMO_CODES — أكواد الخصم
++-- ────────────────────────────────────────────────────────────
++CREATE TABLE IF NOT EXISTS promo_codes (
++  id              TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
++  code            TEXT NOT NULL UNIQUE,
++  description     TEXT,
++  discount_type   TEXT DEFAULT 'percent',  -- percent, fixed
++  discount_value  DECIMAL(8,2) NOT NULL,
++  min_order       DECIMAL(8,2) DEFAULT 0,
++  max_discount    DECIMAL(8,2),            -- حد أقصى للخصم
++  usage_limit     INT DEFAULT 100,
++  used_count      INT DEFAULT 0,
++  valid_from      TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
++  valid_to        TIMESTAMP WITH TIME ZONE,
++  applies_to      TEXT DEFAULT 'all',      -- all, ride, delivery, airport
++  is_active       BOOLEAN DEFAULT true,
++  created_by      TEXT,                    -- admin phone
++  created_at      TIMESTAMP WITH TIME ZONE DEFAULT NOW()
++);
++
++CREATE INDEX IF NOT EXISTS idx_promo_code    ON promo_codes(code);
++CREATE INDEX IF NOT EXISTS idx_promo_active  ON promo_codes(is_active);
++
++ALTER TABLE promo_codes ENABLE ROW LEVEL SECURITY;
++DROP POLICY IF EXISTS "allow_anon_select_promo" ON promo_codes;
++CREATE POLICY "allow_anon_select_promo" ON promo_codes
++  FOR SELECT TO anon, authenticated USING (true);
++DROP POLICY IF EXISTS "allow_auth_manage_promo" ON promo_codes;
++CREATE POLICY "allow_auth_manage_promo" ON promo_codes
++  FOR ALL TO authenticated USING (true) WITH CHECK (true);
++
++
++-- ────────────────────────────────────────────────────────────
++-- 10. PROMO_USAGE — استخدام الأكواد
++-- ────────────────────────────────────────────────────────────
++CREATE TABLE IF NOT EXISTS promo_usage (
++  id           TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
++  code         TEXT NOT NULL REFERENCES promo_codes(code),
++  phone        TEXT NOT NULL,
++  order_id     TEXT,
++  ride_id      TEXT,
++  discount_amt DECIMAL(8,2),
++  used_at      TIMESTAMP WITH TIME ZONE DEFAULT NOW()
++);
++
++CREATE INDEX IF NOT EXISTS idx_promo_usage_code   ON promo_usage(code);
++CREATE INDEX IF NOT EXISTS idx_promo_usage_phone  ON promo_usage(phone);
++
++ALTER TABLE promo_usage ENABLE ROW LEVEL SECURITY;
++DROP POLICY IF EXISTS "allow_anon_all_promo_usage" ON promo_usage;
++CREATE POLICY "allow_anon_all_promo_usage" ON promo_usage
++  FOR ALL TO anon, authenticated USING (true) WITH CHECK (true);
++
++
++-- ────────────────────────────────────────────────────────────
++-- 11. DRIVER_EARNINGS — أرباح السائقين التفصيلية
++-- ────────────────────────────────────────────────────────────
++CREATE TABLE IF NOT EXISTS driver_earnings (
++  id              TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
++  driver_phone    TEXT NOT NULL REFERENCES accounts(phone) ON DELETE CASCADE,
++  service_type    TEXT NOT NULL,          -- ride, delivery, airport
++  reference_id    TEXT,                   -- ride_id / order_id
++  gross_fare      DECIMAL(8,2) NOT NULL,
++  commission_pct  DECIMAL(5,2) NOT NULL,
++  commission_amt  DECIMAL(8,2) NOT NULL,
++  net_earn        DECIMAL(8,2) NOT NULL,
++  is_paid         BOOLEAN DEFAULT true,
++  created_at      TIMESTAMP WITH TIME ZONE DEFAULT NOW()
++);
++
++CREATE INDEX IF NOT EXISTS idx_earn_driver   ON driver_earnings(driver_phone);
++CREATE INDEX IF NOT EXISTS idx_earn_service  ON driver_earnings(service_type);
++CREATE INDEX IF NOT EXISTS idx_earn_created  ON driver_earnings(created_at DESC);
++
++ALTER TABLE driver_earnings ENABLE ROW LEVEL SECURITY;
++DROP POLICY IF EXISTS "allow_anon_all_earnings" ON driver_earnings;
++CREATE POLICY "allow_anon_all_earnings" ON driver_earnings
++  FOR ALL TO anon, authenticated USING (true) WITH CHECK (true);
++
++
++-- ────────────────────────────────────────────────────────────
++-- 12. STORE_PRODUCTS — منتجات/قائمة المتاجر
++-- ────────────────────────────────────────────────────────────
++CREATE TABLE IF NOT EXISTS store_products (
++  id           TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
++  store_id     TEXT NOT NULL,
++  category     TEXT,
++  name         TEXT NOT NULL,
++  description  TEXT,
++  price        DECIMAL(8,2) NOT NULL,
++  image_url    TEXT,
++  is_available BOOLEAN DEFAULT true,
++  sort_order   INT DEFAULT 0,
++  created_at   TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
++  updated_at   TIMESTAMP WITH TIME ZONE DEFAULT NOW()
++);
++
++CREATE INDEX IF NOT EXISTS idx_products_store  ON store_products(store_id);
++CREATE INDEX IF NOT EXISTS idx_products_avail  ON store_products(is_available);
++
++ALTER TABLE store_products ENABLE ROW LEVEL SECURITY;
++DROP POLICY IF EXISTS "allow_anon_all_products" ON store_products;
++CREATE POLICY "allow_anon_all_products" ON store_products
++  FOR ALL TO anon, authenticated USING (true) WITH CHECK (true);
++
++
++-- ────────────────────────────────────────────────────────────
++-- 13. DOCUMENTS — وثائق جميع المستخدمين المركزية
++-- ────────────────────────────────────────────────────────────
++CREATE TABLE IF NOT EXISTS user_documents (
++  id           TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
++  phone        TEXT NOT NULL REFERENCES accounts(phone) ON DELETE CASCADE,
++  role         TEXT NOT NULL,             -- customer, driver, merchant
++  doc_type     TEXT NOT NULL,
++    -- national_id_front, national_id_back, license, vehicle_reg,
++    -- insurance, inspection, vehicle_front, vehicle_back,
++    -- commercial_reg, tax_card, work_permit, driver_photo,
++    -- good_conduct, profile_photo, other
++  file_url     TEXT NOT NULL,
++  file_name    TEXT,
++  file_size    INT,
++  status       TEXT DEFAULT 'pending',    -- pending, approved, rejected, expired
++  expires_at   DATE,
++  reviewed_by  TEXT,                      -- admin phone
++  reviewed_at  TIMESTAMP WITH TIME ZONE,
++  notes        TEXT,
++  created_at   TIMESTAMP WITH TIME ZONE DEFAULT NOW()
++);
++
++CREATE INDEX IF NOT EXISTS idx_docs_phone    ON user_documents(phone);
++CREATE INDEX IF NOT EXISTS idx_docs_role     ON user_documents(role);
++CREATE INDEX IF NOT EXISTS idx_docs_type     ON user_documents(doc_type);
++CREATE INDEX IF NOT EXISTS idx_docs_status   ON user_documents(status);
++
++ALTER TABLE user_documents ENABLE ROW LEVEL SECURITY;
++DROP POLICY IF EXISTS "allow_anon_all_docs" ON user_documents;
++CREATE POLICY "allow_anon_all_docs" ON user_documents
++  FOR ALL TO anon, authenticated USING (true) WITH CHECK (true);
++
++
++-- ────────────────────────────────────────────────────────────
++-- 14. SUPPORT_TICKETS — تذاكر الدعم الفني
++-- ────────────────────────────────────────────────────────────
++CREATE TABLE IF NOT EXISTS support_tickets (
++  id           TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
++  phone        TEXT NOT NULL,
++  role         TEXT DEFAULT 'customer',
++  category     TEXT DEFAULT 'general',
++    -- general, payment, driver, order, account, technical
++  priority     TEXT DEFAULT 'normal',     -- low, normal, high, urgent
++  subject      TEXT NOT NULL,
++  description  TEXT NOT NULL,
++  status       TEXT DEFAULT 'open',       -- open, in_progress, resolved, closed
++  assigned_to  TEXT,                      -- admin phone
++  resolution   TEXT,
++  attachments  JSONB DEFAULT '[]',
++  created_at   TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
++  updated_at   TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
++  resolved_at  TIMESTAMP WITH TIME ZONE
++);
++
++CREATE INDEX IF NOT EXISTS idx_tickets_phone   ON support_tickets(phone);
++CREATE INDEX IF NOT EXISTS idx_tickets_status  ON support_tickets(status);
++CREATE INDEX IF NOT EXISTS idx_tickets_created ON support_tickets(created_at DESC);
++
++ALTER TABLE support_tickets ENABLE ROW LEVEL SECURITY;
++DROP POLICY IF EXISTS "allow_anon_all_tickets" ON support_tickets;
++CREATE POLICY "allow_anon_all_tickets" ON support_tickets
++  FOR ALL TO anon, authenticated USING (true) WITH CHECK (true);
++
++
++-- ────────────────────────────────────────────────────────────
++-- 15. ADMIN_LOGS — سجل أنشطة الأدمن
++-- ────────────────────────────────────────────────────────────
++CREATE TABLE IF NOT EXISTS admin_logs (
++  id           TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
++  admin_phone  TEXT NOT NULL,
++  action       TEXT NOT NULL,    -- approve_driver, reject_driver, ban_user, etc.
++  target_phone TEXT,
++  target_id    TEXT,
++  details      JSONB,
++  ip_address   TEXT,
++  created_at   TIMESTAMP WITH TIME ZONE DEFAULT NOW()
++);
++
++CREATE INDEX IF NOT EXISTS idx_admin_logs_admin   ON admin_logs(admin_phone);
++CREATE INDEX IF NOT EXISTS idx_admin_logs_action  ON admin_logs(action);
++CREATE INDEX IF NOT EXISTS idx_admin_logs_created ON admin_logs(created_at DESC);
++
++ALTER TABLE admin_logs ENABLE ROW LEVEL SECURITY;
++DROP POLICY IF EXISTS "allow_anon_all_admin_logs" ON admin_logs;
++CREATE POLICY "allow_anon_all_admin_logs" ON admin_logs
++  FOR ALL TO anon, authenticated USING (true) WITH CHECK (true);
++
++
++-- ────────────────────────────────────────────────────────────
++-- 16. RPC FUNCTIONS — وظائف API
++-- ────────────────────────────────────────────────────────────
++
++-- دالة: إحصائيات الأدمن الكاملة
++CREATE OR REPLACE FUNCTION get_admin_stats()
++RETURNS JSON LANGUAGE plpgsql SECURITY DEFINER AS $$
++DECLARE result JSON;
++BEGIN
++  SELECT json_build_object(
++    'total_users',       (SELECT COUNT(*) FROM accounts WHERE role = 'customer'),
++    'total_drivers',     (SELECT COUNT(*) FROM accounts WHERE role = 'driver' AND status = 'approved'),
++    'total_merchants',   (SELECT COUNT(*) FROM accounts WHERE role = 'merchant' AND status = 'approved'),
++    'pending_drivers',   (SELECT COUNT(*) FROM driver_applications WHERE status = 'pending'),
++    'pending_merchants', (SELECT COUNT(*) FROM merchant_applications WHERE status = 'pending'),
++    'today_rides',       (SELECT COUNT(*) FROM rides WHERE created_at::date = CURRENT_DATE),
++    'today_orders',      (SELECT COUNT(*) FROM orders WHERE created_at::date = CURRENT_DATE),
++    'today_revenue',     (SELECT COALESCE(SUM(fare),0) FROM rides WHERE status='completed' AND completed_at::date = CURRENT_DATE),
++    'total_wallets',     (SELECT COALESCE(SUM(balance),0) FROM wallets),
++    'online_drivers',    (SELECT COUNT(*) FROM driver_locations WHERE is_online = true)
++  ) INTO result;
++  RETURN result;
++END; $$;
++
++-- دالة: إحصائيات السائق
++CREATE OR REPLACE FUNCTION get_driver_stats(p_phone TEXT)
++RETURNS JSON LANGUAGE plpgsql SECURITY DEFINER AS $$
++DECLARE result JSON;
++BEGIN
++  SELECT json_build_object(
++    'total_trips',    (SELECT COUNT(*) FROM rides WHERE driver_phone = p_phone AND status = 'completed'),
++    'total_orders',   (SELECT COUNT(*) FROM orders WHERE driver_phone = p_phone AND status = 'delivered'),
++    'total_earnings', (SELECT COALESCE(SUM(net_earn),0) FROM driver_earnings WHERE driver_phone = p_phone),
++    'wallet_balance', (SELECT COALESCE(balance,0) FROM wallets WHERE phone = p_phone),
++    'total_points',   (SELECT COALESCE(total_points,0) FROM points WHERE phone = p_phone),
++    'rating_avg',     (SELECT COALESCE(AVG(rating),0) FROM ratings WHERE driver_phone = p_phone),
++    'rating_count',   (SELECT COUNT(*) FROM ratings WHERE driver_phone = p_phone)
++  ) INTO result;
++  RETURN result;
++END; $$;
++
++-- دالة: إحصائيات التاجر
++CREATE OR REPLACE FUNCTION get_merchant_stats(p_phone TEXT)
++RETURNS JSON LANGUAGE plpgsql SECURITY DEFINER AS $$
++DECLARE result JSON;
++BEGIN
++  SELECT json_build_object(
++    'total_orders',   (SELECT COUNT(*) FROM orders WHERE store_phone = p_phone),
++    'today_orders',   (SELECT COUNT(*) FROM orders WHERE store_phone = p_phone AND created_at::date = CURRENT_DATE),
++    'total_revenue',  (SELECT COALESCE(SUM(total),0) FROM orders WHERE store_phone = p_phone AND status = 'delivered'),
++    'today_revenue',  (SELECT COALESCE(SUM(total),0) FROM orders WHERE store_phone = p_phone AND status = 'delivered' AND delivered_at::date = CURRENT_DATE),
++    'wallet_balance', (SELECT COALESCE(balance,0) FROM wallets WHERE phone = p_phone),
++    'pending_orders', (SELECT COUNT(*) FROM orders WHERE store_phone = p_phone AND status IN ('pending','preparing'))
++  ) INTO result;
++  RETURN result;
++END; $$;
++
++-- دالة: تحديث إحصائيات السائق عند اكتمال رحلة
++CREATE OR REPLACE FUNCTION update_driver_stats_on_complete(p_phone TEXT)
++RETURNS void LANGUAGE plpgsql SECURITY DEFINER AS $$
++BEGIN
++  UPDATE drivers SET
++    total_trips    = (SELECT COUNT(*) FROM rides WHERE driver_phone = p_phone AND status = 'completed') +
++                     (SELECT COUNT(*) FROM orders WHERE driver_phone = p_phone AND status = 'delivered'),
++    total_earnings = (SELECT COALESCE(SUM(net_earn),0) FROM driver_earnings WHERE driver_phone = p_phone),
++    rating_avg     = (SELECT COALESCE(AVG(rating)::DECIMAL(3,2), 0) FROM ratings WHERE driver_phone = p_phone),
++    rating_count   = (SELECT COUNT(*) FROM ratings WHERE driver_phone = p_phone),
++    updated_at     = NOW()
++  WHERE phone = p_phone;
++END; $$;
++
++-- دالة: البحث عن السائقين المتاحين قريباً (للخريطة)
++CREATE OR REPLACE FUNCTION find_nearby_drivers(
++  p_lat  DOUBLE PRECISION,
++  p_lng  DOUBLE PRECISION,
++  p_km   DOUBLE PRECISION DEFAULT 5
++)
++RETURNS TABLE (
++  driver_phone TEXT,
++  driver_name  TEXT,
++  lat          DOUBLE PRECISION,
++  lng          DOUBLE PRECISION,
++  heading      DOUBLE PRECISION,
++  distance_km  DOUBLE PRECISION
++) LANGUAGE plpgsql SECURITY DEFINER AS $$
++BEGIN
++  RETURN QUERY
++  SELECT
++    dl.driver_phone,
++    dl.driver_name,
++    dl.lat,
++    dl.lng,
++    dl.heading,
++    ROUND(
++      (6371 * acos(
++        cos(radians(p_lat)) * cos(radians(dl.lat)) *
++        cos(radians(dl.lng) - radians(p_lng)) +
++        sin(radians(p_lat)) * sin(radians(dl.lat))
++      ))::numeric, 2
++    )::DOUBLE PRECISION AS distance_km
++  FROM driver_locations dl
++  WHERE dl.is_online = true
++    AND dl.ride_id IS NULL
++    AND dl.updated_at > NOW() - INTERVAL '2 minutes'
++    AND (
++      6371 * acos(
++        cos(radians(p_lat)) * cos(radians(dl.lat)) *
++        cos(radians(dl.lng) - radians(p_lng)) +
++        sin(radians(p_lat)) * sin(radians(dl.lat))
++      )
++    ) <= p_km
++  ORDER BY distance_km ASC
++  LIMIT 20;
++END; $$;
++
++-- دالة: التحقق من كود الخصم
++CREATE OR REPLACE FUNCTION validate_promo(p_code TEXT, p_phone TEXT, p_amount DECIMAL)
++RETURNS JSON LANGUAGE plpgsql SECURITY DEFINER AS $$
++DECLARE
++  promo promo_codes%ROWTYPE;
++  used  INT;
++  discount DECIMAL;
++BEGIN
++  SELECT * INTO promo FROM promo_codes WHERE code = UPPER(p_code) AND is_active = true;
++  IF NOT FOUND THEN
++    RETURN json_build_object('valid', false, 'error', 'الكود غير صحيح');
++  END IF;
++  IF promo.valid_to IS NOT NULL AND promo.valid_to < NOW() THEN
++    RETURN json_build_object('valid', false, 'error', 'انتهت صلاحية الكود');
++  END IF;
++  IF promo.used_count >= promo.usage_limit THEN
++    RETURN json_build_object('valid', false, 'error', 'تم استنفاد الكود');
++  END IF;
++  SELECT COUNT(*) INTO used FROM promo_usage WHERE code = p_code AND phone = p_phone;
++  IF used > 0 THEN
++    RETURN json_build_object('valid', false, 'error', 'استخدمت هذا الكود مسبقاً');
++  END IF;
++  IF p_amount < promo.min_order THEN
++    RETURN json_build_object('valid', false, 'error', 'الحد الأدنى للطلب ' || promo.min_order || ' ج.م');
++  END IF;
++  IF promo.discount_type = 'percent' THEN
++    discount := p_amount * promo.discount_value / 100;
++    IF promo.max_discount IS NOT NULL THEN
++      discount := LEAST(discount, promo.max_discount);
++    END IF;
++  ELSE
++    discount := promo.discount_value;
++  END IF;
++  RETURN json_build_object(
++    'valid',        true,
++    'discount',     discount,
++    'discount_pct', promo.discount_type = 'percent',
++    'description',  promo.description
++  );
++END; $$;
++
++-- دالة: إنشاء إشعار
++CREATE OR REPLACE FUNCTION send_notification(
++  p_phone TEXT, p_role TEXT, p_type TEXT, p_title TEXT, p_body TEXT, p_data JSONB DEFAULT NULL
++)
++RETURNS void LANGUAGE plpgsql SECURITY DEFINER AS $$
++BEGIN
++  INSERT INTO notifications (to_phone, role, type, title, body, data)
++  VALUES (p_phone, p_role, p_type, p_title, p_body, p_data);
++END; $$;
++
++
++-- ────────────────────────────────────────────────────────────
++-- 17. RIDES & ORDERS — تحسينات على الجداول الموجودة
++-- ────────────────────────────────────────────────────────────
++ALTER TABLE rides ADD COLUMN IF NOT EXISTS from_lat      DOUBLE PRECISION;
++ALTER TABLE rides ADD COLUMN IF NOT EXISTS from_lng      DOUBLE PRECISION;
++ALTER TABLE rides ADD COLUMN IF NOT EXISTS to_lat        DOUBLE PRECISION;
++ALTER TABLE rides ADD COLUMN IF NOT EXISTS to_lng        DOUBLE PRECISION;
++ALTER TABLE rides ADD COLUMN IF NOT EXISTS distance_km   DECIMAL(8,2);
++ALTER TABLE rides ADD COLUMN IF NOT EXISTS promo_code    TEXT;
++ALTER TABLE rides ADD COLUMN IF NOT EXISTS discount_amt  DECIMAL(8,2) DEFAULT 0;
++ALTER TABLE rides ADD COLUMN IF NOT EXISTS cancel_reason TEXT;
++ALTER TABLE rides ADD COLUMN IF NOT EXISTS rated         BOOLEAN DEFAULT false;
++
++ALTER TABLE orders ADD COLUMN IF NOT EXISTS promo_code   TEXT;
++ALTER TABLE orders ADD COLUMN IF NOT EXISTS discount_amt DECIMAL(8,2) DEFAULT 0;
++ALTER TABLE orders ADD COLUMN IF NOT EXISTS cancel_reason TEXT;
++ALTER TABLE orders ADD COLUMN IF NOT EXISTS store_phone  TEXT;
++ALTER TABLE orders ADD COLUMN IF NOT EXISTS rated        BOOLEAN DEFAULT false;
++ALTER TABLE orders ADD COLUMN IF NOT EXISTS delivery_lat DOUBLE PRECISION;
++ALTER TABLE orders ADD COLUMN IF NOT EXISTS delivery_lng DOUBLE PRECISION;
++
++
++-- ────────────────────────────────────────────────────────────
++-- 18. REALTIME — تفعيل Realtime على الجداول الجديدة
++-- ────────────────────────────────────────────────────────────
++ALTER PUBLICATION supabase_realtime ADD TABLE notifications;
++ALTER PUBLICATION supabase_realtime ADD TABLE service_requests;
++
++
++-- ────────────────────────────────────────────────────────────
++-- ✅ DONE
++-- ────────────────────────────────────────────────────────────
++SELECT 'جاهز! تم إنشاء ' ||
++  (SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = 'public')::TEXT ||
++  ' جدول في قاعدة البيانات' AS status;
+-- 
+2.43.0
+
