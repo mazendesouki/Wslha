@@ -699,12 +699,13 @@ import PageHero from '../components/PageHero.astro';
     document.getElementById('driver-phone-bar').textContent = driver.phone || '';
     // Load approval status and initial account data
     loadApprovalStatus();
+    loadTodayStats();
   }
 
   /* ── Stats ── */
   let todayStats = { trips: 0, earn: 0 };
   try {
-    const key = 'wslha_driver_stats_' + new Date().toDateString();
+    const key = 'wslha_driver_stats_' + (driver?.phone || '') + '_' + new Date().toDateString();
     todayStats = JSON.parse(localStorage.getItem(key) || '{"trips":0,"earn":0}');
   } catch {}
   function renderStats() {
@@ -1207,7 +1208,7 @@ import PageHero from '../components/PageHero.astro';
       const fee = currentOrder.delivery_fee || 0;
       const orderId = currentOrder.id;
       try {
-        const key = 'wslha_driver_stats_' + new Date().toDateString();
+        const key = 'wslha_driver_stats_' + (driver?.phone || '') + '_' + new Date().toDateString();
         todayStats.trips += 1;
         todayStats.earn  += fee;
         localStorage.setItem(key, JSON.stringify(todayStats));
@@ -1228,7 +1229,7 @@ import PageHero from '../components/PageHero.astro';
     const fare   = currentRide.fare;
     const rideId = currentRide.id;
     try {
-      const key = 'wslha_driver_stats_' + new Date().toDateString();
+      const key = 'wslha_driver_stats_' + (driver?.phone || '') + '_' + new Date().toDateString();
       todayStats.trips += 1;
       todayStats.earn  += fare || 0;
       localStorage.setItem(key, JSON.stringify(todayStats));
