@@ -1089,6 +1089,12 @@ import Layout from '../components/layout.astro';
       SB_URL + '/rest/v1/accounts?' + phoneOrFilter(phone) + '&select=*&limit=1');
     return Array.isArray(data) ? (data[0] || null) : null;
   }
+  async function fetchWallet(phone) {
+    const intl  = intlPhone(phone);
+    const local = localPhone(phone);
+    const data  = await sbFetch(SB_URL + '/rest/v1/wallets?or=(phone.eq.' + encodeURIComponent(intl) + ',phone.eq.' + encodeURIComponent(local) + ')&select=balance&limit=1');
+    return Array.isArray(data) && data[0] ? data[0] : null;
+  }
   async function fetchDriverApp(phone) {
     const data = await sbFetch(
       SB_URL + '/rest/v1/driver_applications?' + phoneOrFilter(phone) +
@@ -1768,7 +1774,7 @@ import Layout from '../components/layout.astro';
     showContent(lsAcc, mergeOrders([], lsOrders), [], null, null);
 
     var role = user.role || 'customer';
-    var fetches = [fetchAccount(phone), fetchOrders(phone), fetchRides(phone)];
+    var fetches = [fetchAccount(phone), fetchOrders(phone), fetchRides(phone), fetchWallet(phone)];
     if (role === 'driver') fetches.push(fetchDriverApp(phone));
 
     Promise.all(fetches)

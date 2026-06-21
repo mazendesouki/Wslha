@@ -7,7 +7,7 @@
     "start": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "deploy": "astro build && firebase deploy --only hosting",
+    "deploy": "astro build && vercel --prod",
     "icons": "node scripts/gen-brand-icons.mjs",
     "assets": "npx @capacitor/assets generate --iconBackgroundColor #3B6EF8 --iconBackgroundColorDark #2952D9 --splashBackgroundColor #3B6EF8 --splashBackgroundColorDark #2952D9",
     "app:sync": "astro build && npx cap sync",

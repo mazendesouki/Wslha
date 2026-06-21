@@ -1,4 +1,4 @@
-name: Deploy to Firebase Hosting
+name: Deploy to Vercel
 
 on:
   push:
@@ -24,10 +24,7 @@ jobs:
       - name: Build
         run: npm run build
 
-      - name: Install Firebase Tools
-        run: npm install -g firebase-tools@13
-
-      - name: Deploy to Firebase Hosting
-        run: firebase deploy --only hosting --project wslha-941c8 --non-interactive --token "$FIREBASE_TOKEN"
+      - name: Deploy to Vercel
+        run: npx vercel --prod --token "$VERCEL_TOKEN"
         env:
-          FIREBASE_TOKEN: ${{ secrets.FIREBASE }}
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}

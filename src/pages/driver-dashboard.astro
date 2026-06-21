@@ -390,6 +390,11 @@ import PageHero from '../components/PageHero.astro';
   .rating-item__stars { font-size: var(--text-sm); }
   .rating-item__date  { font-size: 10px; color: var(--color-text-faint); }
   .rating-item__comment { font-size: var(--text-xs); color: var(--color-text-muted); margin-top: 2px; }
+  .rating-item__reply { margin-top:6px; padding:6px 10px; background:#eff6ff; border-radius:8px; font-size:var(--text-xs); color:#1e40af; border-right:3px solid #3b82f6; }
+  .rating-item__reply-label { font-size:10px; color:#64748b; margin-bottom:2px; }
+  .rating-reply-form { margin-top:6px; display:flex; gap:6px; }
+  .rating-reply-input { flex:1; padding:6px 10px; border:1.5px solid var(--color-border); border-radius:8px; font-size:var(--text-xs); resize:none; direction:rtl; font-family:var(--font-body); background:var(--color-bg); color:var(--color-text); }
+  .rating-reply-send { padding:6px 14px; background:var(--color-primary); color:#fff; border:none; border-radius:8px; font-size:var(--text-xs); cursor:pointer; }
 
   /* ── Activity log ── */
   .activity-item {
@@ -459,7 +464,7 @@ import PageHero from '../components/PageHero.astro';
       <div class="stats-strip">
         <div class="stat-card"><div class="stat-card__val" id="stat-trips">0</div><div class="stat-card__key">رحلات اليوم</div></div>
         <div class="stat-card"><div class="stat-card__val" id="stat-earn">0</div><div class="stat-card__key">ج.م اليوم</div></div>
-        <div class="stat-card"><div class="stat-card__val" id="stat-rating">⭐</div><div class="stat-card__key">التقييم</div></div>
+        <div class="stat-card"><div class="stat-card__val" id="stat-rating">—</div><div class="stat-card__key">⭐ التقييم</div></div>
       </div>
 
       <!-- Tabs -->
@@ -1336,7 +1341,7 @@ import PageHero from '../components/PageHero.astro';
       fetch(`${SB_URL}/rest/v1/wallet_transactions?phone=eq.${phone}&select=amount,type,note,created_at&order=created_at.desc&limit=10`, { headers: SB_H }),
       fetch(`${SB_URL}/rest/v1/points?phone=eq.${phone}&select=total_points`, { headers: SB_H }),
       fetch(`${SB_URL}/rest/v1/point_transactions?phone=eq.${phone}&select=points,type,created_at&order=created_at.desc&limit=10`, { headers: SB_H }),
-      fetch(`${SB_URL}/rest/v1/ratings?driver_phone=eq.${driver.phone}&select=rating,comment,service_type,created_at&order=created_at.desc&limit=10`, { headers: SB_H }),
+      fetch(`${SB_URL}/rest/v1/ratings?driver_phone=eq.${driver.phone}&select=id,rating,comment,service_type,created_at,driver_reply&order=created_at.desc&limit=20`, { headers: SB_H }),
     ]);
 
     // Wallet
@@ -1389,11 +1394,16 @@ import PageHero from '../components/PageHero.astro';
         document.getElementById('rating-avg').textContent   = avg.toFixed(1);
         document.getElementById('rating-stars').textContent = stars;
         document.getElementById('rating-count').textContent = `${rts.length} تقييم`;
-        document.getElementById('stat-rating').textContent  = `⭐ ${avg.toFixed(1)}`;
+        document.getElementById('stat-rating').textContent  = avg.toFixed(1);
         document.getElementById('ratings-list').innerHTML = rts.map(r => {
           const d = new Date(r.created_at).toLocaleDateString('ar-EG', { month: 'short', day: 'numeric' });
           const s = '⭐'.repeat(r.rating) + '☆'.repeat(5 - r.rating);
-          return `<div class="rating-item"><div class="rating-item__top"><span class="rating-item__stars">${s}</span><span class="rating-item__date">${d}</span></div>${r.comment ? `<div class="rating-item__comment">"${r.comment}"</div>` : ''}</div>`;
+          const typeIcon = r.service_type === 'delivery' ? '🛵' : r.service_type === 'airport' ? '✈️' : '🚗';
+          const commentHtml = r.comment ? `<div class="rating-item__comment">"${r.comment}"</div>` : '';
+          const replyHtml = r.driver_reply
+            ? `<div class="rating-item__reply"><div class="rating-item__reply-label">ردك:</div>${r.driver_reply}</div>`
+            : `<div class="rating-reply-form"><textarea class="rating-reply-input" rows="1" placeholder="اكتب ردك..."></textarea><button class="rating-reply-send" onclick="sendReply('${r.id}',this)">إرسال</button></div>`;
+          return `<div class="rating-item" id="rt-${r.id}"><div class="rating-item__top"><span class="rating-item__stars">${s}</span><span class="rating-item__date">${typeIcon} ${d}</span></div>${commentHtml}${replyHtml}</div>`;
         }).join('');
       }
     } catch {}
