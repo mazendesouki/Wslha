@@ -35,3 +35,8 @@ dist/
 *.bundle
 *.patch
 apply-all.ps1
+
+.firebase/
+*.bundle
+*.patch
+apply-all.ps1
