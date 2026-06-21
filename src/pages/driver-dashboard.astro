@@ -847,12 +847,44 @@ import PageHero from '../components/PageHero.astro';
     document.getElementById('state-active').classList.toggle('visible',  name === 'active');
   }
 
+  /* ── Notification helpers ── */
+  function playAlert() {
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      [[880,0],[660,0.18],[880,0.36]].forEach(([freq,t]) => {
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.connect(g); g.connect(ctx.destination);
+        o.type = 'sine'; o.frequency.value = freq;
+        g.gain.setValueAtTime(0.5, ctx.currentTime + t);
+        g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + t + 0.17);
+        o.start(ctx.currentTime + t); o.stop(ctx.currentTime + t + 0.18);
+      });
+    } catch {}
+    if (navigator.vibrate) navigator.vibrate([150, 80, 150, 80, 300]);
+  }
+
+  function pushNotify(title, body) {
+    if (typeof Notification === 'undefined' || Notification.permission !== 'granted') return;
+    try {
+      const n = new Notification(title, { body, icon: '/favicon.ico', tag: 'wslha-req', requireInteraction: true });
+      n.onclick = () => { window.focus(); n.close(); };
+    } catch {}
+  }
+
+  async function ensureNotifyPermission() {
+    if (typeof Notification !== 'undefined' && Notification.permission === 'default') {
+      await Notification.requestPermission();
+    }
+  }
+
   function hideRideRequest() {
     document.getElementById('ride-request').classList.remove('visible');
     if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
   }
 
   function showRideRequest(ride) {
+    playAlert();
+    pushNotify('🚗 طلب رحلة جديد!', `${ride.from_area || ''} ← ${ride.to_area || ''} — ${ride.fare || ''} ج.م`);
     pendingRide = ride;
     document.getElementById('req-customer-name').textContent = (ride.customer_name || 'راكب') + ' — راكب جديد';
     document.getElementById('req-from').textContent = ride.from_area;
