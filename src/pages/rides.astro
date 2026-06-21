@@ -2152,7 +2152,7 @@ import { POPULAR_PLACES, PLACES, PLACE_CATEGORIES, CATEGORY_COLORS } from '../da
       const _ru = JSON.parse(localStorage.getItem('wslha_user') || '{}');
       const _rk = _ru.phone ? 'wslha_orders_' + _ru.phone : 'wslha_orders';
       const orders = JSON.parse(localStorage.getItem(_rk) || '[]');
-      orders.unshift({ id: ride?.id || ('R'+Date.now()), type:'ride', from:from.name, to:to.name, name, phone, passengers:pax, payment:pay, fare, eta, distance: roadKm.toFixed(1), status:'pending', createdAt:new Date().toISOString() });
+      orders.unshift({ id: ride?.id || ('R'+Date.now()), type:'ride', icon:'🚗', route:from.name+' → '+to.name, price:fare+' ج.م', from:from.name, to:to.name, name, phone, passengers:pax, payment:pay, fare, eta, distance: roadKm.toFixed(1), status:'pending', createdAt:new Date().toISOString() });
       localStorage.setItem(_rk, JSON.stringify(orders));
     } catch {}
 
@@ -2329,7 +2329,7 @@ import { POPULAR_PLACES, PLACES, PLACE_CATEGORIES, CATEGORY_COLORS } from '../da
       const _au = JSON.parse(localStorage.getItem('wslha_user') || '{}');
       const _ak = _au.phone ? 'wslha_orders_' + _au.phone : 'wslha_orders';
       const orders = JSON.parse(localStorage.getItem(_ak) || '[]');
-      orders.unshift({ id: ride?.id || ('R'+Date.now()), type:'airport', from:fromArea.name, to:airport.name, name, phone, passengers:pax, payment:pay, fare:airport.flatFare, eta:airport.driveMins, status:'pending', createdAt:new Date().toISOString() });
+      orders.unshift({ id: ride?.id || ('R'+Date.now()), type:'airport', icon:'✈️', route:fromArea.name+' → '+airport.name, price:airport.flatFare+' ج.م', from:fromArea.name, to:airport.name, name, phone, passengers:pax, payment:pay, fare:airport.flatFare, eta:airport.driveMins, status:'pending', createdAt:new Date().toISOString() });
       localStorage.setItem(_ak, JSON.stringify(orders));
     } catch {}
 
