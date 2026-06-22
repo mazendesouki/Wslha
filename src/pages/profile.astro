@@ -1213,9 +1213,11 @@ import Layout from '../components/layout.astro';
       const d = new Date(o.created_at || o.date || 0);
       return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
     });
-    const totalSpent = orders
-      .filter(o => o.status === 'delivered' || o.status === 'completed')
-      .reduce((s, o) => s + (Number(o.total) || 0), 0);
+    const totalSpent =
+      orders.filter(o => o.status === 'delivered' || o.status === 'completed')
+            .reduce((s, o) => s + (Number(o.total) || 0), 0)
+      + rides.filter(r => r.status === 'completed')
+             .reduce((s, r) => s + (Number(r.fare) || 0), 0);
 
     $('stat-orders').textContent = orders.length;
     $('stat-spent').textContent  = fmt(Math.round(totalSpent)) + ' ج.م';

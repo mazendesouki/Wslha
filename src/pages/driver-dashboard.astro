@@ -1215,12 +1215,27 @@ import PageHero from '../components/PageHero.astro';
         renderStats();
       } catch {}
       await recordCompletion('delivery', orderId, fee);
+      // Credit merchant wallet with order subtotal (order total minus delivery fee)
+      if (storeId) {
+        try {
+          const storeData = await fetch(`${SB_URL}/rest/v1/stores?id=eq.${storeId}&select=owner_phone`, { headers: SB_H }).then(r => r.json());
+          const mPhone = storeData?.[0]?.owner_phone;
+          if (mPhone) {
+            const subtotal = Math.max(0, (currentOrder.subtotal || currentOrder.total || 0) - fee);
+            await Promise.allSettled([
+              fetch(`${SB_URL}/rest/v1/rpc/add_wallet_balance`, { method: 'POST', headers: SB_H, body: JSON.stringify({ p_phone: mPhone, p_amount: subtotal }) }),
+              fetch(`${SB_URL}/rest/v1/wallet_transactions`, { method: 'POST', headers: { ...SB_H, Prefer: 'return=minimal' }, body: JSON.stringify({ phone: mPhone, amount: subtotal, type: 'earning', reference_id: orderId, note: `أرباح طلب #${currentOrder.code || orderId}`, created_at: new Date().toISOString() }) }),
+            ]);
+          }
+        } catch {}
+      }
       currentOrder = null;
       await upsertLocation(true);
       map = null; driverMarker = null;
       resetActionButtons();
       showState('waiting');
       showToast(`تم توصيل الطلب! أرباح +${fee} ج.م 🎉`);
+      setTimeout(() => loadActivityLog(), 600);
       return;
     }
 
@@ -1235,13 +1250,14 @@ import PageHero from '../components/PageHero.astro';
       localStorage.setItem(key, JSON.stringify(todayStats));
       renderStats();
     } catch {}
-    await recordCompletion('ride', rideId, fare || 0);
+    await recordCompletion(rideType, rideId, fare || 0);
     currentRide = null;
     await upsertLocation(true);
     map = null; driverMarker = null;
     resetActionButtons();
     showState('waiting');
     showToast(`رحلة منتهية! أرباح +${fare} ج.م 🎉`);
+    setTimeout(() => loadActivityLog(), 600);
   });
 
   /* ── Navigate button: open Google Maps ── */
@@ -1492,11 +1508,11 @@ import PageHero from '../components/PageHero.astro';
     const typeLabel = type === 'delivery' ? 'توصيل' : type === 'airport' ? 'مطار' : 'رحلة';
 
     await Promise.allSettled([
-      // Upsert driver wallet
-      fetch(`${SB_URL}/rest/v1/wallets`, {
+      // Accumulate driver wallet balance via RPC (prevents overwrite)
+      fetch(`${SB_URL}/rest/v1/rpc/add_wallet_balance`, {
         method: 'POST',
-        headers: { ...SB_H, Prefer: 'resolution=merge-duplicates,return=minimal' },
-        body: JSON.stringify({ phone, balance: driverEarn, updated_at: now }),
+        headers: { ...SB_H },
+        body: JSON.stringify({ p_phone: phone, p_amount: driverEarn }),
       }),
       // Driver earning transaction
       fetch(`${SB_URL}/rest/v1/wallet_transactions`, {
@@ -1516,11 +1532,11 @@ import PageHero from '../components/PageHero.astro';
         headers: { ...SB_H, Prefer: 'return=minimal' },
         body: JSON.stringify({ id: ptId, phone, points: pointsEarned, type, reference_id: referenceId, created_at: now }),
       }),
-      // Upsert points total
-      fetch(`${SB_URL}/rest/v1/points`, {
+      // Accumulate points total via RPC (prevents overwrite)
+      fetch(`${SB_URL}/rest/v1/rpc/add_points`, {
         method: 'POST',
-        headers: { ...SB_H, Prefer: 'resolution=merge-duplicates,return=minimal' },
-        body: JSON.stringify({ phone, total_points: pointsEarned, updated_at: now }),
+        headers: { ...SB_H },
+        body: JSON.stringify({ p_phone: phone, p_amount: pointsEarned }),
       }),
     ]);
   }
