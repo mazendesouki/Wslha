@@ -808,7 +808,7 @@ import { AIRPORTS, priceForDistance, VEHICLE_TYPES } from '../data/airports';
     form.addEventListener('input', render);
     form.addEventListener('change', render);
 
-    form.addEventListener('submit', (e) => {
+    form.addEventListener('submit', async (e) => {
       e.preventDefault();
       const c = calc();
       const fail = (msg: string) => { errBox.textContent = msg; errBox.classList.add('is-visible'); errBox.scrollIntoView({ block: 'center', behavior: 'smooth' }); };
