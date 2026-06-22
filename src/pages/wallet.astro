@@ -3,442 +3,266 @@ import Layout from '../components/layout.astro';
 ---
 
 <style>
-  /* ── page shell ── */
   .wallet-page {
-    max-width: 480px;
-    margin: 0 auto;
-    min-height: 100vh;
-    background: #f1f5f9;
-    padding-bottom: 90px;
-    font-family: var(--font-body);
+    max-width: 480px; margin: 0 auto;
+    min-height: 100vh; background: #f5f5f5;
+    padding-bottom: 90px; font-family: var(--font-body);
   }
-
-  /* ── top bar ── */
-  .wallet-topbar {
+  .w-topbar {
     display: flex; align-items: center; justify-content: space-between;
-    padding: var(--sp-4) var(--sp-5);
-    background: #fff;
-    border-bottom: 1px solid var(--color-border);
-    position: sticky; top: 0; z-index: 50;
+    padding: 16px 18px; background: #fff;
+    border-bottom: 1px solid #eee; position: sticky; top: 0; z-index: 50;
   }
-  .wallet-topbar__title { font-size: var(--text-base); font-weight: var(--weight-black); }
-  .topbar-back {
-    display: flex; align-items: center; justify-content: center;
+  .w-topbar__back {
     width: 36px; height: 36px; border-radius: 50%;
-    border: none; background: #f1f5f9; cursor: pointer;
-    font-size: 1.1rem; color: var(--color-text-muted);
-    transition: background 0.2s;
+    border: none; background: #f5f5f5; cursor: pointer;
+    font-size: 1.1rem; color: #6b7280; display: flex; align-items: center; justify-content: center;
   }
-  .topbar-back:hover { background: #e2e8f0; }
-
-  /* ── hero balance card ── */
-  .balance-hero {
-    background: linear-gradient(135deg, #1d4ed8 0%, #3b82f6 60%, #06b6d4 100%);
-    margin: var(--sp-4);
-    border-radius: 24px;
-    padding: var(--sp-6) var(--sp-6) var(--sp-5);
-    color: #fff;
-    box-shadow: 0 8px 32px rgba(29,78,216,.35);
-    position: relative;
-    overflow: hidden;
+  .w-topbar__title { font-size: 1rem; font-weight: 900; color: #111; }
+  .balance-card {
+    background: #fff; margin: 14px; border-radius: 16px;
+    padding: 22px 20px; box-shadow: 0 2px 12px rgba(0,0,0,.07);
   }
-  .balance-hero::before {
-    content: ''; position: absolute;
-    width: 220px; height: 220px; border-radius: 50%;
-    background: rgba(255,255,255,.08);
-    top: -60px; left: -60px; pointer-events: none;
+  .balance-card__top {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 16px;
   }
-  .balance-hero::after {
-    content: ''; position: absolute;
-    width: 160px; height: 160px; border-radius: 50%;
-    background: rgba(255,255,255,.06);
-    bottom: -50px; right: -30px; pointer-events: none;
+  .wallet-icon {
+    width: 48px; height: 48px; border-radius: 12px;
+    background: #1a2340; display: flex; align-items: center; justify-content: center;
+    font-size: 1.4rem;
   }
-  .balance-label { font-size: var(--text-xs); opacity: .85; margin-bottom: var(--sp-1); }
-  .balance-amount {
-    font-size: 3rem; font-weight: 900; line-height: 1.1;
-    display: flex; align-items: baseline; gap: var(--sp-2);
+  .balance-label { font-size: .78rem; color: #9ca3af; margin-bottom: 4px; text-align: right; }
+  .balance-amount { font-size: 1.6rem; font-weight: 900; color: #111; text-align: right; direction: ltr; }
+  .w-action-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 16px; }
+  .w-action-btn {
+    padding: 13px; border: none; border-radius: 12px;
+    font-family: var(--font-body); font-size: .95rem; font-weight: 900;
+    cursor: pointer; transition: opacity .15s;
+    background: #1a2340; color: #fff;
   }
-  .balance-currency { font-size: var(--text-base); font-weight: var(--weight-bold); opacity: .85; }
-  .balance-card-row {
-    display: flex; align-items: center; gap: var(--sp-3);
-    margin-top: var(--sp-4); padding-top: var(--sp-4);
-    border-top: 1px solid rgba(255,255,255,.2);
+  .w-action-btn:hover { opacity: .85; }
+  .w-action-btn.transfer { background: #374151; }
+  .connected-badge {
+    display: flex; align-items: center; gap: 6px;
+    font-size: .78rem; color: #16a34a; font-weight: 700; margin-top: 14px;
   }
-  .balance-card-num { font-size: var(--text-xs); letter-spacing: 2px; opacity: .9; flex: 1; }
-  .balance-card-badge {
-    font-size: 10px; font-weight: var(--weight-bold);
-    background: rgba(255,255,255,.2); border-radius: 99px;
-    padding: 2px 10px; white-space: nowrap;
+  .connected-dot { width: 8px; height: 8px; border-radius: 50%; background: #16a34a; }
+  .tx-section { margin: 0 14px; }
+  .tx-section__header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 0 10px; font-size: .95rem; font-weight: 900; color: #111;
   }
-
-  /* ── hero action buttons ── */
-  .hero-actions {
-    display: grid; grid-template-columns: repeat(4, 1fr);
-    gap: var(--sp-2); margin-top: var(--sp-5);
-    position: relative; z-index: 1;
-  }
-  .hero-action {
-    display: flex; flex-direction: column; align-items: center; gap: 4px;
-    background: rgba(255,255,255,.15); border: none; border-radius: var(--radius-lg);
-    padding: var(--sp-3) var(--sp-2); cursor: pointer;
-    color: #fff; font-family: var(--font-body);
-    transition: background 0.2s;
-  }
-  .hero-action:hover { background: rgba(255,255,255,.25); }
-  .hero-action__icon { font-size: 1.3rem; }
-  .hero-action__lbl { font-size: 11px; font-weight: var(--weight-bold); white-space: nowrap; }
-
-  /* ── stats strip ── */
-  .stats-strip {
-    display: grid; grid-template-columns: repeat(3,1fr);
-    gap: var(--sp-3); margin: 0 var(--sp-4) var(--sp-4);
-  }
-  .stat-box {
-    background: #fff; border-radius: var(--radius-xl);
-    padding: var(--sp-4) var(--sp-3); text-align: center;
-    box-shadow: 0 1px 8px rgba(0,0,0,.06);
-  }
-  .stat-box__val { font-size: var(--text-xl); font-weight: var(--weight-black); color: var(--color-primary); line-height: 1; }
-  .stat-box__lbl { font-size: 10px; color: var(--color-text-faint); margin-top: 4px; }
-
-  /* ── tab bar ── */
-  .wallet-tabs {
-    display: flex; background: #fff;
-    margin: 0 var(--sp-4) var(--sp-4);
-    border-radius: var(--radius-xl);
-    padding: var(--sp-1);
-    box-shadow: 0 1px 8px rgba(0,0,0,.06);
-    gap: var(--sp-1);
-  }
-  .wallet-tab {
-    flex: 1; padding: var(--sp-2) var(--sp-3);
-    border: none; border-radius: var(--radius-lg);
-    background: none; cursor: pointer;
-    font-family: var(--font-body); font-size: var(--text-xs); font-weight: var(--weight-bold);
-    color: var(--color-text-muted); display: flex; align-items: center; justify-content: center; gap: 4px;
-    transition: all 0.2s;
-  }
-  .wallet-tab.active { background: var(--color-primary); color: #fff; }
-
-  /* ── tab panels ── */
-  .tab-panel { display: none; flex-direction: column; gap: var(--sp-4); padding: 0 var(--sp-4); }
-  .tab-panel.active { display: flex; }
-
-  /* ── section card ── */
-  .w-card {
-    background: #fff; border-radius: var(--radius-xl);
-    padding: var(--sp-5); box-shadow: 0 1px 8px rgba(0,0,0,.06);
-  }
-  .w-card__title { font-weight: var(--weight-black); font-size: var(--text-sm); margin-bottom: var(--sp-4); display: flex; align-items: center; gap: var(--sp-2); }
-
-  /* ── quick amounts ── */
-  .quick-amounts { display: flex; gap: var(--sp-2); margin-bottom: var(--sp-4); flex-wrap: wrap; }
-  .quick-amt {
-    flex: 1; min-width: 70px; padding: var(--sp-3);
-    border: 2px solid var(--color-border); border-radius: var(--radius-lg);
-    background: none; cursor: pointer; font-family: var(--font-body);
-    font-size: var(--text-sm); font-weight: var(--weight-bold); color: var(--color-text-muted);
-    transition: all 0.2s; text-align: center;
-  }
-  .quick-amt.selected { border-color: var(--color-primary); background: var(--color-primary-light); color: var(--color-primary); }
-
-  /* ── input group ── */
-  .input-group { margin-bottom: var(--sp-4); }
-  .input-label { font-size: var(--text-xs); font-weight: var(--weight-bold); color: var(--color-text-faint); margin-bottom: var(--sp-2); display: block; }
-  .input-field {
-    width: 100%; border: 1.5px solid var(--color-border); border-radius: var(--radius-lg);
-    padding: var(--sp-3) var(--sp-4); font-family: var(--font-body); font-size: var(--text-base);
-    box-sizing: border-box; transition: border-color 0.2s;
-  }
-  .input-field:focus { outline: none; border-color: var(--color-primary); }
-
-  /* ── pay methods ── */
-  .pay-methods { display: flex; flex-direction: column; gap: var(--sp-2); margin-bottom: var(--sp-4); }
-  .pay-method {
-    display: flex; align-items: center; gap: var(--sp-3);
-    border: 1.5px solid var(--color-border); border-radius: var(--radius-lg);
-    padding: var(--sp-3) var(--sp-4); cursor: pointer; transition: all 0.2s;
-    position: relative;
-  }
-  .pay-method input { position: absolute; opacity: 0; width: 0; }
-  .pay-method:has(input:checked) { border-color: var(--color-primary); background: var(--color-primary-light); }
-  .pay-method__icon { font-size: 1.4rem; flex-shrink: 0; }
-  .pay-method__name { font-weight: var(--weight-bold); font-size: var(--text-sm); }
-  .pay-method__desc { font-size: 11px; color: var(--color-text-faint); }
-  .pay-check { width: 18px; height: 18px; border-radius: 50%; border: 2px solid var(--color-border); margin-right: auto; flex-shrink: 0; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
-  .pay-method:has(input:checked) .pay-check { background: var(--color-primary); border-color: var(--color-primary); }
-  .pay-method:has(input:checked) .pay-check::after { content: '✓'; color: #fff; font-size: 10px; font-weight: 900; }
-
-  /* ── action button ── */
-  .w-btn {
-    width: 100%; padding: var(--sp-4);
-    background: var(--color-primary); color: #fff;
-    border: none; border-radius: var(--radius-xl);
-    font-family: var(--font-body); font-size: var(--text-base); font-weight: var(--weight-black);
-    cursor: pointer; transition: all 0.2s;
-    display: flex; align-items: center; justify-content: center; gap: var(--sp-2);
-  }
-  .w-btn:hover { background: var(--color-primary-dark); transform: translateY(-1px); }
-  .w-btn:disabled { background: #94a3b8; cursor: not-allowed; transform: none; }
-  .w-btn.red   { background: #dc2626; }
-  .w-btn.red:hover { background: #b91c1c; }
-  .w-btn.green { background: #16a34a; }
-  .w-btn.green:hover { background: #15803d; }
-
-  /* ── transaction list ── */
-  .tx-list { display: flex; flex-direction: column; gap: 0; }
+  .tx-date-group { font-size: .75rem; font-weight: 700; color: #9ca3af; padding: 8px 0 4px; }
   .tx-item {
-    display: flex; align-items: center; gap: var(--sp-3);
-    padding: var(--sp-4) 0; border-bottom: 1px solid var(--color-border);
+    background: #fff; border-radius: 12px; padding: 14px 16px;
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 8px; box-shadow: 0 1px 4px rgba(0,0,0,.05);
   }
-  .tx-item:last-child { border-bottom: none; }
-  .tx-icon {
-    width: 42px; height: 42px; border-radius: 50%; flex-shrink: 0;
-    display: flex; align-items: center; justify-content: center; font-size: 1.2rem;
+  .tx-item__left { display: flex; flex-direction: column; gap: 3px; }
+  .tx-item__type { font-size: .78rem; color: #6b7280; display: flex; align-items: center; gap: 5px; }
+  .tx-item__type-check { color: #16a34a; font-weight: 900; }
+  .tx-item__date { font-size: .72rem; color: #9ca3af; }
+  .tx-item__amount { font-size: 1rem; font-weight: 900; color: #111; direction: ltr; }
+  .tx-item__amount.neg { color: #dc2626; }
+  .tx-empty { text-align: center; padding: 40px 0; color: #9ca3af; font-size: .875rem; }
+  .sheet-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,.5);
+    z-index: 700; display: none; align-items: flex-end; justify-content: center;
   }
-  .tx-icon.in  { background: #dcfce7; }
-  .tx-icon.out { background: #fee2e2; }
-  .tx-icon.tr  { background: #dbeafe; }
-  .tx-info { flex: 1; min-width: 0; }
-  .tx-note { font-weight: var(--weight-bold); font-size: var(--text-sm); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .tx-date { font-size: 11px; color: var(--color-text-faint); margin-top: 2px; }
-  .tx-amt { font-weight: var(--weight-black); font-size: var(--text-sm); flex-shrink: 0; }
-  .tx-amt.pos { color: #16a34a; }
-  .tx-amt.neg { color: #dc2626; }
-  .tx-empty { text-align: center; padding: var(--sp-8); color: var(--color-text-faint); font-size: var(--text-sm); }
-
-  /* ── bottom nav ── */
+  .sheet-overlay.visible { display: flex; }
+  .sheet {
+    background: #fff; border-radius: 20px 20px 0 0;
+    width: 100%; max-width: 480px; padding: 20px 20px 40px;
+    animation: sheet-up .3s cubic-bezier(.34,1.56,.64,1);
+  }
+  @keyframes sheet-up { from { transform: translateY(100%); } to { transform: translateY(0); } }
+  .sheet__handle { width: 40px; height: 4px; background: #e5e7eb; border-radius: 99px; margin: 0 auto 18px; }
+  .sheet__title { font-size: 1rem; font-weight: 900; margin-bottom: 18px; text-align: center; }
+  .s-label { font-size: .78rem; color: #6b7280; font-weight: 700; margin-bottom: 6px; display: block; }
+  .s-input {
+    width: 100%; border: 1.5px solid #e5e7eb; border-radius: 12px;
+    padding: 12px 14px; font-family: var(--font-body); font-size: .95rem;
+    box-sizing: border-box; margin-bottom: 14px;
+  }
+  .s-input:focus { outline: none; border-color: #1a2340; }
+  .quick-row { display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; }
+  .quick-btn {
+    flex: 1; min-width: 60px; padding: 9px 6px;
+    border: 1.5px solid #e5e7eb; border-radius: 10px;
+    background: none; cursor: pointer; font-family: var(--font-body);
+    font-size: .825rem; font-weight: 700; color: #6b7280; text-align: center; transition: all .15s;
+  }
+  .quick-btn.sel { border-color: #1a2340; background: #1a2340; color: #fff; }
+  .pay-opts { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
+  .pay-opt {
+    display: flex; align-items: center; gap: 12px;
+    border: 1.5px solid #e5e7eb; border-radius: 12px;
+    padding: 11px 14px; cursor: pointer; transition: border-color .15s; position: relative;
+  }
+  .pay-opt input { position: absolute; opacity: 0; width: 0; }
+  .pay-opt:has(input:checked) { border-color: #1a2340; background: #f0f4ff; }
+  .pay-opt__icon { font-size: 1.3rem; }
+  .pay-opt__name { font-weight: 700; font-size: .875rem; }
+  .pay-opt__sub { font-size: .72rem; color: #9ca3af; }
+  .pay-opt__dot {
+    width: 18px; height: 18px; border-radius: 50%; border: 2px solid #d1d5db;
+    margin-right: auto; flex-shrink: 0; display: flex; align-items: center; justify-content: center; transition: all .15s;
+  }
+  .pay-opt:has(input:checked) .pay-opt__dot { background: #1a2340; border-color: #1a2340; }
+  .pay-opt:has(input:checked) .pay-opt__dot::after { content: '✓'; color: #fff; font-size: 10px; font-weight: 900; }
+  .s-btn {
+    width: 100%; padding: 14px; background: #1a2340; color: #fff;
+    border: none; border-radius: 12px; font-family: var(--font-body);
+    font-size: .95rem; font-weight: 900; cursor: pointer; transition: opacity .15s;
+  }
+  .s-btn:hover { opacity: .88; }
+  .s-btn:disabled { background: #94a3b8; cursor: not-allowed; }
+  .s-avail { font-size: .78rem; color: #6b7280; text-align: center; margin-bottom: 12px; }
+  .recipient-box {
+    display: none; background: #f0fdf4; border: 1.5px solid #86efac;
+    border-radius: 12px; padding: 12px 14px; margin-bottom: 14px;
+    align-items: center; gap: 10px;
+  }
+  .recipient-box.visible { display: flex; }
   .bottom-nav {
     position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
-    width: 100%; max-width: 480px;
-    background: #fff; border-top: 1px solid var(--color-border);
-    display: flex; align-items: center;
+    width: 100%; max-width: 480px; background: #fff;
+    border-top: 1px solid #eee; display: flex; align-items: center;
     z-index: 100; padding-bottom: env(safe-area-inset-bottom);
   }
   .bn-item {
     flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px;
-    padding: var(--sp-2) 0; text-decoration: none; border: none; background: none; cursor: pointer;
-    font-family: var(--font-body); color: var(--color-text-faint);
+    padding: 8px 0; text-decoration: none; border: none; background: none; cursor: pointer;
+    font-family: var(--font-body); color: #9ca3af;
   }
-  .bn-item.active { color: var(--color-primary); }
+  .bn-item.active { color: #1a2340; }
   .bn-item__icon { font-size: 1.3rem; }
-  .bn-item__lbl  { font-size: 10px; font-weight: var(--weight-bold); }
+  .bn-item__lbl  { font-size: 10px; font-weight: 700; }
   .bn-plus {
     width: 52px; height: 52px; border-radius: 50%;
-    background: var(--color-primary); color: #fff;
-    border: 4px solid #fff; box-shadow: 0 2px 12px rgba(29,78,216,.4);
-    font-size: 1.6rem; display: flex; align-items: center; justify-content: center;
-    margin-top: -20px; cursor: pointer; flex-shrink: 0;
-    text-decoration: none;
+    background: #1a2340; color: #fff; border: 4px solid #fff;
+    box-shadow: 0 2px 12px rgba(26,35,64,.4); font-size: 1.6rem;
+    display: flex; align-items: center; justify-content: center;
+    margin-top: -20px; cursor: pointer; flex-shrink: 0; text-decoration: none;
   }
-
-  /* ── toast ── */
+  .auth-box {
+    background: #fff; border-radius: 16px; padding: 48px 24px;
+    text-align: center; margin: 24px 14px; box-shadow: 0 2px 12px rgba(0,0,0,.07);
+  }
   .w-toast {
     position: fixed; top: 80px; left: 50%;
     transform: translateX(-50%) translateY(-20px);
     background: #1f2937; color: #fff;
-    padding: var(--sp-3) var(--sp-5); border-radius: var(--radius-lg);
-    font-size: var(--text-sm); font-weight: var(--weight-bold);
-    z-index: 600; opacity: 0; transition: all 0.3s; white-space: nowrap; pointer-events: none;
+    padding: 10px 20px; border-radius: 10px; font-size: .875rem; font-weight: 700;
+    z-index: 800; opacity: 0; transition: all .3s; white-space: nowrap; pointer-events: none;
   }
   .w-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
-
-  /* ── auth prompt ── */
-  .auth-box {
-    background: #fff; border-radius: var(--radius-xl); padding: var(--sp-10) var(--sp-6);
-    text-align: center; margin: var(--sp-6) var(--sp-4); box-shadow: 0 1px 8px rgba(0,0,0,.08);
-  }
-  .auth-box__icon { font-size: 3rem; margin-bottom: var(--sp-4); }
-  .auth-box__title { font-size: var(--text-xl); font-weight: var(--weight-black); margin-bottom: var(--sp-3); }
-  .auth-box__sub { color: var(--color-text-muted); font-size: var(--text-sm); margin-bottom: var(--sp-6); }
 </style>
 
-<Layout title="المحفظة الإلكترونية | وصّلها" description="محفظتك الإلكترونية — اشحن وحوّل واسحب رصيدك" page="wallet">
-
-  <div class="wallet-page" id="wallet-page">
-
-    <!-- Top bar -->
-    <div class="wallet-topbar">
-      <button class="topbar-back" onclick="history.back()" type="button">←</button>
-      <div class="wallet-topbar__title">💳 المحفظة الإلكترونية</div>
+<Layout title="محفظتي | وصّلها" description="محفظتك الإلكترونية" page="wallet">
+  <div class="wallet-page">
+    <div class="w-topbar">
+      <button class="w-topbar__back" onclick="history.back()" type="button">←</button>
+      <div class="w-topbar__title">محفظتي</div>
       <div style="width:36px"></div>
     </div>
-
-    <!-- Auth prompt -->
     <div class="auth-box" id="auth-box" style="display:none">
-      <div class="auth-box__icon">🔒</div>
-      <div class="auth-box__title">تسجيل الدخول مطلوب</div>
-      <div class="auth-box__sub">يرجى تسجيل الدخول للوصول إلى محفظتك الإلكترونية</div>
-      <div style="display:flex;gap:var(--sp-3);justify-content:center;flex-wrap:wrap;">
-        <a href="/login" class="w-btn" style="text-decoration:none;padding:var(--sp-3) var(--sp-6);">تسجيل الدخول</a>
-        <a href="/register" class="w-btn green" style="text-decoration:none;padding:var(--sp-3) var(--sp-6);">حساب جديد</a>
+      <div style="font-size:3rem;margin-bottom:16px">🔒</div>
+      <div style="font-size:1.1rem;font-weight:900;margin-bottom:10px">تسجيل الدخول مطلوب</div>
+      <div style="color:#6b7280;font-size:.875rem;margin-bottom:24px">يرجى تسجيل الدخول للوصول إلى محفظتك</div>
+      <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
+        <a href="/login" style="padding:12px 24px;background:#1a2340;color:#fff;border-radius:12px;text-decoration:none;font-weight:900;">تسجيل الدخول</a>
+        <a href="/register" style="padding:12px 24px;background:#16a34a;color:#fff;border-radius:12px;text-decoration:none;font-weight:900;">حساب جديد</a>
       </div>
     </div>
-
-    <!-- Main wallet content -->
     <div id="wallet-main" style="display:none">
-
-      <!-- Balance hero -->
-      <div class="balance-hero">
-        <div class="balance-label">🏦 رصيدك الحالي</div>
-        <div class="balance-amount">
-          <span id="balance-val">0</span>
-          <span class="balance-currency">جنيه</span>
+      <div class="balance-card">
+        <div class="balance-card__top">
+          <div class="wallet-icon">💼</div>
+          <div>
+            <div class="balance-label">رصيدك الآن</div>
+            <div class="balance-amount">EGP <span id="balance-val">0</span></div>
+          </div>
         </div>
-        <div class="balance-card-row">
-          <span class="balance-card-num" id="card-num">**** **** **** ----</span>
-          <span class="balance-card-badge">وصلة للدفع الإلكتروني</span>
+        <div class="w-action-row">
+          <button class="w-action-btn" id="btn-deposit" type="button">إيداع</button>
+          <button class="w-action-btn" id="btn-withdraw-open" type="button">سحب</button>
         </div>
-        <div class="hero-actions">
-          <button class="hero-action" onclick="switchTab('charge')" type="button">
-            <span class="hero-action__icon">⬆️</span>
-            <span class="hero-action__lbl">شحن رصيد</span>
-          </button>
-          <button class="hero-action" onclick="switchTab('withdraw')" type="button">
-            <span class="hero-action__icon">⬇️</span>
-            <span class="hero-action__lbl">سحب رصيد</span>
-          </button>
-          <button class="hero-action" onclick="switchTab('transfer')" type="button">
-            <span class="hero-action__icon">↔️</span>
-            <span class="hero-action__lbl">تحويل</span>
-          </button>
-          <button class="hero-action" onclick="switchTab('log')" type="button">
-            <span class="hero-action__icon">📋</span>
-            <span class="hero-action__lbl">العمليات</span>
-          </button>
+        <div style="display:flex;gap:8px;margin-top:8px;">
+          <button class="w-action-btn transfer" id="btn-transfer-open" type="button" style="flex:1;padding:10px;font-size:.82rem;">↔️ تحويل</button>
+        </div>
+        <div class="connected-badge">
+          <div class="connected-dot"></div><span>متصل</span>
         </div>
       </div>
-
-      <!-- Stats -->
-      <div class="stats-strip">
-        <div class="stat-box">
-          <div class="stat-box__val" id="stat-charged">0</div>
-          <div class="stat-box__lbl">إجمالي الشحن 💰</div>
+      <div class="tx-section">
+        <div class="tx-section__header">
+          <span>المعاملات</span>
+          <span style="font-size:1.2rem;cursor:pointer;" onclick="loadLog()">📅</span>
         </div>
-        <div class="stat-box">
-          <div class="stat-box__val" id="stat-spent">0</div>
-          <div class="stat-box__lbl">إجمالي الإنفاق 🛒</div>
-        </div>
-        <div class="stat-box">
-          <div class="stat-box__val" id="stat-transferred">0</div>
-          <div class="stat-box__lbl">المحوّل ↔️</div>
-        </div>
+        <div id="tx-list"><div class="tx-empty">جاري التحميل...</div></div>
       </div>
+    </div>
+  </div>
 
-      <!-- Tabs -->
-      <div class="wallet-tabs">
-        <button class="wallet-tab active" data-tab="charge"   onclick="switchTab('charge')"   type="button">⬆️ شحن</button>
-        <button class="wallet-tab"        data-tab="withdraw" onclick="switchTab('withdraw')" type="button">⬇️ سحب</button>
-        <button class="wallet-tab"        data-tab="transfer" onclick="switchTab('transfer')" type="button">↔️ تحويل</button>
-        <button class="wallet-tab"        data-tab="log"      onclick="switchTab('log')"      type="button">📋 السجل</button>
+  <!-- Deposit sheet -->
+  <div class="sheet-overlay" id="sheet-deposit">
+    <div class="sheet">
+      <div class="sheet__handle"></div>
+      <div class="sheet__title">⬆️ إيداع رصيد</div>
+      <div class="quick-row" id="quick-amounts">
+        <button class="quick-btn" data-val="50" type="button">50</button>
+        <button class="quick-btn sel" data-val="100" type="button">100</button>
+        <button class="quick-btn" data-val="200" type="button">200</button>
+        <button class="quick-btn" data-val="500" type="button">500</button>
       </div>
-
-      <!-- ─── Charge tab ─── -->
-      <div class="tab-panel active" id="panel-charge">
-        <div class="w-card">
-          <div class="w-card__title">⬆️ شحن الرصيد</div>
-          <p style="font-size:var(--text-xs);color:var(--color-text-faint);margin-bottom:var(--sp-4);">اختر المبلغ السريع</p>
-          <div class="quick-amounts" id="quick-amounts">
-            <button class="quick-amt" data-val="50"  type="button">50 جنيه</button>
-            <button class="quick-amt selected" data-val="100" type="button">100 جنيه</button>
-            <button class="quick-amt" data-val="200" type="button">200 جنيه</button>
-            <button class="quick-amt" data-val="500" type="button">500 جنيه</button>
-          </div>
-          <div class="input-group">
-            <label class="input-label">أو أدخل مبلغاً مخصصاً</label>
-            <input type="number" id="charge-amount" class="input-field" placeholder="أدخل المبلغ بالجنيه" min="10" value="100" />
-          </div>
-          <p style="font-size:var(--text-xs);color:var(--color-text-faint);margin-bottom:var(--sp-3);">طريقة الشحن</p>
-          <div class="pay-methods">
-            <label class="pay-method">
-              <input type="radio" name="charge-method" value="vodafone" checked />
-              <span class="pay-method__icon">📱</span>
-              <span><span class="pay-method__name">فودافون كاش</span><br><span class="pay-method__desc">01xxxxxxxxxx</span></span>
-              <span class="pay-check"></span>
-            </label>
-            <label class="pay-method">
-              <input type="radio" name="charge-method" value="instapay" />
-              <span class="pay-method__icon">💳</span>
-              <span><span class="pay-method__name">إنستاباي</span><br><span class="pay-method__desc">تحويل فوري عبر التطبيق</span></span>
-              <span class="pay-check"></span>
-            </label>
-            <label class="pay-method">
-              <input type="radio" name="charge-method" value="bank" />
-              <span class="pay-method__icon">🏦</span>
-              <span><span class="pay-method__name">تحويل بنكي</span><br><span class="pay-method__desc">2-24 ساعة للتأكيد</span></span>
-              <span class="pay-check"></span>
-            </label>
-          </div>
-          <button class="w-btn" id="charge-btn" type="button">⬆️ شحن الرصيد</button>
-        </div>
+      <label class="s-label">أو أدخل مبلغاً آخر (جنيه)</label>
+      <input type="number" id="charge-amount" class="s-input" placeholder="مثال: 150" min="10" value="100" />
+      <div class="pay-opts">
+        <label class="pay-opt"><input type="radio" name="charge-method" value="vodafone" checked /><span class="pay-opt__icon">📱</span><span><div class="pay-opt__name">فودافون كاش</div><div class="pay-opt__sub">01xxxxxxxxxx</div></span><span class="pay-opt__dot"></span></label>
+        <label class="pay-opt"><input type="radio" name="charge-method" value="instapay" /><span class="pay-opt__icon">💳</span><span><div class="pay-opt__name">إنستاباي</div><div class="pay-opt__sub">تحويل فوري</div></span><span class="pay-opt__dot"></span></label>
+        <label class="pay-opt"><input type="radio" name="charge-method" value="bank" /><span class="pay-opt__icon">🏦</span><span><div class="pay-opt__name">تحويل بنكي</div><div class="pay-opt__sub">24 ساعة</div></span><span class="pay-opt__dot"></span></label>
       </div>
+      <button class="s-btn" id="charge-btn" type="button">إيداع الرصيد</button>
+    </div>
+  </div>
 
-      <!-- ─── Withdraw tab ─── -->
-      <div class="tab-panel" id="panel-withdraw">
-        <div class="w-card">
-          <div class="w-card__title">⬇️ سحب الرصيد</div>
-          <div class="input-group">
-            <label class="input-label">المبلغ المراد سحبه</label>
-            <input type="number" id="withdraw-amount" class="input-field" placeholder="أدخل المبلغ بالجنيه" min="10" />
-          </div>
-          <div class="input-group">
-            <label class="input-label">رقم فودافون كاش / إنستاباي</label>
-            <input type="tel" id="withdraw-dest" class="input-field" placeholder="01xxxxxxxxxx" />
-          </div>
-          <div class="input-group">
-            <label class="input-label">ملاحظة (اختياري)</label>
-            <input type="text" id="withdraw-note" class="input-field" placeholder="سبب السحب..." />
-          </div>
-          <div id="withdraw-balance-note" style="font-size:var(--text-xs);color:var(--color-text-faint);margin-bottom:var(--sp-4);">رصيدك المتاح: <strong id="withdraw-avail">0</strong> ج.م</div>
-          <button class="w-btn red" id="withdraw-btn" type="button">⬇️ طلب سحب</button>
-        </div>
+  <!-- Withdraw sheet -->
+  <div class="sheet-overlay" id="sheet-withdraw">
+    <div class="sheet">
+      <div class="sheet__handle"></div>
+      <div class="sheet__title">⬇️ سحب الرصيد</div>
+      <p class="s-avail">رصيدك المتاح: <strong id="withdraw-avail">0</strong> ج.م</p>
+      <label class="s-label">المبلغ (جنيه)</label>
+      <input type="number" id="withdraw-amount" class="s-input" placeholder="أدخل المبلغ" min="10" />
+      <label class="s-label">رقم فودافون كاش / إنستاباي</label>
+      <input type="tel" id="withdraw-dest" class="s-input" placeholder="01xxxxxxxxxx" />
+      <label class="s-label">ملاحظة (اختياري)</label>
+      <input type="text" id="withdraw-note" class="s-input" placeholder="سبب السحب..." />
+      <button class="s-btn" id="withdraw-btn" type="button">طلب سحب</button>
+    </div>
+  </div>
+
+  <!-- Transfer sheet -->
+  <div class="sheet-overlay" id="sheet-transfer">
+    <div class="sheet">
+      <div class="sheet__handle"></div>
+      <div class="sheet__title">↔️ تحويل لمستخدم</div>
+      <label class="s-label">رقم جوال المستلم</label>
+      <input type="tel" id="transfer-phone" class="s-input" placeholder="01xxxxxxxxxx" />
+      <div class="recipient-box" id="transfer-recipient">
+        <span style="font-size:1.5rem">👤</span>
+        <div><div style="font-weight:800;font-size:.875rem" id="transfer-recipient-name">—</div><div style="font-size:.72rem;color:#6b7280" id="transfer-recipient-phone">—</div></div>
       </div>
+      <label class="s-label">المبلغ (جنيه)</label>
+      <input type="number" id="transfer-amount" class="s-input" placeholder="أدخل المبلغ" min="1" />
+      <label class="s-label">ملاحظة (اختياري)</label>
+      <input type="text" id="transfer-note" class="s-input" placeholder="سبب التحويل..." />
+      <button class="s-btn" id="transfer-btn" type="button">تحويل الآن</button>
+    </div>
+  </div>
 
-      <!-- ─── Transfer tab ─── -->
-      <div class="tab-panel" id="panel-transfer">
-        <div class="w-card">
-          <div class="w-card__title">↔️ تحويل لمستخدم آخر</div>
-          <div class="input-group">
-            <label class="input-label">رقم جوال المستلم</label>
-            <input type="tel" id="transfer-phone" class="input-field" placeholder="01xxxxxxxxxx" />
-          </div>
-          <div id="transfer-recipient" style="display:none;margin-bottom:var(--sp-4);">
-            <div style="display:flex;align-items:center;gap:var(--sp-3);background:#f0fdf4;border:1.5px solid #86efac;border-radius:var(--radius-lg);padding:var(--sp-3) var(--sp-4);">
-              <span style="font-size:1.5rem;">👤</span>
-              <div>
-                <div style="font-weight:800;font-size:var(--text-sm)" id="transfer-recipient-name">—</div>
-                <div style="font-size:11px;color:var(--color-text-faint)" id="transfer-recipient-phone">—</div>
-              </div>
-            </div>
-          </div>
-          <div class="input-group">
-            <label class="input-label">المبلغ</label>
-            <input type="number" id="transfer-amount" class="input-field" placeholder="أدخل المبلغ بالجنيه" min="1" />
-          </div>
-          <div class="input-group">
-            <label class="input-label">ملاحظة (اختياري)</label>
-            <input type="text" id="transfer-note" class="input-field" placeholder="سبب التحويل..." />
-          </div>
-          <button class="w-btn" id="transfer-btn" type="button">↔️ تحويل الآن</button>
-        </div>
-      </div>
-
-      <!-- ─── Log tab ─── -->
-      <div class="tab-panel" id="panel-log">
-        <div class="w-card">
-          <div class="w-card__title">📋 سجل العمليات</div>
-          <div class="tx-list" id="tx-list">
-            <div class="tx-empty">جاري التحميل...</div>
-          </div>
-        </div>
-      </div>
-
-    </div><!-- /wallet-main -->
-
-  </div><!-- /wallet-page -->
-
-  <!-- Bottom nav -->
   <nav class="bottom-nav">
     <a href="/" class="bn-item"><span class="bn-item__icon">🏠</span><span class="bn-item__lbl">الرئيسية</span></a>
     <a href="/orders" class="bn-item"><span class="bn-item__icon">📋</span><span class="bn-item__lbl">طلباتي</span></a>
@@ -446,179 +270,106 @@ import Layout from '../components/layout.astro';
     <a href="/wallet" class="bn-item active"><span class="bn-item__icon">💳</span><span class="bn-item__lbl">المحفظة</span></a>
     <a href="/profile" class="bn-item"><span class="bn-item__icon">⚙️</span><span class="bn-item__lbl">الإعدادات</span></a>
   </nav>
-
   <div class="w-toast" id="w-toast"></div>
-
 </Layout>
 
 <script is:inline>
   const SB_URL = 'https://vtikgyiopkjnrwlqnmfx.supabase.co';
   const SB_KEY = 'sb_publishable_PLSnpvCT-sAyUMtymNgTwA_QmL2suw4';
   const SB_H = { apikey: SB_KEY, Authorization: 'Bearer ' + SB_KEY, 'Content-Type': 'application/json' };
-
-  /* ── Auth ── */
   var user = null;
   try { var raw = localStorage.getItem('wslha_user'); user = raw ? JSON.parse(raw) : null; } catch {}
+  if (!user) { document.getElementById('auth-box').style.display = ''; }
+  else { document.getElementById('wallet-main').style.display = 'block'; loadWallet(); loadLog(); }
 
-  if (!user) {
-    document.getElementById('auth-box').style.display = '';
-  } else {
-    document.getElementById('wallet-main').style.display = 'block';
-    // card num last 4 from phone
-    var last4 = (user.phone || '').replace(/\D/g, '').slice(-4) || '----';
-    document.getElementById('card-num').textContent = '**** **** **** ' + last4;
-    loadWallet();
-  }
-
-  /* ── Toast ── */
   function toast(msg, ok) {
     var t = document.getElementById('w-toast');
-    t.textContent = msg;
-    t.style.background = ok === false ? '#dc2626' : '#1f2937';
-    t.classList.add('show');
-    setTimeout(function() { t.classList.remove('show'); }, 2800);
+    t.textContent = msg; t.style.background = ok === false ? '#dc2626' : '#1f2937';
+    t.classList.add('show'); setTimeout(function() { t.classList.remove('show'); }, 2800);
   }
+  function openSheet(id) { document.getElementById(id).classList.add('visible'); }
+  function closeSheet(id) { document.getElementById(id).classList.remove('visible'); }
+  ['sheet-deposit','sheet-withdraw','sheet-transfer'].forEach(function(id) {
+    document.getElementById(id).addEventListener('click', function(e) { if (e.target === this) closeSheet(id); });
+  });
+  document.getElementById('btn-deposit').addEventListener('click', function() { openSheet('sheet-deposit'); });
+  document.getElementById('btn-withdraw-open').addEventListener('click', function() { openSheet('sheet-withdraw'); });
+  document.getElementById('btn-transfer-open').addEventListener('click', function() { openSheet('sheet-transfer'); });
 
-  /* ── Tab switching ── */
-  function switchTab(name) {
-    document.querySelectorAll('.wallet-tab').forEach(function(b) {
-      b.classList.toggle('active', b.dataset.tab === name);
-    });
-    document.querySelectorAll('.tab-panel').forEach(function(p) {
-      p.classList.toggle('active', p.id === 'panel-' + name);
-    });
-    if (name === 'log') loadLog();
-  }
-
-  /* ── Quick amounts ── */
-  document.querySelectorAll('.quick-amt').forEach(function(btn) {
+  document.querySelectorAll('.quick-btn').forEach(function(btn) {
     btn.addEventListener('click', function() {
-      document.querySelectorAll('.quick-amt').forEach(function(b) { b.classList.remove('selected'); });
-      btn.classList.add('selected');
+      document.querySelectorAll('.quick-btn').forEach(function(b) { b.classList.remove('sel'); });
+      btn.classList.add('sel');
       document.getElementById('charge-amount').value = btn.dataset.val;
     });
   });
   document.getElementById('charge-amount').addEventListener('input', function() {
-    document.querySelectorAll('.quick-amt').forEach(function(b) { b.classList.remove('selected'); });
+    document.querySelectorAll('.quick-btn').forEach(function(b) { b.classList.remove('sel'); });
   });
 
-  /* ── Load wallet balance + stats ── */
   async function loadWallet() {
     if (!user) return;
-    var p = encodeURIComponent(user.phone);
     try {
-      var res = await fetch(SB_URL + '/rest/v1/wallets?phone=eq.' + p + '&select=balance', { headers: SB_H });
+      var res = await fetch(SB_URL + '/rest/v1/wallets?phone=eq.' + encodeURIComponent(user.phone) + '&select=balance', { headers: SB_H });
       var rows = await res.json();
       var bal = (Array.isArray(rows) && rows[0]) ? (rows[0].balance || 0) : 0;
       document.getElementById('balance-val').textContent = Number(bal).toLocaleString('ar-EG');
       document.getElementById('withdraw-avail').textContent = Number(bal).toLocaleString('ar-EG');
     } catch {}
-
-    try {
-      var res2 = await fetch(SB_URL + '/rest/v1/wallet_transactions?phone=eq.' + p + '&select=amount,type', { headers: SB_H });
-      var txs = await res2.json();
-      if (Array.isArray(txs)) {
-        var charged = 0, spent = 0, transferred = 0;
-        txs.forEach(function(t) {
-          var amt = Math.abs(Number(t.amount));
-          if (t.type === 'topup') charged += amt;
-          else if (t.type === 'earning') charged += amt;
-          else if (t.type === 'commission' || t.type === 'payment') spent += amt;
-          else if (t.type === 'transfer_out' || t.type === 'transfer_in') transferred += amt;
-        });
-        document.getElementById('stat-charged').textContent = charged.toLocaleString('ar-EG');
-        document.getElementById('stat-spent').textContent = spent.toLocaleString('ar-EG');
-        document.getElementById('stat-transferred').textContent = transferred.toLocaleString('ar-EG');
-      }
-    } catch {}
   }
 
-  /* ── Load transaction log ── */
   async function loadLog() {
     if (!user) return;
-    var p = encodeURIComponent(user.phone);
     try {
-      var res = await fetch(SB_URL + '/rest/v1/wallet_transactions?phone=eq.' + p + '&select=amount,type,note,created_at&order=created_at.desc&limit=30', { headers: SB_H });
+      var res = await fetch(SB_URL + '/rest/v1/wallet_transactions?phone=eq.' + encodeURIComponent(user.phone) + '&select=amount,type,note,created_at&order=created_at.desc&limit=50', { headers: SB_H });
       var txs = await res.json();
       var el = document.getElementById('tx-list');
-      if (!Array.isArray(txs) || !txs.length) {
-        el.innerHTML = '<div class="tx-empty">لا توجد عمليات بعد</div>';
-        return;
-      }
-      var typeMap = {
-        topup: { icon: '⬆️', cls: 'in', label: 'شحن رصيد' },
-        earning: { icon: '💰', cls: 'in', label: 'أرباح' },
-        refund: { icon: '↩️', cls: 'in', label: 'استرداد' },
-        transfer_in: { icon: '↔️', cls: 'tr', label: 'تحويل وارد' },
-        commission: { icon: '🏢', cls: 'out', label: 'عمولة منصة' },
-        payment: { icon: '🛒', cls: 'out', label: 'مدفوعات' },
-        withdrawal: { icon: '⬇️', cls: 'out', label: 'سحب رصيد' },
-        transfer_out: { icon: '↔️', cls: 'tr', label: 'تحويل صادر' },
-      };
-      el.innerHTML = txs.map(function(t) {
-        var amt = Number(t.amount);
-        var info = typeMap[t.type] || { icon: '💳', cls: amt >= 0 ? 'in' : 'out', label: t.type };
-        var sign = amt >= 0 ? '+' : '';
-        var cls = amt >= 0 ? 'pos' : 'neg';
-        var d = new Date(t.created_at).toLocaleDateString('ar-EG', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
-        return '<div class="tx-item">'
-          + '<div class="tx-icon ' + info.cls + '">' + info.icon + '</div>'
-          + '<div class="tx-info"><div class="tx-note">' + (t.note || info.label) + '</div><div class="tx-date">' + d + '</div></div>'
-          + '<div class="tx-amt ' + cls + '">' + sign + Math.abs(amt).toLocaleString('ar-EG') + ' ج.م</div>'
-          + '</div>';
-      }).join('');
-    } catch {
-      document.getElementById('tx-list').innerHTML = '<div class="tx-empty">تعذّر تحميل السجل</div>';
-    }
+      if (!Array.isArray(txs) || !txs.length) { el.innerHTML = '<div class="tx-empty">لا توجد معاملات بعد</div>'; return; }
+      var labels = { topup:'إيداع', earning:'أرباح', refund:'استرداد', transfer_in:'تحويل وارد', commission:'عمولة', payment:'مدفوعات', withdrawal:'سحب', transfer_out:'تحويل صادر' };
+      var today = new Date().toDateString();
+      var groups = {};
+      txs.forEach(function(t) {
+        var d = new Date(t.created_at); var key = d.toDateString();
+        if (!groups[key]) groups[key] = { label: key === today ? 'اليوم' : d.toLocaleDateString('ar-EG', { year:'numeric', month:'long', day:'numeric' }), items: [] };
+        groups[key].items.push(t);
+      });
+      var html = '';
+      Object.keys(groups).forEach(function(key) {
+        var g = groups[key];
+        html += '<div class="tx-date-group">' + g.label + '</div>';
+        g.items.forEach(function(t) {
+          var amt = Number(t.amount); var isPos = amt >= 0;
+          var label = labels[t.type] || t.type;
+          var time = new Date(t.created_at).toLocaleTimeString('ar-EG', { hour:'2-digit', minute:'2-digit' });
+          var dateStr = new Date(t.created_at).toLocaleDateString('ar-EG', { day:'numeric', month:'short', year:'numeric' });
+          html += '<div class="tx-item"><div class="tx-item__left"><div class="tx-item__type"><span class="tx-item__type-check">' + (isPos?'✓':'✕') + '</span>' + label + '</div><div class="tx-item__date">' + dateStr + ' ' + time + '</div></div><div class="tx-item__amount ' + (isPos?'pos':'neg') + '">' + (isPos?'+':'') + Math.abs(amt).toLocaleString('ar-EG') + '</div></div>';
+        });
+      });
+      el.innerHTML = html;
+    } catch { document.getElementById('tx-list').innerHTML = '<div class="tx-empty">تعذّر تحميل المعاملات</div>'; }
   }
 
-  /* ── Charge ── */
   document.getElementById('charge-btn').addEventListener('click', async function() {
     if (!user) return;
     var amt = parseFloat(document.getElementById('charge-amount').value);
     if (!amt || amt < 10) { toast('أدخل مبلغاً لا يقل عن 10 جنيه', false); return; }
     var method = document.querySelector('input[name="charge-method"]:checked').value;
-    var methodLabel = { vodafone: 'فودافون كاش', instapay: 'إنستاباي', bank: 'تحويل بنكي' }[method];
-
-    var btn = document.getElementById('charge-btn');
-    btn.disabled = true; btn.textContent = 'جاري المعالجة...';
-
+    var methodLabel = { vodafone:'فودافون كاش', instapay:'إنستاباي', bank:'تحويل بنكي' }[method];
+    var btn = this; btn.disabled = true; btn.textContent = 'جاري المعالجة...';
     try {
-      // Upsert wallet balance
       var res = await fetch(SB_URL + '/rest/v1/wallets?phone=eq.' + encodeURIComponent(user.phone) + '&select=balance', { headers: SB_H });
       var rows = await res.json();
       var currBal = (Array.isArray(rows) && rows[0]) ? Number(rows[0].balance || 0) : 0;
       var newBal = currBal + amt;
-
-      var wp = await fetch(SB_URL + '/rest/v1/wallets', {
-        method: 'POST',
-        headers: Object.assign({}, SB_H, { Prefer: 'resolution=merge-duplicates,return=minimal' }),
-        body: JSON.stringify({ phone: user.phone, balance: newBal, updated_at: new Date().toISOString() }),
-      });
-
-      // Insert transaction
-      await fetch(SB_URL + '/rest/v1/wallet_transactions', {
-        method: 'POST',
-        headers: Object.assign({}, SB_H, { Prefer: 'return=minimal' }),
-        body: JSON.stringify({
-          id: 'wtx-' + Date.now(),
-          phone: user.phone,
-          amount: amt,
-          type: 'topup',
-          note: 'شحن رصيد عبر ' + methodLabel,
-          created_at: new Date().toISOString(),
-        }),
-      });
-
+      await fetch(SB_URL + '/rest/v1/wallets', { method:'POST', headers: Object.assign({}, SB_H, {Prefer:'resolution=merge-duplicates,return=minimal'}), body: JSON.stringify({ phone: user.phone, balance: newBal, updated_at: new Date().toISOString() }) });
+      await fetch(SB_URL + '/rest/v1/wallet_transactions', { method:'POST', headers: Object.assign({}, SB_H, {Prefer:'return=minimal'}), body: JSON.stringify({ id:'wtx-'+Date.now(), phone:user.phone, amount:amt, type:'topup', note:'إيداع عبر '+methodLabel, created_at:new Date().toISOString() }) });
       document.getElementById('balance-val').textContent = newBal.toLocaleString('ar-EG');
       document.getElementById('withdraw-avail').textContent = newBal.toLocaleString('ar-EG');
-      toast('✅ تم شحن ' + amt + ' ج.م بنجاح!');
-      loadWallet();
+      closeSheet('sheet-deposit'); toast('✅ تم إيداع ' + amt + ' ج.م بنجاح!'); loadLog();
     } catch { toast('حدث خطأ، حاول مرة أخرى', false); }
-    btn.disabled = false; btn.textContent = '⬆️ شحن الرصيد';
+    btn.disabled = false; btn.textContent = 'إيداع الرصيد';
   });
 
-  /* ── Withdraw ── */
   document.getElementById('withdraw-btn').addEventListener('click', async function() {
     if (!user) return;
     var amt = parseFloat(document.getElementById('withdraw-amount').value);
@@ -626,69 +377,45 @@ import Layout from '../components/layout.astro';
     var note = document.getElementById('withdraw-note').value.trim();
     if (!amt || amt < 10) { toast('أدخل مبلغاً لا يقل عن 10 جنيه', false); return; }
     if (!dest) { toast('أدخل رقم فودافون كاش أو إنستاباي', false); return; }
-
-    // Check balance
     var res = await fetch(SB_URL + '/rest/v1/wallets?phone=eq.' + encodeURIComponent(user.phone) + '&select=balance', { headers: SB_H });
     var rows = await res.json();
     var currBal = (Array.isArray(rows) && rows[0]) ? Number(rows[0].balance || 0) : 0;
     if (amt > currBal) { toast('رصيدك غير كافٍ (المتاح: ' + currBal + ' ج.م)', false); return; }
-
-    var btn = document.getElementById('withdraw-btn');
-    btn.disabled = true; btn.textContent = 'جاري المعالجة...';
-
+    var btn = this; btn.disabled = true; btn.textContent = 'جاري المعالجة...';
     try {
       var newBal = currBal - amt;
-      await fetch(SB_URL + '/rest/v1/wallets', {
-        method: 'POST',
-        headers: Object.assign({}, SB_H, { Prefer: 'resolution=merge-duplicates,return=minimal' }),
-        body: JSON.stringify({ phone: user.phone, balance: newBal, updated_at: new Date().toISOString() }),
-      });
-      await fetch(SB_URL + '/rest/v1/wallet_transactions', {
-        method: 'POST',
-        headers: Object.assign({}, SB_H, { Prefer: 'return=minimal' }),
-        body: JSON.stringify({
-          id: 'wtx-' + Date.now(),
-          phone: user.phone,
-          amount: -amt,
-          type: 'withdrawal',
-          note: (note || 'سحب رصيد') + ' — إلى ' + dest,
-          created_at: new Date().toISOString(),
-        }),
-      });
+      await fetch(SB_URL + '/rest/v1/wallets', { method:'POST', headers: Object.assign({}, SB_H, {Prefer:'resolution=merge-duplicates,return=minimal'}), body: JSON.stringify({ phone:user.phone, balance:newBal, updated_at:new Date().toISOString() }) });
+      await fetch(SB_URL + '/rest/v1/wallet_transactions', { method:'POST', headers: Object.assign({}, SB_H, {Prefer:'return=minimal'}), body: JSON.stringify({ id:'wtx-'+Date.now(), phone:user.phone, amount:-amt, type:'withdrawal', note:(note||'سحب رصيد')+' — إلى '+dest, created_at:new Date().toISOString() }) });
       document.getElementById('balance-val').textContent = newBal.toLocaleString('ar-EG');
       document.getElementById('withdraw-avail').textContent = newBal.toLocaleString('ar-EG');
       document.getElementById('withdraw-amount').value = '';
       document.getElementById('withdraw-dest').value = '';
-      toast('✅ تم طلب سحب ' + amt + ' ج.م — سيصلك خلال 24 ساعة');
-      loadWallet();
+      closeSheet('sheet-withdraw'); toast('✅ تم طلب سحب ' + amt + ' ج.م'); loadLog();
     } catch { toast('حدث خطأ، حاول مرة أخرى', false); }
-    btn.disabled = false; btn.textContent = '⬇️ طلب سحب';
+    btn.disabled = false; btn.textContent = 'طلب سحب';
   });
 
-  /* ── Transfer: lookup recipient ── */
-  var _transferTimer = null;
+  var _trTimer = null;
   document.getElementById('transfer-phone').addEventListener('input', function() {
-    clearTimeout(_transferTimer);
-    var ph = this.value.trim();
-    document.getElementById('transfer-recipient').style.display = 'none';
+    clearTimeout(_trTimer); var ph = this.value.trim();
+    document.getElementById('transfer-recipient').classList.remove('visible');
     if (ph.length < 10) return;
-    _transferTimer = setTimeout(async function() {
+    _trTimer = setTimeout(async function() {
       try {
-        var local = ph.startsWith('+20') ? '0' + ph.slice(3) : ph;
-        var intl  = ph.startsWith('01')  ? '+2' + ph : ph;
-        var filter = 'or=(phone.eq.' + encodeURIComponent(intl) + ',phone.eq.' + encodeURIComponent(local) + ')';
-        var res = await fetch(SB_URL + '/rest/v1/accounts?' + filter + '&select=name,phone&limit=1', { headers: SB_H });
+        var local = ph.startsWith('+20') ? '0'+ph.slice(3) : ph;
+        var intl = ph.startsWith('01') ? '+2'+ph : ph;
+        var filter = 'or=(phone.eq.'+encodeURIComponent(intl)+',phone.eq.'+encodeURIComponent(local)+')';
+        var res = await fetch(SB_URL+'/rest/v1/accounts?'+filter+'&select=name,phone&limit=1', { headers: SB_H });
         var rows = await res.json();
         if (Array.isArray(rows) && rows[0]) {
-          document.getElementById('transfer-recipient-name').textContent = rows[0].name || 'مستخدم';
+          document.getElementById('transfer-recipient-name').textContent = rows[0].name||'مستخدم';
           document.getElementById('transfer-recipient-phone').textContent = rows[0].phone;
-          document.getElementById('transfer-recipient').style.display = '';
+          document.getElementById('transfer-recipient').classList.add('visible');
         }
       } catch {}
     }, 600);
   });
 
-  /* ── Transfer: execute ── */
   document.getElementById('transfer-btn').addEventListener('click', async function() {
     if (!user) return;
     var toPhone = document.getElementById('transfer-phone').value.trim();
@@ -697,65 +424,34 @@ import Layout from '../components/layout.astro';
     if (!toPhone) { toast('أدخل رقم المستلم', false); return; }
     if (toPhone === user.phone) { toast('لا يمكن التحويل لنفس الحساب', false); return; }
     if (!amt || amt < 1) { toast('أدخل مبلغاً صحيحاً', false); return; }
-
-    // Normalize phone
-    var toIntl = toPhone.startsWith('01') ? '+2' + toPhone : toPhone;
-    var toLocal = toPhone.startsWith('+20') ? '0' + toPhone.slice(3) : toPhone;
-
-    // Check sender balance
-    var res = await fetch(SB_URL + '/rest/v1/wallets?phone=eq.' + encodeURIComponent(user.phone) + '&select=balance', { headers: SB_H });
+    var toIntl = toPhone.startsWith('01') ? '+2'+toPhone : toPhone;
+    var toLocal = toPhone.startsWith('+20') ? '0'+toPhone.slice(3) : toPhone;
+    var res = await fetch(SB_URL+'/rest/v1/wallets?phone=eq.'+encodeURIComponent(user.phone)+'&select=balance', { headers: SB_H });
     var rows = await res.json();
-    var currBal = (Array.isArray(rows) && rows[0]) ? Number(rows[0].balance || 0) : 0;
-    if (amt > currBal) { toast('رصيدك غير كافٍ (المتاح: ' + currBal + ' ج.م)', false); return; }
-
-    // Verify recipient exists
-    var filter = 'or=(phone.eq.' + encodeURIComponent(toIntl) + ',phone.eq.' + encodeURIComponent(toLocal) + ')';
-    var rRes = await fetch(SB_URL + '/rest/v1/accounts?' + filter + '&select=name,phone&limit=1', { headers: SB_H });
+    var currBal = (Array.isArray(rows) && rows[0]) ? Number(rows[0].balance||0) : 0;
+    if (amt > currBal) { toast('رصيدك غير كافٍ', false); return; }
+    var filter = 'or=(phone.eq.'+encodeURIComponent(toIntl)+',phone.eq.'+encodeURIComponent(toLocal)+')';
+    var rRes = await fetch(SB_URL+'/rest/v1/accounts?'+filter+'&select=name,phone&limit=1', { headers: SB_H });
     var rRows = await rRes.json();
-    if (!Array.isArray(rRows) || !rRows[0]) { toast('لم يُعثر على هذا المستخدم', false); return; }
+    if (!Array.isArray(rRows)||!rRows[0]) { toast('لم يُعثر على هذا المستخدم', false); return; }
     var recipientPhone = rRows[0].phone;
-
-    var btn = document.getElementById('transfer-btn');
-    btn.disabled = true; btn.textContent = 'جاري التحويل...';
-
+    var btn = this; btn.disabled = true; btn.textContent = 'جاري التحويل...';
     try {
-      var now = new Date().toISOString();
-      // Debit sender
-      var newSenderBal = currBal - amt;
-      await fetch(SB_URL + '/rest/v1/wallets', {
-        method: 'POST',
-        headers: Object.assign({}, SB_H, { Prefer: 'resolution=merge-duplicates,return=minimal' }),
-        body: JSON.stringify({ phone: user.phone, balance: newSenderBal, updated_at: now }),
-      });
-      await fetch(SB_URL + '/rest/v1/wallet_transactions', {
-        method: 'POST',
-        headers: Object.assign({}, SB_H, { Prefer: 'return=minimal' }),
-        body: JSON.stringify({ id: 'wtx-out-' + Date.now(), phone: user.phone, amount: -amt, type: 'transfer_out', note: (note || 'تحويل') + ' → ' + recipientPhone, created_at: now }),
-      });
-
-      // Credit recipient
-      var rBalRes = await fetch(SB_URL + '/rest/v1/wallets?phone=eq.' + encodeURIComponent(recipientPhone) + '&select=balance', { headers: SB_H });
+      var now = new Date().toISOString(); var newSenderBal = currBal - amt;
+      await fetch(SB_URL+'/rest/v1/wallets', { method:'POST', headers: Object.assign({},SB_H,{Prefer:'resolution=merge-duplicates,return=minimal'}), body: JSON.stringify({phone:user.phone,balance:newSenderBal,updated_at:now}) });
+      await fetch(SB_URL+'/rest/v1/wallet_transactions', { method:'POST', headers: Object.assign({},SB_H,{Prefer:'return=minimal'}), body: JSON.stringify({id:'wtx-out-'+Date.now(),phone:user.phone,amount:-amt,type:'transfer_out',note:(note||'تحويل')+' → '+recipientPhone,created_at:now}) });
+      var rBalRes = await fetch(SB_URL+'/rest/v1/wallets?phone=eq.'+encodeURIComponent(recipientPhone)+'&select=balance', { headers: SB_H });
       var rBalRows = await rBalRes.json();
-      var recBal = (Array.isArray(rBalRows) && rBalRows[0]) ? Number(rBalRows[0].balance || 0) : 0;
-      await fetch(SB_URL + '/rest/v1/wallets', {
-        method: 'POST',
-        headers: Object.assign({}, SB_H, { Prefer: 'resolution=merge-duplicates,return=minimal' }),
-        body: JSON.stringify({ phone: recipientPhone, balance: recBal + amt, updated_at: now }),
-      });
-      await fetch(SB_URL + '/rest/v1/wallet_transactions', {
-        method: 'POST',
-        headers: Object.assign({}, SB_H, { Prefer: 'return=minimal' }),
-        body: JSON.stringify({ id: 'wtx-in-' + Date.now(), phone: recipientPhone, amount: amt, type: 'transfer_in', note: (note || 'تحويل') + ' ← ' + user.phone, created_at: now }),
-      });
-
+      var recBal = (Array.isArray(rBalRows)&&rBalRows[0]) ? Number(rBalRows[0].balance||0) : 0;
+      await fetch(SB_URL+'/rest/v1/wallets', { method:'POST', headers: Object.assign({},SB_H,{Prefer:'resolution=merge-duplicates,return=minimal'}), body: JSON.stringify({phone:recipientPhone,balance:recBal+amt,updated_at:now}) });
+      await fetch(SB_URL+'/rest/v1/wallet_transactions', { method:'POST', headers: Object.assign({},SB_H,{Prefer:'return=minimal'}), body: JSON.stringify({id:'wtx-in-'+Date.now(),phone:recipientPhone,amount:amt,type:'transfer_in',note:(note||'تحويل')+' ← '+user.phone,created_at:now}) });
       document.getElementById('balance-val').textContent = newSenderBal.toLocaleString('ar-EG');
       document.getElementById('transfer-phone').value = '';
       document.getElementById('transfer-amount').value = '';
-      document.getElementById('transfer-recipient').style.display = 'none';
-      toast('✅ تم تحويل ' + amt + ' ج.م بنجاح!');
-      loadWallet();
+      document.getElementById('transfer-recipient').classList.remove('visible');
+      closeSheet('sheet-transfer'); toast('✅ تم تحويل ' + amt + ' ج.م بنجاح!'); loadLog();
     } catch { toast('حدث خطأ، حاول مرة أخرى', false); }
-    btn.disabled = false; btn.textContent = '↔️ تحويل الآن';
+    btn.disabled = false; btn.textContent = 'تحويل الآن';
   });
 </script>
 

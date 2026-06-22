@@ -928,15 +928,20 @@ function renderUsers() {
       <td style="font-size:.82rem">${u.city||'—'}</td>
       <td style="font-size:.78rem">${fmtDate(u.created_at||u.createdAt)}</td>
       <td>
-        <div class="btn-row" style="flex-wrap:nowrap;align-items:center">
-          <select class="filter-select" style="font-size:.72rem;padding:.25rem .45rem;min-width:80px" onchange="changeUserStatus('${u.phone}',this.value);this.value='${u.status||'active'}'">
+        <div class="btn-row" style="flex-wrap:nowrap;align-items:center;gap:4px">
+          <select class="filter-select" style="font-size:.72rem;padding:.25rem .45rem;min-width:75px" onchange="changeUserStatus('${u.phone}',this.value);this.value='${u.status||'active'}'">
             <option value="active"  ${(u.status||'active')==='active'  ?'selected':''}>نشط</option>
             <option value="pending" ${(u.status||'')==='pending' ?'selected':''}>معلق</option>
             <option value="approved"${(u.status||'')==='approved'?'selected':''}>معتمد</option>
             <option value="rejected"${(u.status||'')==='rejected'?'selected':''}>مرفوض</option>
             <option value="banned"  ${(u.status||'')==='banned'  ?'selected':''}>محظور</option>
           </select>
-          ${u.role !== 'admin' ? `<button class="btn btn--ghost btn--sm" onclick="makeAdmin('${u.phone}')">مشرف</button>` : ''}
+          <select class="filter-select" style="font-size:.72rem;padding:.25rem .45rem;min-width:75px" onchange="changeUserRole('${u.phone}',this.value)">
+            <option value="customer" ${u.role==='customer'?'selected':''}>عميل</option>
+            <option value="driver"   ${u.role==='driver'  ?'selected':''}>سائق</option>
+            <option value="merchant" ${u.role==='merchant'?'selected':''}>تاجر</option>
+            <option value="admin"    ${u.role==='admin'   ?'selected':''}>مشرف</option>
+          </select>
           <button class="btn btn--red btn--sm" onclick="deleteUser('${u.phone}')">حذف</button>
         </div>
       </td>
@@ -960,9 +965,31 @@ async function makeAdmin(phone) {
   else showToast('❌ حدث خطأ', '#DC2626');
 }
 async function deleteUser(phone) {
-  if (!confirm(`⚠️ حذف حساب ${phone}؟ هذا الإجراء لا يمكن التراجع عنه.`)) return;
-  const ok = await sbDelete(`accounts?phone=eq.${encodeURIComponent(phone)}`);
-  if (ok) { showToast('✅ تم الحذف', '#16A34A'); loadUsers(); }
+  const user = allUsers.find(u => u.phone === phone);
+  const roleAr = { driver:'سائق', merchant:'تاجر', customer:'عميل', admin:'مشرف' }[user?.role] || user?.role || '';
+  if (!confirm(`⚠️ حذف حساب ${roleAr} "${user?.name || phone}"؟\nسيتم حذف جميع بياناته المرتبطة. هذا الإجراء لا يمكن التراجع عنه.`)) return;
+  const p = encodeURIComponent(phone);
+  // Delete all related data first to avoid FK constraint errors
+  await Promise.allSettled([
+    sbDelete(`driver_applications?phone=eq.${p}`),
+    sbDelete(`merchant_applications?phone=eq.${p}`),
+    sbDelete(`driver_locations?driver_phone=eq.${p}`),
+    sbDelete(`wallet_transactions?phone=eq.${p}`),
+    sbDelete(`rides?driver_phone=eq.${p}`),
+    sbDelete(`rides?customer_phone=eq.${p}`),
+    sbDelete(`orders?customer_phone=eq.${p}`),
+  ]);
+  const ok = await sbDelete(`accounts?phone=eq.${p}`);
+  if (ok) { showToast('✅ تم الحذف بالكامل', '#16A34A'); loadUsers(); }
+  else showToast('❌ فشل الحذف — تحقق من الصلاحيات', '#DC2626');
+}
+async function changeUserRole(phone, role) {
+  if (!role) return;
+  if (!confirm(`تغيير دور هذا المستخدم إلى "${{driver:'سائق',merchant:'تاجر',customer:'عميل',admin:'مشرف'}[role]||role}"؟`)) {
+    renderUsers(); return;
+  }
+  const ok = await sbPatch(`accounts?phone=eq.${encodeURIComponent(phone)}`, { role });
+  if (ok) { showToast('✅ تم تغيير الدور', '#16A34A'); loadUsers(); }
   else showToast('❌ حدث خطأ', '#DC2626');
 }
 
