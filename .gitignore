@@ -40,3 +40,5 @@ apply-all.ps1
 *.bundle
 *.patch
 apply-all.ps1
+.vercel
+.env*.local
