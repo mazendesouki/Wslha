@@ -3,44 +3,117 @@ import Layout from '../components/layout.astro';
 ---
 <Layout title="تقديم طلب تاجر — وصّلها" currentPage="merchant-apply">
 <style>
-  .apply-wrap{max-width:860px;margin:0 auto;padding:var(--sp-8) var(--sp-6) var(--sp-20)}
-  .step-header{display:flex;align-items:center;gap:var(--sp-3);padding:var(--sp-5) var(--sp-6);background:linear-gradient(135deg,#16A34A,#15803D);color:#fff;border-radius:var(--radius-lg);margin-bottom:var(--sp-6)}
-  .step-header__icon{font-size:2.2rem}
-  .step-header__title{font-size:var(--text-xl);font-weight:var(--weight-black)}
-  .step-header__sub{font-size:var(--text-sm);opacity:.85;margin-top:4px}
-  .steps-nav{display:flex;gap:var(--sp-1);margin-bottom:var(--sp-6);overflow-x:auto;scrollbar-width:none}
-  .step-pill{padding:var(--sp-2) var(--sp-4);border-radius:var(--radius-full);font-size:var(--text-xs);font-weight:var(--weight-bold);white-space:nowrap;background:var(--color-bg-soft);color:var(--color-text-muted);border:1.5px solid var(--color-border)}
-  .step-pill.active{background:#16A34A;color:#fff;border-color:#16A34A}
-  .step-pill.done{color:#16A34A;border-color:#16A34A}
-  .card{background:var(--color-bg);border:1px solid var(--color-border);border-radius:var(--radius-lg);margin-bottom:var(--sp-5);box-shadow:var(--shadow-sm)}
-  .card__head{padding:var(--sp-4) var(--sp-5);border-bottom:1px solid var(--color-border);font-size:var(--text-base);font-weight:var(--weight-black)}
+  /* ── 2026 Merchant Signup ──────────────────────────────────── */
+  .apply-wrap{
+    max-width:760px;margin:0 auto;padding:var(--sp-6) var(--sp-4) calc(var(--sp-20) + 40px);
+  }
+  .hidden{display:none!important}
+  :global(body){
+    background:
+      radial-gradient(1100px 520px at 85% -8%, rgba(22,163,74,.16), transparent 60%),
+      radial-gradient(820px 440px at -10% 108%, rgba(59,110,248,.12), transparent 55%),
+      #F4F8F5;
+  }
+
+  /* Step hero header */
+  .step-header{
+    display:flex;align-items:center;gap:var(--sp-4);
+    padding:var(--sp-6) var(--sp-6) var(--sp-7);
+    background:linear-gradient(135deg,#16A34A 0%,#0E9F6E 55%,#0EA5A0 100%);
+    color:#fff;border-radius:24px;margin-bottom:var(--sp-5);
+    position:relative;overflow:hidden;
+    box-shadow:0 18px 50px rgba(16,163,74,.28);
+  }
+  .step-header::after{
+    content:'';position:absolute;inset:0;
+    background:radial-gradient(360px 180px at 88% 0%, rgba(255,255,255,.25), transparent 70%);
+    pointer-events:none;
+  }
+  .step-header__icon{
+    font-size:2rem;width:60px;height:60px;flex-shrink:0;
+    display:flex;align-items:center;justify-content:center;
+    background:rgba(255,255,255,.2);border:1.5px solid rgba(255,255,255,.4);
+    border-radius:18px;backdrop-filter:blur(6px);
+  }
+  .step-header__title{font-size:1.4rem;font-weight:900;letter-spacing:-.3px}
+  .step-header__sub{font-size:.86rem;opacity:.92;margin-top:4px;font-weight:500}
+
+  /* Stepper pills */
+  .steps-nav{display:flex;gap:8px;margin-bottom:var(--sp-5);overflow-x:auto;scrollbar-width:none;padding-bottom:2px}
+  .steps-nav::-webkit-scrollbar{display:none}
+  .step-pill{
+    padding:9px 16px;border-radius:999px;font-size:.74rem;font-weight:800;
+    white-space:nowrap;background:#fff;color:var(--color-text-muted);
+    border:1.5px solid var(--color-border);transition:all .25s;display:flex;align-items:center;gap:5px;
+  }
+  .step-pill.active{background:linear-gradient(135deg,#16A34A,#0E9F6E);color:#fff;border-color:transparent;box-shadow:0 6px 16px rgba(16,163,74,.3)}
+  .step-pill.done{color:#16A34A;border-color:#86EFAC;background:#F0FDF4}
+  .step-pill.done::before{content:'✓ '}
+
+  /* Cards */
+  .card{
+    background:rgba(255,255,255,.92);backdrop-filter:blur(12px);
+    border:1px solid rgba(255,255,255,.9);border-radius:20px;
+    margin-bottom:var(--sp-4);box-shadow:0 12px 36px rgba(20,80,50,.08);overflow:hidden;
+  }
+  .card__head{padding:var(--sp-4) var(--sp-5);border-bottom:1px solid var(--color-border);font-size:.95rem;font-weight:900;color:var(--color-text)}
   .card__body{padding:var(--sp-5)}
   .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-4)}
-  .form-group{display:flex;flex-direction:column;gap:var(--sp-2)}
+  .form-group{display:flex;flex-direction:column;gap:7px}
   .form-group--full{grid-column:1/-1}
-  label{font-size:var(--text-sm);font-weight:var(--weight-bold);color:var(--color-text)}
+  label{font-size:.82rem;font-weight:800;color:var(--color-text)}
   label .req{color:#DC2626;margin-right:2px}
-  .form-input,.form-select,.form-textarea{padding:var(--sp-3) var(--sp-4);border:1.5px solid var(--color-border);border-radius:var(--radius);font-family:var(--font-body);font-size:var(--text-base);color:var(--color-text);background:var(--color-bg);transition:border-color var(--ease);width:100%}
-  .form-input:focus,.form-select:focus,.form-textarea:focus{outline:none;border-color:#16A34A}
+  .form-input,.form-select,.form-textarea{
+    padding:13px 15px;border:2px solid var(--color-border);border-radius:13px;
+    font-family:var(--font-body);font-size:1rem;color:var(--color-text);background:#fff;
+    transition:border-color .18s,box-shadow .18s;width:100%;
+  }
+  .form-input:focus,.form-select:focus,.form-textarea:focus{outline:none;border-color:#16A34A;box-shadow:0 0 0 4px rgba(22,163,74,.13)}
   .form-textarea{min-height:80px;resize:vertical}
-  .upload-zone{border:2px dashed var(--color-border);border-radius:var(--radius);padding:var(--sp-5);text-align:center;cursor:pointer;transition:all var(--ease);position:relative;background:var(--color-bg-soft)}
-  .upload-zone:hover{border-color:#16A34A;background:#DCFCE7}
+
+  /* Upload zones */
+  .upload-zone{
+    border:2px dashed var(--color-border);border-radius:16px;padding:var(--sp-6) var(--sp-5);
+    text-align:center;cursor:pointer;transition:all .2s;position:relative;background:#F8FAF9;
+  }
+  .upload-zone:hover{border-color:#16A34A;background:#ECFDF3;transform:translateY(-2px)}
   .upload-zone input[type="file"]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
-  .upload-zone__icon{font-size:2rem;margin-bottom:var(--sp-2)}
-  .upload-zone__text{font-size:var(--text-sm);font-weight:var(--weight-bold);color:var(--color-text-muted)}
-  .upload-preview{width:100%;height:140px;object-fit:cover;border-radius:var(--radius);margin-top:var(--sp-2);border:1px solid var(--color-border);display:none}
+  .upload-zone__icon{font-size:2.1rem;margin-bottom:var(--sp-2)}
+  .upload-zone__text{font-size:.85rem;font-weight:800;color:var(--color-text-muted)}
+  .upload-preview{width:100%;height:150px;object-fit:cover;border-radius:14px;margin-top:var(--sp-2);border:1px solid var(--color-border);display:none}
+
+  /* Buttons */
   .nav-buttons{display:flex;gap:var(--sp-3);justify-content:space-between;margin-top:var(--sp-6)}
-  .btn-next{padding:var(--sp-3) var(--sp-8);background:#16A34A;color:#fff;border:none;border-radius:var(--radius);font-family:var(--font-body);font-size:var(--text-base);font-weight:var(--weight-bold);cursor:pointer;transition:all var(--ease)}
-  .btn-next:hover{background:#15803D;transform:translateY(-1px)}
-  .btn-next:disabled{opacity:.5;cursor:not-allowed;transform:none}
-  .btn-back{padding:var(--sp-3) var(--sp-6);background:var(--color-bg-soft);color:var(--color-text-muted);border:1.5px solid var(--color-border);border-radius:var(--radius);font-family:var(--font-body);font-size:var(--text-base);font-weight:var(--weight-bold);cursor:pointer}
-  .info-box{padding:var(--sp-4);background:#DCFCE7;border:1px solid #86EFAC;border-radius:var(--radius);font-size:var(--text-sm);color:#14532D;line-height:1.7;margin-bottom:var(--sp-5)}
-  .warn-box{padding:var(--sp-4);background:#FEF9C3;border:1px solid #FDE047;border-radius:var(--radius);font-size:var(--text-sm);color:#92400E;line-height:1.7;margin-bottom:var(--sp-5)}
+  .btn-next{
+    padding:15px var(--sp-8);background:linear-gradient(135deg,#16A34A,#0E9F6E);color:#fff;border:none;
+    border-radius:14px;font-family:var(--font-body);font-size:1rem;font-weight:900;cursor:pointer;
+    transition:transform .15s,box-shadow .18s;box-shadow:0 10px 26px rgba(16,163,74,.32);
+  }
+  .btn-next:hover{transform:translateY(-2px);box-shadow:0 14px 32px rgba(16,163,74,.4)}
+  .btn-next:disabled{opacity:.55;cursor:not-allowed;transform:none;box-shadow:none}
+  .btn-back{padding:15px var(--sp-6);background:#fff;color:var(--color-text-muted);border:2px solid var(--color-border);border-radius:14px;font-family:var(--font-body);font-size:1rem;font-weight:800;cursor:pointer;transition:all .18s}
+  .btn-back:hover{border-color:#16A34A;color:#16A34A}
+
+  .info-box{padding:14px 16px;background:#ECFDF3;border:1px solid #A7F3D0;border-radius:14px;font-size:.85rem;color:#14532D;line-height:1.7;margin-bottom:var(--sp-5)}
+  .warn-box{padding:14px 16px;background:#FEF9C3;border:1px solid #FDE047;border-radius:14px;font-size:.85rem;color:#92400E;line-height:1.7;margin-bottom:var(--sp-5)}
+
+  /* Success */
   .success-state{text-align:center;padding:var(--sp-12) var(--sp-6)}
-  .success-state__icon{font-size:4rem;margin-bottom:var(--sp-4)}
-  .success-state__title{font-size:var(--text-2xl);font-weight:var(--weight-black);margin-bottom:var(--sp-3)}
-  .success-state__text{color:var(--color-text-muted);font-size:var(--text-base);line-height:1.7;max-width:480px;margin:0 auto var(--sp-6)}
-  @media(max-width:600px){.form-grid{grid-template-columns:1fr}.apply-wrap{padding:var(--sp-6) var(--sp-4) var(--sp-20)}}
+  .success-state__icon{font-size:4.2rem;margin-bottom:var(--sp-4);animation:pop .5s cubic-bezier(.16,1,.3,1)}
+  @keyframes pop{from{transform:scale(.5);opacity:0}to{transform:scale(1);opacity:1}}
+  .success-state__title{font-size:1.6rem;font-weight:900;margin-bottom:var(--sp-3)}
+  .success-state__text{color:var(--color-text-muted);font-size:1rem;line-height:1.7;max-width:480px;margin:0 auto var(--sp-6)}
+
+  .form-step{animation:fadeUp .4s cubic-bezier(.16,1,.3,1)}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+
+  @media(max-width:600px){
+    .form-grid{grid-template-columns:1fr}
+    .apply-wrap{padding:var(--sp-4) var(--sp-3) calc(var(--sp-20) + 40px)}
+    .step-header{padding:var(--sp-5) var(--sp-5) var(--sp-6);gap:var(--sp-3)}
+    .step-header__icon{width:50px;height:50px;font-size:1.7rem}
+    .step-header__title{font-size:1.2rem}
+  }
 </style>
 
 <div class="apply-wrap" id="main-content">
