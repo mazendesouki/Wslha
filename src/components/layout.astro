@@ -1,5 +1,6 @@
 ---
 import Nav from './Nav.astro';
+import BottomNav from './BottomNav.astro';
 import Footer from './Footer.astro';
 
 interface Props {
@@ -8,7 +9,7 @@ interface Props {
   page?: string;
 }
 
-const { title, description, page = '' } = Astro.props;
+const { title, description, page = '', currentPage = page, hideBottomNav = false } = Astro.props;
 const canonicalURL = new URL(Astro.url.pathname, Astro.site ?? 'https://wslha.co');
 ---
 
@@ -163,7 +164,7 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site ?? 'https://wslha.co
 </head>
 
 <body>
-  <Nav currentPage={page} />
+  <Nav currentPage={currentPage} />
 
   <main id="main-content" tabindex="-1">
     <slot />
@@ -178,6 +179,8 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site ?? 'https://wslha.co
   >
     💬
   </a>
+
+  {!hideBottomNav && <BottomNav currentPage={currentPage} />}
 
   <Footer />
 

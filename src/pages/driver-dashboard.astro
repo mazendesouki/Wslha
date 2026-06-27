@@ -1433,6 +1433,7 @@ import PageHero from '../components/PageHero.astro';
       const appRows  = appRes.ok  ? await appRes.json()  : [];
 
       const acctStatus = Array.isArray(acctRows) && acctRows[0] ? (acctRows[0].status || 'active') : null;
+      const acctRole   = Array.isArray(acctRows) && acctRows[0] ? acctRows[0].role : null;
       const appStatus  = Array.isArray(appRows)  && appRows[0]  ? appRows[0].status : null;
       const rejection  = Array.isArray(appRows)  && appRows[0]  ? appRows[0].rejection_reason : null;
 
@@ -1476,8 +1477,8 @@ import PageHero from '../components/PageHero.astro';
         return;
       }
 
-      // If account itself is approved treat as approved (admin may approve directly on accounts table)
-      const effectiveAppStatus = appStatus || (acctStatus === 'approved' ? 'approved' : null);
+      // If account itself is approved, or role is driver (admin set it), treat as approved
+      const effectiveAppStatus = appStatus || (acctStatus === 'approved' || acctRole === 'driver' ? 'approved' : null);
 
       if (!effectiveAppStatus) {
         banner.innerHTML = `<div class="approval-banner pending"><div class="approval-banner__icon">📋</div><div><div class="approval-banner__title">لم تقدّم طلب انضمام بعد</div><div class="approval-banner__sub">قدّم طلبك لبدء العمل كسائق. <a href="/driver" style="color:var(--color-primary);font-weight:700">تقديم الطلب الآن</a></div></div></div>`;

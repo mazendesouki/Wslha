@@ -220,6 +220,9 @@
     <button class="nav-item" data-section="finance">
       <span class="nav-item__icon">💰</span> التقارير المالية
     </button>
+    <button class="nav-item" data-section="wallets">
+      <span class="nav-item__icon">💳</span> إدارة المحافظ
+    </button>
     <button class="nav-item" data-section="settings">
       <span class="nav-item__icon">⚙️</span> الإعدادات
     </button>
@@ -550,6 +553,90 @@
       </div>
     </div>
 
+    <!-- ═══════════════════ WALLETS ════════════════════════ -->
+    <div class="section" id="sec-wallets">
+      <!-- KPIs -->
+      <div class="kpi-grid">
+        <div class="kpi kpi--green"><div class="kpi__icon">🏢</div><div class="kpi__val" id="w-platform-balance">—</div><div class="kpi__label">رصيد المنصة (عمولات)</div></div>
+        <div class="kpi kpi--blue"><div class="kpi__icon">💳</div><div class="kpi__val" id="w-total-balance">—</div><div class="kpi__label">إجمالي أرصدة المستخدمين</div></div>
+        <div class="kpi kpi--orange"><div class="kpi__icon">🚗</div><div class="kpi__val" id="w-driver-balance">—</div><div class="kpi__label">أرصدة السائقين</div></div>
+        <div class="kpi kpi--blue"><div class="kpi__icon">🏪</div><div class="kpi__val" id="w-merchant-balance">—</div><div class="kpi__label">أرصدة التجار</div></div>
+      </div>
+
+      <!-- Platform commission wallet -->
+      <div class="card">
+        <div class="card__head">
+          <span class="card__title">🏢 محفظة المنصة — العمولات المتراكمة</span>
+          <button class="btn btn--sm btn--primary" onclick="adminSettlePlatform()">💸 تسوية العمولات</button>
+        </div>
+        <div class="card__body">
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:1rem">
+            <div style="background:#DCFCE7;border-radius:10px;padding:.85rem 1rem;text-align:center">
+              <div style="font-size:1.35rem;font-weight:900;color:#15803D" id="pw-ride">—</div>
+              <div style="font-size:.72rem;color:#166534;margin-top:2px">🚗 عمولة رحلات</div>
+            </div>
+            <div style="background:#DBEAFE;border-radius:10px;padding:.85rem 1rem;text-align:center">
+              <div style="font-size:1.35rem;font-weight:900;color:#1D4ED8" id="pw-delivery">—</div>
+              <div style="font-size:.72rem;color:#1E40AF;margin-top:2px">🛵 عمولة توصيل</div>
+            </div>
+            <div style="background:#FEF3C7;border-radius:10px;padding:.85rem 1rem;text-align:center">
+              <div style="font-size:1.35rem;font-weight:900;color:#B45309" id="pw-airport">—</div>
+              <div style="font-size:.72rem;color:#92400E;margin-top:2px">✈️ عمولة مطار</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- User wallets table -->
+      <div class="card">
+        <div class="card__head">
+          <span class="card__title">👥 محافظ المستخدمين</span>
+          <div style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap">
+            <select class="filter-select" id="wallet-role-filter" onchange="renderWalletsList()">
+              <option value="">كل الأدوار</option>
+              <option value="driver">السائقين</option>
+              <option value="merchant">التجار</option>
+              <option value="customer">العملاء</option>
+            </select>
+            <input class="search-input" id="wallet-search" placeholder="🔍 بحث بالاسم أو الجوال" oninput="renderWalletsList()" style="width:170px"/>
+          </div>
+        </div>
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr><th>الاسم</th><th>الجوال</th><th>الدور</th><th>الرصيد</th><th>إجراءات</th></tr></thead>
+            <tbody id="wallets-tbody"><tr><td colspan="5" style="text-align:center;color:#94A3B8;padding:2rem">جاري التحميل…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Full transaction log -->
+      <div class="card">
+        <div class="card__head">
+          <span class="card__title">📋 سجل جميع المعاملات</span>
+          <div style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap">
+            <select class="filter-select" id="tx-type-filter" onchange="renderTxLog()">
+              <option value="">كل الأنواع</option>
+              <option value="earning">أرباح سائق</option>
+              <option value="commission">عمولة منصة</option>
+              <option value="topup">شحن</option>
+              <option value="withdrawal">سحب</option>
+              <option value="transfer_out">تحويل صادر</option>
+              <option value="transfer_in">تحويل وارد</option>
+              <option value="admin_credit">إضافة إدارية</option>
+              <option value="admin_debit">خصم إداري</option>
+            </select>
+            <input class="search-input" id="tx-search" placeholder="🔍 بحث بالجوال أو الوصف" oninput="renderTxLog()" style="width:170px"/>
+          </div>
+        </div>
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr><th>التاريخ</th><th>الجوال</th><th>الاسم</th><th>النوع</th><th>المبلغ</th><th>الوصف</th></tr></thead>
+            <tbody id="all-tx-tbody"><tr><td colspan="6" style="text-align:center;color:#94A3B8;padding:2rem">جاري التحميل…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
     <!-- ═══════════════════ SETTINGS ════════════════════════ -->
     <div class="section" id="sec-settings">
       <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:1.25rem">
@@ -702,6 +789,51 @@
   <img id="lightbox-img" src="" alt="" style="max-width:95vw;max-height:95vh;border-radius:8px;box-shadow:0 25px 50px rgba(0,0,0,.5)"/>
 </div>
 
+<!-- Wallet charge/deduct modal -->
+<div class="modal hidden" id="wallet-op-modal">
+  <div class="modal__box" style="max-width:400px">
+    <div class="modal__head">
+      <span id="wallet-op-title">شحن محفظة</span>
+      <button class="modal__close" onclick="closeModal('wallet-op-modal')">✕</button>
+    </div>
+    <div class="modal__body" style="display:flex;flex-direction:column;gap:.85rem">
+      <div style="padding:.75rem 1rem;background:#F1F5F9;border-radius:8px">
+        <div style="font-size:.75rem;color:#64748B">المستخدم</div>
+        <div style="font-weight:800;font-size:1rem" id="wallet-op-user">—</div>
+        <div style="font-size:.78rem;color:#94A3B8;margin-top:1px" id="wallet-op-phone-display">—</div>
+      </div>
+      <div>
+        <label style="font-size:.78rem;font-weight:700;color:#64748B;display:block;margin-bottom:.3rem">المبلغ (ج.م)</label>
+        <input class="search-input" id="wallet-op-amount" type="number" min="0.5" step="0.5" placeholder="0.00" style="width:100%;font-size:1.1rem;font-weight:700"/>
+      </div>
+      <div>
+        <label style="font-size:.78rem;font-weight:700;color:#64748B;display:block;margin-bottom:.3rem">السبب / الملاحظة</label>
+        <input class="search-input" id="wallet-op-note" type="text" placeholder="مثال: مكافأة أداء، شحن يدوي…" style="width:100%"/>
+      </div>
+      <button class="btn btn--primary" style="width:100%" id="wallet-op-confirm-btn" onclick="execAdminWalletOp()">تأكيد</button>
+      <div id="wallet-op-msg" style="display:none;font-size:.82rem;font-weight:700;padding:.5rem .75rem;border-radius:6px"></div>
+    </div>
+  </div>
+</div>
+
+<!-- User transaction history modal -->
+<div class="modal hidden" id="user-tx-modal">
+  <div class="modal__box" style="max-width:600px">
+    <div class="modal__head">
+      <span id="user-tx-modal-title">سجل معاملات</span>
+      <button class="modal__close" onclick="closeModal('user-tx-modal')">✕</button>
+    </div>
+    <div class="modal__body">
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>التاريخ</th><th>النوع</th><th>المبلغ</th><th>الوصف</th></tr></thead>
+          <tbody id="user-tx-tbody"><tr><td colspan="4" style="text-align:center;color:#94A3B8;padding:2rem">جاري التحميل…</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script is:inline>
@@ -797,7 +929,7 @@ async function sbDelete(path) {
 const sectionTitles = {
   dash:'لوحة التحكم', users:'إدارة المستخدمين', drivers:'إدارة السائقين',
   merchants:'إدارة التجار', orders:'إدارة الطلبات', rides:'إدارة الرحلات',
-  stores:'إدارة المتاجر', finance:'التقارير المالية', settings:'الإعدادات'
+  stores:'إدارة المتاجر', finance:'التقارير المالية', wallets:'إدارة المحافظ', settings:'الإعدادات'
 };
 let currentSection = 'dash';
 function loadDriversSection() {
@@ -812,7 +944,7 @@ function loadMerchantsSection() {
 }
 const loaders = { dash:loadDash, users:loadUsers, drivers:loadDriversSection,
   merchants:loadMerchantsSection, orders:loadOrders, rides:loadRides, stores:loadStores,
-  messages:loadMessages, finance:loadFinance, settings:loadSettingsSection };
+  messages:loadMessages, finance:loadFinance, wallets:loadWalletsSection, settings:loadSettingsSection };
 
 document.querySelectorAll('.nav-item').forEach(btn => {
   btn.addEventListener('click', () => {
@@ -988,7 +1120,9 @@ async function changeUserRole(phone, role) {
   if (!confirm(`تغيير دور هذا المستخدم إلى "${{driver:'سائق',merchant:'تاجر',customer:'عميل',admin:'مشرف'}[role]||role}"؟`)) {
     renderUsers(); return;
   }
-  const ok = await sbPatch(`accounts?phone=eq.${encodeURIComponent(phone)}`, { role });
+  const patch = { role };
+  if (role === 'driver') patch.status = 'approved';
+  const ok = await sbPatch(`accounts?phone=eq.${encodeURIComponent(phone)}`, patch);
   if (ok) { showToast('✅ تم تغيير الدور', '#16A34A'); loadUsers(); }
   else showToast('❌ حدث خطأ', '#DC2626');
 }
@@ -1680,6 +1814,224 @@ async function saveCommissionRates() {
 
 async function loadSettingsSection() {
   await loadCommissionRates();
+}
+
+/* ═══════════════════ WALLETS ═══════════════════════════════ */
+let allWallets = [], allWalletAccounts = [], allTxLogs = [];
+
+async function loadWalletsSection() {
+  document.getElementById('wallets-tbody').innerHTML = '<tr><td colspan="5" style="text-align:center;color:#94A3B8;padding:2rem">جاري التحميل…</td></tr>';
+  document.getElementById('all-tx-tbody').innerHTML  = '<tr><td colspan="6" style="text-align:center;color:#94A3B8;padding:2rem">جاري التحميل…</td></tr>';
+
+  const [wallets, accounts, platformTxns, txData] = await Promise.all([
+    sbGet('wallets?select=phone,balance,updated_at&order=balance.desc&limit=2000'),
+    sbGet('accounts?select=phone,name,role&limit=2000'),
+    sbGet('wallet_transactions?phone=eq.platform&select=amount,note,created_at&order=created_at.desc&limit=5000'),
+    sbGet('wallet_transactions?select=id,phone,amount,type,note,reference_id,created_at&order=created_at.desc&limit=500'),
+  ]);
+
+  allWalletAccounts = accounts || [];
+  const acctMap = {};
+  allWalletAccounts.forEach(a => { acctMap[a.phone] = a; });
+
+  allWallets = (wallets || []).map(w => ({
+    ...w, name: acctMap[w.phone]?.name || '', role: acctMap[w.phone]?.role || 'customer',
+  }));
+  allWalletAccounts.forEach(a => {
+    if (!allWallets.find(w => w.phone === a.phone))
+      allWallets.push({ phone: a.phone, balance: 0, name: a.name || '', role: a.role || 'customer' });
+  });
+
+  const totalBal    = allWallets.reduce((s,w) => s + Number(w.balance||0), 0);
+  const driverBal   = allWallets.filter(w => w.role === 'driver').reduce((s,w) => s + Number(w.balance||0), 0);
+  const merchantBal = allWallets.filter(w => w.role === 'merchant').reduce((s,w) => s + Number(w.balance||0), 0);
+
+  const platformComms   = (platformTxns || []).filter(t => !/تسوية/.test(t.note||''));
+  const platformSettled = (platformTxns || []).filter(t => /تسوية/.test(t.note||''));
+  const platformBal     = platformComms.reduce((s,t) => s + Number(t.amount||0), 0)
+                        - platformSettled.reduce((s,t) => s + Math.abs(Number(t.amount||0)), 0);
+  const rideComm    = (platformTxns||[]).filter(t => (t.note||'').includes('رحلة') && !(t.note||'').includes('مطار')).reduce((s,t) => s + Number(t.amount||0), 0);
+  const delivComm   = (platformTxns||[]).filter(t => (t.note||'').includes('توصيل')).reduce((s,t) => s + Number(t.amount||0), 0);
+  const airportComm = (platformTxns||[]).filter(t => (t.note||'').includes('مطار')).reduce((s,t) => s + Number(t.amount||0), 0);
+
+  document.getElementById('w-platform-balance').textContent = fmt(Math.round(platformBal)) + ' ج.م';
+  document.getElementById('w-total-balance').textContent    = fmt(Math.round(totalBal))    + ' ج.م';
+  document.getElementById('w-driver-balance').textContent   = fmt(Math.round(driverBal))   + ' ج.م';
+  document.getElementById('w-merchant-balance').textContent = fmt(Math.round(merchantBal)) + ' ج.م';
+  document.getElementById('pw-ride').textContent     = fmt(Math.round(rideComm))    + ' ج.م';
+  document.getElementById('pw-delivery').textContent = fmt(Math.round(delivComm))   + ' ج.م';
+  document.getElementById('pw-airport').textContent  = fmt(Math.round(airportComm)) + ' ج.م';
+
+  allTxLogs = (txData || []).map(t => ({ ...t, userName: acctMap[t.phone]?.name || (t.phone === 'platform' ? 'المنصة' : '') }));
+
+  renderWalletsList();
+  renderTxLog();
+}
+
+function renderWalletsList() {
+  const roleFilter = document.getElementById('wallet-role-filter')?.value || '';
+  const search     = (document.getElementById('wallet-search')?.value || '').trim().toLowerCase();
+  const ROLE_AR    = { driver:'سائق', merchant:'تاجر', customer:'عميل', admin:'مشرف' };
+  const ROLE_CLR   = { driver:'#1D4ED8', merchant:'#7C3AED', customer:'#064E3B', admin:'#DC2626' };
+
+  let rows = allWallets;
+  if (roleFilter) rows = rows.filter(w => w.role === roleFilter);
+  if (search) rows = rows.filter(w => (w.name||'').toLowerCase().includes(search) || (w.phone||'').includes(search));
+  rows = rows.slice().sort((a,b) => Number(b.balance||0) - Number(a.balance||0));
+
+  if (!rows.length) {
+    document.getElementById('wallets-tbody').innerHTML = '<tr><td colspan="5" style="text-align:center;color:#94A3B8;padding:2rem">لا توجد نتائج</td></tr>';
+    return;
+  }
+  document.getElementById('wallets-tbody').innerHTML = rows.slice(0,200).map(w => {
+    const bal = Number(w.balance||0);
+    const balClr = bal > 0 ? '#15803D' : bal < 0 ? '#DC2626' : '#64748B';
+    const rAr = ROLE_AR[w.role] || w.role;
+    const rClr = ROLE_CLR[w.role] || '#334155';
+    const nameSafe = (w.name||'').replace(/'/g,"\\'");
+    return `<tr>
+      <td style="font-weight:700">${w.name||'—'}</td>
+      <td dir="ltr">${w.phone}</td>
+      <td><span style="background:${rClr}22;color:${rClr};font-size:.72rem;font-weight:700;padding:2px 8px;border-radius:99px">${rAr}</span></td>
+      <td style="font-weight:800;color:${balClr}">${bal.toFixed(2)} ج.م</td>
+      <td><div class="btn-row" style="flex-wrap:nowrap;gap:4px">
+        <button class="btn btn--sm" style="background:#DCFCE7;color:#15803D" onclick="adminChargeWallet('${w.phone}','${nameSafe}')">شحن</button>
+        <button class="btn btn--red btn--sm" onclick="adminDeductWallet('${w.phone}','${nameSafe}')">خصم</button>
+        <button class="btn btn--sm" style="background:#F1F5F9;color:#334155" onclick="viewUserTransactions('${w.phone}','${nameSafe}')">سجل</button>
+      </div></td>
+    </tr>`;
+  }).join('');
+}
+
+const TX_TYPES_AR = {
+  earning:'أرباح', commission:'عمولة منصة', topup:'شحن', withdrawal:'سحب',
+  transfer_out:'تحويل صادر', transfer_in:'تحويل وارد',
+  admin_credit:'إضافة إدارية', admin_debit:'خصم إداري', payment:'دفع', refund:'استرداد'
+};
+const TX_CLR = {
+  earning:'#16A34A', commission:'#1D4ED8', topup:'#0891B2', withdrawal:'#DC2626',
+  transfer_out:'#D97706', transfer_in:'#7C3AED', admin_credit:'#16A34A', admin_debit:'#DC2626'
+};
+
+function renderTxLog() {
+  const typeFilter = document.getElementById('tx-type-filter')?.value || '';
+  const search     = (document.getElementById('tx-search')?.value || '').trim().toLowerCase();
+  let rows = allTxLogs;
+  if (typeFilter) rows = rows.filter(t => t.type === typeFilter);
+  if (search) rows = rows.filter(t => (t.phone||'').includes(search) || (t.userName||'').includes(search) || (t.note||'').toLowerCase().includes(search));
+  if (!rows.length) {
+    document.getElementById('all-tx-tbody').innerHTML = '<tr><td colspan="6" style="text-align:center;color:#94A3B8;padding:2rem">لا توجد نتائج</td></tr>';
+    return;
+  }
+  document.getElementById('all-tx-tbody').innerHTML = rows.slice(0,200).map(t => {
+    const d   = new Date(t.created_at||0).toLocaleDateString('ar-EG', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' });
+    const amt = Number(t.amount||0);
+    const ac  = amt >= 0 ? '#16A34A' : '#DC2626';
+    const tc  = TX_CLR[t.type] || '#64748B';
+    const tar = TX_TYPES_AR[t.type] || t.type;
+    return `<tr>
+      <td style="font-size:.78rem">${d}</td>
+      <td dir="ltr" style="font-size:.78rem">${t.phone === 'platform' ? '🏢 منصة' : t.phone}</td>
+      <td style="font-size:.82rem">${t.userName||'—'}</td>
+      <td><span style="background:${tc}22;color:${tc};font-size:.7rem;font-weight:700;padding:2px 7px;border-radius:99px">${tar}</span></td>
+      <td style="font-weight:800;color:${ac}">${amt>=0?'+':''}${amt.toFixed(2)} ج.م</td>
+      <td style="font-size:.78rem;color:#64748B;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${t.note||t.reference_id||'—'}</td>
+    </tr>`;
+  }).join('');
+}
+
+let _walletOpPhone = '', _walletOpType = '';
+function adminChargeWallet(phone, name) {
+  _walletOpPhone = phone; _walletOpType = 'credit';
+  document.getElementById('wallet-op-title').textContent = '💳 شحن محفظة';
+  document.getElementById('wallet-op-user').textContent = name || phone;
+  document.getElementById('wallet-op-phone-display').textContent = phone;
+  document.getElementById('wallet-op-amount').value = '';
+  document.getElementById('wallet-op-note').value = '';
+  document.getElementById('wallet-op-msg').style.display = 'none';
+  const btn = document.getElementById('wallet-op-confirm-btn');
+  btn.textContent = '✅ تأكيد الشحن'; btn.style.background = '#16A34A'; btn.disabled = false;
+  document.getElementById('wallet-op-modal').classList.remove('hidden');
+}
+function adminDeductWallet(phone, name) {
+  _walletOpPhone = phone; _walletOpType = 'debit';
+  document.getElementById('wallet-op-title').textContent = '➖ خصم من محفظة';
+  document.getElementById('wallet-op-user').textContent = name || phone;
+  document.getElementById('wallet-op-phone-display').textContent = phone;
+  document.getElementById('wallet-op-amount').value = '';
+  document.getElementById('wallet-op-note').value = '';
+  document.getElementById('wallet-op-msg').style.display = 'none';
+  const btn = document.getElementById('wallet-op-confirm-btn');
+  btn.textContent = '⚠️ تأكيد الخصم'; btn.style.background = '#DC2626'; btn.disabled = false;
+  document.getElementById('wallet-op-modal').classList.remove('hidden');
+}
+
+async function execAdminWalletOp() {
+  const amtRaw = parseFloat(document.getElementById('wallet-op-amount').value);
+  const note   = document.getElementById('wallet-op-note').value.trim() || (_walletOpType === 'credit' ? 'شحن إداري' : 'خصم إداري');
+  const msgEl  = document.getElementById('wallet-op-msg');
+  if (!amtRaw || amtRaw <= 0) {
+    msgEl.style.cssText = 'display:block;background:#FEE2E2;color:#991B1B;font-size:.82rem;font-weight:700;padding:.5rem .75rem;border-radius:6px';
+    msgEl.textContent = '⚠️ أدخل مبلغاً صحيحاً أكبر من صفر'; return;
+  }
+  const amt  = _walletOpType === 'credit' ? amtRaw : -amtRaw;
+  const type = _walletOpType === 'credit' ? 'admin_credit' : 'admin_debit';
+  const txId = `adm-${_walletOpType === 'credit' ? 'cr' : 'db'}-${Date.now()}`;
+  const btn  = document.getElementById('wallet-op-confirm-btn');
+  btn.textContent = 'جاري التنفيذ…'; btn.disabled = true;
+
+  const [ok1, ok2] = await Promise.all([
+    sbPost('rpc/add_wallet_balance', { p_phone: _walletOpPhone, p_amount: amt }),
+    sbPost('wallet_transactions', { id: txId, phone: _walletOpPhone, amount: amt, type, note, created_at: new Date().toISOString() }),
+  ]);
+
+  btn.disabled = false;
+  if (ok1 || ok2) {
+    msgEl.style.cssText = 'display:block;background:#DCFCE7;color:#14532D;font-size:.82rem;font-weight:700;padding:.5rem .75rem;border-radius:6px';
+    msgEl.textContent = _walletOpType === 'credit' ? `✅ تم شحن ${amtRaw.toFixed(2)} ج.م بنجاح` : `✅ تم خصم ${amtRaw.toFixed(2)} ج.م بنجاح`;
+    setTimeout(() => { closeModal('wallet-op-modal'); loadWalletsSection(); }, 1200);
+  } else {
+    msgEl.style.cssText = 'display:block;background:#FEE2E2;color:#991B1B;font-size:.82rem;font-weight:700;padding:.5rem .75rem;border-radius:6px';
+    msgEl.textContent = '❌ حدث خطأ — تحقق من الاتصال';
+    btn.textContent = _walletOpType === 'credit' ? '✅ تأكيد الشحن' : '⚠️ تأكيد الخصم';
+  }
+}
+
+async function viewUserTransactions(phone, name) {
+  document.getElementById('user-tx-modal-title').textContent = `📋 معاملات: ${name || phone}`;
+  document.getElementById('user-tx-tbody').innerHTML = '<tr><td colspan="4" style="text-align:center;color:#94A3B8;padding:2rem">جاري التحميل…</td></tr>';
+  document.getElementById('user-tx-modal').classList.remove('hidden');
+  const txData = await sbGet(`wallet_transactions?phone=eq.${encodeURIComponent(phone)}&select=amount,type,note,reference_id,created_at&order=created_at.desc&limit=300`);
+  if (!txData || !txData.length) {
+    document.getElementById('user-tx-tbody').innerHTML = '<tr><td colspan="4" style="text-align:center;color:#94A3B8;padding:2rem">لا توجد معاملات</td></tr>';
+    return;
+  }
+  document.getElementById('user-tx-tbody').innerHTML = txData.map(t => {
+    const d = new Date(t.created_at||0).toLocaleDateString('ar-EG', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' });
+    const amt = Number(t.amount||0);
+    const ac  = amt >= 0 ? '#16A34A' : '#DC2626';
+    return `<tr>
+      <td style="font-size:.78rem">${d}</td>
+      <td style="font-size:.78rem"><span style="background:${(TX_CLR[t.type]||'#64748B')}22;color:${TX_CLR[t.type]||'#64748B'};font-size:.7rem;font-weight:700;padding:2px 7px;border-radius:99px">${TX_TYPES_AR[t.type]||t.type}</span></td>
+      <td style="font-weight:800;color:${ac}">${amt>=0?'+':''}${amt.toFixed(2)} ج.م</td>
+      <td style="font-size:.78rem;color:#64748B">${t.note||t.reference_id||'—'}</td>
+    </tr>`;
+  }).join('');
+}
+
+async function adminSettlePlatform() {
+  const balText = (document.getElementById('w-platform-balance').textContent||'0').replace(/[^\d.]/g,'');
+  const bal = parseFloat(balText) || 0;
+  if (bal <= 0) { showToast('لا توجد عمولات مستحقة للتسوية', '#D97706'); return; }
+  if (!confirm(`تسوية عمولات المنصة بقيمة ${bal.toFixed(2)} ج.م؟\nسيتم تسجيل عملية السحب في السجل.`)) return;
+  const txId = `plat-settle-${Date.now()}`;
+  const ok = await sbPost('wallet_transactions', {
+    id: txId, phone: 'platform', amount: -bal,
+    type: 'withdrawal', note: 'تسوية عمولات المنصة — إداري',
+    created_at: new Date().toISOString()
+  });
+  if (ok) { showToast('✅ تمت تسوية العمولات بنجاح', '#16A34A'); loadWalletsSection(); }
+  else showToast('❌ فشلت عملية التسوية', '#DC2626');
 }
 
 /* ═══════════════════ SETTINGS ══════════════════════════════ */
