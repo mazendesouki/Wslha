@@ -1,0 +1,849 @@
+<!DOCTYPE html>
+
+
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+
+  <!-- SEO -->
+  <title>محفظتي | وصّلها | وصّلها</title>
+  <meta name="description" content="محفظتك الإلكترونية">
+  <link rel="canonical" href="https://wslha.co/wallet/">
+
+  <!-- Open Graph -->
+  <meta property="og:title" content="محفظتي | وصّلها | وصّلها">
+  <meta property="og:description" content="محفظتك الإلكترونية">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://wslha.co/wallet/">
+
+  <!-- Icons & PWA -->
+  <link rel="icon" href="/favicon.ico" sizes="any">
+  <link rel="icon" href="/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <link rel="manifest" href="/site.webmanifest">
+  <meta name="theme-color" content="#3B6EF8">
+
+  <!-- iOS standalone web-app -->
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="وصّلها">
+
+  <!-- Disable Netlify Identity widget -->
+  <meta name="netlify-identity-widget" content="disabled">
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+  <!-- Base styles -->
+  <link rel="stylesheet" href="/global.css">
+
+  <!-- Capture beforeinstallprompt ASAP (Chrome/Edge/Samsung) -->
+  <script>
+    window.__pwaPrompt = null;
+    window.addEventListener('beforeinstallprompt', function(e) {
+      e.preventDefault();
+      window.__pwaPrompt = e;
+      var fab = document.getElementById('pwa-fab');
+      if (fab) fab.hidden = false;
+    });
+  </script>
+
+  
+<link rel="stylesheet" href="/_astro/wallet.13a4e1b1.css" />
+<link rel="stylesheet" href="/_astro/about.d223ab77.css" /><script type="module" src="/_astro/hoisted.a389f595.js"></script></head>
+
+<body>
+  <header role="banner" class="astro-DMQPWCEC">
+  <a class="skip-nav astro-DMQPWCEC" href="#main-content">انتقل إلى المحتوى الرئيسي</a>
+
+  <nav class="nav astro-DMQPWCEC" aria-label="التنقل الرئيسي">
+    <div class="nav__inner astro-DMQPWCEC">
+
+      <!-- Logo -->
+      <a href="/" class="nav__logo astro-DMQPWCEC" aria-label="وصّلها — الصفحة الرئيسية">
+        <div class="nav__logo-mark astro-DMQPWCEC" aria-hidden="true">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="astro-DMQPWCEC">
+            <circle cx="12" cy="12" r="10" class="astro-DMQPWCEC"></circle>
+            <path d="M12 8 L8 16 L12 13 L16 16 L12 8" class="astro-DMQPWCEC"></path>
+          </svg>
+        </div>
+        <div class="nav__logo-text astro-DMQPWCEC">
+          <span class="nav__logo-name astro-DMQPWCEC" aria-hidden="true">وصّلها</span>
+          <span class="nav__logo-tagline astro-DMQPWCEC">خدمة توصيل دمياط</span>
+        </div>
+      </a>
+
+      <!-- Desktop links -->
+      <ul class="nav__links astro-DMQPWCEC" role="list">
+        <li class="astro-DMQPWCEC">
+            <a href="/" class="nav__link astro-DMQPWCEC">
+              الرئيسية
+            </a>
+          </li><li class="astro-DMQPWCEC">
+            <a href="/rides" class="nav__link astro-DMQPWCEC">
+              مشاوير
+            </a>
+          </li><li class="astro-DMQPWCEC">
+            <a href="/airport" class="nav__link astro-DMQPWCEC">
+              توصيل المطار
+            </a>
+          </li><li class="astro-DMQPWCEC">
+            <a href="/stores" class="nav__link astro-DMQPWCEC">
+              المتاجر
+            </a>
+          </li><li class="astro-DMQPWCEC">
+            <a href="/services" class="nav__link astro-DMQPWCEC">
+              خدماتنا
+            </a>
+          </li><li class="astro-DMQPWCEC">
+            <a href="/about" class="nav__link astro-DMQPWCEC">
+              من نحن
+            </a>
+          </li><li class="astro-DMQPWCEC">
+            <a href="/contact" class="nav__link astro-DMQPWCEC">
+              تواصل معنا
+            </a>
+          </li>
+      </ul>
+
+      <!-- Actions -->
+      <div class="nav__actions astro-DMQPWCEC">
+
+        <!-- Driver CTA -->
+        <a href="/driver" class="nav__driver astro-DMQPWCEC" id="nav-driver-btn">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" class="astro-DMQPWCEC">
+            <circle cx="12" cy="12" r="10" class="astro-DMQPWCEC"></circle>
+            <path d="M14.5 4.5 C14.5 4.5 16 8 14.5 12 C13 16 12 19.5 12 19.5" class="astro-DMQPWCEC"></path>
+            <path d="M9.5 4.5 C9.5 4.5 8 8 9.5 12 C11 16 12 19.5 12 19.5" class="astro-DMQPWCEC"></path>
+            <path d="M4.5 9.5 h15" class="astro-DMQPWCEC"></path>
+            <path d="M4.5 14.5 h15" class="astro-DMQPWCEC"></path>
+          </svg>
+          انضم كسائق
+        </a>
+
+        <!-- Merchant CTA -->
+        <a href="/merchant-apply" class="nav__merchant astro-DMQPWCEC" id="nav-merchant-btn">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" class="astro-DMQPWCEC">
+            <path d="M5 9l4 4-2 8H3V9z" class="astro-DMQPWCEC"></path>
+            <path d="M11 9l-4 4 2 8h4V9z" class="astro-DMQPWCEC"></path>
+            <path d="M3 9h18l-2 8H5l2-8z" class="astro-DMQPWCEC"></path>
+            <path d="M21 9v12H3V9" class="astro-DMQPWCEC"></path>
+            <circle cx="9" cy="15" r="1" class="astro-DMQPWCEC"></circle>
+            <circle cx="15" cy="15" r="1" class="astro-DMQPWCEC"></circle>
+          </svg>
+          انضم كتاجر
+        </a>
+
+        <!-- Profile dropdown -->
+        <div class="nav__profile astro-DMQPWCEC" id="nav-profile">
+          <button class="nav__user astro-DMQPWCEC" id="profile-btn" aria-expanded="false" aria-haspopup="menu" type="button">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" class="astro-DMQPWCEC">
+              <circle cx="12" cy="8" r="4" class="astro-DMQPWCEC"></circle>
+              <path d="M20 21a8 8 0 10-16 0" class="astro-DMQPWCEC"></path>
+            </svg>
+            <span id="profile-name" class="astro-DMQPWCEC">دخول</span>
+            <svg class="nav__chevron astro-DMQPWCEC" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+              <polyline points="6 9 12 15 18 9" class="astro-DMQPWCEC"></polyline>
+            </svg>
+          </button>
+
+          <div class="nav__dropdown astro-DMQPWCEC" id="profile-dropdown" role="menu" hidden>
+            <!-- Logged-in user info -->
+            <div class="nav__dropdown-user astro-DMQPWCEC" id="dropdown-user-info" hidden>
+              <span class="nav__dropdown-username astro-DMQPWCEC" id="dropdown-name">—</span>
+              <span class="nav__dropdown-phone astro-DMQPWCEC" id="dropdown-phone">—</span>
+            </div>
+
+            <!-- Logged-in menu items -->
+            <a href="/profile" class="nav__dropdown-item astro-DMQPWCEC" id="dropdown-profile" role="menuitem" hidden>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" class="astro-DMQPWCEC"><circle cx="12" cy="8" r="4" class="astro-DMQPWCEC"></circle><path d="M20 21a8 8 0 10-16 0" class="astro-DMQPWCEC"></path></svg>
+              حسابي
+            </a>
+            <a href="/orders" class="nav__dropdown-item astro-DMQPWCEC" id="dropdown-orders" role="menuitem" hidden>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" class="astro-DMQPWCEC"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2" class="astro-DMQPWCEC"></path><rect x="9" y="3" width="6" height="4" rx="1" class="astro-DMQPWCEC"></rect></svg>
+              طلباتي
+            </a>
+            <a href="/track" class="nav__dropdown-item astro-DMQPWCEC" id="dropdown-track" role="menuitem" hidden>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" class="astro-DMQPWCEC"><circle cx="12" cy="12" r="10" class="astro-DMQPWCEC"></circle><circle cx="12" cy="12" r="3" class="astro-DMQPWCEC"></circle></svg>
+              تتبع الطلب
+            </a>
+
+            <!-- Driver dashboard (only for drivers) -->
+            <div class="nav__dropdown-divider astro-DMQPWCEC" id="dropdown-driver-divider" hidden></div>
+            <a href="/driver-dashboard" class="nav__dropdown-item nav__dropdown-driver astro-DMQPWCEC" id="dropdown-driver-dash" role="menuitem" hidden>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" class="astro-DMQPWCEC"><path d="M9 17 L3 17 L3 11 L12 3 L21 11 L21 17 L15 17" class="astro-DMQPWCEC"></path><rect x="9" y="12" width="6" height="5" rx="1" class="astro-DMQPWCEC"></rect></svg>
+              لوحة السائق
+            </a>
+
+            <!-- Merchant dashboard (only for merchants) -->
+            <div class="nav__dropdown-divider astro-DMQPWCEC" id="dropdown-merchant-divider" hidden></div>
+            <a href="/merchant-dashboard" class="nav__dropdown-item nav__dropdown-merchant astro-DMQPWCEC" id="dropdown-merchant-dash" role="menuitem" hidden>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" class="astro-DMQPWCEC"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" class="astro-DMQPWCEC"></path><polyline points="9 22 9 12 15 12 15 22" class="astro-DMQPWCEC"></polyline></svg>
+              لوحة التاجر
+            </a>
+            <a href="/restaurant-orders" class="nav__dropdown-item nav__dropdown-orders-dash astro-DMQPWCEC" id="dropdown-restaurant-orders" role="menuitem" hidden>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" class="astro-DMQPWCEC"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2" class="astro-DMQPWCEC"></path><rect x="9" y="3" width="6" height="4" rx="1" class="astro-DMQPWCEC"></rect><path d="M9 12h6M9 16h4" class="astro-DMQPWCEC"></path></svg>
+              📡 إدارة الطلبات
+            </a>
+
+            <!-- Login (only when not logged in) -->
+            <div class="nav__dropdown-divider astro-DMQPWCEC" id="dropdown-divider" hidden></div>
+            <a href="/login" class="nav__dropdown-item astro-DMQPWCEC" id="dropdown-login" role="menuitem">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" class="astro-DMQPWCEC"><path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4" class="astro-DMQPWCEC"></path><polyline points="10 17 15 12 10 7" class="astro-DMQPWCEC"></polyline><line x1="15" y1="12" x2="3" y2="12" class="astro-DMQPWCEC"></line></svg>
+              تسجيل الدخول
+            </a>
+
+            <!-- Logout (only when logged in) -->
+            <div class="nav__dropdown-divider astro-DMQPWCEC" id="dropdown-logout-divider" hidden></div>
+            <button class="nav__dropdown-item nav__dropdown-logout astro-DMQPWCEC" id="dropdown-logout" role="menuitem" hidden type="button">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" class="astro-DMQPWCEC"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4" class="astro-DMQPWCEC"></path><polyline points="16 17 21 12 16 7" class="astro-DMQPWCEC"></polyline><line x1="21" y1="12" x2="9" y2="12" class="astro-DMQPWCEC"></line></svg>
+              تسجيل الخروج
+            </button>
+          </div>
+        </div>
+
+        <!-- Hamburger (mobile) -->
+        <button class="nav__burger astro-DMQPWCEC" id="nav-burger" aria-label="فتح القائمة" aria-expanded="false" aria-controls="nav-mobile" type="button">
+          <span class="nav__burger-bar astro-DMQPWCEC"></span>
+          <span class="nav__burger-bar astro-DMQPWCEC"></span>
+          <span class="nav__burger-bar astro-DMQPWCEC"></span>
+        </button>
+
+      </div>
+    </div>
+  </nav>
+
+  <!-- Mobile menu -->
+  <div class="nav__mobile astro-DMQPWCEC" id="nav-mobile" aria-hidden="true">
+    <div class="nav__mobile-inner astro-DMQPWCEC">
+      <ul class="nav__mobile-links astro-DMQPWCEC" role="list">
+        <li class="astro-DMQPWCEC">
+            <a href="/" class="nav__mobile-link astro-DMQPWCEC">
+              الرئيسية
+            </a>
+          </li><li class="astro-DMQPWCEC">
+            <a href="/rides" class="nav__mobile-link astro-DMQPWCEC">
+              مشاوير
+            </a>
+          </li><li class="astro-DMQPWCEC">
+            <a href="/airport" class="nav__mobile-link astro-DMQPWCEC">
+              توصيل المطار
+            </a>
+          </li><li class="astro-DMQPWCEC">
+            <a href="/stores" class="nav__mobile-link astro-DMQPWCEC">
+              المتاجر
+            </a>
+          </li><li class="astro-DMQPWCEC">
+            <a href="/services" class="nav__mobile-link astro-DMQPWCEC">
+              خدماتنا
+            </a>
+          </li><li class="astro-DMQPWCEC">
+            <a href="/about" class="nav__mobile-link astro-DMQPWCEC">
+              من نحن
+            </a>
+          </li><li class="astro-DMQPWCEC">
+            <a href="/contact" class="nav__mobile-link astro-DMQPWCEC">
+              تواصل معنا
+            </a>
+          </li>
+      </ul>
+      <div class="nav__mobile-user-links astro-DMQPWCEC" id="nav-mobile-user-links" hidden>
+        <a href="/orders" class="nav__mobile-link astro-DMQPWCEC" id="nav-mobile-orders">📋 طلباتي</a>
+        <a href="/track" class="nav__mobile-link astro-DMQPWCEC" id="nav-mobile-track">📡 تتبع الطلب</a>
+        <a href="/driver-dashboard" class="nav__mobile-link astro-DMQPWCEC" id="nav-mobile-driver-dash" hidden>🚗 لوحة السائق</a>
+        <a href="/merchant-dashboard" class="nav__mobile-link astro-DMQPWCEC" id="nav-mobile-merchant-dash" hidden>🏪 لوحة التاجر</a>
+        <a href="/restaurant-orders" class="nav__mobile-link astro-DMQPWCEC" id="nav-mobile-restaurant-orders" hidden>📡 إدارة الطلبات</a>
+      </div>
+      <div class="nav__mobile-actions astro-DMQPWCEC">
+        <a href="/login" class="btn btn--outline astro-DMQPWCEC" style="width:100%;justify-content:center;" id="nav-mobile-login">تسجيل الدخول</a>
+        <a href="/merchant-apply" class="btn btn--accent astro-DMQPWCEC" style="width:100%;justify-content:center;background:#f59e0b;" id="nav-mobile-merchant">🏪 انضم كتاجر</a>
+      </div>
+    </div>
+  </div>
+
+</header>
+
+  <main id="main-content" tabindex="-1">
+    <div class="wallet-page astro-F4SCHYHQ">
+    <div class="w-topbar astro-F4SCHYHQ">
+      <button class="w-topbar__back astro-F4SCHYHQ" onclick="history.back()" type="button">←</button>
+      <div class="w-topbar__title astro-F4SCHYHQ">محفظتي</div>
+      <div style="width:36px" class="astro-F4SCHYHQ"></div>
+    </div>
+    <div class="auth-box astro-F4SCHYHQ" id="auth-box" style="display:none">
+      <div style="font-size:3rem;margin-bottom:16px" class="astro-F4SCHYHQ">🔒</div>
+      <div style="font-size:1.1rem;font-weight:900;margin-bottom:10px" class="astro-F4SCHYHQ">تسجيل الدخول مطلوب</div>
+      <div style="color:#6b7280;font-size:.875rem;margin-bottom:24px" class="astro-F4SCHYHQ">يرجى تسجيل الدخول للوصول إلى محفظتك</div>
+      <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;" class="astro-F4SCHYHQ">
+        <a href="/login" style="padding:12px 24px;background:#1a2340;color:#fff;border-radius:12px;text-decoration:none;font-weight:900;" class="astro-F4SCHYHQ">تسجيل الدخول</a>
+        <a href="/register" style="padding:12px 24px;background:#16a34a;color:#fff;border-radius:12px;text-decoration:none;font-weight:900;" class="astro-F4SCHYHQ">حساب جديد</a>
+      </div>
+    </div>
+    <div id="wallet-main" style="display:none" class="astro-F4SCHYHQ">
+      <div class="balance-card astro-F4SCHYHQ">
+        <div class="balance-card__top astro-F4SCHYHQ">
+          <div class="wallet-icon astro-F4SCHYHQ">💼</div>
+          <div class="astro-F4SCHYHQ">
+            <div class="balance-label astro-F4SCHYHQ">رصيدك الآن</div>
+            <div class="balance-amount astro-F4SCHYHQ">EGP <span id="balance-val" class="astro-F4SCHYHQ">0</span></div>
+          </div>
+        </div>
+        <div class="w-action-row astro-F4SCHYHQ">
+          <button class="w-action-btn astro-F4SCHYHQ" id="btn-deposit" type="button">إيداع</button>
+          <button class="w-action-btn astro-F4SCHYHQ" id="btn-withdraw-open" type="button">سحب</button>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:8px;" class="astro-F4SCHYHQ">
+          <button class="w-action-btn transfer astro-F4SCHYHQ" id="btn-transfer-open" type="button" style="flex:1;padding:10px;font-size:.82rem;">↔️ تحويل</button>
+        </div>
+        <div class="connected-badge astro-F4SCHYHQ">
+          <div class="connected-dot astro-F4SCHYHQ"></div><span class="astro-F4SCHYHQ">متصل</span>
+        </div>
+      </div>
+      <div class="tx-section astro-F4SCHYHQ">
+        <div class="tx-section__header astro-F4SCHYHQ">
+          <span class="astro-F4SCHYHQ">المعاملات</span>
+          <span style="font-size:1.2rem;cursor:pointer;" onclick="loadLog()" class="astro-F4SCHYHQ">📅</span>
+        </div>
+        <div id="tx-list" class="astro-F4SCHYHQ"><div class="tx-empty astro-F4SCHYHQ">جاري التحميل...</div></div>
+      </div>
+    </div>
+  </div><div class="sheet-overlay astro-F4SCHYHQ" id="sheet-deposit">
+    <div class="sheet astro-F4SCHYHQ">
+      <div class="sheet__handle astro-F4SCHYHQ"></div>
+      <div class="sheet__title astro-F4SCHYHQ">⬆️ إيداع رصيد</div>
+      <div class="quick-row astro-F4SCHYHQ" id="quick-amounts">
+        <button class="quick-btn astro-F4SCHYHQ" data-val="50" type="button">50</button>
+        <button class="quick-btn sel astro-F4SCHYHQ" data-val="100" type="button">100</button>
+        <button class="quick-btn astro-F4SCHYHQ" data-val="200" type="button">200</button>
+        <button class="quick-btn astro-F4SCHYHQ" data-val="500" type="button">500</button>
+      </div>
+      <label class="s-label astro-F4SCHYHQ">أو أدخل مبلغاً آخر (جنيه)</label>
+      <input type="number" id="charge-amount" class="s-input astro-F4SCHYHQ" placeholder="مثال: 150" min="10" value="100">
+      <div class="pay-opts astro-F4SCHYHQ">
+        <label class="pay-opt astro-F4SCHYHQ"><input type="radio" name="charge-method" value="vodafone" checked class="astro-F4SCHYHQ"><span class="pay-opt__icon astro-F4SCHYHQ">📱</span><span class="astro-F4SCHYHQ"><div class="pay-opt__name astro-F4SCHYHQ">فودافون كاش</div><div class="pay-opt__sub astro-F4SCHYHQ">01xxxxxxxxxx</div></span><span class="pay-opt__dot astro-F4SCHYHQ"></span></label>
+        <label class="pay-opt astro-F4SCHYHQ"><input type="radio" name="charge-method" value="instapay" class="astro-F4SCHYHQ"><span class="pay-opt__icon astro-F4SCHYHQ">💳</span><span class="astro-F4SCHYHQ"><div class="pay-opt__name astro-F4SCHYHQ">إنستاباي</div><div class="pay-opt__sub astro-F4SCHYHQ">تحويل فوري</div></span><span class="pay-opt__dot astro-F4SCHYHQ"></span></label>
+        <label class="pay-opt astro-F4SCHYHQ"><input type="radio" name="charge-method" value="bank" class="astro-F4SCHYHQ"><span class="pay-opt__icon astro-F4SCHYHQ">🏦</span><span class="astro-F4SCHYHQ"><div class="pay-opt__name astro-F4SCHYHQ">تحويل بنكي</div><div class="pay-opt__sub astro-F4SCHYHQ">24 ساعة</div></span><span class="pay-opt__dot astro-F4SCHYHQ"></span></label>
+      </div>
+      <button class="s-btn astro-F4SCHYHQ" id="charge-btn" type="button">إيداع الرصيد</button>
+    </div>
+  </div><div class="sheet-overlay astro-F4SCHYHQ" id="sheet-withdraw">
+    <div class="sheet astro-F4SCHYHQ">
+      <div class="sheet__handle astro-F4SCHYHQ"></div>
+      <div class="sheet__title astro-F4SCHYHQ">⬇️ سحب الرصيد</div>
+      <p class="s-avail astro-F4SCHYHQ">رصيدك المتاح: <strong id="withdraw-avail" class="astro-F4SCHYHQ">0</strong> ج.م</p>
+      <label class="s-label astro-F4SCHYHQ">المبلغ (جنيه)</label>
+      <input type="number" id="withdraw-amount" class="s-input astro-F4SCHYHQ" placeholder="أدخل المبلغ" min="10">
+      <label class="s-label astro-F4SCHYHQ">رقم فودافون كاش / إنستاباي</label>
+      <input type="tel" id="withdraw-dest" class="s-input astro-F4SCHYHQ" placeholder="01xxxxxxxxxx">
+      <label class="s-label astro-F4SCHYHQ">ملاحظة (اختياري)</label>
+      <input type="text" id="withdraw-note" class="s-input astro-F4SCHYHQ" placeholder="سبب السحب...">
+      <button class="s-btn astro-F4SCHYHQ" id="withdraw-btn" type="button">طلب سحب</button>
+    </div>
+  </div><div class="sheet-overlay astro-F4SCHYHQ" id="sheet-transfer">
+    <div class="sheet astro-F4SCHYHQ">
+      <div class="sheet__handle astro-F4SCHYHQ"></div>
+      <div class="sheet__title astro-F4SCHYHQ">↔️ تحويل لمستخدم</div>
+      <label class="s-label astro-F4SCHYHQ">رقم جوال المستلم</label>
+      <input type="tel" id="transfer-phone" class="s-input astro-F4SCHYHQ" placeholder="01xxxxxxxxxx">
+      <div class="recipient-box astro-F4SCHYHQ" id="transfer-recipient">
+        <span style="font-size:1.5rem" class="astro-F4SCHYHQ">👤</span>
+        <div class="astro-F4SCHYHQ"><div style="font-weight:800;font-size:.875rem" id="transfer-recipient-name" class="astro-F4SCHYHQ">—</div><div style="font-size:.72rem;color:#6b7280" id="transfer-recipient-phone" class="astro-F4SCHYHQ">—</div></div>
+      </div>
+      <label class="s-label astro-F4SCHYHQ">المبلغ (جنيه)</label>
+      <input type="number" id="transfer-amount" class="s-input astro-F4SCHYHQ" placeholder="أدخل المبلغ" min="1">
+      <label class="s-label astro-F4SCHYHQ">ملاحظة (اختياري)</label>
+      <input type="text" id="transfer-note" class="s-input astro-F4SCHYHQ" placeholder="سبب التحويل...">
+      <button class="s-btn astro-F4SCHYHQ" id="transfer-btn" type="button">تحويل الآن</button>
+    </div>
+  </div><nav class="bottom-nav astro-F4SCHYHQ">
+    <a href="/" class="bn-item astro-F4SCHYHQ"><span class="bn-item__icon astro-F4SCHYHQ">🏠</span><span class="bn-item__lbl astro-F4SCHYHQ">الرئيسية</span></a>
+    <a href="/orders" class="bn-item astro-F4SCHYHQ"><span class="bn-item__icon astro-F4SCHYHQ">📋</span><span class="bn-item__lbl astro-F4SCHYHQ">طلباتي</span></a>
+    <a href="/rides" class="bn-plus astro-F4SCHYHQ">+</a>
+    <a href="/wallet" class="bn-item active astro-F4SCHYHQ"><span class="bn-item__icon astro-F4SCHYHQ">💳</span><span class="bn-item__lbl astro-F4SCHYHQ">المحفظة</span></a>
+    <a href="/profile" class="bn-item astro-F4SCHYHQ"><span class="bn-item__icon astro-F4SCHYHQ">⚙️</span><span class="bn-item__lbl astro-F4SCHYHQ">الإعدادات</span></a>
+  </nav><div class="w-toast astro-F4SCHYHQ" id="w-toast"></div>
+  </main>
+
+  <a href="https://wa.me/201102667324" class="whatsapp-float" aria-label="تواصل معنا عبر واتساب" rel="noopener noreferrer" target="_blank">
+    💬
+  </a>
+
+  <nav class="bottom-nav" role="navigation" aria-label="التنقل السفلي">
+  <ul class="bottom-nav__list" role="list">
+    <li class="bottom-nav__item">
+        <a href="/" class="bottom-nav__link">
+          <span class="bottom-nav__icon">🏠</span>
+          <span class="bottom-nav__label">الرئيسية</span>
+        </a>
+      </li><li class="bottom-nav__item">
+        <a href="/wallet" class="bottom-nav__link bottom-nav__link--active" aria-current="page">
+          <span class="bottom-nav__icon">💳</span>
+          <span class="bottom-nav__label">المحفظة</span>
+        </a>
+      </li><li class="bottom-nav__item">
+        <a href="/profile" class="bottom-nav__link">
+          <span class="bottom-nav__icon">👤</span>
+          <span class="bottom-nav__label">حسابي</span>
+        </a>
+      </li><li class="bottom-nav__item">
+        <a href="/orders" class="bottom-nav__link">
+          <span class="bottom-nav__icon">📦</span>
+          <span class="bottom-nav__label">الطلبات</span>
+        </a>
+      </li><li class="bottom-nav__item">
+        <a href="/rides" class="bottom-nav__link">
+          <span class="bottom-nav__icon">🚖</span>
+          <span class="bottom-nav__label">رحلات</span>
+        </a>
+      </li>
+  </ul>
+</nav>
+
+  <footer class="footer astro-SZ7XMLTE" role="contentinfo">
+  <div class="footer__grid astro-SZ7XMLTE">
+
+    <!-- Brand -->
+    <div class="footer__brand astro-SZ7XMLTE">
+      <p class="footer__name astro-SZ7XMLTE">وصّلها</p>
+      <p class="footer__desc astro-SZ7XMLTE">
+        خدمة توصيل سريعة وموثوقة — توصيل محلي من المتاجر
+        وتوصيل من وإلى المطار.
+      </p>
+      <nav aria-label="روابط التواصل الاجتماعي" class="astro-SZ7XMLTE">
+        <ul class="footer__social astro-SZ7XMLTE" role="list">
+          <li class="astro-SZ7XMLTE"><a href="#" aria-label="تويتر" class="astro-SZ7XMLTE">𝕏</a></li>
+          <li class="astro-SZ7XMLTE"><a href="#" aria-label="انستغرام" class="astro-SZ7XMLTE">📷</a></li>
+          <li class="astro-SZ7XMLTE"><a href="https://wa.me/201102667324" aria-label="واتساب" class="astro-SZ7XMLTE">💬</a></li>
+        </ul>
+      </nav>
+
+      <!-- App Store Buttons -->
+      <div class="footer__apps astro-SZ7XMLTE">
+        <button class="app-btn astro-SZ7XMLTE" id="btn-google-play" aria-label="تحميل من Google Play" type="button">
+          <svg class="app-btn__icon astro-SZ7XMLTE" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M3.18 23.76c.37.2.8.2 1.18.01l11.45-6.53-2.56-2.56-10.07 9.08z" fill="#EA4335" class="astro-SZ7XMLTE"></path>
+            <path d="M21.37 10.34L18.8 8.87l-2.88 2.88 2.88 2.87 2.6-1.49a1.5 1.5 0 000-2.79z" fill="#FBBC04" class="astro-SZ7XMLTE"></path>
+            <path d="M2.01 1.04A1.5 1.5 0 000 2.4v19.2a1.5 1.5 0 002.01 1.36l12.63-11.4L2.01 1.04z" fill="#4285F4" class="astro-SZ7XMLTE"></path>
+            <path d="M4.36.23L15.81 6.76l-2.56 2.56L3.18.24A1.5 1.5 0 014.36.23z" fill="#34A853" class="astro-SZ7XMLTE"></path>
+          </svg>
+          <span class="app-btn__text astro-SZ7XMLTE">
+            <span class="app-btn__sub astro-SZ7XMLTE">GET IT ON</span>
+            <span class="app-btn__name astro-SZ7XMLTE">Google Play</span>
+          </span>
+        </button>
+
+        <button class="app-btn astro-SZ7XMLTE" id="btn-app-store" aria-label="تحميل من App Store" type="button">
+          <svg class="app-btn__icon astro-SZ7XMLTE" viewBox="0 0 24 24" fill="white" aria-hidden="true">
+            <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z" class="astro-SZ7XMLTE"></path>
+          </svg>
+          <span class="app-btn__text astro-SZ7XMLTE">
+            <span class="app-btn__sub astro-SZ7XMLTE">Download on the</span>
+            <span class="app-btn__name astro-SZ7XMLTE">App Store</span>
+          </span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Quick links -->
+    <div class="footer__col astro-SZ7XMLTE">
+      <h2 class="footer__heading astro-SZ7XMLTE">روابط سريعة</h2>
+      <ul role="list" class="astro-SZ7XMLTE">
+        <li class="astro-SZ7XMLTE"><a href="/" class="astro-SZ7XMLTE">الرئيسية</a></li><li class="astro-SZ7XMLTE"><a href="/about" class="astro-SZ7XMLTE">من نحن</a></li><li class="astro-SZ7XMLTE"><a href="/rides" class="astro-SZ7XMLTE">مشاوير</a></li><li class="astro-SZ7XMLTE"><a href="/stores" class="astro-SZ7XMLTE">المتاجر المحلية</a></li><li class="astro-SZ7XMLTE"><a href="/track" class="astro-SZ7XMLTE">تتبع الطلب</a></li><li class="astro-SZ7XMLTE"><a href="/contact" class="astro-SZ7XMLTE">تواصل معنا</a></li>
+      </ul>
+    </div>
+
+    <!-- Services -->
+    <div class="footer__col astro-SZ7XMLTE">
+      <h2 class="footer__heading astro-SZ7XMLTE">خدماتنا</h2>
+      <ul role="list" class="astro-SZ7XMLTE">
+        <li class="astro-SZ7XMLTE"><a href="/airport" class="astro-SZ7XMLTE">توصيل المطار</a></li><li class="astro-SZ7XMLTE"><a href="/rides" class="astro-SZ7XMLTE">مشاوير دمياط</a></li><li class="astro-SZ7XMLTE"><a href="/stores" class="astro-SZ7XMLTE">المتاجر المحلية</a></li><li class="astro-SZ7XMLTE"><a href="/services#pricing" class="astro-SZ7XMLTE">الأسعار</a></li>
+      </ul>
+    </div>
+
+    <!-- Contact -->
+    <div class="footer__col astro-SZ7XMLTE">
+      <h2 class="footer__heading astro-SZ7XMLTE">تواصل معنا</h2>
+      <ul role="list" class="astro-SZ7XMLTE">
+        <li class="astro-SZ7XMLTE"><a href="tel:+201102667324" class="astro-SZ7XMLTE">📞 0020 1102 667324</a></li><li class="astro-SZ7XMLTE"><a href="mailto:info@wslha.co" class="astro-SZ7XMLTE">✉️ info@wslha.co</a></li><li class="astro-SZ7XMLTE"><a href="https://wa.me/201102667324" class="astro-SZ7XMLTE">💬 واتساب</a></li>
+      </ul>
+    </div>
+
+  </div>
+
+  <div class="footer__bottom astro-SZ7XMLTE">
+    <span class="astro-SZ7XMLTE">© 2024 وصّلها. جميع الحقوق محفوظة.</span>
+    <span class="astro-SZ7XMLTE">Wslha.co</span>
+  </div>
+</footer>
+
+<!-- App coming-soon toast -->
+<div class="app-toast astro-SZ7XMLTE" id="app-toast" role="alert" aria-live="polite" hidden>
+  <span class="app-toast__icon astro-SZ7XMLTE">🚀</span>
+  <div class="app-toast__body astro-SZ7XMLTE">
+    <strong class="astro-SZ7XMLTE">قريباً على المتاجر!</strong>
+    <span class="astro-SZ7XMLTE">التطبيق قيد التطوير وسيُتاح للتحميل قريباً.</span>
+  </div>
+  <button class="app-toast__close astro-SZ7XMLTE" id="app-toast-close" type="button" aria-label="إغلاق">✕</button>
+</div>
+
+  <!-- ── بانر تثبيت التطبيق — يظهر تلقائياً بـ CSS بدون انتظار JS ── -->
+  <div id="pwa-banner" class="pwa-banner">
+    <div class="pwa-banner__inner">
+      <button class="pwa-banner__close" id="pwa-banner-close" aria-label="إغلاق">✕</button>
+      <div class="pwa-banner__app">
+        <img src="/icon-192.png" width="52" height="52" alt="" class="pwa-banner__logo">
+        <div class="pwa-banner__info">
+          <div class="pwa-banner__name">📲 وصّلها</div>
+          <div class="pwa-banner__sub">ثبّت التطبيق — أسرع وأسهل من المتصفح</div>
+          <div class="pwa-banner__rating">⭐⭐⭐⭐⭐ &nbsp;مجاني تماماً</div>
+        </div>
+      </div>
+      <button id="pwa-install-btn" class="pwa-banner__btn">⬇️ تثبيت التطبيق الآن</button>
+    </div>
+  </div>
+
+  <!-- مودال تعليمات التثبيت -->
+  <div id="pwa-modal" class="pwa-modal" hidden role="dialog" aria-modal="true">
+    <div class="pwa-modal__box">
+      <button class="pwa-modal__close" id="pwa-modal-close" aria-label="إغلاق">✕</button>
+      <img src="/icon-192.png" width="60" height="60" alt="وصّلها" style="border-radius:14px;margin-bottom:10px">
+      <h2 class="pwa-modal__title">ثبّت تطبيق وصّلها</h2>
+      <p class="pwa-modal__sub">أيقونة مباشرة على شاشتك الرئيسية</p>
+      <ol class="pwa-modal__steps" id="pwa-steps"></ol>
+    </div>
+  </div>
+
+  
+
+  <script>
+    // ── Service worker ────────────────────────────────────────
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js').catch(function(){});
+    }
+
+    // ── PWA Banner ────────────────────────────────────────────
+    (function () {
+      var banner     = document.getElementById('pwa-banner');
+      var closeBtn   = document.getElementById('pwa-banner-close');
+      var installBtn = document.getElementById('pwa-install-btn');
+      var modal      = document.getElementById('pwa-modal');
+      var steps      = document.getElementById('pwa-steps');
+      var modalClose = document.getElementById('pwa-modal-close');
+
+      // امسح كل مفاتيح localStorage القديمة
+      try {
+        localStorage.removeItem('wslha_dismissed');
+        localStorage.removeItem('wslha_installed');
+        localStorage.removeItem('wslha_dismissed_at');
+        localStorage.removeItem('wslha_da');
+      } catch(x) {}
+
+      function hide(el) { if (el) el.classList.add('pwa-hidden'); }
+
+      // أخفِ فقط لو التطبيق مفتوح من الشاشة الرئيسية (مثبّت فعلاً)
+      var inStandalone = window.matchMedia('(display-mode: standalone)').matches
+                      || !!window.navigator.standalone;
+      if (inStandalone) { hide(banner); return; }
+
+      var ua = navigator.userAgent;
+      var isIOS    = /iP(hone|ad|od)/.test(ua);
+      var isSafari = isIOS && /WebKit/.test(ua) && !/CriOS|FxiOS/.test(ua);
+      var isFF     = /Firefox\//.test(ua);
+
+      // زر الإغلاق — يخفي البانر للجلسة فقط (يرجع عند إعادة الفتح)
+      if (closeBtn) closeBtn.addEventListener('click', function() {
+        hide(banner);
+      });
+
+      // زر التثبيت
+      if (installBtn) installBtn.addEventListener('click', function() {
+        if (window.__pwaPrompt) {
+          hide(banner);
+          window.__pwaPrompt.prompt();
+          window.__pwaPrompt.userChoice.then(function(c) {
+            if (c.outcome === 'accepted') try { localStorage.setItem('wslha_installed','1'); } catch(x) {}
+            window.__pwaPrompt = null;
+          });
+        } else if (isSafari) {
+          hide(banner);
+          openModal(['اضغط زر المشاركة 🔗 أسفل شاشة Safari','اختر "إضافة إلى الشاشة الرئيسية" 📲','اضغط "إضافة" ✅']);
+        } else {
+          hide(banner);
+          openModal(['افتح قائمة المتصفح ⋮ أو ⋯','اختر "إضافة إلى الشاشة الرئيسية" 📲','اضغط "تثبيت" أو "إضافة" ✅']);
+        }
+      });
+
+      function openModal(arr) {
+        if (!steps || !modal) return;
+        steps.innerHTML = '';
+        arr.forEach(function(t,i){
+          var li = document.createElement('li');
+          li.innerHTML = '<span class="step-num">'+(i+1)+'</span><span>'+t+'</span>';
+          steps.appendChild(li);
+        });
+        modal.hidden = false;
+      }
+      if (modalClose) modalClose.addEventListener('click', function(){ modal.hidden = true; });
+      if (modal) modal.addEventListener('click', function(e){ if(e.target===modal) modal.hidden=true; });
+
+      window.addEventListener('beforeinstallprompt', function(e) {
+        e.preventDefault(); window.__pwaPrompt = e;
+      });
+      window.addEventListener('appinstalled', function() {
+        try { localStorage.setItem('wslha_installed','1'); } catch(x) {}
+        hide(banner); modal.hidden = true;
+      });
+    })();
+
+    // ── Native (Capacitor) progressive enhancement ───────────
+    // Runs only inside the packaged Android/iOS app. On the web this
+    // block is inert, so the same build serves browser + native.
+    (function () {
+      var Cap = window.Capacitor;
+      if (!Cap || !Cap.isNativePlatform || !Cap.isNativePlatform()) return;
+
+      var P = Cap.Plugins || {};
+
+      // Status bar to brand colour.
+      if (P.StatusBar) {
+        try {
+          P.StatusBar.setBackgroundColor({ color: '#2952D9' });
+          P.StatusBar.setStyle({ style: 'LIGHT' });
+        } catch (e) {}
+      }
+
+      // Hide the splash once the page is interactive.
+      if (P.SplashScreen) {
+        try { P.SplashScreen.hide(); } catch (e) {}
+      }
+
+      // Request notification permission (+ register push if available).
+      if (P.PushNotifications) {
+        try {
+          P.PushNotifications.requestPermissions().then(function (r) {
+            if (r && r.receive === 'granted') P.PushNotifications.register();
+          });
+        } catch (e) {}
+      }
+      if (P.LocalNotifications) {
+        try { P.LocalNotifications.requestPermissions(); } catch (e) {}
+      }
+
+      // Bridge web notification calls to native local notifications so
+      // status/order alerts still fire inside the WebView.
+      if (P.LocalNotifications) {
+        window.wslhaNativeNotify = function (title, body) {
+          try {
+            P.LocalNotifications.schedule({
+              notifications: [{
+                id: Date.now() % 100000,
+                title: title || 'وصّلها',
+                body: body || '',
+                smallIcon: 'ic_stat_icon',
+              }],
+            });
+          } catch (e) {}
+        };
+      }
+
+      // Hardware back button: go back in history, else stay (don't exit abruptly).
+      if (P.App) {
+        try {
+          P.App.addListener('backButton', function (info) {
+            if (info && info.canGoBack) window.history.back();
+            else if (P.App.exitApp) P.App.exitApp();
+          });
+        } catch (e) {}
+      }
+    })();
+  </script>
+</body>
+</html>
+
+<script>
+  const SB_URL = 'https://vtikgyiopkjnrwlqnmfx.supabase.co';
+  const SB_KEY = 'sb_publishable_PLSnpvCT-sAyUMtymNgTwA_QmL2suw4';
+  const SB_H = { apikey: SB_KEY, Authorization: 'Bearer ' + SB_KEY, 'Content-Type': 'application/json' };
+  var user = null;
+  try { var raw = localStorage.getItem('wslha_user'); user = raw ? JSON.parse(raw) : null; } catch {}
+  if (!user) { document.getElementById('auth-box').style.display = ''; }
+  else { document.getElementById('wallet-main').style.display = 'block'; loadWallet(); loadLog(); }
+
+  function toast(msg, ok) {
+    var t = document.getElementById('w-toast');
+    t.textContent = msg; t.style.background = ok === false ? '#dc2626' : '#1f2937';
+    t.classList.add('show'); setTimeout(function() { t.classList.remove('show'); }, 2800);
+  }
+  function openSheet(id) { document.getElementById(id).classList.add('visible'); }
+  function closeSheet(id) { document.getElementById(id).classList.remove('visible'); }
+  ['sheet-deposit','sheet-withdraw','sheet-transfer'].forEach(function(id) {
+    document.getElementById(id).addEventListener('click', function(e) { if (e.target === this) closeSheet(id); });
+  });
+  document.getElementById('btn-deposit').addEventListener('click', function() { openSheet('sheet-deposit'); });
+  document.getElementById('btn-withdraw-open').addEventListener('click', function() { openSheet('sheet-withdraw'); });
+  document.getElementById('btn-transfer-open').addEventListener('click', function() { openSheet('sheet-transfer'); });
+
+  document.querySelectorAll('.quick-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      document.querySelectorAll('.quick-btn').forEach(function(b) { b.classList.remove('sel'); });
+      btn.classList.add('sel');
+      document.getElementById('charge-amount').value = btn.dataset.val;
+    });
+  });
+  document.getElementById('charge-amount').addEventListener('input', function() {
+    document.querySelectorAll('.quick-btn').forEach(function(b) { b.classList.remove('sel'); });
+  });
+
+  async function loadWallet() {
+    if (!user) return;
+    try {
+      var res = await fetch(SB_URL + '/rest/v1/wallets?phone=eq.' + encodeURIComponent(user.phone) + '&select=balance', { headers: SB_H });
+      var rows = await res.json();
+      var bal = (Array.isArray(rows) && rows[0]) ? (rows[0].balance || 0) : 0;
+      document.getElementById('balance-val').textContent = Number(bal).toLocaleString('ar-EG');
+      document.getElementById('withdraw-avail').textContent = Number(bal).toLocaleString('ar-EG');
+    } catch {}
+  }
+
+  async function loadLog() {
+    if (!user) return;
+    try {
+      var res = await fetch(SB_URL + '/rest/v1/wallet_transactions?phone=eq.' + encodeURIComponent(user.phone) + '&select=amount,type,note,created_at&order=created_at.desc&limit=50', { headers: SB_H });
+      var txs = await res.json();
+      var el = document.getElementById('tx-list');
+      if (!Array.isArray(txs) || !txs.length) { el.innerHTML = '<div class="tx-empty">لا توجد معاملات بعد</div>'; return; }
+      var labels = { topup:'إيداع', earning:'أرباح', refund:'استرداد', transfer_in:'تحويل وارد', commission:'عمولة', payment:'مدفوعات', withdrawal:'سحب', transfer_out:'تحويل صادر' };
+      var today = new Date().toDateString();
+      var groups = {};
+      txs.forEach(function(t) {
+        var d = new Date(t.created_at); var key = d.toDateString();
+        if (!groups[key]) groups[key] = { label: key === today ? 'اليوم' : d.toLocaleDateString('ar-EG', { year:'numeric', month:'long', day:'numeric' }), items: [] };
+        groups[key].items.push(t);
+      });
+      var html = '';
+      Object.keys(groups).forEach(function(key) {
+        var g = groups[key];
+        html += '<div class="tx-date-group">' + g.label + '</div>';
+        g.items.forEach(function(t) {
+          var amt = Number(t.amount); var isPos = amt >= 0;
+          var label = labels[t.type] || t.type;
+          var time = new Date(t.created_at).toLocaleTimeString('ar-EG', { hour:'2-digit', minute:'2-digit' });
+          var dateStr = new Date(t.created_at).toLocaleDateString('ar-EG', { day:'numeric', month:'short', year:'numeric' });
+          html += '<div class="tx-item"><div class="tx-item__left"><div class="tx-item__type"><span class="tx-item__type-check">' + (isPos?'✓':'✕') + '</span>' + label + '</div><div class="tx-item__date">' + dateStr + ' ' + time + '</div></div><div class="tx-item__amount ' + (isPos?'pos':'neg') + '">' + (isPos?'+':'') + Math.abs(amt).toLocaleString('ar-EG') + '</div></div>';
+        });
+      });
+      el.innerHTML = html;
+    } catch { document.getElementById('tx-list').innerHTML = '<div class="tx-empty">تعذّر تحميل المعاملات</div>'; }
+  }
+
+  document.getElementById('charge-btn').addEventListener('click', async function() {
+    if (!user) return;
+    var amt = parseFloat(document.getElementById('charge-amount').value);
+    if (!amt || amt < 10) { toast('أدخل مبلغاً لا يقل عن 10 جنيه', false); return; }
+    var method = document.querySelector('input[name="charge-method"]:checked').value;
+    var methodLabel = { vodafone:'فودافون كاش', instapay:'إنستاباي', bank:'تحويل بنكي' }[method];
+    var btn = this; btn.disabled = true; btn.textContent = 'جاري المعالجة...';
+    try {
+      var res = await fetch(SB_URL + '/rest/v1/wallets?phone=eq.' + encodeURIComponent(user.phone) + '&select=balance', { headers: SB_H });
+      var rows = await res.json();
+      var currBal = (Array.isArray(rows) && rows[0]) ? Number(rows[0].balance || 0) : 0;
+      var newBal = currBal + amt;
+      await fetch(SB_URL + '/rest/v1/wallets', { method:'POST', headers: Object.assign({}, SB_H, {Prefer:'resolution=merge-duplicates,return=minimal'}), body: JSON.stringify({ phone: user.phone, balance: newBal, updated_at: new Date().toISOString() }) });
+      await fetch(SB_URL + '/rest/v1/wallet_transactions', { method:'POST', headers: Object.assign({}, SB_H, {Prefer:'return=minimal'}), body: JSON.stringify({ id:'wtx-'+Date.now(), phone:user.phone, amount:amt, type:'topup', note:'إيداع عبر '+methodLabel, created_at:new Date().toISOString() }) });
+      document.getElementById('balance-val').textContent = newBal.toLocaleString('ar-EG');
+      document.getElementById('withdraw-avail').textContent = newBal.toLocaleString('ar-EG');
+      closeSheet('sheet-deposit'); toast('✅ تم إيداع ' + amt + ' ج.م بنجاح!'); loadLog();
+    } catch { toast('حدث خطأ، حاول مرة أخرى', false); }
+    btn.disabled = false; btn.textContent = 'إيداع الرصيد';
+  });
+
+  document.getElementById('withdraw-btn').addEventListener('click', async function() {
+    if (!user) return;
+    var amt = parseFloat(document.getElementById('withdraw-amount').value);
+    var dest = document.getElementById('withdraw-dest').value.trim();
+    var note = document.getElementById('withdraw-note').value.trim();
+    if (!amt || amt < 10) { toast('أدخل مبلغاً لا يقل عن 10 جنيه', false); return; }
+    if (!dest) { toast('أدخل رقم فودافون كاش أو إنستاباي', false); return; }
+    var res = await fetch(SB_URL + '/rest/v1/wallets?phone=eq.' + encodeURIComponent(user.phone) + '&select=balance', { headers: SB_H });
+    var rows = await res.json();
+    var currBal = (Array.isArray(rows) && rows[0]) ? Number(rows[0].balance || 0) : 0;
+    if (amt > currBal) { toast('رصيدك غير كافٍ (المتاح: ' + currBal + ' ج.م)', false); return; }
+    var btn = this; btn.disabled = true; btn.textContent = 'جاري المعالجة...';
+    try {
+      var newBal = currBal - amt;
+      await fetch(SB_URL + '/rest/v1/wallets', { method:'POST', headers: Object.assign({}, SB_H, {Prefer:'resolution=merge-duplicates,return=minimal'}), body: JSON.stringify({ phone:user.phone, balance:newBal, updated_at:new Date().toISOString() }) });
+      await fetch(SB_URL + '/rest/v1/wallet_transactions', { method:'POST', headers: Object.assign({}, SB_H, {Prefer:'return=minimal'}), body: JSON.stringify({ id:'wtx-'+Date.now(), phone:user.phone, amount:-amt, type:'withdrawal', note:(note||'سحب رصيد')+' — إلى '+dest, created_at:new Date().toISOString() }) });
+      document.getElementById('balance-val').textContent = newBal.toLocaleString('ar-EG');
+      document.getElementById('withdraw-avail').textContent = newBal.toLocaleString('ar-EG');
+      document.getElementById('withdraw-amount').value = '';
+      document.getElementById('withdraw-dest').value = '';
+      closeSheet('sheet-withdraw'); toast('✅ تم طلب سحب ' + amt + ' ج.م'); loadLog();
+    } catch { toast('حدث خطأ، حاول مرة أخرى', false); }
+    btn.disabled = false; btn.textContent = 'طلب سحب';
+  });
+
+  var _trTimer = null;
+  document.getElementById('transfer-phone').addEventListener('input', function() {
+    clearTimeout(_trTimer); var ph = this.value.trim();
+    document.getElementById('transfer-recipient').classList.remove('visible');
+    if (ph.length < 10) return;
+    _trTimer = setTimeout(async function() {
+      try {
+        var local = ph.startsWith('+20') ? '0'+ph.slice(3) : ph;
+        var intl = ph.startsWith('01') ? '+2'+ph : ph;
+        var filter = 'or=(phone.eq.'+encodeURIComponent(intl)+',phone.eq.'+encodeURIComponent(local)+')';
+        var res = await fetch(SB_URL+'/rest/v1/accounts?'+filter+'&select=name,phone&limit=1', { headers: SB_H });
+        var rows = await res.json();
+        if (Array.isArray(rows) && rows[0]) {
+          document.getElementById('transfer-recipient-name').textContent = rows[0].name||'مستخدم';
+          document.getElementById('transfer-recipient-phone').textContent = rows[0].phone;
+          document.getElementById('transfer-recipient').classList.add('visible');
+        }
+      } catch {}
+    }, 600);
+  });
+
+  document.getElementById('transfer-btn').addEventListener('click', async function() {
+    if (!user) return;
+    var toPhone = document.getElementById('transfer-phone').value.trim();
+    var amt = parseFloat(document.getElementById('transfer-amount').value);
+    var note = document.getElementById('transfer-note').value.trim();
+    if (!toPhone) { toast('أدخل رقم المستلم', false); return; }
+    if (toPhone === user.phone) { toast('لا يمكن التحويل لنفس الحساب', false); return; }
+    if (!amt || amt < 1) { toast('أدخل مبلغاً صحيحاً', false); return; }
+    var toIntl = toPhone.startsWith('01') ? '+2'+toPhone : toPhone;
+    var toLocal = toPhone.startsWith('+20') ? '0'+toPhone.slice(3) : toPhone;
+    var res = await fetch(SB_URL+'/rest/v1/wallets?phone=eq.'+encodeURIComponent(user.phone)+'&select=balance', { headers: SB_H });
+    var rows = await res.json();
+    var currBal = (Array.isArray(rows) && rows[0]) ? Number(rows[0].balance||0) : 0;
+    if (amt > currBal) { toast('رصيدك غير كافٍ', false); return; }
+    var filter = 'or=(phone.eq.'+encodeURIComponent(toIntl)+',phone.eq.'+encodeURIComponent(toLocal)+')';
+    var rRes = await fetch(SB_URL+'/rest/v1/accounts?'+filter+'&select=name,phone&limit=1', { headers: SB_H });
+    var rRows = await rRes.json();
+    if (!Array.isArray(rRows)||!rRows[0]) { toast('لم يُعثر على هذا المستخدم', false); return; }
+    var recipientPhone = rRows[0].phone;
+    var btn = this; btn.disabled = true; btn.textContent = 'جاري التحويل...';
+    try {
+      var now = new Date().toISOString(); var newSenderBal = currBal - amt;
+      await fetch(SB_URL+'/rest/v1/wallets', { method:'POST', headers: Object.assign({},SB_H,{Prefer:'resolution=merge-duplicates,return=minimal'}), body: JSON.stringify({phone:user.phone,balance:newSenderBal,updated_at:now}) });
+      await fetch(SB_URL+'/rest/v1/wallet_transactions', { method:'POST', headers: Object.assign({},SB_H,{Prefer:'return=minimal'}), body: JSON.stringify({id:'wtx-out-'+Date.now(),phone:user.phone,amount:-amt,type:'transfer_out',note:(note||'تحويل')+' → '+recipientPhone,created_at:now}) });
+      var rBalRes = await fetch(SB_URL+'/rest/v1/wallets?phone=eq.'+encodeURIComponent(recipientPhone)+'&select=balance', { headers: SB_H });
+      var rBalRows = await rBalRes.json();
+      var recBal = (Array.isArray(rBalRows)&&rBalRows[0]) ? Number(rBalRows[0].balance||0) : 0;
+      await fetch(SB_URL+'/rest/v1/wallets', { method:'POST', headers: Object.assign({},SB_H,{Prefer:'resolution=merge-duplicates,return=minimal'}), body: JSON.stringify({phone:recipientPhone,balance:recBal+amt,updated_at:now}) });
+      await fetch(SB_URL+'/rest/v1/wallet_transactions', { method:'POST', headers: Object.assign({},SB_H,{Prefer:'return=minimal'}), body: JSON.stringify({id:'wtx-in-'+Date.now(),phone:recipientPhone,amount:amt,type:'transfer_in',note:(note||'تحويل')+' ← '+user.phone,created_at:now}) });
+      document.getElementById('balance-val').textContent = newSenderBal.toLocaleString('ar-EG');
+      document.getElementById('transfer-phone').value = '';
+      document.getElementById('transfer-amount').value = '';
+      document.getElementById('transfer-recipient').classList.remove('visible');
+      closeSheet('sheet-transfer'); toast('✅ تم تحويل ' + amt + ' ج.م بنجاح!'); loadLog();
+    } catch { toast('حدث خطأ، حاول مرة أخرى', false); }
+    btn.disabled = false; btn.textContent = 'تحويل الآن';
+  });
+</script>
+

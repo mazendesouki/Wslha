@@ -1,0 +1,100 @@
+/* ── Design Tokens ──────────────────────────────────────────── */
+:root {
+  /* Colors */
+  --color-primary:       #3B6EF8;
+  --color-primary-dark:  #2952D9;
+  --color-primary-light: #EEF2FF;
+  --color-primary-bg:    #F5F7FF;
+
+  --color-accent:        #F5B800;
+  --color-accent-dark:   #D9A200;
+
+  --color-text:          #1A1A2E;
+  --color-text-muted:    #64748B;
+  --color-text-faint:    #94A3B8;
+
+  --color-bg:            #FFFFFF;
+  --color-bg-soft:       #F8FAFC;
+  --color-border:        #E2E8F0;
+  --color-success:       #22C55E;
+  --color-dark-bg:       #0F172A;
+  --color-dark-border:   #1E293B;
+
+  /* Typography */
+  --font-body: 'Cairo', 'Segoe UI', sans-serif;
+
+  --text-xs:   0.75rem;
+  --text-sm:   0.875rem;
+  --text-base: 1rem;
+  --text-lg:   1.125rem;
+  --text-xl:   1.25rem;
+  --text-2xl:  1.5rem;
+  --text-3xl:  1.875rem;
+  --text-4xl:  2.25rem;
+  --text-5xl:  3.25rem;
+
+  --weight-regular: 400;
+  --weight-medium:  500;
+  --weight-semi:    600;
+  --weight-bold:    700;
+  --weight-black:   900;
+
+  /* Spacing */
+  --sp-1:  0.25rem;
+  --sp-2:  0.5rem;
+  --sp-3:  0.75rem;
+  --sp-4:  1rem;
+  --sp-5:  1.25rem;
+  --sp-6:  1.5rem;
+  --sp-8:  2rem;
+  --sp-10: 2.5rem;
+  --sp-12: 3rem;
+  --sp-16: 4rem;
+  --sp-20: 5rem;
+
+  /* Radii */
+  --radius-sm:   6px;
+  --radius:      10px;
+  --radius-lg:   14px;
+  --radius-xl:   18px;
+  --radius-2xl:  24px;
+  --radius-full: 9999px;
+
+  /* Shadows */
+  --shadow-sm:      0 1px 4px rgba(0, 0, 0, 0.06);
+  --shadow:         0 4px 16px rgba(0, 0, 0, 0.08);
+  --shadow-md:      0 8px 32px rgba(0, 0, 0, 0.10);
+  --shadow-lg:      0 16px 48px rgba(0, 0, 0, 0.12);
+  --shadow-primary: 0 4px 20px rgba(59, 110, 248, 0.25);
+  --shadow-accent:  0 4px 16px rgba(245, 184, 0, 0.35);
+
+  /* Layout */
+  --container: 1280px;
+  --nav-height: 64px;
+
+  /* Transitions */
+  --ease: 0.18s ease;
+}
+
+/* ── Reset ──────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html {
+  font-family: var(--font-body);
+  color: var(--color-text);
+  background: var(--color-bg);
+  font-size: 16px;
+  line-height: 1.6;
+  scroll-behavior: smooth;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+a  { color: inherit; text-decoration: none; }
+img { max-width: 100%; display: block; }
+button { cursor: pointer; font-family: inherit; }

@@ -1,0 +1,2083 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" class="astro-2ZP6Q64Z">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>لوحة التحكم — وصّلها</title>
+  <link rel="icon" href="/icon.svg" type="image/svg+xml">
+  
+<link rel="stylesheet" href="/_astro/admin.b624381c.css" /></head>
+<body class="astro-2ZP6Q64Z">
+
+<div class="sidebar-overlay astro-2ZP6Q64Z" id="overlay"></div>
+
+<!-- ── Sidebar ──────────────────────────────────────────────── -->
+<aside class="sidebar astro-2ZP6Q64Z" id="sidebar">
+  <div class="sidebar__logo astro-2ZP6Q64Z">
+    <div class="sidebar__logo-name astro-2ZP6Q64Z">وصّلها</div>
+    <div class="sidebar__logo-sub astro-2ZP6Q64Z">لوحة التحكم الإدارية</div>
+  </div>
+  <div class="sidebar__admin astro-2ZP6Q64Z">
+    <div class="sidebar__avatar astro-2ZP6Q64Z" id="admin-avatar">م</div>
+    <div class="astro-2ZP6Q64Z">
+      <div class="sidebar__admin-name astro-2ZP6Q64Z" id="admin-name">المشرف</div>
+      <div class="sidebar__admin-role astro-2ZP6Q64Z">مشرف النظام</div>
+    </div>
+  </div>
+  <nav class="astro-2ZP6Q64Z">
+    <button class="nav-item active astro-2ZP6Q64Z" data-section="dash">
+      <span class="nav-item__icon astro-2ZP6Q64Z">📊</span> لوحة التحكم
+    </button>
+    <button class="nav-item astro-2ZP6Q64Z" data-section="users">
+      <span class="nav-item__icon astro-2ZP6Q64Z">👥</span> المستخدمون
+    </button>
+    <div class="nav-divider astro-2ZP6Q64Z"></div>
+    <button class="nav-item astro-2ZP6Q64Z" data-section="drivers">
+      <span class="nav-item__icon astro-2ZP6Q64Z">🚗</span> السائقون
+      <span class="nav-item__badge hidden astro-2ZP6Q64Z" id="badge-drivers">0</span>
+    </button>
+    <button class="nav-item astro-2ZP6Q64Z" data-section="merchants">
+      <span class="nav-item__icon astro-2ZP6Q64Z">🏪</span> التجار
+      <span class="nav-item__badge hidden astro-2ZP6Q64Z" id="badge-merchants">0</span>
+    </button>
+    <div class="nav-divider astro-2ZP6Q64Z"></div>
+    <button class="nav-item astro-2ZP6Q64Z" data-section="orders">
+      <span class="nav-item__icon astro-2ZP6Q64Z">📦</span> الطلبات
+    </button>
+    <button class="nav-item astro-2ZP6Q64Z" data-section="rides">
+      <span class="nav-item__icon astro-2ZP6Q64Z">🚖</span> الرحلات
+    </button>
+    <button class="nav-item astro-2ZP6Q64Z" data-section="stores">
+      <span class="nav-item__icon astro-2ZP6Q64Z">🏬</span> المتاجر
+    </button>
+    <button class="nav-item astro-2ZP6Q64Z" data-section="messages">
+      <span class="nav-item__icon astro-2ZP6Q64Z">✉️</span> الرسائل
+      <span class="nav-item__badge hidden astro-2ZP6Q64Z" id="badge-messages">0</span>
+    </button>
+    <div class="nav-divider astro-2ZP6Q64Z"></div>
+    <button class="nav-item astro-2ZP6Q64Z" data-section="finance">
+      <span class="nav-item__icon astro-2ZP6Q64Z">💰</span> التقارير المالية
+    </button>
+    <button class="nav-item astro-2ZP6Q64Z" data-section="wallets">
+      <span class="nav-item__icon astro-2ZP6Q64Z">💳</span> إدارة المحافظ
+    </button>
+    <button class="nav-item astro-2ZP6Q64Z" data-section="settings">
+      <span class="nav-item__icon astro-2ZP6Q64Z">⚙️</span> الإعدادات
+    </button>
+  </nav>
+  <div class="sidebar__logout astro-2ZP6Q64Z">
+    <button class="btn-logout astro-2ZP6Q64Z" id="logout-btn">🚪 تسجيل الخروج</button>
+  </div>
+</aside>
+
+<!-- ── Main ──────────────────────────────────────────────────── -->
+<div class="main astro-2ZP6Q64Z">
+  <div class="topbar astro-2ZP6Q64Z">
+    <button class="topbar__burger astro-2ZP6Q64Z" id="burger">☰</button>
+    <h1 class="topbar__title astro-2ZP6Q64Z" id="topbar-title">لوحة التحكم</h1>
+    <div class="live-badge astro-2ZP6Q64Z" id="live-badge" title="تحديث تلقائي كل 30 ثانية">
+      <span class="live-dot astro-2ZP6Q64Z"></span>
+      <span id="live-label" class="astro-2ZP6Q64Z">مباشر</span>
+    </div>
+    <span class="topbar__date astro-2ZP6Q64Z" id="topbar-date"></span>
+  </div>
+
+  <div class="content astro-2ZP6Q64Z">
+
+    <!-- ═══════════════════ DASHBOARD ══════════════════════ -->
+    <div class="section active astro-2ZP6Q64Z" id="sec-dash">
+      <div class="kpi-grid astro-2ZP6Q64Z" id="kpi-grid">
+        <div class="kpi kpi--blue astro-2ZP6Q64Z"><div class="kpi__icon astro-2ZP6Q64Z">👥</div><div class="kpi__val astro-2ZP6Q64Z" id="kpi-users">—</div><div class="kpi__label astro-2ZP6Q64Z">إجمالي المستخدمين</div></div>
+        <div class="kpi kpi--green astro-2ZP6Q64Z"><div class="kpi__icon astro-2ZP6Q64Z">🚗</div><div class="kpi__val astro-2ZP6Q64Z" id="kpi-drivers">—</div><div class="kpi__label astro-2ZP6Q64Z">السائقون المعتمدون</div></div>
+        <div class="kpi kpi--orange astro-2ZP6Q64Z"><div class="kpi__icon astro-2ZP6Q64Z">📦</div><div class="kpi__val astro-2ZP6Q64Z" id="kpi-today-orders">—</div><div class="kpi__label astro-2ZP6Q64Z">طلبات اليوم</div></div>
+        <div class="kpi kpi--green astro-2ZP6Q64Z"><div class="kpi__icon astro-2ZP6Q64Z">💰</div><div class="kpi__val astro-2ZP6Q64Z" id="kpi-revenue">—</div><div class="kpi__label astro-2ZP6Q64Z">إيرادات اليوم (ج.م)</div></div>
+        <div class="kpi kpi--blue astro-2ZP6Q64Z"><div class="kpi__icon astro-2ZP6Q64Z">🏬</div><div class="kpi__val astro-2ZP6Q64Z" id="kpi-stores">—</div><div class="kpi__label astro-2ZP6Q64Z">المتاجر النشطة</div></div>
+        <div class="kpi kpi--red astro-2ZP6Q64Z"><div class="kpi__icon astro-2ZP6Q64Z">⏳</div><div class="kpi__val astro-2ZP6Q64Z" id="kpi-pending">—</div><div class="kpi__label astro-2ZP6Q64Z">طلبات الاعتماد</div></div>
+      </div>
+      <div class="dash-grid astro-2ZP6Q64Z">
+        <div class="card astro-2ZP6Q64Z">
+          <div class="card__head astro-2ZP6Q64Z"><span class="card__title astro-2ZP6Q64Z">📦 آخر الطلبات</span></div>
+          <div class="tbl-wrap astro-2ZP6Q64Z">
+            <table class="astro-2ZP6Q64Z"><thead class="astro-2ZP6Q64Z"><tr class="astro-2ZP6Q64Z"><th class="astro-2ZP6Q64Z">رقم الطلب</th><th class="astro-2ZP6Q64Z">العميل</th><th class="astro-2ZP6Q64Z">المتجر</th><th class="astro-2ZP6Q64Z">الإجمالي</th><th class="astro-2ZP6Q64Z">الحالة</th><th class="astro-2ZP6Q64Z">التاريخ</th></tr></thead>
+            <tbody id="dash-recent-orders" class="astro-2ZP6Q64Z"><tr class="astro-2ZP6Q64Z"><td colspan="6" style="text-align:center;color:#94A3B8;padding:2rem" class="astro-2ZP6Q64Z">جاري التحميل…</td></tr></tbody></table>
+          </div>
+        </div>
+        <div class="card astro-2ZP6Q64Z">
+          <div class="card__head astro-2ZP6Q64Z"><span class="card__title astro-2ZP6Q64Z">⏳ طلبات الاعتماد المعلقة</span></div>
+          <div class="card__body astro-2ZP6Q64Z" id="dash-pending-list" style="display:flex;flex-direction:column;gap:.75rem">
+            <p style="color:#94A3B8;font-size:.875rem" class="astro-2ZP6Q64Z">جاري التحميل…</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════ USERS ═══════════════════════════ -->
+    <div class="section astro-2ZP6Q64Z" id="sec-users">
+      <div class="filters-bar astro-2ZP6Q64Z">
+        <input class="search-input astro-2ZP6Q64Z" id="users-search" type="search" placeholder="🔍 بحث بالاسم أو الجوال…">
+        <select class="filter-select astro-2ZP6Q64Z" id="users-role-filter">
+          <option value="" class="astro-2ZP6Q64Z">جميع الأدوار</option>
+          <option value="customer" class="astro-2ZP6Q64Z">عملاء</option>
+          <option value="driver" class="astro-2ZP6Q64Z">سائقون</option>
+          <option value="admin" class="astro-2ZP6Q64Z">مشرفون</option>
+        </select>
+        <select class="filter-select astro-2ZP6Q64Z" id="users-status-filter">
+          <option value="" class="astro-2ZP6Q64Z">جميع الحالات</option>
+          <option value="active" class="astro-2ZP6Q64Z">نشط</option>
+          <option value="pending" class="astro-2ZP6Q64Z">معلق</option>
+          <option value="approved" class="astro-2ZP6Q64Z">معتمد</option>
+          <option value="rejected" class="astro-2ZP6Q64Z">مرفوض</option>
+          <option value="banned" class="astro-2ZP6Q64Z">محظور</option>
+        </select>
+        <button class="btn btn--primary astro-2ZP6Q64Z" onclick="loadUsers()">🔄 تحديث</button>
+      </div>
+      <div class="card astro-2ZP6Q64Z">
+        <div class="tbl-wrap astro-2ZP6Q64Z">
+          <table class="astro-2ZP6Q64Z">
+            <thead class="astro-2ZP6Q64Z"><tr class="astro-2ZP6Q64Z"><th class="astro-2ZP6Q64Z">#</th><th class="astro-2ZP6Q64Z">الاسم</th><th class="astro-2ZP6Q64Z">الجوال</th><th class="astro-2ZP6Q64Z">الدور</th><th class="astro-2ZP6Q64Z">الحالة</th><th class="astro-2ZP6Q64Z">المدينة</th><th class="astro-2ZP6Q64Z">تاريخ الانضمام</th><th class="astro-2ZP6Q64Z">إجراءات</th></tr></thead>
+            <tbody id="users-tbody" class="astro-2ZP6Q64Z"><tr class="astro-2ZP6Q64Z"><td colspan="8" style="text-align:center;color:#94A3B8;padding:2rem" class="astro-2ZP6Q64Z">جاري التحميل…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════ DRIVERS ═════════════════════════ -->
+    <div class="section astro-2ZP6Q64Z" id="sec-drivers">
+      <div class="tab-bar astro-2ZP6Q64Z" id="drivers-main-tabs">
+        <button class="tab-btn active astro-2ZP6Q64Z" data-dmain="accounts">🚗 السائقون النشطون</button>
+        <button class="tab-btn astro-2ZP6Q64Z" data-dmain="apps">📋 طلبات الاعتماد <span id="dmain-pending-cnt" style="display:none;background:#DC2626;color:#fff;font-size:.65rem;padding:1px 6px;border-radius:99px;margin-right:4px" class="astro-2ZP6Q64Z"></span></button>
+      </div>
+
+      <!-- Drivers accounts sub-section -->
+      <div id="drivers-accounts-section" class="astro-2ZP6Q64Z">
+        <div class="filters-bar astro-2ZP6Q64Z">
+          <input class="search-input astro-2ZP6Q64Z" id="drivers-acct-search" type="search" placeholder="🔍 بحث بالاسم أو الجوال…">
+          <select class="filter-select astro-2ZP6Q64Z" id="drivers-acct-status">
+            <option value="" class="astro-2ZP6Q64Z">جميع الحالات</option>
+            <option value="active" class="astro-2ZP6Q64Z">نشط</option>
+            <option value="pending" class="astro-2ZP6Q64Z">معلق</option>
+            <option value="approved" class="astro-2ZP6Q64Z">معتمد</option>
+            <option value="banned" class="astro-2ZP6Q64Z">محظور</option>
+          </select>
+          <button class="btn btn--primary astro-2ZP6Q64Z" onclick="loadDriverAccounts()">🔄 تحديث</button>
+        </div>
+        <div class="card astro-2ZP6Q64Z">
+          <div class="tbl-wrap astro-2ZP6Q64Z">
+            <table class="astro-2ZP6Q64Z">
+              <thead class="astro-2ZP6Q64Z"><tr class="astro-2ZP6Q64Z"><th class="astro-2ZP6Q64Z">#</th><th class="astro-2ZP6Q64Z">الاسم</th><th class="astro-2ZP6Q64Z">الجوال</th><th class="astro-2ZP6Q64Z">المدينة</th><th class="astro-2ZP6Q64Z">الحالة</th><th class="astro-2ZP6Q64Z">تاريخ الانضمام</th><th class="astro-2ZP6Q64Z">إجراءات</th></tr></thead>
+              <tbody id="drivers-acct-tbody" class="astro-2ZP6Q64Z"><tr class="astro-2ZP6Q64Z"><td colspan="7" style="text-align:center;color:#94A3B8;padding:2rem" class="astro-2ZP6Q64Z">جاري التحميل…</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Drivers applications sub-section -->
+      <div id="drivers-apps-section" style="display:none" class="astro-2ZP6Q64Z">
+        <div class="tab-bar astro-2ZP6Q64Z" id="drivers-tabs">
+          <button class="tab-btn active astro-2ZP6Q64Z" data-dtab="pending">⏳ معلق <span id="dt-pending-cnt" class="astro-2ZP6Q64Z"></span></button>
+          <button class="tab-btn astro-2ZP6Q64Z" data-dtab="approved">✅ معتمد</button>
+          <button class="tab-btn astro-2ZP6Q64Z" data-dtab="rejected">❌ مرفوض</button>
+          <button class="tab-btn astro-2ZP6Q64Z" data-dtab="all">الكل</button>
+        </div>
+        <div class="card astro-2ZP6Q64Z">
+          <div class="card__head astro-2ZP6Q64Z"><span class="card__title astro-2ZP6Q64Z" id="drivers-tab-title">طلبات الاعتماد المعلقة</span>
+            <button class="btn btn--ghost btn--sm astro-2ZP6Q64Z" onclick="loadDriverApps()">🔄</button>
+          </div>
+          <div class="tbl-wrap astro-2ZP6Q64Z">
+            <table class="astro-2ZP6Q64Z">
+              <thead class="astro-2ZP6Q64Z"><tr class="astro-2ZP6Q64Z"><th class="astro-2ZP6Q64Z">الاسم</th><th class="astro-2ZP6Q64Z">الجوال</th><th class="astro-2ZP6Q64Z">السيارة</th><th class="astro-2ZP6Q64Z">تاريخ التقديم</th><th class="astro-2ZP6Q64Z">الحالة</th><th class="astro-2ZP6Q64Z">مراجعة</th></tr></thead>
+              <tbody id="drivers-tbody" class="astro-2ZP6Q64Z"><tr class="astro-2ZP6Q64Z"><td colspan="6" style="text-align:center;color:#94A3B8;padding:2rem" class="astro-2ZP6Q64Z">جاري التحميل…</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════ MERCHANTS ═══════════════════════ -->
+    <div class="section astro-2ZP6Q64Z" id="sec-merchants">
+      <div class="tab-bar astro-2ZP6Q64Z" id="merchants-main-tabs">
+        <button class="tab-btn active astro-2ZP6Q64Z" data-mmain="accounts">🏪 التجار النشطون</button>
+        <button class="tab-btn astro-2ZP6Q64Z" data-mmain="apps">📋 طلبات الاعتماد</button>
+      </div>
+
+      <!-- Merchants accounts sub-section -->
+      <div id="merchants-accounts-section" class="astro-2ZP6Q64Z">
+        <div class="filters-bar astro-2ZP6Q64Z">
+          <input class="search-input astro-2ZP6Q64Z" id="merchants-acct-search" type="search" placeholder="🔍 بحث بالاسم أو الجوال…">
+          <select class="filter-select astro-2ZP6Q64Z" id="merchants-acct-status">
+            <option value="" class="astro-2ZP6Q64Z">جميع الحالات</option>
+            <option value="active" class="astro-2ZP6Q64Z">نشط</option>
+            <option value="pending" class="astro-2ZP6Q64Z">معلق</option>
+            <option value="approved" class="astro-2ZP6Q64Z">معتمد</option>
+            <option value="banned" class="astro-2ZP6Q64Z">محظور</option>
+          </select>
+          <button class="btn btn--primary astro-2ZP6Q64Z" onclick="loadMerchantAccounts()">🔄 تحديث</button>
+        </div>
+        <div class="card astro-2ZP6Q64Z">
+          <div class="tbl-wrap astro-2ZP6Q64Z">
+            <table class="astro-2ZP6Q64Z">
+              <thead class="astro-2ZP6Q64Z"><tr class="astro-2ZP6Q64Z"><th class="astro-2ZP6Q64Z">#</th><th class="astro-2ZP6Q64Z">الاسم</th><th class="astro-2ZP6Q64Z">الجوال</th><th class="astro-2ZP6Q64Z">المدينة</th><th class="astro-2ZP6Q64Z">الحالة</th><th class="astro-2ZP6Q64Z">تاريخ الانضمام</th><th class="astro-2ZP6Q64Z">إجراءات</th></tr></thead>
+              <tbody id="merchants-acct-tbody" class="astro-2ZP6Q64Z"><tr class="astro-2ZP6Q64Z"><td colspan="7" style="text-align:center;color:#94A3B8;padding:2rem" class="astro-2ZP6Q64Z">جاري التحميل…</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Merchants applications sub-section -->
+      <div id="merchants-apps-section" style="display:none" class="astro-2ZP6Q64Z">
+        <div class="tab-bar astro-2ZP6Q64Z" id="merchants-tabs">
+          <button class="tab-btn active astro-2ZP6Q64Z" data-mtab="pending">⏳ معلق <span id="mt-pending-cnt" class="astro-2ZP6Q64Z"></span></button>
+          <button class="tab-btn astro-2ZP6Q64Z" data-mtab="approved">✅ معتمد</button>
+          <button class="tab-btn astro-2ZP6Q64Z" data-mtab="rejected">❌ مرفوض</button>
+          <button class="tab-btn astro-2ZP6Q64Z" data-mtab="all">الكل</button>
+        </div>
+        <div class="card astro-2ZP6Q64Z">
+          <div class="card__head astro-2ZP6Q64Z"><span class="card__title astro-2ZP6Q64Z" id="merchants-tab-title">طلبات الاعتماد المعلقة</span>
+            <button class="btn btn--ghost btn--sm astro-2ZP6Q64Z" onclick="loadMerchantApps()">🔄</button>
+          </div>
+          <div class="tbl-wrap astro-2ZP6Q64Z">
+            <table class="astro-2ZP6Q64Z">
+              <thead class="astro-2ZP6Q64Z"><tr class="astro-2ZP6Q64Z"><th class="astro-2ZP6Q64Z">الاسم التجاري</th><th class="astro-2ZP6Q64Z">الجوال</th><th class="astro-2ZP6Q64Z">نوع النشاط</th><th class="astro-2ZP6Q64Z">تاريخ التقديم</th><th class="astro-2ZP6Q64Z">الحالة</th><th class="astro-2ZP6Q64Z">مراجعة</th></tr></thead>
+              <tbody id="merchants-tbody" class="astro-2ZP6Q64Z"><tr class="astro-2ZP6Q64Z"><td colspan="6" style="text-align:center;color:#94A3B8;padding:2rem" class="astro-2ZP6Q64Z">جاري التحميل…</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════ ORDERS ══════════════════════════ -->
+    <div class="section astro-2ZP6Q64Z" id="sec-orders">
+      <div class="filters-bar astro-2ZP6Q64Z">
+        <input class="search-input astro-2ZP6Q64Z" id="orders-search" type="search" placeholder="🔍 بحث برقم الطلب أو الجوال…">
+        <select class="filter-select astro-2ZP6Q64Z" id="orders-status-filter">
+          <option value="" class="astro-2ZP6Q64Z">جميع الحالات</option>
+          <option value="pending" class="astro-2ZP6Q64Z">قيد الانتظار</option>
+          <option value="preparing" class="astro-2ZP6Q64Z">قيد التحضير</option>
+          <option value="on_the_way" class="astro-2ZP6Q64Z">في الطريق</option>
+          <option value="delivered" class="astro-2ZP6Q64Z">تم التسليم</option>
+          <option value="rejected" class="astro-2ZP6Q64Z">مرفوض</option>
+        </select>
+        <button class="btn btn--primary astro-2ZP6Q64Z" onclick="loadOrders()">🔄 تحديث</button>
+      </div>
+      <div class="card astro-2ZP6Q64Z">
+        <div class="tbl-wrap astro-2ZP6Q64Z">
+          <table class="astro-2ZP6Q64Z">
+            <thead class="astro-2ZP6Q64Z"><tr class="astro-2ZP6Q64Z"><th class="astro-2ZP6Q64Z">رقم الطلب</th><th class="astro-2ZP6Q64Z">العميل</th><th class="astro-2ZP6Q64Z">الجوال</th><th class="astro-2ZP6Q64Z">المتجر</th><th class="astro-2ZP6Q64Z">الإجمالي</th><th class="astro-2ZP6Q64Z">السائق</th><th class="astro-2ZP6Q64Z">الحالة</th><th class="astro-2ZP6Q64Z">التاريخ</th><th class="astro-2ZP6Q64Z">إجراءات</th></tr></thead>
+            <tbody id="orders-tbody" class="astro-2ZP6Q64Z"><tr class="astro-2ZP6Q64Z"><td colspan="9" style="text-align:center;color:#94A3B8;padding:2rem" class="astro-2ZP6Q64Z">جاري التحميل…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════ RIDES ═══════════════════════════ -->
+    <div class="section astro-2ZP6Q64Z" id="sec-rides">
+      <div class="filters-bar astro-2ZP6Q64Z">
+        <input class="search-input astro-2ZP6Q64Z" id="rides-search" type="search" placeholder="🔍 بحث…">
+        <select class="filter-select astro-2ZP6Q64Z" id="rides-status-filter">
+          <option value="" class="astro-2ZP6Q64Z">جميع الحالات</option>
+          <option value="pending" class="astro-2ZP6Q64Z">قيد الانتظار</option>
+          <option value="accepted" class="astro-2ZP6Q64Z">مقبول</option>
+          <option value="in_progress" class="astro-2ZP6Q64Z">جارية</option>
+          <option value="completed" class="astro-2ZP6Q64Z">مكتملة</option>
+          <option value="cancelled" class="astro-2ZP6Q64Z">ملغاة</option>
+        </select>
+        <button class="btn btn--primary astro-2ZP6Q64Z" onclick="loadRides()">🔄 تحديث</button>
+      </div>
+      <div class="card astro-2ZP6Q64Z">
+        <div class="tbl-wrap astro-2ZP6Q64Z">
+          <table class="astro-2ZP6Q64Z">
+            <thead class="astro-2ZP6Q64Z"><tr class="astro-2ZP6Q64Z"><th class="astro-2ZP6Q64Z">رقم الرحلة</th><th class="astro-2ZP6Q64Z">العميل</th><th class="astro-2ZP6Q64Z">من</th><th class="astro-2ZP6Q64Z">إلى</th><th class="astro-2ZP6Q64Z">الأجرة</th><th class="astro-2ZP6Q64Z">السائق</th><th class="astro-2ZP6Q64Z">الحالة</th><th class="astro-2ZP6Q64Z">التاريخ</th><th class="astro-2ZP6Q64Z">إجراءات</th></tr></thead>
+            <tbody id="rides-tbody" class="astro-2ZP6Q64Z"><tr class="astro-2ZP6Q64Z"><td colspan="9" style="text-align:center;color:#94A3B8;padding:2rem" class="astro-2ZP6Q64Z">جاري التحميل…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════ STORES ══════════════════════════ -->
+    <div class="section astro-2ZP6Q64Z" id="sec-stores">
+      <div class="filters-bar astro-2ZP6Q64Z">
+        <input class="search-input astro-2ZP6Q64Z" id="stores-search" type="search" placeholder="🔍 بحث بالاسم أو المنطقة…">
+        <button class="btn btn--primary astro-2ZP6Q64Z" onclick="loadStores()">🔄 تحديث</button>
+      </div>
+      <div class="card astro-2ZP6Q64Z">
+        <div class="tbl-wrap astro-2ZP6Q64Z">
+          <table class="astro-2ZP6Q64Z">
+            <thead class="astro-2ZP6Q64Z"><tr class="astro-2ZP6Q64Z"><th class="astro-2ZP6Q64Z">المتجر</th><th class="astro-2ZP6Q64Z">الفئة</th><th class="astro-2ZP6Q64Z">المنطقة</th><th class="astro-2ZP6Q64Z">صاحب العمل</th><th class="astro-2ZP6Q64Z">رسوم التوصيل</th><th class="astro-2ZP6Q64Z">التقييم</th><th class="astro-2ZP6Q64Z">نشط</th><th class="astro-2ZP6Q64Z">مفتوح</th><th class="astro-2ZP6Q64Z">إجراءات</th></tr></thead>
+            <tbody id="stores-tbody" class="astro-2ZP6Q64Z"><tr class="astro-2ZP6Q64Z"><td colspan="9" style="text-align:center;color:#94A3B8;padding:2rem" class="astro-2ZP6Q64Z">جاري التحميل…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════ MESSAGES ════════════════════════ -->
+    <div class="section astro-2ZP6Q64Z" id="sec-messages">
+      <div class="card astro-2ZP6Q64Z">
+        <div class="card__head astro-2ZP6Q64Z" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.5rem">
+          <span class="card__title astro-2ZP6Q64Z">✉️ رسائل التواصل</span>
+          <div style="display:flex;gap:.5rem;flex-wrap:wrap" class="astro-2ZP6Q64Z">
+            <select id="msg-filter" style="padding:.4rem .75rem;border-radius:6px;border:1px solid #334155;background:#1E293B;color:#e2e8f0;font-size:.8rem" class="astro-2ZP6Q64Z">
+              <option value="" class="astro-2ZP6Q64Z">كل الرسائل</option>
+              <option value="unread" class="astro-2ZP6Q64Z">غير مقروء</option>
+              <option value="read" class="astro-2ZP6Q64Z">مقروء</option>
+              <option value="replied" class="astro-2ZP6Q64Z">تم الرد</option>
+            </select>
+          </div>
+        </div>
+        <div class="tbl-wrap astro-2ZP6Q64Z">
+          <table class="astro-2ZP6Q64Z">
+            <thead class="astro-2ZP6Q64Z"><tr class="astro-2ZP6Q64Z"><th class="astro-2ZP6Q64Z">الاسم</th><th class="astro-2ZP6Q64Z">الجوال</th><th class="astro-2ZP6Q64Z">البريد</th><th class="astro-2ZP6Q64Z">الموضوع</th><th class="astro-2ZP6Q64Z">الحالة</th><th class="astro-2ZP6Q64Z">التاريخ</th><th class="astro-2ZP6Q64Z">إجراء</th></tr></thead>
+            <tbody id="messages-tbody" class="astro-2ZP6Q64Z"><tr class="astro-2ZP6Q64Z"><td colspan="7" style="text-align:center;color:#94A3B8;padding:2rem" class="astro-2ZP6Q64Z">جاري التحميل…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Message detail modal -->
+      <div id="msg-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:1000;align-items:center;justify-content:center;padding:1rem" class="astro-2ZP6Q64Z">
+        <div style="background:#1E293B;border-radius:12px;padding:1.5rem;max-width:580px;width:100%;border:1px solid #334155;max-height:90vh;overflow-y:auto" class="astro-2ZP6Q64Z">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem" class="astro-2ZP6Q64Z">
+            <h3 style="font-size:1rem;font-weight:800;color:#f1f5f9" id="msg-modal-subject" class="astro-2ZP6Q64Z">—</h3>
+            <button onclick="document.getElementById('msg-modal').style.display='none'" style="background:none;border:none;color:#94A3B8;font-size:1.2rem;cursor:pointer" class="astro-2ZP6Q64Z">✕</button>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-bottom:1rem" class="astro-2ZP6Q64Z">
+            <div class="astro-2ZP6Q64Z"><div style="font-size:.7rem;color:#64748B;margin-bottom:2px" class="astro-2ZP6Q64Z">الاسم</div><div style="font-size:.875rem;color:#f1f5f9;font-weight:700" id="msg-modal-name" class="astro-2ZP6Q64Z">—</div></div>
+            <div class="astro-2ZP6Q64Z"><div style="font-size:.7rem;color:#64748B;margin-bottom:2px" class="astro-2ZP6Q64Z">الجوال</div><div style="font-size:.875rem;color:#f1f5f9;font-weight:700" id="msg-modal-phone" class="astro-2ZP6Q64Z">—</div></div>
+            <div class="astro-2ZP6Q64Z"><div style="font-size:.7rem;color:#64748B;margin-bottom:2px" class="astro-2ZP6Q64Z">البريد</div><div style="font-size:.875rem;color:#3B82F6" id="msg-modal-email" class="astro-2ZP6Q64Z">—</div></div>
+            <div class="astro-2ZP6Q64Z"><div style="font-size:.7rem;color:#64748B;margin-bottom:2px" class="astro-2ZP6Q64Z">التاريخ</div><div style="font-size:.875rem;color:#f1f5f9" id="msg-modal-date" class="astro-2ZP6Q64Z">—</div></div>
+          </div>
+          <div style="background:#0F172A;border-radius:8px;padding:1rem;margin-bottom:1rem" class="astro-2ZP6Q64Z">
+            <div style="font-size:.7rem;color:#64748B;margin-bottom:.5rem" class="astro-2ZP6Q64Z">الرسالة</div>
+            <p style="font-size:.875rem;color:#e2e8f0;line-height:1.7;white-space:pre-wrap" id="msg-modal-body" class="astro-2ZP6Q64Z">—</p>
+          </div>
+          <div style="display:flex;gap:.75rem;flex-wrap:wrap" class="astro-2ZP6Q64Z">
+            <button id="msg-mark-read" style="padding:.5rem 1rem;background:#3B82F6;color:#fff;border:none;border-radius:6px;font-size:.8rem;font-weight:700;cursor:pointer" class="astro-2ZP6Q64Z">✓ تحديد كمقروء</button>
+            <button id="msg-mark-replied" style="padding:.5rem 1rem;background:#16A34A;color:#fff;border:none;border-radius:6px;font-size:.8rem;font-weight:700;cursor:pointer" class="astro-2ZP6Q64Z">↩ تم الرد</button>
+            <button id="msg-reply-email" style="padding:.5rem 1rem;background:#F59E0B;color:#fff;border:none;border-radius:6px;font-size:.8rem;font-weight:700;cursor:pointer" class="astro-2ZP6Q64Z">✉ رد بالبريد</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════ FINANCE ═════════════════════════ -->
+    <div class="section astro-2ZP6Q64Z" id="sec-finance">
+      <div class="kpi-grid astro-2ZP6Q64Z" id="finance-kpis">
+        <div class="kpi kpi--blue astro-2ZP6Q64Z"><div class="kpi__icon astro-2ZP6Q64Z">💰</div><div class="kpi__val astro-2ZP6Q64Z" id="fin-total-rev">—</div><div class="kpi__label astro-2ZP6Q64Z">إجمالي إيرادات الطلبات</div></div>
+        <div class="kpi kpi--green astro-2ZP6Q64Z"><div class="kpi__icon astro-2ZP6Q64Z">🏢</div><div class="kpi__val astro-2ZP6Q64Z" id="fin-total-commission">—</div><div class="kpi__label astro-2ZP6Q64Z">إجمالي عمولات التطبيق (ج.م)</div></div>
+        <div class="kpi kpi--orange astro-2ZP6Q64Z"><div class="kpi__icon astro-2ZP6Q64Z">🚗</div><div class="kpi__val astro-2ZP6Q64Z" id="fin-ride-commission">—</div><div class="kpi__label astro-2ZP6Q64Z">عمولات الرحلات (ج.م)</div></div>
+        <div class="kpi kpi--blue astro-2ZP6Q64Z"><div class="kpi__icon astro-2ZP6Q64Z">🛵</div><div class="kpi__val astro-2ZP6Q64Z" id="fin-deliv-commission">—</div><div class="kpi__label astro-2ZP6Q64Z">عمولات التوصيل (ج.م)</div></div>
+        <div class="kpi kpi--green astro-2ZP6Q64Z"><div class="kpi__icon astro-2ZP6Q64Z">📦</div><div class="kpi__val astro-2ZP6Q64Z" id="fin-total-orders">—</div><div class="kpi__label astro-2ZP6Q64Z">إجمالي الطلبات المُسلَّمة</div></div>
+        <div class="kpi kpi--orange astro-2ZP6Q64Z"><div class="kpi__icon astro-2ZP6Q64Z">🚖</div><div class="kpi__val astro-2ZP6Q64Z" id="fin-total-rides">—</div><div class="kpi__label astro-2ZP6Q64Z">إجمالي الرحلات المكتملة</div></div>
+        <div class="kpi kpi--blue astro-2ZP6Q64Z"><div class="kpi__icon astro-2ZP6Q64Z">📈</div><div class="kpi__val astro-2ZP6Q64Z" id="fin-avg-order">—</div><div class="kpi__label astro-2ZP6Q64Z">متوسط قيمة الطلب (ج.م)</div></div>
+      </div>
+
+      <!-- Commission log -->
+      <div class="card astro-2ZP6Q64Z">
+        <div class="card__head astro-2ZP6Q64Z"><span class="card__title astro-2ZP6Q64Z">🏢 سجل عمولات التطبيق</span></div>
+        <div class="tbl-wrap astro-2ZP6Q64Z">
+          <table class="astro-2ZP6Q64Z">
+            <thead class="astro-2ZP6Q64Z"><tr class="astro-2ZP6Q64Z"><th class="astro-2ZP6Q64Z">التاريخ</th><th class="astro-2ZP6Q64Z">النوع</th><th class="astro-2ZP6Q64Z">المبلغ (ج.م)</th><th class="astro-2ZP6Q64Z">الوصف</th><th class="astro-2ZP6Q64Z">المرجع</th></tr></thead>
+            <tbody id="commission-tbody" class="astro-2ZP6Q64Z"><tr class="astro-2ZP6Q64Z"><td colspan="5" style="text-align:center;color:#94A3B8;padding:2rem" class="astro-2ZP6Q64Z">جاري التحميل…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card astro-2ZP6Q64Z">
+        <div class="card__head astro-2ZP6Q64Z"><span class="card__title astro-2ZP6Q64Z">📅 الإيرادات الشهرية</span></div>
+        <div class="tbl-wrap astro-2ZP6Q64Z">
+          <table class="astro-2ZP6Q64Z">
+            <thead class="astro-2ZP6Q64Z"><tr class="astro-2ZP6Q64Z"><th class="astro-2ZP6Q64Z">الشهر</th><th class="astro-2ZP6Q64Z">عدد الطلبات</th><th class="astro-2ZP6Q64Z">المُسلَّمة</th><th class="astro-2ZP6Q64Z">إيرادات الطلبات</th><th class="astro-2ZP6Q64Z">عمولات التطبيق</th><th class="astro-2ZP6Q64Z">الرحلات</th></tr></thead>
+            <tbody id="finance-tbody" class="astro-2ZP6Q64Z"><tr class="astro-2ZP6Q64Z"><td colspan="6" style="text-align:center;color:#94A3B8;padding:2rem" class="astro-2ZP6Q64Z">جاري التحميل…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════ WALLETS ════════════════════════ -->
+    <div class="section astro-2ZP6Q64Z" id="sec-wallets">
+      <!-- KPIs -->
+      <div class="kpi-grid astro-2ZP6Q64Z">
+        <div class="kpi kpi--green astro-2ZP6Q64Z"><div class="kpi__icon astro-2ZP6Q64Z">🏢</div><div class="kpi__val astro-2ZP6Q64Z" id="w-platform-balance">—</div><div class="kpi__label astro-2ZP6Q64Z">رصيد المنصة (عمولات)</div></div>
+        <div class="kpi kpi--blue astro-2ZP6Q64Z"><div class="kpi__icon astro-2ZP6Q64Z">💳</div><div class="kpi__val astro-2ZP6Q64Z" id="w-total-balance">—</div><div class="kpi__label astro-2ZP6Q64Z">إجمالي أرصدة المستخدمين</div></div>
+        <div class="kpi kpi--orange astro-2ZP6Q64Z"><div class="kpi__icon astro-2ZP6Q64Z">🚗</div><div class="kpi__val astro-2ZP6Q64Z" id="w-driver-balance">—</div><div class="kpi__label astro-2ZP6Q64Z">أرصدة السائقين</div></div>
+        <div class="kpi kpi--blue astro-2ZP6Q64Z"><div class="kpi__icon astro-2ZP6Q64Z">🏪</div><div class="kpi__val astro-2ZP6Q64Z" id="w-merchant-balance">—</div><div class="kpi__label astro-2ZP6Q64Z">أرصدة التجار</div></div>
+      </div>
+
+      <!-- Platform commission wallet -->
+      <div class="card astro-2ZP6Q64Z">
+        <div class="card__head astro-2ZP6Q64Z">
+          <span class="card__title astro-2ZP6Q64Z">🏢 محفظة المنصة — العمولات المتراكمة</span>
+          <button class="btn btn--sm btn--primary astro-2ZP6Q64Z" onclick="adminSettlePlatform()">💸 تسوية العمولات</button>
+        </div>
+        <div class="card__body astro-2ZP6Q64Z">
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:1rem" class="astro-2ZP6Q64Z">
+            <div style="background:#DCFCE7;border-radius:10px;padding:.85rem 1rem;text-align:center" class="astro-2ZP6Q64Z">
+              <div style="font-size:1.35rem;font-weight:900;color:#15803D" id="pw-ride" class="astro-2ZP6Q64Z">—</div>
+              <div style="font-size:.72rem;color:#166534;margin-top:2px" class="astro-2ZP6Q64Z">🚗 عمولة رحلات</div>
+            </div>
+            <div style="background:#DBEAFE;border-radius:10px;padding:.85rem 1rem;text-align:center" class="astro-2ZP6Q64Z">
+              <div style="font-size:1.35rem;font-weight:900;color:#1D4ED8" id="pw-delivery" class="astro-2ZP6Q64Z">—</div>
+              <div style="font-size:.72rem;color:#1E40AF;margin-top:2px" class="astro-2ZP6Q64Z">🛵 عمولة توصيل</div>
+            </div>
+            <div style="background:#FEF3C7;border-radius:10px;padding:.85rem 1rem;text-align:center" class="astro-2ZP6Q64Z">
+              <div style="font-size:1.35rem;font-weight:900;color:#B45309" id="pw-airport" class="astro-2ZP6Q64Z">—</div>
+              <div style="font-size:.72rem;color:#92400E;margin-top:2px" class="astro-2ZP6Q64Z">✈️ عمولة مطار</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- User wallets table -->
+      <div class="card astro-2ZP6Q64Z">
+        <div class="card__head astro-2ZP6Q64Z">
+          <span class="card__title astro-2ZP6Q64Z">👥 محافظ المستخدمين</span>
+          <div style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap" class="astro-2ZP6Q64Z">
+            <select class="filter-select astro-2ZP6Q64Z" id="wallet-role-filter" onchange="renderWalletsList()">
+              <option value="" class="astro-2ZP6Q64Z">كل الأدوار</option>
+              <option value="driver" class="astro-2ZP6Q64Z">السائقين</option>
+              <option value="merchant" class="astro-2ZP6Q64Z">التجار</option>
+              <option value="customer" class="astro-2ZP6Q64Z">العملاء</option>
+            </select>
+            <input class="search-input astro-2ZP6Q64Z" id="wallet-search" placeholder="🔍 بحث بالاسم أو الجوال" oninput="renderWalletsList()" style="width:170px">
+          </div>
+        </div>
+        <div class="tbl-wrap astro-2ZP6Q64Z">
+          <table class="astro-2ZP6Q64Z">
+            <thead class="astro-2ZP6Q64Z"><tr class="astro-2ZP6Q64Z"><th class="astro-2ZP6Q64Z">الاسم</th><th class="astro-2ZP6Q64Z">الجوال</th><th class="astro-2ZP6Q64Z">الدور</th><th class="astro-2ZP6Q64Z">الرصيد</th><th class="astro-2ZP6Q64Z">إجراءات</th></tr></thead>
+            <tbody id="wallets-tbody" class="astro-2ZP6Q64Z"><tr class="astro-2ZP6Q64Z"><td colspan="5" style="text-align:center;color:#94A3B8;padding:2rem" class="astro-2ZP6Q64Z">جاري التحميل…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Full transaction log -->
+      <div class="card astro-2ZP6Q64Z">
+        <div class="card__head astro-2ZP6Q64Z">
+          <span class="card__title astro-2ZP6Q64Z">📋 سجل جميع المعاملات</span>
+          <div style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap" class="astro-2ZP6Q64Z">
+            <select class="filter-select astro-2ZP6Q64Z" id="tx-type-filter" onchange="renderTxLog()">
+              <option value="" class="astro-2ZP6Q64Z">كل الأنواع</option>
+              <option value="earning" class="astro-2ZP6Q64Z">أرباح سائق</option>
+              <option value="commission" class="astro-2ZP6Q64Z">عمولة منصة</option>
+              <option value="topup" class="astro-2ZP6Q64Z">شحن</option>
+              <option value="withdrawal" class="astro-2ZP6Q64Z">سحب</option>
+              <option value="transfer_out" class="astro-2ZP6Q64Z">تحويل صادر</option>
+              <option value="transfer_in" class="astro-2ZP6Q64Z">تحويل وارد</option>
+              <option value="admin_credit" class="astro-2ZP6Q64Z">إضافة إدارية</option>
+              <option value="admin_debit" class="astro-2ZP6Q64Z">خصم إداري</option>
+            </select>
+            <input class="search-input astro-2ZP6Q64Z" id="tx-search" placeholder="🔍 بحث بالجوال أو الوصف" oninput="renderTxLog()" style="width:170px">
+          </div>
+        </div>
+        <div class="tbl-wrap astro-2ZP6Q64Z">
+          <table class="astro-2ZP6Q64Z">
+            <thead class="astro-2ZP6Q64Z"><tr class="astro-2ZP6Q64Z"><th class="astro-2ZP6Q64Z">التاريخ</th><th class="astro-2ZP6Q64Z">الجوال</th><th class="astro-2ZP6Q64Z">الاسم</th><th class="astro-2ZP6Q64Z">النوع</th><th class="astro-2ZP6Q64Z">المبلغ</th><th class="astro-2ZP6Q64Z">الوصف</th></tr></thead>
+            <tbody id="all-tx-tbody" class="astro-2ZP6Q64Z"><tr class="astro-2ZP6Q64Z"><td colspan="6" style="text-align:center;color:#94A3B8;padding:2rem" class="astro-2ZP6Q64Z">جاري التحميل…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════ SETTINGS ════════════════════════ -->
+    <div class="section astro-2ZP6Q64Z" id="sec-settings">
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:1.25rem" class="astro-2ZP6Q64Z">
+        <!-- Commission rates -->
+        <div class="card astro-2ZP6Q64Z">
+          <div class="card__head astro-2ZP6Q64Z"><span class="card__title astro-2ZP6Q64Z">⚙️ نسب عمولة التطبيق</span></div>
+          <div class="card__body astro-2ZP6Q64Z">
+            <p style="font-size:.8rem;color:#64748B;margin-bottom:1rem" class="astro-2ZP6Q64Z">تُطبَّق هذه النسب تلقائياً عند اكتمال كل رحلة أو توصيل. العمولة تُخصم من أرباح السائق وتُضاف لإيرادات المنصة.</p>
+            <div style="display:flex;flex-direction:column;gap:.85rem" class="astro-2ZP6Q64Z">
+              <div class="astro-2ZP6Q64Z">
+                <label style="font-size:.78rem;font-weight:700;color:#64748B;display:block;margin-bottom:.3rem" class="astro-2ZP6Q64Z">🚗 عمولة الرحلات المحلية (%)</label>
+                <div style="display:flex;align-items:center;gap:.5rem" class="astro-2ZP6Q64Z">
+                  <input class="search-input astro-2ZP6Q64Z" id="rate-ride" type="number" min="0" max="50" step="0.5" value="15" style="width:100px;text-align:center;font-weight:700;font-size:1.1rem">
+                  <span style="font-size:.82rem;color:#64748B" class="astro-2ZP6Q64Z">% من قيمة الرحلة</span>
+                </div>
+              </div>
+              <div class="astro-2ZP6Q64Z">
+                <label style="font-size:.78rem;font-weight:700;color:#64748B;display:block;margin-bottom:.3rem" class="astro-2ZP6Q64Z">🛵 عمولة توصيل المتاجر (%)</label>
+                <div style="display:flex;align-items:center;gap:.5rem" class="astro-2ZP6Q64Z">
+                  <input class="search-input astro-2ZP6Q64Z" id="rate-delivery" type="number" min="0" max="50" step="0.5" value="15" style="width:100px;text-align:center;font-weight:700;font-size:1.1rem">
+                  <span style="font-size:.82rem;color:#64748B" class="astro-2ZP6Q64Z">% من رسوم التوصيل</span>
+                </div>
+              </div>
+              <div class="astro-2ZP6Q64Z">
+                <label style="font-size:.78rem;font-weight:700;color:#64748B;display:block;margin-bottom:.3rem" class="astro-2ZP6Q64Z">✈️ عمولة رحلات المطار (%)</label>
+                <div style="display:flex;align-items:center;gap:.5rem" class="astro-2ZP6Q64Z">
+                  <input class="search-input astro-2ZP6Q64Z" id="rate-airport" type="number" min="0" max="50" step="0.5" value="15" style="width:100px;text-align:center;font-weight:700;font-size:1.1rem">
+                  <span style="font-size:.82rem;color:#64748B" class="astro-2ZP6Q64Z">% من قيمة الرحلة</span>
+                </div>
+              </div>
+              <button class="btn btn--primary astro-2ZP6Q64Z" onclick="saveCommissionRates()" id="save-rates-btn">💾 حفظ النسب</button>
+              <div id="rates-msg" style="display:none;font-size:.82rem;font-weight:700;padding:.5rem .75rem;border-radius:6px" class="astro-2ZP6Q64Z"></div>
+            </div>
+          </div>
+        </div>
+        <!-- Create admin account -->
+        <div class="card astro-2ZP6Q64Z">
+          <div class="card__head astro-2ZP6Q64Z"><span class="card__title astro-2ZP6Q64Z">➕ إنشاء حساب مشرف جديد</span></div>
+          <div class="card__body astro-2ZP6Q64Z">
+            <form id="create-admin-form" style="display:flex;flex-direction:column;gap:.85rem" novalidate class="astro-2ZP6Q64Z">
+              <div class="astro-2ZP6Q64Z"><label style="font-size:.78rem;font-weight:700;color:#64748B;display:block;margin-bottom:.3rem" class="astro-2ZP6Q64Z">الاسم الكامل</label>
+                <input class="search-input astro-2ZP6Q64Z" id="new-admin-name" type="text" placeholder="اسم المشرف" style="width:100%"></div>
+              <div class="astro-2ZP6Q64Z"><label style="font-size:.78rem;font-weight:700;color:#64748B;display:block;margin-bottom:.3rem" class="astro-2ZP6Q64Z">رقم الجوال</label>
+                <input class="search-input astro-2ZP6Q64Z" id="new-admin-phone" type="tel" placeholder="01XXXXXXXXX" dir="ltr" style="width:100%"></div>
+              <div class="astro-2ZP6Q64Z"><label style="font-size:.78rem;font-weight:700;color:#64748B;display:block;margin-bottom:.3rem" class="astro-2ZP6Q64Z">كلمة المرور</label>
+                <input class="search-input astro-2ZP6Q64Z" id="new-admin-pass" type="password" placeholder="كلمة مرور قوية" style="width:100%"></div>
+              <button class="btn btn--primary astro-2ZP6Q64Z" type="submit">إنشاء الحساب</button>
+              <div id="admin-create-msg" style="display:none;font-size:.82rem;font-weight:700;padding:.5rem .75rem;border-radius:6px" class="astro-2ZP6Q64Z"></div>
+            </form>
+          </div>
+        </div>
+        <!-- DB Setup SQL -->
+        <div class="card astro-2ZP6Q64Z">
+          <div class="card__head astro-2ZP6Q64Z"><span class="card__title astro-2ZP6Q64Z">🗄️ إعداد قاعدة البيانات</span></div>
+          <div class="card__body astro-2ZP6Q64Z">
+            <p style="font-size:.82rem;color:#64748B;margin-bottom:.75rem" class="astro-2ZP6Q64Z">شغّل هذا الكود في Supabase SQL Editor لإنشاء الجداول المطلوبة:</p>
+            <pre id="sql-setup" style="background:#0F172A;color:#E2E8F0;padding:1rem;border-radius:8px;font-size:.72rem;overflow-x:auto;line-height:1.6;direction:ltr;text-align:left;white-space:pre-wrap" class="astro-2ZP6Q64Z"></pre>
+            <button class="btn btn--ghost btn--sm astro-2ZP6Q64Z" style="margin-top:.75rem" onclick="copySql()">📋 نسخ الكود</button>
+          </div>
+        </div>
+        <!-- Storage setup -->
+        <div class="card astro-2ZP6Q64Z">
+          <div class="card__head astro-2ZP6Q64Z"><span class="card__title astro-2ZP6Q64Z">🪣 إعداد Storage</span></div>
+          <div class="card__body astro-2ZP6Q64Z">
+            <p style="font-size:.82rem;color:#64748B;margin-bottom:.75rem" class="astro-2ZP6Q64Z">لتفعيل رفع المستندات:</p>
+            <ol style="font-size:.82rem;color:#334155;padding-right:1rem;line-height:2" class="astro-2ZP6Q64Z">
+              <li class="astro-2ZP6Q64Z">افتح Supabase Dashboard → Storage</li>
+              <li class="astro-2ZP6Q64Z">أنشئ Bucket باسم: <strong class="astro-2ZP6Q64Z">documents</strong></li>
+              <li class="astro-2ZP6Q64Z">اجعله <strong class="astro-2ZP6Q64Z">Public</strong></li>
+              <li class="astro-2ZP6Q64Z">أضف Policy لـ anon: INSERT + SELECT</li>
+            </ol>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+</div><!-- /main -->
+
+<!-- ═══════════════════ MODALS ══════════════════════════════ -->
+
+<!-- Driver review modal -->
+<div class="modal-bg hidden astro-2ZP6Q64Z" id="driver-modal">
+  <div class="modal astro-2ZP6Q64Z">
+    <div class="modal__head astro-2ZP6Q64Z">
+      <span class="modal__title astro-2ZP6Q64Z">🚗 مراجعة طلب سائق</span>
+      <button class="modal__close astro-2ZP6Q64Z" onclick="closeModal('driver-modal')">✕</button>
+    </div>
+    <div class="modal__body astro-2ZP6Q64Z" id="driver-modal-body">
+      <p style="color:#94A3B8" class="astro-2ZP6Q64Z">جاري التحميل…</p>
+    </div>
+    <div class="modal__foot astro-2ZP6Q64Z">
+      <div class="reject-area astro-2ZP6Q64Z" id="driver-reject-area">
+        <label style="font-size:.8rem;font-weight:700;color:#64748B;display:block;margin-bottom:.4rem" class="astro-2ZP6Q64Z">سبب الرفض</label>
+        <textarea id="driver-reject-reason" placeholder="اكتب سبب الرفض للسائق…" class="astro-2ZP6Q64Z"></textarea>
+      </div>
+      <button class="btn btn--red astro-2ZP6Q64Z" id="driver-reject-toggle" onclick="toggleReject('driver')">❌ رفض</button>
+      <button class="btn btn--red hidden astro-2ZP6Q64Z" id="driver-reject-confirm" onclick="confirmReject('driver')">تأكيد الرفض</button>
+      <button class="btn btn--green astro-2ZP6Q64Z" id="driver-approve-btn" onclick="confirmApprove('driver')">✅ اعتماد السائق</button>
+    </div>
+  </div>
+</div>
+
+<!-- Merchant review modal -->
+<div class="modal-bg hidden astro-2ZP6Q64Z" id="merchant-modal">
+  <div class="modal astro-2ZP6Q64Z">
+    <div class="modal__head astro-2ZP6Q64Z">
+      <span class="modal__title astro-2ZP6Q64Z">🏪 مراجعة طلب تاجر</span>
+      <button class="modal__close astro-2ZP6Q64Z" onclick="closeModal('merchant-modal')">✕</button>
+    </div>
+    <div class="modal__body astro-2ZP6Q64Z" id="merchant-modal-body">
+      <p style="color:#94A3B8" class="astro-2ZP6Q64Z">جاري التحميل…</p>
+    </div>
+    <div class="modal__foot astro-2ZP6Q64Z">
+      <div class="reject-area astro-2ZP6Q64Z" id="merchant-reject-area">
+        <label style="font-size:.8rem;font-weight:700;color:#64748B;display:block;margin-bottom:.4rem" class="astro-2ZP6Q64Z">سبب الرفض</label>
+        <textarea id="merchant-reject-reason" placeholder="اكتب سبب الرفض للتاجر…" class="astro-2ZP6Q64Z"></textarea>
+      </div>
+      <button class="btn btn--red astro-2ZP6Q64Z" id="merchant-reject-toggle" onclick="toggleReject('merchant')">❌ رفض</button>
+      <button class="btn btn--red hidden astro-2ZP6Q64Z" id="merchant-reject-confirm" onclick="confirmReject('merchant')">تأكيد الرفض</button>
+      <button class="btn btn--green astro-2ZP6Q64Z" id="merchant-approve-btn" onclick="confirmApprove('merchant')">✅ اعتماد التاجر</button>
+    </div>
+  </div>
+</div>
+
+<!-- Order detail modal -->
+<div class="modal-bg hidden astro-2ZP6Q64Z" id="order-modal">
+  <div class="modal astro-2ZP6Q64Z">
+    <div class="modal__head astro-2ZP6Q64Z">
+      <span class="modal__title astro-2ZP6Q64Z">📦 تفاصيل الطلب</span>
+      <button class="modal__close astro-2ZP6Q64Z" onclick="closeModal('order-modal')">✕</button>
+    </div>
+    <div class="modal__body astro-2ZP6Q64Z" id="order-modal-body"></div>
+    <div class="modal__foot astro-2ZP6Q64Z">
+      <select class="filter-select astro-2ZP6Q64Z" id="order-status-select" style="flex:1">
+        <option value="pending" class="astro-2ZP6Q64Z">قيد الانتظار</option>
+        <option value="preparing" class="astro-2ZP6Q64Z">قيد التحضير</option>
+        <option value="on_the_way" class="astro-2ZP6Q64Z">في الطريق</option>
+        <option value="delivered" class="astro-2ZP6Q64Z">تم التسليم</option>
+        <option value="rejected" class="astro-2ZP6Q64Z">مرفوض</option>
+      </select>
+      <button class="btn btn--primary astro-2ZP6Q64Z" onclick="saveOrderStatus()">💾 حفظ الحالة</button>
+      <button class="btn btn--red astro-2ZP6Q64Z" onclick="deleteCurrentOrder()">🗑 حذف</button>
+    </div>
+  </div>
+</div>
+
+<!-- Image lightbox -->
+<div class="modal-bg hidden astro-2ZP6Q64Z" id="lightbox" onclick="closeModal('lightbox')">
+  <img id="lightbox-img" src="" alt="" style="max-width:95vw;max-height:95vh;border-radius:8px;box-shadow:0 25px 50px rgba(0,0,0,.5)" class="astro-2ZP6Q64Z">
+</div>
+
+<!-- Wallet charge/deduct modal -->
+<div class="modal hidden astro-2ZP6Q64Z" id="wallet-op-modal">
+  <div class="modal__box astro-2ZP6Q64Z" style="max-width:400px">
+    <div class="modal__head astro-2ZP6Q64Z">
+      <span id="wallet-op-title" class="astro-2ZP6Q64Z">شحن محفظة</span>
+      <button class="modal__close astro-2ZP6Q64Z" onclick="closeModal('wallet-op-modal')">✕</button>
+    </div>
+    <div class="modal__body astro-2ZP6Q64Z" style="display:flex;flex-direction:column;gap:.85rem">
+      <div style="padding:.75rem 1rem;background:#F1F5F9;border-radius:8px" class="astro-2ZP6Q64Z">
+        <div style="font-size:.75rem;color:#64748B" class="astro-2ZP6Q64Z">المستخدم</div>
+        <div style="font-weight:800;font-size:1rem" id="wallet-op-user" class="astro-2ZP6Q64Z">—</div>
+        <div style="font-size:.78rem;color:#94A3B8;margin-top:1px" id="wallet-op-phone-display" class="astro-2ZP6Q64Z">—</div>
+      </div>
+      <div class="astro-2ZP6Q64Z">
+        <label style="font-size:.78rem;font-weight:700;color:#64748B;display:block;margin-bottom:.3rem" class="astro-2ZP6Q64Z">المبلغ (ج.م)</label>
+        <input class="search-input astro-2ZP6Q64Z" id="wallet-op-amount" type="number" min="0.5" step="0.5" placeholder="0.00" style="width:100%;font-size:1.1rem;font-weight:700">
+      </div>
+      <div class="astro-2ZP6Q64Z">
+        <label style="font-size:.78rem;font-weight:700;color:#64748B;display:block;margin-bottom:.3rem" class="astro-2ZP6Q64Z">السبب / الملاحظة</label>
+        <input class="search-input astro-2ZP6Q64Z" id="wallet-op-note" type="text" placeholder="مثال: مكافأة أداء، شحن يدوي…" style="width:100%">
+      </div>
+      <button class="btn btn--primary astro-2ZP6Q64Z" style="width:100%" id="wallet-op-confirm-btn" onclick="execAdminWalletOp()">تأكيد</button>
+      <div id="wallet-op-msg" style="display:none;font-size:.82rem;font-weight:700;padding:.5rem .75rem;border-radius:6px" class="astro-2ZP6Q64Z"></div>
+    </div>
+  </div>
+</div>
+
+<!-- User transaction history modal -->
+<div class="modal hidden astro-2ZP6Q64Z" id="user-tx-modal">
+  <div class="modal__box astro-2ZP6Q64Z" style="max-width:600px">
+    <div class="modal__head astro-2ZP6Q64Z">
+      <span id="user-tx-modal-title" class="astro-2ZP6Q64Z">سجل معاملات</span>
+      <button class="modal__close astro-2ZP6Q64Z" onclick="closeModal('user-tx-modal')">✕</button>
+    </div>
+    <div class="modal__body astro-2ZP6Q64Z">
+      <div class="tbl-wrap astro-2ZP6Q64Z">
+        <table class="astro-2ZP6Q64Z">
+          <thead class="astro-2ZP6Q64Z"><tr class="astro-2ZP6Q64Z"><th class="astro-2ZP6Q64Z">التاريخ</th><th class="astro-2ZP6Q64Z">النوع</th><th class="astro-2ZP6Q64Z">المبلغ</th><th class="astro-2ZP6Q64Z">الوصف</th></tr></thead>
+          <tbody id="user-tx-tbody" class="astro-2ZP6Q64Z"><tr class="astro-2ZP6Q64Z"><td colspan="4" style="text-align:center;color:#94A3B8;padding:2rem" class="astro-2ZP6Q64Z">جاري التحميل…</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast astro-2ZP6Q64Z" id="toast"></div>
+
+<script>
+/* ── Constants ─────────────────────────────────────────────── */
+const SB_URL = 'https://vtikgyiopkjnrwlqnmfx.supabase.co';
+const SB_KEY = 'sb_publishable_PLSnpvCT-sAyUMtymNgTwA_QmL2suw4';
+const SB_H = { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}`, 'Content-Type': 'application/json' };
+
+const MONTHS_AR = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
+const STATUS_AR = {
+  pending:'قيد الانتظار', preparing:'قيد التحضير', on_the_way:'في الطريق',
+  delivered:'تم التسليم', rejected:'مرفوض', approved:'معتمد',
+  active:'نشط', banned:'محظور', cancelled:'ملغي',
+  completed:'مكتمل', accepted:'مقبول', in_progress:'جارية',
+};
+const STATUS_CLS = {
+  pending:'badge--orange', preparing:'badge--orange', on_the_way:'badge--blue',
+  delivered:'badge--green', rejected:'badge--red', approved:'badge--green',
+  active:'badge--green', banned:'badge--red', cancelled:'badge--red',
+  completed:'badge--green', accepted:'badge--blue', in_progress:'badge--blue',
+};
+
+/* ── Auth guard ─────────────────────────────────────────────── */
+let ADMIN;
+try {
+  ADMIN = JSON.parse(localStorage.getItem('wslha_admin') || 'null');
+} catch { ADMIN = null; }
+if (!ADMIN || ADMIN.role !== 'admin') { window.location.href = '/admin-login'; }
+else {
+  const n = ADMIN.name || ADMIN.phone || '';
+  document.getElementById('admin-name').textContent = n;
+  document.getElementById('admin-avatar').textContent = n[0] || 'م';
+  document.getElementById('topbar-date').textContent = new Date().toLocaleDateString('ar-EG', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+}
+
+/* ── Helpers ────────────────────────────────────────────────── */
+function fmt(n) { return Number(n||0).toLocaleString('ar-EG'); }
+function fmtDate(iso) {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  return d.toLocaleDateString('ar-EG', { year:'numeric', month:'short', day:'numeric' });
+}
+function fmtTime(iso) {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  return d.toLocaleDateString('ar-EG', { month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' });
+}
+function badge(status) {
+  const s = (status||'').toLowerCase();
+  return `<span class="badge ${STATUS_CLS[s]||'badge--gray'}">${STATUS_AR[s]||status||'—'}</span>`;
+}
+function roleBadge(role) {
+  const map = { customer:'badge--blue', driver:'badge--green', admin:'badge--purple' };
+  const ar  = { customer:'عميل', driver:'سائق', admin:'مشرف' };
+  return `<span class="badge ${map[role]||'badge--gray'}">${ar[role]||role||'—'}</span>`;
+}
+function showToast(msg, color='#1E293B') {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.style.background = color;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2800);
+}
+function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+
+/* ── API helpers ────────────────────────────────────────────── */
+async function sbGet(path) {
+  const ctrl = new AbortController();
+  const tid  = setTimeout(() => ctrl.abort(), 8000);
+  try {
+    const r = await fetch(`${SB_URL}/rest/v1/${path}`, { headers: SB_H, signal: ctrl.signal });
+    clearTimeout(tid);
+    return r.ok ? await r.json() : null;
+  } catch { return null; }
+}
+async function sbPatch(path, body) {
+  const r = await fetch(`${SB_URL}/rest/v1/${path}`, {
+    method:'PATCH', headers:{...SB_H,Prefer:'return=minimal'}, body:JSON.stringify(body)
+  });
+  return r.ok;
+}
+async function sbPost(path, body) {
+  const r = await fetch(`${SB_URL}/rest/v1/${path}`, {
+    method:'POST', headers:{...SB_H,Prefer:'return=minimal'}, body:JSON.stringify(body)
+  });
+  return r.ok;
+}
+async function sbDelete(path) {
+  const r = await fetch(`${SB_URL}/rest/v1/${path}`, { method:'DELETE', headers:SB_H });
+  return r.ok;
+}
+
+/* ── Navigation ─────────────────────────────────────────────── */
+const sectionTitles = {
+  dash:'لوحة التحكم', users:'إدارة المستخدمين', drivers:'إدارة السائقين',
+  merchants:'إدارة التجار', orders:'إدارة الطلبات', rides:'إدارة الرحلات',
+  stores:'إدارة المتاجر', finance:'التقارير المالية', wallets:'إدارة المحافظ', settings:'الإعدادات'
+};
+let currentSection = 'dash';
+function loadDriversSection() {
+  const activeTab = document.querySelector('#drivers-main-tabs .tab-btn.active');
+  if (activeTab?.dataset.dmain === 'apps') loadDriverApps();
+  else loadDriverAccounts();
+}
+function loadMerchantsSection() {
+  const activeTab = document.querySelector('#merchants-main-tabs .tab-btn.active');
+  if (activeTab?.dataset.mmain === 'apps') loadMerchantApps();
+  else loadMerchantAccounts();
+}
+const loaders = { dash:loadDash, users:loadUsers, drivers:loadDriversSection,
+  merchants:loadMerchantsSection, orders:loadOrders, rides:loadRides, stores:loadStores,
+  messages:loadMessages, finance:loadFinance, wallets:loadWalletsSection, settings:loadSettingsSection };
+
+document.querySelectorAll('.nav-item').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const s = btn.dataset.section;
+    document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.section').forEach(el => el.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById(`sec-${s}`).classList.add('active');
+    document.getElementById('topbar-title').textContent = sectionTitles[s] || '';
+    currentSection = s;
+    closeSidebar();
+    if (loaders[s]) loaders[s]();
+  });
+});
+
+/* ── Sidebar mobile ─────────────────────────────────────────── */
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('overlay').classList.remove('show');
+}
+document.getElementById('burger').addEventListener('click', () => {
+  document.getElementById('sidebar').classList.toggle('open');
+  document.getElementById('overlay').classList.toggle('show');
+});
+document.getElementById('overlay').addEventListener('click', closeSidebar);
+
+/* ── Logout ──────────────────────────────────────────────────── */
+document.getElementById('logout-btn').addEventListener('click', () => {
+  localStorage.removeItem('wslha_admin');
+  window.location.href = '/admin-login';
+});
+
+/* ═══════════════════ DASHBOARD ════════════════════════════ */
+async function loadDash() {
+  const [users, orders, rides, stores, dApps, mApps] = await Promise.all([
+    sbGet('accounts?select=phone,role,status,created_at'),
+    sbGet('orders?select=id,code,customer_name,customer_phone,store_name,total,status,created_at&order=created_at.desc&limit=200'),
+    sbGet('rides?select=id,status,base_fare,created_at'),
+    sbGet('stores?select=id,is_active'),
+    sbGet('driver_applications?select=id,phone,status&status=eq.pending'),
+    sbGet('merchant_applications?select=id,phone,status,business_name&status=eq.pending'),
+  ]);
+  const today = new Date().toISOString().slice(0,10);
+  const todayOrd = (orders||[]).filter(o => (o.created_at||'').startsWith(today));
+  const revenue  = todayOrd.filter(o => o.status==='delivered').reduce((s,o)=>s+(Number(o.total)||0),0);
+  const pendingTotal = (dApps||[]).length + (mApps||[]).length;
+
+  document.getElementById('kpi-users').textContent        = fmt((users||[]).length);
+  document.getElementById('kpi-drivers').textContent      = fmt((users||[]).filter(u=>u.role==='driver'&&u.status==='approved').length);
+  document.getElementById('kpi-today-orders').textContent = fmt(todayOrd.length);
+  document.getElementById('kpi-revenue').textContent      = fmt(revenue);
+  document.getElementById('kpi-stores').textContent       = fmt((stores||[]).filter(s=>s.is_active).length);
+  document.getElementById('kpi-pending').textContent      = fmt(pendingTotal);
+
+  // Update sidebar badges
+  const dn = (dApps||[]).length, mn = (mApps||[]).length;
+  const db = document.getElementById('badge-drivers'), mb = document.getElementById('badge-merchants');
+  db.textContent = dn; db.classList.toggle('hidden', dn === 0);
+  mb.textContent = mn; mb.classList.toggle('hidden', mn === 0);
+
+  // Recent orders table
+  const recentRows = (orders||[]).slice(0,10).map(o => `
+    <tr>
+      <td style="direction:ltr;font-size:.78rem">${o.code||o.id?.slice(0,8)||'—'}</td>
+      <td>${o.customer_name||'—'}</td>
+      <td>${o.store_name||'—'}</td>
+      <td style="font-weight:700;color:var(--pr)">${fmt(o.total)} ج.م</td>
+      <td>${badge(o.status)}</td>
+      <td style="font-size:.78rem">${fmtTime(o.created_at)}</td>
+    </tr>`).join('');
+  document.getElementById('dash-recent-orders').innerHTML = recentRows || '<tr><td colspan="6" style="text-align:center;color:#94A3B8;padding:2rem">لا توجد طلبات</td></tr>';
+
+  // Pending list
+  const pendingHtml = [
+    ...(dApps||[]).map(d => `
+      <div style="display:flex;align-items:center;gap:.75rem;padding:.6rem 1rem;background:#F8FAFC;border-radius:8px;border:1px solid #E2E8F0">
+        <span style="font-size:1.3rem">🚗</span>
+        <div style="flex:1"><div style="font-size:.82rem;font-weight:700">${d.phone}</div><div style="font-size:.72rem;color:#64748B">طلب سائق</div></div>
+        <button class="btn btn--primary btn--sm" onclick="openDriverModal('${d.phone}')">مراجعة</button>
+      </div>`),
+    ...(mApps||[]).map(m => `
+      <div style="display:flex;align-items:center;gap:.75rem;padding:.6rem 1rem;background:#F8FAFC;border-radius:8px;border:1px solid #E2E8F0">
+        <span style="font-size:1.3rem">🏪</span>
+        <div style="flex:1"><div style="font-size:.82rem;font-weight:700">${m.business_name||m.phone}</div><div style="font-size:.72rem;color:#64748B">طلب تاجر</div></div>
+        <button class="btn btn--primary btn--sm" onclick="openMerchantModal('${m.phone}')">مراجعة</button>
+      </div>`),
+  ].join('') || '<p style="color:#94A3B8;font-size:.875rem">لا توجد طلبات معلقة</p>';
+  document.getElementById('dash-pending-list').innerHTML = pendingHtml;
+}
+
+/* ═══════════════════ USERS ═════════════════════════════════ */
+let allUsers = [];
+async function loadUsers() {
+  const data = await sbGet('accounts?select=*&order=created_at.desc&limit=500');
+  allUsers = data || [];
+  renderUsers();
+}
+function renderUsers() {
+  const search = document.getElementById('users-search').value.trim().toLowerCase();
+  const role   = document.getElementById('users-role-filter').value;
+  const status = document.getElementById('users-status-filter').value;
+  let rows = allUsers;
+  if (search) rows = rows.filter(u => (u.name||'').toLowerCase().includes(search)||(u.phone||'').includes(search));
+  if (role)   rows = rows.filter(u => u.role === role);
+  if (status) rows = rows.filter(u => (u.status||'active') === status);
+  const html = rows.map((u,i) => `
+    <tr>
+      <td style="color:#94A3B8;font-size:.78rem">${i+1}</td>
+      <td style="font-weight:700">${u.name||'—'}</td>
+      <td style="direction:ltr;font-size:.85rem">${u.phone||'—'}</td>
+      <td>${roleBadge(u.role)}</td>
+      <td>${badge(u.status||'active')}</td>
+      <td style="font-size:.82rem">${u.city||'—'}</td>
+      <td style="font-size:.78rem">${fmtDate(u.created_at||u.createdAt)}</td>
+      <td>
+        <div class="btn-row" style="flex-wrap:nowrap;align-items:center;gap:4px">
+          <select class="filter-select" style="font-size:.72rem;padding:.25rem .45rem;min-width:75px" onchange="changeUserStatus('${u.phone}',this.value);this.value='${u.status||'active'}'">
+            <option value="active"  ${(u.status||'active')==='active'  ?'selected':''}>نشط</option>
+            <option value="pending" ${(u.status||'')==='pending' ?'selected':''}>معلق</option>
+            <option value="approved"${(u.status||'')==='approved'?'selected':''}>معتمد</option>
+            <option value="rejected"${(u.status||'')==='rejected'?'selected':''}>مرفوض</option>
+            <option value="banned"  ${(u.status||'')==='banned'  ?'selected':''}>محظور</option>
+          </select>
+          <select class="filter-select" style="font-size:.72rem;padding:.25rem .45rem;min-width:75px" onchange="changeUserRole('${u.phone}',this.value)">
+            <option value="customer" ${u.role==='customer'?'selected':''}>عميل</option>
+            <option value="driver"   ${u.role==='driver'  ?'selected':''}>سائق</option>
+            <option value="merchant" ${u.role==='merchant'?'selected':''}>تاجر</option>
+            <option value="admin"    ${u.role==='admin'   ?'selected':''}>مشرف</option>
+          </select>
+          <button class="btn btn--red btn--sm" onclick="deleteUser('${u.phone}')">حذف</button>
+        </div>
+      </td>
+    </tr>`).join('') || '<tr><td colspan="8" style="text-align:center;color:#94A3B8;padding:2rem">لا توجد نتائج</td></tr>';
+  document.getElementById('users-tbody').innerHTML = html;
+}
+document.getElementById('users-search').addEventListener('input', renderUsers);
+document.getElementById('users-role-filter').addEventListener('change', renderUsers);
+document.getElementById('users-status-filter').addEventListener('change', renderUsers);
+
+async function changeUserStatus(phone, status) {
+  if (!status) return;
+  const ok = await sbPatch(`accounts?phone=eq.${encodeURIComponent(phone)}`, { status });
+  if (ok) { showToast(`✅ تم تغيير الحالة إلى "${STATUS_AR[status]||status}"`, '#16A34A'); loadUsers(); }
+  else showToast('❌ حدث خطأ', '#DC2626');
+}
+async function makeAdmin(phone) {
+  if (!confirm('منح صلاحيات المشرف لهذا المستخدم؟')) return;
+  const ok = await sbPatch(`accounts?phone=eq.${encodeURIComponent(phone)}`, { role:'admin', status:'active' });
+  if (ok) { showToast('✅ تم التحديث', '#16A34A'); loadUsers(); }
+  else showToast('❌ حدث خطأ', '#DC2626');
+}
+async function deleteUser(phone) {
+  const user = allUsers.find(u => u.phone === phone);
+  const roleAr = { driver:'سائق', merchant:'تاجر', customer:'عميل', admin:'مشرف' }[user?.role] || user?.role || '';
+  if (!confirm(`⚠️ حذف حساب ${roleAr} "${user?.name || phone}"؟\nسيتم حذف جميع بياناته المرتبطة. هذا الإجراء لا يمكن التراجع عنه.`)) return;
+  const p = encodeURIComponent(phone);
+  // Delete all related data first to avoid FK constraint errors
+  await Promise.allSettled([
+    sbDelete(`driver_applications?phone=eq.${p}`),
+    sbDelete(`merchant_applications?phone=eq.${p}`),
+    sbDelete(`driver_locations?driver_phone=eq.${p}`),
+    sbDelete(`wallet_transactions?phone=eq.${p}`),
+    sbDelete(`rides?driver_phone=eq.${p}`),
+    sbDelete(`rides?customer_phone=eq.${p}`),
+    sbDelete(`orders?customer_phone=eq.${p}`),
+  ]);
+  const ok = await sbDelete(`accounts?phone=eq.${p}`);
+  if (ok) { showToast('✅ تم الحذف بالكامل', '#16A34A'); loadUsers(); }
+  else showToast('❌ فشل الحذف — تحقق من الصلاحيات', '#DC2626');
+}
+async function changeUserRole(phone, role) {
+  if (!role) return;
+  if (!confirm(`تغيير دور هذا المستخدم إلى "${{driver:'سائق',merchant:'تاجر',customer:'عميل',admin:'مشرف'}[role]||role}"؟`)) {
+    renderUsers(); return;
+  }
+  const patch = { role };
+  if (role === 'driver') patch.status = 'approved';
+  const ok = await sbPatch(`accounts?phone=eq.${encodeURIComponent(phone)}`, patch);
+  if (ok) { showToast('✅ تم تغيير الدور', '#16A34A'); loadUsers(); }
+  else showToast('❌ حدث خطأ', '#DC2626');
+}
+
+/* ═══════════════════ DRIVERS ═══════════════════════════════ */
+let allDriverApps = [], currentDriverPhone = '';
+let currentDriverTab = 'pending';
+let allDriverAccounts = [];
+
+/* ── Driver main tabs (accounts / apps) ─── */
+document.querySelectorAll('#drivers-main-tabs .tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('#drivers-main-tabs .tab-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const tab = btn.dataset.dmain;
+    document.getElementById('drivers-accounts-section').style.display = tab === 'accounts' ? '' : 'none';
+    document.getElementById('drivers-apps-section').style.display    = tab === 'apps'     ? '' : 'none';
+    if (tab === 'accounts') loadDriverAccounts();
+    else loadDriverApps();
+  });
+});
+
+async function loadDriverAccounts() {
+  const data = await sbGet('accounts?role=eq.driver&select=*&order=created_at.desc&limit=500');
+  allDriverAccounts = data || [];
+  renderDriverAccounts();
+}
+function renderDriverAccounts() {
+  const search = document.getElementById('drivers-acct-search').value.trim().toLowerCase();
+  const status = document.getElementById('drivers-acct-status').value;
+  let rows = allDriverAccounts;
+  if (search) rows = rows.filter(u => (u.name||'').toLowerCase().includes(search)||(u.phone||'').includes(search));
+  if (status) rows = rows.filter(u => (u.status||'active') === status);
+  const html = rows.map((u,i) => `
+    <tr>
+      <td style="color:#94A3B8;font-size:.78rem">${i+1}</td>
+      <td style="font-weight:700">${u.name||'—'}</td>
+      <td style="direction:ltr;font-size:.85rem">${u.phone||'—'}</td>
+      <td style="font-size:.82rem">${u.city||'—'}</td>
+      <td>${badge(u.status||'active')}</td>
+      <td style="font-size:.78rem">${fmtDate(u.created_at||u.createdAt)}</td>
+      <td>
+        <div class="btn-row" style="flex-wrap:nowrap;align-items:center">
+          <select class="filter-select" style="font-size:.72rem;padding:.25rem .45rem;min-width:80px" onchange="changeUserStatus('${u.phone}',this.value);this.value='${u.status||'active'}'">
+            <option value="active"   ${(u.status||'active')==='active'  ?'selected':''}>نشط</option>
+            <option value="pending"  ${(u.status||'')==='pending' ?'selected':''}>معلق</option>
+            <option value="approved" ${(u.status||'')==='approved'?'selected':''}>معتمد</option>
+            <option value="banned"   ${(u.status||'')==='banned'  ?'selected':''}>محظور</option>
+          </select>
+          <button class="btn btn--ghost btn--sm" onclick="openDriverModal('${u.phone}')">📋 ملف</button>
+          <button class="btn btn--red btn--sm" onclick="deleteUser('${u.phone}')">حذف</button>
+        </div>
+      </td>
+    </tr>`).join('') || '<tr><td colspan="7" style="text-align:center;color:#94A3B8;padding:2rem">لا يوجد سائقون</td></tr>';
+  document.getElementById('drivers-acct-tbody').innerHTML = html;
+}
+document.getElementById('drivers-acct-search').addEventListener('input', renderDriverAccounts);
+document.getElementById('drivers-acct-status').addEventListener('change', renderDriverAccounts);
+
+async function loadDriverApps() {
+  const data = await sbGet('driver_applications?select=*&order=created_at.desc&limit=200');
+  allDriverApps = data || [];
+  renderDriverApps();
+}
+function renderDriverApps() {
+  const rows = allDriverApps.filter(a => currentDriverTab==='all' || a.status===currentDriverTab);
+  const pending = allDriverApps.filter(a => a.status==='pending').length;
+  document.getElementById('dt-pending-cnt').textContent = pending ? `(${pending})` : '';
+  // Update main tab badge
+  const mainBadge = document.getElementById('dmain-pending-cnt');
+  if (mainBadge) { mainBadge.textContent = pending; mainBadge.style.display = pending ? '' : 'none'; }
+  const titles = { pending:'طلبات الاعتماد المعلقة', approved:'السائقون المعتمدون', rejected:'طلبات مرفوضة', all:'جميع الطلبات' };
+  document.getElementById('drivers-tab-title').textContent = titles[currentDriverTab]||'';
+  const html = rows.map(a => `
+    <tr>
+      <td style="font-weight:700">${a.full_name||'—'}</td>
+      <td style="direction:ltr;font-size:.85rem">${a.phone||'—'}</td>
+      <td style="font-size:.82rem">${a.vehicle_model||'—'} ${a.vehicle_color||''} ${a.vehicle_year||''}</td>
+      <td style="font-size:.78rem">${fmtDate(a.created_at)}</td>
+      <td>${badge(a.status)}</td>
+      <td><button class="btn btn--primary btn--sm" onclick="openDriverModal('${a.phone}')">📋 مراجعة</button></td>
+    </tr>`).join('') || '<tr><td colspan="6" style="text-align:center;color:#94A3B8;padding:2rem">لا توجد طلبات</td></tr>';
+  document.getElementById('drivers-tbody').innerHTML = html;
+}
+document.getElementById('drivers-tabs').querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('#drivers-tabs .tab-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentDriverTab = btn.dataset.dtab;
+    renderDriverApps();
+  });
+});
+
+async function openDriverModal(phone) {
+  currentDriverPhone = phone;
+  document.getElementById('driver-modal').classList.remove('hidden');
+  document.getElementById('driver-reject-area').style.display = 'none';
+  document.getElementById('driver-reject-toggle').classList.remove('hidden');
+  document.getElementById('driver-reject-confirm').classList.add('hidden');
+  document.getElementById('driver-modal-body').innerHTML = '<p style="color:#94A3B8">جاري التحميل…</p>';
+  const rows = await sbGet(`driver_applications?phone=eq.${encodeURIComponent(phone)}&select=*&limit=1`);
+  const a = rows?.[0];
+  if (!a) { document.getElementById('driver-modal-body').innerHTML = '<p style="color:#DC2626">لم يتم العثور على الطلب</p>'; return; }
+
+  const docItem = (label, url) => `
+    <div class="doc-card">
+      ${url
+        ? `<img class="doc-card__img" src="${url}" alt="${label}" onclick="document.getElementById('lightbox-img').src='${url}';document.getElementById('lightbox').classList.remove('hidden')" loading="lazy"/>`
+        : `<div class="doc-card__img no-img">📄</div>`}
+      <div class="doc-card__label">${label}</div>
+    </div>`;
+  const infoF = (label, val) => val ? `<div class="info-field"><div class="info-field__label">${label}</div><div class="info-field__val">${val}</div></div>` : '';
+
+  document.getElementById('driver-modal-body').innerHTML = `
+    <h3 style="font-size:.85rem;font-weight:700;color:#64748B;text-transform:uppercase;letter-spacing:.05em;margin-bottom:.75rem">📋 المعلومات الشخصية</h3>
+    <div class="info-grid">
+      ${infoF('الاسم الكامل', a.full_name)}
+      ${infoF('رقم الجوال', a.phone)}
+      ${infoF('رقم الهوية', a.national_id_number)}
+      ${infoF('انتهاء الهوية', a.national_id_expiry)}
+      ${infoF('رقم الرخصة', a.license_number)}
+      ${infoF('انتهاء الرخصة', a.license_expiry)}
+      ${infoF('رقم التسجيل', a.vehicle_reg_number)}
+      ${infoF('انتهاء التسجيل', a.vehicle_reg_expiry)}
+      ${infoF('انتهاء التأمين', a.insurance_expiry)}
+      ${infoF('انتهاء الفحص', a.inspection_expiry)}
+      ${infoF('موديل السيارة', a.vehicle_model)}
+      ${infoF('لون السيارة', a.vehicle_color)}
+      ${infoF('سنة الصنع', a.vehicle_year)}
+      ${infoF('تاريخ الشراء', a.vehicle_purchase_date)}
+      ${infoF('ملكية السيارة', a.vehicle_ownership === 'owned' ? 'ملك' : a.vehicle_ownership === 'rented' ? 'إيجار' : a.vehicle_ownership === 'borrowed' ? 'مستعار' : a.vehicle_ownership)}
+      ${infoF('يتعاطى مخدرات؟', a.uses_drugs === 'no' ? '❌ لا' : '⚠️ نعم')}
+      ${a.handwritten_text ? infoF('النص المكتوب', a.handwritten_text) : ''}
+    </div>
+    <h3 style="font-size:.85rem;font-weight:700;color:#64748B;text-transform:uppercase;letter-spacing:.05em;margin-bottom:.75rem;margin-top:1rem">📸 المستندات والصور</h3>
+    <div class="doc-grid">
+      ${docItem('صورة السائق', a.driver_photo_url)}
+      ${docItem('الهوية الوطنية (أمام)', a.national_id_front_url)}
+      ${docItem('الهوية الوطنية (خلف)', a.national_id_back_url)}
+      ${docItem('رخصة القيادة', a.license_photo_url)}
+      ${docItem('رخصة السيارة', a.vehicle_reg_photo_url)}
+      ${docItem('التأمين', a.insurance_photo_url)}
+      ${docItem('شهادة الفحص', a.inspection_photo_url)}
+      ${docItem('السيارة (أمام)', a.vehicle_front_url)}
+      ${docItem('السيارة (خلف)', a.vehicle_back_url)}
+      ${docItem('السيارة (يمين)', a.vehicle_right_url)}
+      ${docItem('السيارة (يسار)', a.vehicle_left_url)}
+      ${docItem('لوحة الترقيم', a.plate_photo_url)}
+      ${docItem('النص المكتوب بخط اليد', a.handwritten_photo_url)}
+      ${a.good_conduct_url ? docItem('شهادة حسن السيرة', a.good_conduct_url) : ''}
+    </div>
+    ${a.rejection_reason ? `<div style="background:#FEE2E2;border:1px solid #FECACA;border-radius:8px;padding:.75rem 1rem;margin-top:1rem"><span style="font-size:.8rem;font-weight:700;color:#DC2626">سبب الرفض السابق:</span> <span style="font-size:.85rem;color:#DC2626">${a.rejection_reason}</span></div>` : ''}
+    ${a.status !== 'pending' ? `<div style="background:#F8FAFC;border-radius:8px;padding:.75rem 1rem;margin-top:.75rem;font-size:.82rem;color:#64748B">تمت المراجعة بواسطة: ${a.reviewed_by||'—'} — ${fmtDate(a.reviewed_at)}</div>` : ''}
+  `;
+  // Hide approve/reject if already decided
+  const aBtn = document.getElementById('driver-approve-btn');
+  const rBtn = document.getElementById('driver-reject-toggle');
+  const hide = a.status !== 'pending';
+  aBtn.classList.toggle('hidden', hide);
+  rBtn.classList.toggle('hidden', hide);
+}
+
+/* ═══════════════════ MERCHANTS ═════════════════════════════ */
+let allMerchantAccounts = [];
+
+/* ── Merchant main tabs ─── */
+document.querySelectorAll('#merchants-main-tabs .tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('#merchants-main-tabs .tab-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const tab = btn.dataset.mmain;
+    document.getElementById('merchants-accounts-section').style.display = tab === 'accounts' ? '' : 'none';
+    document.getElementById('merchants-apps-section').style.display     = tab === 'apps'     ? '' : 'none';
+    if (tab === 'accounts') loadMerchantAccounts();
+    else loadMerchantApps();
+  });
+});
+
+async function loadMerchantAccounts() {
+  const data = await sbGet('accounts?role=eq.merchant&select=*&order=created_at.desc&limit=500');
+  allMerchantAccounts = data || [];
+  renderMerchantAccounts();
+}
+function renderMerchantAccounts() {
+  const search = document.getElementById('merchants-acct-search').value.trim().toLowerCase();
+  const status = document.getElementById('merchants-acct-status').value;
+  let rows = allMerchantAccounts;
+  if (search) rows = rows.filter(u => (u.name||'').toLowerCase().includes(search)||(u.phone||'').includes(search));
+  if (status) rows = rows.filter(u => (u.status||'active') === status);
+  const html = rows.map((u,i) => `
+    <tr>
+      <td style="color:#94A3B8;font-size:.78rem">${i+1}</td>
+      <td style="font-weight:700">${u.name||'—'}</td>
+      <td style="direction:ltr;font-size:.85rem">${u.phone||'—'}</td>
+      <td style="font-size:.82rem">${u.city||'—'}</td>
+      <td>${badge(u.status||'active')}</td>
+      <td style="font-size:.78rem">${fmtDate(u.created_at||u.createdAt)}</td>
+      <td>
+        <div class="btn-row" style="flex-wrap:nowrap;align-items:center">
+          <select class="filter-select" style="font-size:.72rem;padding:.25rem .45rem;min-width:80px" onchange="changeUserStatus('${u.phone}',this.value);this.value='${u.status||'active'}'">
+            <option value="active"   ${(u.status||'active')==='active'  ?'selected':''}>نشط</option>
+            <option value="pending"  ${(u.status||'')==='pending' ?'selected':''}>معلق</option>
+            <option value="approved" ${(u.status||'')==='approved'?'selected':''}>معتمد</option>
+            <option value="banned"   ${(u.status||'')==='banned'  ?'selected':''}>محظور</option>
+          </select>
+          <button class="btn btn--ghost btn--sm" onclick="openMerchantModal('${u.phone}')">📋 ملف</button>
+          <button class="btn btn--red btn--sm" onclick="deleteUser('${u.phone}')">حذف</button>
+        </div>
+      </td>
+    </tr>`).join('') || '<tr><td colspan="7" style="text-align:center;color:#94A3B8;padding:2rem">لا يوجد تجار</td></tr>';
+  document.getElementById('merchants-acct-tbody').innerHTML = html;
+}
+document.getElementById('merchants-acct-search').addEventListener('input', renderMerchantAccounts);
+document.getElementById('merchants-acct-status').addEventListener('change', renderMerchantAccounts);
+
+/* ── Original merchants section marker ─── */
+let allMerchantApps = [], currentMerchantPhone = '';
+let currentMerchantTab = 'pending';
+
+async function loadMerchantApps() {
+  const data = await sbGet('merchant_applications?select=*&order=created_at.desc&limit=200');
+  allMerchantApps = data || [];
+  renderMerchantApps();
+}
+function renderMerchantApps() {
+  const rows = allMerchantApps.filter(a => currentMerchantTab==='all' || a.status===currentMerchantTab);
+  const pending = allMerchantApps.filter(a => a.status==='pending').length;
+  document.getElementById('mt-pending-cnt').textContent = pending ? `(${pending})` : '';
+  const titles = { pending:'طلبات الاعتماد المعلقة', approved:'التجار المعتمدون', rejected:'طلبات مرفوضة', all:'جميع الطلبات' };
+  document.getElementById('merchants-tab-title').textContent = titles[currentMerchantTab]||'';
+  const html = rows.map(a => `
+    <tr>
+      <td style="font-weight:700">${a.business_name||'—'}</td>
+      <td style="direction:ltr;font-size:.85rem">${a.phone||'—'}</td>
+      <td style="font-size:.82rem">${a.business_type||'—'}</td>
+      <td style="font-size:.78rem">${fmtDate(a.created_at)}</td>
+      <td>${badge(a.status)}</td>
+      <td><button class="btn btn--primary btn--sm" onclick="openMerchantModal('${a.phone}')">📋 مراجعة</button></td>
+    </tr>`).join('') || '<tr><td colspan="6" style="text-align:center;color:#94A3B8;padding:2rem">لا توجد طلبات</td></tr>';
+  document.getElementById('merchants-tbody').innerHTML = html;
+}
+document.getElementById('merchants-tabs').querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('#merchants-tabs .tab-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentMerchantTab = btn.dataset.mtab;
+    renderMerchantApps();
+  });
+});
+
+async function openMerchantModal(phone) {
+  currentMerchantPhone = phone;
+  document.getElementById('merchant-modal').classList.remove('hidden');
+  document.getElementById('merchant-reject-area').style.display = 'none';
+  document.getElementById('merchant-reject-toggle').classList.remove('hidden');
+  document.getElementById('merchant-reject-confirm').classList.add('hidden');
+  document.getElementById('merchant-modal-body').innerHTML = '<p style="color:#94A3B8">جاري التحميل…</p>';
+  const rows = await sbGet(`merchant_applications?phone=eq.${encodeURIComponent(phone)}&select=*&limit=1`);
+  const a = rows?.[0];
+  if (!a) { document.getElementById('merchant-modal-body').innerHTML = '<p style="color:#DC2626">لم يتم العثور على الطلب</p>'; return; }
+
+  const docItem = (label, url) => `
+    <div class="doc-card">
+      ${url
+        ? `<img class="doc-card__img" src="${url}" alt="${label}" onclick="document.getElementById('lightbox-img').src='${url}';document.getElementById('lightbox').classList.remove('hidden')" loading="lazy"/>`
+        : `<div class="doc-card__img no-img">📄</div>`}
+      <div class="doc-card__label">${label}</div>
+    </div>`;
+  const infoF = (label, val) => val ? `<div class="info-field"><div class="info-field__label">${label}</div><div class="info-field__val">${val}</div></div>` : '';
+
+  document.getElementById('merchant-modal-body').innerHTML = `
+    <h3 style="font-size:.85rem;font-weight:700;color:#64748B;text-transform:uppercase;letter-spacing:.05em;margin-bottom:.75rem">📋 معلومات النشاط التجاري</h3>
+    <div class="info-grid">
+      ${infoF('اسم النشاط', a.business_name)}
+      ${infoF('نوع النشاط', a.business_type)}
+      ${infoF('عنوان النشاط', a.business_address)}
+      ${infoF('رقم الجوال', a.phone)}
+      ${infoF('رقم السجل التجاري', a.commercial_reg_number)}
+      ${infoF('تاريخ السجل', a.commercial_reg_date)}
+      ${infoF('رقم الهوية الوطنية', a.national_id_number)}
+      ${infoF('انتهاء الهوية', a.national_id_expiry)}
+      ${infoF('رقم البطاقة الضريبية', a.tax_card_number)}
+    </div>
+    <h3 style="font-size:.85rem;font-weight:700;color:#64748B;text-transform:uppercase;letter-spacing:.05em;margin-bottom:.75rem;margin-top:1rem">📸 المستندات</h3>
+    <div class="doc-grid">
+      ${docItem('السجل التجاري', a.commercial_reg_url)}
+      ${docItem('الهوية الوطنية', a.national_id_url)}
+      ${docItem('البطاقة الضريبية', a.tax_card_url)}
+      ${docItem('رخصة العمل', a.work_permit_url)}
+    </div>
+    ${a.rejection_reason ? `<div style="background:#FEE2E2;border:1px solid #FECACA;border-radius:8px;padding:.75rem 1rem;margin-top:1rem"><span style="font-size:.8rem;font-weight:700;color:#DC2626">سبب الرفض السابق:</span> <span style="font-size:.85rem;color:#DC2626">${a.rejection_reason}</span></div>` : ''}
+    ${a.status !== 'pending' ? `<div style="background:#F8FAFC;border-radius:8px;padding:.75rem 1rem;margin-top:.75rem;font-size:.82rem;color:#64748B">تمت المراجعة بواسطة: ${a.reviewed_by||'—'} — ${fmtDate(a.reviewed_at)}</div>` : ''}
+  `;
+  const hide = a.status !== 'pending';
+  document.getElementById('merchant-approve-btn').classList.toggle('hidden', hide);
+  document.getElementById('merchant-reject-toggle').classList.toggle('hidden', hide);
+}
+
+/* ── Approve / Reject ─────────────────────────────────────── */
+function toggleReject(type) {
+  const area = document.getElementById(`${type}-reject-area`);
+  const tog  = document.getElementById(`${type}-reject-toggle`);
+  const conf = document.getElementById(`${type}-reject-confirm`);
+  area.style.display = area.style.display === 'block' ? 'none' : 'block';
+  tog.classList.toggle('hidden', area.style.display === 'block');
+  conf.classList.toggle('hidden', area.style.display !== 'block');
+}
+
+async function confirmApprove(type) {
+  const phone = type === 'driver' ? currentDriverPhone : currentMerchantPhone;
+  if (!confirm(`اعتماد هذا الطلب؟`)) return;
+  const table = type === 'driver' ? 'driver_applications' : 'merchant_applications';
+  const ok1 = await sbPatch(`${table}?phone=eq.${encodeURIComponent(phone)}`, { status:'approved' });
+  const patch = { status:'approved' };
+  if (type === 'driver') patch.role = 'driver';
+  const ok2 = await sbPatch(`accounts?phone=eq.${encodeURIComponent(phone)}`, patch);
+  if (ok1 && ok2) {
+    showToast('✅ تم الاعتماد بنجاح', '#16A34A');
+    closeModal(`${type}-modal`);
+    type === 'driver' ? loadDriverApps() : loadMerchantApps();
+    loadDash();
+  } else showToast('❌ حدث خطأ في تحديث قاعدة البيانات', '#DC2626');
+}
+
+async function confirmReject(type) {
+  const phone  = type === 'driver' ? currentDriverPhone : currentMerchantPhone;
+  const reason = document.getElementById(`${type}-reject-reason`).value.trim();
+  if (!reason) { showToast('⚠️ أدخل سبب الرفض', '#D97706'); return; }
+  if (!confirm('رفض هذا الطلب؟')) return;
+  const table = type === 'driver' ? 'driver_applications' : 'merchant_applications';
+  const ok1 = await sbPatch(`${table}?phone=eq.${encodeURIComponent(phone)}`, { status:'rejected' });
+  const ok2 = await sbPatch(`accounts?phone=eq.${encodeURIComponent(phone)}`, { status:'rejected' });
+  if (ok1 && ok2) {
+    showToast('تم الرفض', '#DC2626');
+    closeModal(`${type}-modal`);
+    type === 'driver' ? loadDriverApps() : loadMerchantApps();
+    loadDash();
+  } else showToast('❌ حدث خطأ في تحديث قاعدة البيانات', '#DC2626');
+}
+
+/* ═══════════════════ ORDERS ════════════════════════════════ */
+let allOrders = [], currentOrderId = '';
+async function loadOrders() {
+  const data = await sbGet('orders?select=*&order=created_at.desc&limit=500');
+  allOrders = data || [];
+  renderOrders();
+}
+function renderOrders() {
+  const search = document.getElementById('orders-search').value.trim().toLowerCase();
+  const status = document.getElementById('orders-status-filter').value;
+  let rows = allOrders;
+  if (search) rows = rows.filter(o => (o.code||o.id||'').toLowerCase().includes(search)||(o.customer_phone||'').includes(search)||(o.customer_name||'').toLowerCase().includes(search));
+  if (status) rows = rows.filter(o => o.status === status);
+  const html = rows.map(o => `
+    <tr>
+      <td style="direction:ltr;font-size:.75rem;font-weight:700;color:#3B6EF8">${o.code||o.id?.slice(0,10)||'—'}</td>
+      <td style="font-weight:600">${o.customer_name||'—'}</td>
+      <td style="direction:ltr;font-size:.82rem">${o.customer_phone||'—'}</td>
+      <td>${o.store_name||'—'}</td>
+      <td style="font-weight:700;color:var(--pr)">${fmt(o.total)} ج.م</td>
+      <td style="font-size:.82rem">${o.driver_name||'—'}</td>
+      <td>${badge(o.status)}</td>
+      <td style="font-size:.75rem">${fmtTime(o.created_at)}</td>
+      <td><button class="btn btn--ghost btn--sm" onclick="openOrderModal('${o.id}')">تفاصيل</button></td>
+    </tr>`).join('') || '<tr><td colspan="9" style="text-align:center;color:#94A3B8;padding:2rem">لا توجد طلبات</td></tr>';
+  document.getElementById('orders-tbody').innerHTML = html;
+}
+document.getElementById('orders-search').addEventListener('input', renderOrders);
+document.getElementById('orders-status-filter').addEventListener('change', renderOrders);
+
+function openOrderModal(id) {
+  currentOrderId = id;
+  const o = allOrders.find(x => x.id === id);
+  if (!o) return;
+  document.getElementById('order-status-select').value = o.status||'pending';
+  let items = '—';
+  try {
+    const arr = typeof o.items === 'string' ? JSON.parse(o.items) : o.items;
+    if (Array.isArray(arr)) items = arr.map(i => `${i.qty||1}× ${i.emoji||''} ${i.name}`).join('<br>');
+  } catch {}
+  document.getElementById('order-modal-body').innerHTML = `
+    <div class="info-grid">
+      <div class="info-field"><div class="info-field__label">رقم الطلب</div><div class="info-field__val" style="direction:ltr">${o.code||o.id||'—'}</div></div>
+      <div class="info-field"><div class="info-field__label">المتجر</div><div class="info-field__val">${o.store_name||'—'}</div></div>
+      <div class="info-field"><div class="info-field__label">العميل</div><div class="info-field__val">${o.customer_name||'—'}</div></div>
+      <div class="info-field"><div class="info-field__label">جوال العميل</div><div class="info-field__val" style="direction:ltr">${o.customer_phone||'—'}</div></div>
+      <div class="info-field"><div class="info-field__label">العنوان</div><div class="info-field__val">${o.address||o.area||'—'}</div></div>
+      <div class="info-field"><div class="info-field__label">السائق</div><div class="info-field__val">${o.driver_name||'—'}</div></div>
+      <div class="info-field"><div class="info-field__label">المجموع الفرعي</div><div class="info-field__val">${fmt(o.subtotal)} ج.م</div></div>
+      <div class="info-field"><div class="info-field__label">رسوم التوصيل</div><div class="info-field__val">${fmt(o.delivery_fee)} ج.م</div></div>
+      <div class="info-field"><div class="info-field__label">الإجمالي</div><div class="info-field__val" style="font-size:1.1rem;color:var(--pr)">${fmt(o.total)} ج.م</div></div>
+      <div class="info-field"><div class="info-field__label">طريقة الدفع</div><div class="info-field__val">${o.payment==='cash'?'💵 نقداً':'💳 بطاقة'}</div></div>
+      <div class="info-field"><div class="info-field__label">تاريخ الطلب</div><div class="info-field__val">${fmtTime(o.created_at)}</div></div>
+      <div class="info-field"><div class="info-field__label">الحالة الحالية</div><div class="info-field__val">${badge(o.status)}</div></div>
+    </div>
+    <div class="info-field" style="margin-top:.5rem"><div class="info-field__label">المنتجات</div><div class="info-field__val" style="line-height:1.8">${items}</div></div>`;
+  document.getElementById('order-modal').classList.remove('hidden');
+}
+async function saveOrderStatus() {
+  const status = document.getElementById('order-status-select').value;
+  const ok = await sbPatch(`orders?id=eq.${encodeURIComponent(currentOrderId)}`, { status });
+  if (ok) {
+    showToast('✅ تم تحديث حالة الطلب', '#16A34A');
+    closeModal('order-modal');
+    loadOrders();
+  } else showToast('❌ حدث خطأ', '#DC2626');
+}
+async function deleteCurrentOrder() {
+  if (!confirm('حذف هذا الطلب نهائياً؟')) return;
+  const ok = await sbDelete(`orders?id=eq.${encodeURIComponent(currentOrderId)}`);
+  if (ok) { showToast('✅ تم الحذف', '#16A34A'); closeModal('order-modal'); loadOrders(); }
+  else showToast('❌ حدث خطأ', '#DC2626');
+}
+
+/* ═══════════════════ RIDES ═════════════════════════════════ */
+let allRides = [];
+async function loadRides() {
+  const data = await sbGet('rides?select=*&order=created_at.desc&limit=500');
+  allRides = data || [];
+  renderRides();
+}
+function renderRides() {
+  const search = document.getElementById('rides-search').value.trim().toLowerCase();
+  const status = document.getElementById('rides-status-filter').value;
+  let rows = allRides;
+  if (search) rows = rows.filter(r => (r.id||'').toLowerCase().includes(search)||(r.customer_phone||'').includes(search)||(r.customer_name||'').toLowerCase().includes(search));
+  if (status) rows = rows.filter(r => r.status === status);
+  const html = rows.map(r => `
+    <tr>
+      <td style="direction:ltr;font-size:.75rem;color:#94A3B8">${r.id?.slice(0,10)||'—'}</td>
+      <td style="font-weight:600">${r.customer_name||'—'}</td>
+      <td>${r.from_area||'—'}</td>
+      <td>${r.to_area||'—'}</td>
+      <td style="font-weight:700;color:var(--pr)">${fmt(r.base_fare||r.fare)} ج.م</td>
+      <td>${r.driver_name||'—'}</td>
+      <td>${badge(r.status)}</td>
+      <td style="font-size:.75rem">${fmtTime(r.created_at)}</td>
+      <td>
+        <select class="filter-select" style="font-size:.72rem;padding:.2rem .4rem" onchange="updateRideStatus('${r.id}',this.value)">
+          <option value="">تغيير</option>
+          <option value="pending">معلق</option>
+          <option value="accepted">مقبول</option>
+          <option value="in_progress">جارية</option>
+          <option value="completed">مكتملة</option>
+          <option value="cancelled">ملغاة</option>
+        </select>
+      </td>
+    </tr>`).join('') || '<tr><td colspan="9" style="text-align:center;color:#94A3B8;padding:2rem">لا توجد رحلات</td></tr>';
+  document.getElementById('rides-tbody').innerHTML = html;
+}
+document.getElementById('rides-search').addEventListener('input', renderRides);
+document.getElementById('rides-status-filter').addEventListener('change', renderRides);
+async function updateRideStatus(id, status) {
+  if (!status) return;
+  const ok = await sbPatch(`rides?id=eq.${encodeURIComponent(id)}`, { status });
+  if (ok) { showToast('✅ تم التحديث', '#16A34A'); loadRides(); }
+  else showToast('❌ حدث خطأ', '#DC2626');
+}
+
+/* ═══════════════════ STORES ════════════════════════════════ */
+let allStores = [];
+async function loadStores() {
+  const data = await sbGet('stores?select=*&order=created_at.desc&limit=200');
+  allStores = data || [];
+  renderStores();
+}
+function renderStores() {
+  const search = document.getElementById('stores-search').value.trim().toLowerCase();
+  let rows = allStores;
+  if (search) rows = rows.filter(s => (s.name||'').toLowerCase().includes(search)||(s.area||'').toLowerCase().includes(search));
+  const html = rows.map(s => `
+    <tr>
+      <td style="font-weight:700">${s.emoji||''} ${s.name||'—'}</td>
+      <td style="font-size:.82rem">${s.category||'—'}</td>
+      <td>${s.area||'—'}</td>
+      <td style="direction:ltr;font-size:.82rem">${s.owner_phone||'—'}</td>
+      <td>${fmt(s.delivery_fee)} ج.م</td>
+      <td>${s.rating||'—'} ⭐ (${s.reviews||0})</td>
+      <td>
+        <label style="display:flex;align-items:center;gap:.35rem;cursor:pointer">
+          <input type="checkbox" ${s.is_active?'checked':''} onchange="toggleStore('${s.id}',this.checked)" style="cursor:pointer"/>
+          <span style="font-size:.78rem">${s.is_active?'نشط':'معطل'}</span>
+        </label>
+      </td>
+      <td><span class="badge ${s.is_open?'badge--green':'badge--gray'}">${s.is_open?'مفتوح':'مغلق'}</span></td>
+      <td>
+        <button class="btn btn--red btn--sm" onclick="deleteStore('${s.id}')">حذف</button>
+      </td>
+    </tr>`).join('') || '<tr><td colspan="9" style="text-align:center;color:#94A3B8;padding:2rem">لا توجد متاجر</td></tr>';
+  document.getElementById('stores-tbody').innerHTML = html;
+}
+document.getElementById('stores-search').addEventListener('input', renderStores);
+async function toggleStore(id, is_active) {
+  const ok = await sbPatch(`stores?id=eq.${encodeURIComponent(id)}`, { is_active });
+  if (ok) showToast(`✅ ${is_active?'تم تفعيل':'تم تعطيل'} المتجر`, '#16A34A');
+  else { showToast('❌ حدث خطأ', '#DC2626'); loadStores(); }
+}
+async function deleteStore(id) {
+  if (!confirm('حذف هذا المتجر نهائياً؟')) return;
+  const ok = await sbDelete(`stores?id=eq.${encodeURIComponent(id)}`);
+  if (ok) { showToast('✅ تم الحذف', '#16A34A'); loadStores(); }
+  else showToast('❌ حدث خطأ', '#DC2626');
+}
+
+/* ═══════════════════ MESSAGES ══════════════════════════════ */
+let currentMsg = null;
+
+async function loadMessages() {
+  const filterEl = document.getElementById('msg-filter');
+  const filter = filterEl ? filterEl.value : '';
+  const q = filter ? `messages?status=eq.${filter}&order=created_at.desc` : 'messages?order=created_at.desc';
+  const rows = await sbGet(q);
+  const tbody = document.getElementById('messages-tbody');
+  if (!tbody) return;
+  if (!rows || !rows.length) { tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#94A3B8;padding:2rem">لا توجد رسائل</td></tr>'; return; }
+
+  const unread = rows.filter(r => r.status === 'unread').length;
+  const msgBadge = document.getElementById('badge-messages');
+  if (msgBadge) {
+    if (unread > 0) { msgBadge.textContent = String(unread); msgBadge.classList.remove('hidden'); }
+    else msgBadge.classList.add('hidden');
+  }
+
+  const statusLabel = { unread:'غير مقروء', read:'مقروء', replied:'تم الرد' };
+  const statusColor = { unread:'#F59E0B', read:'#3B82F6', replied:'#16A34A' };
+
+  tbody.innerHTML = rows.map(m => `
+    <tr style="${m.status === 'unread' ? 'background:rgba(245,158,11,.07)' : ''}">
+      <td style="font-weight:700">${m.name}</td>
+      <td>${m.phone}</td>
+      <td style="color:#3B82F6">${m.email || '—'}</td>
+      <td>${m.subject}</td>
+      <td><span style="padding:2px 8px;border-radius:99px;font-size:.75rem;font-weight:700;background:${(statusColor[m.status]||'#94A3B8')}22;color:${statusColor[m.status]||'#94A3B8'}">${statusLabel[m.status] || m.status}</span></td>
+      <td style="font-size:.78rem;color:#64748B">${new Date(m.created_at).toLocaleDateString('ar-EG')}</td>
+      <td><button onclick="openMsg(${JSON.stringify(JSON.stringify(m))})" style="padding:.3rem .7rem;background:#3B6EF8;color:#fff;border:none;border-radius:5px;font-size:.78rem;cursor:pointer">عرض</button></td>
+    </tr>`).join('');
+}
+
+function openMsg(jsonStr) {
+  currentMsg = JSON.parse(jsonStr);
+  const m = currentMsg;
+  document.getElementById('msg-modal-subject').textContent = m.subject;
+  document.getElementById('msg-modal-name').textContent = m.name;
+  document.getElementById('msg-modal-phone').textContent = m.phone;
+  document.getElementById('msg-modal-email').textContent = m.email || '—';
+  document.getElementById('msg-modal-date').textContent = new Date(m.created_at).toLocaleString('ar-EG');
+  document.getElementById('msg-modal-body').textContent = m.message;
+  const modal = document.getElementById('msg-modal');
+  if (modal) modal.style.display = 'flex';
+  if (m.status === 'unread') updateMsgStatus(m.id, 'read');
+}
+
+async function updateMsgStatus(id, status) {
+  await fetch(`${SB_URL}/rest/v1/messages?id=eq.${id}`, {
+    method: 'PATCH', headers: { ...SB_H, Prefer:'return=minimal' },
+    body: JSON.stringify({ status }),
+  });
+  if (currentMsg && currentMsg.id === id) currentMsg.status = status;
+  loadMessages();
+}
+
+const msgMarkRead = document.getElementById('msg-mark-read');
+const msgMarkReplied = document.getElementById('msg-mark-replied');
+const msgReplyEmail = document.getElementById('msg-reply-email');
+const msgFilter = document.getElementById('msg-filter');
+const msgModalEl = document.getElementById('msg-modal');
+if (msgMarkRead) msgMarkRead.addEventListener('click', () => { if (currentMsg) updateMsgStatus(currentMsg.id, 'read'); });
+if (msgMarkReplied) msgMarkReplied.addEventListener('click', () => { if (currentMsg) updateMsgStatus(currentMsg.id, 'replied'); });
+if (msgReplyEmail) msgReplyEmail.addEventListener('click', () => {
+  if (!currentMsg || !currentMsg.email) { showToast('لا يوجد بريد إلكتروني', '#F59E0B'); return; }
+  window.open(`mailto:${currentMsg.email}?subject=رد: ${currentMsg.subject}`);
+  updateMsgStatus(currentMsg.id, 'replied');
+});
+if (msgFilter) msgFilter.addEventListener('change', loadMessages);
+if (msgModalEl) msgModalEl.addEventListener('click', (e) => {
+  if (e.target === msgModalEl) msgModalEl.style.display = 'none';
+});
+
+/* ═══════════════════ FINANCE ═══════════════════════════════ */
+async function loadFinance() {
+  const [orders, rides, commissions] = await Promise.all([
+    sbGet('orders?select=id,status,total,delivery_fee,created_at&order=created_at.desc&limit=1000'),
+    sbGet('rides?select=id,status,fare,created_at&order=created_at.desc&limit=500'),
+    sbGet('wallet_transactions?phone=eq.platform&select=amount,type,note,reference_id,created_at&order=created_at.desc&limit=500'),
+  ]);
+  const delivered = (orders||[]).filter(o => o.status === 'delivered');
+  const totalRev  = delivered.reduce((s,o) => s + (Number(o.total)||0), 0);
+  const totalOrd  = delivered.length;
+  const avgOrd    = totalOrd ? Math.round(totalRev / totalOrd) : 0;
+  const doneRides = (rides||[]).filter(r => r.status==='completed');
+
+  // Commission totals
+  const comms = (commissions||[]).filter(c => c.type === 'commission');
+  const totalComm = comms.reduce((s,c) => s + Math.abs(Number(c.amount)||0), 0);
+  const rideComm  = comms.filter(c => (c.note||'').includes('رحلة') && !(c.note||'').includes('مطار')).reduce((s,c) => s + Math.abs(Number(c.amount)||0), 0);
+  const delivComm = comms.filter(c => (c.note||'').includes('توصيل')).reduce((s,c) => s + Math.abs(Number(c.amount)||0), 0);
+
+  document.getElementById('fin-total-rev').textContent        = fmt(totalRev);
+  document.getElementById('fin-total-commission').textContent  = fmt(totalComm);
+  document.getElementById('fin-ride-commission').textContent   = fmt(rideComm);
+  document.getElementById('fin-deliv-commission').textContent  = fmt(delivComm);
+  document.getElementById('fin-total-orders').textContent     = fmt(totalOrd);
+  document.getElementById('fin-total-rides').textContent      = fmt(doneRides.length);
+  document.getElementById('fin-avg-order').textContent        = fmt(avgOrd);
+
+  // Commission log
+  document.getElementById('commission-tbody').innerHTML = comms.slice(0,30).map(c => {
+    const d = new Date(c.created_at||0).toLocaleDateString('ar-EG', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' });
+    const typeIcon = (c.note||'').includes('توصيل') ? '🛵' : (c.note||'').includes('مطار') ? '✈️' : '🚗';
+    return `<tr>
+      <td>${d}</td>
+      <td>${typeIcon} ${(c.note||'').includes('توصيل') ? 'توصيل' : (c.note||'').includes('مطار') ? 'مطار' : 'رحلة'}</td>
+      <td style="font-weight:700;color:#16A34A">+${fmt(Math.abs(Number(c.amount||0)))} ج.م</td>
+      <td style="font-size:.8rem;color:#64748B">${c.note||'—'}</td>
+      <td style="font-size:.75rem;color:#94A3B8;direction:ltr">${(c.reference_id||'').slice(0,12)||'—'}</td>
+    </tr>`;
+  }).join('') || '<tr><td colspan="5" style="text-align:center;color:#94A3B8;padding:2rem">لا توجد عمولات بعد</td></tr>';
+
+  // Monthly breakdown
+  const monthMap = {};
+  (orders||[]).forEach(o => {
+    const d   = new Date(o.created_at||0);
+    const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+    if (!monthMap[key]) monthMap[key] = { label: MONTHS_AR[d.getMonth()]+' '+d.getFullYear(), orders:0, delivered:0, revenue:0, commission:0, rides:0 };
+    monthMap[key].orders++;
+    if (o.status === 'delivered') { monthMap[key].delivered++; monthMap[key].revenue += Number(o.total)||0; }
+  });
+  (rides||[]).forEach(r => {
+    const d   = new Date(r.created_at||0);
+    const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+    if (monthMap[key]) monthMap[key].rides++;
+  });
+  comms.forEach(c => {
+    const d   = new Date(c.created_at||0);
+    const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+    if (monthMap[key]) monthMap[key].commission += Math.abs(Number(c.amount)||0);
+  });
+  const rows = Object.entries(monthMap).sort((a,b) => b[0].localeCompare(a[0])).slice(0,18);
+  document.getElementById('finance-tbody').innerHTML = rows.map(([,m]) => `
+    <tr>
+      <td style="font-weight:700">${m.label}</td>
+      <td>${fmt(m.orders)}</td>
+      <td>${fmt(m.delivered)}</td>
+      <td style="font-weight:700;color:var(--pr)">${fmt(m.revenue)} ج.م</td>
+      <td style="font-weight:700;color:#16A34A">${fmt(Math.round(m.commission))} ج.م</td>
+      <td>${fmt(m.rides)}</td>
+    </tr>`).join('') || '<tr><td colspan="6" style="text-align:center;color:#94A3B8;padding:2rem">لا توجد بيانات</td></tr>';
+}
+
+/* ═══════════════════ SETTINGS — Commission rates ════════════ */
+async function loadCommissionRates() {
+  try {
+    const rows = await sbGet('app_settings?key=in.(commission_ride,commission_delivery,commission_airport)&select=key,value');
+    (rows||[]).forEach(r => {
+      if (r.key === 'commission_ride')     { const el = document.getElementById('rate-ride');     if(el) el.value = r.value; }
+      if (r.key === 'commission_delivery') { const el = document.getElementById('rate-delivery'); if(el) el.value = r.value; }
+      if (r.key === 'commission_airport')  { const el = document.getElementById('rate-airport');  if(el) el.value = r.value; }
+    });
+  } catch {}
+}
+
+async function saveCommissionRates() {
+  const btn = document.getElementById('save-rates-btn');
+  const msg = document.getElementById('rates-msg');
+  btn.disabled = true; btn.textContent = 'جاري الحفظ...';
+  const pairs = [
+    { key:'commission_ride',     value: document.getElementById('rate-ride').value },
+    { key:'commission_delivery', value: document.getElementById('rate-delivery').value },
+    { key:'commission_airport',  value: document.getElementById('rate-airport').value },
+  ];
+  try {
+    await Promise.all(pairs.map(p =>
+      fetch(`${SB_URL}/rest/v1/app_settings`, {
+        method: 'POST',
+        headers: { ...SB_H, Prefer: 'resolution=merge-duplicates,return=minimal' },
+        body: JSON.stringify({ key: p.key, value: p.value, updated_at: new Date().toISOString() }),
+      })
+    ));
+    msg.textContent = '✅ تم حفظ النسب بنجاح — ستطبق على الرحلات القادمة';
+    msg.style.cssText = 'display:block;background:#DCFCE7;color:#14532D;font-size:.82rem;font-weight:700;padding:.5rem .75rem;border-radius:6px';
+    showToast('✅ تم حفظ نسب العمولة', '#16A34A');
+  } catch {
+    msg.textContent = 'حدث خطأ، حاول مرة أخرى';
+    msg.style.cssText = 'display:block;background:#FEE2E2;color:#991B1B;font-size:.82rem;font-weight:700;padding:.5rem .75rem;border-radius:6px';
+  }
+  btn.disabled = false; btn.textContent = '💾 حفظ النسب';
+  setTimeout(() => { msg.style.display = 'none'; }, 4000);
+}
+
+async function loadSettingsSection() {
+  await loadCommissionRates();
+}
+
+/* ═══════════════════ WALLETS ═══════════════════════════════ */
+let allWallets = [], allWalletAccounts = [], allTxLogs = [];
+
+async function loadWalletsSection() {
+  document.getElementById('wallets-tbody').innerHTML = '<tr><td colspan="5" style="text-align:center;color:#94A3B8;padding:2rem">جاري التحميل…</td></tr>';
+  document.getElementById('all-tx-tbody').innerHTML  = '<tr><td colspan="6" style="text-align:center;color:#94A3B8;padding:2rem">جاري التحميل…</td></tr>';
+
+  const [wallets, accounts, platformTxns, txData] = await Promise.all([
+    sbGet('wallets?select=phone,balance,updated_at&order=balance.desc&limit=2000'),
+    sbGet('accounts?select=phone,name,role&limit=2000'),
+    sbGet('wallet_transactions?phone=eq.platform&select=amount,note,created_at&order=created_at.desc&limit=5000'),
+    sbGet('wallet_transactions?select=id,phone,amount,type,note,reference_id,created_at&order=created_at.desc&limit=500'),
+  ]);
+
+  allWalletAccounts = accounts || [];
+  const acctMap = {};
+  allWalletAccounts.forEach(a => { acctMap[a.phone] = a; });
+
+  allWallets = (wallets || []).map(w => ({
+    ...w, name: acctMap[w.phone]?.name || '', role: acctMap[w.phone]?.role || 'customer',
+  }));
+  allWalletAccounts.forEach(a => {
+    if (!allWallets.find(w => w.phone === a.phone))
+      allWallets.push({ phone: a.phone, balance: 0, name: a.name || '', role: a.role || 'customer' });
+  });
+
+  const totalBal    = allWallets.reduce((s,w) => s + Number(w.balance||0), 0);
+  const driverBal   = allWallets.filter(w => w.role === 'driver').reduce((s,w) => s + Number(w.balance||0), 0);
+  const merchantBal = allWallets.filter(w => w.role === 'merchant').reduce((s,w) => s + Number(w.balance||0), 0);
+
+  const platformComms   = (platformTxns || []).filter(t => !/تسوية/.test(t.note||''));
+  const platformSettled = (platformTxns || []).filter(t => /تسوية/.test(t.note||''));
+  const platformBal     = platformComms.reduce((s,t) => s + Number(t.amount||0), 0)
+                        - platformSettled.reduce((s,t) => s + Math.abs(Number(t.amount||0)), 0);
+  const rideComm    = (platformTxns||[]).filter(t => (t.note||'').includes('رحلة') && !(t.note||'').includes('مطار')).reduce((s,t) => s + Number(t.amount||0), 0);
+  const delivComm   = (platformTxns||[]).filter(t => (t.note||'').includes('توصيل')).reduce((s,t) => s + Number(t.amount||0), 0);
+  const airportComm = (platformTxns||[]).filter(t => (t.note||'').includes('مطار')).reduce((s,t) => s + Number(t.amount||0), 0);
+
+  document.getElementById('w-platform-balance').textContent = fmt(Math.round(platformBal)) + ' ج.م';
+  document.getElementById('w-total-balance').textContent    = fmt(Math.round(totalBal))    + ' ج.م';
+  document.getElementById('w-driver-balance').textContent   = fmt(Math.round(driverBal))   + ' ج.م';
+  document.getElementById('w-merchant-balance').textContent = fmt(Math.round(merchantBal)) + ' ج.م';
+  document.getElementById('pw-ride').textContent     = fmt(Math.round(rideComm))    + ' ج.م';
+  document.getElementById('pw-delivery').textContent = fmt(Math.round(delivComm))   + ' ج.م';
+  document.getElementById('pw-airport').textContent  = fmt(Math.round(airportComm)) + ' ج.م';
+
+  allTxLogs = (txData || []).map(t => ({ ...t, userName: acctMap[t.phone]?.name || (t.phone === 'platform' ? 'المنصة' : '') }));
+
+  renderWalletsList();
+  renderTxLog();
+}
+
+function renderWalletsList() {
+  const roleFilter = document.getElementById('wallet-role-filter')?.value || '';
+  const search     = (document.getElementById('wallet-search')?.value || '').trim().toLowerCase();
+  const ROLE_AR    = { driver:'سائق', merchant:'تاجر', customer:'عميل', admin:'مشرف' };
+  const ROLE_CLR   = { driver:'#1D4ED8', merchant:'#7C3AED', customer:'#064E3B', admin:'#DC2626' };
+
+  let rows = allWallets;
+  if (roleFilter) rows = rows.filter(w => w.role === roleFilter);
+  if (search) rows = rows.filter(w => (w.name||'').toLowerCase().includes(search) || (w.phone||'').includes(search));
+  rows = rows.slice().sort((a,b) => Number(b.balance||0) - Number(a.balance||0));
+
+  if (!rows.length) {
+    document.getElementById('wallets-tbody').innerHTML = '<tr><td colspan="5" style="text-align:center;color:#94A3B8;padding:2rem">لا توجد نتائج</td></tr>';
+    return;
+  }
+  document.getElementById('wallets-tbody').innerHTML = rows.slice(0,200).map(w => {
+    const bal = Number(w.balance||0);
+    const balClr = bal > 0 ? '#15803D' : bal < 0 ? '#DC2626' : '#64748B';
+    const rAr = ROLE_AR[w.role] || w.role;
+    const rClr = ROLE_CLR[w.role] || '#334155';
+    const nameSafe = (w.name||'').replace(/'/g,"\\'");
+    return `<tr>
+      <td style="font-weight:700">${w.name||'—'}</td>
+      <td dir="ltr">${w.phone}</td>
+      <td><span style="background:${rClr}22;color:${rClr};font-size:.72rem;font-weight:700;padding:2px 8px;border-radius:99px">${rAr}</span></td>
+      <td style="font-weight:800;color:${balClr}">${bal.toFixed(2)} ج.م</td>
+      <td><div class="btn-row" style="flex-wrap:nowrap;gap:4px">
+        <button class="btn btn--sm" style="background:#DCFCE7;color:#15803D" onclick="adminChargeWallet('${w.phone}','${nameSafe}')">شحن</button>
+        <button class="btn btn--red btn--sm" onclick="adminDeductWallet('${w.phone}','${nameSafe}')">خصم</button>
+        <button class="btn btn--sm" style="background:#F1F5F9;color:#334155" onclick="viewUserTransactions('${w.phone}','${nameSafe}')">سجل</button>
+      </div></td>
+    </tr>`;
+  }).join('');
+}
+
+const TX_TYPES_AR = {
+  earning:'أرباح', commission:'عمولة منصة', topup:'شحن', withdrawal:'سحب',
+  transfer_out:'تحويل صادر', transfer_in:'تحويل وارد',
+  admin_credit:'إضافة إدارية', admin_debit:'خصم إداري', payment:'دفع', refund:'استرداد'
+};
+const TX_CLR = {
+  earning:'#16A34A', commission:'#1D4ED8', topup:'#0891B2', withdrawal:'#DC2626',
+  transfer_out:'#D97706', transfer_in:'#7C3AED', admin_credit:'#16A34A', admin_debit:'#DC2626'
+};
+
+function renderTxLog() {
+  const typeFilter = document.getElementById('tx-type-filter')?.value || '';
+  const search     = (document.getElementById('tx-search')?.value || '').trim().toLowerCase();
+  let rows = allTxLogs;
+  if (typeFilter) rows = rows.filter(t => t.type === typeFilter);
+  if (search) rows = rows.filter(t => (t.phone||'').includes(search) || (t.userName||'').includes(search) || (t.note||'').toLowerCase().includes(search));
+  if (!rows.length) {
+    document.getElementById('all-tx-tbody').innerHTML = '<tr><td colspan="6" style="text-align:center;color:#94A3B8;padding:2rem">لا توجد نتائج</td></tr>';
+    return;
+  }
+  document.getElementById('all-tx-tbody').innerHTML = rows.slice(0,200).map(t => {
+    const d   = new Date(t.created_at||0).toLocaleDateString('ar-EG', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' });
+    const amt = Number(t.amount||0);
+    const ac  = amt >= 0 ? '#16A34A' : '#DC2626';
+    const tc  = TX_CLR[t.type] || '#64748B';
+    const tar = TX_TYPES_AR[t.type] || t.type;
+    return `<tr>
+      <td style="font-size:.78rem">${d}</td>
+      <td dir="ltr" style="font-size:.78rem">${t.phone === 'platform' ? '🏢 منصة' : t.phone}</td>
+      <td style="font-size:.82rem">${t.userName||'—'}</td>
+      <td><span style="background:${tc}22;color:${tc};font-size:.7rem;font-weight:700;padding:2px 7px;border-radius:99px">${tar}</span></td>
+      <td style="font-weight:800;color:${ac}">${amt>=0?'+':''}${amt.toFixed(2)} ج.م</td>
+      <td style="font-size:.78rem;color:#64748B;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${t.note||t.reference_id||'—'}</td>
+    </tr>`;
+  }).join('');
+}
+
+let _walletOpPhone = '', _walletOpType = '';
+function adminChargeWallet(phone, name) {
+  _walletOpPhone = phone; _walletOpType = 'credit';
+  document.getElementById('wallet-op-title').textContent = '💳 شحن محفظة';
+  document.getElementById('wallet-op-user').textContent = name || phone;
+  document.getElementById('wallet-op-phone-display').textContent = phone;
+  document.getElementById('wallet-op-amount').value = '';
+  document.getElementById('wallet-op-note').value = '';
+  document.getElementById('wallet-op-msg').style.display = 'none';
+  const btn = document.getElementById('wallet-op-confirm-btn');
+  btn.textContent = '✅ تأكيد الشحن'; btn.style.background = '#16A34A'; btn.disabled = false;
+  document.getElementById('wallet-op-modal').classList.remove('hidden');
+}
+function adminDeductWallet(phone, name) {
+  _walletOpPhone = phone; _walletOpType = 'debit';
+  document.getElementById('wallet-op-title').textContent = '➖ خصم من محفظة';
+  document.getElementById('wallet-op-user').textContent = name || phone;
+  document.getElementById('wallet-op-phone-display').textContent = phone;
+  document.getElementById('wallet-op-amount').value = '';
+  document.getElementById('wallet-op-note').value = '';
+  document.getElementById('wallet-op-msg').style.display = 'none';
+  const btn = document.getElementById('wallet-op-confirm-btn');
+  btn.textContent = '⚠️ تأكيد الخصم'; btn.style.background = '#DC2626'; btn.disabled = false;
+  document.getElementById('wallet-op-modal').classList.remove('hidden');
+}
+
+async function execAdminWalletOp() {
+  const amtRaw = parseFloat(document.getElementById('wallet-op-amount').value);
+  const note   = document.getElementById('wallet-op-note').value.trim() || (_walletOpType === 'credit' ? 'شحن إداري' : 'خصم إداري');
+  const msgEl  = document.getElementById('wallet-op-msg');
+  if (!amtRaw || amtRaw <= 0) {
+    msgEl.style.cssText = 'display:block;background:#FEE2E2;color:#991B1B;font-size:.82rem;font-weight:700;padding:.5rem .75rem;border-radius:6px';
+    msgEl.textContent = '⚠️ أدخل مبلغاً صحيحاً أكبر من صفر'; return;
+  }
+  const amt  = _walletOpType === 'credit' ? amtRaw : -amtRaw;
+  const type = _walletOpType === 'credit' ? 'admin_credit' : 'admin_debit';
+  const txId = `adm-${_walletOpType === 'credit' ? 'cr' : 'db'}-${Date.now()}`;
+  const btn  = document.getElementById('wallet-op-confirm-btn');
+  btn.textContent = 'جاري التنفيذ…'; btn.disabled = true;
+
+  const [ok1, ok2] = await Promise.all([
+    sbPost('rpc/add_wallet_balance', { p_phone: _walletOpPhone, p_amount: amt }),
+    sbPost('wallet_transactions', { id: txId, phone: _walletOpPhone, amount: amt, type, note, created_at: new Date().toISOString() }),
+  ]);
+
+  btn.disabled = false;
+  if (ok1 || ok2) {
+    msgEl.style.cssText = 'display:block;background:#DCFCE7;color:#14532D;font-size:.82rem;font-weight:700;padding:.5rem .75rem;border-radius:6px';
+    msgEl.textContent = _walletOpType === 'credit' ? `✅ تم شحن ${amtRaw.toFixed(2)} ج.م بنجاح` : `✅ تم خصم ${amtRaw.toFixed(2)} ج.م بنجاح`;
+    setTimeout(() => { closeModal('wallet-op-modal'); loadWalletsSection(); }, 1200);
+  } else {
+    msgEl.style.cssText = 'display:block;background:#FEE2E2;color:#991B1B;font-size:.82rem;font-weight:700;padding:.5rem .75rem;border-radius:6px';
+    msgEl.textContent = '❌ حدث خطأ — تحقق من الاتصال';
+    btn.textContent = _walletOpType === 'credit' ? '✅ تأكيد الشحن' : '⚠️ تأكيد الخصم';
+  }
+}
+
+async function viewUserTransactions(phone, name) {
+  document.getElementById('user-tx-modal-title').textContent = `📋 معاملات: ${name || phone}`;
+  document.getElementById('user-tx-tbody').innerHTML = '<tr><td colspan="4" style="text-align:center;color:#94A3B8;padding:2rem">جاري التحميل…</td></tr>';
+  document.getElementById('user-tx-modal').classList.remove('hidden');
+  const txData = await sbGet(`wallet_transactions?phone=eq.${encodeURIComponent(phone)}&select=amount,type,note,reference_id,created_at&order=created_at.desc&limit=300`);
+  if (!txData || !txData.length) {
+    document.getElementById('user-tx-tbody').innerHTML = '<tr><td colspan="4" style="text-align:center;color:#94A3B8;padding:2rem">لا توجد معاملات</td></tr>';
+    return;
+  }
+  document.getElementById('user-tx-tbody').innerHTML = txData.map(t => {
+    const d = new Date(t.created_at||0).toLocaleDateString('ar-EG', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' });
+    const amt = Number(t.amount||0);
+    const ac  = amt >= 0 ? '#16A34A' : '#DC2626';
+    return `<tr>
+      <td style="font-size:.78rem">${d}</td>
+      <td style="font-size:.78rem"><span style="background:${(TX_CLR[t.type]||'#64748B')}22;color:${TX_CLR[t.type]||'#64748B'};font-size:.7rem;font-weight:700;padding:2px 7px;border-radius:99px">${TX_TYPES_AR[t.type]||t.type}</span></td>
+      <td style="font-weight:800;color:${ac}">${amt>=0?'+':''}${amt.toFixed(2)} ج.م</td>
+      <td style="font-size:.78rem;color:#64748B">${t.note||t.reference_id||'—'}</td>
+    </tr>`;
+  }).join('');
+}
+
+async function adminSettlePlatform() {
+  const balText = (document.getElementById('w-platform-balance').textContent||'0').replace(/[^\d.]/g,'');
+  const bal = parseFloat(balText) || 0;
+  if (bal <= 0) { showToast('لا توجد عمولات مستحقة للتسوية', '#D97706'); return; }
+  if (!confirm(`تسوية عمولات المنصة بقيمة ${bal.toFixed(2)} ج.م؟\nسيتم تسجيل عملية السحب في السجل.`)) return;
+  const txId = `plat-settle-${Date.now()}`;
+  const ok = await sbPost('wallet_transactions', {
+    id: txId, phone: 'platform', amount: -bal,
+    type: 'withdrawal', note: 'تسوية عمولات المنصة — إداري',
+    created_at: new Date().toISOString()
+  });
+  if (ok) { showToast('✅ تمت تسوية العمولات بنجاح', '#16A34A'); loadWalletsSection(); }
+  else showToast('❌ فشلت عملية التسوية', '#DC2626');
+}
+
+/* ═══════════════════ SETTINGS ══════════════════════════════ */
+const SQL_SETUP = `-- Run in Supabase SQL Editor
+
+-- 1. Add columns to accounts
+ALTER TABLE accounts
+  ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'active';
+
+-- 2. Create driver_applications table
+CREATE TABLE IF NOT EXISTS driver_applications (
+  id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::TEXT,
+  phone TEXT,
+  status TEXT DEFAULT 'pending',
+  full_name TEXT,
+  national_id_number TEXT,
+  national_id_expiry TEXT,
+  national_id_front_url TEXT,
+  national_id_back_url TEXT,
+  license_number TEXT,
+  license_expiry TEXT,
+  license_photo_url TEXT,
+  vehicle_reg_number TEXT,
+  vehicle_reg_expiry TEXT,
+  vehicle_reg_photo_url TEXT,
+  insurance_expiry TEXT,
+  insurance_photo_url TEXT,
+  inspection_expiry TEXT,
+  inspection_photo_url TEXT,
+  vehicle_color TEXT,
+  vehicle_model TEXT,
+  vehicle_year TEXT,
+  vehicle_purchase_date TEXT,
+  vehicle_ownership TEXT,
+  vehicle_front_url TEXT,
+  vehicle_back_url TEXT,
+  vehicle_right_url TEXT,
+  vehicle_left_url TEXT,
+  plate_photo_url TEXT,
+  handwritten_text TEXT,
+  handwritten_photo_url TEXT,
+  driver_photo_url TEXT,
+  good_conduct_url TEXT,
+  uses_drugs TEXT DEFAULT 'no',
+  admin_notes TEXT,
+  reviewed_by TEXT,
+  reviewed_at TEXT,
+  rejection_reason TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 3. Create merchant_applications table
+CREATE TABLE IF NOT EXISTS merchant_applications (
+  id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::TEXT,
+  phone TEXT,
+  status TEXT DEFAULT 'pending',
+  business_name TEXT,
+  business_type TEXT,
+  business_address TEXT,
+  commercial_reg_number TEXT,
+  commercial_reg_date TEXT,
+  commercial_reg_url TEXT,
+  national_id_number TEXT,
+  national_id_expiry TEXT,
+  national_id_url TEXT,
+  tax_card_number TEXT,
+  tax_card_url TEXT,
+  work_permit_url TEXT,
+  admin_notes TEXT,
+  reviewed_by TEXT,
+  reviewed_at TEXT,
+  rejection_reason TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 4. Create app_settings table (commission rates)
+CREATE TABLE IF NOT EXISTS app_settings (
+  key TEXT PRIMARY KEY,
+  value TEXT,
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Seed default commission rates
+INSERT INTO app_settings (key, value) VALUES
+  ('commission_ride', '15'),
+  ('commission_delivery', '15'),
+  ('commission_airport', '15')
+ON CONFLICT (key) DO NOTHING;
+
+-- 5. wallet_transactions: platform phone key
+-- The phone 'platform' is used as the identifier for platform commission entries.
+-- Make sure wallet_transactions table exists with these columns:
+CREATE TABLE IF NOT EXISTS wallet_transactions (
+  id TEXT PRIMARY KEY,
+  phone TEXT,
+  amount NUMERIC,
+  type TEXT,
+  note TEXT,
+  reference_id TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);`;
+
+document.getElementById('sql-setup').textContent = SQL_SETUP;
+function copySql() {
+  navigator.clipboard.writeText(SQL_SETUP).then(() => showToast('✅ تم النسخ', '#16A34A'));
+}
+
+document.getElementById('create-admin-form').addEventListener('submit', async e => {
+  e.preventDefault();
+  const name  = document.getElementById('new-admin-name').value.trim();
+  const phone = document.getElementById('new-admin-phone').value.trim();
+  const pass  = document.getElementById('new-admin-pass').value;
+  const msg   = document.getElementById('admin-create-msg');
+  if (!name || !phone || !pass) { msg.textContent='أكمل جميع الحقول'; msg.style.cssText='display:block;background:#FEE2E2;color:#DC2626'; return; }
+  const ok = await sbPost('accounts', {
+    phone, name, password:pass, role:'admin', status:'active', created_at: new Date().toISOString()
+  });
+  if (ok) {
+    msg.textContent = '✅ تم إنشاء حساب المشرف بنجاح';
+    msg.style.cssText = 'display:block;background:#DCFCE7;color:#16A34A';
+    document.getElementById('create-admin-form').reset();
+  } else {
+    msg.textContent = '❌ حدث خطأ (قد يكون الجوال مسجلاً مسبقاً)';
+    msg.style.cssText = 'display:block;background:#FEE2E2;color:#DC2626';
+  }
+});
+
+/* ── Auto-refresh ───────────────────────────────────────────── */
+const REFRESH_INTERVAL = 30000; // 30 seconds
+let refreshTimer = null;
+let prevPendingCount = 0;
+
+function setSyncing(on) {
+  const badge = document.getElementById('live-badge');
+  const label = document.getElementById('live-label');
+  if (!badge || !label) return;
+  if (on) { badge.classList.add('syncing'); label.textContent = 'يتم التحديث…'; }
+  else     { badge.classList.remove('syncing'); label.textContent = 'مباشر'; }
+}
+
+async function autoRefreshDash() {
+  setSyncing(true);
+  try {
+    // Lightweight KPI-only refresh
+    const [users, orders, stores, dApps, mApps] = await Promise.all([
+      sbGet('accounts?select=phone,role,status'),
+      sbGet('orders?select=id,status,total,created_at'),
+      sbGet('stores?select=id,is_active'),
+      sbGet('driver_applications?select=id,phone,status,full_name'),
+      sbGet('merchant_applications?select=id,phone,status,business_name'),
+    ]);
+    const today = new Date().toISOString().slice(0,10);
+    const todayOrd  = (orders||[]).filter(o => (o.created_at||'').startsWith(today));
+    const revenue   = todayOrd.filter(o => o.status==='delivered').reduce((s,o)=>s+(Number(o.total)||0),0);
+    const pendingD  = (dApps||[]).filter(a=>a.status==='pending');
+    const pendingM  = (mApps||[]).filter(a=>a.status==='pending');
+    const pendingTotal = pendingD.length + pendingM.length;
+
+    // Update KPIs
+    const set = (id,v) => { const el=document.getElementById(id); if(el) el.textContent=fmt(v); };
+    set('kpi-users',    (users||[]).length);
+    set('kpi-drivers',  (users||[]).filter(u=>u.role==='driver'&&u.status==='approved').length);
+    set('kpi-today-orders', todayOrd.length);
+    set('kpi-revenue',  revenue);
+    set('kpi-stores',   (stores||[]).filter(s=>s.is_active).length);
+    set('kpi-pending',  pendingTotal);
+
+    // Update sidebar badges
+    const db = document.getElementById('badge-drivers');
+    const mb = document.getElementById('badge-merchants');
+    if (db) { db.textContent = pendingD.length; db.classList.toggle('hidden', pendingD.length===0); }
+    if (mb) { mb.textContent = pendingM.length; mb.classList.toggle('hidden', pendingM.length===0); }
+
+    // Alert if new pending apps appeared
+    if (pendingTotal > prevPendingCount && prevPendingCount !== 0) {
+      showToast(`🔔 طلب اعتماد جديد! (${pendingTotal} معلق)`, '#3B6EF8');
+    }
+    prevPendingCount = pendingTotal;
+
+    // Always silently refresh pending driver/merchant counts for badges
+    const dAppsQuiet = await sbGet('driver_applications?select=id,status&status=eq.pending');
+    const mAppsQuiet = await sbGet('merchant_applications?select=id,status&status=eq.pending');
+    const dPending = (dAppsQuiet||[]).length;
+    const mPending = (mAppsQuiet||[]).length;
+    const mainBadge = document.getElementById('dmain-pending-cnt');
+    if (mainBadge) { mainBadge.textContent = dPending; mainBadge.style.display = dPending ? '' : 'none'; }
+
+    // If currently viewing a section, refresh it too
+    if (loaders[currentSection] && currentSection !== 'dash') loaders[currentSection]();
+
+  } catch(e) { /* silent fail */ }
+  setSyncing(false);
+}
+
+function startAutoRefresh() {
+  if (refreshTimer) clearInterval(refreshTimer);
+  refreshTimer = setInterval(autoRefreshDash, REFRESH_INTERVAL);
+}
+
+// Pause refresh on tab hidden, resume when visible
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) clearInterval(refreshTimer);
+  else { autoRefreshDash(); startAutoRefresh(); }
+});
+
+/* ── Init ───────────────────────────────────────────────────── */
+loadDash();
+startAutoRefresh();
+</script>
+</body>
+</html>

@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" class="astro-UIPYDU2K">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>إدارة الطلبات — وصّلها</title>
+  <link rel="manifest" href="/site.webmanifest">
+  <meta name="theme-color" content="#3B6EF8">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  
+<link rel="stylesheet" href="/_astro/restaurant-orders.72903d0a.css" /><script type="module" src="/_astro/hoisted.9a8620db.js"></script></head>
+<body class="astro-UIPYDU2K">
+
+<!-- LOADER -->
+<div id="loader" class="astro-UIPYDU2K">
+  <div class="spinner astro-UIPYDU2K"></div>
+  <span style="color:#94A3B8;font-size:14px;font-weight:600" class="astro-UIPYDU2K">جارٍ التحميل…</span>
+</div>
+
+<!-- AUTH WALL -->
+<div id="auth-wall" class="astro-UIPYDU2K">
+  <div class="aw-icon astro-UIPYDU2K">🔒</div>
+  <div class="aw-msg astro-UIPYDU2K">يجب تسجيل الدخول أولاً</div>
+  <div class="aw-sub astro-UIPYDU2K">هذه الصفحة متاحة للمطاعم المسجّلة فقط</div>
+  <a href="/login" class="astro-UIPYDU2K">تسجيل الدخول</a>
+</div>
+
+<!-- HEADER -->
+<header id="app-header" style="display:none" class="astro-UIPYDU2K">
+  <!-- Store info -->
+  <div id="store-info" class="astro-UIPYDU2K">
+    <div id="store-emoji" class="astro-UIPYDU2K">🍽️</div>
+    <div id="store-text" class="astro-UIPYDU2K">
+      <div id="store-name" class="astro-UIPYDU2K">المطعم</div>
+      <div id="store-area" class="astro-UIPYDU2K">—</div>
+    </div>
+  </div>
+
+  <!-- Stats -->
+  <div id="header-stats" class="astro-UIPYDU2K">
+    <div class="stat-item astro-UIPYDU2K">
+      <div class="stat-value astro-UIPYDU2K" id="stat-count">0</div>
+      <div class="stat-label astro-UIPYDU2K">طلبات اليوم</div>
+    </div>
+    <div class="stat-sep astro-UIPYDU2K"></div>
+    <div class="stat-item astro-UIPYDU2K">
+      <div class="stat-value astro-UIPYDU2K" id="stat-revenue">0 ر.س</div>
+      <div class="stat-label astro-UIPYDU2K">إيرادات اليوم</div>
+    </div>
+    <div class="stat-sep astro-UIPYDU2K"></div>
+    <div class="stat-item astro-UIPYDU2K">
+      <div id="pending-badge-wrap" class="astro-UIPYDU2K">
+        <div class="stat-value astro-UIPYDU2K" id="stat-pending">0</div>
+        <div id="pending-badge" class="astro-UIPYDU2K">0</div>
+      </div>
+      <div class="stat-label astro-UIPYDU2K">طلبات معلّقة</div>
+    </div>
+  </div>
+
+  <!-- Actions -->
+  <div id="header-actions" class="astro-UIPYDU2K">
+    <button id="toggle-open-btn" class="hdr-btn astro-UIPYDU2K" onclick="toggleStoreOpen()">
+      <span id="open-status-icon" class="astro-UIPYDU2K">✅</span>
+      <span id="open-status-text" class="astro-UIPYDU2K">مفتوح</span>
+    </button>
+    <button id="sound-btn" class="hdr-btn astro-UIPYDU2K" onclick="toggleSound()" title="تبديل الصوت">🔔</button>
+    <a id="back-btn" href="/merchant-dashboard" class="astro-UIPYDU2K">
+      ← لوحة التحكم
+    </a>
+  </div>
+</header>
+
+<!-- MAIN CONTENT -->
+<div id="main-content" style="display:none" class="astro-UIPYDU2K">
+  <!-- Two Columns -->
+  <div id="columns-area" class="astro-UIPYDU2K">
+    <!-- Pending -->
+    <div class="orders-column astro-UIPYDU2K">
+      <div class="col-header astro-UIPYDU2K">
+        <span class="astro-UIPYDU2K">🔴</span>
+        <span class="col-title astro-UIPYDU2K">طلبات جديدة</span>
+        <span class="col-count astro-UIPYDU2K" id="pending-count">0</span>
+      </div>
+      <div class="col-body astro-UIPYDU2K" id="incoming-orders">
+        <div class="empty-state astro-UIPYDU2K">
+          <div class="empty-icon astro-UIPYDU2K">📭</div>
+          <div class="empty-text astro-UIPYDU2K">لا توجد طلبات جديدة</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Active -->
+    <div class="orders-column astro-UIPYDU2K">
+      <div class="col-header astro-UIPYDU2K">
+        <span class="astro-UIPYDU2K">🟡</span>
+        <span class="col-title astro-UIPYDU2K">قيد التنفيذ</span>
+        <span class="col-count astro-UIPYDU2K" id="active-count">0</span>
+      </div>
+      <div class="col-body astro-UIPYDU2K" id="active-orders">
+        <div class="empty-state astro-UIPYDU2K">
+          <div class="empty-icon astro-UIPYDU2K">🏃</div>
+          <div class="empty-text astro-UIPYDU2K">لا توجد طلبات نشطة</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- History -->
+  <div id="history-section" class="astro-UIPYDU2K">
+    <div id="history-header" class="astro-UIPYDU2K">📋 سجل اليوم</div>
+    <div id="history-orders" class="astro-UIPYDU2K">
+      <div style="padding:12px;text-align:center;color:#475569;font-size:13px" class="astro-UIPYDU2K">لا يوجد سجل حتى الآن</div>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div id="toast" class="astro-UIPYDU2K"></div>
+
+
+</body>
+</html>
