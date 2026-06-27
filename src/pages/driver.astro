@@ -869,6 +869,47 @@ function normPhone(p) {
   if (p.startsWith('01')) return '+2' + p;
   return p;
 }
+// Canonical Egyptian mobile (local 01XXXXXXXXX) — '' if invalid.
+// Mirrors src/utils/validation.ts so all signup flows match.
+function canonLocal(p) {
+  var v = (p || '').replace(/[\s\-()]/g, '');
+  if (v.indexOf('+20') === 0) v = '0' + v.slice(3);
+  else if (v.indexOf('0020') === 0) v = '0' + v.slice(4);
+  else if (v.indexOf('20') === 0 && v.length === 12) v = '0' + v.slice(2);
+  return /^01[0125][0-9]{8}$/.test(v) ? v : '';
+}
+// Default avatar (SVG data-URI from initials) for every new account.
+function dAvatar(name) {
+  var clean = (name || '؟').trim();
+  var parts = clean.split(/\s+/).filter(Boolean);
+  var initials = (parts[0] ? parts[0][0] : '؟') + (parts[1] ? parts[1][0] : '');
+  var grads = [['#3B6EF8','#6D5DF6'],['#16A34A','#0EA5A0'],['#F59E0B','#EF4444'],['#8B5CF6','#EC4899'],['#0EA5E9','#22C55E'],['#F43F5E','#FB923C']];
+  var hash = 0; for (var i = 0; i < clean.length; i++) hash = (hash * 31 + clean.charCodeAt(i)) >>> 0;
+  var g = grads[hash % grads.length];
+  var svg = '<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 120 120"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="'+g[0]+'"/><stop offset="1" stop-color="'+g[1]+'"/></linearGradient></defs><rect width="120" height="120" rx="60" fill="url(#g)"/><text x="60" y="60" dy=".36em" text-anchor="middle" fill="#fff" font-family="Cairo,sans-serif" font-size="48" font-weight="800">'+initials+'</text></svg>';
+  return 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
+}
+// Garbage-resistant full-name check. Returns '' if valid, else message.
+function vName(n) {
+  n = (n || '').trim().replace(/\s+/g, ' ');
+  if (n.length < 4 || n.length > 50) return 'أدخل اسمك الكامل (4-50 حرفاً).';
+  if (!/^[A-Za-z؀-ۿ ]+$/.test(n)) return 'الاسم: حروف فقط بدون أرقام أو رموز.';
+  var w = n.split(' ').filter(Boolean);
+  if (w.length < 2) return 'أدخل الاسم الكامل (اسمان على الأقل).';
+  if (w.some(function(x){ return x.length < 2; })) return 'كل جزء من الاسم حرفان على الأقل.';
+  if (w.some(function(x){ return /^(.)\1+$/.test(x); })) return 'الاسم غير صالح، أدخل اسمك الحقيقي.';
+  return '';
+}
+// Strong password (8+, upper, lower, digit, alphanumeric). '' if valid.
+function vPass(p) {
+  p = p || '';
+  if (p.length < 8) return 'كلمة المرور 8 أحرف على الأقل.';
+  if (!/^[A-Za-z0-9]+$/.test(p)) return 'بدون مسافات أو رموز — حروف وأرقام فقط.';
+  if (!/[A-Z]/.test(p)) return 'يجب أن تحتوي على حرف كبير (A-Z).';
+  if (!/[a-z]/.test(p)) return 'يجب أن تحتوي على حرف صغير (a-z).';
+  if (!/[0-9]/.test(p)) return 'يجب أن تحتوي على رقم.';
+  return '';
+}
 function localPhone(p) { return p.startsWith('+20') ? '0' + p.slice(3) : p; }
 function orFilter(p) {
   var intl   = p.startsWith('01') ? '+2' + p : p;
@@ -954,18 +995,17 @@ window.doRegister = async function() {
   clearFieldErr('err-r-pass');
   showErr('err-register', '');
 
-  if (!name || name.split(/\s+/).filter(Boolean).length < 2) {
-    fieldErr('err-r-name', 'أدخل الاسم الكامل (اسمان على الأقل)'); ok = false;
+  var nameMsg = vName(name);
+  if (nameMsg) { fieldErr('err-r-name', nameMsg); ok = false; }
+  var pLocal = canonLocal(phone);
+  if (!pLocal) {
+    fieldErr('err-r-phone', 'رقم جوال مصري صحيح: 11 رقماً يبدأ بـ 010/011/012/015'); ok = false;
   }
-  if (!phone.match(/^(01[0-9]{9}|002[0-9]{11}|\+2[0-9]{11})$/)) {
-    fieldErr('err-r-phone', 'رقم الجوال غير صحيح (مثال: 01012345678)'); ok = false;
-  }
-  if (pass.length < 6) {
-    fieldErr('err-r-pass', 'كلمة المرور 6 أحرف على الأقل'); ok = false;
-  }
+  var passMsg = vPass(pass);
+  if (passMsg) { fieldErr('err-r-pass', passMsg); ok = false; }
   if (!ok) return;
 
-  var phone14 = normPhone(phone);
+  var phone14 = pLocal;
   btn.disabled = true;
   btn.innerHTML = '<span style="display:inline-block;width:16px;height:16px;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite"></span> جاري التحقق…';
 
@@ -984,7 +1024,7 @@ window.doRegister = async function() {
     if (Array.isArray(existing) && existing.length > 0) {
       var acc = existing[0];
       if (acc.role === 'driver') {
-        localStorage.setItem('wslha_user', JSON.stringify({ phone: acc.phone, name: acc.name || name, role: 'driver', status: acc.status || 'pending', city: acc.city || city }));
+        localStorage.setItem('wslha_user', JSON.stringify({ phone: acc.phone, name: acc.name || name, role: 'driver', status: acc.status || 'pending', city: acc.city || city, avatar: dAvatar(acc.name || name) }));
         window.location.href = '/driver-dashboard';
         return;
       }
@@ -1016,6 +1056,7 @@ window.doRegister = async function() {
       USER = { phone: phone14, name: name, role: 'driver', status: 'pending', city: city };
     }
 
+    if (!USER.avatar) USER.avatar = dAvatar(USER.name);
     localStorage.setItem('wslha_user', JSON.stringify(USER));
 
     // Create preliminary application record

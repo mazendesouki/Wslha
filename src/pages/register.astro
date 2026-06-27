@@ -347,6 +347,7 @@ const CITIES = ['دمياط الجديدة', 'دمياط', 'كفر سعد', 'ف�
   import { isEgyptianMobile, normalizeEgyptianPhone, EG_PHONE_ERROR } from '../utils/phone';
   import { validatePassword }    from '../utils/password';
   import { addAccount, fieldExists } from '../utils/accounts';
+  import { validateFullName, defaultAvatar } from '../utils/validation';
 
   const form      = document.getElementById('register-form')   as HTMLFormElement;
   const errorBox  = document.getElementById('register-error')  as HTMLElement;
@@ -484,7 +485,8 @@ const CITIES = ['دمياط الجديدة', 'دمياط', 'كفر سعد', 'ف�
 
   function validateStep(n: number): boolean {
     if (n === 1) {
-      if (nameInp.value.trim().length < 2) { showError('يرجى إدخال الاسم بالكامل (حرفين على الأقل).'); return false; }
+      const nm = validateFullName(nameInp.value);
+      if (!nm.valid) { showError(nm.message); return false; }
       const u = userInp.value.trim();
       if (!/^[a-zA-Z0-9_\.]{3,20}$/.test(u)) { showError('اسم المستخدم: أحرف إنجليزية وأرقام و _ . فقط (3-20 حرف).'); return false; }
       if (fieldState.username === 'taken') { showError('اسم المستخدم محجوز، اختر اسماً آخر.'); return false; }
@@ -538,7 +540,8 @@ const CITIES = ['دمياط الجديدة', 'دمياط', 'كفر سعد', 'ف�
     const pass2    = pass2Inp.value;
 
     // ── Client-side validation ──
-    if (name.length < 2)        { showStep(1); showError('يرجى إدخال الاسم بالكامل (حرفين على الأقل).'); return; }
+    const nameCheck = validateFullName(name);
+    if (!nameCheck.valid)       { showStep(1); showError(nameCheck.message); return; }
     if (!username || username.length < 3) { showStep(1); showError('اسم المستخدم يجب أن يكون 3 أحرف على الأقل.'); return; }
     if (!/^[a-zA-Z0-9_\.]{3,20}$/.test(username)) { showStep(1); showError('اسم المستخدم: أحرف إنجليزية وأرقام و _ . فقط (3-20 حرف).'); return; }
     if (!isEgyptianMobile(phone)) { showStep(1); showError(EG_PHONE_ERROR); return; }
@@ -588,6 +591,7 @@ const CITIES = ['دمياط الجديدة', 'دمياط', 'كفر سعد', 'ف�
       localStorage.setItem('wslha_user', JSON.stringify({
         name, username, phone: norm, email, city,
         role: 'customer',
+        avatar: defaultAvatar(name),
         createdAt: new Date().toISOString(),
         loginAt:   new Date().toISOString(),
       }));

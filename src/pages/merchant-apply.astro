@@ -373,6 +373,46 @@ function normPhone(p) {
   if (p.startsWith('01')) return '+2' + p;
   return p;
 }
+// ── Unified account-creation guards (mirror src/utils/validation.ts) ──
+function canonLocal(p) {
+  var v = (p || '').replace(/[\s\-()]/g, '');
+  if (v.indexOf('+20') === 0) v = '0' + v.slice(3);
+  else if (v.indexOf('0020') === 0) v = '0' + v.slice(4);
+  else if (v.indexOf('20') === 0 && v.length === 12) v = '0' + v.slice(2);
+  return /^01[0125][0-9]{8}$/.test(v) ? v : '';
+}
+function phoneOrFilter(local) {
+  return 'or=(phone.eq.' + encodeURIComponent(local) + ',phone.eq.' + encodeURIComponent('+2' + local) + ')';
+}
+function dAvatar(name) {
+  var clean = (name || '؟').trim();
+  var parts = clean.split(/\s+/).filter(Boolean);
+  var initials = (parts[0] ? parts[0][0] : '؟') + (parts[1] ? parts[1][0] : '');
+  var grads = [['#3B6EF8','#6D5DF6'],['#16A34A','#0EA5A0'],['#F59E0B','#EF4444'],['#8B5CF6','#EC4899'],['#0EA5E9','#22C55E'],['#F43F5E','#FB923C']];
+  var hash = 0; for (var i = 0; i < clean.length; i++) hash = (hash * 31 + clean.charCodeAt(i)) >>> 0;
+  var g = grads[hash % grads.length];
+  var svg = '<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 120 120"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="'+g[0]+'"/><stop offset="1" stop-color="'+g[1]+'"/></linearGradient></defs><rect width="120" height="120" rx="60" fill="url(#g)"/><text x="60" y="60" dy=".36em" text-anchor="middle" fill="#fff" font-family="Cairo,sans-serif" font-size="48" font-weight="800">'+initials+'</text></svg>';
+  return 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
+}
+function vName(n) {
+  n = (n || '').trim().replace(/\s+/g, ' ');
+  if (n.length < 4 || n.length > 50) return 'أدخل اسمك الكامل (4-50 حرفاً).';
+  if (!/^[A-Za-z؀-ۿ ]+$/.test(n)) return 'الاسم: حروف فقط بدون أرقام أو رموز.';
+  var w = n.split(' ').filter(Boolean);
+  if (w.length < 2) return 'أدخل الاسم الكامل (اسمان على الأقل).';
+  if (w.some(function(x){ return x.length < 2; })) return 'كل جزء من الاسم حرفان على الأقل.';
+  if (w.some(function(x){ return /^(.)\1+$/.test(x); })) return 'الاسم غير صالح، أدخل اسمك الحقيقي.';
+  return '';
+}
+function vPass(p) {
+  p = p || '';
+  if (p.length < 8) return 'كلمة المرور 8 أحرف على الأقل.';
+  if (!/^[A-Za-z0-9]+$/.test(p)) return 'بدون مسافات أو رموز — حروف وأرقام فقط.';
+  if (!/[A-Z]/.test(p)) return 'يجب أن تحتوي على حرف كبير (A-Z).';
+  if (!/[a-z]/.test(p)) return 'يجب أن تحتوي على حرف صغير (a-z).';
+  if (!/[0-9]/.test(p)) return 'يجب أن تحتوي على رقم.';
+  return '';
+}
 
 let currentStep = 0;
 
@@ -393,23 +433,21 @@ async function registerMerchantAndProceed() {
   const err   = document.getElementById('reg-owner-err');
   err.style.display = 'none';
 
-  if (!name || name.split(' ').length < 2) {
-    err.textContent = '⚠️ يرجى إدخال الاسم رباعياً على الأقل'; err.style.display = 'block'; return;
+  const nameMsg = vName(name);
+  if (nameMsg) { err.textContent = '⚠️ ' + nameMsg; err.style.display = 'block'; return; }
+  const phone14 = canonLocal(phone);
+  if (!phone14) {
+    err.textContent = '⚠️ رقم جوال مصري صحيح: 11 رقماً يبدأ بـ 010/011/012/015'; err.style.display = 'block'; return;
   }
-  if (!phone.match(/^(01[0-9]{9}|002[0-9]{11}|\+2[0-9]{11})$/)) {
-    err.textContent = '⚠️ رقم الجوال غير صحيح'; err.style.display = 'block'; return;
-  }
-  if (pass.length < 6) {
-    err.textContent = '⚠️ كلمة المرور يجب أن تكون 6 أحرف على الأقل'; err.style.display = 'block'; return;
-  }
+  const passMsg = vPass(pass);
+  if (passMsg) { err.textContent = '⚠️ ' + passMsg; err.style.display = 'block'; return; }
 
-  const phone14 = normPhone(phone);
   const btn = document.getElementById('reg-owner-btn');
   btn.disabled = true; btn.textContent = '⏳ جاري التحقق...';
 
   try {
     const checkRes = await fetch(
-      `${SB_URL}/rest/v1/accounts?phone=eq.${encodeURIComponent(phone14)}&select=phone,name,role,status,city`,
+      `${SB_URL}/rest/v1/accounts?${phoneOrFilter(phone14)}&select=phone,name,role,status,city`,
       { headers: SB_H }
     );
     const existing = await checkRes.json();
@@ -420,11 +458,12 @@ async function registerMerchantAndProceed() {
         localStorage.setItem('wslha_user', JSON.stringify({
           phone: acc.phone, name: acc.name || name, role: 'merchant',
           status: acc.status || 'pending', city: acc.city || city,
+          avatar: dAvatar(acc.name || name),
         }));
         window.location.href = '/merchant-dashboard';
         return;
       }
-      await fetch(`${SB_URL}/rest/v1/accounts?phone=eq.${encodeURIComponent(phone14)}`, {
+      await fetch(`${SB_URL}/rest/v1/accounts?phone=eq.${encodeURIComponent(acc.phone)}`, {
         method: 'PATCH',
         headers: { ...SB_H, 'Content-Type': 'application/json', Prefer: 'return=minimal' },
         body: JSON.stringify({ role: 'merchant', status: 'pending' }),
@@ -439,6 +478,7 @@ async function registerMerchantAndProceed() {
       if (!createRes.ok) throw new Error('create failed');
       USER = { phone: phone14, name, role: 'merchant', status: 'pending', city };
     }
+    if (!USER.avatar) USER.avatar = dAvatar(USER.name);
 
     localStorage.setItem('wslha_user', JSON.stringify(USER));
     document.getElementById('step-0').classList.add('hidden');
