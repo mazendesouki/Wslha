@@ -160,6 +160,14 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site ?? 'https://wslha.co
       outline: 3px solid var(--color-accent);
       outline-offset: 3px;
     }
+
+    /* On mobile, lift the WhatsApp button above the bottom navigation
+       so the two don't overlap (bottom nav ≈ 70px + safe-area inset). */
+    @media (max-width: 767px) {
+      .whatsapp-float {
+        bottom: calc(70px + env(safe-area-inset-bottom, 0px) + var(--sp-3));
+      }
+    }
   </style>
 </head>
 
