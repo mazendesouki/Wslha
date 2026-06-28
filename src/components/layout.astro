@@ -2,6 +2,7 @@
 import Nav from './Nav.astro';
 import BottomNav from './BottomNav.astro';
 import Footer from './Footer.astro';
+import SpeedInsights from '@vercel/speed-insights/astro';
 
 interface Props {
   title: string;
@@ -191,6 +192,9 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site ?? 'https://wslha.co
   {!hideBottomNav && <BottomNav currentPage={currentPage} />}
 
   <Footer />
+
+  <!-- Vercel Speed Insights (performance monitoring) -->
+  <SpeedInsights />
 
   <!-- ── بانر تثبيت التطبيق — يظهر تلقائياً بـ CSS بدون انتظار JS ── -->
   <div id="pwa-banner" class="pwa-banner">
