@@ -807,8 +807,8 @@
         <input class="search-input" id="wallet-op-amount" type="number" min="0.5" step="0.5" placeholder="0.00" style="width:100%;font-size:1.1rem;font-weight:700"/>
       </div>
       <div>
-        <label style="font-size:.78rem;font-weight:700;color:#64748B;display:block;margin-bottom:.3rem">السبب / الملاحظة</label>
-        <input class="search-input" id="wallet-op-note" type="text" placeholder="مثال: مكافأة أداء، شحن يدوي…" style="width:100%"/>
+        <label style="font-size:.78rem;font-weight:700;color:#64748B;display:block;margin-bottom:.3rem">السبب / الملاحظة <span style="color:#DC2626">* إلزامي</span></label>
+        <input class="search-input" id="wallet-op-note" type="text" placeholder="سبب واضح للعملية — يُسجَّل ويُراجَع" style="width:100%" required minlength="5"/>
       </div>
       <button class="btn btn--primary" style="width:100%" id="wallet-op-confirm-btn" onclick="execAdminWalletOp()">تأكيد</button>
       <div id="wallet-op-msg" style="display:none;font-size:.82rem;font-weight:700;padding:.5rem .75rem;border-radius:6px"></div>
@@ -1968,25 +1968,37 @@ function adminDeductWallet(phone, name) {
 
 async function execAdminWalletOp() {
   const amtRaw = parseFloat(document.getElementById('wallet-op-amount').value);
-  const note   = document.getElementById('wallet-op-note').value.trim() || (_walletOpType === 'credit' ? 'شحن إداري' : 'خصم إداري');
+  const note   = document.getElementById('wallet-op-note').value.trim();
   const msgEl  = document.getElementById('wallet-op-msg');
-  if (!amtRaw || amtRaw <= 0) {
+  const showOpErr = (m) => {
     msgEl.style.cssText = 'display:block;background:#FEE2E2;color:#991B1B;font-size:.82rem;font-weight:700;padding:.5rem .75rem;border-radius:6px';
-    msgEl.textContent = '⚠️ أدخل مبلغاً صحيحاً أكبر من صفر'; return;
-  }
+    msgEl.textContent = m;
+  };
+  if (!amtRaw || amtRaw <= 0) { showOpErr('⚠️ أدخل مبلغاً صحيحاً أكبر من صفر'); return; }
+  // Mandatory documented reason — no anonymous/arbitrary balance changes.
+  if (note.length < 5) { showOpErr('⚠️ السبب إلزامي (5 أحرف على الأقل) — كل عملية تُسجَّل وتُراجَع'); return; }
+  // Record who performed the operation (admin identity) for the audit trail.
+  const adminTag = (ADMIN && (ADMIN.name || ADMIN.phone)) ? ` — بواسطة ${ADMIN.name || ADMIN.phone}` : '';
+  const fullNote = note + adminTag;
   const amt  = _walletOpType === 'credit' ? amtRaw : -amtRaw;
   const type = _walletOpType === 'credit' ? 'admin_credit' : 'admin_debit';
   const txId = `adm-${_walletOpType === 'credit' ? 'cr' : 'db'}-${Date.now()}`;
   const btn  = document.getElementById('wallet-op-confirm-btn');
   btn.textContent = 'جاري التنفيذ…'; btn.disabled = true;
 
-  const [ok1, ok2] = await Promise.all([
-    sbPost('rpc/add_wallet_balance', { p_phone: _walletOpPhone, p_amount: amt }),
-    sbPost('wallet_transactions', { id: txId, phone: _walletOpPhone, amount: amt, type, note, created_at: new Date().toISOString() }),
-  ]);
+  // The transaction-log record is the source of truth and MUST succeed first;
+  // only then do we adjust the balance — so no balance change is ever unlogged.
+  const logged = await sbPost('wallet_transactions', { id: txId, phone: _walletOpPhone, amount: amt, type, note: fullNote, created_at: new Date().toISOString() });
+  if (!logged) {
+    btn.disabled = false;
+    btn.textContent = _walletOpType === 'credit' ? '✅ تأكيد الشحن' : '⚠️ تأكيد الخصم';
+    showOpErr('❌ تعذّر تسجيل العملية في السجل — لم يتم تغيير الرصيد');
+    return;
+  }
+  const ok1 = await sbPost('rpc/add_wallet_balance', { p_phone: _walletOpPhone, p_amount: amt });
 
   btn.disabled = false;
-  if (ok1 || ok2) {
+  if (ok1) {
     msgEl.style.cssText = 'display:block;background:#DCFCE7;color:#14532D;font-size:.82rem;font-weight:700;padding:.5rem .75rem;border-radius:6px';
     msgEl.textContent = _walletOpType === 'credit' ? `✅ تم شحن ${amtRaw.toFixed(2)} ج.م بنجاح` : `✅ تم خصم ${amtRaw.toFixed(2)} ج.م بنجاح`;
     setTimeout(() => { closeModal('wallet-op-modal'); loadWalletsSection(); }, 1200);
