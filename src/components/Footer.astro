@@ -256,6 +256,14 @@ import { FOOTER_LINKS } from '../data/nav';
     opacity: 1;
   }
 
+  /* On mobile, lift the toast above the bottom navigation so it
+     doesn't overlap the nav icons (nav ≈ 70px + safe-area inset). */
+  @media (max-width: 767px) {
+    .app-toast {
+      bottom: calc(70px + env(safe-area-inset-bottom, 0px) + var(--sp-3));
+    }
+  }
+
   .app-toast__icon { font-size: 1.6rem; flex-shrink: 0; }
 
   .app-toast__body {
