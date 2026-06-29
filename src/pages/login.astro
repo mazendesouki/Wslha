@@ -168,9 +168,8 @@ import PageHero from '../components/PageHero.astro';
 
 <script>
   import { isEgyptianMobile, normalizeEgyptianPhone, EG_PHONE_ERROR } from '../utils/phone';
+  import { supabase, SB_URL, SB_KEY, toE164 } from '../utils/supabaseClient';
 
-  const SB_URL = 'https://vtikgyiopkjnrwlqnmfx.supabase.co';
-  const SB_KEY = 'sb_publishable_PLSnpvCT-sAyUMtymNgTwA_QmL2suw4';
   const SB_H   = { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_KEY}`, 'Content-Type': 'application/json' };
 
   // ── DOM ──
@@ -199,11 +198,6 @@ import PageHero from '../components/PageHero.astro';
   }
   function hideErr(el: HTMLElement) { el.classList.remove('is-visible'); }
 
-  function toE164(phone: string): string {
-    const p = normalizeEgyptianPhone(phone);
-    return '+2' + p; // 01xxxxxxxxx → +201xxxxxxxxx
-  }
-
   // ── Supabase account lookup (both phone formats) ──
   async function fetchAccount(phone: string) {
     try {
@@ -221,61 +215,31 @@ import PageHero from '../components/PageHero.astro';
     } catch { return null; }
   }
 
-  // ── OTP: Send (custom DB flow with local fallback) ──
+  // ── OTP: Send — real SMS via Supabase Auth (Twilio) ──
+  //    The code is delivered by SMS only; it is NEVER shown on screen.
   async function sendOTP(phone: string): Promise<void> {
-    // Cryptographically random 6-digit code
-    const arr = new Uint32Array(1);
-    crypto.getRandomValues(arr);
-    const code = String(100000 + (arr[0] % 900000));
-
-    // Always store locally so verification works even if DB insert fails (RLS)
-    sessionStorage.setItem('otp_phone', phone);
-    sessionStorage.setItem('otp_code', code);
-    sessionStorage.setItem('otp_expires', String(Date.now() + 5 * 60 * 1000));
-
-    // Try DB insert (best-effort — may fail due to RLS)
-    await fetch(`${SB_URL}/rest/v1/otps?phone=eq.${encodeURIComponent(phone)}`, {
-      method: 'DELETE', headers: SB_H,
-    }).catch(() => {});
-    await fetch(`${SB_URL}/rest/v1/otps`, {
-      method: 'POST',
-      headers: { ...SB_H, Prefer: 'return=minimal' },
-      body: JSON.stringify({ phone, code }),
-    }).catch(() => {});
-
-    // Show code prominently (click to auto-fill all boxes)
-    devCode.textContent = code;
-    devCode.onclick = () => {
-      code.split('').forEach((d, i) => {
-        if (otpBoxes[i]) { otpBoxes[i].value = d; otpBoxes[i].classList.add('filled'); }
-      });
-      setTimeout(doVerify, 300);
-    };
-    devNotice.classList.add('visible');
+    devNotice.classList.remove('visible'); // no on-screen code anymore
+    const { error } = await supabase.auth.signInWithOtp({
+      phone: toE164(phone),
+      options: { shouldCreateUser: true }, // first OTP login links the existing account
+    });
+    if (error) {
+      throw new Error(
+        /rate|limit|too many/i.test(error.message)
+          ? 'تم إرسال عدد كبير من الرموز. انتظر قليلاً ثم أعد المحاولة.'
+          : 'تعذّر إرسال رمز التحقق عبر SMS. تأكد من الرقم وحاول مجدداً.'
+      );
+    }
   }
 
-  // ── OTP: Verify — DB RPC first, local sessionStorage fallback ──
+  // ── OTP: Verify — real Supabase Auth verification (creates a session) ──
   async function verifyOTP(phone: string, token: string): Promise<boolean> {
-    // Try DB RPC first
-    try {
-      const res = await fetch(`${SB_URL}/rest/v1/rpc/verify_otp`, {
-        method: 'POST', headers: SB_H,
-        body: JSON.stringify({ p_phone: phone, p_code: token }),
-      });
-      if (res.ok && (await res.json()) === true) return true;
-    } catch { /* fall through */ }
-
-    // Fallback: verify against sessionStorage (works when DB RLS blocks insert)
-    const storedPhone   = sessionStorage.getItem('otp_phone');
-    const storedCode    = sessionStorage.getItem('otp_code');
-    const storedExpires = Number(sessionStorage.getItem('otp_expires') || 0);
-    if (storedPhone === phone && storedCode === token && Date.now() < storedExpires) {
-      sessionStorage.removeItem('otp_phone');
-      sessionStorage.removeItem('otp_code');
-      sessionStorage.removeItem('otp_expires');
-      return true;
-    }
-    return false;
+    const { data, error } = await supabase.auth.verifyOtp({
+      phone: toE164(phone),
+      token,
+      type: 'sms',
+    });
+    return !error && !!data?.session;
   }
 
   // ── Countdown ──
