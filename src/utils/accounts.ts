@@ -100,18 +100,20 @@ export type LoginResult =
 export async function verifyLogin(phone: string, password: string): Promise<LoginResult> {
   const p = normalizeEgyptianPhone(phone);
   try {
-    const res = await fetch(
-      `${SB_URL}/rest/v1/accounts?phone=eq.${encodeURIComponent(p)}&select=*&limit=1`,
-      { headers: SB_H }
-    );
+    // Server-side verification: the password is checked inside Postgres
+    // (bcrypt) and is NEVER sent back to the browser.
+    const res = await fetch(`${SB_URL}/rest/v1/rpc/verify_login`, {
+      method: 'POST',
+      headers: SB_H,
+      body: JSON.stringify({ p_phone: p, p_password: password }),
+    });
     if (res.ok) {
       const rows = await res.json();
-      if (rows[0]) {
-        // Normalize snake_case fields from Supabase to camelCase
-        const raw = rows[0];
+      const raw = Array.isArray(rows) ? rows[0] : rows;
+      if (raw && raw.phone) {
         const account: Account = {
           phone:     raw.phone,
-          password:  raw.password,
+          password:  '',                      // never stored/echoed client-side
           name:      raw.name,
           username:  raw.username,
           email:     raw.email,
@@ -119,22 +121,27 @@ export async function verifyLogin(phone: string, password: string): Promise<Logi
           city:      raw.city,
           createdAt: raw.created_at ?? raw.createdAt,
         };
-        if (account.password !== password) return { ok: false, reason: 'bad_password' };
-        // Migrate into localStorage so offline use works
-        const stored = lsAll();
-        if (!stored.some(a => a.phone === p)) lsSave([...stored, account]);
         return { ok: true, account };
       }
-      // Not in Supabase — fall through to check localStorage
+      // RPC returned no row → either wrong password or unknown number.
+      // Distinguish by checking existence (without reading the password).
+      try {
+        const ex = await fetch(
+          `${SB_URL}/rest/v1/accounts?phone=eq.${encodeURIComponent(p)}&select=phone&limit=1`,
+          { headers: SB_H }
+        );
+        const exRows = ex.ok ? await ex.json() : [];
+        return { ok: false, reason: (exRows && exRows.length) ? 'bad_password' : 'not_found' };
+      } catch {
+        return { ok: false, reason: 'bad_password' };
+      }
     }
   } catch {}
 
-  // localStorage fallback: covers accounts saved locally when Supabase insert failed
+  // localStorage fallback (covers accounts saved locally when Supabase was down)
   const account = lsAll().find(a => a.phone === p);
   if (!account) return { ok: false, reason: 'not_found' };
   if (account.password !== password) return { ok: false, reason: 'bad_password' };
-  // Try to sync this localStorage account up to Supabase now
-  sbInsert(account).catch(() => {});
   return { ok: true, account };
 }
 

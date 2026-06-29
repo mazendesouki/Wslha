@@ -210,8 +210,9 @@ import PageHero from '../components/PageHero.astro';
       const local = phone.startsWith('+20') ? '0' + phone.slice(3) : phone;
       const intl  = phone.startsWith('01')  ? '+2' + phone : phone;
       const orFilter = `or=(phone.eq.${encodeURIComponent(intl)},phone.eq.${encodeURIComponent(local)})`;
+      // Only need phone/name/role to gate login — never pull the password column.
       const res = await fetch(
-        `${SB_URL}/rest/v1/accounts?${orFilter}&select=*&limit=1`,
+        `${SB_URL}/rest/v1/accounts?${orFilter}&select=phone,name,role,status&limit=1`,
         { headers: SB_H }
       );
       if (!res.ok) return null;
