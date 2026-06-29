@@ -95,7 +95,8 @@
       try {
         // Server-side password check (bcrypt) — password never returned to the browser.
         const res  = await fetch(`${SB_URL}/rest/v1/rpc/verify_login`, {
-          method: 'POST', headers: SB_H,
+          method: 'POST',
+          headers: { ...SB_H, 'Content-Type': 'application/json' },
           body: JSON.stringify({ p_phone: local, p_password: password }),
         });
         const rows = res.ok ? await res.json() : [];
