@@ -1,0 +1,507 @@
+---
+import Layout from '../components/layout.astro';
+import PageHero from '../components/PageHero.astro';
+---
+
+<style>
+  .auth-section {
+    padding: var(--sp-16) var(--sp-6) var(--sp-20);
+    display: flex;
+    justify-content: center;
+  }
+
+  .auth-card {
+    background: var(--color-bg);
+    border: 1.5px solid var(--color-border);
+    border-radius: var(--radius-2xl);
+    padding: var(--sp-10);
+    width: 100%;
+    max-width: 420px;
+    box-shadow: var(--shadow-md);
+  }
+
+  .auth-card__title { font-size: var(--text-2xl); font-weight: var(--weight-black); margin-bottom: var(--sp-2); }
+  .auth-card__sub   { font-size: var(--text-sm); color: var(--color-text-muted); margin-bottom: var(--sp-8); }
+
+  /* Steps */
+  .step { display: none; }
+  .step.active { display: block; }
+
+  /* Field */
+  .field { margin-bottom: var(--sp-5); }
+  .field__label {
+    display: block; font-weight: var(--weight-bold);
+    font-size: var(--text-sm); margin-bottom: var(--sp-2); color: var(--color-text);
+  }
+  .field__input {
+    width: 100%; padding: var(--sp-3) var(--sp-4);
+    border: 2px solid var(--color-border); border-radius: var(--radius);
+    font-family: var(--font-body); font-size: var(--text-base);
+    outline: none; transition: border-color var(--ease);
+    direction: rtl; color: var(--color-text); background: var(--color-bg);
+  }
+  .field__input:focus { border-color: var(--color-primary); }
+  .field__input::placeholder { color: var(--color-text-faint); }
+
+  /* OTP boxes */
+  .otp-group {
+    display: flex;
+    gap: var(--sp-3);
+    justify-content: center;
+    margin: var(--sp-6) 0;
+    direction: ltr;
+  }
+  .otp-box {
+    width: 52px; height: 60px;
+    border: 2px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    font-family: var(--font-body);
+    font-size: 1.6rem; font-weight: var(--weight-black);
+    text-align: center; color: var(--color-text); background: var(--color-bg);
+    outline: none; transition: all var(--ease);
+    caret-color: transparent;
+  }
+  .otp-box:focus { border-color: var(--color-primary); background: var(--color-primary-light); }
+  .otp-box.filled { border-color: var(--color-primary); }
+  .otp-box.shake  {
+    animation: shake .35s ease;
+    border-color: #ef4444;
+  }
+  @keyframes shake {
+    0%,100% { transform: translateX(0); }
+    20%      { transform: translateX(-6px); }
+    60%      { transform: translateX(6px); }
+    80%      { transform: translateX(-3px); }
+  }
+
+  /* Phone display */
+  .phone-badge {
+    display: inline-flex; align-items: center; gap: var(--sp-2);
+    background: var(--color-primary-light); color: var(--color-primary);
+    border-radius: var(--radius-full); padding: var(--sp-1) var(--sp-4);
+    font-weight: var(--weight-bold); font-size: var(--text-sm);
+    margin-bottom: var(--sp-2);
+  }
+
+  /* Countdown */
+  .countdown-row {
+    display: flex; align-items: center; justify-content: center; gap: var(--sp-2);
+    font-size: var(--text-sm); color: var(--color-text-faint);
+    margin-bottom: var(--sp-5); text-align: center;
+  }
+  .countdown-num { font-weight: var(--weight-black); color: var(--color-primary); min-width: 32px; }
+  .resend-btn {
+    background: none; border: none; color: var(--color-primary);
+    font-family: var(--font-body); font-size: var(--text-sm);
+    font-weight: var(--weight-bold); cursor: pointer; text-decoration: underline;
+    display: none;
+  }
+  .resend-btn.visible { display: inline; }
+
+  /* Dev mode notice */
+  .dev-notice {
+    background: linear-gradient(135deg, #fffbeb, #fef3c7);
+    border: 2px solid #f59e0b;
+    border-radius: var(--radius-lg); padding: var(--sp-4) var(--sp-5);
+    font-size: var(--text-sm); margin-bottom: var(--sp-4);
+    display: none; text-align: center;
+  }
+  .dev-notice.visible { display: block; }
+  .dev-notice__label { color: #92400e; margin-bottom: var(--sp-2); font-weight: var(--weight-bold); }
+  .dev-notice__code {
+    font-weight: var(--weight-black); font-size: 2.2rem; letter-spacing: .25em;
+    color: #1d4ed8; display: block; margin-top: var(--sp-1); direction: ltr;
+    background: #fff; border-radius: var(--radius); padding: var(--sp-2) var(--sp-4);
+    border: 2px dashed #93c5fd; cursor: pointer; transition: background 0.2s;
+    user-select: all;
+  }
+  .dev-notice__code:hover { background: #eff6ff; }
+  .dev-notice__hint { font-size: 11px; color: #92400e; margin-top: var(--sp-1); }
+
+  /* Error */
+  .auth-error {
+    background: #FEE2E2; color: #B91C1C;
+    border-radius: var(--radius); padding: var(--sp-3) var(--sp-4);
+    font-size: var(--text-sm); margin-bottom: var(--sp-4); display: none;
+  }
+  .auth-error.is-visible { display: block; }
+  .auth-error a { color: inherit; font-weight: var(--weight-bold); text-decoration: underline; }
+
+  /* Submit */
+  .auth-submit {
+    width: 100%; padding: var(--sp-4); background: var(--color-primary);
+    color: #fff; border: none; border-radius: var(--radius);
+    font-family: var(--font-body); font-weight: var(--weight-black);
+    font-size: var(--text-base); cursor: pointer;
+    transition: background var(--ease), transform var(--ease);
+    margin-bottom: var(--sp-4);
+  }
+  .auth-submit:hover:not(:disabled) { background: var(--color-primary-dark); transform: translateY(-1px); }
+  .auth-submit:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+  .back-btn {
+    background: none; border: none; color: var(--color-text-faint);
+    font-family: var(--font-body); font-size: var(--text-sm);
+    cursor: pointer; display: flex; align-items: center; gap: var(--sp-1);
+    margin-bottom: var(--sp-5); padding: 0;
+  }
+  .back-btn:hover { color: var(--color-text); }
+
+  /* Divider */
+  .auth-divider {
+    display: flex; align-items: center; gap: var(--sp-3);
+    margin: var(--sp-6) 0; color: var(--color-text-faint); font-size: var(--text-sm);
+  }
+  .auth-divider::before, .auth-divider::after { content: ''; flex: 1; height: 1px; background: var(--color-border); }
+
+  .auth-actions { display: flex; flex-direction: column; gap: var(--sp-3); }
+  .auth-actions .btn { width: 100%; justify-content: center; text-align: center; }
+  .auth-footer { margin-top: var(--sp-6); text-align: center; font-size: var(--text-sm); color: var(--color-text-muted); }
+  .auth-footer a { color: var(--color-primary); font-weight: var(--weight-bold); }
+
+  @media (max-width: 460px) {
+    .auth-card { padding: var(--sp-6); }
+    .otp-box { width: 44px; height: 52px; font-size: 1.4rem; }
+    .otp-group { gap: var(--sp-2); }
+  }
+</style>
+
+<script>
+  import { isEgyptianMobile, normalizeEgyptianPhone, EG_PHONE_ERROR } from '../utils/phone';
+  import { supabase, SB_URL, SB_KEY, toE164 } from '../utils/supabaseClient';
+
+  const SB_H   = { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_KEY}`, 'Content-Type': 'application/json' };
+
+  // ── DOM ──
+  const step1     = document.getElementById('step-phone')!;
+  const step2     = document.getElementById('step-otp')!;
+  const errBox1   = document.getElementById('err1')!;
+  const errBox2   = document.getElementById('err2')!;
+  const devNotice = document.getElementById('dev-notice')!;
+  const devCode   = document.getElementById('dev-code')!;
+  const phoneBadge= document.getElementById('phone-badge')!;
+  const countEl   = document.getElementById('countdown')!;
+  const resendBtn = document.getElementById('resend-btn')!;
+  const sendBtn   = document.getElementById('send-btn')!  as HTMLButtonElement;
+  const verifyBtn = document.getElementById('verify-btn')! as HTMLButtonElement;
+  const phoneInp  = document.getElementById('login-phone')! as HTMLInputElement;
+  const otpBoxes  = Array.from(document.querySelectorAll<HTMLInputElement>('.otp-box'));
+  const backBtn   = document.getElementById('back-btn')!;
+
+  let currentPhone = '';
+  let countdownTimer: ReturnType<typeof setInterval> | null = null;
+
+  // ── Helpers ──
+  function showErr(el: HTMLElement, msg: string) {
+    el.innerHTML = msg;
+    el.classList.add('is-visible');
+  }
+  function hideErr(el: HTMLElement) { el.classList.remove('is-visible'); }
+
+  // ── Supabase account lookup (both phone formats) ──
+  async function fetchAccount(phone: string) {
+    try {
+      const local = phone.startsWith('+20') ? '0' + phone.slice(3) : phone;
+      const intl  = phone.startsWith('01')  ? '+2' + phone : phone;
+      const orFilter = `or=(phone.eq.${encodeURIComponent(intl)},phone.eq.${encodeURIComponent(local)})`;
+      // Only need phone/name/role to gate login — never pull the password column.
+      const res = await fetch(
+        `${SB_URL}/rest/v1/accounts?${orFilter}&select=phone,name,role,status&limit=1`,
+        { headers: SB_H }
+      );
+      if (!res.ok) return null;
+      const rows = await res.json();
+      return rows[0] ?? null;
+    } catch { return null; }
+  }
+
+  // ── OTP: Send — real SMS via Supabase Auth (Twilio) ──
+  //    The code is delivered by SMS only; it is NEVER shown on screen.
+  async function sendOTP(phone: string): Promise<void> {
+    devNotice.classList.remove('visible'); // no on-screen code anymore
+    const { error } = await supabase.auth.signInWithOtp({
+      phone: toE164(phone),
+      options: { shouldCreateUser: true }, // first OTP login links the existing account
+    });
+    if (error) {
+      throw new Error(
+        /rate|limit|too many/i.test(error.message)
+          ? 'تم إرسال عدد كبير من الرموز. انتظر قليلاً ثم أعد المحاولة.'
+          : 'تعذّر إرسال رمز التحقق عبر SMS. تأكد من الرقم وحاول مجدداً.'
+      );
+    }
+  }
+
+  // ── OTP: Verify — real Supabase Auth verification (creates a session) ──
+  async function verifyOTP(phone: string, token: string): Promise<boolean> {
+    const { data, error } = await supabase.auth.verifyOtp({
+      phone: toE164(phone),
+      token,
+      type: 'sms',
+    });
+    return !error && !!data?.session;
+  }
+
+  // ── Countdown ──
+  function startCountdown(secs = 300) {
+    clearCountdown();
+    let remaining = secs;
+    resendBtn.classList.remove('visible');
+    updateCountEl(remaining);
+    countdownTimer = setInterval(() => {
+      remaining--;
+      updateCountEl(remaining);
+      if (remaining <= 0) {
+        clearCountdown();
+        resendBtn.classList.add('visible');
+      }
+    }, 1000);
+  }
+  function clearCountdown() {
+    if (countdownTimer) { clearInterval(countdownTimer); countdownTimer = null; }
+  }
+  function updateCountEl(s: number) {
+    const m = Math.floor(s / 60).toString().padStart(2, '0');
+    const sec = (s % 60).toString().padStart(2, '0');
+    countEl.textContent = `${m}:${sec}`;
+  }
+
+  // ── Go to step 2 (call AFTER sendOTP so dev-notice stays visible) ──
+  function goToOTP(phone: string) {
+    currentPhone = phone;
+    phoneBadge.textContent = phone;
+    step1.classList.remove('active');
+    step2.classList.add('active');
+    otpBoxes.forEach(b => { b.value = ''; b.classList.remove('filled', 'shake'); });
+    hideErr(errBox2);
+    startCountdown(300);
+    setTimeout(() => otpBoxes[0]?.focus(), 100);
+  }
+
+  // ── Step 1: Send OTP — check registration first ──
+  sendBtn.addEventListener('click', async () => {
+    hideErr(errBox1);
+    const phone = phoneInp.value.trim();
+    if (!isEgyptianMobile(phone)) { showErr(errBox1, EG_PHONE_ERROR); return; }
+
+    sendBtn.disabled = true;
+    sendBtn.textContent = 'جاري التحقق...';
+
+    try {
+      const normalized = normalizeEgyptianPhone(phone);
+
+      // Block unregistered numbers before sending any OTP
+      const account = await fetchAccount(normalized);
+      if (!account) {
+        showErr(errBox1,
+          'هذا الرقم غير مسجّل في النظام. ' +
+          '<a href="/register">أنشئ حساباً جديداً</a> أو تواصل معنا.'
+        );
+        return;
+      }
+
+      // Use the phone exactly as stored in DB to keep everything consistent
+      const canonicalPhone = account.phone || normalized;
+      goToOTP(canonicalPhone);
+      await sendOTP(canonicalPhone);
+    } catch (e: any) {
+      showErr(errBox1, e.message || 'حدث خطأ، حاول مرة أخرى.');
+    } finally {
+      sendBtn.disabled = false;
+      sendBtn.textContent = 'أرسل كود التحقق ←';
+    }
+  });
+
+  // ── Resend ──
+  resendBtn.addEventListener('click', async () => {
+    resendBtn.classList.remove('visible');
+    hideErr(errBox2);
+    devNotice.classList.remove('visible');
+    otpBoxes.forEach(b => { b.value = ''; b.classList.remove('filled', 'shake'); });
+    try {
+      startCountdown(300);
+      await sendOTP(currentPhone);
+      otpBoxes[0].focus();
+    } catch (e: any) {
+      showErr(errBox2, e.message || 'فشل إعادة الإرسال.');
+    }
+  });
+
+  // ── Back ──
+  backBtn.addEventListener('click', () => {
+    clearCountdown();
+    step2.classList.remove('active');
+    step1.classList.add('active');
+    devNotice.classList.remove('visible');
+    hideErr(errBox2);
+  });
+
+  // ── OTP Box keyboard handling ──
+  otpBoxes.forEach((box, i) => {
+    box.addEventListener('keydown', (e) => {
+      if (e.key === 'Backspace') {
+        if (!box.value && i > 0) { otpBoxes[i - 1].focus(); otpBoxes[i - 1].value = ''; otpBoxes[i - 1].classList.remove('filled'); }
+        box.value = ''; box.classList.remove('filled');
+        e.preventDefault();
+      }
+      if (e.key === 'ArrowRight' && i > 0)         otpBoxes[i - 1].focus();
+      if (e.key === 'ArrowLeft'  && i < 5)         otpBoxes[i + 1].focus();
+    });
+    box.addEventListener('input', (e) => {
+      const v = box.value.replace(/\D/g, '').slice(-1);
+      box.value = v;
+      box.classList.toggle('filled', !!v);
+      if (v && i < 5) otpBoxes[i + 1].focus();
+      if (allFilled()) setTimeout(doVerify, 120);
+    });
+    box.addEventListener('paste', (e) => {
+      e.preventDefault();
+      const digits = (e.clipboardData?.getData('text') || '').replace(/\D/g, '').slice(0, 6);
+      digits.split('').forEach((d, j) => {
+        if (otpBoxes[j]) { otpBoxes[j].value = d; otpBoxes[j].classList.add('filled'); }
+      });
+      const next = Math.min(digits.length, 5);
+      otpBoxes[next].focus();
+      if (digits.length === 6) setTimeout(doVerify, 120);
+    });
+    box.addEventListener('focus', () => { box.select(); });
+  });
+
+  function allFilled() { return otpBoxes.every(b => b.value.length === 1); }
+  function getCode()   { return otpBoxes.map(b => b.value).join(''); }
+  function shakeBoxes(){ otpBoxes.forEach(b => { b.classList.remove('shake'); void b.offsetWidth; b.classList.add('shake'); }); }
+
+  // ── Step 2: Verify ──
+  verifyBtn.addEventListener('click', doVerify);
+
+  async function doVerify() {
+    if (!allFilled()) { showErr(errBox2, 'أدخل الكود المكوّن من 6 أرقام كاملاً.'); return; }
+    hideErr(errBox2);
+    verifyBtn.disabled = true;
+    verifyBtn.textContent = 'جاري التحقق...';
+
+    try {
+      const token = getCode();
+      const ok = await verifyOTP(currentPhone, token);
+
+      if (!ok) {
+        shakeBoxes();
+        otpBoxes.forEach(b => { b.value = ''; b.classList.remove('filled'); });
+        otpBoxes[0].focus();
+        showErr(errBox2, 'الكود غير صحيح أو انتهت صلاحيته. حاول مرة أخرى أو اضغط "أعد الإرسال".');
+        verifyBtn.disabled = false;
+        verifyBtn.textContent = 'تحقق وادخل ←';
+        return;
+      }
+
+      // Re-fetch account to get latest data for session
+      const account = await fetchAccount(currentPhone);
+      clearCountdown();
+      try {
+        // If a different user was logged in, clear their orders so new user starts clean
+        const prevRaw = localStorage.getItem('wslha_user');
+        const prevUser = prevRaw ? JSON.parse(prevRaw) : null;
+        if (prevUser?.phone && prevUser.phone !== currentPhone) {
+          // Remove the old user's per-phone orders key AND any legacy key
+          localStorage.removeItem('wslha_orders_' + prevUser.phone);
+          localStorage.removeItem('wslha_orders');
+        }
+
+        localStorage.setItem('wslha_user', JSON.stringify({
+          name: account?.name || '', phone: currentPhone,
+          role: account?.role || 'customer', city: account?.city || '',
+          loginAt: new Date().toISOString(),
+        }));
+      } catch {}
+
+      verifyBtn.textContent = '✅ تم الدخول، جاري التحويل...';
+      setTimeout(() => { window.location.href = '/orders'; }, 700);
+
+    } catch (e: any) {
+      showErr(errBox2, e.message || 'حدث خطأ، حاول مرة أخرى.');
+      verifyBtn.disabled = false;
+      verifyBtn.textContent = 'تحقق وادخل ←';
+    }
+  }
+
+  // Enter key on phone input
+  phoneInp.addEventListener('keydown', (e) => { if (e.key === 'Enter') sendBtn.click(); });
+</script>
+
+<Layout title="تسجيل الدخول" description="ادخل إلى حسابك في وصّلها" page="login">
+  <PageHero
+    badge="👤 حسابي"
+    title="تسجيل الدخول"
+    subtitle="أدخل رقمك وسنرسل لك كود التحقق"
+  />
+
+  <section class="auth-section">
+    <div class="auth-card">
+
+      <!-- ── Step 1: Phone ── -->
+      <div id="step-phone" class="step active">
+        <h2 class="auth-card__title">مرحباً بعودتك 👋</h2>
+        <p class="auth-card__sub">سنرسل كود التحقق إلى رقم جوالك</p>
+
+        <div id="err1" class="auth-error" role="alert" aria-live="polite"></div>
+
+        <div class="field">
+          <label class="field__label" for="login-phone">رقم الجوال</label>
+          <input class="field__input" type="tel" id="login-phone"
+            placeholder="010 1234 5678" inputmode="numeric"
+            maxlength="11" pattern="01[0125][0-9]{8}" required autocomplete="tel">
+        </div>
+
+        <button type="button" class="auth-submit" id="send-btn">
+          أرسل كود التحقق ←
+        </button>
+
+        <div class="auth-divider"><span>أو</span></div>
+        <div class="auth-actions">
+          <a href="/register" class="btn btn--outline">إنشاء حساب عميل جديد</a>
+          <a href="/driver" class="btn btn--accent">🚗 حساب سائق جديد</a>
+        </div>
+        <p class="auth-footer">مشكلة في الدخول؟ <a href="/contact">تواصل معنا</a></p>
+      </div>
+
+      <!-- ── Step 2: OTP ── -->
+      <div id="step-otp" class="step">
+        <button type="button" id="back-btn" class="back-btn">→ رجوع</button>
+
+        <h2 class="auth-card__title">أدخل كود التحقق 🔐</h2>
+        <p class="auth-card__sub">
+          تم إرسال كود مكوّن من 6 أرقام إلى<br>
+          <span class="phone-badge">📱 <span id="phone-badge"></span></span>
+        </p>
+
+        <div id="dev-notice" class="dev-notice" role="alert">
+          <div class="dev-notice__label">📱 كود التحقق الخاص بك</div>
+          <span id="dev-code" class="dev-notice__code"></span>
+          <div class="dev-notice__hint">اضغط على الكود للملء التلقائي</div>
+        </div>
+
+        <div id="err2" class="auth-error" role="alert" aria-live="polite"></div>
+
+        <div class="otp-group" aria-label="كود التحقق">
+          <input type="text" class="otp-box" inputmode="numeric" pattern="[0-9]" maxlength="1" autocomplete="one-time-code">
+          <input type="text" class="otp-box" inputmode="numeric" pattern="[0-9]" maxlength="1">
+          <input type="text" class="otp-box" inputmode="numeric" pattern="[0-9]" maxlength="1">
+          <input type="text" class="otp-box" inputmode="numeric" pattern="[0-9]" maxlength="1">
+          <input type="text" class="otp-box" inputmode="numeric" pattern="[0-9]" maxlength="1">
+          <input type="text" class="otp-box" inputmode="numeric" pattern="[0-9]" maxlength="1">
+        </div>
+
+        <div class="countdown-row">
+          <span>ينتهي الكود خلال</span>
+          <span class="countdown-num" id="countdown">05:00</span>
+          <button type="button" id="resend-btn" class="resend-btn">أعد الإرسال</button>
+        </div>
+
+        <button type="button" class="auth-submit" id="verify-btn">
+          تحقق وادخل ←
+        </button>
+      </div>
+
+    </div>
+  </section>
+</Layout>

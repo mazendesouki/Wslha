@@ -34,6 +34,7 @@
     "@capacitor/push-notifications": "^5.1.2",
     "@capacitor/splash-screen": "^5.0.8",
     "@capacitor/status-bar": "^5.0.8",
+    "@supabase/supabase-js": "^2.108.2",
     "@vercel/speed-insights": "^2.0.0"
   }
 }
