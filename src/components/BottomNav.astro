@@ -11,6 +11,7 @@ const navItems = [
   { href: '/profile', label: 'حسابي', emoji: '👤', page: 'profile' },
   { href: '/orders', label: 'الطلبات', emoji: '📦', page: 'orders' },
   { href: '/rides', label: 'رحلات', emoji: '🚖', page: 'rides' },
+  { href: '/settings', label: 'الإعدادات', emoji: '⚙️', page: 'settings' },
 ];
 ---
 
@@ -50,12 +51,13 @@ const navItems = [
     list-style: none;
     margin: 0;
     padding: 0;
-    justify-content: space-around;
+    justify-content: space-between;
     align-items: stretch;
   }
 
   .bottom-nav__item {
-    flex: 1;
+    flex: 1 1 0;
+    min-width: 0;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -66,16 +68,16 @@ const navItems = [
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 4px;
-    padding: 10px 4px;
+    gap: 3px;
+    padding: 7px 2px;
     width: 100%;
     height: 100%;
     text-decoration: none;
     color: #94A3B8;
     transition: color 0.3s ease, background 0.3s ease;
-    font-size: 11px;
+    font-size: 9.5px;
     font-weight: 600;
-    min-height: 56px;
+    min-height: 52px;
   }
 
   .bottom-nav__link:active {
@@ -87,7 +89,8 @@ const navItems = [
   }
 
   .bottom-nav__icon {
-    font-size: 20px;
+    font-size: 18px;
+    line-height: 1;
     display: inline-block;
     transition: transform 0.2s ease;
   }
