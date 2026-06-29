@@ -224,11 +224,12 @@ import PageHero from '../components/PageHero.astro';
       options: { shouldCreateUser: true }, // first OTP login links the existing account
     });
     if (error) {
-      throw new Error(
-        /rate|limit|too many/i.test(error.message)
-          ? 'تم إرسال عدد كبير من الرموز. انتظر قليلاً ثم أعد المحاولة.'
-          : 'تعذّر إرسال رمز التحقق عبر SMS. تأكد من الرقم وحاول مجدداً.'
-      );
+      console.error('[login] signInWithOtp error:', error);
+      if (/rate|limit|too many/i.test(error.message)) {
+        throw new Error('تم إرسال عدد كبير من الرموز. انتظر قليلاً ثم أعد المحاولة.');
+      }
+      // Surface the real provider error to help diagnose SMS delivery problems.
+      throw new Error('تعذّر إرسال SMS: ' + (error.message || 'خطأ غير معروف'));
     }
   }
 
@@ -302,8 +303,10 @@ import PageHero from '../components/PageHero.astro';
 
       // Use the phone exactly as stored in DB to keep everything consistent
       const canonicalPhone = account.phone || normalized;
-      goToOTP(canonicalPhone);
+      // Send the OTP FIRST; only advance to the code step if it actually succeeded,
+      // so any SMS/Twilio error is shown on this step instead of being hidden.
       await sendOTP(canonicalPhone);
+      goToOTP(canonicalPhone);
     } catch (e: any) {
       showErr(errBox1, e.message || 'حدث خطأ، حاول مرة أخرى.');
     } finally {
