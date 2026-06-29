@@ -125,27 +125,8 @@ import Layout from '../components/layout.astro';
     align-items: center; gap: 10px;
   }
   .recipient-box.visible { display: flex; }
-  .bottom-nav {
-    position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
-    width: 100%; max-width: 480px; background: #fff;
-    border-top: 1px solid #eee; display: flex; align-items: center;
-    z-index: 100; padding-bottom: env(safe-area-inset-bottom);
-  }
-  .bn-item {
-    flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px;
-    padding: 8px 0; text-decoration: none; border: none; background: none; cursor: pointer;
-    font-family: var(--font-body); color: #9ca3af;
-  }
-  .bn-item.active { color: #1a2340; }
-  .bn-item__icon { font-size: 1.3rem; }
-  .bn-item__lbl  { font-size: 10px; font-weight: 700; }
-  .bn-plus {
-    width: 52px; height: 52px; border-radius: 50%;
-    background: #1a2340; color: #fff; border: 4px solid #fff;
-    box-shadow: 0 2px 12px rgba(26,35,64,.4); font-size: 1.6rem;
-    display: flex; align-items: center; justify-content: center;
-    margin-top: -20px; cursor: pointer; flex-shrink: 0; text-decoration: none;
-  }
+  /* (Removed the page's own .bottom-nav / .bn-item / .bn-plus — the bottom
+     navigation now comes only from the global Layout to avoid duplication.) */
   .auth-box {
     background: #fff; border-radius: 16px; padding: 48px 24px;
     text-align: center; margin: 24px 14px; box-shadow: 0 2px 12px rgba(0,0,0,.07);
@@ -263,13 +244,8 @@ import Layout from '../components/layout.astro';
     </div>
   </div>
 
-  <nav class="bottom-nav">
-    <a href="/" class="bn-item"><span class="bn-item__icon">🏠</span><span class="bn-item__lbl">الرئيسية</span></a>
-    <a href="/orders" class="bn-item"><span class="bn-item__icon">📋</span><span class="bn-item__lbl">طلباتي</span></a>
-    <a href="/rides" class="bn-plus">+</a>
-    <a href="/wallet" class="bn-item active"><span class="bn-item__icon">💳</span><span class="bn-item__lbl">المحفظة</span></a>
-    <a href="/profile" class="bn-item"><span class="bn-item__icon">⚙️</span><span class="bn-item__lbl">الإعدادات</span></a>
-  </nav>
+  <!-- Bottom navigation is provided globally by the Layout (BottomNav.astro);
+       the page no longer renders its own to avoid a duplicate/overlapping bar. -->
   <div class="w-toast" id="w-toast"></div>
 </Layout>
 
