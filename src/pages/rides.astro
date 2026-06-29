@@ -777,22 +777,7 @@ import { POPULAR_PLACES, PLACES, PLACE_CATEGORIES, CATEGORY_COLORS } from '../da
         <!-- Booking card -->
         <div id="booking-card" class="booking-card">
 
-          <!-- ── Trip type toggle ── -->
-          <div class="type-bar">
-            <span class="type-bar__label">نوع الرحلة</span>
-            <div class="type-btns">
-              <button class="type-btn active" id="btn-local" type="button">
-                <span class="type-btn__icon">🚗</span>
-                <span class="type-btn__name">محلية</span>
-                <span class="type-btn__desc">داخل دمياط • عداد</span>
-              </button>
-              <button class="type-btn" id="btn-intl" type="button">
-                <span class="type-btn__icon">✈️</span>
-                <span class="type-btn__name">مطار / دولية</span>
-                <span class="type-btn__desc">توصيل للمطار • سعر ثابت</span>
-              </button>
-            </div>
-          </div>
+          <!-- Trip-type toggle removed — only local rides (داخل دمياط) are offered. -->
 
           <!-- ══════════════════════════════════════
                LOCAL PANEL
@@ -2112,20 +2097,18 @@ import { POPULAR_PLACES, PLACES, PLACE_CATEGORIES, CATEGORY_COLORS } from '../da
   // ═══════════════════════════════════════════
   let tripType = 'local';
 
-  function switchType(type) {
-    tripType = type;
-    const isIntl = type === 'intl';
-    document.getElementById('btn-local').classList.toggle('active', !isIntl);
-    document.getElementById('btn-intl').classList.toggle('active', isIntl);
-    document.getElementById('local-panel').style.display = isIntl ? 'none' : '';
-    document.getElementById('intl-panel').style.display  = isIntl ? ''     : 'none';
-    // Update fare guide
-    renderFareGuide(isIntl);
+  function switchType() {
+    // Airport/intl trips removed — local is the only ride type.
+    tripType = 'local';
+    const localPanel = document.getElementById('local-panel');
+    const intlPanel  = document.getElementById('intl-panel');
+    if (localPanel) localPanel.style.display = '';
+    if (intlPanel)  intlPanel.style.display  = 'none';
+    renderFareGuide(false);
     clearMap();
   }
 
-  document.getElementById('btn-local').addEventListener('click', () => switchType('local'));
-  document.getElementById('btn-intl').addEventListener('click',  () => switchType('intl'));
+  // (Trip-type toggle buttons removed — no listeners needed.)
 
   // ═══════════════════════════════════════════
   //  LOCAL FORM
