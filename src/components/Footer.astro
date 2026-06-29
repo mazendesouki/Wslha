@@ -249,11 +249,17 @@ import { FOOTER_LINKS } from '../data/nav';
     width: calc(100vw - var(--sp-8));
     transition: transform 0.35s cubic-bezier(.34,1.56,.64,1), opacity 0.3s;
     opacity: 0;
+    /* When not shown, the toast must never intercept taps meant for the
+       bottom navigation (it stays in the layout because .app-toast sets
+       display:flex, which overrides the [hidden] attribute). */
+    pointer-events: none;
   }
+  .app-toast[hidden] { display: none; }
 
   .app-toast.is-visible {
     transform: translateX(-50%) translateY(0);
     opacity: 1;
+    pointer-events: auto;
   }
 
   /* On mobile, lift the toast above the bottom navigation so it

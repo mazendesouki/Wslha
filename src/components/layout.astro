@@ -232,9 +232,18 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site ?? 'https://wslha.co
     .pwa-banner {
       position: fixed;
       bottom: 0; left: 0; right: 0;
-      z-index: 9999;
+      z-index: 40;
       animation: pwa-slide-up .4s ease-out 1.5s both;
       padding-bottom: env(safe-area-inset-bottom, 0);
+    }
+    /* On mobile the bottom navigation occupies the bottom of the screen.
+       Lift the install banner above it AND keep it below the nav's z-index
+       so it can never intercept the navigation's taps. */
+    @media (max-width: 767px) {
+      .pwa-banner {
+        bottom: calc(70px + env(safe-area-inset-bottom, 0px));
+        padding-bottom: 0;
+      }
     }
     .pwa-banner.pwa-hidden { display: none; }
     .pwa-banner__inner {
