@@ -325,27 +325,45 @@ import Layout from '../components/layout.astro';
     } catch { document.getElementById('tx-list').innerHTML = '<div class="tx-empty">تعذّر تحميل المعاملات</div>'; }
   }
 
+  // Map RPC error codes → friendly Arabic messages
+  function rpcError(txt) {
+    if (/insufficient_funds/.test(txt))     return 'رصيدك غير كافٍ';
+    if (/amount_too_small/.test(txt))       return 'المبلغ أقل من الحد المسموح';
+    if (/destination_required/.test(txt))   return 'أدخل رقم التحويل';
+    if (/recipient_not_found/.test(txt))    return 'لم يُعثر على هذا المستخدم';
+    if (/same_account/.test(txt))           return 'لا يمكن التحويل لنفس الحساب';
+    return 'حدث خطأ، حاول مرة أخرى';
+  }
+  async function callRpc(name, payload) {
+    var res = await fetch(SB_URL + '/rest/v1/rpc/' + name, {
+      method: 'POST', headers: SB_H, body: JSON.stringify(payload)
+    });
+    var body = await res.text();
+    if (!res.ok) { throw new Error(rpcError(body)); }
+    try { return JSON.parse(body); } catch { return null; }
+  }
+
+  // ── Deposit: never changes the balance on the client. It records a
+  //    top-up request the admin confirms once the real money arrives
+  //    (Paymob online charging is wired separately). No forgery possible.
   document.getElementById('charge-btn').addEventListener('click', async function() {
     if (!user) return;
     var amt = parseFloat(document.getElementById('charge-amount').value);
     if (!amt || amt < 10) { toast('أدخل مبلغاً لا يقل عن 10 جنيه', false); return; }
     var method = document.querySelector('input[name="charge-method"]:checked').value;
     var methodLabel = { vodafone:'فودافون كاش', instapay:'إنستاباي', bank:'تحويل بنكي' }[method];
-    var btn = this; btn.disabled = true; btn.textContent = 'جاري المعالجة...';
+    var btn = this; btn.disabled = true; btn.textContent = 'جاري الإرسال...';
     try {
-      var res = await fetch(SB_URL + '/rest/v1/wallets?phone=eq.' + encodeURIComponent(user.phone) + '&select=balance', { headers: SB_H });
-      var rows = await res.json();
-      var currBal = (Array.isArray(rows) && rows[0]) ? Number(rows[0].balance || 0) : 0;
-      var newBal = currBal + amt;
-      await fetch(SB_URL + '/rest/v1/wallets', { method:'POST', headers: Object.assign({}, SB_H, {Prefer:'resolution=merge-duplicates,return=minimal'}), body: JSON.stringify({ phone: user.phone, balance: newBal, updated_at: new Date().toISOString() }) });
-      await fetch(SB_URL + '/rest/v1/wallet_transactions', { method:'POST', headers: Object.assign({}, SB_H, {Prefer:'return=minimal'}), body: JSON.stringify({ id:'wtx-'+Date.now(), phone:user.phone, amount:amt, type:'topup', note:'إيداع عبر '+methodLabel, created_at:new Date().toISOString() }) });
-      document.getElementById('balance-val').textContent = newBal.toLocaleString('ar-EG');
-      document.getElementById('withdraw-avail').textContent = newBal.toLocaleString('ar-EG');
-      closeSheet('sheet-deposit'); toast('✅ تم إيداع ' + amt + ' ج.م بنجاح!'); loadLog();
-    } catch { toast('حدث خطأ، حاول مرة أخرى', false); }
+      await callRpc('request_deposit', { p_phone:user.phone, p_amount:amt, p_method:methodLabel, p_note:'طلب إيداع عبر '+methodLabel });
+      closeSheet('sheet-deposit');
+      toast('✅ تم استلام طلب الإيداع — سيُضاف الرصيد بعد تأكيد التحويل');
+    } catch(ex) { toast(ex.message, false); }
     btn.disabled = false; btn.textContent = 'إيداع الرصيد';
   });
 
+  // ── Withdraw: the server reserves the funds atomically (checks the
+  //    balance, deducts, logs) and opens an admin payout request. The
+  //    client cannot set its own balance — it only calls the RPC.
   document.getElementById('withdraw-btn').addEventListener('click', async function() {
     if (!user) return;
     var amt = parseFloat(document.getElementById('withdraw-amount').value);
@@ -353,21 +371,16 @@ import Layout from '../components/layout.astro';
     var note = document.getElementById('withdraw-note').value.trim();
     if (!amt || amt < 10) { toast('أدخل مبلغاً لا يقل عن 10 جنيه', false); return; }
     if (!dest) { toast('أدخل رقم فودافون كاش أو إنستاباي', false); return; }
-    var res = await fetch(SB_URL + '/rest/v1/wallets?phone=eq.' + encodeURIComponent(user.phone) + '&select=balance', { headers: SB_H });
-    var rows = await res.json();
-    var currBal = (Array.isArray(rows) && rows[0]) ? Number(rows[0].balance || 0) : 0;
-    if (amt > currBal) { toast('رصيدك غير كافٍ (المتاح: ' + currBal + ' ج.م)', false); return; }
     var btn = this; btn.disabled = true; btn.textContent = 'جاري المعالجة...';
     try {
-      var newBal = currBal - amt;
-      await fetch(SB_URL + '/rest/v1/wallets', { method:'POST', headers: Object.assign({}, SB_H, {Prefer:'resolution=merge-duplicates,return=minimal'}), body: JSON.stringify({ phone:user.phone, balance:newBal, updated_at:new Date().toISOString() }) });
-      await fetch(SB_URL + '/rest/v1/wallet_transactions', { method:'POST', headers: Object.assign({}, SB_H, {Prefer:'return=minimal'}), body: JSON.stringify({ id:'wtx-'+Date.now(), phone:user.phone, amount:-amt, type:'withdrawal', note:(note||'سحب رصيد')+' — إلى '+dest, created_at:new Date().toISOString() }) });
-      document.getElementById('balance-val').textContent = newBal.toLocaleString('ar-EG');
-      document.getElementById('withdraw-avail').textContent = newBal.toLocaleString('ar-EG');
+      await callRpc('request_withdrawal', { p_phone:user.phone, p_amount:amt, p_dest:dest, p_note:note || null });
       document.getElementById('withdraw-amount').value = '';
       document.getElementById('withdraw-dest').value = '';
-      closeSheet('sheet-withdraw'); toast('✅ تم طلب سحب ' + amt + ' ج.م'); loadLog();
-    } catch { toast('حدث خطأ، حاول مرة أخرى', false); }
+      document.getElementById('withdraw-note').value = '';
+      closeSheet('sheet-withdraw');
+      toast('✅ تم طلب سحب ' + amt + ' ج.م — قيد المراجعة');
+      loadWallet(); loadLog();
+    } catch(ex) { toast(ex.message, false); }
     btn.disabled = false; btn.textContent = 'طلب سحب';
   });
 
@@ -392,6 +405,8 @@ import Layout from '../components/layout.astro';
     }, 600);
   });
 
+  // ── Transfer: a single atomic SECURITY DEFINER RPC moves the money on
+  //    the server (balance check + both ledger entries). No client write.
   document.getElementById('transfer-btn').addEventListener('click', async function() {
     if (!user) return;
     var toPhone = document.getElementById('transfer-phone').value.trim();
@@ -400,33 +415,28 @@ import Layout from '../components/layout.astro';
     if (!toPhone) { toast('أدخل رقم المستلم', false); return; }
     if (toPhone === user.phone) { toast('لا يمكن التحويل لنفس الحساب', false); return; }
     if (!amt || amt < 1) { toast('أدخل مبلغاً صحيحاً', false); return; }
+
+    // Resolve the recipient to their canonical stored phone (handles 01.. / +20..)
     var toIntl = toPhone.startsWith('01') ? '+2'+toPhone : toPhone;
     var toLocal = toPhone.startsWith('+20') ? '0'+toPhone.slice(3) : toPhone;
-    var res = await fetch(SB_URL+'/rest/v1/wallets?phone=eq.'+encodeURIComponent(user.phone)+'&select=balance', { headers: SB_H });
-    var rows = await res.json();
-    var currBal = (Array.isArray(rows) && rows[0]) ? Number(rows[0].balance||0) : 0;
-    if (amt > currBal) { toast('رصيدك غير كافٍ', false); return; }
     var filter = 'or=(phone.eq.'+encodeURIComponent(toIntl)+',phone.eq.'+encodeURIComponent(toLocal)+')';
     var rRes = await fetch(SB_URL+'/rest/v1/accounts?'+filter+'&select=name,phone&limit=1', { headers: SB_H });
     var rRows = await rRes.json();
     if (!Array.isArray(rRows)||!rRows[0]) { toast('لم يُعثر على هذا المستخدم', false); return; }
     var recipientPhone = rRows[0].phone;
+    if (recipientPhone === user.phone) { toast('لا يمكن التحويل لنفس الحساب', false); return; }
+
     var btn = this; btn.disabled = true; btn.textContent = 'جاري التحويل...';
     try {
-      var now = new Date().toISOString(); var newSenderBal = currBal - amt;
-      await fetch(SB_URL+'/rest/v1/wallets', { method:'POST', headers: Object.assign({},SB_H,{Prefer:'resolution=merge-duplicates,return=minimal'}), body: JSON.stringify({phone:user.phone,balance:newSenderBal,updated_at:now}) });
-      await fetch(SB_URL+'/rest/v1/wallet_transactions', { method:'POST', headers: Object.assign({},SB_H,{Prefer:'return=minimal'}), body: JSON.stringify({id:'wtx-out-'+Date.now(),phone:user.phone,amount:-amt,type:'transfer_out',note:(note||'تحويل')+' → '+recipientPhone,created_at:now}) });
-      var rBalRes = await fetch(SB_URL+'/rest/v1/wallets?phone=eq.'+encodeURIComponent(recipientPhone)+'&select=balance', { headers: SB_H });
-      var rBalRows = await rBalRes.json();
-      var recBal = (Array.isArray(rBalRows)&&rBalRows[0]) ? Number(rBalRows[0].balance||0) : 0;
-      await fetch(SB_URL+'/rest/v1/wallets', { method:'POST', headers: Object.assign({},SB_H,{Prefer:'resolution=merge-duplicates,return=minimal'}), body: JSON.stringify({phone:recipientPhone,balance:recBal+amt,updated_at:now}) });
-      await fetch(SB_URL+'/rest/v1/wallet_transactions', { method:'POST', headers: Object.assign({},SB_H,{Prefer:'return=minimal'}), body: JSON.stringify({id:'wtx-in-'+Date.now(),phone:recipientPhone,amount:amt,type:'transfer_in',note:(note||'تحويل')+' ← '+user.phone,created_at:now}) });
-      document.getElementById('balance-val').textContent = newSenderBal.toLocaleString('ar-EG');
+      await callRpc('wallet_transfer', { p_from:user.phone, p_to:recipientPhone, p_amount:amt, p_note:note || null });
       document.getElementById('transfer-phone').value = '';
       document.getElementById('transfer-amount').value = '';
+      document.getElementById('transfer-note').value = '';
       document.getElementById('transfer-recipient').classList.remove('visible');
-      closeSheet('sheet-transfer'); toast('✅ تم تحويل ' + amt + ' ج.م بنجاح!'); loadLog();
-    } catch { toast('حدث خطأ، حاول مرة أخرى', false); }
+      closeSheet('sheet-transfer');
+      toast('✅ تم تحويل ' + amt + ' ج.م بنجاح!');
+      loadWallet(); loadLog();
+    } catch(ex) { toast(ex.message, false); }
     btn.disabled = false; btn.textContent = 'تحويل الآن';
   });
 </script>
