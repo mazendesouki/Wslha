@@ -276,7 +276,9 @@ import PageHero from '../components/PageHero.astro';
   // This closes the account-takeover hole of showing the code on screen.
   async function sendResetOTP(phone: string): Promise<void> {
     fpDev.classList.remove('visible');
-    const r = await fetch(`${SB_URL}/functions/v1/request-password-reset`, {
+    // NOTE: the deployed edge function slug is "swift-processor" (its code is
+    // the request-password-reset logic). Keep this in sync with the function name.
+    const r = await fetch(`${SB_URL}/functions/v1/swift-processor`, {
       method: 'POST', headers: SB_H, body: JSON.stringify({ phone }),
     });
     if (!r.ok) {
