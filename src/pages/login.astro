@@ -42,6 +42,15 @@ import PageHero from '../components/PageHero.astro';
   }
   .field__input:focus { border-color: var(--color-primary); }
   .field__input::placeholder { color: var(--color-text-faint); }
+  .field__input[type="password"] { direction: ltr; text-align: right; }
+
+  /* Forgot-password link */
+  .forgot-link {
+    display: block; text-align: left; margin: calc(-1 * var(--sp-2)) 0 var(--sp-5);
+    background: none; border: none; padding: 0; cursor: pointer;
+    font-family: var(--font-body); font-size: var(--text-sm);
+    font-weight: var(--weight-bold); color: var(--color-primary); text-decoration: underline;
+  }
 
   /* OTP boxes */
   .otp-group {
@@ -83,22 +92,7 @@ import PageHero from '../components/PageHero.astro';
     margin-bottom: var(--sp-2);
   }
 
-  /* Countdown */
-  .countdown-row {
-    display: flex; align-items: center; justify-content: center; gap: var(--sp-2);
-    font-size: var(--text-sm); color: var(--color-text-faint);
-    margin-bottom: var(--sp-5); text-align: center;
-  }
-  .countdown-num { font-weight: var(--weight-black); color: var(--color-primary); min-width: 32px; }
-  .resend-btn {
-    background: none; border: none; color: var(--color-primary);
-    font-family: var(--font-body); font-size: var(--text-sm);
-    font-weight: var(--weight-bold); cursor: pointer; text-decoration: underline;
-    display: none;
-  }
-  .resend-btn.visible { display: inline; }
-
-  /* Dev mode notice */
+  /* Dev / on-screen code notice (used only when SMS provider is unavailable) */
   .dev-notice {
     background: linear-gradient(135deg, #fffbeb, #fef3c7);
     border: 2px solid #f59e0b;
@@ -168,296 +162,248 @@ import PageHero from '../components/PageHero.astro';
 
 <script>
   import { isEgyptianMobile, normalizeEgyptianPhone, EG_PHONE_ERROR } from '../utils/phone';
-  import { supabase, SB_URL, SB_KEY, toE164 } from '../utils/supabaseClient';
+  import { validatePassword } from '../utils/password';
+  import { verifyLogin } from '../utils/accounts';
+  import { SB_URL, SB_KEY } from '../utils/supabaseClient';
 
-  const SB_H   = { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_KEY}`, 'Content-Type': 'application/json' };
+  const SB_H = { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}`, 'Content-Type': 'application/json' };
 
-  // ── DOM ──
-  const step1     = document.getElementById('step-phone')!;
-  const step2     = document.getElementById('step-otp')!;
-  const errBox1   = document.getElementById('err1')!;
-  const errBox2   = document.getElementById('err2')!;
-  const devNotice = document.getElementById('dev-notice')!;
-  const devCode   = document.getElementById('dev-code')!;
-  const phoneBadge= document.getElementById('phone-badge')!;
-  const countEl   = document.getElementById('countdown')!;
-  const resendBtn = document.getElementById('resend-btn')!;
-  const sendBtn   = document.getElementById('send-btn')!  as HTMLButtonElement;
-  const verifyBtn = document.getElementById('verify-btn')! as HTMLButtonElement;
-  const phoneInp  = document.getElementById('login-phone')! as HTMLInputElement;
-  const otpBoxes  = Array.from(document.querySelectorAll<HTMLInputElement>('.otp-box'));
-  const backBtn   = document.getElementById('back-btn')!;
-
-  let currentPhone = '';
-  let countdownTimer: ReturnType<typeof setInterval> | null = null;
-
-  // ── Helpers ──
-  function showErr(el: HTMLElement, msg: string) {
-    el.innerHTML = msg;
-    el.classList.add('is-visible');
-  }
+  const $ = (id: string) => document.getElementById(id)!;
+  function showErr(el: HTMLElement, msg: string) { el.innerHTML = msg; el.classList.add('is-visible'); }
   function hideErr(el: HTMLElement) { el.classList.remove('is-visible'); }
 
-  // ── Supabase account lookup (both phone formats) ──
-  async function fetchAccount(phone: string) {
+  function dashboardFor(role: string): string {
+    if (role === 'admin')    return '/admin';
+    if (role === 'driver')   return '/driver-dashboard';
+    if (role === 'merchant') return '/merchant-dashboard';
+    return '/orders';
+  }
+
+  function storeSession(account: any, phone: string) {
     try {
-      const local = phone.startsWith('+20') ? '0' + phone.slice(3) : phone;
-      const intl  = phone.startsWith('01')  ? '+2' + phone : phone;
-      const orFilter = `or=(phone.eq.${encodeURIComponent(intl)},phone.eq.${encodeURIComponent(local)})`;
-      // Only need phone/name/role to gate login — never pull the password column.
-      const res = await fetch(
-        `${SB_URL}/rest/v1/accounts?${orFilter}&select=phone,name,role,status&limit=1`,
-        { headers: SB_H }
-      );
+      const prevRaw = localStorage.getItem('wslha_user');
+      const prev = prevRaw ? JSON.parse(prevRaw) : null;
+      if (prev?.phone && prev.phone !== phone) {
+        localStorage.removeItem('wslha_orders_' + prev.phone);
+        localStorage.removeItem('wslha_orders');
+      }
+    } catch {}
+    localStorage.setItem('wslha_user', JSON.stringify({
+      name: account?.name || '', phone,
+      role: account?.role || 'customer', city: account?.city || '',
+      loginAt: new Date().toISOString(),
+    }));
+  }
+
+  /* ─────────────────────────  STEP 1: PASSWORD LOGIN  ───────────────────────── */
+  const loginPhone = $('login-phone') as HTMLInputElement;
+  const loginPass  = $('login-pass')  as HTMLInputElement;
+  const loginBtn   = $('login-btn')   as HTMLButtonElement;
+  const errLogin   = $('err-login');
+
+  async function doLogin() {
+    hideErr(errLogin);
+    const phone = loginPhone.value.trim();
+    const pass  = loginPass.value;
+    if (!isEgyptianMobile(phone)) { showErr(errLogin, EG_PHONE_ERROR); return; }
+    if (!pass) { showErr(errLogin, 'أدخل كلمة المرور.'); return; }
+
+    loginBtn.disabled = true; loginBtn.textContent = 'جاري الدخول...';
+    try {
+      const res = await verifyLogin(phone, pass);
+      if (!res.ok) {
+        showErr(errLogin, res.reason === 'not_found'
+          ? 'هذا الرقم غير مسجّل. <a href="/register">أنشئ حساباً جديداً</a>.'
+          : 'رقم الجوال أو كلمة المرور غير صحيحة.');
+        return;
+      }
+      storeSession(res.account, res.account.phone || normalizeEgyptianPhone(phone));
+      loginBtn.textContent = '✅ تم الدخول، جاري التحويل...';
+      setTimeout(() => { window.location.href = dashboardFor(res.account.role); }, 500);
+    } catch {
+      showErr(errLogin, 'حدث خطأ، حاول مرة أخرى.');
+    } finally {
+      if (!loginBtn.textContent!.startsWith('✅')) { loginBtn.disabled = false; loginBtn.textContent = 'دخول ←'; }
+    }
+  }
+  loginBtn.addEventListener('click', doLogin);
+  loginPass.addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+  loginPhone.addEventListener('keydown', e => { if (e.key === 'Enter') loginPass.focus(); });
+
+  /* ─────────────────────────  FORGOT PASSWORD  ───────────────────────── */
+  const stepLogin = $('step-login');
+  const stepFp    = $('step-fp');
+  const fpPhone   = $('fp-phone') as HTMLInputElement;
+  const fpPass    = $('fp-pass')  as HTMLInputElement;
+  const fpPass2   = $('fp-pass2') as HTMLInputElement;
+  const fpSendBtn = $('fp-send-btn') as HTMLButtonElement;
+  const fpSetBtn  = $('fp-set-btn')  as HTMLButtonElement;
+  const errFp     = $('err-fp');
+  const fpBadge   = $('fp-badge');
+  const fpDev     = $('fp-dev-notice');
+  const fpDevCode = $('fp-dev-code');
+  const fpOtpBoxes = Array.from(document.querySelectorAll<HTMLInputElement>('.otp-box'));
+  const fpSendArea = $('fp-send-area');
+  const fpResetArea = $('fp-reset-area');
+  let fpCurrentPhone = '';
+
+  $('forgot-link').addEventListener('click', () => {
+    stepLogin.classList.remove('active'); stepFp.classList.add('active');
+    fpSendArea.style.display = ''; fpResetArea.style.display = 'none';
+    hideErr(errFp); fpDev.classList.remove('visible');
+    fpPhone.value = loginPhone.value.trim();
+    setTimeout(() => fpPhone.focus(), 60);
+  });
+  $('fp-back-btn').addEventListener('click', () => {
+    stepFp.classList.remove('active'); stepLogin.classList.add('active');
+  });
+
+  // Account lookup (both phone formats), returns the canonical stored phone or null.
+  async function findAccountPhone(normalized: string): Promise<string | null> {
+    try {
+      const local = normalized;
+      const intl  = normalized.startsWith('01') ? '+2' + normalized : normalized;
+      const orF = `or=(phone.eq.${encodeURIComponent(intl)},phone.eq.${encodeURIComponent(local)})`;
+      const res = await fetch(`${SB_URL}/rest/v1/accounts?${orF}&select=phone&limit=1`, { headers: SB_H });
       if (!res.ok) return null;
       const rows = await res.json();
-      return rows[0] ?? null;
+      return rows[0]?.phone ?? null;
     } catch { return null; }
   }
 
-  // ── OTP: Send — real SMS via Supabase Auth (Twilio) ──
-  //    The code is delivered by SMS only; it is NEVER shown on screen.
-  async function sendOTP(phone: string): Promise<void> {
-    devNotice.classList.remove('visible'); // no on-screen code anymore
-    const { error } = await supabase.auth.signInWithOtp({
-      phone: toE164(phone),
-      options: { shouldCreateUser: true }, // first OTP login links the existing account
+  // Send a recovery OTP. Stored in the otps table (validated server-side by
+  // reset_password). Until a real SMS provider is connected, the code is shown
+  // on screen so recovery still works.
+  async function sendResetOTP(phone: string): Promise<void> {
+    const arr = new Uint32Array(1); crypto.getRandomValues(arr);
+    const code = String(100000 + (arr[0] % 900000));
+    await fetch(`${SB_URL}/rest/v1/otps?phone=eq.${encodeURIComponent(phone)}`, { method: 'DELETE', headers: SB_H }).catch(() => {});
+    const r = await fetch(`${SB_URL}/rest/v1/otps`, {
+      method: 'POST', headers: { ...SB_H, Prefer: 'return=minimal' },
+      body: JSON.stringify({ phone, code }),
     });
-    if (error) {
-      console.error('[login] signInWithOtp error:', error);
-      if (/rate|limit|too many/i.test(error.message)) {
-        throw new Error('تم إرسال عدد كبير من الرموز. انتظر قليلاً ثم أعد المحاولة.');
-      }
-      // Surface the real provider error to help diagnose SMS delivery problems.
-      throw new Error('تعذّر إرسال SMS: ' + (error.message || 'خطأ غير معروف'));
-    }
+    if (!r.ok) throw new Error('send_failed');
+    fpDevCode.textContent = code;
+    fpDevCode.onclick = () => {
+      code.split('').forEach((d, i) => { if (fpOtpBoxes[i]) { fpOtpBoxes[i].value = d; fpOtpBoxes[i].classList.add('filled'); } });
+    };
+    fpDev.classList.add('visible');
   }
 
-  // ── OTP: Verify — real Supabase Auth verification (creates a session) ──
-  async function verifyOTP(phone: string, token: string): Promise<boolean> {
-    const { data, error } = await supabase.auth.verifyOtp({
-      phone: toE164(phone),
-      token,
-      type: 'sms',
-    });
-    return !error && !!data?.session;
-  }
-
-  // ── Countdown ──
-  function startCountdown(secs = 300) {
-    clearCountdown();
-    let remaining = secs;
-    resendBtn.classList.remove('visible');
-    updateCountEl(remaining);
-    countdownTimer = setInterval(() => {
-      remaining--;
-      updateCountEl(remaining);
-      if (remaining <= 0) {
-        clearCountdown();
-        resendBtn.classList.add('visible');
-      }
-    }, 1000);
-  }
-  function clearCountdown() {
-    if (countdownTimer) { clearInterval(countdownTimer); countdownTimer = null; }
-  }
-  function updateCountEl(s: number) {
-    const m = Math.floor(s / 60).toString().padStart(2, '0');
-    const sec = (s % 60).toString().padStart(2, '0');
-    countEl.textContent = `${m}:${sec}`;
-  }
-
-  // ── Go to step 2 (call AFTER sendOTP so dev-notice stays visible) ──
-  function goToOTP(phone: string) {
-    currentPhone = phone;
-    phoneBadge.textContent = phone;
-    step1.classList.remove('active');
-    step2.classList.add('active');
-    otpBoxes.forEach(b => { b.value = ''; b.classList.remove('filled', 'shake'); });
-    hideErr(errBox2);
-    startCountdown(300);
-    setTimeout(() => otpBoxes[0]?.focus(), 100);
-  }
-
-  // ── Step 1: Send OTP — check registration first ──
-  sendBtn.addEventListener('click', async () => {
-    hideErr(errBox1);
-    const phone = phoneInp.value.trim();
-    if (!isEgyptianMobile(phone)) { showErr(errBox1, EG_PHONE_ERROR); return; }
-
-    sendBtn.disabled = true;
-    sendBtn.textContent = 'جاري التحقق...';
-
+  fpSendBtn.addEventListener('click', async () => {
+    hideErr(errFp);
+    const phone = fpPhone.value.trim();
+    if (!isEgyptianMobile(phone)) { showErr(errFp, EG_PHONE_ERROR); return; }
+    fpSendBtn.disabled = true; fpSendBtn.textContent = 'جاري الإرسال...';
     try {
       const normalized = normalizeEgyptianPhone(phone);
-
-      // Block unregistered numbers before sending any OTP
-      const account = await fetchAccount(normalized);
-      if (!account) {
-        showErr(errBox1,
-          'هذا الرقم غير مسجّل في النظام. ' +
-          '<a href="/register">أنشئ حساباً جديداً</a> أو تواصل معنا.'
-        );
-        return;
-      }
-
-      // Use the phone exactly as stored in DB to keep everything consistent
-      const canonicalPhone = account.phone || normalized;
-      // Send the OTP FIRST; only advance to the code step if it actually succeeded,
-      // so any SMS/Twilio error is shown on this step instead of being hidden.
-      await sendOTP(canonicalPhone);
-      goToOTP(canonicalPhone);
-    } catch (e: any) {
-      showErr(errBox1, e.message || 'حدث خطأ، حاول مرة أخرى.');
+      const acc = await findAccountPhone(normalized);
+      if (!acc) { showErr(errFp, 'هذا الرقم غير مسجّل في النظام.'); return; }
+      fpCurrentPhone = acc;
+      await sendResetOTP(acc);
+      fpBadge.textContent = acc;
+      fpSendArea.style.display = 'none';
+      fpResetArea.style.display = '';
+      fpOtpBoxes.forEach(b => { b.value = ''; b.classList.remove('filled'); });
+      setTimeout(() => fpOtpBoxes[0]?.focus(), 80);
+    } catch {
+      showErr(errFp, 'تعذّر إرسال رمز التحقق، حاول مجدداً.');
     } finally {
-      sendBtn.disabled = false;
-      sendBtn.textContent = 'أرسل كود التحقق ←';
+      fpSendBtn.disabled = false; fpSendBtn.textContent = 'إرسال رمز التحقق ←';
     }
   });
 
-  // ── Resend ──
-  resendBtn.addEventListener('click', async () => {
-    resendBtn.classList.remove('visible');
-    hideErr(errBox2);
-    devNotice.classList.remove('visible');
-    otpBoxes.forEach(b => { b.value = ''; b.classList.remove('filled', 'shake'); });
-    try {
-      startCountdown(300);
-      await sendOTP(currentPhone);
-      otpBoxes[0].focus();
-    } catch (e: any) {
-      showErr(errBox2, e.message || 'فشل إعادة الإرسال.');
-    }
-  });
-
-  // ── Back ──
-  backBtn.addEventListener('click', () => {
-    clearCountdown();
-    step2.classList.remove('active');
-    step1.classList.add('active');
-    devNotice.classList.remove('visible');
-    hideErr(errBox2);
-  });
-
-  // ── OTP Box keyboard handling ──
-  otpBoxes.forEach((box, i) => {
+  // OTP box keyboard handling
+  fpOtpBoxes.forEach((box, i) => {
     box.addEventListener('keydown', (e) => {
-      if (e.key === 'Backspace') {
-        if (!box.value && i > 0) { otpBoxes[i - 1].focus(); otpBoxes[i - 1].value = ''; otpBoxes[i - 1].classList.remove('filled'); }
-        box.value = ''; box.classList.remove('filled');
-        e.preventDefault();
-      }
-      if (e.key === 'ArrowRight' && i > 0)         otpBoxes[i - 1].focus();
-      if (e.key === 'ArrowLeft'  && i < 5)         otpBoxes[i + 1].focus();
+      if (e.key === 'Backspace' && !box.value && i > 0) { fpOtpBoxes[i - 1].focus(); fpOtpBoxes[i - 1].value = ''; fpOtpBoxes[i - 1].classList.remove('filled'); e.preventDefault(); }
     });
-    box.addEventListener('input', (e) => {
-      const v = box.value.replace(/\D/g, '').slice(-1);
-      box.value = v;
+    box.addEventListener('input', () => {
+      const v = box.value.replace(/\D/g, '').slice(-1); box.value = v;
       box.classList.toggle('filled', !!v);
-      if (v && i < 5) otpBoxes[i + 1].focus();
-      if (allFilled()) setTimeout(doVerify, 120);
+      if (v && i < 5) fpOtpBoxes[i + 1].focus();
     });
     box.addEventListener('paste', (e) => {
       e.preventDefault();
       const digits = (e.clipboardData?.getData('text') || '').replace(/\D/g, '').slice(0, 6);
-      digits.split('').forEach((d, j) => {
-        if (otpBoxes[j]) { otpBoxes[j].value = d; otpBoxes[j].classList.add('filled'); }
-      });
-      const next = Math.min(digits.length, 5);
-      otpBoxes[next].focus();
-      if (digits.length === 6) setTimeout(doVerify, 120);
+      digits.split('').forEach((d, j) => { if (fpOtpBoxes[j]) { fpOtpBoxes[j].value = d; fpOtpBoxes[j].classList.add('filled'); } });
+      fpOtpBoxes[Math.min(digits.length, 5)].focus();
     });
-    box.addEventListener('focus', () => { box.select(); });
+    box.addEventListener('focus', () => box.select());
   });
 
-  function allFilled() { return otpBoxes.every(b => b.value.length === 1); }
-  function getCode()   { return otpBoxes.map(b => b.value).join(''); }
-  function shakeBoxes(){ otpBoxes.forEach(b => { b.classList.remove('shake'); void b.offsetWidth; b.classList.add('shake'); }); }
+  fpSetBtn.addEventListener('click', async () => {
+    hideErr(errFp);
+    const code = fpOtpBoxes.map(b => b.value).join('');
+    if (code.length !== 6) { showErr(errFp, 'أدخل رمز التحقق المكوّن من 6 أرقام.'); return; }
+    const p1 = fpPass.value, p2 = fpPass2.value;
+    const pw = validatePassword(p1);
+    if (!pw.valid) { showErr(errFp, pw.message); return; }
+    if (p1 !== p2) { showErr(errFp, 'كلمتا المرور غير متطابقتين.'); return; }
 
-  // ── Step 2: Verify ──
-  verifyBtn.addEventListener('click', doVerify);
-
-  async function doVerify() {
-    if (!allFilled()) { showErr(errBox2, 'أدخل الكود المكوّن من 6 أرقام كاملاً.'); return; }
-    hideErr(errBox2);
-    verifyBtn.disabled = true;
-    verifyBtn.textContent = 'جاري التحقق...';
-
+    fpSetBtn.disabled = true; fpSetBtn.textContent = 'جاري الحفظ...';
     try {
-      const token = getCode();
-      const ok = await verifyOTP(currentPhone, token);
-
+      const res = await fetch(`${SB_URL}/rest/v1/rpc/reset_password`, {
+        method: 'POST', headers: SB_H,
+        body: JSON.stringify({ p_phone: fpCurrentPhone, p_code: code, p_new_password: p1 }),
+      });
+      const ok = res.ok && (await res.json()) === true;
       if (!ok) {
-        shakeBoxes();
-        otpBoxes.forEach(b => { b.value = ''; b.classList.remove('filled'); });
-        otpBoxes[0].focus();
-        showErr(errBox2, 'الكود غير صحيح أو انتهت صلاحيته. حاول مرة أخرى أو اضغط "أعد الإرسال".');
-        verifyBtn.disabled = false;
-        verifyBtn.textContent = 'تحقق وادخل ←';
+        fpOtpBoxes.forEach(b => { b.classList.remove('shake'); void b.offsetWidth; b.classList.add('shake'); });
+        showErr(errFp, 'الرمز غير صحيح أو انتهت صلاحيته.');
+        fpSetBtn.disabled = false; fpSetBtn.textContent = 'تعيين كلمة المرور';
         return;
       }
-
-      // Re-fetch account to get latest data for session
-      const account = await fetchAccount(currentPhone);
-      clearCountdown();
-      try {
-        // If a different user was logged in, clear their orders so new user starts clean
-        const prevRaw = localStorage.getItem('wslha_user');
-        const prevUser = prevRaw ? JSON.parse(prevRaw) : null;
-        if (prevUser?.phone && prevUser.phone !== currentPhone) {
-          // Remove the old user's per-phone orders key AND any legacy key
-          localStorage.removeItem('wslha_orders_' + prevUser.phone);
-          localStorage.removeItem('wslha_orders');
-        }
-
-        localStorage.setItem('wslha_user', JSON.stringify({
-          name: account?.name || '', phone: currentPhone,
-          role: account?.role || 'customer', city: account?.city || '',
-          loginAt: new Date().toISOString(),
-        }));
-      } catch {}
-
-      verifyBtn.textContent = '✅ تم الدخول، جاري التحويل...';
-      setTimeout(() => { window.location.href = '/orders'; }, 700);
-
-    } catch (e: any) {
-      showErr(errBox2, e.message || 'حدث خطأ، حاول مرة أخرى.');
-      verifyBtn.disabled = false;
-      verifyBtn.textContent = 'تحقق وادخل ←';
+      // Success → back to login, prefilled.
+      fpSetBtn.textContent = '✅ تم التغيير';
+      loginPhone.value = fpCurrentPhone.startsWith('+20') ? '0' + fpCurrentPhone.slice(3) : fpCurrentPhone;
+      setTimeout(() => {
+        stepFp.classList.remove('active'); stepLogin.classList.add('active');
+        fpSetBtn.disabled = false; fpSetBtn.textContent = 'تعيين كلمة المرور';
+        showErr(errLogin, '✅ تم تغيير كلمة المرور. سجّل الدخول الآن.');
+        errLogin.style.background = '#DCFCE7'; errLogin.style.color = '#14532D';
+        loginPass.focus();
+      }, 900);
+    } catch {
+      showErr(errFp, 'حدث خطأ، حاول مرة أخرى.');
+      fpSetBtn.disabled = false; fpSetBtn.textContent = 'تعيين كلمة المرور';
     }
-  }
-
-  // Enter key on phone input
-  phoneInp.addEventListener('keydown', (e) => { if (e.key === 'Enter') sendBtn.click(); });
+  });
 </script>
 
 <Layout title="تسجيل الدخول" description="ادخل إلى حسابك في وصّلها" page="login">
   <PageHero
     badge="👤 حسابي"
     title="تسجيل الدخول"
-    subtitle="أدخل رقمك وسنرسل لك كود التحقق"
+    subtitle="أدخل رقمك وكلمة المرور للدخول"
   />
 
   <section class="auth-section">
     <div class="auth-card">
 
-      <!-- ── Step 1: Phone ── -->
-      <div id="step-phone" class="step active">
+      <!-- ── Step 1: Password login ── -->
+      <div id="step-login" class="step active">
         <h2 class="auth-card__title">مرحباً بعودتك 👋</h2>
-        <p class="auth-card__sub">سنرسل كود التحقق إلى رقم جوالك</p>
+        <p class="auth-card__sub">سجّل الدخول إلى حسابك</p>
 
-        <div id="err1" class="auth-error" role="alert" aria-live="polite"></div>
+        <div id="err-login" class="auth-error" role="alert" aria-live="polite"></div>
 
         <div class="field">
           <label class="field__label" for="login-phone">رقم الجوال</label>
           <input class="field__input" type="tel" id="login-phone"
             placeholder="010 1234 5678" inputmode="numeric"
-            maxlength="11" pattern="01[0125][0-9]{8}" required autocomplete="tel">
+            maxlength="11" pattern="01[0125][0-9]{8}" required autocomplete="username">
         </div>
 
-        <button type="button" class="auth-submit" id="send-btn">
-          أرسل كود التحقق ←
-        </button>
+        <div class="field">
+          <label class="field__label" for="login-pass">كلمة المرور</label>
+          <input class="field__input" type="password" id="login-pass"
+            placeholder="••••••••" required autocomplete="current-password">
+        </div>
+
+        <button type="button" class="forgot-link" id="forgot-link">نسيت كلمة المرور؟</button>
+
+        <button type="button" class="auth-submit" id="login-btn">دخول ←</button>
 
         <div class="auth-divider"><span>أو</span></div>
         <div class="auth-actions">
@@ -467,42 +413,57 @@ import PageHero from '../components/PageHero.astro';
         <p class="auth-footer">مشكلة في الدخول؟ <a href="/contact">تواصل معنا</a></p>
       </div>
 
-      <!-- ── Step 2: OTP ── -->
-      <div id="step-otp" class="step">
-        <button type="button" id="back-btn" class="back-btn">→ رجوع</button>
+      <!-- ── Step 2: Forgot password ── -->
+      <div id="step-fp" class="step">
+        <button type="button" id="fp-back-btn" class="back-btn">→ رجوع لتسجيل الدخول</button>
+        <h2 class="auth-card__title">استعادة كلمة المرور 🔑</h2>
 
-        <h2 class="auth-card__title">أدخل كود التحقق 🔐</h2>
-        <p class="auth-card__sub">
-          تم إرسال كود مكوّن من 6 أرقام إلى<br>
-          <span class="phone-badge">📱 <span id="phone-badge"></span></span>
-        </p>
+        <div id="err-fp" class="auth-error" role="alert" aria-live="polite"></div>
 
-        <div id="dev-notice" class="dev-notice" role="alert">
-          <div class="dev-notice__label">📱 كود التحقق الخاص بك</div>
-          <span id="dev-code" class="dev-notice__code"></span>
-          <div class="dev-notice__hint">اضغط على الكود للملء التلقائي</div>
+        <!-- 2a: enter phone -->
+        <div id="fp-send-area">
+          <p class="auth-card__sub">أدخل رقم جوالك وسنرسل لك رمز تحقق لإعادة التعيين</p>
+          <div class="field">
+            <label class="field__label" for="fp-phone">رقم الجوال</label>
+            <input class="field__input" type="tel" id="fp-phone"
+              placeholder="010 1234 5678" inputmode="numeric" maxlength="11" pattern="01[0125][0-9]{8}">
+          </div>
+          <button type="button" class="auth-submit" id="fp-send-btn">إرسال رمز التحقق ←</button>
         </div>
 
-        <div id="err2" class="auth-error" role="alert" aria-live="polite"></div>
+        <!-- 2b: enter OTP + new password -->
+        <div id="fp-reset-area" style="display:none">
+          <p class="auth-card__sub">
+            تم إرسال رمز إلى<br>
+            <span class="phone-badge">📱 <span id="fp-badge"></span></span>
+          </p>
 
-        <div class="otp-group" aria-label="كود التحقق">
-          <input type="text" class="otp-box" inputmode="numeric" pattern="[0-9]" maxlength="1" autocomplete="one-time-code">
-          <input type="text" class="otp-box" inputmode="numeric" pattern="[0-9]" maxlength="1">
-          <input type="text" class="otp-box" inputmode="numeric" pattern="[0-9]" maxlength="1">
-          <input type="text" class="otp-box" inputmode="numeric" pattern="[0-9]" maxlength="1">
-          <input type="text" class="otp-box" inputmode="numeric" pattern="[0-9]" maxlength="1">
-          <input type="text" class="otp-box" inputmode="numeric" pattern="[0-9]" maxlength="1">
+          <div id="fp-dev-notice" class="dev-notice" role="alert">
+            <div class="dev-notice__label">📱 رمز التحقق (مؤقتاً حتى تفعيل SMS)</div>
+            <span id="fp-dev-code" class="dev-notice__code"></span>
+            <div class="dev-notice__hint">اضغط على الرمز للملء التلقائي</div>
+          </div>
+
+          <div class="otp-group" aria-label="رمز التحقق">
+            <input type="text" class="otp-box" inputmode="numeric" maxlength="1" autocomplete="one-time-code">
+            <input type="text" class="otp-box" inputmode="numeric" maxlength="1">
+            <input type="text" class="otp-box" inputmode="numeric" maxlength="1">
+            <input type="text" class="otp-box" inputmode="numeric" maxlength="1">
+            <input type="text" class="otp-box" inputmode="numeric" maxlength="1">
+            <input type="text" class="otp-box" inputmode="numeric" maxlength="1">
+          </div>
+
+          <div class="field">
+            <label class="field__label" for="fp-pass">كلمة المرور الجديدة</label>
+            <input class="field__input" type="password" id="fp-pass" placeholder="••••••••" autocomplete="new-password">
+          </div>
+          <div class="field">
+            <label class="field__label" for="fp-pass2">تأكيد كلمة المرور</label>
+            <input class="field__input" type="password" id="fp-pass2" placeholder="••••••••" autocomplete="new-password">
+          </div>
+
+          <button type="button" class="auth-submit" id="fp-set-btn">تعيين كلمة المرور</button>
         </div>
-
-        <div class="countdown-row">
-          <span>ينتهي الكود خلال</span>
-          <span class="countdown-num" id="countdown">05:00</span>
-          <button type="button" id="resend-btn" class="resend-btn">أعد الإرسال</button>
-        </div>
-
-        <button type="button" class="auth-submit" id="verify-btn">
-          تحقق وادخل ←
-        </button>
       </div>
 
     </div>
