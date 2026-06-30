@@ -271,23 +271,20 @@ import PageHero from '../components/PageHero.astro';
     } catch { return null; }
   }
 
-  // Send a recovery OTP. Stored in the otps table (validated server-side by
-  // reset_password). Until a real SMS provider is connected, the code is shown
-  // on screen so recovery still works.
+  // Request a recovery code. The SERVER generates the code, stores it, and
+  // emails it to the account's registered address — the browser NEVER sees it.
+  // This closes the account-takeover hole of showing the code on screen.
   async function sendResetOTP(phone: string): Promise<void> {
-    const arr = new Uint32Array(1); crypto.getRandomValues(arr);
-    const code = String(100000 + (arr[0] % 900000));
-    await fetch(`${SB_URL}/rest/v1/otps?phone=eq.${encodeURIComponent(phone)}`, { method: 'DELETE', headers: SB_H }).catch(() => {});
-    const r = await fetch(`${SB_URL}/rest/v1/otps`, {
-      method: 'POST', headers: { ...SB_H, Prefer: 'return=minimal' },
-      body: JSON.stringify({ phone, code }),
+    fpDev.classList.remove('visible');
+    const r = await fetch(`${SB_URL}/functions/v1/request-password-reset`, {
+      method: 'POST', headers: SB_H, body: JSON.stringify({ phone }),
     });
-    if (!r.ok) throw new Error('send_failed');
-    fpDevCode.textContent = code;
-    fpDevCode.onclick = () => {
-      code.split('').forEach((d, i) => { if (fpOtpBoxes[i]) { fpOtpBoxes[i].value = d; fpOtpBoxes[i].classList.add('filled'); } });
-    };
-    fpDev.classList.add('visible');
+    if (!r.ok) {
+      const t = await r.text().catch(() => '');
+      if (/no_email/.test(t))   throw new Error('no_email');
+      if (/not_found/.test(t))  throw new Error('not_found');
+      throw new Error('send_failed');
+    }
   }
 
   fpSendBtn.addEventListener('click', async () => {
@@ -306,8 +303,11 @@ import PageHero from '../components/PageHero.astro';
       fpResetArea.style.display = '';
       fpOtpBoxes.forEach(b => { b.value = ''; b.classList.remove('filled'); });
       setTimeout(() => fpOtpBoxes[0]?.focus(), 80);
-    } catch {
-      showErr(errFp, 'تعذّر إرسال رمز التحقق، حاول مجدداً.');
+    } catch (e: any) {
+      const m = e?.message;
+      if (m === 'no_email')      showErr(errFp, 'لا يوجد بريد إلكتروني مسجّل لهذا الحساب. تواصل مع الدعم لإعادة التعيين.');
+      else if (m === 'not_found') showErr(errFp, 'هذا الرقم غير مسجّل في النظام.');
+      else                        showErr(errFp, 'تعذّر إرسال البريد. حاول لاحقاً أو تواصل مع الدعم.');
     } finally {
       fpSendBtn.disabled = false; fpSendBtn.textContent = 'إرسال رمز التحقق ←';
     }
@@ -434,14 +434,14 @@ import PageHero from '../components/PageHero.astro';
         <!-- 2b: enter OTP + new password -->
         <div id="fp-reset-area" style="display:none">
           <p class="auth-card__sub">
-            تم إرسال رمز إلى<br>
-            <span class="phone-badge">📱 <span id="fp-badge"></span></span>
+            أرسلنا رمز التحقق إلى بريدك الإلكتروني المسجّل لحساب<br>
+            <span class="phone-badge">📱 <span id="fp-badge"></span></span><br>
+            <span style="font-size:var(--text-sm);color:var(--color-text-faint)">📧 تحقّق من صندوق الوارد (ومجلد الرسائل غير المرغوبة)</span>
           </p>
 
-          <div id="fp-dev-notice" class="dev-notice" role="alert">
-            <div class="dev-notice__label">📱 رمز التحقق (مؤقتاً حتى تفعيل SMS)</div>
+          <div id="fp-dev-notice" class="dev-notice" role="alert" style="display:none">
+            <div class="dev-notice__label">📧 تحقّق من بريدك الإلكتروني</div>
             <span id="fp-dev-code" class="dev-notice__code"></span>
-            <div class="dev-notice__hint">اضغط على الرمز للملء التلقائي</div>
           </div>
 
           <div class="otp-group" aria-label="رمز التحقق">
