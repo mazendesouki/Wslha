@@ -924,6 +924,23 @@ async function sbDelete(path) {
   const r = await fetch(`${SB_URL}/rest/v1/${path}`, { method:'DELETE', headers:SB_H });
   return r.ok;
 }
+// Privileged admin actions (promote / create admin) require re-confirming the
+// admin password; it is verified server-side (bcrypt) by the RPC. Cached in
+// memory for the session only — never stored.
+let _adminPass = null;
+function getAdminPass() {
+  if (!_adminPass) _adminPass = (prompt('للأمان، أدخل كلمة مرور المشرف لتأكيد العملية:') || '').trim() || null;
+  return _adminPass;
+}
+async function sbRpc(fn, body) {
+  try {
+    const r = await fetch(`${SB_URL}/rest/v1/rpc/${fn}`, {
+      method:'POST', headers:{...SB_H,'Content-Type':'application/json'}, body:JSON.stringify(body)
+    });
+    if (!r.ok) return false;
+    return (await r.json()) === true;
+  } catch { return false; }
+}
 
 /* ── Navigation ─────────────────────────────────────────────── */
 const sectionTitles = {
@@ -1092,9 +1109,11 @@ async function changeUserStatus(phone, status) {
 }
 async function makeAdmin(phone) {
   if (!confirm('منح صلاحيات المشرف لهذا المستخدم؟')) return;
-  const ok = await sbPatch(`accounts?phone=eq.${encodeURIComponent(phone)}`, { role:'admin', status:'active' });
-  if (ok) { showToast('✅ تم التحديث', '#16A34A'); loadUsers(); }
-  else showToast('❌ حدث خطأ', '#DC2626');
+  const pass = getAdminPass();
+  if (!pass) return;
+  const ok = await sbRpc('grant_admin', { p_admin_phone: ADMIN.phone, p_admin_password: pass, p_target_phone: phone });
+  if (ok) { showToast('✅ تم منح صلاحيات المشرف', '#16A34A'); loadUsers(); }
+  else { _adminPass = null; showToast('❌ فشل — تحقق من كلمة مرور المشرف', '#DC2626'); }
 }
 async function deleteUser(phone) {
   const user = allUsers.find(u => u.phone === phone);
@@ -1120,6 +1139,8 @@ async function changeUserRole(phone, role) {
   if (!confirm(`تغيير دور هذا المستخدم إلى "${{driver:'سائق',merchant:'تاجر',customer:'عميل',admin:'مشرف'}[role]||role}"؟`)) {
     renderUsers(); return;
   }
+  // Promoting to admin goes through the password-verified secure RPC.
+  if (role === 'admin') { await makeAdmin(phone); return; }
   const patch = { role };
   if (role === 'driver') patch.status = 'approved';
   const ok = await sbPatch(`accounts?phone=eq.${encodeURIComponent(phone)}`, patch);
@@ -2158,9 +2179,13 @@ document.getElementById('create-admin-form').addEventListener('submit', async e 
   const pass  = document.getElementById('new-admin-pass').value;
   const msg   = document.getElementById('admin-create-msg');
   if (!name || !phone || !pass) { msg.textContent='أكمل جميع الحقول'; msg.style.cssText='display:block;background:#FEE2E2;color:#DC2626'; return; }
-  const ok = await sbPost('accounts', {
-    phone, name, password:pass, role:'admin', status:'active', created_at: new Date().toISOString()
+  const adminPass = getAdminPass();
+  if (!adminPass) { msg.textContent='مطلوب كلمة مرور المشرف'; msg.style.cssText='display:block;background:#FEE2E2;color:#DC2626'; return; }
+  const ok = await sbRpc('create_admin', {
+    p_admin_phone: ADMIN.phone, p_admin_password: adminPass,
+    p_name: name, p_phone: phone, p_password: pass
   });
+  if (!ok) { _adminPass = null; }
   if (ok) {
     msg.textContent = '✅ تم إنشاء حساب المشرف بنجاح';
     msg.style.cssText = 'display:block;background:#DCFCE7;color:#16A34A';
