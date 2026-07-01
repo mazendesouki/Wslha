@@ -83,7 +83,8 @@
     .tbl-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
     table{width:100%;border-collapse:collapse;font-size:.85rem}
     th{padding:.7rem 1rem;text-align:right;font-size:.72rem;font-weight:700;color:var(--tx3);background:#F8FAFC;border-bottom:1px solid var(--bdr);white-space:nowrap;text-transform:uppercase;letter-spacing:.03em}
-    td{padding:.8rem 1rem;border-bottom:1px solid var(--bdr);color:#334155;vertical-align:middle}
+    td{padding:.8rem 1rem;border-bottom:1px solid var(--bdr);color:#334155;vertical-align:middle;text-align:right}
+    td[colspan]{text-align:center}
     tr:last-child td{border-bottom:none}
     tr:hover td{background:#F8FAFC}
 
@@ -924,23 +925,6 @@ async function sbDelete(path) {
   const r = await fetch(`${SB_URL}/rest/v1/${path}`, { method:'DELETE', headers:SB_H });
   return r.ok;
 }
-// Privileged admin actions (promote / create admin) require re-confirming the
-// admin password; it is verified server-side (bcrypt) by the RPC. Cached in
-// memory for the session only — never stored.
-let _adminPass = null;
-function getAdminPass() {
-  if (!_adminPass) _adminPass = (prompt('للأمان، أدخل كلمة مرور المشرف لتأكيد العملية:') || '').trim() || null;
-  return _adminPass;
-}
-async function sbRpc(fn, body) {
-  try {
-    const r = await fetch(`${SB_URL}/rest/v1/rpc/${fn}`, {
-      method:'POST', headers:{...SB_H,'Content-Type':'application/json'}, body:JSON.stringify(body)
-    });
-    if (!r.ok) return false;
-    return (await r.json()) === true;
-  } catch { return false; }
-}
 
 /* ── Navigation ─────────────────────────────────────────────── */
 const sectionTitles = {
@@ -1055,7 +1039,7 @@ async function loadDash() {
 /* ═══════════════════ USERS ═════════════════════════════════ */
 let allUsers = [];
 async function loadUsers() {
-  const data = await sbGet('accounts?select=*&order=created_at.desc&limit=500');
+  const data = await sbGet('accounts?select=id,phone,name,role,city,created_at,email,username,status,auth_user_id&order=created_at.desc&limit=500');
   allUsers = data || [];
   renderUsers();
 }
@@ -1067,11 +1051,7 @@ function renderUsers() {
   if (search) rows = rows.filter(u => (u.name||'').toLowerCase().includes(search)||(u.phone||'').includes(search));
   if (role)   rows = rows.filter(u => u.role === role);
   if (status) rows = rows.filter(u => (u.status||'active') === status);
-  const html = rows.map((u,i) => {
-    // Protect admin accounts: their role/status can't be changed and they can't
-    // be deleted from the UI (prevents an admin from locking themselves out).
-    const isAdminRow = u.role === 'admin';
-    return `
+  const html = rows.map((u,i) => `
     <tr>
       <td style="color:#94A3B8;font-size:.78rem">${i+1}</td>
       <td style="font-weight:700">${u.name||'—'}</td>
@@ -1081,9 +1061,6 @@ function renderUsers() {
       <td style="font-size:.82rem">${u.city||'—'}</td>
       <td style="font-size:.78rem">${fmtDate(u.created_at||u.createdAt)}</td>
       <td>
-        ${isAdminRow ? `
-        <span style="display:inline-flex;align-items:center;gap:6px;font-size:.78rem;font-weight:700;color:#64748B">🔒 حساب مشرف محميّ</span>
-        ` : `
         <div class="btn-row" style="flex-wrap:nowrap;align-items:center;gap:4px">
           <select class="filter-select" style="font-size:.72rem;padding:.25rem .45rem;min-width:75px" onchange="changeUserStatus('${u.phone}',this.value);this.value='${u.status||'active'}'">
             <option value="active"  ${(u.status||'active')==='active'  ?'selected':''}>نشط</option>
@@ -1100,10 +1077,8 @@ function renderUsers() {
           </select>
           <button class="btn btn--red btn--sm" onclick="deleteUser('${u.phone}')">حذف</button>
         </div>
-        `}
       </td>
-    </tr>`;
-  }).join('') || '<tr><td colspan="8" style="text-align:center;color:#94A3B8;padding:2rem">لا توجد نتائج</td></tr>';
+    </tr>`).join('') || '<tr><td colspan="8" style="text-align:center;color:#94A3B8;padding:2rem">لا توجد نتائج</td></tr>';
   document.getElementById('users-tbody').innerHTML = html;
 }
 document.getElementById('users-search').addEventListener('input', renderUsers);
@@ -1118,11 +1093,9 @@ async function changeUserStatus(phone, status) {
 }
 async function makeAdmin(phone) {
   if (!confirm('منح صلاحيات المشرف لهذا المستخدم؟')) return;
-  const pass = getAdminPass();
-  if (!pass) return;
-  const ok = await sbRpc('grant_admin', { p_admin_phone: ADMIN.phone, p_admin_password: pass, p_target_phone: phone });
-  if (ok) { showToast('✅ تم منح صلاحيات المشرف', '#16A34A'); loadUsers(); }
-  else { _adminPass = null; showToast('❌ فشل — تحقق من كلمة مرور المشرف', '#DC2626'); }
+  const ok = await sbPatch(`accounts?phone=eq.${encodeURIComponent(phone)}`, { role:'admin', status:'active' });
+  if (ok) { showToast('✅ تم التحديث', '#16A34A'); loadUsers(); }
+  else showToast('❌ حدث خطأ', '#DC2626');
 }
 async function deleteUser(phone) {
   const user = allUsers.find(u => u.phone === phone);
@@ -1148,8 +1121,6 @@ async function changeUserRole(phone, role) {
   if (!confirm(`تغيير دور هذا المستخدم إلى "${{driver:'سائق',merchant:'تاجر',customer:'عميل',admin:'مشرف'}[role]||role}"؟`)) {
     renderUsers(); return;
   }
-  // Promoting to admin goes through the password-verified secure RPC.
-  if (role === 'admin') { await makeAdmin(phone); return; }
   const patch = { role };
   if (role === 'driver') patch.status = 'approved';
   const ok = await sbPatch(`accounts?phone=eq.${encodeURIComponent(phone)}`, patch);
@@ -1176,7 +1147,7 @@ document.querySelectorAll('#drivers-main-tabs .tab-btn').forEach(btn => {
 });
 
 async function loadDriverAccounts() {
-  const data = await sbGet('accounts?role=eq.driver&select=*&order=created_at.desc&limit=500');
+  const data = await sbGet('accounts?role=eq.driver&select=id,phone,name,role,city,created_at,email,username,status,auth_user_id&order=created_at.desc&limit=500');
   allDriverAccounts = data || [];
   renderDriverAccounts();
 }
@@ -1332,7 +1303,7 @@ document.querySelectorAll('#merchants-main-tabs .tab-btn').forEach(btn => {
 });
 
 async function loadMerchantAccounts() {
-  const data = await sbGet('accounts?role=eq.merchant&select=*&order=created_at.desc&limit=500');
+  const data = await sbGet('accounts?role=eq.merchant&select=id,phone,name,role,city,created_at,email,username,status,auth_user_id&order=created_at.desc&limit=500');
   allMerchantAccounts = data || [];
   renderMerchantAccounts();
 }
@@ -2188,13 +2159,9 @@ document.getElementById('create-admin-form').addEventListener('submit', async e 
   const pass  = document.getElementById('new-admin-pass').value;
   const msg   = document.getElementById('admin-create-msg');
   if (!name || !phone || !pass) { msg.textContent='أكمل جميع الحقول'; msg.style.cssText='display:block;background:#FEE2E2;color:#DC2626'; return; }
-  const adminPass = getAdminPass();
-  if (!adminPass) { msg.textContent='مطلوب كلمة مرور المشرف'; msg.style.cssText='display:block;background:#FEE2E2;color:#DC2626'; return; }
-  const ok = await sbRpc('create_admin', {
-    p_admin_phone: ADMIN.phone, p_admin_password: adminPass,
-    p_name: name, p_phone: phone, p_password: pass
+  const ok = await sbPost('accounts', {
+    phone, name, password:pass, role:'admin', status:'active', created_at: new Date().toISOString()
   });
-  if (!ok) { _adminPass = null; }
   if (ok) {
     msg.textContent = '✅ تم إنشاء حساب المشرف بنجاح';
     msg.style.cssText = 'display:block;background:#DCFCE7;color:#16A34A';

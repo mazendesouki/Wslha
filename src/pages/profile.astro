@@ -1086,7 +1086,7 @@ import Layout from '../components/layout.astro';
   }
   async function fetchAccount(phone) {
     const data = await sbFetch(
-      SB_URL + '/rest/v1/accounts?' + phoneOrFilter(phone) + '&select=*&limit=1');
+      SB_URL + '/rest/v1/accounts?' + phoneOrFilter(phone) + '&select=id,phone,name,role,city,created_at,email,username,status,auth_user_id&limit=1');
     return Array.isArray(data) ? (data[0] || null) : null;
   }
   async function fetchWallet(phone) {

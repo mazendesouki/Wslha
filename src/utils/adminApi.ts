@@ -80,7 +80,7 @@ export async function getAdminStats() {
 }
 
 // ── Users ──────────────────────────────────────────────────────
-export const getAllUsers    = () => sbGet('accounts?select=*&order=created_at.desc&limit=500');
+export const getAllUsers    = () => sbGet('accounts?select=id,phone,name,role,city,created_at,email,username,status,auth_user_id&order=created_at.desc&limit=500');
 export const updateUserStatus = (phone: string, status: string) =>
   sbPatch(`accounts?phone=eq.${encodeURIComponent(phone)}`, { status });
 export const updateUserRole = (phone: string, role: string) =>
