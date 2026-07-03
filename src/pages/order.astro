@@ -14,8 +14,10 @@ interface DeliveryType {
 const DELIVERY_TYPES: DeliveryType[] = [
   { id: 'local',   icon: '🛵', title: 'توصيل محلي',   desc: 'داخل المدينة خلال 30 دقيقة', base: 25,  eta: '30 دقيقة' },
   { id: 'express', icon: '⚡', title: 'توصيل سريع',   desc: 'أولوية قصوى خلال 15 دقيقة',  base: 45,  eta: '15 دقيقة' },
-  { id: 'airport', icon: '✈️', title: 'توصيل المطار', desc: 'من وإلى مطار برج العرب',      base: 150, eta: '90 دقيقة' },
 ];
+// ملاحظة: توصيل المطار له صفحة مخصّصة واحترافية بالفعل (/airport) بتسعير
+// دقيق حسب نوع السيارة والشنط ووقت الانتظار — لا داعي لتكراره هنا بسعر
+// عام غير دقيق (وكان يشير خطأً لمطار برج العرب بالإسكندرية بدل دمياط).
 
 const CITIES = ['دمياط الجديدة', 'دمياط', 'كفر سعد', 'فارسكور', 'منية النصر', 'رأس البر', 'الزرقا'];
 ---
@@ -88,21 +90,28 @@ const CITIES = ['دمياط الجديدة', 'دمياط', 'كفر سعد', 'ف�
   }
 
   .type-option {
+    position: relative;
     display: flex;
     align-items: center;
     gap: var(--sp-4);
-    padding: var(--sp-4);
-    border: 2px solid var(--color-border);
-    border-radius: var(--radius-lg);
+    padding: var(--sp-5);
+    border: 1.5px solid var(--color-border);
+    border-radius: var(--radius-xl);
     cursor: pointer;
-    transition: border-color var(--ease), background var(--ease);
+    background: var(--color-bg);
+    transition: border-color var(--ease), background var(--ease), box-shadow var(--ease), transform var(--ease);
   }
 
-  .type-option:hover { border-color: var(--color-primary); }
+  .type-option:hover {
+    border-color: var(--color-primary);
+    box-shadow: var(--shadow-sm);
+    transform: translateY(-1px);
+  }
 
   .type-option:has(input:checked) {
     border-color: var(--color-primary);
     background: var(--color-primary-light);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary) 12%, transparent);
   }
 
   .type-option:has(input:focus-visible) {
@@ -112,21 +121,38 @@ const CITIES = ['دمياط الجديدة', 'دمياط', 'كفر سعد', 'ف�
 
   .type-option input { position: absolute; opacity: 0; pointer-events: none; }
 
+  /* Checkmark badge shown only when selected */
+  .type-option__check {
+    position: absolute; top: var(--sp-3); left: var(--sp-3);
+    width: 20px; height: 20px; border-radius: 50%;
+    background: var(--color-primary); color: #fff;
+    align-items: center; justify-content: center;
+    font-size: 11px; font-weight: var(--weight-black);
+    display: none;
+  }
+  .type-option:has(input:checked) .type-option__check { display: flex; }
+
   .type-option__icon {
-    width: 44px;
-    height: 44px;
-    border-radius: var(--radius);
-    background: var(--color-primary-light);
+    width: 52px;
+    height: 52px;
+    border-radius: var(--radius-lg);
+    background: linear-gradient(135deg, var(--color-primary-light), #dbeafe);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: var(--text-xl);
+    font-size: 1.5rem;
     flex-shrink: 0;
+    transition: transform var(--ease);
   }
+  .type-option:has(input:checked) .type-option__icon { transform: scale(1.08); }
 
-  .type-option__title { font-weight: var(--weight-black); font-size: var(--text-sm); }
-  .type-option__desc  { font-size: var(--text-xs); color: var(--color-text-muted); margin-top: 2px; }
-  .type-option__price { margin-right: auto; font-weight: var(--weight-black); color: var(--color-primary); font-size: var(--text-base); white-space: nowrap; }
+  .type-option__title { font-weight: var(--weight-black); font-size: var(--text-base); }
+  .type-option__desc  { font-size: var(--text-xs); color: var(--color-text-muted); margin-top: 3px; }
+  .type-option__price {
+    margin-right: auto; font-weight: var(--weight-black); color: var(--color-primary);
+    font-size: var(--text-lg); white-space: nowrap; text-align: left;
+  }
+  .type-option__price small { display: block; font-size: 10px; font-weight: var(--weight-semi); color: var(--color-text-faint); }
 
   /* Fields */
   .order-form__row {
@@ -299,7 +325,7 @@ const CITIES = ['دمياط الجديدة', 'دمياط', 'كفر سعد', 'ف�
 
   interface Rates { [key: string]: number; }
 
-  const BASE_RATES: Rates = { local: 25, express: 45, airport: 150 };
+  const BASE_RATES: Rates = { local: 25, express: 45 };
   const CROSS_CITY_FEE = 20;
 
   const form      = document.getElementById('order-form')    as HTMLFormElement;
@@ -321,7 +347,6 @@ const CITIES = ['دمياط الجديدة', 'دمياط', 'كفر سعد', 'ف�
   const TYPE_META: Record<string, { label: string; eta: string }> = {
     local:   { label: 'توصيل محلي',   eta: '30 دقيقة' },
     express: { label: 'توصيل سريع',   eta: '15 دقيقة' },
-    airport: { label: 'توصيل المطار', eta: '90 دقيقة' },
   };
 
   function selectedType(): string {
@@ -439,13 +464,14 @@ const CITIES = ['دمياط الجديدة', 'دمياط', 'كفر سعد', 'ف�
         <legend class="sr-only">اختر نوع التوصيل</legend>
         {DELIVERY_TYPES.map((t, i) => (
           <label class="type-option">
+            <span class="type-option__check" aria-hidden="true">✓</span>
             <input type="radio" name="delivery-type" value={t.id} checked={i === 0} required>
             <span class="type-option__icon" aria-hidden="true">{t.icon}</span>
             <span>
               <span class="type-option__title">{t.title}</span>
               <span class="type-option__desc">{t.desc}</span>
             </span>
-            <span class="type-option__price">{t.base} ج.م</span>
+            <span class="type-option__price">{t.base} ج.م<small>ابتداءً من</small></span>
           </label>
         ))}
       </fieldset>
