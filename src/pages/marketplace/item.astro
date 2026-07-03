@@ -1,0 +1,207 @@
+---
+import Layout from '../../components/layout.astro';
+---
+
+<style>
+  .item-page { max-width: 900px; margin: 0 auto; padding: var(--sp-8) var(--sp-6) var(--sp-20); }
+  .item-grid { display: grid; grid-template-columns: 1.1fr 1fr; gap: var(--sp-8); }
+  @media (max-width: 780px) { .item-grid { grid-template-columns: 1fr; } }
+
+  .gallery { border-radius: var(--radius-xl); overflow: hidden; background: var(--color-primary-light); }
+  .gallery__main { width: 100%; aspect-ratio: 4/3; object-fit: cover; display: block; }
+  .gallery__thumbs { display: flex; gap: var(--sp-2); margin-top: var(--sp-2); overflow-x: auto; }
+  .gallery__thumbs img { width: 70px; height: 70px; object-fit: cover; border-radius: var(--radius); cursor: pointer; border: 2px solid transparent; flex-shrink: 0; }
+  .gallery__thumbs img.active { border-color: var(--color-primary); }
+  .gallery__empty { aspect-ratio: 4/3; display: flex; align-items: center; justify-content: center; font-size: 4rem; }
+
+  .badge-row { display: flex; gap: var(--sp-2); margin-bottom: var(--sp-3); flex-wrap: wrap; }
+  .badge { padding: 3px var(--sp-3); border-radius: var(--radius-full); font-size: 11px; font-weight: var(--weight-bold); }
+  .badge--cond { background: var(--color-primary-light); color: var(--color-primary); }
+  .badge--merchant { background: #d1fae5; color: #047857; }
+  .badge--sold { background: #fee2e2; color: #dc2626; }
+
+  .title { font-size: var(--text-2xl); font-weight: var(--weight-black); margin-bottom: var(--sp-2); }
+  .price { font-size: var(--text-3xl, 2rem); font-weight: var(--weight-black); color: #059669; margin-bottom: var(--sp-4); }
+  .meta-row { display: flex; gap: var(--sp-4); font-size: var(--text-sm); color: var(--color-text-faint); margin-bottom: var(--sp-5); flex-wrap: wrap; }
+  .desc { font-size: var(--text-sm); line-height: 1.8; color: var(--color-text-muted); margin-bottom: var(--sp-6); white-space: pre-wrap; }
+
+  .contact-card { background: var(--color-bg); border: 1.5px solid var(--color-border); border-radius: var(--radius-xl); padding: var(--sp-5); margin-bottom: var(--sp-4); }
+  .contact-card__title { font-weight: var(--weight-bold); margin-bottom: var(--sp-3); font-size: var(--text-sm); }
+  .contact-btns { display: flex; gap: var(--sp-3); }
+  .contact-btn {
+    flex: 1; display: flex; align-items: center; justify-content: center; gap: var(--sp-2);
+    padding: var(--sp-3); border-radius: var(--radius-lg); font-weight: var(--weight-bold);
+    font-size: var(--text-sm); text-decoration: none; transition: all .2s;
+  }
+  .contact-btn--call { background: var(--color-primary); color: #fff; }
+  .contact-btn--wa { background: #25D366; color: #fff; }
+  .contact-btn:hover { opacity: .9; transform: translateY(-1px); }
+
+  .delivery-card { background: #eff6ff; border: 1.5px solid #bfdbfe; border-radius: var(--radius-xl); padding: var(--sp-5); }
+  .delivery-card__title { font-weight: var(--weight-bold); margin-bottom: var(--sp-2); font-size: var(--text-sm); }
+  .delivery-card__sub { font-size: var(--text-xs); color: var(--color-text-muted); margin-bottom: var(--sp-3); }
+  .delivery-form input, .delivery-form textarea {
+    width: 100%; padding: var(--sp-3); border: 1.5px solid var(--color-border); border-radius: var(--radius);
+    font-family: var(--font-body); font-size: var(--text-sm); margin-bottom: var(--sp-3); box-sizing: border-box;
+  }
+  .delivery-btn {
+    width: 100%; padding: var(--sp-3); background: var(--color-primary); color: #fff; border: none;
+    border-radius: var(--radius); font-family: var(--font-body); font-weight: var(--weight-bold);
+    font-size: var(--text-sm); cursor: pointer;
+  }
+  .delivery-btn:disabled { opacity: .6; cursor: not-allowed; }
+
+  .report-link { display: inline-block; margin-top: var(--sp-4); font-size: var(--text-xs); color: var(--color-text-faint); cursor: pointer; text-decoration: underline; }
+  .toast {
+    position: fixed; bottom: var(--sp-8); left: 50%; transform: translateX(-50%) translateY(60px);
+    background: #1f2937; color: #fff; padding: var(--sp-3) var(--sp-5); border-radius: 99px;
+    font-size: var(--text-sm); font-weight: var(--weight-bold); z-index: 9999; transition: transform .3s;
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+  .not-found { text-align: center; padding: var(--sp-16); }
+</style>
+
+<script>
+  import { fetchItem, incrementViews, reportItem, requestDelivery, CONDITIONS, type MarketItem } from '../../utils/marketplaceApi';
+  import { isEgyptianMobile, EG_PHONE_ERROR } from '../../utils/phone';
+
+  const id = new URLSearchParams(window.location.search).get('id') || '';
+
+  function toast(msg: string) {
+    const t = document.getElementById('toast')!;
+    t.textContent = msg; t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2800);
+  }
+
+  let item: MarketItem | null = null;
+
+  async function init() {
+    item = id ? await fetchItem(id) : null;
+    const root = document.getElementById('item-root')!;
+    if (!item) {
+      root.innerHTML = `<div class="not-found"><div style="font-size:3rem">🔍</div><p>هذا الإعلان غير موجود أو تم حذفه.</p><a href="/marketplace" class="btn btn--primary" style="margin-top:1rem;display:inline-block">العودة للسوق</a></div>`;
+      return;
+    }
+    incrementViews(item.id, item.views);
+    render(item);
+  }
+
+  function render(i: MarketItem) {
+    document.title = i.title + ' | سوق المستعمل | وصّلها';
+    const images = i.images?.length ? i.images : [];
+    const gallery = document.getElementById('gallery')!;
+    gallery.innerHTML = images.length
+      ? `<img class="gallery__main" id="gallery-main" src="${images[0]}" alt="${i.title}">` +
+        (images.length > 1 ? `<div class="gallery__thumbs">${images.map((im, idx) => `<img src="${im}" class="${idx===0?'active':''}" data-src="${im}">`).join('')}</div>` : '')
+      : `<div class="gallery__empty">📦</div>`;
+    gallery.querySelectorAll('.gallery__thumbs img').forEach(t => {
+      t.addEventListener('click', () => {
+        (document.getElementById('gallery-main') as HTMLImageElement).src = (t as HTMLElement).dataset.src!;
+        gallery.querySelectorAll('.gallery__thumbs img').forEach(x => x.classList.remove('active'));
+        t.classList.add('active');
+      });
+    });
+
+    document.getElementById('badges')!.innerHTML = `
+      <span class="badge badge--cond">${CONDITIONS[i.condition] || i.condition}</span>
+      ${i.seller_type === 'merchant' ? '<span class="badge badge--merchant">🏪 بائع تاجر</span>' : ''}
+      ${i.status === 'sold' ? '<span class="badge badge--sold">تم البيع</span>' : ''}
+    `;
+    document.getElementById('title')!.textContent = i.title;
+    document.getElementById('price')!.textContent = Number(i.price).toLocaleString('ar-EG') + ' ج.م';
+    document.getElementById('meta')!.innerHTML = `
+      <span>📍 ${i.city || i.area || 'دمياط الجديدة'}</span>
+      <span>👁️ ${i.views} مشاهدة</span>
+      <span>🗓️ ${new Date(i.created_at).toLocaleDateString('ar-EG')}</span>
+    `;
+    document.getElementById('desc')!.textContent = i.description || 'لا يوجد وصف إضافي.';
+
+    const callBtn = document.getElementById('call-btn') as HTMLAnchorElement;
+    const waBtn   = document.getElementById('wa-btn') as HTMLAnchorElement;
+    callBtn.href = `tel:${i.contact_phone}`;
+    if (i.whatsapp) {
+      const waPhone = i.contact_phone.startsWith('0') ? '2' + i.contact_phone : i.contact_phone;
+      waBtn.href = `https://wa.me/${waPhone}?text=${encodeURIComponent('مهتم بإعلانك "' + i.title + '" في وصّلها')}`;
+    } else {
+      waBtn.style.display = 'none';
+    }
+
+    if (i.status === 'sold' || i.status !== 'active') {
+      (document.getElementById('delivery-card') as HTMLElement).style.display = 'none';
+    }
+  }
+
+  document.getElementById('report-link')!.addEventListener('click', async () => {
+    const reason = prompt('سبب الإبلاغ عن هذا الإعلان:');
+    if (!reason) return;
+    let phone = '';
+    try { phone = (JSON.parse(localStorage.getItem('wslha_user') || '{}')).phone || ''; } catch {}
+    await reportItem(id, phone, reason);
+    toast('✅ تم استلام البلاغ، شكراً لك');
+  });
+
+  document.getElementById('delivery-form')!.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const name = (document.getElementById('d-name') as HTMLInputElement).value.trim();
+    const phone = (document.getElementById('d-phone') as HTMLInputElement).value.trim();
+    const address = (document.getElementById('d-address') as HTMLInputElement).value.trim();
+    if (name.length < 2) return toast('أدخل اسمك');
+    if (!isEgyptianMobile(phone)) return toast(EG_PHONE_ERROR);
+    if (address.length < 5) return toast('أدخل عنوانك بالتفصيل');
+
+    const btn = document.getElementById('delivery-submit') as HTMLButtonElement;
+    btn.disabled = true; btn.textContent = 'جاري الإرسال...';
+    const ok = await requestDelivery(id, { phone, name, address });
+    if (ok) {
+      toast('✅ تم إرسال طلب التوصيل — سيتواصل معك فريقنا لتأكيد السائق');
+      (document.getElementById('delivery-form') as HTMLFormElement).reset();
+    } else {
+      toast('❌ حدث خطأ، حاول مرة أخرى');
+    }
+    btn.disabled = false; btn.textContent = '🚚 اطلب توصيل عبر وصّلها';
+  });
+
+  init();
+</script>
+
+<Layout title="تفاصيل الإعلان | وصّلها" description="سوق المستعمل" page="marketplace">
+  <section class="item-page">
+    <div id="item-root">
+      <div class="item-grid">
+        <div>
+          <div class="gallery" id="gallery"><div class="gallery__empty">⏳</div></div>
+        </div>
+        <div>
+          <div class="badge-row" id="badges"></div>
+          <h1 class="title" id="title">جاري التحميل…</h1>
+          <div class="price" id="price"></div>
+          <div class="meta-row" id="meta"></div>
+          <p class="desc" id="desc"></p>
+
+          <div class="contact-card">
+            <div class="contact-card__title">📞 تواصل مع البائع مباشرة</div>
+            <div class="contact-btns">
+              <a id="call-btn" class="contact-btn contact-btn--call" href="#">📞 اتصال</a>
+              <a id="wa-btn" class="contact-btn contact-btn--wa" href="#" target="_blank" rel="noopener">💬 واتساب</a>
+            </div>
+          </div>
+
+          <div class="delivery-card" id="delivery-card">
+            <div class="delivery-card__title">🚚 تفضّل التوصيل بدل الذهاب بنفسك؟</div>
+            <div class="delivery-card__sub">اطلب توصيل هذا المنتج إلى عنوانك عبر شبكة سائقي وصّلها (رسوم توصيل تُضاف للسعر)</div>
+            <form class="delivery-form" id="delivery-form">
+              <input id="d-name" type="text" placeholder="اسمك الكامل" required>
+              <input id="d-phone" type="tel" placeholder="رقم جوالك" dir="ltr" required>
+              <textarea id="d-address" rows="2" placeholder="عنوانك بالتفصيل" required></textarea>
+              <button type="submit" id="delivery-submit" class="delivery-btn">🚚 اطلب توصيل عبر وصّلها</button>
+            </form>
+          </div>
+
+          <span class="report-link" id="report-link">🚩 الإبلاغ عن هذا الإعلان</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="toast" id="toast"></div>
+</Layout>

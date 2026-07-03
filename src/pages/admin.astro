@@ -213,6 +213,10 @@
     <button class="nav-item" data-section="stores">
       <span class="nav-item__icon">🏬</span> المتاجر
     </button>
+    <button class="nav-item" data-section="marketplace">
+      <span class="nav-item__icon">🛍️</span> سوق المستعمل
+      <span class="nav-item__badge hidden" id="badge-marketplace">0</span>
+    </button>
     <button class="nav-item" data-section="messages">
       <span class="nav-item__icon">✉️</span> الرسائل
       <span class="nav-item__badge hidden" id="badge-messages">0</span>
@@ -467,6 +471,29 @@
           <table>
             <thead><tr><th>المتجر</th><th>الفئة</th><th>المنطقة</th><th>صاحب العمل</th><th>رسوم التوصيل</th><th>التقييم</th><th>نشط</th><th>مفتوح</th><th>إجراءات</th></tr></thead>
             <tbody id="stores-tbody"><tr><td colspan="9" style="text-align:center;color:#94A3B8;padding:2rem">جاري التحميل…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════ MARKETPLACE ═════════════════════ -->
+    <div class="section" id="sec-marketplace">
+      <div class="filters-bar">
+        <input class="search-input" id="mkt-admin-search" type="search" placeholder="🔍 بحث بالعنوان أو الجوال…"/>
+        <select class="filter-select" id="mkt-admin-status">
+          <option value="">جميع الحالات</option>
+          <option value="active">نشط</option>
+          <option value="under_review">قيد المراجعة (مُبلَّغ عنه)</option>
+          <option value="sold">تم البيع</option>
+          <option value="removed">محذوف</option>
+        </select>
+        <button class="btn btn--primary" onclick="loadMarketplaceSection()">🔄 تحديث</button>
+      </div>
+      <div class="card">
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr><th>الإعلان</th><th>البائع</th><th>النوع</th><th>السعر</th><th>البلاغات</th><th>الحالة</th><th>التاريخ</th><th>إجراءات</th></tr></thead>
+            <tbody id="marketplace-tbody"><tr><td colspan="8" style="text-align:center;color:#94A3B8;padding:2rem">جاري التحميل…</td></tr></tbody>
           </table>
         </div>
       </div>
@@ -872,6 +899,10 @@ else {
 
 /* ── Helpers ────────────────────────────────────────────────── */
 function fmt(n) { return Number(n||0).toLocaleString('ar-EG'); }
+// Escape untrusted text (e.g. public contact-form fields) before inserting via innerHTML.
+function escapeHtml(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+}
 function fmtDate(iso) {
   if (!iso) return '—';
   const d = new Date(iso);
@@ -947,7 +978,8 @@ async function sbRpc(fn, body) {
 const sectionTitles = {
   dash:'لوحة التحكم', users:'إدارة المستخدمين', drivers:'إدارة السائقين',
   merchants:'إدارة التجار', orders:'إدارة الطلبات', rides:'إدارة الرحلات',
-  stores:'إدارة المتاجر', finance:'التقارير المالية', wallets:'إدارة المحافظ', settings:'الإعدادات'
+  stores:'إدارة المتاجر', marketplace:'سوق المستعمل',
+  finance:'التقارير المالية', wallets:'إدارة المحافظ', settings:'الإعدادات'
 };
 let currentSection = 'dash';
 function loadDriversSection() {
@@ -962,6 +994,7 @@ function loadMerchantsSection() {
 }
 const loaders = { dash:loadDash, users:loadUsers, drivers:loadDriversSection,
   merchants:loadMerchantsSection, orders:loadOrders, rides:loadRides, stores:loadStores,
+  marketplace:loadMarketplaceSection,
   messages:loadMessages, finance:loadFinance, wallets:loadWalletsSection, settings:loadSettingsSection };
 
 document.querySelectorAll('.nav-item').forEach(btn => {
@@ -1465,17 +1498,18 @@ function toggleReject(type) {
 async function confirmApprove(type) {
   const phone = type === 'driver' ? currentDriverPhone : currentMerchantPhone;
   if (!confirm(`اعتماد هذا الطلب؟`)) return;
-  const table = type === 'driver' ? 'driver_applications' : 'merchant_applications';
-  const ok1 = await sbPatch(`${table}?phone=eq.${encodeURIComponent(phone)}`, { status:'approved' });
-  const patch = { status:'approved' };
-  if (type === 'driver') patch.role = 'driver';
-  const ok2 = await sbPatch(`accounts?phone=eq.${encodeURIComponent(phone)}`, patch);
-  if (ok1 && ok2) {
+  const pass = getAdminPass();
+  if (!pass) return;
+  const ok = await sbRpc('admin_review_application', {
+    p_admin_phone: ADMIN.phone, p_admin_password: pass,
+    p_type: type, p_phone: phone, p_status: 'approved', p_reason: null,
+  });
+  if (ok) {
     showToast('✅ تم الاعتماد بنجاح', '#16A34A');
     closeModal(`${type}-modal`);
     type === 'driver' ? loadDriverApps() : loadMerchantApps();
     loadDash();
-  } else showToast('❌ حدث خطأ في تحديث قاعدة البيانات', '#DC2626');
+  } else { _adminPass = null; showToast('❌ فشل — تحقق من كلمة مرور المشرف', '#DC2626'); }
 }
 
 async function confirmReject(type) {
@@ -1483,15 +1517,18 @@ async function confirmReject(type) {
   const reason = document.getElementById(`${type}-reject-reason`).value.trim();
   if (!reason) { showToast('⚠️ أدخل سبب الرفض', '#D97706'); return; }
   if (!confirm('رفض هذا الطلب؟')) return;
-  const table = type === 'driver' ? 'driver_applications' : 'merchant_applications';
-  const ok1 = await sbPatch(`${table}?phone=eq.${encodeURIComponent(phone)}`, { status:'rejected' });
-  const ok2 = await sbPatch(`accounts?phone=eq.${encodeURIComponent(phone)}`, { status:'rejected' });
-  if (ok1 && ok2) {
+  const pass = getAdminPass();
+  if (!pass) return;
+  const ok = await sbRpc('admin_review_application', {
+    p_admin_phone: ADMIN.phone, p_admin_password: pass,
+    p_type: type, p_phone: phone, p_status: 'rejected', p_reason: reason,
+  });
+  if (ok) {
     showToast('تم الرفض', '#DC2626');
     closeModal(`${type}-modal`);
     type === 'driver' ? loadDriverApps() : loadMerchantApps();
     loadDash();
-  } else showToast('❌ حدث خطأ في تحديث قاعدة البيانات', '#DC2626');
+  } else { _adminPass = null; showToast('❌ فشل — تحقق من كلمة مرور المشرف', '#DC2626'); }
 }
 
 /* ═══════════════════ ORDERS ════════════════════════════════ */
@@ -1510,11 +1547,11 @@ function renderOrders() {
   const html = rows.map(o => `
     <tr>
       <td style="direction:ltr;font-size:.75rem;font-weight:700;color:#3B6EF8">${o.code||o.id?.slice(0,10)||'—'}</td>
-      <td style="font-weight:600">${o.customer_name||'—'}</td>
-      <td style="direction:ltr;font-size:.82rem">${o.customer_phone||'—'}</td>
-      <td>${o.store_name||'—'}</td>
+      <td style="font-weight:600">${escapeHtml(o.customer_name)||'—'}</td>
+      <td style="direction:ltr;font-size:.82rem">${escapeHtml(o.customer_phone)||'—'}</td>
+      <td>${escapeHtml(o.store_name)||'—'}</td>
       <td style="font-weight:700;color:var(--pr)">${fmt(o.total)} ج.م</td>
-      <td style="font-size:.82rem">${o.driver_name||'—'}</td>
+      <td style="font-size:.82rem">${escapeHtml(o.driver_name)||'—'}</td>
       <td>${badge(o.status)}</td>
       <td style="font-size:.75rem">${fmtTime(o.created_at)}</td>
       <td><button class="btn btn--ghost btn--sm" onclick="openOrderModal('${o.id}')">تفاصيل</button></td>
@@ -1532,16 +1569,16 @@ function openOrderModal(id) {
   let items = '—';
   try {
     const arr = typeof o.items === 'string' ? JSON.parse(o.items) : o.items;
-    if (Array.isArray(arr)) items = arr.map(i => `${i.qty||1}× ${i.emoji||''} ${i.name}`).join('<br>');
+    if (Array.isArray(arr)) items = arr.map(i => `${i.qty||1}× ${escapeHtml(i.emoji||'')} ${escapeHtml(i.name)}`).join('<br>');
   } catch {}
   document.getElementById('order-modal-body').innerHTML = `
     <div class="info-grid">
       <div class="info-field"><div class="info-field__label">رقم الطلب</div><div class="info-field__val" style="direction:ltr">${o.code||o.id||'—'}</div></div>
-      <div class="info-field"><div class="info-field__label">المتجر</div><div class="info-field__val">${o.store_name||'—'}</div></div>
-      <div class="info-field"><div class="info-field__label">العميل</div><div class="info-field__val">${o.customer_name||'—'}</div></div>
-      <div class="info-field"><div class="info-field__label">جوال العميل</div><div class="info-field__val" style="direction:ltr">${o.customer_phone||'—'}</div></div>
-      <div class="info-field"><div class="info-field__label">العنوان</div><div class="info-field__val">${o.address||o.area||'—'}</div></div>
-      <div class="info-field"><div class="info-field__label">السائق</div><div class="info-field__val">${o.driver_name||'—'}</div></div>
+      <div class="info-field"><div class="info-field__label">المتجر</div><div class="info-field__val">${escapeHtml(o.store_name)||'—'}</div></div>
+      <div class="info-field"><div class="info-field__label">العميل</div><div class="info-field__val">${escapeHtml(o.customer_name)||'—'}</div></div>
+      <div class="info-field"><div class="info-field__label">جوال العميل</div><div class="info-field__val" style="direction:ltr">${escapeHtml(o.customer_phone)||'—'}</div></div>
+      <div class="info-field"><div class="info-field__label">العنوان</div><div class="info-field__val">${escapeHtml(o.address||o.area)||'—'}</div></div>
+      <div class="info-field"><div class="info-field__label">السائق</div><div class="info-field__val">${escapeHtml(o.driver_name)||'—'}</div></div>
       <div class="info-field"><div class="info-field__label">المجموع الفرعي</div><div class="info-field__val">${fmt(o.subtotal)} ج.م</div></div>
       <div class="info-field"><div class="info-field__label">رسوم التوصيل</div><div class="info-field__val">${fmt(o.delivery_fee)} ج.م</div></div>
       <div class="info-field"><div class="info-field__label">الإجمالي</div><div class="info-field__val" style="font-size:1.1rem;color:var(--pr)">${fmt(o.total)} ج.م</div></div>
@@ -1584,11 +1621,11 @@ function renderRides() {
   const html = rows.map(r => `
     <tr>
       <td style="direction:ltr;font-size:.75rem;color:#94A3B8">${r.id?.slice(0,10)||'—'}</td>
-      <td style="font-weight:600">${r.customer_name||'—'}</td>
-      <td>${r.from_area||'—'}</td>
-      <td>${r.to_area||'—'}</td>
+      <td style="font-weight:600">${escapeHtml(r.customer_name)||'—'}</td>
+      <td>${escapeHtml(r.from_area)||'—'}</td>
+      <td>${escapeHtml(r.to_area)||'—'}</td>
       <td style="font-weight:700;color:var(--pr)">${fmt(r.base_fare||r.fare)} ج.م</td>
-      <td>${r.driver_name||'—'}</td>
+      <td>${escapeHtml(r.driver_name)||'—'}</td>
       <td>${badge(r.status)}</td>
       <td style="font-size:.75rem">${fmtTime(r.created_at)}</td>
       <td>
@@ -1658,6 +1695,56 @@ async function deleteStore(id) {
   else showToast('❌ حدث خطأ', '#DC2626');
 }
 
+/* ═══════════════════ MARKETPLACE ═══════════════════════════ */
+let allMarketItems = [];
+async function loadMarketplaceSection() {
+  const data = await sbGet('marketplace_items?select=*&order=created_at.desc&limit=500');
+  allMarketItems = data || [];
+  const underReview = allMarketItems.filter(i => i.status === 'under_review').length;
+  const badge = document.getElementById('badge-marketplace');
+  if (badge) { badge.textContent = String(underReview); badge.classList.toggle('hidden', !underReview); }
+  renderMarketplace();
+}
+function renderMarketplace() {
+  const search = document.getElementById('mkt-admin-search').value.trim().toLowerCase();
+  const status = document.getElementById('mkt-admin-status').value;
+  let rows = allMarketItems;
+  if (search) rows = rows.filter(i => (i.title||'').toLowerCase().includes(search) || (i.seller_phone||'').includes(search));
+  if (status) rows = rows.filter(i => i.status === status);
+  const statusAr = { active:'نشط', sold:'تم البيع', removed:'محذوف', under_review:'قيد المراجعة' };
+  const statusCls = { active:'badge--green', sold:'badge--gray', removed:'badge--red', under_review:'badge--orange' };
+  const html = rows.map(i => `
+    <tr style="${i.status==='under_review' ? 'background:rgba(217,119,6,.08)' : ''}">
+      <td style="font-weight:700">${escapeHtml(i.title)}</td>
+      <td style="direction:ltr;font-size:.8rem">${escapeHtml(i.seller_phone)}</td>
+      <td>${i.seller_type==='merchant' ? '🏪 تاجر' : '👤 فرد'}</td>
+      <td style="font-weight:700;color:var(--pr)">${fmt(i.price)} ج.م</td>
+      <td>${i.reports_count > 0 ? `<span style="color:#DC2626;font-weight:700">${i.reports_count} ⚠️</span>` : '—'}</td>
+      <td><span class="badge ${statusCls[i.status]||'badge--gray'}">${statusAr[i.status]||i.status}</span></td>
+      <td style="font-size:.75rem">${fmtTime(i.created_at)}</td>
+      <td>
+        <div class="btn-row" style="flex-wrap:nowrap;gap:4px">
+          ${i.status === 'under_review' ? `<button class="btn btn--green btn--sm" onclick="marketplaceModerate('${i.id}','approve')">اعتماد</button>` : ''}
+          ${i.status !== 'removed' ? `<button class="btn btn--red btn--sm" onclick="marketplaceModerate('${i.id}','remove')">حذف</button>` : ''}
+          <a class="btn btn--ghost btn--sm" href="/marketplace/item?id=${i.id}" target="_blank">عرض</a>
+        </div>
+      </td>
+    </tr>`).join('') || '<tr><td colspan="8" style="text-align:center;color:#94A3B8;padding:2rem">لا توجد إعلانات</td></tr>';
+  document.getElementById('marketplace-tbody').innerHTML = html;
+}
+document.getElementById('mkt-admin-search').addEventListener('input', renderMarketplace);
+document.getElementById('mkt-admin-status').addEventListener('change', renderMarketplace);
+
+async function marketplaceModerate(itemId, action) {
+  const msg = action === 'approve' ? 'اعتماد هذا الإعلان وإرجاعه للعرض العام؟' : 'حذف هذا الإعلان نهائياً؟';
+  if (!confirm(msg)) return;
+  const pass = getAdminPass();
+  if (!pass) return;
+  const ok = await sbRpc('admin_moderate_item', { p_admin_phone: ADMIN.phone, p_admin_password: pass, p_item_id: itemId, p_action: action });
+  if (ok) { showToast(action === 'approve' ? '✅ تم الاعتماد' : '✅ تم الحذف', '#16A34A'); loadMarketplaceSection(); }
+  else { _adminPass = null; showToast('❌ فشل — تحقق من كلمة مرور المشرف', '#DC2626'); }
+}
+
 /* ═══════════════════ MESSAGES ══════════════════════════════ */
 let currentMsg = null;
 
@@ -1682,10 +1769,10 @@ async function loadMessages() {
 
   tbody.innerHTML = rows.map(m => `
     <tr style="${m.status === 'unread' ? 'background:rgba(245,158,11,.07)' : ''}">
-      <td style="font-weight:700">${m.name}</td>
-      <td>${m.phone}</td>
-      <td style="color:#3B82F6">${m.email || '—'}</td>
-      <td>${m.subject}</td>
+      <td style="font-weight:700">${escapeHtml(m.name)}</td>
+      <td>${escapeHtml(m.phone)}</td>
+      <td style="color:#3B82F6">${escapeHtml(m.email) || '—'}</td>
+      <td>${escapeHtml(m.subject)}</td>
       <td><span style="padding:2px 8px;border-radius:99px;font-size:.75rem;font-weight:700;background:${(statusColor[m.status]||'#94A3B8')}22;color:${statusColor[m.status]||'#94A3B8'}">${statusLabel[m.status] || m.status}</span></td>
       <td style="font-size:.78rem;color:#64748B">${new Date(m.created_at).toLocaleDateString('ar-EG')}</td>
       <td><button onclick="openMsg(${JSON.stringify(JSON.stringify(m))})" style="padding:.3rem .7rem;background:#3B6EF8;color:#fff;border:none;border-radius:5px;font-size:.78rem;cursor:pointer">عرض</button></td>
@@ -2287,6 +2374,13 @@ document.addEventListener('visibilitychange', () => {
   if (document.hidden) clearInterval(refreshTimer);
   else { autoRefreshDash(); startAutoRefresh(); }
 });
+
+/* ── Live refresh every second (المشاوير — يشمل توصيل المطار في نفس الجدول — والطلبات) ── */
+setInterval(() => {
+  if (document.hidden) return;
+  if (currentSection === 'rides')  loadRides();
+  if (currentSection === 'orders') loadOrders();
+}, 1000);
 
 /* ── Init ───────────────────────────────────────────────────── */
 loadDash();

@@ -1,0 +1,271 @@
+---
+import Layout from '../../components/layout.astro';
+import PageHero from '../../components/PageHero.astro';
+---
+
+<style>
+  .post-page { max-width: 640px; margin: 0 auto; padding: var(--sp-8) var(--sp-6) var(--sp-20); }
+  .card { background: var(--color-bg); border: 1.5px solid var(--color-border); border-radius: var(--radius-2xl); padding: var(--sp-8); box-shadow: var(--shadow-md); }
+
+  .steps { display: flex; gap: var(--sp-2); margin-bottom: var(--sp-8); }
+  .steps__dot { flex: 1; height: 4px; border-radius: 99px; background: var(--color-border); }
+  .steps__dot.done, .steps__dot.active { background: var(--color-primary); }
+
+  .step { display: none; }
+  .step.active { display: block; }
+
+  .field { margin-bottom: var(--sp-5); }
+  .field__label { display: block; font-weight: var(--weight-bold); font-size: var(--text-sm); margin-bottom: var(--sp-2); }
+  .field__input, .field__select, .field__textarea {
+    width: 100%; padding: var(--sp-3) var(--sp-4); border: 2px solid var(--color-border);
+    border-radius: var(--radius); font-family: var(--font-body); font-size: var(--text-base);
+    color: var(--color-text); background: var(--color-bg); box-sizing: border-box;
+  }
+  .field__input:focus, .field__select:focus, .field__textarea:focus { outline: none; border-color: var(--color-primary); }
+  .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-4); }
+
+  .upload-zone {
+    border: 2px dashed var(--color-border); border-radius: var(--radius-lg);
+    padding: var(--sp-6); text-align: center; cursor: pointer; transition: all .2s; margin-bottom: var(--sp-4);
+  }
+  .upload-zone:hover { border-color: var(--color-primary); background: var(--color-primary-light); }
+  .thumbs { display: flex; gap: var(--sp-2); flex-wrap: wrap; margin-bottom: var(--sp-4); }
+  .thumbs img { width: 80px; height: 80px; object-fit: cover; border-radius: var(--radius); }
+  .thumb-wrap { position: relative; }
+  .thumb-remove {
+    position: absolute; top: -6px; left: -6px; width: 22px; height: 22px; border-radius: 50%;
+    background: #dc2626; color: #fff; border: none; cursor: pointer; font-size: 12px; line-height: 1;
+  }
+
+  .nav-btns { display: flex; gap: var(--sp-3); margin-top: var(--sp-6); }
+  .btn-next, .btn-submit {
+    flex: 1; padding: var(--sp-4); background: var(--color-primary); color: #fff; border: none;
+    border-radius: var(--radius); font-family: var(--font-body); font-weight: var(--weight-black);
+    font-size: var(--text-base); cursor: pointer;
+  }
+  .btn-next:disabled, .btn-submit:disabled { opacity: .6; cursor: not-allowed; }
+  .btn-back {
+    padding: var(--sp-4) var(--sp-6); background: none; border: 2px solid var(--color-border);
+    border-radius: var(--radius); font-family: var(--font-body); font-weight: var(--weight-bold);
+    cursor: pointer; color: var(--color-text-muted);
+  }
+
+  .checkbox-row { display: flex; align-items: center; gap: var(--sp-2); font-size: var(--text-sm); }
+  .auth-error { background: #FEE2E2; color: #B91C1C; border-radius: var(--radius); padding: var(--sp-3) var(--sp-4); font-size: var(--text-sm); margin-bottom: var(--sp-4); display: none; }
+  .auth-error.visible { display: block; }
+  .success-box { text-align: center; padding: var(--sp-8) 0; }
+  .limit-note { font-size: var(--text-xs); color: var(--color-text-faint); margin-top: -var(--sp-3); margin-bottom: var(--sp-4); }
+</style>
+
+<script>
+  import { CATEGORIES, CONDITIONS, createItem, uploadImage } from '../../utils/marketplaceApi';
+  import { isEgyptianMobile, EG_PHONE_ERROR } from '../../utils/phone';
+
+  let user: any = null;
+  try { user = JSON.parse(localStorage.getItem('wslha_user') || 'null'); } catch {}
+  if (!user || !user.phone) { window.location.href = '/login?next=/marketplace/post'; }
+
+  const isMerchant = user?.role === 'merchant';
+  document.getElementById('qty-field')!.style.display = isMerchant ? 'block' : 'none';
+
+  let currentStep = 1;
+  const totalSteps = 3;
+  const images: string[] = [];
+
+  function showStep(n: number) {
+    document.querySelectorAll('.step').forEach(el => el.classList.remove('active'));
+    document.getElementById(`step-${n}`)!.classList.add('active');
+    document.querySelectorAll('.steps__dot').forEach((el, i) => {
+      el.classList.toggle('done', i < n - 1);
+      el.classList.toggle('active', i === n - 1);
+    });
+    currentStep = n;
+  }
+
+  function showErr(msg: string) {
+    const el = document.getElementById('err')!;
+    el.textContent = msg; el.classList.add('visible');
+  }
+  function hideErr() { document.getElementById('err')!.classList.remove('visible'); }
+
+  document.querySelectorAll<HTMLButtonElement>('[data-next]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      hideErr();
+      const from = Number(btn.dataset.next);
+      if (from === 1) {
+        const title = (document.getElementById('f-title') as HTMLInputElement).value.trim();
+        const price = (document.getElementById('f-price') as HTMLInputElement).value;
+        const category = (document.getElementById('f-category') as HTMLSelectElement).value;
+        if (title.length < 3) return showErr('أدخل عنواناً واضحاً (3 أحرف على الأقل).');
+        if (!price || Number(price) < 0) return showErr('أدخل سعراً صحيحاً.');
+        if (!category) return showErr('اختر الفئة.');
+      }
+      showStep(Math.min(from + 1, totalSteps));
+    });
+  });
+  document.querySelectorAll<HTMLButtonElement>('[data-back]').forEach(btn => {
+    btn.addEventListener('click', () => showStep(Math.max(Number(btn.dataset.back) - 1, 1)));
+  });
+
+  function renderThumbs() {
+    document.getElementById('thumbs')!.innerHTML = images.map((src, i) => `
+      <div class="thumb-wrap"><img src="${src}"><button type="button" class="thumb-remove" data-idx="${i}">✕</button></div>
+    `).join('');
+    document.querySelectorAll('.thumb-remove').forEach(b => {
+      b.addEventListener('click', () => { images.splice(Number((b as HTMLElement).dataset.idx), 1); renderThumbs(); });
+    });
+  }
+
+  document.getElementById('upload-zone')!.addEventListener('click', () => {
+    document.getElementById('file-input')!.click();
+  });
+  document.getElementById('file-input')!.addEventListener('change', async (e) => {
+    const files = Array.from((e.target as HTMLInputElement).files || []).slice(0, 6 - images.length);
+    const zone = document.getElementById('upload-zone')!;
+    zone.textContent = 'جاري رفع الصور...';
+    for (const file of files) {
+      const url = await uploadImage(file);
+      if (url) images.push(url);
+    }
+    zone.textContent = '📷 اضغط لإضافة صور (حتى 6 صور)';
+    renderThumbs();
+  });
+
+  // Populate category select
+  const catSel = document.getElementById('f-category') as HTMLSelectElement;
+  catSel.innerHTML = '<option value="">اختر الفئة…</option>' + CATEGORIES.map(c => `<option value="${c.id}">${c.emoji} ${c.label}</option>`).join('');
+
+  const condSel = document.getElementById('f-condition') as HTMLSelectElement;
+  condSel.innerHTML = Object.entries(CONDITIONS).map(([k, v]) => `<option value="${k}">${v}</option>`).join('');
+
+  (document.getElementById('c-phone') as HTMLInputElement).value = user?.phone?.startsWith('+20') ? '0' + user.phone.slice(3) : (user?.phone || '');
+
+  document.getElementById('post-form')!.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    hideErr();
+    const contactPhone = (document.getElementById('c-phone') as HTMLInputElement).value.trim();
+    if (!isEgyptianMobile(contactPhone)) { showErr(EG_PHONE_ERROR); return; }
+
+    const btn = document.getElementById('submit-btn') as HTMLButtonElement;
+    btn.disabled = true; btn.textContent = 'جاري النشر...';
+
+    const payload = {
+      seller_phone: user.phone,
+      title: (document.getElementById('f-title') as HTMLInputElement).value.trim(),
+      description: (document.getElementById('f-desc') as HTMLTextAreaElement).value.trim(),
+      category: catSel.value,
+      condition: condSel.value,
+      price: Number((document.getElementById('f-price') as HTMLInputElement).value),
+      quantity: isMerchant ? Number((document.getElementById('f-qty') as HTMLInputElement).value || 1) : 1,
+      city: (document.getElementById('f-city') as HTMLInputElement).value.trim() || 'دمياط الجديدة',
+      images,
+      contact_phone: contactPhone,
+      whatsapp: (document.getElementById('c-whatsapp') as HTMLInputElement).checked,
+    };
+
+    const created = await createItem(payload);
+    if (created) {
+      showStep(4 as any);
+      document.getElementById('success-link')!.setAttribute('href', `/marketplace/item?id=${created.id}`);
+    } else {
+      showErr('حدث خطأ أثناء النشر، حاول مرة أخرى.');
+      btn.disabled = false; btn.textContent = '✅ نشر الإعلان';
+    }
+  });
+</script>
+
+<Layout title="أضف إعلاناً | سوق المستعمل | وصّلها" description="بيع منتجك المستعمل بسهولة" page="marketplace">
+  <PageHero badge="🛍️ سوق المستعمل" title="أضف إعلانك" subtitle="ثلاث خطوات بسيطة وينشر إعلانك فوراً" />
+
+  <section class="post-page">
+    <div class="card">
+      <div class="steps">
+        <div class="steps__dot active"></div><div class="steps__dot"></div><div class="steps__dot"></div>
+      </div>
+
+      <div id="err" class="auth-error"></div>
+
+      <!-- Step 1: Item info -->
+      <div id="step-1" class="step active">
+        <h2 style="font-weight:900;margin-bottom:1.5rem">📝 بيانات المنتج</h2>
+        <div class="field">
+          <label class="field__label" for="f-title">عنوان الإعلان</label>
+          <input class="field__input" id="f-title" type="text" placeholder="مثال: آيفون 13 برو استخدام خفيف" maxlength="80">
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label class="field__label" for="f-category">الفئة</label>
+            <select class="field__select" id="f-category"></select>
+          </div>
+          <div class="field">
+            <label class="field__label" for="f-condition">الحالة</label>
+            <select class="field__select" id="f-condition"></select>
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label class="field__label" for="f-price">السعر (ج.م)</label>
+            <input class="field__input" id="f-price" type="number" min="0" placeholder="0">
+          </div>
+          <div class="field" id="qty-field">
+            <label class="field__label" for="f-qty">الكمية المتاحة</label>
+            <input class="field__input" id="f-qty" type="number" min="1" value="1">
+          </div>
+        </div>
+        <div class="field">
+          <label class="field__label" for="f-city">المدينة/المنطقة</label>
+          <input class="field__input" id="f-city" type="text" placeholder="دمياط الجديدة">
+        </div>
+        <div class="field">
+          <label class="field__label" for="f-desc">الوصف (اختياري)</label>
+          <textarea class="field__textarea" id="f-desc" rows="4" placeholder="تفاصيل إضافية عن المنتج، سبب البيع، إلخ."></textarea>
+        </div>
+        <div class="nav-btns">
+          <button type="button" class="btn-next" data-next="1">التالي: الصور ←</button>
+        </div>
+      </div>
+
+      <!-- Step 2: Images -->
+      <div id="step-2" class="step">
+        <h2 style="font-weight:900;margin-bottom:1.5rem">📷 صور المنتج</h2>
+        <div class="upload-zone" id="upload-zone">📷 اضغط لإضافة صور (حتى 6 صور)</div>
+        <input type="file" id="file-input" accept="image/*" multiple hidden>
+        <div class="thumbs" id="thumbs"></div>
+        <p class="limit-note">الصور تزيد فرصة البيع بشكل كبير — لكنها اختيارية.</p>
+        <div class="nav-btns">
+          <button type="button" class="btn-back" data-back="2">→ رجوع</button>
+          <button type="button" class="btn-next" data-next="2">التالي: التواصل ←</button>
+        </div>
+      </div>
+
+      <!-- Step 3: Contact -->
+      <form id="post-form">
+        <div id="step-3" class="step">
+          <h2 style="font-weight:900;margin-bottom:1.5rem">📞 بيانات التواصل</h2>
+          <div class="field">
+            <label class="field__label" for="c-phone">رقم الجوال الذي سيظهر للمشترين</label>
+            <input class="field__input" id="c-phone" type="tel" dir="ltr" placeholder="01XXXXXXXXX" maxlength="11">
+          </div>
+          <div class="field checkbox-row">
+            <input type="checkbox" id="c-whatsapp" checked style="width:auto">
+            <label for="c-whatsapp">هذا الرقم يعمل على واتساب</label>
+          </div>
+          <div class="nav-btns">
+            <button type="button" class="btn-back" data-back="3">→ رجوع</button>
+            <button type="submit" id="submit-btn" class="btn-submit">✅ نشر الإعلان</button>
+          </div>
+        </div>
+      </form>
+
+      <!-- Step 4: Success -->
+      <div id="step-4" class="step">
+        <div class="success-box">
+          <div style="font-size:3.5rem;margin-bottom:1rem">🎉</div>
+          <h2 style="font-weight:900;margin-bottom:.5rem">تم نشر إعلانك بنجاح!</h2>
+          <p style="color:var(--color-text-muted);margin-bottom:1.5rem">إعلانك ظاهر الآن للجميع في سوق المستعمل</p>
+          <a id="success-link" href="/marketplace" class="btn btn--primary" style="display:inline-block;padding:.9rem 2rem;text-decoration:none">عرض الإعلان</a>
+        </div>
+      </div>
+    </div>
+  </section>
+</Layout>

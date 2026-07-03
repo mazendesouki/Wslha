@@ -5,13 +5,14 @@ export interface NavLink {
 }
 
 export const NAV_LINKS: NavLink[] = [
-  { label: 'الرئيسية',     href: '/',          page: 'home'     },
-  { label: 'مشاوير',       href: '/rides',      page: 'rides'    },
-  { label: 'توصيل المطار', href: '/airport',    page: 'airport'  },
-  { label: 'المتاجر',      href: '/stores',     page: 'stores'   },
-  { label: 'خدماتنا',      href: '/services',   page: 'services' },
-  { label: 'من نحن',       href: '/about',      page: 'about'    },
-  { label: 'تواصل معنا',   href: '/contact',    page: 'contact'  },
+  { label: 'الرئيسية',       href: '/',            page: 'home'        },
+  { label: 'مشاوير',         href: '/rides',        page: 'rides'       },
+  { label: 'توصيل المطار',   href: '/airport',      page: 'airport'     },
+  { label: 'المتاجر',        href: '/stores',       page: 'stores'      },
+  { label: 'سوق المستعمل',   href: '/marketplace',  page: 'marketplace' },
+  { label: 'خدماتنا',        href: '/services',     page: 'services'    },
+  { label: 'من نحن',         href: '/about',        page: 'about'       },
+  { label: 'تواصل معنا',     href: '/contact',      page: 'contact'     },
 ];
 
 export const FOOTER_LINKS = {
@@ -27,6 +28,7 @@ export const FOOTER_LINKS = {
     { label: 'توصيل المطار',   href: '/airport'  },
     { label: 'مشاوير دمياط',   href: '/rides'    },
     { label: 'المتاجر المحلية', href: '/stores'   },
+    { label: 'سوق المستعمل',   href: '/marketplace' },
     { label: 'الأسعار',        href: '/services#pricing' },
   ],
   contact: [
