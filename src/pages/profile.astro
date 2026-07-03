@@ -1547,34 +1547,18 @@ import Layout from '../components/layout.astro';
       return null;
     }
 
-    async function sendOTP(phone) {
-      var arr = new Uint32Array(1);
-      crypto.getRandomValues(arr);
-      var code = String(100000 + (arr[0] % 900000));
-      await fetch(SB_URL + '/rest/v1/otps?phone=eq.' + encodeURIComponent(phone), {
-        method: 'DELETE', headers: SB_H,
-      }).catch(function(){});
-      await fetch(SB_URL + '/rest/v1/otps', {
-        method: 'POST',
-        headers: { ...SB_H, Prefer: 'return=minimal' },
-        body: JSON.stringify({ phone: phone, code: code }),
+    // The server generates + emails the code to the account's registered email
+    // (via the edge function). The code is NEVER shown on screen.
+    async function sendEmailOTP() {
+      var r = await fetch(SB_URL + '/functions/v1/swift-processor', {
+        method: 'POST', headers: { ...SB_H, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone: user.phone }),
       });
-      phoneBadge.title = 'كود التطوير: ' + code;
-      phoneBadge.style.cursor = 'pointer';
-      phoneBadge.onclick = function () {
-        otpBoxes.forEach(function (b, i) { b.value = code[i] || ''; b.classList.toggle('filled', !!code[i]); });
-        doVerify();
-      };
-    }
-
-    async function verifyOTP(phone, token) {
-      var res = await fetch(SB_URL + '/rest/v1/rpc/verify_otp', {
-        method: 'POST', headers: SB_H,
-        body: JSON.stringify({ p_phone: phone, p_code: token }),
-      });
-      if (!res.ok) return false;
-      var json = await res.json();
-      return json === true || json === 'true' || (json && json.verified === true);
+      if (!r.ok) {
+        var t = await r.text().catch(function(){ return ''; });
+        if (/no_email/.test(t)) throw new Error('لا يوجد بريد إلكتروني مسجّل لحسابك. تواصل مع الدعم.');
+        throw new Error('تعذّر إرسال رمز التحقق إلى بريدك.');
+      }
     }
 
     function goStep2() {
@@ -1633,10 +1617,10 @@ import Layout from '../components/layout.astro';
       var btn = $('pc-send-btn');
       btn.disabled = true; btn.textContent = 'جاري الإرسال…';
       try {
-        await sendOTP(pcNewPhone);
+        await sendEmailOTP();
         goStep2();
       } catch (e) {
-        showErr(err1, 'فشل الإرسال، حاول مرة أخرى');
+        showErr(err1, (e && e.message) || 'فشل الإرسال، حاول مرة أخرى');
       } finally {
         btn.disabled = false; btn.textContent = 'إرسال كود التحقق';
       }
@@ -1651,7 +1635,12 @@ import Layout from '../components/layout.astro';
       hideErr(err2);
 
       try {
-        var ok = await verifyOTP(pcNewPhone, token);
+        // Server validates the emailed code AND changes the phone atomically.
+        var res = await fetch(SB_URL + '/rest/v1/rpc/change_phone', {
+          method: 'POST', headers: { ...SB_H, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ p_phone: user.phone, p_code: token, p_new_phone: pcNewPhone }),
+        });
+        var ok = res.ok && (await res.json()) === true;
         if (!ok) {
           otpBoxes.forEach(function (b) { b.classList.remove('shake'); void b.offsetWidth; b.classList.add('shake'); b.value = ''; b.classList.remove('filled'); });
           otpBoxes[0] && otpBoxes[0].focus();
@@ -1659,18 +1648,6 @@ import Layout from '../components/layout.astro';
           btn.disabled = false; btn.textContent = 'تأكيد التغيير';
           return;
         }
-
-        var local = user.phone.startsWith('+20') ? '0' + user.phone.slice(3) : user.phone;
-        var intl  = user.phone.startsWith('0')   ? '+2' + user.phone : user.phone;
-        var patchRes = await fetch(
-          SB_URL + '/rest/v1/accounts?or=(phone.eq.' + encodeURIComponent(intl) + ',phone.eq.' + encodeURIComponent(local) + ')',
-          {
-            method: 'PATCH',
-            headers: { ...SB_H, 'Content-Type': 'application/json', Prefer: 'return=minimal' },
-            body: JSON.stringify({ phone: pcNewPhone }),
-          }
-        );
-        if (!patchRes.ok) { showErr(err2, 'فشل تحديث الرقم، حاول مرة أخرى'); btn.disabled = false; btn.textContent = 'تأكيد التغيير'; return; }
 
         try {
           var stored = JSON.parse(localStorage.getItem('wslha_user') || '{}');

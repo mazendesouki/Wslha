@@ -1678,12 +1678,16 @@ import { POPULAR_PLACES, PLACES, PLACE_CATEGORIES, CATEGORY_COLORS } from '../da
           origin: { lat: from.lat, lng: from.lng },
           destination: { lat: to.lat, lng: to.lng },
           travelMode: G.TravelMode.DRIVING,
+          // الوقت مع الزحام الحيّ (يعتمد على حركة المرور الآن)
+          drivingOptions: { departureTime: new Date(), trafficModel: G.TrafficModel.BEST_GUESS },
         }, (r, s) => s === 'OK' ? res(r) : rej(s))
       );
       routeRenderer.setDirections(result);
       const leg = result.routes[0].legs[0];
       _realRoadKm = leg.distance.value / 1000;
-      _realEtaMin = Math.max(1, Math.ceil(leg.duration.value / 60));
+      // زمن القيادة مع الزحام إن توفّر، وإلا الزمن المعتاد
+      const _durSec = (leg.duration_in_traffic && leg.duration_in_traffic.value) || leg.duration.value;
+      _realEtaMin = Math.max(1, Math.ceil(_durSec / 60));
       const realFare = fareFor(_realRoadKm);
       document.getElementById('sum-dist').textContent  = _realRoadKm.toFixed(1) + ' كم';
       document.getElementById('sum-eta').textContent   = _realEtaMin + ' دق';
@@ -2014,7 +2018,7 @@ import { POPULAR_PLACES, PLACES, PLACE_CATEGORIES, CATEGORY_COLORS } from '../da
     document.getElementById('receipt-route-to').textContent = ride.to_area || '—';
     const gridItems = [
       { label: 'مدة الرحلة', value: (ride.eta_minutes || '—') + ' دقيقة' },
-      { label: 'المسافة', value: (ride.distance_km ? (ride.distance_km * 1.35).toFixed(1) : '—') + ' كم' },
+      { label: 'المسافة', value: (ride.distance_km ? Number(ride.distance_km).toFixed(1) : '—') + ' كم' },
       { label: 'السائق', value: ride.driver_name || '—' },
       { label: 'طريقة الدفع', value: ride.payment === 'wallet' ? '💳 محفظة' : '💵 نقدي' },
     ];

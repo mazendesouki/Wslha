@@ -1818,6 +1818,8 @@ async function loadCommissionRates() {
 async function saveCommissionRates() {
   const btn = document.getElementById('save-rates-btn');
   const msg = document.getElementById('rates-msg');
+  const pass = getAdminPass();
+  if (!pass) { msg.textContent='مطلوب كلمة مرور المشرف'; msg.style.cssText='display:block;background:#FEE2E2;color:#991B1B;font-size:.82rem;font-weight:700;padding:.5rem .75rem;border-radius:6px'; return; }
   btn.disabled = true; btn.textContent = 'جاري الحفظ...';
   const pairs = [
     { key:'commission_ride',     value: document.getElementById('rate-ride').value },
@@ -1825,16 +1827,18 @@ async function saveCommissionRates() {
     { key:'commission_airport',  value: document.getElementById('rate-airport').value },
   ];
   try {
-    await Promise.all(pairs.map(p =>
-      fetch(`${SB_URL}/rest/v1/app_settings`, {
-        method: 'POST',
-        headers: { ...SB_H, Prefer: 'resolution=merge-duplicates,return=minimal' },
-        body: JSON.stringify({ key: p.key, value: p.value, updated_at: new Date().toISOString() }),
-      })
+    const results = await Promise.all(pairs.map(p =>
+      sbRpc('admin_set_setting', { p_admin_phone: ADMIN.phone, p_admin_password: pass, p_key: p.key, p_value: p.value })
     ));
-    msg.textContent = '✅ تم حفظ النسب بنجاح — ستطبق على الرحلات القادمة';
-    msg.style.cssText = 'display:block;background:#DCFCE7;color:#14532D;font-size:.82rem;font-weight:700;padding:.5rem .75rem;border-radius:6px';
-    showToast('✅ تم حفظ نسب العمولة', '#16A34A');
+    if (results.every(Boolean)) {
+      msg.textContent = '✅ تم حفظ النسب بنجاح — ستطبق على الرحلات القادمة';
+      msg.style.cssText = 'display:block;background:#DCFCE7;color:#14532D;font-size:.82rem;font-weight:700;padding:.5rem .75rem;border-radius:6px';
+      showToast('✅ تم حفظ نسب العمولة', '#16A34A');
+    } else {
+      _adminPass = null;
+      msg.textContent = '❌ فشل — تحقق من كلمة مرور المشرف';
+      msg.style.cssText = 'display:block;background:#FEE2E2;color:#991B1B;font-size:.82rem;font-weight:700;padding:.5rem .75rem;border-radius:6px';
+    }
   } catch {
     msg.textContent = 'حدث خطأ، حاول مرة أخرى';
     msg.style.cssText = 'display:block;background:#FEE2E2;color:#991B1B;font-size:.82rem;font-weight:700;padding:.5rem .75rem;border-radius:6px';
