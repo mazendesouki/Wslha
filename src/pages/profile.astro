@@ -1,4 +1,3 @@
----
 import Layout from '../components/layout.astro';
 ---
 
@@ -809,10 +808,10 @@ import Layout from '../components/layout.astro';
                 <div class="security-row__label">رقم الجوال</div>
                 <div class="security-row__desc" id="sec-phone">—</div>
               </div>
-              <button class="btn-outline" id="change-phone-btn" type="button">تغيير</button>
+              <span class="btn-outline" style="opacity:.6;cursor:default" title="سيتوفر قريباً">قريباً</span>
             </div>
-            <!-- Phone change panel -->
-            <div class="phone-change-panel" id="phone-change-panel">
+            <!-- Phone change panel (temporarily disabled — email delivery only works for the admin's own inbox until a verified sending domain is set up) -->
+            <div class="phone-change-panel" id="phone-change-panel" style="display:none !important">
               <div class="pc-step is-active" id="pc-step1">
                 <div class="pc-title">📱 تغيير رقم الجوال</div>
                 <div class="pc-hint">أدخل الرقم الجديد وسنرسل إليه كود التحقق</div>
@@ -1085,9 +1084,16 @@ import Layout from '../components/layout.astro';
     return 'or=(phone.eq.' + encodeURIComponent(intl) + ',phone.eq.' + encodeURIComponent(local) + ')';
   }
   async function fetchAccount(phone) {
-    const data = await sbFetch(
-      SB_URL + '/rest/v1/accounts?' + phoneOrFilter(phone) + '&select=id,phone,name,role,city,created_at,email,username,status,auth_user_id&limit=1');
-    return Array.isArray(data) ? (data[0] || null) : null;
+    // Routed through the narrow lookup RPC — the anon key can no longer
+    // SELECT the accounts table directly (closes mass PII enumeration).
+    try {
+      const res = await fetch(SB_URL + '/rest/v1/rpc/lookup_account', {
+        method: 'POST', headers: { ...SB_H, 'Content-Type': 'application/json' }, body: JSON.stringify({ p_phone: phone }),
+      });
+      if (!res.ok) return null;
+      const rows = await res.json();
+      return Array.isArray(rows) ? (rows[0] || null) : null;
+    } catch { return null; }
   }
   async function fetchWallet(phone) {
     const intl  = intlPhone(phone);
@@ -1580,14 +1586,7 @@ import Layout from '../components/layout.astro';
       pcNewPhone = '';
     }
 
-    $('change-phone-btn').addEventListener('click', function () {
-      panel.classList.toggle('is-open');
-      if (panel.classList.contains('is-open')) {
-        step1.classList.add('is-active');
-        step2.classList.remove('is-active');
-        setTimeout(function () { newPhoneIn.focus(); }, 50);
-      }
-    });
+    // Feature disabled: change-phone-btn no longer rendered (shows "قريباً" instead).
     $('pc-cancel-btn').addEventListener('click', resetPanel);
     $('pc-back-btn').addEventListener('click', function () {
       step2.classList.remove('is-active');
@@ -1605,13 +1604,11 @@ import Layout from '../components/layout.astro';
       var newLocal = normalized.startsWith('+20') ? '0' + normalized.slice(3) : normalized;
       if (newLocal === curLocal) { showErr(err1, 'هذا هو رقمك الحالي بالفعل'); return; }
 
-      var checkIntl  = normalized;
-      var checkLocal = newLocal;
-      var existing = await fetch(
-        SB_URL + '/rest/v1/accounts?or=(phone.eq.' + encodeURIComponent(checkIntl) + ',phone.eq.' + encodeURIComponent(checkLocal) + ')&select=id&limit=1',
-        { headers: SB_H }
-      ).then(function (r) { return r.ok ? r.json() : []; }).catch(function () { return []; });
-      if (existing.length > 0) { showErr(err1, 'هذا الرقم مسجّل بالفعل لحساب آخر'); return; }
+      var taken = await fetch(SB_URL + '/rest/v1/rpc/check_field_availability', {
+        method: 'POST', headers: { ...SB_H, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ p_field: 'phone', p_value: normalized }),
+      }).then(function (r) { return r.ok ? r.json() : false; }).catch(function () { return false; });
+      if (taken === true) { showErr(err1, 'هذا الرقم مسجّل بالفعل لحساب آخر'); return; }
 
       pcNewPhone = normalized;
       var btn = $('pc-send-btn');

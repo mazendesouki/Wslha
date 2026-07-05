@@ -18,6 +18,9 @@ const SB_KEY = 'sb_publishable_PLSnpvCT-sAyUMtymNgTwA_QmL2suw4';
 const SB_H   = { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}`, 'Content-Type': 'application/json' };
 
 // ── Check if a field value is already taken in Supabase ──
+// Routed through a narrow RPC (not a direct table SELECT) — the anon key can
+// no longer read the accounts table at all, so this is the only way to check
+// availability without exposing any user's actual data.
 export async function fieldExists(
   field: 'phone' | 'email' | 'username',
   value: string,
@@ -25,16 +28,12 @@ export async function fieldExists(
   if (!value) return false;
   try {
     const v = field === 'phone' ? normalizeEgyptianPhone(value) : value.trim().toLowerCase();
-    const col = field === 'email' ? `email=ilike.${encodeURIComponent(v)}`
-              : field === 'username' ? `username=ilike.${encodeURIComponent(v)}`
-              : `phone=eq.${encodeURIComponent(v)}`;
-    const res = await fetch(
-      `${SB_URL}/rest/v1/accounts?${col}&select=phone&limit=1`,
-      { headers: SB_H }
-    );
+    const res = await fetch(`${SB_URL}/rest/v1/rpc/check_field_availability`, {
+      method: 'POST', headers: SB_H,
+      body: JSON.stringify({ p_field: field, p_value: v }),
+    });
     if (!res.ok) return 'error';
-    const rows = await res.json();
-    return Array.isArray(rows) && rows.length > 0;
+    return (await res.json()) === true;
   } catch { return 'error'; }
 }
 
@@ -124,12 +123,12 @@ export async function verifyLogin(phone: string, password: string): Promise<Logi
         return { ok: true, account };
       }
       // RPC returned no row → either wrong password or unknown number.
-      // Distinguish by checking existence (without reading the password).
+      // Distinguish via the narrow lookup RPC (never reads the table directly).
       try {
-        const ex = await fetch(
-          `${SB_URL}/rest/v1/accounts?phone=eq.${encodeURIComponent(p)}&select=phone&limit=1`,
-          { headers: SB_H }
-        );
+        const ex = await fetch(`${SB_URL}/rest/v1/rpc/lookup_account`, {
+          method: 'POST', headers: SB_H,
+          body: JSON.stringify({ p_phone: p }),
+        });
         const exRows = ex.ok ? await ex.json() : [];
         return { ok: false, reason: (exRows && exRows.length) ? 'bad_password' : 'not_found' };
       } catch {
@@ -147,4 +146,19 @@ export async function verifyLogin(phone: string, password: string): Promise<Logi
 
 export function findAccount(phone: string): Account | undefined {
   return lsAll().find(a => a.phone === normalizeEgyptianPhone(phone));
+}
+
+// ── Look up a single account by exact phone via the narrow lookup RPC.
+//    Replaces direct `accounts?phone=eq....&select=...` reads everywhere —
+//    the anon key can no longer SELECT the accounts table at all.
+export async function lookupAccount(phone: string): Promise<any | null> {
+  try {
+    const res = await fetch(`${SB_URL}/rest/v1/rpc/lookup_account`, {
+      method: 'POST', headers: SB_H,
+      body: JSON.stringify({ p_phone: phone }),
+    });
+    if (!res.ok) return null;
+    const rows = await res.json();
+    return Array.isArray(rows) ? (rows[0] ?? null) : null;
+  } catch { return null; }
 }

@@ -973,6 +973,32 @@ async function sbRpc(fn, body) {
     return (await r.json()) === true;
   } catch { return false; }
 }
+// Like sbRpc but for table-returning RPCs — returns the row array, or null on failure.
+async function sbRpcRows(fn, body) {
+  try {
+    const r = await fetch(`${SB_URL}/rest/v1/rpc/${fn}`, {
+      method:'POST', headers:{...SB_H,'Content-Type':'application/json'}, body:JSON.stringify(body)
+    });
+    if (!r.ok) return null;
+    const rows = await r.json();
+    return Array.isArray(rows) ? rows : null;
+  } catch { return null; }
+}
+
+// The accounts table can no longer be read directly by the anon key (closes
+// mass user-data enumeration) — every bulk listing goes through this
+// password-verified RPC instead. The admin password is asked once per
+// session (cached in _adminPass) and silently reused for every subsequent
+// listing/refresh — background timers never re-prompt on their own; if the
+// password was wrong we just return an empty list until the admin retries
+// via a manual "🔄 تحديث" click (which re-prompts once).
+async function adminListAccounts(roleFilter) {
+  const pass = getAdminPass();
+  if (!pass) return [];
+  const rows = await sbRpcRows('admin_list_accounts', { p_admin_phone: ADMIN.phone, p_admin_password: pass, p_role: roleFilter || null });
+  if (rows === null) { _adminPass = null; return []; }
+  return rows;
+}
 
 /* ── Navigation ─────────────────────────────────────────────── */
 const sectionTitles = {
@@ -1031,7 +1057,7 @@ document.getElementById('logout-btn').addEventListener('click', () => {
 /* ═══════════════════ DASHBOARD ════════════════════════════ */
 async function loadDash() {
   const [users, orders, rides, stores, dApps, mApps] = await Promise.all([
-    sbGet('accounts?select=phone,role,status,created_at'),
+    adminListAccounts(),
     sbGet('orders?select=id,code,customer_name,customer_phone,store_name,total,status,created_at&order=created_at.desc&limit=200'),
     sbGet('rides?select=id,status,base_fare,created_at'),
     sbGet('stores?select=id,is_active'),
@@ -1089,7 +1115,7 @@ async function loadDash() {
 /* ═══════════════════ USERS ═════════════════════════════════ */
 let allUsers = [];
 async function loadUsers() {
-  const data = await sbGet('accounts?select=id,phone,name,role,city,created_at,email,username,status,auth_user_id&order=created_at.desc&limit=500');
+  const data = await adminListAccounts();
   allUsers = data || [];
   renderUsers();
 }
@@ -1210,7 +1236,7 @@ document.querySelectorAll('#drivers-main-tabs .tab-btn').forEach(btn => {
 });
 
 async function loadDriverAccounts() {
-  const data = await sbGet('accounts?role=eq.driver&select=id,phone,name,role,city,created_at,email,username,status,auth_user_id&order=created_at.desc&limit=500');
+  const data = await adminListAccounts('driver');
   allDriverAccounts = data || [];
   renderDriverAccounts();
 }
@@ -1366,7 +1392,7 @@ document.querySelectorAll('#merchants-main-tabs .tab-btn').forEach(btn => {
 });
 
 async function loadMerchantAccounts() {
-  const data = await sbGet('accounts?role=eq.merchant&select=id,phone,name,role,city,created_at,email,username,status,auth_user_id&order=created_at.desc&limit=500');
+  const data = await adminListAccounts('merchant');
   allMerchantAccounts = data || [];
   renderMerchantAccounts();
 }
@@ -1947,7 +1973,7 @@ async function loadWalletsSection() {
 
   const [wallets, accounts, platformTxns, txData] = await Promise.all([
     sbGet('wallets?select=phone,balance,updated_at&order=balance.desc&limit=2000'),
-    sbGet('accounts?select=phone,name,role&limit=2000'),
+    adminListAccounts(),
     sbGet('wallet_transactions?phone=eq.platform&select=amount,note,created_at&order=created_at.desc&limit=5000'),
     sbGet('wallet_transactions?select=id,phone,amount,type,note,reference_id,created_at&order=created_at.desc&limit=500'),
   ]);
@@ -2315,7 +2341,7 @@ async function autoRefreshDash() {
   try {
     // Lightweight KPI-only refresh
     const [users, orders, stores, dApps, mApps] = await Promise.all([
-      sbGet('accounts?select=phone,role,status'),
+      adminListAccounts(),
       sbGet('orders?select=id,status,total,created_at'),
       sbGet('stores?select=id,is_active'),
       sbGet('driver_applications?select=id,phone,status,full_name'),

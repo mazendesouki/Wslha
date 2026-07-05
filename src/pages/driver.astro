@@ -1017,7 +1017,10 @@ window.doRegister = async function() {
   try {
     // Check existing account
     var checkRes = await Promise.race([
-      fetch(SB_URL + '/rest/v1/accounts?' + orFilter(phone14) + '&select=phone,name,role,status,city&limit=1', { headers: SB_H }),
+      fetch(SB_URL + '/rest/v1/rpc/lookup_account', {
+        method: 'POST', headers: Object.assign({}, SB_H, { 'Content-Type': 'application/json' }),
+        body: JSON.stringify({ p_phone: phone14 }),
+      }),
       timeout(10000)
     ]);
     var existing = checkRes.ok ? await checkRes.json() : [];

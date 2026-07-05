@@ -1775,30 +1775,23 @@ import { POPULAR_PLACES, PLACES, PLACE_CATEGORIES, CATEGORY_COLORS } from '../da
     } catch { return null; }
   }
 
-  /* ── Auto-assign real driver from accounts table ── */
+  /* ── Auto-assign a real driver — server picks ONE and assigns it atomically.
+     Replaces the old client-side "fetch up to 20 driver phone numbers, then
+     pick one" pattern, which let any visitor harvest the entire driver list
+     (name+phone+city) with a single unauthenticated request. Now the client
+     never sees more than the one driver actually assigned to this ride. ── */
   async function findAndAssignDriver(rideId) {
     try {
-      const res = await fetch(
-        `${SB_URL}/rest/v1/accounts?role=eq.driver&or=(status.eq.active,status.eq.approved)&select=name,phone,city&order=created_at.asc&limit=20`,
-        { headers: SB_H }
-      );
-      if (!res.ok) return null;
-      const drivers = await res.json();
-      if (!Array.isArray(drivers) || drivers.length === 0) return null;
-
-      // Pick a random available driver for fairness
-      const driver = drivers[Math.floor(Math.random() * drivers.length)];
-      const driverName  = driver.name  || 'السائق';
-      const driverPhone = driver.phone || '';
-
-      const patchRes = await fetch(`${SB_URL}/rest/v1/rides?id=eq.${rideId}`, {
-        method: 'PATCH',
-        headers: { ...SB_H, Prefer: 'return=representation' },
-        body: JSON.stringify({ driver_name: driverName, driver_phone: driverPhone, status: 'accepted' }),
+      const res = await fetch(`${SB_URL}/rest/v1/rpc/assign_random_driver_to_ride`, {
+        method: 'POST',
+        headers: { ...SB_H, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ p_ride_id: rideId }),
       });
-      if (!patchRes.ok) return null;
-      const rows = await patchRes.json();
-      return Array.isArray(rows) ? rows[0] : null;
+      if (!res.ok) return null;
+      const rows = await res.json();
+      const row = Array.isArray(rows) ? rows[0] : rows;
+      if (!row || !row.driver_phone) return null;
+      return { driver_name: row.driver_name || 'السائق', driver_phone: row.driver_phone };
     } catch { return null; }
   }
 
@@ -2224,7 +2217,7 @@ import { POPULAR_PLACES, PLACES, PLACE_CATEGORIES, CATEGORY_COLORS } from '../da
         if (assigned && !_driverShown) {
           // A real driver was assigned as fallback
           _driverShown = true;
-          showDriverFound(assigned);
+          showDriverFound({ ...assigned, from_area: from.name, to_area: to.name });
           if (window._routeCoords && _currentFrom && _currentTo)
             startLiveTracking(_currentFrom, _currentTo, _currentEta);
         } else if (!_driverShown) {
@@ -2401,7 +2394,7 @@ import { POPULAR_PLACES, PLACES, PLACE_CATEGORIES, CATEGORY_COLORS } from '../da
         const assigned = await findAndAssignDriver(activeRideId);
         if (assigned && !_driverShown) {
           _driverShown = true;
-          showDriverFound(assigned);
+          showDriverFound({ ...assigned, from_area: fromArea.name, to_area: airport.name });
           if (window._routeCoords && _currentFrom && _currentTo)
             startLiveTracking(_currentFrom, _currentTo, _currentEta);
         } else if (!_driverShown) {

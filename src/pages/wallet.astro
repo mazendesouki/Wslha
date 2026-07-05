@@ -391,10 +391,9 @@ import Layout from '../components/layout.astro';
     if (ph.length < 10) return;
     _trTimer = setTimeout(async function() {
       try {
-        var local = ph.startsWith('+20') ? '0'+ph.slice(3) : ph;
-        var intl = ph.startsWith('01') ? '+2'+ph : ph;
-        var filter = 'or=(phone.eq.'+encodeURIComponent(intl)+',phone.eq.'+encodeURIComponent(local)+')';
-        var res = await fetch(SB_URL+'/rest/v1/accounts?'+filter+'&select=name,phone&limit=1', { headers: SB_H });
+        var res = await fetch(SB_URL+'/rest/v1/rpc/lookup_account', {
+          method: 'POST', headers: SB_H, body: JSON.stringify({ p_phone: ph }),
+        });
         var rows = await res.json();
         if (Array.isArray(rows) && rows[0]) {
           document.getElementById('transfer-recipient-name').textContent = rows[0].name||'مستخدم';
@@ -416,11 +415,10 @@ import Layout from '../components/layout.astro';
     if (toPhone === user.phone) { toast('لا يمكن التحويل لنفس الحساب', false); return; }
     if (!amt || amt < 1) { toast('أدخل مبلغاً صحيحاً', false); return; }
 
-    // Resolve the recipient to their canonical stored phone (handles 01.. / +20..)
-    var toIntl = toPhone.startsWith('01') ? '+2'+toPhone : toPhone;
-    var toLocal = toPhone.startsWith('+20') ? '0'+toPhone.slice(3) : toPhone;
-    var filter = 'or=(phone.eq.'+encodeURIComponent(toIntl)+',phone.eq.'+encodeURIComponent(toLocal)+')';
-    var rRes = await fetch(SB_URL+'/rest/v1/accounts?'+filter+'&select=name,phone&limit=1', { headers: SB_H });
+    // Resolve the recipient to their canonical stored phone via the narrow lookup RPC.
+    var rRes = await fetch(SB_URL+'/rest/v1/rpc/lookup_account', {
+      method: 'POST', headers: SB_H, body: JSON.stringify({ p_phone: toPhone }),
+    });
     var rRows = await rRes.json();
     if (!Array.isArray(rRows)||!rRows[0]) { toast('لم يُعثر على هذا المستخدم', false); return; }
     var recipientPhone = rRows[0].phone;

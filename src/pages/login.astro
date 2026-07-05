@@ -163,7 +163,7 @@ import PageHero from '../components/PageHero.astro';
 <script>
   import { isEgyptianMobile, normalizeEgyptianPhone, EG_PHONE_ERROR } from '../utils/phone';
   import { validatePassword } from '../utils/password';
-  import { verifyLogin } from '../utils/accounts';
+  import { verifyLogin, lookupAccount } from '../utils/accounts';
   import { SB_URL, SB_KEY } from '../utils/supabaseClient';
 
   const SB_H = { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}`, 'Content-Type': 'application/json' };
@@ -258,17 +258,11 @@ import PageHero from '../components/PageHero.astro';
     stepFp.classList.remove('active'); stepLogin.classList.add('active');
   });
 
-  // Account lookup (both phone formats), returns the canonical stored phone or null.
+  // Account lookup (both phone formats) via the narrow RPC — the anon key
+  // can no longer SELECT the accounts table directly.
   async function findAccountPhone(normalized: string): Promise<string | null> {
-    try {
-      const local = normalized;
-      const intl  = normalized.startsWith('01') ? '+2' + normalized : normalized;
-      const orF = `or=(phone.eq.${encodeURIComponent(intl)},phone.eq.${encodeURIComponent(local)})`;
-      const res = await fetch(`${SB_URL}/rest/v1/accounts?${orF}&select=phone&limit=1`, { headers: SB_H });
-      if (!res.ok) return null;
-      const rows = await res.json();
-      return rows[0]?.phone ?? null;
-    } catch { return null; }
+    const acc = await lookupAccount(normalized);
+    return acc?.phone ?? null;
   }
 
   // Request a recovery code. The SERVER generates the code, stores it, and
