@@ -1425,7 +1425,7 @@ import PageHero from '../components/PageHero.astro';
       const orFilter = `or=(phone.eq.${encodeURIComponent(intl)},phone.eq.${encodeURIComponent(local)})`;
 
       const [acctRes, appRes] = await Promise.all([
-        fetch(`${SB_URL}/rest/v1/accounts?${orFilter}&select=status,role&limit=1`, { headers: SB_H }),
+        fetch(`${SB_URL}/rest/v1/rpc/lookup_account?p_phone=${encodeURIComponent(p)}`, { headers: SB_H }),
         fetch(`${SB_URL}/rest/v1/driver_applications?${orFilter}&select=status,rejection_reason,created_at&order=created_at.desc&limit=1`, { headers: SB_H }),
       ]);
 

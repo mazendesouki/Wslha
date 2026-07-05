@@ -447,7 +447,7 @@ async function registerMerchantAndProceed() {
 
   try {
     const checkRes = await fetch(
-      `${SB_URL}/rest/v1/accounts?${phoneOrFilter(phone14)}&select=phone,name,role,status,city`,
+      `${SB_URL}/rest/v1/rpc/lookup_account?p_phone=${encodeURIComponent(phone14)}`,
       { headers: SB_H }
     );
     const existing = await checkRes.json();
