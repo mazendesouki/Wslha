@@ -1,0 +1,718 @@
+---
+import { NAV_LINKS } from '../data/nav';
+
+interface Props {
+  currentPage: string;
+}
+
+const { currentPage } = Astro.props;
+---
+
+<header role="banner">
+  <a class="skip-nav" href="#main-content">انتقل إلى المحتوى الرئيسي</a>
+
+  <nav class="nav" aria-label="التنقل الرئيسي">
+    <div class="nav__inner">
+
+      <!-- Logo -->
+      <a href="/" class="nav__logo" aria-label="وصّلها — الصفحة الرئيسية">
+        <div class="nav__logo-mark" aria-hidden="true">
+          <svg width="20" height="20" viewBox="0 0 100 100" fill="#fff">
+            <circle cx="50" cy="37" r="16"/>
+            <path d="M50 51 L50 60" stroke="#fff" stroke-width="7" stroke-linecap="round"/>
+            <path d="M50 60 L37 88 M50 60 L50 92 M50 60 L63 88" fill="none" stroke="#fff" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <div class="nav__logo-text">
+          <span class="nav__logo-name" aria-hidden="true">وصّلها</span>
+          <span class="nav__logo-tagline">خدمة توصيل دمياط</span>
+        </div>
+      </a>
+
+      <!-- Desktop links -->
+      <ul class="nav__links" role="list">
+        {NAV_LINKS.map(link => (
+          <li>
+            <a
+              href={link.href}
+              class:list={['nav__link', { 'nav__link--active': currentPage === link.page }]}
+              aria-current={currentPage === link.page ? 'page' : undefined}
+            >
+              {link.label}
+            </a>
+          </li>
+        ))}
+      </ul>
+
+      <!-- Actions -->
+      <div class="nav__actions">
+
+        <!-- Driver CTA -->
+        <a href="/driver" class="nav__driver" id="nav-driver-btn">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <circle cx="12" cy="12" r="10"/>
+            <path d="M14.5 4.5 C14.5 4.5 16 8 14.5 12 C13 16 12 19.5 12 19.5"/>
+            <path d="M9.5 4.5 C9.5 4.5 8 8 9.5 12 C11 16 12 19.5 12 19.5"/>
+            <path d="M4.5 9.5 h15"/>
+            <path d="M4.5 14.5 h15"/>
+          </svg>
+          انضم كسائق
+        </a>
+
+        <!-- Merchant CTA -->
+        <a href="/merchant-apply" class="nav__merchant" id="nav-merchant-btn">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path d="M5 9l4 4-2 8H3V9z"/>
+            <path d="M11 9l-4 4 2 8h4V9z"/>
+            <path d="M3 9h18l-2 8H5l2-8z"/>
+            <path d="M21 9v12H3V9"/>
+            <circle cx="9" cy="15" r="1"/>
+            <circle cx="15" cy="15" r="1"/>
+          </svg>
+          انضم كتاجر
+        </a>
+
+        <!-- Profile dropdown -->
+        <div class="nav__profile" id="nav-profile">
+          <button class="nav__user" id="profile-btn" aria-expanded="false" aria-haspopup="menu" type="button">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <circle cx="12" cy="8" r="4"/>
+              <path d="M20 21a8 8 0 10-16 0"/>
+            </svg>
+            <span id="profile-name">دخول</span>
+            <svg class="nav__chevron" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+              <polyline points="6 9 12 15 18 9"/>
+            </svg>
+          </button>
+
+          <div class="nav__dropdown" id="profile-dropdown" role="menu" hidden>
+            <!-- Logged-in user info -->
+            <div class="nav__dropdown-user" id="dropdown-user-info" hidden>
+              <span class="nav__dropdown-username" id="dropdown-name">—</span>
+              <span class="nav__dropdown-phone" id="dropdown-phone">—</span>
+            </div>
+
+            <!-- Logged-in menu items -->
+            <a href="/profile" class="nav__dropdown-item" id="dropdown-profile" role="menuitem" hidden>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 10-16 0"/></svg>
+              حسابي
+            </a>
+            <a href="/orders" class="nav__dropdown-item" id="dropdown-orders" role="menuitem" hidden>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/></svg>
+              طلباتي
+            </a>
+            <a href="/track" class="nav__dropdown-item" id="dropdown-track" role="menuitem" hidden>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg>
+              تتبع الطلب
+            </a>
+
+            <!-- Driver dashboard (only for drivers) -->
+            <div class="nav__dropdown-divider" id="dropdown-driver-divider" hidden></div>
+            <a href="/driver-dashboard" class="nav__dropdown-item nav__dropdown-driver" id="dropdown-driver-dash" role="menuitem" hidden>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 17 L3 17 L3 11 L12 3 L21 11 L21 17 L15 17"/><rect x="9" y="12" width="6" height="5" rx="1"/></svg>
+              لوحة السائق
+            </a>
+
+            <!-- Merchant dashboard (only for merchants) -->
+            <div class="nav__dropdown-divider" id="dropdown-merchant-divider" hidden></div>
+            <a href="/merchant-dashboard" class="nav__dropdown-item nav__dropdown-merchant" id="dropdown-merchant-dash" role="menuitem" hidden>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+              لوحة التاجر
+            </a>
+            <a href="/restaurant-orders" class="nav__dropdown-item nav__dropdown-orders-dash" id="dropdown-restaurant-orders" role="menuitem" hidden>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 12h6M9 16h4"/></svg>
+              📡 إدارة الطلبات
+            </a>
+
+            <!-- Login (only when not logged in) -->
+            <div class="nav__dropdown-divider" id="dropdown-divider" hidden></div>
+            <a href="/login" class="nav__dropdown-item" id="dropdown-login" role="menuitem">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+              تسجيل الدخول
+            </a>
+
+            <!-- Logout (only when logged in) -->
+            <div class="nav__dropdown-divider" id="dropdown-logout-divider" hidden></div>
+            <button class="nav__dropdown-item nav__dropdown-logout" id="dropdown-logout" role="menuitem" hidden type="button">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+              تسجيل الخروج
+            </button>
+          </div>
+        </div>
+
+        <!-- Hamburger (mobile) -->
+        <button class="nav__burger" id="nav-burger" aria-label="فتح القائمة" aria-expanded="false" aria-controls="nav-mobile" type="button">
+          <span class="nav__burger-bar"></span>
+          <span class="nav__burger-bar"></span>
+          <span class="nav__burger-bar"></span>
+        </button>
+
+      </div>
+    </div>
+  </nav>
+
+  <!-- Mobile menu -->
+  <div class="nav__mobile" id="nav-mobile" aria-hidden="true">
+    <div class="nav__mobile-inner">
+      <ul class="nav__mobile-links" role="list">
+        {NAV_LINKS.map(link => (
+          <li>
+            <a
+              href={link.href}
+              class:list={['nav__mobile-link', { 'nav__mobile-link--active': currentPage === link.page }]}
+              aria-current={currentPage === link.page ? 'page' : undefined}
+            >
+              {link.label}
+            </a>
+          </li>
+        ))}
+      </ul>
+      <div class="nav__mobile-user-links" id="nav-mobile-user-links" hidden>
+        <a href="/orders" class="nav__mobile-link" id="nav-mobile-orders">📋 طلباتي</a>
+        <a href="/track" class="nav__mobile-link" id="nav-mobile-track">📡 تتبع الطلب</a>
+        <a href="/driver-dashboard" class="nav__mobile-link" id="nav-mobile-driver-dash" hidden>🚗 لوحة السائق</a>
+        <a href="/merchant-dashboard" class="nav__mobile-link" id="nav-mobile-merchant-dash" hidden>🏪 لوحة التاجر</a>
+        <a href="/restaurant-orders" class="nav__mobile-link" id="nav-mobile-restaurant-orders" hidden>📡 إدارة الطلبات</a>
+      </div>
+      <div class="nav__mobile-actions">
+        <a href="/login" class="btn btn--outline" style="width:100%;justify-content:center;" id="nav-mobile-login">تسجيل الدخول</a>
+        <a href="/merchant-apply" class="btn btn--accent" style="width:100%;justify-content:center;background:#f59e0b;" id="nav-mobile-merchant">🏪 انضم كتاجر</a>
+      </div>
+    </div>
+  </div>
+
+</header>
+
+<script>
+  /* ── Profile dropdown ─────────────────────────────────── */
+  const profileBtn      = document.getElementById('profile-btn')      as HTMLButtonElement;
+  const profileDropdown = document.getElementById('profile-dropdown') as HTMLElement;
+  const profileName     = document.getElementById('profile-name')     as HTMLElement;
+  const dropdownName    = document.getElementById('dropdown-name')    as HTMLElement;
+  const dropdownPhone   = document.getElementById('dropdown-phone')   as HTMLElement;
+  const dropdownUserInfo= document.getElementById('dropdown-user-info') as HTMLElement;
+  const dropdownLogin   = document.getElementById('dropdown-login')   as HTMLElement;
+  const dropdownLogout  = document.getElementById('dropdown-logout')  as HTMLButtonElement;
+  const navMerchantBtn   = document.getElementById('nav-merchant-btn')  as HTMLElement;
+  const navMobileMerchant= document.getElementById('nav-mobile-merchant') as HTMLElement;
+
+  function updateProfileUI(): void {
+    try {
+      const raw  = localStorage.getItem('wslha_user');
+      const user = raw ? JSON.parse(raw) : null;
+      // Strict check: must have phone (the real identifier)
+      const isLoggedIn = !!(user && user.phone && user.phone.length > 5);
+
+      if (isLoggedIn) {
+        // ── User is logged in ─────────────────────────
+        profileName.textContent  = user.name || user.phone;
+        dropdownName.textContent = user.name || '—';
+        dropdownPhone.textContent= user.phone || '';
+
+        show('dropdown-user-info');
+        show('dropdown-profile');
+        show('dropdown-orders');
+        show('dropdown-track');
+        show('dropdown-divider');
+        show('dropdown-logout-divider');
+        show('dropdown-logout');
+        hide('dropdown-login');
+        show('nav-mobile-user-links');
+        hide('nav-mobile-login');
+
+        if (user.role === 'driver') {
+          // Driver: show driver dashboard link, hide merchant buttons
+          show('dropdown-driver-divider');
+          show('dropdown-driver-dash');
+          hide('dropdown-merchant-divider');
+          hide('dropdown-merchant-dash');
+          hide('dropdown-restaurant-orders');
+          hide('nav-mobile-merchant-dash');
+          hide('nav-mobile-restaurant-orders');
+          show('nav-mobile-driver-dash');
+          hide('nav-merchant-btn');
+          hide('nav-mobile-merchant');
+          show('nav-driver-btn');
+        } else if (user.role === 'merchant') {
+          // Merchant: show merchant dashboard + orders, hide driver/join buttons
+          hide('dropdown-driver-divider');
+          hide('dropdown-driver-dash');
+          show('dropdown-merchant-divider');
+          show('dropdown-merchant-dash');
+          show('dropdown-restaurant-orders');
+          show('nav-mobile-merchant-dash');
+          show('nav-mobile-restaurant-orders');
+          hide('nav-mobile-driver-dash');
+          hide('nav-merchant-btn');
+          hide('nav-mobile-merchant');
+          hide('nav-driver-btn');
+        } else {
+          // Regular customer
+          hide('dropdown-driver-divider');
+          hide('dropdown-driver-dash');
+          hide('dropdown-merchant-divider');
+          hide('dropdown-merchant-dash');
+          hide('dropdown-restaurant-orders');
+          hide('nav-mobile-driver-dash');
+          hide('nav-mobile-merchant-dash');
+          hide('nav-mobile-restaurant-orders');
+          show('nav-merchant-btn');
+          show('nav-mobile-merchant');
+          show('nav-driver-btn');
+        }
+      } else {
+        profileName.textContent = 'دخول';
+
+        hide('dropdown-user-info');
+        hide('dropdown-profile');
+        hide('dropdown-orders');
+        hide('dropdown-track');
+        hide('dropdown-divider');
+        hide('dropdown-logout-divider');
+        hide('dropdown-logout');
+        hide('dropdown-driver-divider');
+        hide('dropdown-driver-dash');
+        hide('dropdown-merchant-divider');
+        hide('dropdown-merchant-dash');
+        hide('dropdown-restaurant-orders');
+        show('dropdown-login');
+        hide('nav-mobile-user-links');
+        show('nav-mobile-login');
+
+        show('nav-merchant-btn');
+        show('nav-mobile-merchant');
+        show('nav-driver-btn');
+      }
+    } catch { /* storage unavailable */ }
+  }
+
+  function show(id: string): void {
+    document.getElementById(id)?.removeAttribute('hidden');
+  }
+  function hide(id: string): void {
+    document.getElementById(id)?.setAttribute('hidden', '');
+  }
+
+  updateProfileUI();
+
+  profileBtn.addEventListener('click', () => {
+    const open = profileBtn.getAttribute('aria-expanded') === 'true';
+    profileBtn.setAttribute('aria-expanded', String(!open));
+    profileDropdown.hidden = open;
+  });
+
+  document.addEventListener('click', (e) => {
+    if (!(e.target as Element).closest('#nav-profile')) {
+      profileBtn.setAttribute('aria-expanded', 'false');
+      profileDropdown.hidden = true;
+    }
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      profileBtn.setAttribute('aria-expanded', 'false');
+      profileDropdown.hidden = true;
+    }
+  });
+
+  dropdownLogout.addEventListener('click', () => {
+    localStorage.removeItem('wslha_user');
+    updateProfileUI();
+    profileDropdown.hidden = true;
+    profileBtn.setAttribute('aria-expanded', 'false');
+    window.location.href = '/';
+  });
+
+  /* ── Mobile hamburger ─────────────────────────────────── */
+  const burger     = document.getElementById('nav-burger') as HTMLButtonElement;
+  const mobileMenu = document.getElementById('nav-mobile') as HTMLElement;
+
+  function setMobileOpen(open: boolean): void {
+    burger.setAttribute('aria-expanded', String(open));
+    burger.setAttribute('aria-label', open ? 'إغلاق القائمة' : 'فتح القائمة');
+    mobileMenu.setAttribute('aria-hidden', String(!open));
+    mobileMenu.classList.toggle('is-open', open);
+    document.body.style.overflow = open ? 'hidden' : '';
+  }
+
+  burger.addEventListener('click', () => {
+    setMobileOpen(burger.getAttribute('aria-expanded') !== 'true');
+  });
+
+  mobileMenu.querySelectorAll('a').forEach(a => {
+    a.addEventListener('click', () => setMobileOpen(false));
+  });
+</script>
+
+<style>
+  .skip-nav {
+    position: absolute;
+    top: -100%;
+    right: var(--sp-4);
+    background: var(--color-primary);
+    color: #fff;
+    padding: var(--sp-2) var(--sp-4);
+    border-radius: var(--radius);
+    font-weight: var(--weight-bold);
+    z-index: 9999;
+    transition: top var(--ease);
+  }
+  .skip-nav:focus { top: var(--sp-2); }
+
+  /* ── Sticky nav ─────────────────────────────────────── */
+  .nav {
+    position: sticky;
+    top: 0;
+    z-index: 200;
+    background: var(--color-bg);
+    border-bottom: 1px solid var(--color-border);
+    box-shadow: 0 1px 12px rgba(0,0,0,0.07);
+  }
+
+  .nav__inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--sp-4);
+    padding: 0 var(--sp-6);
+    max-width: var(--container);
+    margin: 0 auto;
+    height: var(--nav-height);
+  }
+
+  /* ── Logo ───────────────────────────────────────────── */
+  .nav__logo {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-3);
+    flex-shrink: 0;
+    text-decoration: none;
+  }
+
+  .nav__logo-mark {
+    width: 38px; height: 38px;
+    border-radius: var(--radius-lg);
+    background: var(--color-primary);
+    color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    box-shadow: var(--shadow-primary);
+  }
+
+  .nav__logo-text {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.15;
+  }
+
+  .nav__logo-name {
+    font-family: var(--font-display);
+    font-size: var(--text-xl);
+    font-weight: var(--weight-bold);
+    color: var(--color-text);
+    letter-spacing: -0.3px;
+  }
+
+  .nav__logo-tagline {
+    font-size: 10px;
+    color: var(--color-text-faint);
+    font-weight: var(--weight-semi);
+    white-space: nowrap;
+    letter-spacing: 0.3px;
+  }
+
+  /* ── Desktop links ──────────────────────────────────── */
+  .nav__links {
+    display: flex;
+    align-items: stretch;
+    list-style: none;
+    flex: 1;
+    justify-content: center;
+    flex-wrap: nowrap;
+    gap: 0;
+    margin: 0;
+    padding: 0;
+    height: 100%;
+  }
+
+  .nav__links li { display: flex; align-items: stretch; }
+
+  .nav__link {
+    display: flex;
+    align-items: center;
+    padding: 0 0.75rem;
+    font-size: var(--text-sm);
+    font-weight: var(--weight-semi);
+    color: var(--color-text-muted);
+    transition: color var(--ease);
+    white-space: nowrap;
+    text-decoration: none;
+    position: relative;
+  }
+
+  .nav__link::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0.75rem; right: 0.75rem;
+    height: 2.5px;
+    background: var(--color-primary);
+    border-radius: 2px 2px 0 0;
+    transform: scaleX(0);
+    transition: transform 0.2s ease;
+  }
+
+  .nav__link:hover { color: var(--color-text); }
+  .nav__link:hover::after { transform: scaleX(0.5); }
+  .nav__link--active { color: var(--color-primary); font-weight: var(--weight-bold); }
+  .nav__link--active::after { transform: scaleX(1); }
+
+  /* ── Actions bar ────────────────────────────────────── */
+  .nav__actions {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-2);
+    flex-shrink: 0;
+  }
+
+  /* Driver button */
+  .nav__driver {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 7px var(--sp-4);
+    background: #16A34A;
+    color: #fff;
+    border-radius: var(--radius-full);
+    font-size: var(--text-sm);
+    font-weight: var(--weight-bold);
+    text-decoration: none;
+    transition: background var(--ease), box-shadow var(--ease), transform var(--ease);
+    white-space: nowrap;
+    box-shadow: 0 1px 6px rgba(22,163,74,0.3);
+  }
+  .nav__driver:hover { background: #15803D; transform: translateY(-1px); box-shadow: 0 3px 10px rgba(22,163,74,0.4); }
+  .nav__driver[hidden] { display: none; }
+
+  /* Merchant button */
+  .nav__merchant {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 7px var(--sp-4);
+    background: #f59e0b;
+    color: #fff;
+    border-radius: var(--radius-full);
+    font-size: var(--text-sm);
+    font-weight: var(--weight-bold);
+    text-decoration: none;
+    transition: background var(--ease), box-shadow var(--ease), transform var(--ease);
+    white-space: nowrap;
+    box-shadow: 0 1px 6px rgba(245,158,11,0.3);
+  }
+  .nav__merchant:hover { background: #d97706; transform: translateY(-1px); box-shadow: 0 3px 10px rgba(245,158,11,0.4); }
+  .nav__merchant[hidden] { display: none; }
+
+  /* ── Profile dropdown ───────────────────────────────── */
+  .nav__profile { position: relative; }
+
+  .nav__user {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-2);
+    background: var(--color-bg-soft);
+    border: 1.5px solid var(--color-border);
+    border-radius: var(--radius);
+    padding: var(--sp-2) var(--sp-3);
+    font-size: var(--text-sm);
+    font-weight: var(--weight-bold);
+    color: var(--color-text);
+    cursor: pointer;
+    transition: border-color var(--ease), background var(--ease);
+    font-family: var(--font-body);
+    white-space: nowrap;
+  }
+  .nav__user:hover { border-color: var(--color-primary); background: var(--color-primary-light); }
+
+  .nav__chevron {
+    transition: transform 0.2s ease;
+    flex-shrink: 0;
+  }
+  .nav__user[aria-expanded="true"] .nav__chevron { transform: rotate(180deg); }
+
+  .nav__dropdown {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    min-width: 200px;
+    background: var(--color-bg);
+    border: 1.5px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-md);
+    overflow: hidden;
+    z-index: 300;
+  }
+
+  .nav__dropdown-user {
+    padding: var(--sp-3) var(--sp-4);
+    background: var(--color-primary-light);
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .nav__dropdown-username {
+    display: block;
+    font-weight: var(--weight-black);
+    font-size: var(--text-sm);
+    color: var(--color-primary);
+  }
+
+  .nav__dropdown-phone {
+    display: block;
+    font-size: var(--text-xs);
+    color: var(--color-text-muted);
+    margin-top: 2px;
+  }
+
+  .nav__dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-2);
+    width: 100%;
+    padding: var(--sp-3) var(--sp-4);
+    font-size: var(--text-sm);
+    font-weight: var(--weight-semi);
+    color: var(--color-text);
+    text-decoration: none;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-family: var(--font-body);
+    transition: background var(--ease), color var(--ease);
+    text-align: right;
+  }
+  .nav__dropdown-item:hover { background: var(--color-bg-soft); color: var(--color-primary); }
+
+  .nav__dropdown-divider { height: 1px; background: var(--color-border); margin: var(--sp-1) 0; }
+
+  .nav__dropdown-logout { color: #DC2626; }
+  .nav__dropdown-logout:hover { background: #FEE2E2; color: #B91C1C; }
+
+  /* Ensure hidden always works regardless of display rules */
+  [hidden] { display: none !important; }
+
+  .nav__dropdown-driver { color: #16A34A; font-weight: var(--weight-bold); }
+  .nav__dropdown-driver:hover { background: #DCFCE7; }
+
+  .nav__dropdown-merchant { color: #D97706; font-weight: var(--weight-bold); }
+  .nav__dropdown-merchant:hover { background: #FEF3C7; }
+
+  .nav__dropdown-orders-dash { color: #2563EB; font-weight: var(--weight-bold); }
+  .nav__dropdown-orders-dash:hover { background: #DBEAFE; }
+
+  /* ── Hamburger ──────────────────────────────────────── */
+  .nav__burger {
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    gap: 5px;
+    width: 36px;
+    height: 36px;
+    padding: var(--sp-2);
+    background: none;
+    border: 1.5px solid var(--color-border);
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: border-color var(--ease);
+  }
+  .nav__burger:hover { border-color: var(--color-primary); }
+
+  .nav__burger-bar {
+    display: block;
+    height: 2px;
+    background: var(--color-text);
+    border-radius: 2px;
+    transition: transform 0.25s ease, opacity 0.25s ease;
+  }
+
+  .nav__burger[aria-expanded="true"] .nav__burger-bar:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+  .nav__burger[aria-expanded="true"] .nav__burger-bar:nth-child(2) { opacity: 0; }
+  .nav__burger[aria-expanded="true"] .nav__burger-bar:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+  /* ── Mobile menu ────────────────────────────────────── */
+  .nav__mobile {
+    position: fixed;
+    inset: var(--nav-height) 0 0 0;
+    background: var(--color-bg);
+    z-index: 150;
+    overflow-y: auto;
+    transform: translateX(100%);
+    transition: transform 0.3s cubic-bezier(.4,0,.2,1);
+    border-top: 1px solid var(--color-border);
+  }
+
+  .nav__mobile.is-open { transform: translateX(0); }
+
+  .nav__mobile-inner {
+    padding: var(--sp-6);
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-6);
+    min-height: calc(100vh - var(--nav-height));
+  }
+
+  .nav__mobile-links {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-1);
+  }
+
+  .nav__mobile-link {
+    display: block;
+    padding: var(--sp-3) var(--sp-4);
+    border-radius: var(--radius);
+    font-size: var(--text-base);
+    font-weight: var(--weight-semi);
+    color: var(--color-text);
+    text-decoration: none;
+    transition: background var(--ease), color var(--ease);
+  }
+  .nav__mobile-link:hover,
+  .nav__mobile-link--active {
+    background: var(--color-primary-light);
+    color: var(--color-primary);
+  }
+
+  .nav__mobile-actions {
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-3);
+    margin-top: auto;
+    padding-top: var(--sp-6);
+    border-top: 1px solid var(--color-border);
+  }
+
+  #nav-mobile-merchant[hidden] { display: none; }
+  .nav__mobile-user-links {
+    border-top: 1px solid var(--color-border);
+    padding-top: var(--sp-2);
+    margin-top: calc(-1 * var(--sp-4));
+    display: flex;
+    flex-direction: column;
+  }
+  .nav__mobile-user-links[hidden] { display: none; }
+
+  /* ── Responsive ─────────────────────────────────────── */
+  @media (max-width: 900px) {
+    .nav__links   { display: none; }
+    .nav__driver  { display: none; }
+    .nav__merchant { display: none; }
+    .nav__burger  { display: flex; }
+  }
+
+  @media (max-width: 600px) {
+    .nav__user span#profile-name { display: none; }
+    .nav__chevron { display: none; }
+  }
+</style>

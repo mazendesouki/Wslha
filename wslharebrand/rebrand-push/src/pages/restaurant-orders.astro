@@ -1,0 +1,1231 @@
+---
+---
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>إدارة الطلبات — وصّلها</title>
+  <link rel="manifest" href="/site.webmanifest" />
+  <meta name="theme-color" content="#0E4B49" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg-base: #0F172A;
+      --bg-surface: #1E293B;
+      --bg-card: #FFFFFF;
+      --bg-column: #162032;
+      --border-pending: #F59E0B;
+      --border-preparing: #A3E635;
+      --border-onway: #22C55E;
+      --text-primary: #F8FAFC;
+      --text-secondary: #94A3B8;
+      --text-dark: #1E293B;
+      --accent-blue: #3B82F6;
+      --accent-green: #22C55E;
+      --accent-red: #EF4444;
+      --accent-amber: #F59E0B;
+      --accent-violet: #8B5CF6;
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 16px;
+      --shadow-card: 0 4px 24px rgba(0,0,0,0.35);
+      --shadow-header: 0 2px 16px rgba(0,0,0,0.4);
+      --header-h: 64px;
+    }
+
+    html, body {
+      height: 100%;
+      font-family: 'Cairo', sans-serif;
+      background: var(--bg-base);
+      color: var(--text-primary);
+      overflow-x: hidden;
+    }
+
+    /* ── SCROLLBAR ── */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: var(--bg-base); }
+    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+
+    /* ── HEADER ── */
+    #app-header {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      height: var(--header-h);
+      background: var(--bg-surface);
+      box-shadow: var(--shadow-header);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 0 16px;
+      z-index: 100;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+
+    #store-info {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+    }
+    #store-emoji { font-size: 28px; line-height: 1; flex-shrink: 0; }
+    #store-text { min-width: 0; }
+    #store-name {
+      font-size: 15px; font-weight: 700;
+      color: var(--text-primary);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    #store-area { font-size: 12px; color: var(--text-secondary); }
+
+    #header-stats {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 20px;
+    }
+    .stat-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+    }
+    .stat-value {
+      font-size: 18px; font-weight: 800;
+      color: var(--text-primary);
+      line-height: 1;
+    }
+    .stat-label {
+      font-size: 10px; font-weight: 500;
+      color: var(--text-secondary);
+      white-space: nowrap;
+    }
+    .stat-sep { width: 1px; height: 32px; background: rgba(255,255,255,0.1); }
+
+    #pending-badge-wrap { position: relative; display: inline-flex; }
+    #pending-badge {
+      position: absolute;
+      top: -8px; left: -8px;
+      background: var(--accent-red);
+      color: #fff;
+      font-size: 10px; font-weight: 800;
+      border-radius: 50%;
+      width: 18px; height: 18px;
+      display: flex; align-items: center; justify-content: center;
+      animation: badge-pulse 1.4s infinite;
+      display: none;
+    }
+    @keyframes badge-pulse {
+      0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239,68,68,0.6); }
+      50% { transform: scale(1.15); box-shadow: 0 0 0 6px rgba(239,68,68,0); }
+    }
+
+    #header-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    .hdr-btn {
+      display: flex; align-items: center; gap: 6px;
+      padding: 8px 14px;
+      border-radius: var(--radius-sm);
+      border: none; cursor: pointer;
+      font-family: 'Cairo', sans-serif;
+      font-size: 13px; font-weight: 600;
+      transition: opacity 0.15s, transform 0.1s;
+    }
+    .hdr-btn:active { transform: scale(0.96); }
+
+    #toggle-open-btn { background: #22C55E; color: #fff; }
+    #toggle-open-btn.closed { background: #475569; }
+    #sound-btn { background: #334155; color: var(--text-primary); font-size: 18px; padding: 8px 10px; }
+    #back-btn {
+      background: #334155; color: var(--text-secondary);
+      text-decoration: none;
+      display: flex; align-items: center; gap: 6px;
+      padding: 8px 14px;
+      border-radius: var(--radius-sm);
+      font-size: 13px; font-weight: 600;
+      transition: opacity 0.15s;
+    }
+    #back-btn:hover { opacity: 0.8; }
+
+    /* ── MAIN LAYOUT ── */
+    #main-content {
+      margin-top: var(--header-h);
+      height: calc(100vh - var(--header-h));
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    #columns-area {
+      display: flex;
+      gap: 0;
+      flex: 1;
+      overflow: hidden;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+
+    .orders-column {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .orders-column:first-child {
+      border-left: 1px solid rgba(255,255,255,0.06);
+    }
+
+    .col-header {
+      padding: 14px 16px 12px;
+      background: rgba(255,255,255,0.03);
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      display: flex; align-items: center; gap: 8px;
+      flex-shrink: 0;
+    }
+    .col-title { font-size: 15px; font-weight: 700; }
+    .col-count {
+      background: rgba(255,255,255,0.1);
+      color: var(--text-secondary);
+      font-size: 11px; font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 20px;
+    }
+
+    .col-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    /* ── HISTORY SECTION ── */
+    #history-section {
+      flex-shrink: 0;
+      max-height: 220px;
+      overflow-y: auto;
+      background: rgba(255,255,255,0.02);
+      border-top: 1px solid rgba(255,255,255,0.06);
+    }
+    #history-header {
+      padding: 10px 16px;
+      font-size: 13px; font-weight: 700;
+      color: var(--text-secondary);
+      position: sticky; top: 0;
+      background: var(--bg-base);
+      z-index: 1;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+    }
+    #history-orders {
+      padding: 4px 12px 8px;
+    }
+
+    /* ── ORDER CARDS ── */
+    .order-card {
+      background: var(--bg-card);
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-card);
+      padding: 14px;
+      color: var(--text-dark);
+      border: 2px solid transparent;
+      position: relative;
+      overflow: hidden;
+      transition: border-color 0.2s;
+    }
+
+    .order-card.pending {
+      border-color: var(--border-pending);
+      animation: ring-shake 2.5s ease-in-out infinite;
+    }
+    @keyframes ring-shake {
+      0%, 90%, 100% { transform: translateX(0); }
+      92% { transform: translateX(-4px); }
+      94% { transform: translateX(4px); }
+      96% { transform: translateX(-3px); }
+      98% { transform: translateX(3px); }
+    }
+
+    .order-card.preparing { border-color: var(--border-preparing); }
+    .order-card.on_the_way { border-color: var(--border-onway); }
+
+    .card-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 10px;
+    }
+    .order-code {
+      font-size: 13px; font-weight: 800;
+      color: #0F172A;
+      background: #F1F5F9;
+      padding: 3px 8px;
+      border-radius: 6px;
+      letter-spacing: 0.5px;
+    }
+    .time-ago {
+      font-size: 11px; font-weight: 500;
+      color: #64748B;
+    }
+
+    .status-badge {
+      display: inline-flex; align-items: center; gap: 4px;
+      font-size: 11px; font-weight: 700;
+      padding: 3px 10px;
+      border-radius: 20px;
+    }
+    .status-badge.preparing { background: #FEF9C3; color: #92400E; }
+    .status-badge.on_the_way { background: #DCFCE7; color: #166534; }
+    .status-badge.delivered { background: #DCFCE7; color: #166534; }
+    .status-badge.rejected { background: #FEE2E2; color: #991B1B; }
+
+    .customer-row {
+      display: flex; align-items: center; gap: 8px;
+      margin-bottom: 8px;
+    }
+    .customer-name { font-size: 15px; font-weight: 700; color: #0F172A; }
+    .customer-phone {
+      font-size: 12px; color: var(--accent-blue);
+      text-decoration: none; font-weight: 600;
+    }
+    .customer-phone:hover { text-decoration: underline; }
+
+    .items-list {
+      background: #F8FAFC;
+      border-radius: var(--radius-sm);
+      padding: 8px 10px;
+      margin-bottom: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .item-row {
+      display: flex; align-items: center; gap: 6px;
+      font-size: 13px; color: #334155;
+    }
+    .item-qty {
+      background: var(--accent-blue);
+      color: #fff;
+      font-size: 11px; font-weight: 700;
+      border-radius: 4px;
+      padding: 1px 5px;
+      flex-shrink: 0;
+    }
+    .item-name { flex: 1; font-weight: 500; }
+    .item-price { font-size: 12px; color: #64748B; }
+
+    .order-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .order-total {
+      font-size: 16px; font-weight: 800; color: #0F172A;
+    }
+    .order-total span { font-size: 12px; font-weight: 500; color: #64748B; }
+    .payment-badge {
+      font-size: 11px; font-weight: 700;
+      padding: 3px 10px; border-radius: 20px;
+    }
+    .payment-badge.cash { background: #FEF9C3; color: #92400E; }
+    .payment-badge.card { background: #EDE9FE; color: #5B21B6; }
+
+    .delivery-info {
+      font-size: 12px; color: #64748B;
+      margin-bottom: 10px;
+      display: flex; align-items: center; gap: 4px;
+    }
+
+    .driver-info {
+      background: #F0FDF4;
+      border-radius: var(--radius-sm);
+      padding: 8px 10px;
+      margin-bottom: 10px;
+      font-size: 12px; color: #166534;
+    }
+    .driver-info.searching {
+      background: #FEF9C3; color: #92400E;
+    }
+    .driver-name { font-weight: 700; font-size: 13px; }
+
+    .dots-anim::after {
+      content: '';
+      animation: dots 1.4s steps(4, end) infinite;
+    }
+    @keyframes dots {
+      0%   { content: ''; }
+      25%  { content: '.'; }
+      50%  { content: '..'; }
+      75%  { content: '...'; }
+      100% { content: ''; }
+    }
+
+    /* ── ACTION BUTTONS ── */
+    .btn-accept {
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      width: 100%;
+      min-height: 52px;
+      background: linear-gradient(135deg, #22C55E, #16A34A);
+      color: #fff;
+      border: none; border-radius: var(--radius-sm);
+      font-family: 'Cairo', sans-serif;
+      font-size: 15px; font-weight: 700;
+      cursor: pointer;
+      transition: opacity 0.15s, transform 0.1s;
+      margin-bottom: 8px;
+      box-shadow: 0 4px 12px rgba(34,197,94,0.4);
+    }
+    .btn-accept:hover { opacity: 0.9; }
+    .btn-accept:active { transform: scale(0.98); }
+
+    .btn-reject {
+      display: flex; align-items: center; justify-content: center; gap: 6px;
+      width: 100%;
+      min-height: 40px;
+      background: #FEE2E2;
+      color: var(--accent-red);
+      border: none; border-radius: var(--radius-sm);
+      font-family: 'Cairo', sans-serif;
+      font-size: 13px; font-weight: 700;
+      cursor: pointer;
+      transition: background 0.15s, transform 0.1s;
+    }
+    .btn-reject:hover { background: #FECACA; }
+    .btn-reject:active { transform: scale(0.98); }
+
+    .btn-ready {
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      width: 100%;
+      min-height: 48px;
+      background: linear-gradient(135deg, #3B82F6, #2563EB);
+      color: #fff;
+      border: none; border-radius: var(--radius-sm);
+      font-family: 'Cairo', sans-serif;
+      font-size: 14px; font-weight: 700;
+      cursor: pointer;
+      transition: opacity 0.15s, transform 0.1s;
+      box-shadow: 0 4px 12px rgba(59,130,246,0.4);
+    }
+    .btn-ready:hover { opacity: 0.9; }
+    .btn-ready:active { transform: scale(0.98); }
+
+    .btn-ready.already-ready {
+      background: #D1FAE5; color: #166534;
+      box-shadow: none; cursor: default;
+    }
+
+    /* ── HISTORY ROWS ── */
+    .history-row {
+      display: flex; align-items: center; gap: 10px;
+      padding: 8px 4px;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+      font-size: 13px;
+    }
+    .history-row:last-child { border-bottom: none; }
+    .h-code { font-weight: 700; color: var(--text-secondary); font-size: 12px; min-width: 80px; }
+    .h-name { flex: 1; font-weight: 600; color: var(--text-primary); }
+    .h-total { font-weight: 700; color: var(--text-primary); white-space: nowrap; }
+    .h-time { font-size: 11px; color: var(--text-secondary); white-space: nowrap; }
+
+    /* ── EMPTY STATE ── */
+    .empty-state {
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      padding: 40px 20px;
+      color: var(--text-secondary);
+      gap: 10px;
+      height: 100%;
+    }
+    .empty-icon { font-size: 48px; opacity: 0.4; }
+    .empty-text { font-size: 14px; font-weight: 600; text-align: center; }
+
+    /* ── TOAST ── */
+    #toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(100px);
+      background: #1E293B;
+      color: var(--text-primary);
+      padding: 14px 22px;
+      border-radius: var(--radius-md);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+      font-size: 14px; font-weight: 600;
+      z-index: 999;
+      transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1);
+      border: 1px solid rgba(255,255,255,0.1);
+      max-width: calc(100vw - 32px);
+      text-align: center;
+    }
+    #toast.show { transform: translateX(-50%) translateY(0); }
+    #toast.success { border-color: var(--accent-green); }
+    #toast.error { border-color: var(--accent-red); }
+    #toast.info { border-color: var(--accent-blue); }
+
+    /* ── LOADER ── */
+    #loader {
+      position: fixed; inset: 0;
+      background: var(--bg-base);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 200; flex-direction: column; gap: 16px;
+    }
+    .spinner {
+      width: 40px; height: 40px;
+      border: 3px solid rgba(255,255,255,0.1);
+      border-top-color: var(--accent-blue);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── AUTH WALL ── */
+    #auth-wall {
+      display: none;
+      position: fixed; inset: 0;
+      background: var(--bg-base);
+      align-items: center; justify-content: center;
+      flex-direction: column; gap: 16px;
+      z-index: 200;
+    }
+    #auth-wall .aw-icon { font-size: 56px; }
+    #auth-wall .aw-msg { font-size: 18px; font-weight: 700; color: var(--text-primary); }
+    #auth-wall .aw-sub { font-size: 14px; color: var(--text-secondary); }
+    #auth-wall a {
+      margin-top: 8px;
+      background: var(--accent-blue); color: #fff;
+      padding: 12px 28px; border-radius: var(--radius-sm);
+      text-decoration: none; font-weight: 700;
+    }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 768px) {
+      #header-stats { gap: 12px; }
+      .stat-value { font-size: 14px; }
+      .stat-label { font-size: 9px; }
+      .hdr-btn { padding: 7px 10px; font-size: 12px; }
+      #store-name { font-size: 13px; }
+
+      #columns-area { flex-direction: column; overflow-y: auto; overflow-x: hidden; }
+      .orders-column { flex: unset; max-height: none; overflow: visible; }
+      .orders-column:first-child { border-left: none; border-bottom: 1px solid rgba(255,255,255,0.06); }
+      .col-body { overflow-y: visible; }
+      #history-section { max-height: none; }
+      #main-content { overflow-y: auto; height: auto; }
+    }
+
+    /* ── CARD SHIMMER ── */
+    .card-shimmer {
+      background: linear-gradient(90deg, #1E293B 25%, #2D3748 50%, #1E293B 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.5s infinite;
+      border-radius: var(--radius-md);
+      height: 120px;
+    }
+    @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+  </style>
+</head>
+<body>
+
+<!-- LOADER -->
+<div id="loader">
+  <div class="spinner"></div>
+  <span style="color:#94A3B8;font-size:14px;font-weight:600">جارٍ التحميل…</span>
+</div>
+
+<!-- AUTH WALL -->
+<div id="auth-wall">
+  <div class="aw-icon">🔒</div>
+  <div class="aw-msg">يجب تسجيل الدخول أولاً</div>
+  <div class="aw-sub">هذه الصفحة متاحة للمطاعم المسجّلة فقط</div>
+  <a href="/login">تسجيل الدخول</a>
+</div>
+
+<!-- HEADER -->
+<header id="app-header" style="display:none">
+  <!-- Store info -->
+  <div id="store-info">
+    <div id="store-emoji">🍽️</div>
+    <div id="store-text">
+      <div id="store-name">المطعم</div>
+      <div id="store-area">—</div>
+    </div>
+  </div>
+
+  <!-- Stats -->
+  <div id="header-stats">
+    <div class="stat-item">
+      <div class="stat-value" id="stat-count">0</div>
+      <div class="stat-label">طلبات اليوم</div>
+    </div>
+    <div class="stat-sep"></div>
+    <div class="stat-item">
+      <div class="stat-value" id="stat-revenue">0 ر.س</div>
+      <div class="stat-label">إيرادات اليوم</div>
+    </div>
+    <div class="stat-sep"></div>
+    <div class="stat-item">
+      <div id="pending-badge-wrap">
+        <div class="stat-value" id="stat-pending">0</div>
+        <div id="pending-badge">0</div>
+      </div>
+      <div class="stat-label">طلبات معلّقة</div>
+    </div>
+  </div>
+
+  <!-- Actions -->
+  <div id="header-actions">
+    <button id="toggle-open-btn" class="hdr-btn" onclick="toggleStoreOpen()">
+      <span id="open-status-icon">✅</span>
+      <span id="open-status-text">مفتوح</span>
+    </button>
+    <button id="sound-btn" class="hdr-btn" onclick="toggleSound()" title="تبديل الصوت">🔔</button>
+    <a id="back-btn" href="/merchant-dashboard">
+      ← لوحة التحكم
+    </a>
+  </div>
+</header>
+
+<!-- MAIN CONTENT -->
+<div id="main-content" style="display:none">
+  <!-- Two Columns -->
+  <div id="columns-area">
+    <!-- Pending -->
+    <div class="orders-column">
+      <div class="col-header">
+        <span>🔴</span>
+        <span class="col-title">طلبات جديدة</span>
+        <span class="col-count" id="pending-count">0</span>
+      </div>
+      <div class="col-body" id="incoming-orders">
+        <div class="empty-state">
+          <div class="empty-icon">📭</div>
+          <div class="empty-text">لا توجد طلبات جديدة</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Active -->
+    <div class="orders-column">
+      <div class="col-header">
+        <span>🟡</span>
+        <span class="col-title">قيد التنفيذ</span>
+        <span class="col-count" id="active-count">0</span>
+      </div>
+      <div class="col-body" id="active-orders">
+        <div class="empty-state">
+          <div class="empty-icon">🏃</div>
+          <div class="empty-text">لا توجد طلبات نشطة</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- History -->
+  <div id="history-section">
+    <div id="history-header">📋 سجل اليوم</div>
+    <div id="history-orders">
+      <div style="padding:12px;text-align:center;color:#475569;font-size:13px">لا يوجد سجل حتى الآن</div>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+<script>
+(function() {
+  'use strict';
+
+  /* ══════════════════════════════════════════════
+     CONFIG
+  ══════════════════════════════════════════════ */
+  const SB_URL = 'https://vtikgyiopkjnrwlqnmfx.supabase.co';
+  const SB_KEY = 'sb_publishable_PLSnpvCT-sAyUMtymNgTwA_QmL2suw4';
+  const SB_H   = {
+    'apikey': SB_KEY,
+    'Authorization': 'Bearer ' + SB_KEY,
+    'Content-Type': 'application/json'
+  };
+
+  /* ══════════════════════════════════════════════
+     STATE
+  ══════════════════════════════════════════════ */
+  let currentStore    = null;
+  let currentUser     = null;
+  let knownPendingIds = new Set();
+  let ordersChannel   = null;
+  let _sb             = null;
+  let pollTimer       = null;
+  let audioCtx        = null;
+  let soundEnabled    = true;
+  let allOrders       = [];
+  let elapsedTimer    = null;
+
+  /* ══════════════════════════════════════════════
+     SUPABASE REST
+  ══════════════════════════════════════════════ */
+  async function sbGet(path) {
+    const res = await fetch(SB_URL + '/rest/v1/' + path, { headers: SB_H });
+    if (!res.ok) throw new Error(await res.text());
+    return res.json();
+  }
+
+  async function sbPatch(path, body) {
+    const res = await fetch(SB_URL + '/rest/v1/' + path, {
+      method: 'PATCH',
+      headers: { ...SB_H, 'Prefer': 'return=representation' },
+      body: JSON.stringify(body)
+    });
+    if (!res.ok) throw new Error(await res.text());
+    return res.json();
+  }
+
+  /* ══════════════════════════════════════════════
+     AUTH CHECK
+  ══════════════════════════════════════════════ */
+  function checkAuth() {
+    try {
+      const raw = localStorage.getItem('wslha_user');
+      if (!raw) return null;
+      return JSON.parse(raw);
+    } catch { return null; }
+  }
+
+  /* ══════════════════════════════════════════════
+     LOAD SUPABASE SDK
+  ══════════════════════════════════════════════ */
+  function loadSupabaseSDK() {
+    return new Promise((resolve, reject) => {
+      if (window.supabase) { resolve(window.supabase); return; }
+      const s = document.createElement('script');
+      s.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js';
+      s.onload = () => resolve(window.supabase);
+      s.onerror = reject;
+      document.head.appendChild(s);
+    });
+  }
+
+  /* ══════════════════════════════════════════════
+     REALTIME SUBSCRIBE
+  ══════════════════════════════════════════════ */
+  async function subscribeOrders() {
+    try {
+      const sdk = await loadSupabaseSDK();
+      _sb = sdk.createClient(SB_URL, SB_KEY);
+
+      ordersChannel = _sb
+        .channel('orders-changes')
+        .on('postgres_changes', {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'orders',
+          filter: 'store_id=eq.' + currentStore.id
+        }, (payload) => {
+          handleRealtimeEvent('INSERT', payload.new);
+        })
+        .on('postgres_changes', {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'orders',
+          filter: 'store_id=eq.' + currentStore.id
+        }, (payload) => {
+          handleRealtimeEvent('UPDATE', payload.new);
+        })
+        .subscribe((status) => {
+          if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+            console.warn('[Wslha] Realtime error, falling back to polling');
+            startPolling();
+          }
+        });
+    } catch (err) {
+      console.warn('[Wslha] Could not load Supabase SDK, using polling', err);
+      startPolling();
+    }
+  }
+
+  function handleRealtimeEvent(event, order) {
+    if (event === 'INSERT' && order.status === 'pending') {
+      if (!knownPendingIds.has(order.id)) {
+        knownPendingIds.add(order.id);
+        playChime();
+        showBrowserNotification(
+          'طلب جديد! 🛎️',
+          'من ' + (order.customer_name || 'عميل') + ' — ' + formatCurrency(order.total)
+        );
+        showToast('🛎️ طلب جديد وصل من ' + (order.customer_name || 'عميل'), 'info');
+      }
+    }
+    loadOrders(false);
+  }
+
+  function startPolling() {
+    if (pollTimer) return;
+    pollTimer = setInterval(() => loadOrders(false), 5000);
+  }
+
+  /* ══════════════════════════════════════════════
+     AUDIO
+  ══════════════════════════════════════════════ */
+  function getAudioCtx() {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    return audioCtx;
+  }
+
+  function playTone(freq, start, duration) {
+    const ctx = getAudioCtx();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.frequency.value = freq;
+    osc.type = 'sine';
+    gain.gain.setValueAtTime(0, ctx.currentTime + start);
+    gain.gain.linearRampToValueAtTime(0.4, ctx.currentTime + start + 0.01);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + start + duration);
+    osc.start(ctx.currentTime + start);
+    osc.stop(ctx.currentTime + start + duration + 0.05);
+  }
+
+  function playChime() {
+    if (!soundEnabled) return;
+    try {
+      playTone(880, 0,    0.25);
+      playTone(1100, 0.3, 0.25);
+      playTone(880, 0.6,  0.35);
+      if (navigator.vibrate) navigator.vibrate([100, 80, 100]);
+    } catch (e) { console.warn('[Wslha] Audio error', e); }
+  }
+
+  function toggleSound() {
+    soundEnabled = !soundEnabled;
+    document.getElementById('sound-btn').textContent = soundEnabled ? '🔔' : '🔕';
+    showToast(soundEnabled ? '🔔 الصوت مفعّل' : '🔕 الصوت معطّل', 'info');
+  }
+
+  /* ══════════════════════════════════════════════
+     NOTIFICATIONS
+  ══════════════════════════════════════════════ */
+  async function requestNotificationPermission() {
+    if (!('Notification' in window)) return;
+    if (Notification.permission === 'default') {
+      await Notification.requestPermission();
+    }
+  }
+
+  function showBrowserNotification(title, body) {
+    if (!('Notification' in window) || Notification.permission !== 'granted') return;
+    try {
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.ready.then(reg => {
+          reg.showNotification(title, { body, icon: '/icon-192.png', badge: '/icon-72.png', vibrate: [100,80,100] });
+        }).catch(() => new Notification(title, { body }));
+      } else {
+        new Notification(title, { body });
+      }
+    } catch (e) { /* silently fail */ }
+  }
+
+  /* ══════════════════════════════════════════════
+     LOAD ORDERS
+  ══════════════════════════════════════════════ */
+  async function loadOrders(announce) {
+    if (!currentStore) return;
+    try {
+      // today's date in ISO
+      const todayStart = new Date();
+      todayStart.setHours(0,0,0,0);
+      const isoStart = todayStart.toISOString();
+
+      const orders = await sbGet(
+        'orders?store_id=eq.' + currentStore.id +
+        '&created_at=gte.' + isoStart +
+        '&order=created_at.desc&limit=200'
+      );
+      allOrders = orders || [];
+
+      const pending    = allOrders.filter(o => o.status === 'pending');
+      const active     = allOrders.filter(o => o.status === 'preparing' || o.status === 'on_the_way');
+      const history    = allOrders.filter(o => o.status === 'delivered' || o.status === 'rejected');
+
+      // detect new pending
+      if (announce !== false) {
+        pending.forEach(o => {
+          if (!knownPendingIds.has(o.id)) {
+            knownPendingIds.add(o.id);
+            playChime();
+            showBrowserNotification('طلب جديد! 🛎️', 'من ' + (o.customer_name || 'عميل') + ' — ' + formatCurrency(o.total));
+            showToast('🛎️ طلب جديد وصل من ' + (o.customer_name || 'عميل'), 'info');
+          }
+        });
+      } else {
+        pending.forEach(o => knownPendingIds.add(o.id));
+      }
+
+      renderPending(pending);
+      renderActive(active);
+      renderHistory(history);
+      updateStats(allOrders);
+    } catch (err) {
+      console.error('[Wslha] loadOrders error', err);
+    }
+  }
+
+  /* ══════════════════════════════════════════════
+     RENDER HELPERS
+  ══════════════════════════════════════════════ */
+  function renderItems(o) {
+    let items = [];
+    if (o.items) {
+      try {
+        items = typeof o.items === 'string' ? JSON.parse(o.items) : o.items;
+      } catch { items = []; }
+    }
+    if (!Array.isArray(items) || items.length === 0) {
+      if (o.items_summary) {
+        return '<div class="items-list"><div class="item-row"><span class="item-name">' + esc(o.items_summary) + '</span></div></div>';
+      }
+      return '';
+    }
+    const rows = items.map(it => {
+      return '<div class="item-row">' +
+        '<span class="item-qty">×' + esc(it.qty || 1) + '</span>' +
+        (it.emoji ? '<span>' + esc(it.emoji) + '</span>' : '') +
+        '<span class="item-name">' + esc(it.name || '') + '</span>' +
+        (it.price ? '<span class="item-price">' + formatCurrency(it.price * (it.qty||1)) + '</span>' : '') +
+        '</div>';
+    }).join('');
+    return '<div class="items-list">' + rows + '</div>';
+  }
+
+  function renderPending(orders) {
+    const el = document.getElementById('incoming-orders');
+    document.getElementById('pending-count').textContent = orders.length;
+
+    const badge = document.getElementById('pending-badge');
+    if (orders.length > 0) {
+      badge.textContent = orders.length;
+      badge.style.display = 'flex';
+    } else {
+      badge.style.display = 'none';
+    }
+
+    if (!orders.length) {
+      el.innerHTML = '<div class="empty-state"><div class="empty-icon">📭</div><div class="empty-text">لا توجد طلبات جديدة</div></div>';
+      return;
+    }
+
+    el.innerHTML = orders.map(o => {
+      const payClass = (o.payment_method === 'card' || o.payment_method === 'online') ? 'card' : 'cash';
+      const payLabel = payClass === 'card' ? '💳 بطاقة' : '💵 كاش';
+      return '<div class="order-card pending" data-id="' + o.id + '">' +
+        '<div class="card-top">' +
+          '<span class="order-code">#' + esc(o.order_code || o.id.slice(-6).toUpperCase()) + '</span>' +
+          '<span class="time-ago" data-created="' + esc(o.created_at) + '">' + timeAgo(o.created_at) + '</span>' +
+        '</div>' +
+        '<div class="customer-row">' +
+          '<span class="customer-name">👤 ' + esc(o.customer_name || 'عميل') + '</span>' +
+          (o.customer_phone ? '<a class="customer-phone" href="tel:' + esc(o.customer_phone) + '">📞 ' + esc(o.customer_phone) + '</a>' : '') +
+        '</div>' +
+        renderItems(o) +
+        '<div class="order-footer">' +
+          '<div class="order-total">' + formatCurrency(o.total) + ' <span>إجمالي</span></div>' +
+          '<span class="payment-badge ' + payClass + '">' + payLabel + '</span>' +
+        '</div>' +
+        '<div class="delivery-info">📍 ' + esc(o.delivery_area || '') + (o.delivery_address ? ' — ' + esc(o.delivery_address) : '') + '</div>' +
+        '<button class="btn-accept" onclick="acceptOrder(\'' + o.id + '\')">✅ قبول الطلب</button>' +
+        '<button class="btn-reject" onclick="rejectOrder(\'' + o.id + '\')">✕ رفض الطلب</button>' +
+      '</div>';
+    }).join('');
+  }
+
+  function renderActive(orders) {
+    const el = document.getElementById('active-orders');
+    document.getElementById('active-count').textContent = orders.length;
+
+    if (!orders.length) {
+      el.innerHTML = '<div class="empty-state"><div class="empty-icon">🏃</div><div class="empty-text">لا توجد طلبات نشطة</div></div>';
+      return;
+    }
+
+    el.innerHTML = orders.map(o => {
+      const isOnWay = o.status === 'on_the_way';
+      const statusLabel = isOnWay ? 'في الطريق 🚗' : 'قيد التجهيز 👨‍🍳';
+      const statusClass = isOnWay ? 'on_the_way' : 'preparing';
+
+      let driverHtml = '';
+      if (o.driver_phone) {
+        driverHtml = '<div class="driver-info">' +
+          '🚴 <span class="driver-name">' + esc(o.driver_name || 'سائق') + '</span>' +
+          ' — <a href="tel:' + esc(o.driver_phone) + '" style="color:#166534">' + esc(o.driver_phone) + '</a>' +
+        '</div>';
+      } else {
+        driverHtml = '<div class="driver-info searching">🔍 جارٍ البحث عن سائق<span class="dots-anim"></span></div>';
+      }
+
+      let readyBtn = '';
+      if (!isOnWay) {
+        if (o.ready_at) {
+          readyBtn = '<button class="btn-ready already-ready" disabled>✅ الطلب جاهز للاستلام</button>';
+        } else {
+          readyBtn = '<button class="btn-ready" onclick="markReady(\'' + o.id + '\')">📦 الطلب جاهز للاستلام</button>';
+        }
+      }
+
+      return '<div class="order-card ' + statusClass + '" data-id="' + o.id + '">' +
+        '<div class="card-top">' +
+          '<span class="order-code">#' + esc(o.order_code || o.id.slice(-6).toUpperCase()) + '</span>' +
+          '<span class="status-badge ' + statusClass + '">' + statusLabel + '</span>' +
+        '</div>' +
+        '<div class="customer-row">' +
+          '<span class="customer-name">👤 ' + esc(o.customer_name || 'عميل') + '</span>' +
+          '<span style="font-size:12px;color:#64748B">📍 ' + esc(o.delivery_area || '') + '</span>' +
+        '</div>' +
+        driverHtml +
+        readyBtn +
+      '</div>';
+    }).join('');
+  }
+
+  function renderHistory(orders) {
+    const el = document.getElementById('history-orders');
+    if (!orders.length) {
+      el.innerHTML = '<div style="padding:12px;text-align:center;color:#475569;font-size:13px">لا يوجد سجل حتى الآن</div>';
+      return;
+    }
+    el.innerHTML = orders.map(o => {
+      const statusLabel = o.status === 'delivered' ? 'تم التسليم ✅' : 'مرفوض ✕';
+      const statusClass = o.status === 'delivered' ? 'delivered' : 'rejected';
+      const ts = o.delivered_at || o.rejected_at || o.updated_at || o.created_at;
+      return '<div class="history-row">' +
+        '<span class="h-code">#' + esc(o.order_code || o.id.slice(-6).toUpperCase()) + '</span>' +
+        '<span class="h-name">' + esc(o.customer_name || 'عميل') + '</span>' +
+        '<span class="h-total">' + formatCurrency(o.total) + '</span>' +
+        '<span class="status-badge ' + statusClass + '">' + statusLabel + '</span>' +
+        '<span class="h-time">' + timeAgo(ts) + '</span>' +
+      '</div>';
+    }).join('');
+  }
+
+  /* ══════════════════════════════════════════════
+     STATS
+  ══════════════════════════════════════════════ */
+  function updateStats(orders) {
+    const delivered = orders.filter(o => o.status === 'delivered');
+    const pending   = orders.filter(o => o.status === 'pending');
+    const revenue   = delivered.reduce((s, o) => s + (parseFloat(o.total) || 0), 0);
+
+    document.getElementById('stat-count').textContent   = orders.length;
+    document.getElementById('stat-revenue').textContent = formatCurrency(revenue);
+    document.getElementById('stat-pending').textContent = pending.length;
+  }
+
+  /* ══════════════════════════════════════════════
+     ACTIONS
+  ══════════════════════════════════════════════ */
+  window.acceptOrder = async function(id) {
+    const btn = document.querySelector('.order-card[data-id="' + id + '"] .btn-accept');
+    if (btn) { btn.disabled = true; btn.textContent = '⏳ جارٍ القبول…'; }
+    try {
+      await sbPatch('orders?id=eq.' + id, {
+        status: 'preparing',
+        accepted_at: new Date().toISOString(),
+        store_name: currentStore.name
+      });
+      showToast('✅ تم قبول الطلب بنجاح', 'success');
+      await loadOrders(false);
+    } catch (err) {
+      showToast('❌ فشل قبول الطلب: ' + err.message, 'error');
+      if (btn) { btn.disabled = false; btn.textContent = '✅ قبول الطلب'; }
+    }
+  };
+
+  window.rejectOrder = async function(id) {
+    if (!confirm('هل تريد رفض هذا الطلب؟')) return;
+    const btn = document.querySelector('.order-card[data-id="' + id + '"] .btn-reject');
+    if (btn) { btn.disabled = true; btn.textContent = '⏳ جارٍ الرفض…'; }
+    try {
+      await sbPatch('orders?id=eq.' + id, {
+        status: 'rejected',
+        rejected_at: new Date().toISOString()
+      });
+      showToast('🚫 تم رفض الطلب', 'info');
+      await loadOrders(false);
+    } catch (err) {
+      showToast('❌ فشل رفض الطلب: ' + err.message, 'error');
+      if (btn) { btn.disabled = false; btn.textContent = '✕ رفض الطلب'; }
+    }
+  };
+
+  window.markReady = async function(id) {
+    const btn = document.querySelector('.order-card[data-id="' + id + '"] .btn-ready');
+    if (btn) { btn.disabled = true; btn.textContent = '⏳ جارٍ التأكيد…'; }
+    try {
+      await sbPatch('orders?id=eq.' + id, { ready_at: new Date().toISOString() });
+      showToast('📦 تم تأكيد جاهزية الطلب', 'success');
+      await loadOrders(false);
+    } catch (err) {
+      showToast('❌ فشل تحديث الحالة: ' + err.message, 'error');
+      if (btn) { btn.disabled = false; btn.textContent = '📦 الطلب جاهز للاستلام'; }
+    }
+  };
+
+  /* ══════════════════════════════════════════════
+     STORE OPEN/CLOSE TOGGLE
+  ══════════════════════════════════════════════ */
+  window.toggleStoreOpen = async function() {
+    if (!currentStore) return;
+    const newVal = !currentStore.is_open;
+    try {
+      await sbPatch('stores?id=eq.' + currentStore.id, { is_open: newVal });
+      currentStore.is_open = newVal;
+      updateOpenBtn();
+      showToast(newVal ? '🟢 المطعم مفتوح الآن' : '🔴 المطعم مغلق الآن', 'info');
+    } catch (err) {
+      showToast('❌ فشل تحديث حالة المطعم', 'error');
+    }
+  };
+
+  function updateOpenBtn() {
+    const btn = document.getElementById('toggle-open-btn');
+    const icon = document.getElementById('open-status-icon');
+    const text = document.getElementById('open-status-text');
+    if (currentStore && currentStore.is_open) {
+      btn.classList.remove('closed');
+      icon.textContent = '✅';
+      text.textContent = 'مفتوح';
+    } else {
+      btn.classList.add('closed');
+      icon.textContent = '🔴';
+      text.textContent = 'مغلق';
+    }
+  }
+
+  /* ══════════════════════════════════════════════
+     UTILS
+  ══════════════════════════════════════════════ */
+  function timeAgo(iso) {
+    if (!iso) return '';
+    const diff = (Date.now() - new Date(iso).getTime()) / 1000;
+    if (diff < 60) return 'الآن';
+    const mins = Math.floor(diff / 60);
+    if (mins < 60) return 'منذ ' + mins + ' دقيقة';
+    const hrs = Math.floor(mins / 60);
+    if (hrs < 24) return 'منذ ' + hrs + ' ساعة';
+    return 'منذ ' + Math.floor(hrs / 24) + ' يوم';
+  }
+
+  function formatCurrency(val) {
+    const n = parseFloat(val) || 0;
+    return n.toLocaleString('ar-SA', { minimumFractionDigits: 0, maximumFractionDigits: 2 }) + ' ر.س';
+  }
+
+  function esc(str) {
+    if (str == null) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
+  /* ══════════════════════════════════════════════
+     TOAST
+  ══════════════════════════════════════════════ */
+  let toastTimer = null;
+  function showToast(msg, type) {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.className = 'show ' + (type || 'info');
+    if (toastTimer) clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => { el.className = ''; }, 3500);
+  }
+
+  /* ══════════════════════════════════════════════
+     ELAPSED TIMER
+  ══════════════════════════════════════════════ */
+  function startElapsedTimers() {
+    if (elapsedTimer) clearInterval(elapsedTimer);
+    elapsedTimer = setInterval(() => {
+      document.querySelectorAll('[data-created]').forEach(el => {
+        el.textContent = timeAgo(el.dataset.created);
+      });
+    }, 30000);
+  }
+
+  /* ══════════════════════════════════════════════
+     INIT
+  ══════════════════════════════════════════════ */
+  async function init() {
+    // Service worker registration
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js').catch(() => {});
+    }
+
+    currentUser = checkAuth();
+    if (!currentUser) {
+      document.getElementById('loader').style.display = 'none';
+      const aw = document.getElementById('auth-wall');
+      aw.style.display = 'flex';
+      return;
+    }
+
+    await requestNotificationPermission();
+
+    // Load store by phone
+    try {
+      const stores = await sbGet('stores?phone=eq.' + encodeURIComponent(currentUser.phone) + '&limit=1');
+      if (!stores || !stores.length) {
+        document.getElementById('loader').style.display = 'none';
+        const aw = document.getElementById('auth-wall');
+        aw.querySelector('.aw-msg').textContent = 'لم يتم العثور على المطعم';
+        aw.querySelector('.aw-sub').textContent = 'تأكد من أن حسابك مرتبط بمطعم';
+        aw.style.display = 'flex';
+        return;
+      }
+      currentStore = stores[0];
+    } catch (err) {
+      // fallback: try by user_id or just show the error
+      console.error('[Wslha] Store load error', err);
+      document.getElementById('loader').style.display = 'none';
+      showToast('❌ فشل تحميل بيانات المطعم', 'error');
+      return;
+    }
+
+    // Populate header
+    document.getElementById('store-emoji').textContent = currentStore.emoji || '🍽️';
+    document.getElementById('store-name').textContent  = currentStore.name || 'المطعم';
+    document.getElementById('store-area').textContent  = currentStore.area || currentStore.city || '—';
+    updateOpenBtn();
+
+    // Show UI
+    document.getElementById('loader').style.display   = 'none';
+    document.getElementById('app-header').style.display = 'flex';
+    document.getElementById('main-content').style.display = 'flex';
+
+    // Load orders (initial, no announcement)
+    await loadOrders(false);
+
+    // Subscribe realtime
+    subscribeOrders();
+
+    // Elapsed timers
+    startElapsedTimers();
+  }
+
+  // Kick off
+  init();
+})();
+</script>
+</body>
+</html>

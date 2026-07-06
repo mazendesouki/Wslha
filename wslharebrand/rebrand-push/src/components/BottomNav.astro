@@ -1,0 +1,124 @@
+---
+interface Props {
+  currentPage?: string;
+}
+
+const { currentPage = '' } = Astro.props;
+
+const navItems = [
+  { href: '/', label: 'الرئيسية', emoji: '🏠', page: 'home' },
+  { href: '/wallet', label: 'المحفظة', emoji: '💳', page: 'wallet' },
+  { href: '/profile', label: 'حسابي', emoji: '👤', page: 'profile' },
+  { href: '/orders', label: 'الطلبات', emoji: '📦', page: 'orders' },
+  { href: '/rides', label: 'رحلات', emoji: '🚖', page: 'rides' },
+  { href: '/settings', label: 'الإعدادات', emoji: '⚙️', page: 'settings' },
+];
+---
+
+<nav class="bottom-nav" role="navigation" aria-label="التنقل السفلي">
+  <ul class="bottom-nav__list" role="list">
+    {navItems.map(item => (
+      <li class="bottom-nav__item">
+        <a
+          href={item.href}
+          class:list={['bottom-nav__link', { 'bottom-nav__link--active': currentPage === item.page }]}
+          aria-current={currentPage === item.page ? 'page' : undefined}
+        >
+          <span class="bottom-nav__icon">{item.emoji}</span>
+          <span class="bottom-nav__label">{item.label}</span>
+        </a>
+      </li>
+    ))}
+  </ul>
+</nav>
+
+<style is:global>
+  /* ── Bottom Navigation ───────────────────────────────────── */
+  .bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: #fff;
+    border-top: 1.5px solid #E2E8F0;
+    z-index: 50;
+    padding-bottom: max(0px, env(safe-area-inset-bottom));
+    box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.08);
+  }
+
+  .bottom-nav__list {
+    display: flex;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    justify-content: space-between;
+    align-items: stretch;
+  }
+
+  .bottom-nav__item {
+    flex: 1 1 0;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .bottom-nav__link {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    padding: 7px 2px;
+    width: 100%;
+    height: 100%;
+    text-decoration: none;
+    color: #94A3B8;
+    transition: color 0.3s ease, background 0.3s ease;
+    font-size: 9.5px;
+    font-weight: 600;
+    min-height: 52px;
+  }
+
+  .bottom-nav__link:active {
+    background: rgba(59, 110, 248, 0.05);
+  }
+
+  .bottom-nav__link--active {
+    color: #0E4B49;
+  }
+
+  .bottom-nav__icon {
+    font-size: 18px;
+    line-height: 1;
+    display: inline-block;
+    transition: transform 0.2s ease;
+  }
+
+  .bottom-nav__link--active .bottom-nav__icon {
+    transform: scale(1.15);
+  }
+
+  .bottom-nav__label {
+    display: block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+  }
+
+  /* ── Adjust main content to not overlap with bottom nav ── */
+  main {
+    padding-bottom: 70px;
+  }
+
+  /* ── Mobile optimization ───────────────────────────────── */
+  @media (min-width: 768px) {
+    .bottom-nav {
+      display: none;
+    }
+    main {
+      padding-bottom: 0;
+    }
+  }
+</style>

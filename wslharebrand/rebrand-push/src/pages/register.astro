@@ -1,0 +1,603 @@
+---
+import Layout from '../components/layout.astro';
+
+const CITIES = ['دمياط الجديدة', 'دمياط', 'كفر سعد', 'فارسكور', 'منية النصر', 'رأس البر', 'الزرقا'];
+---
+
+<style>
+  /* ── 2026 Auth Experience ───────────────────────────────────── */
+  .auth26 {
+    min-height: calc(100vh - var(--nav-height));
+    background:
+      radial-gradient(1200px 600px at 80% -10%, rgba(59,110,248,.18), transparent 60%),
+      radial-gradient(900px 500px at -10% 110%, rgba(245,184,0,.14), transparent 55%),
+      #F5F7FF;
+    padding: var(--sp-8) var(--sp-4) calc(var(--sp-20) + 40px);
+    display: flex; justify-content: center; align-items: flex-start;
+  }
+
+  .auth26__card {
+    background: rgba(255,255,255,.85);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+    border: 1px solid rgba(255,255,255,.9);
+    border-radius: 28px;
+    width: 100%; max-width: 480px;
+    box-shadow: 0 24px 70px rgba(40,60,140,.18), 0 2px 8px rgba(40,60,140,.06);
+    overflow: hidden;
+    position: relative;
+  }
+
+  /* Top gradient band */
+  .auth26__head {
+    background: linear-gradient(135deg, #0E4B49 0%, #6D5DF6 55%, #8B5CF6 100%);
+    padding: var(--sp-8) var(--sp-6) var(--sp-10);
+    color: #fff; position: relative; overflow: hidden;
+  }
+  .auth26__head::after {
+    content: ''; position: absolute; inset: 0;
+    background: radial-gradient(420px 200px at 90% 0%, rgba(255,255,255,.25), transparent 70%);
+    pointer-events: none;
+  }
+  .auth26__logo {
+    font-size: 1.65rem; font-weight: 900; letter-spacing: -.5px;
+    display: flex; align-items: center; gap: 8px; margin-bottom: 6px;
+  }
+  .auth26__logo-dot {
+    width: 10px; height: 10px; border-radius: 50%;
+    background: var(--color-accent); box-shadow: 0 0 0 4px rgba(245,184,0,.3);
+  }
+  .auth26__title { font-size: 1.5rem; font-weight: 900; margin: 10px 0 4px; }
+  .auth26__sub   { font-size: .9rem; opacity: .92; font-weight: 500; }
+
+  /* Stepper */
+  .stepper {
+    display: flex; align-items: center; gap: 0;
+    margin-top: var(--sp-6); position: relative; z-index: 1;
+  }
+  .stepper__node {
+    width: 34px; height: 34px; border-radius: 50%; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 900; font-size: .85rem;
+    background: rgba(255,255,255,.25); color: #fff;
+    border: 2px solid rgba(255,255,255,.55);
+    transition: all .35s cubic-bezier(.4,0,.2,1);
+  }
+  .stepper__node.active {
+    background: #fff; color: var(--color-primary);
+    border-color: #fff; transform: scale(1.12);
+    box-shadow: 0 6px 18px rgba(0,0,0,.18);
+  }
+  .stepper__node.done {
+    background: var(--color-accent); color: #1A1A2E; border-color: var(--color-accent);
+  }
+  .stepper__bar {
+    flex: 1; height: 3px; border-radius: 99px;
+    background: rgba(255,255,255,.3); position: relative; overflow: hidden;
+  }
+  .stepper__bar::after {
+    content: ''; position: absolute; inset: 0; width: 0;
+    background: var(--color-accent); transition: width .4s ease;
+  }
+  .stepper__bar.fill::after { width: 100%; }
+
+  /* Body */
+  .auth26__body { padding: var(--sp-7) var(--sp-6) var(--sp-6); }
+
+  /* Step panels with slide animation */
+  .steps-viewport { position: relative; overflow: hidden; }
+  .step-panel { display: none; animation: stepIn .4s cubic-bezier(.16,1,.3,1); }
+  .step-panel.active { display: block; }
+  @keyframes stepIn {
+    from { opacity: 0; transform: translateX(24px); }
+    to   { opacity: 1; transform: translateX(0); }
+  }
+  .step-panel__heading {
+    font-size: .8rem; font-weight: 800; color: var(--color-primary);
+    text-transform: uppercase; letter-spacing: .04em; margin-bottom: 2px;
+  }
+  .step-panel__caption { font-size: .82rem; color: var(--color-text-muted); margin-bottom: var(--sp-5); }
+
+  /* Fields */
+  .f26 { margin-bottom: var(--sp-4); }
+  .f26__label {
+    display: flex; align-items: center; justify-content: space-between;
+    font-weight: 800; font-size: .82rem; margin-bottom: 7px; color: var(--color-text);
+  }
+  .f26__avail { font-size: 11px; font-weight: 800; opacity: 0; transition: opacity .2s; }
+  .f26__avail.checking { color: var(--color-text-faint); opacity: 1; }
+  .f26__avail.ok       { color: #16a34a; opacity: 1; }
+  .f26__avail.taken    { color: #dc2626; opacity: 1; }
+
+  .f26__wrap { position: relative; display: flex; align-items: center; }
+  .f26__icon {
+    position: absolute; right: 14px; font-size: 1.05rem;
+    pointer-events: none; opacity: .55; transition: opacity .2s;
+  }
+  .field__input, .field__select {
+    width: 100%; padding: 14px 44px 14px 16px;
+    border: 2px solid var(--color-border); border-radius: 14px;
+    font-family: var(--font-body); font-size: 1rem; background: #fff;
+    outline: none; transition: border-color .18s, box-shadow .18s; color: var(--color-text);
+  }
+  .field__select { padding-right: 16px; }
+  .f26__wrap:focus-within .f26__icon { opacity: 1; }
+  .field__input:focus, .field__select:focus {
+    border-color: var(--color-primary); box-shadow: 0 0 0 4px rgba(59,110,248,.13);
+  }
+  .field__input::placeholder { color: var(--color-text-faint); }
+  .field__input.ok    { border-color: #16a34a; }
+  .field__input.taken,
+  .field__input.error { border-color: #ef4444; }
+  .f26__hint { font-size: 11px; color: var(--color-text-faint); margin-top: 5px; }
+
+  /* Password rules */
+  .pw-rules { list-style: none; margin: 10px 0 0; padding: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 3px 10px; }
+  .pw-rule  { font-size: .73rem; color: var(--color-text-muted); transition: color .15s; display: flex; align-items: center; gap: 4px; }
+  .pw-rule.ok  { color: #16a34a; }
+  .pw-rule.bad { color: #cbd5e1; }
+  .match-row { font-size: .76rem; margin-top: 7px; height: 16px; font-weight: 700; }
+  .match-ok { color: #16a34a; } .match-no { color: #dc2626; }
+
+  /* Error banner */
+  .auth-error {
+    background: #fef2f2; color: #b91c1c; border: 1px solid #fca5a5;
+    border-radius: 12px; padding: 11px 14px; font-size: .85rem;
+    margin-bottom: var(--sp-4); display: none;
+  }
+  .auth-error.is-visible { display: block; animation: stepIn .3s; }
+
+  /* Nav buttons */
+  .step-nav { display: flex; gap: 10px; margin-top: var(--sp-6); }
+  .btn26 {
+    flex: 1; padding: 15px; border: none; border-radius: 14px;
+    font-family: var(--font-body); font-weight: 900; font-size: 1rem;
+    cursor: pointer; transition: transform .15s, background .18s, box-shadow .18s;
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+  }
+  .btn26--primary { background: var(--color-primary); color: #fff; box-shadow: 0 8px 22px rgba(59,110,248,.32); }
+  .btn26--primary:hover:not(:disabled) { background: var(--color-primary-dark); transform: translateY(-2px); }
+  .btn26--primary:disabled { opacity: .55; cursor: not-allowed; transform: none; box-shadow: none; }
+  .btn26--ghost { background: #fff; color: var(--color-text-muted); border: 2px solid var(--color-border); flex: 0 0 46%; }
+  .btn26--ghost:hover { border-color: var(--color-primary); color: var(--color-primary); }
+
+  /* Footer actions */
+  .auth26__foot { padding: 0 var(--sp-6) var(--sp-7); }
+  .auth-divider { display: flex; align-items: center; gap: 12px; margin: var(--sp-5) 0; color: var(--color-text-faint); font-size: .82rem; }
+  .auth-divider::before, .auth-divider::after { content: ''; flex: 1; height: 1px; background: var(--color-border); }
+  .alt-actions { display: flex; flex-direction: column; gap: 10px; }
+  .alt-btn {
+    width: 100%; padding: 13px; border-radius: 13px; text-align: center;
+    font-weight: 800; font-size: .9rem; transition: all .18s;
+    display: flex; align-items: center; justify-content: center; gap: 7px;
+  }
+  .alt-btn--outline { border: 2px solid var(--color-border); color: var(--color-text); }
+  .alt-btn--outline:hover { border-color: var(--color-primary); color: var(--color-primary); background: var(--color-primary-light); }
+  .alt-btn--driver { background: linear-gradient(135deg, #F5B800, #FF9D00); color: #1A1A2E; box-shadow: 0 6px 18px rgba(245,184,0,.32); }
+  .alt-btn--driver:hover { transform: translateY(-2px); }
+  .auth-foot-note { margin-top: var(--sp-5); text-align: center; font-size: .8rem; color: var(--color-text-muted); }
+  .auth-foot-note a { color: var(--color-primary); font-weight: 800; }
+
+  @media (max-width: 480px) {
+    .auth26 { padding-top: var(--sp-5); }
+    .auth26__head { padding: var(--sp-6) var(--sp-5) var(--sp-8); }
+    .auth26__body, .auth26__foot { padding-left: var(--sp-5); padding-right: var(--sp-5); }
+    .pw-rules { grid-template-columns: 1fr; }
+  }
+</style>
+
+<Layout title="حساب جديد | وصّلها" description="أنشئ حساب عميل جديد في وصّلها" page="register">
+  <section class="auth26">
+    <div class="auth26__card">
+
+      <!-- Head -->
+      <div class="auth26__head">
+        <div class="auth26__logo"><span class="auth26__logo-dot"></span> وصّلها</div>
+        <h1 class="auth26__title">أنشئ حسابك ✨</h1>
+        <p class="auth26__sub">ثلاث خطوات سريعة وتبدأ بطلب التوصيل</p>
+
+        <div class="stepper">
+          <div class="stepper__node active" id="node-1">1</div>
+          <div class="stepper__bar" id="bar-1"></div>
+          <div class="stepper__node" id="node-2">2</div>
+          <div class="stepper__bar" id="bar-2"></div>
+          <div class="stepper__node" id="node-3">3</div>
+        </div>
+      </div>
+
+      <!-- Body -->
+      <div class="auth26__body">
+        <form id="register-form" novalidate>
+          <div id="register-error" class="auth-error" role="alert" aria-live="polite"></div>
+
+          <div class="steps-viewport">
+
+            <!-- ── Step 1: Identity ── -->
+            <div class="step-panel active" data-step="1">
+              <div class="step-panel__heading">الخطوة ١ — هويتك</div>
+              <div class="step-panel__caption">عرّفنا بنفسك واختر اسم مستخدم مميّز</div>
+
+              <div class="f26">
+                <label class="f26__label" for="reg-name">الاسم بالكامل</label>
+                <div class="f26__wrap">
+                  <span class="f26__icon">👤</span>
+                  <input class="field__input" type="text" id="reg-name"
+                    placeholder="مثال: أحمد محمد علي" required autocomplete="name">
+                </div>
+              </div>
+
+              <div class="f26">
+                <label class="f26__label" for="reg-username">
+                  اسم المستخدم <span id="user-avail" class="f26__avail"></span>
+                </label>
+                <div class="f26__wrap">
+                  <span class="f26__icon">@</span>
+                  <input class="field__input" type="text" id="reg-username"
+                    placeholder="ahmed_2026" required autocomplete="username"
+                    minlength="3" maxlength="20" dir="ltr">
+                </div>
+                <div class="f26__hint">أحرف إنجليزية وأرقام و _ . فقط (3-20 حرف)</div>
+              </div>
+
+              <div class="f26">
+                <label class="f26__label" for="reg-phone">
+                  رقم الجوال <span id="phone-avail" class="f26__avail"></span>
+                </label>
+                <div class="f26__wrap">
+                  <span class="f26__icon">📱</span>
+                  <input class="field__input" type="tel" id="reg-phone"
+                    placeholder="010 1234 5678" inputmode="numeric"
+                    maxlength="11" pattern="01[0125][0-9]{8}" required autocomplete="tel">
+                </div>
+              </div>
+
+              <div class="step-nav">
+                <button type="button" class="btn26 btn26--primary" data-next="1">التالي ←</button>
+              </div>
+            </div>
+
+            <!-- ── Step 2: Contact ── -->
+            <div class="step-panel" data-step="2">
+              <div class="step-panel__heading">الخطوة ٢ — بيانات التواصل</div>
+              <div class="step-panel__caption">بريدك ومدينتك لخدمة توصيل أدق</div>
+
+              <div class="f26">
+                <label class="f26__label" for="reg-email">
+                  البريد الإلكتروني <span id="email-avail" class="f26__avail"></span>
+                </label>
+                <div class="f26__wrap">
+                  <span class="f26__icon">✉️</span>
+                  <input class="field__input" type="email" id="reg-email"
+                    placeholder="example@gmail.com" required autocomplete="email" dir="ltr">
+                </div>
+              </div>
+
+              <div class="f26">
+                <label class="f26__label" for="reg-city">المدينة</label>
+                <div class="f26__wrap">
+                  <select class="field__select" id="reg-city" required>
+                    <option value="">اختر مدينتك</option>
+                    {CITIES.map(c => <option value={c}>{c}</option>)}
+                  </select>
+                </div>
+              </div>
+
+              <div class="step-nav">
+                <button type="button" class="btn26 btn26--ghost" data-back="2">→ السابق</button>
+                <button type="button" class="btn26 btn26--primary" data-next="2">التالي ←</button>
+              </div>
+            </div>
+
+            <!-- ── Step 3: Security ── -->
+            <div class="step-panel" data-step="3">
+              <div class="step-panel__heading">الخطوة ٣ — الأمان</div>
+              <div class="step-panel__caption">اختر كلمة مرور قوية لحماية حسابك</div>
+
+              <div class="f26">
+                <label class="f26__label" for="reg-pass">كلمة المرور</label>
+                <div class="f26__wrap">
+                  <span class="f26__icon">🔒</span>
+                  <input class="field__input" type="password" id="reg-pass"
+                    placeholder="••••••••" required autocomplete="new-password">
+                </div>
+                <ul class="pw-rules" aria-live="polite">
+                  <li id="rule-len" class="pw-rule">✗ 8 أحرف على الأقل</li>
+                  <li id="rule-up"  class="pw-rule">✗ حرف كبير (A-Z)</li>
+                  <li id="rule-low" class="pw-rule">✗ حرف صغير (a-z)</li>
+                  <li id="rule-dig" class="pw-rule">✗ رقم واحد</li>
+                  <li id="rule-sym" class="pw-rule">✗ بدون رموز أو مسافات</li>
+                </ul>
+              </div>
+
+              <div class="f26">
+                <label class="f26__label" for="reg-pass2">تأكيد كلمة المرور</label>
+                <div class="f26__wrap">
+                  <span class="f26__icon">🔐</span>
+                  <input class="field__input" type="password" id="reg-pass2"
+                    placeholder="••••••••" required autocomplete="new-password">
+                </div>
+                <div id="pass-match" class="match-row"></div>
+              </div>
+
+              <div class="step-nav">
+                <button type="button" class="btn26 btn26--ghost" data-back="3">→ السابق</button>
+                <button type="submit" class="btn26 btn26--primary" id="register-submit">إنشاء الحساب ✓</button>
+              </div>
+            </div>
+
+          </div>
+        </form>
+      </div>
+
+      <!-- Footer -->
+      <div class="auth26__foot">
+        <div class="auth-divider"><span>أو</span></div>
+        <div class="alt-actions">
+          <a href="/login" class="alt-btn alt-btn--outline">لديك حساب؟ سجّل الدخول</a>
+          <a href="/driver" class="alt-btn alt-btn--driver">🚗 انضم كسائق</a>
+        </div>
+        <p class="auth-foot-note">بإنشائك الحساب فأنت توافق على <a href="/about">شروط الخدمة</a></p>
+      </div>
+
+    </div>
+  </section>
+</Layout>
+
+<script>
+  import { isEgyptianMobile, normalizeEgyptianPhone, EG_PHONE_ERROR } from '../utils/phone';
+  import { validatePassword }    from '../utils/password';
+  import { addAccount, fieldExists } from '../utils/accounts';
+  import { validateFullName, defaultAvatar } from '../utils/validation';
+
+  const form      = document.getElementById('register-form')   as HTMLFormElement;
+  const errorBox  = document.getElementById('register-error')  as HTMLElement;
+  const submitBtn = document.getElementById('register-submit') as HTMLButtonElement;
+
+  const nameInp  = document.getElementById('reg-name')     as HTMLInputElement;
+  const userInp  = document.getElementById('reg-username') as HTMLInputElement;
+  const phoneInp = document.getElementById('reg-phone')    as HTMLInputElement;
+  const emailInp = document.getElementById('reg-email')    as HTMLInputElement;
+  const cityInp  = document.getElementById('reg-city')     as HTMLSelectElement;
+  const passInp  = document.getElementById('reg-pass')     as HTMLInputElement;
+  const pass2Inp = document.getElementById('reg-pass2')    as HTMLInputElement;
+
+  const userAvail  = document.getElementById('user-avail')  as HTMLElement;
+  const phoneAvail = document.getElementById('phone-avail') as HTMLElement;
+  const emailAvail = document.getElementById('email-avail') as HTMLElement;
+
+  // ── Password rules ──
+  const ruleLen = document.getElementById('rule-len')!;
+  const ruleUp  = document.getElementById('rule-up')!;
+  const ruleLow = document.getElementById('rule-low')!;
+  const ruleDig = document.getElementById('rule-dig')!;
+  const ruleSym = document.getElementById('rule-sym')!;
+  const matchEl = document.getElementById('pass-match')!;
+
+  function setRule(el: HTMLElement, ok: boolean) {
+    const label = el.textContent!.replace(/^[✓✗] /, '');
+    el.textContent = (ok ? '✓ ' : '✗ ') + label;
+    el.className = 'pw-rule ' + (ok ? 'ok' : 'bad');
+  }
+  passInp.addEventListener('input', () => {
+    const v = passInp.value;
+    setRule(ruleLen, v.length >= 8);
+    setRule(ruleUp,  /[A-Z]/.test(v));
+    setRule(ruleLow, /[a-z]/.test(v));
+    setRule(ruleDig, /[0-9]/.test(v));
+    setRule(ruleSym, v.length > 0 && /^[A-Za-z0-9]+$/.test(v));
+    checkMatch();
+  });
+  pass2Inp.addEventListener('input', checkMatch);
+  function checkMatch() {
+    if (!pass2Inp.value) { matchEl.textContent = ''; matchEl.className = 'match-row'; return; }
+    const ok = pass2Inp.value === passInp.value;
+    matchEl.textContent  = ok ? '✓ كلمتا المرور متطابقتان' : '✗ كلمتا المرور غير متطابقتين';
+    matchEl.className = 'match-row ' + (ok ? 'match-ok' : 'match-no');
+  }
+
+  // ── Real-time uniqueness checking (debounced) ──
+  type AvailState = 'idle' | 'checking' | 'ok' | 'taken' | 'error';
+
+  const fieldState: Record<string, AvailState> = {
+    username: 'idle', phone: 'idle', email: 'idle',
+  };
+
+  function setAvail(el: HTMLElement, inp: HTMLInputElement, state: AvailState, msg = '') {
+    el.className = 'f26__avail ' + (state === 'idle' ? '' : state);
+    el.innerHTML = msg;
+    inp.classList.remove('ok', 'taken');
+    if (state === 'ok')    inp.classList.add('ok');
+    if (state === 'taken') inp.classList.add('taken');
+  }
+
+  function debounce<T extends (...args: any[]) => void>(fn: T, ms: number): T {
+    let t: ReturnType<typeof setTimeout>;
+    return ((...args: any[]) => { clearTimeout(t); t = setTimeout(() => fn(...args), ms); }) as T;
+  }
+
+  const checkUsername = debounce(async () => {
+    const v = userInp.value.trim();
+    if (!v || v.length < 3) { setAvail(userAvail, userInp, 'idle', ''); fieldState.username = 'idle'; return; }
+    if (!/^[a-zA-Z0-9_\.]{3,20}$/.test(v)) {
+      setAvail(userAvail, userInp, 'taken', '✗ أحرف غير مسموح بها');
+      fieldState.username = 'taken'; return;
+    }
+    setAvail(userAvail, userInp, 'checking', 'جاري الفحص...');
+    fieldState.username = 'checking';
+    const exists = await fieldExists('username', v);
+    if (exists === true)  { setAvail(userAvail, userInp, 'taken', '✗ اسم المستخدم محجوز'); fieldState.username = 'taken'; }
+    else if (exists === false) { setAvail(userAvail, userInp, 'ok', '✓ متاح'); fieldState.username = 'ok'; }
+    else { setAvail(userAvail, userInp, 'idle', ''); fieldState.username = 'idle'; }
+  }, 600);
+
+  const checkPhone = debounce(async () => {
+    const v = phoneInp.value.trim();
+    if (!v) { setAvail(phoneAvail, phoneInp, 'idle', ''); fieldState.phone = 'idle'; return; }
+    if (!isEgyptianMobile(v)) { setAvail(phoneAvail, phoneInp, 'taken', '✗ رقم غير صحيح'); fieldState.phone = 'taken'; return; }
+    setAvail(phoneAvail, phoneInp, 'checking', 'جاري الفحص...');
+    fieldState.phone = 'checking';
+    const norm = normalizeEgyptianPhone(v);
+    const exists = await fieldExists('phone', norm);
+    if (exists === true)  { setAvail(phoneAvail, phoneInp, 'taken', '✗ مسجّل بالفعل — <a href="/login" style="color:inherit">تسجيل دخول</a>'); fieldState.phone = 'taken'; }
+    else if (exists === false) { setAvail(phoneAvail, phoneInp, 'ok', '✓ رقم جديد'); fieldState.phone = 'ok'; }
+    else { setAvail(phoneAvail, phoneInp, 'idle', ''); fieldState.phone = 'idle'; }
+  }, 600);
+
+  const checkEmail = debounce(async () => {
+    const v = emailInp.value.trim();
+    if (!v) { setAvail(emailAvail, emailInp, 'idle', ''); fieldState.email = 'idle'; return; }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)) {
+      setAvail(emailAvail, emailInp, 'taken', '✗ صيغة البريد غير صحيحة');
+      fieldState.email = 'taken'; return;
+    }
+    setAvail(emailAvail, emailInp, 'checking', 'جاري الفحص...');
+    fieldState.email = 'checking';
+    const exists = await fieldExists('email', v.toLowerCase());
+    if (exists === true)  { setAvail(emailAvail, emailInp, 'taken', '✗ بريد مسجّل مسبقاً'); fieldState.email = 'taken'; }
+    else if (exists === false) { setAvail(emailAvail, emailInp, 'ok', '✓ متاح'); fieldState.email = 'ok'; }
+    else { setAvail(emailAvail, emailInp, 'idle', ''); fieldState.email = 'idle'; }
+  }, 600);
+
+  userInp.addEventListener('input',  checkUsername);
+  phoneInp.addEventListener('input', checkPhone);
+  emailInp.addEventListener('input', checkEmail);
+
+  // ── Multi-step navigation ──
+  let currentStep = 1;
+  const totalSteps = 3;
+
+  function showStep(n: number) {
+    document.querySelectorAll<HTMLElement>('.step-panel').forEach(p => {
+      p.classList.toggle('active', Number(p.dataset.step) === n);
+    });
+    for (let i = 1; i <= totalSteps; i++) {
+      const node = document.getElementById('node-' + i)!;
+      node.classList.toggle('active', i === n);
+      node.classList.toggle('done', i < n);
+      node.textContent = i < n ? '✓' : String(i);
+      const bar = document.getElementById('bar-' + i);
+      if (bar) bar.classList.toggle('fill', i < n);
+    }
+    currentStep = n;
+    errorBox.classList.remove('is-visible');
+    document.querySelector('.auth26__card')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  function validateStep(n: number): boolean {
+    if (n === 1) {
+      const nm = validateFullName(nameInp.value);
+      if (!nm.valid) { showError(nm.message); return false; }
+      const u = userInp.value.trim();
+      if (!/^[a-zA-Z0-9_\.]{3,20}$/.test(u)) { showError('اسم المستخدم: أحرف إنجليزية وأرقام و _ . فقط (3-20 حرف).'); return false; }
+      if (fieldState.username === 'taken') { showError('اسم المستخدم محجوز، اختر اسماً آخر.'); return false; }
+      if (!isEgyptianMobile(phoneInp.value.trim())) { showError(EG_PHONE_ERROR); return false; }
+      if (fieldState.phone === 'taken') { showError('هذا الرقم مسجّل بالفعل. <a href="/login">سجّل الدخول</a> مباشرة.'); return false; }
+    }
+    if (n === 2) {
+      const em = emailInp.value.trim();
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)) { showError('يرجى إدخال بريد إلكتروني صحيح.'); return false; }
+      if (fieldState.email === 'taken') { showError('هذا البريد الإلكتروني مسجّل بالفعل.'); return false; }
+      if (!cityInp.value) { showError('يرجى اختيار المدينة.'); return false; }
+    }
+    return true;
+  }
+
+  document.querySelectorAll<HTMLButtonElement>('[data-next]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const from = Number(btn.dataset.next);
+      if (validateStep(from)) showStep(Math.min(from + 1, totalSteps));
+    });
+  });
+  document.querySelectorAll<HTMLButtonElement>('[data-back]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const from = Number(btn.dataset.back);
+      showStep(Math.max(from - 1, 1));
+    });
+  });
+
+  // ── Error helper ──
+  function showError(msg: string) {
+    errorBox.innerHTML = msg;
+    errorBox.classList.add('is-visible');
+    submitBtn.disabled    = false;
+    submitBtn.textContent = 'إنشاء الحساب ✓';
+    errorBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  // ── Submit ──
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    errorBox.classList.remove('is-visible');
+    submitBtn.disabled    = true;
+    submitBtn.textContent = 'جاري الإنشاء...';
+
+    const name     = nameInp.value.trim();
+    const username = userInp.value.trim();
+    const phone    = phoneInp.value.trim();
+    const email    = emailInp.value.trim().toLowerCase();
+    const city     = cityInp.value;
+    const pass     = passInp.value;
+    const pass2    = pass2Inp.value;
+
+    // ── Client-side validation ──
+    const nameCheck = validateFullName(name);
+    if (!nameCheck.valid)       { showStep(1); showError(nameCheck.message); return; }
+    if (!username || username.length < 3) { showStep(1); showError('اسم المستخدم يجب أن يكون 3 أحرف على الأقل.'); return; }
+    if (!/^[a-zA-Z0-9_\.]{3,20}$/.test(username)) { showStep(1); showError('اسم المستخدم: أحرف إنجليزية وأرقام و _ . فقط (3-20 حرف).'); return; }
+    if (!isEgyptianMobile(phone)) { showStep(1); showError(EG_PHONE_ERROR); return; }
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { showStep(2); showError('يرجى إدخال بريد إلكتروني صحيح.'); return; }
+    if (!city)  { showStep(2); showError('يرجى اختيار المدينة.'); return; }
+    const pwResult = validatePassword(pass);
+    if (!pwResult.valid) { showError(pwResult.message); return; }
+    if (pass !== pass2) { showError('كلمتا المرور غير متطابقتين.'); return; }
+
+    // ── Block if any field already known to be taken ──
+    if (fieldState.username === 'taken') { showStep(1); showError('اسم المستخدم محجوز، اختر اسماً آخر.'); return; }
+    if (fieldState.phone    === 'taken') { showStep(1); showError('هذا الرقم مسجّل بالفعل. <a href="/login">سجّل الدخول</a> مباشرة.'); return; }
+    if (fieldState.email    === 'taken') { showStep(2); showError('هذا البريد الإلكتروني مسجّل بالفعل.'); return; }
+
+    // ── Final server-side uniqueness check before insert ──
+    const norm = normalizeEgyptianPhone(phone);
+    const [phoneExists, emailExists, userExists] = await Promise.all([
+      fieldExists('phone',    norm),
+      fieldExists('email',    email),
+      fieldExists('username', username),
+    ]);
+
+    if (phoneExists === true)  { showStep(1); showError('هذا الرقم مسجّل بالفعل. <a href="/login">سجّل الدخول</a> مباشرة.'); return; }
+    if (emailExists === true)  { showStep(2); showError('هذا البريد الإلكتروني مسجّل في النظام.'); return; }
+    if (userExists  === true)  { showStep(1); showError('اسم المستخدم محجوز، جرّب اسماً آخر.'); return; }
+
+    // ── Create account ──
+    const created = await addAccount({
+      name, username, phone: norm, email, password: pass,
+      role: 'customer', city,
+      createdAt: new Date().toISOString(),
+    });
+
+    if (!created) {
+      showError('حدث تعارض أثناء الإنشاء — قد يكون أحد البيانات مسجّلاً بالفعل.');
+      return;
+    }
+
+    try {
+      const prevRaw = localStorage.getItem('wslha_user');
+      const prevUser = prevRaw ? JSON.parse(prevRaw) : null;
+      if (prevUser?.phone && prevUser.phone !== norm) {
+        localStorage.removeItem('wslha_orders_' + prevUser.phone);
+        localStorage.removeItem('wslha_orders');
+      }
+
+      localStorage.setItem('wslha_user', JSON.stringify({
+        name, username, phone: norm, email, city,
+        role: 'customer',
+        avatar: defaultAvatar(name),
+        createdAt: new Date().toISOString(),
+        loginAt:   new Date().toISOString(),
+      }));
+    } catch {}
+
+    submitBtn.textContent = '✅ تم الإنشاء، جاري التحويل...';
+    setTimeout(() => { window.location.href = '/orders'; }, 700);
+  });
+</script>
