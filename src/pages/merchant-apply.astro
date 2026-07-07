@@ -388,7 +388,7 @@ function dAvatar(name) {
   var clean = (name || '؟').trim();
   var parts = clean.split(/\s+/).filter(Boolean);
   var initials = (parts[0] ? parts[0][0] : '؟') + (parts[1] ? parts[1][0] : '');
-  var grads = [['#3B6EF8','#6D5DF6'],['#16A34A','#0EA5A0'],['#F59E0B','#EF4444'],['#8B5CF6','#EC4899'],['#0EA5E9','#22C55E'],['#F43F5E','#FB923C']];
+  var grads = [['#0E4B49','#6D5DF6'],['#16A34A','#0EA5A0'],['#F59E0B','#EF4444'],['#8B5CF6','#EC4899'],['#0EA5E9','#22C55E'],['#F43F5E','#FB923C']];
   var hash = 0; for (var i = 0; i < clean.length; i++) hash = (hash * 31 + clean.charCodeAt(i)) >>> 0;
   var g = grads[hash % grads.length];
   var svg = '<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 120 120"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="'+g[0]+'"/><stop offset="1" stop-color="'+g[1]+'"/></linearGradient></defs><rect width="120" height="120" rx="60" fill="url(#g)"/><text x="60" y="60" dy=".36em" text-anchor="middle" fill="#fff" font-family="Cairo,sans-serif" font-size="48" font-weight="800">'+initials+'</text></svg>';

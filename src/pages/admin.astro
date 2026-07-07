@@ -11,7 +11,7 @@
     :root{
       --sb:#0F172A;--sb2:#1E293B;--sb3:#334155;
       --tx:#F1F5F9;--tx2:#94A3B8;--tx3:#64748B;
-      --pr:#3B6EF8;--pr2:#2952D9;--pr-l:rgba(59,110,248,.12);
+      --pr:#0E4B49;--pr2:#082F2E;--pr-l:rgba(59,110,248,.12);
       --green:#16A34A;--green-l:#DCFCE7;
       --red:#DC2626;--red-l:#FEE2E2;
       --orange:#D97706;--orange-l:#FEF3C7;
@@ -30,7 +30,7 @@
     /* Sidebar */
     .sidebar{width:260px;background:var(--sb);flex-shrink:0;display:flex;flex-direction:column;position:fixed;top:0;right:0;bottom:0;z-index:100;transition:transform .3s}
     .sidebar__logo{padding:1.5rem;border-bottom:1px solid var(--sb3)}
-    .sidebar__logo-name{font-size:1.5rem;font-weight:900;background:linear-gradient(135deg,#3B6EF8,#818CF8);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+    .sidebar__logo-name{font-size:1.5rem;font-weight:900;background:linear-gradient(135deg,#0E4B49,#3FA79A);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
     .sidebar__logo-sub{font-size:.72rem;color:var(--tx3);margin-top:2px}
     .sidebar__admin{display:flex;align-items:center;gap:.75rem;padding:1rem 1.5rem;border-bottom:1px solid var(--sb3)}
     .sidebar__avatar{width:36px;height:36px;border-radius:50%;background:var(--pr-l);border:2px solid var(--pr);display:flex;align-items:center;justify-content:center;font-size:.9rem;font-weight:900;color:var(--pr);flex-shrink:0}
@@ -95,7 +95,7 @@
     .badge--orange{background:var(--orange-l);color:var(--orange)}
     .badge--blue{background:#DBEAFE;color:#2563EB}
     .badge--gray{background:#F1F5F9;color:#64748B}
-    .badge--purple{background:#EDE9FE;color:#7C3AED}
+    .badge--purple{background:#EDE9FE;color:#0E4B49}
 
     /* ── Buttons ──────────────────────────────────────────── */
     .btn{padding:.5rem 1rem;border-radius:var(--radius);font-family:inherit;font-size:.82rem;font-weight:700;border:none;cursor:pointer;transition:all .15s;display:inline-flex;align-items:center;gap:.35rem}
@@ -1572,7 +1572,7 @@ function renderOrders() {
   if (status) rows = rows.filter(o => o.status === status);
   const html = rows.map(o => `
     <tr>
-      <td style="direction:ltr;font-size:.75rem;font-weight:700;color:#3B6EF8">${o.code||o.id?.slice(0,10)||'—'}</td>
+      <td style="direction:ltr;font-size:.75rem;font-weight:700;color:#0E4B49">${o.code||o.id?.slice(0,10)||'—'}</td>
       <td style="font-weight:600">${escapeHtml(o.customer_name)||'—'}</td>
       <td style="direction:ltr;font-size:.82rem">${escapeHtml(o.customer_phone)||'—'}</td>
       <td>${escapeHtml(o.store_name)||'—'}</td>
@@ -1801,7 +1801,7 @@ async function loadMessages() {
       <td>${escapeHtml(m.subject)}</td>
       <td><span style="padding:2px 8px;border-radius:99px;font-size:.75rem;font-weight:700;background:${(statusColor[m.status]||'#94A3B8')}22;color:${statusColor[m.status]||'#94A3B8'}">${statusLabel[m.status] || m.status}</span></td>
       <td style="font-size:.78rem;color:#64748B">${new Date(m.created_at).toLocaleDateString('ar-EG')}</td>
-      <td><button onclick="openMsg(${JSON.stringify(JSON.stringify(m))})" style="padding:.3rem .7rem;background:#3B6EF8;color:#fff;border:none;border-radius:5px;font-size:.78rem;cursor:pointer">عرض</button></td>
+      <td><button onclick="openMsg(${JSON.stringify(JSON.stringify(m))})" style="padding:.3rem .7rem;background:#0E4B49;color:#fff;border:none;border-radius:5px;font-size:.78rem;cursor:pointer">عرض</button></td>
     </tr>`).join('');
 }
 
@@ -2020,7 +2020,7 @@ function renderWalletsList() {
   const roleFilter = document.getElementById('wallet-role-filter')?.value || '';
   const search     = (document.getElementById('wallet-search')?.value || '').trim().toLowerCase();
   const ROLE_AR    = { driver:'سائق', merchant:'تاجر', customer:'عميل', admin:'مشرف' };
-  const ROLE_CLR   = { driver:'#1D4ED8', merchant:'#7C3AED', customer:'#064E3B', admin:'#DC2626' };
+  const ROLE_CLR   = { driver:'#1D4ED8', merchant:'#0E4B49', customer:'#064E3B', admin:'#DC2626' };
 
   let rows = allWallets;
   if (roleFilter) rows = rows.filter(w => w.role === roleFilter);
@@ -2058,7 +2058,7 @@ const TX_TYPES_AR = {
 };
 const TX_CLR = {
   earning:'#16A34A', commission:'#1D4ED8', topup:'#0891B2', withdrawal:'#DC2626',
-  transfer_out:'#D97706', transfer_in:'#7C3AED', admin_credit:'#16A34A', admin_debit:'#DC2626'
+  transfer_out:'#D97706', transfer_in:'#0E4B49', admin_credit:'#16A34A', admin_debit:'#DC2626'
 };
 
 function renderTxLog() {
@@ -2371,7 +2371,7 @@ async function autoRefreshDash() {
 
     // Alert if new pending apps appeared
     if (pendingTotal > prevPendingCount && prevPendingCount !== 0) {
-      showToast(`🔔 طلب اعتماد جديد! (${pendingTotal} معلق)`, '#3B6EF8');
+      showToast(`🔔 طلب اعتماد جديد! (${pendingTotal} معلق)`, '#0E4B49');
     }
     prevPendingCount = pendingTotal;
 

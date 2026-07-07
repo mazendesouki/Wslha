@@ -37,7 +37,7 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site ?? 'https://wslha.co
   <link rel="icon" href="/icon.svg"    type="image/svg+xml">
   <link rel="apple-touch-icon"    href="/apple-touch-icon.png">
   <link rel="manifest"            href="/site.webmanifest">
-  <meta name="theme-color"        content="#3B6EF8">
+  <meta name="theme-color"        content="#0E4B49">
 
   <!-- iOS standalone web-app -->
   <meta name="mobile-web-app-capable"             content="yes">
@@ -51,7 +51,7 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site ?? 'https://wslha.co
   <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&family=El+Messiri:wght@500;600;700;800&display=swap" rel="stylesheet">
 
   <!-- Base styles -->
   <link rel="stylesheet" href="/global.css">
@@ -273,7 +273,7 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site ?? 'https://wslha.co
     .pwa-banner__sub  { font-size: 12px; color: #555; margin-top: 2px; font-family: var(--font-body,sans-serif); }
     .pwa-banner__rating { font-size: 11px; color: #888; margin-top: 3px; font-family: var(--font-body,sans-serif); }
     .pwa-banner__btn {
-      background: #3B6EF8; color: #fff; border: none;
+      background: #0E4B49; color: #fff; border: none;
       border-radius: 12px; padding: 14px;
       font-family: var(--font-body,sans-serif); font-size: 15px; font-weight: 800;
       width: 100%; cursor: pointer;
@@ -290,9 +290,9 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site ?? 'https://wslha.co
     .pwa-modal__sub { font-size:13px; color:#666; margin:0 0 18px; }
     .pwa-modal__steps { list-style:none; padding:0; margin:0; text-align:right; display:flex; flex-direction:column; gap:10px; }
     .pwa-modal__steps li { display:flex; align-items:center; gap:10px; background:#f5f7ff; border-radius:10px; padding:11px 13px; font-size:13px; font-weight:600; color:#111; }
-    .pwa-modal__steps li .step-num { background:#3B6EF8; color:#fff; border-radius:50%; width:24px; height:24px; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:800; flex-shrink:0; }
+    .pwa-modal__steps li .step-num { background:#0E4B49; color:#fff; border-radius:50%; width:24px; height:24px; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:800; flex-shrink:0; }
     .pwa-modal__extra { margin-top:14px; }
-    .pwa-chrome-btn { display:block; background:#3B6EF8; color:#fff; text-decoration:none; border-radius:10px; padding:13px; font-weight:700; font-size:14px; text-align:center; }
+    .pwa-chrome-btn { display:block; background:#0E4B49; color:#fff; text-decoration:none; border-radius:10px; padding:13px; font-weight:700; font-size:14px; text-align:center; }
   </style>
 
   <script is:inline>
@@ -387,7 +387,7 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site ?? 'https://wslha.co
       // Status bar to brand colour.
       if (P.StatusBar) {
         try {
-          P.StatusBar.setBackgroundColor({ color: '#2952D9' });
+          P.StatusBar.setBackgroundColor({ color: '#082F2E' });
           P.StatusBar.setStyle({ style: 'LIGHT' });
         } catch (e) {}
       }

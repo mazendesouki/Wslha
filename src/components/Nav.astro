@@ -17,9 +17,10 @@ const { currentPage } = Astro.props;
       <!-- Logo -->
       <a href="/" class="nav__logo" aria-label="وصّلها — الصفحة الرئيسية">
         <div class="nav__logo-mark" aria-hidden="true">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="12" cy="12" r="10"/>
-            <path d="M12 8 L8 16 L12 13 L16 16 L12 8"/>
+          <svg width="20" height="20" viewBox="0 0 100 100" fill="#fff">
+            <circle cx="50" cy="37" r="16"/>
+            <path d="M50 51 L50 60" stroke="#fff" stroke-width="7" stroke-linecap="round"/>
+            <path d="M50 60 L37 88 M50 60 L50 92 M50 60 L63 88" fill="none" stroke="#fff" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
         </div>
         <div class="nav__logo-text">
@@ -391,11 +392,11 @@ const { currentPage } = Astro.props;
   .nav__logo-mark {
     width: 38px; height: 38px;
     border-radius: var(--radius-lg);
-    background: linear-gradient(135deg, var(--color-primary) 0%, #7c3aed 100%);
+    background: var(--color-primary);
     color: #fff;
     display: flex; align-items: center; justify-content: center;
     flex-shrink: 0;
-    box-shadow: 0 2px 8px rgba(37, 99, 235, 0.35);
+    box-shadow: var(--shadow-primary);
   }
 
   .nav__logo-text {
@@ -405,8 +406,9 @@ const { currentPage } = Astro.props;
   }
 
   .nav__logo-name {
+    font-family: var(--font-display);
     font-size: var(--text-xl);
-    font-weight: var(--weight-black);
+    font-weight: var(--weight-bold);
     color: var(--color-text);
     letter-spacing: -0.3px;
   }

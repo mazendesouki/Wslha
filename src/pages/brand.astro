@@ -3,11 +3,11 @@ import Layout from '../components/layout.astro';
 
 const colors = {
   brand: [
-    { name: 'Primary',       var: '--color-primary',       hex: '#3B6EF8', text: '#fff' },
-    { name: 'Primary Dark',  var: '--color-primary-dark',  hex: '#2952D9', text: '#fff' },
-    { name: 'Primary Light', var: '--color-primary-light', hex: '#EEF2FF', text: '#1A1A2E' },
-    { name: 'Accent',        var: '--color-accent',        hex: '#F5B800', text: '#1A1A2E' },
-    { name: 'Accent Dark',   var: '--color-accent-dark',   hex: '#D9A200', text: '#1A1A2E' },
+    { name: 'Primary',       var: '--color-primary',       hex: '#0E4B49', text: '#fff' },
+    { name: 'Primary Dark',  var: '--color-primary-dark',  hex: '#082F2E', text: '#fff' },
+    { name: 'Primary Light', var: '--color-primary-light', hex: '#E3EDEC', text: '#16262A' },
+    { name: 'Accent',        var: '--color-accent',        hex: '#B8863B', text: '#fff' },
+    { name: 'Accent Dark',   var: '--color-accent-dark',   hex: '#96692A', text: '#fff' },
   ],
   semantic: [
     { name: 'Success', hex: '#22C55E', text: '#fff' },
@@ -16,12 +16,12 @@ const colors = {
     { name: 'Info',    hex: '#2563EB', text: '#fff' },
   ],
   neutral: [
-    { name: 'Text',       hex: '#1A1A2E', text: '#fff' },
-    { name: 'Text Muted', hex: '#64748B', text: '#fff' },
-    { name: 'Text Faint', hex: '#94A3B8', text: '#fff' },
-    { name: 'Border',     hex: '#E2E8F0', text: '#1A1A2E' },
-    { name: 'BG Soft',    hex: '#F8FAFC', text: '#1A1A2E' },
-    { name: 'Dark BG',    hex: '#0F172A', text: '#fff' },
+    { name: 'Text',       hex: '#16262A', text: '#fff' },
+    { name: 'Text Muted', hex: '#5B6B6A', text: '#fff' },
+    { name: 'Text Faint', hex: '#8A9998', text: '#fff' },
+    { name: 'Border',     hex: '#E2E8F0', text: '#16262A' },
+    { name: 'BG Soft',    hex: '#F8FAFC', text: '#16262A' },
+    { name: 'Dark BG',    hex: '#0B1514', text: '#fff' },
   ],
 };
 
@@ -53,7 +53,7 @@ const shadows = [
 
   /* Hero */
   .brand-hero {
-    background: linear-gradient(135deg, #0F172A 0%, #2952D9 50%, #6D5DF6 100%);
+    background: linear-gradient(135deg, #0F172A 0%, #082F2E 50%, #6D5DF6 100%);
     color: #fff; padding: var(--sp-16) var(--sp-6) var(--sp-12); text-align: center; position: relative; overflow: hidden;
   }
   .brand-hero::after {

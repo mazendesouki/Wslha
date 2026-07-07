@@ -74,7 +74,7 @@ export function phoneOrFilter(localPhone: string): string {
 // Deterministic SVG data-URI built from the user's initials so
 // every account has an image even without an upload.
 const AVATAR_GRADIENTS = [
-  ['#3B6EF8', '#6D5DF6'], ['#16A34A', '#0EA5A0'], ['#F59E0B', '#EF4444'],
+  ['#0E4B49', '#6D5DF6'], ['#16A34A', '#0EA5A0'], ['#F59E0B', '#EF4444'],
   ['#8B5CF6', '#EC4899'], ['#0EA5E9', '#22C55E'], ['#F43F5E', '#FB923C'],
 ];
 

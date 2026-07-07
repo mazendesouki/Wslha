@@ -8,8 +8,8 @@
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait",
-  "theme_color": "#3B6EF8",
-  "background_color": "#2952D9",
+  "theme_color": "#0E4B49",
+  "background_color": "#082F2E",
   "categories": ["food", "shopping", "business"],
   "icons": [
     { "src": "/icon-192.png", "type": "image/png", "sizes": "192x192", "purpose": "any" },

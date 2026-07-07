@@ -2,11 +2,11 @@
   "appId": "co.wslha.app",
   "appName": "وصّلها",
   "webDir": "dist",
-  "backgroundColor": "#2952D9",
+  "backgroundColor": "#082F2E",
   "plugins": {
     "SplashScreen": {
       "launchShowDuration": 1500,
-      "backgroundColor": "#3B6EF8",
+      "backgroundColor": "#0E4B49",
       "showSpinner": false,
       "androidScaleType": "CENTER_CROP"
     },
@@ -16,11 +16,11 @@
     },
     "LocalNotifications": {
       "smallIcon": "ic_stat_icon",
-      "iconColor": "#3B6EF8"
+      "iconColor": "#0E4B49"
     },
     "StatusBar": {
       "style": "LIGHT",
-      "backgroundColor": "#2952D9"
+      "backgroundColor": "#082F2E"
     }
   },
   "server": {
