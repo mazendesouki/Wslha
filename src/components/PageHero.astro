@@ -9,6 +9,11 @@ const { badge, title, subtitle } = Astro.props;
 ---
 
 <section class="page-hero" aria-labelledby="page-hero-title">
+  <svg class="page-hero__mark" viewBox="0 0 100 100" fill="#fff" aria-hidden="true">
+    <circle cx="50" cy="37" r="16"/>
+    <path d="M50 51 L50 60" stroke="#fff" stroke-width="7" stroke-linecap="round"/>
+    <path d="M50 60 L37 88 M50 60 L50 92 M50 60 L63 88" fill="none" stroke="#fff" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
   {badge && (
     <span class="page-hero__badge" aria-label={badge}>{badge}</span>
   )}
@@ -24,9 +29,21 @@ const { badge, title, subtitle } = Astro.props;
     padding: var(--sp-16) var(--sp-6) var(--sp-12);
     text-align: center;
     color: #fff;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .page-hero__mark {
+    position: absolute;
+    width: 320px; height: 320px;
+    opacity: 0.06;
+    left: -70px; top: 50%;
+    transform: translateY(-50%);
+    pointer-events: none;
   }
 
   .page-hero__badge {
+    position: relative;
     display: inline-block;
     background: rgba(255, 255, 255, 0.15);
     border: 1px solid rgba(255, 255, 255, 0.3);
@@ -39,13 +56,16 @@ const { badge, title, subtitle } = Astro.props;
   }
 
   .page-hero__title {
+    position: relative;
+    font-family: var(--font-display);
     font-size: var(--text-4xl);
-    font-weight: var(--weight-black);
+    font-weight: 800;
     margin-bottom: var(--sp-3);
     line-height: 1.15;
   }
 
   .page-hero__subtitle {
+    position: relative;
     color: rgba(255, 255, 255, 0.8);
     font-size: var(--text-base);
     max-width: 520px;

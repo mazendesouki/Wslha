@@ -9,11 +9,18 @@ interface ContactCard {
   href: string;
 }
 
+const ICONS = {
+  phone: `<path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 3.07 9.81 19.79 19.79 0 0 1 0 1.18 2 2 0 0 1 2 -1h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L6.09 7.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.9.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z" transform="translate(0 3)"/>`,
+  chat:  `<path d="M4 5h16v11H8l-4 4V5z"/><path d="M8 9h8M8 12.5h5"/>`,
+  mail:  `<path d="M4 4h16v16H4z"/><path d="m4 6 8 7 8-7"/>`,
+  pin:   `<path d="M12 21s7-6.1 7-11.5A7 7 0 0 0 5 9.5C5 14.9 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/>`,
+};
+
 const CONTACT_CARDS: ContactCard[] = [
-  { icon: '📞', label: 'اتصل بنا',           value: '0020 1102 667324',  href: 'tel:+201102667324'          },
-  { icon: '💬', label: 'واتساب',              value: '0020 1102 667324',  href: 'https://wa.me/201102667324' },
-  { icon: '✉️', label: 'البريد الإلكتروني',  value: 'info@wslha.co',     href: 'mailto:info@wslha.co'       },
-  { icon: '📍', label: 'الموقع',              value: 'دمياط الجديدة، مصر',    href: '#'                       },
+  { icon: ICONS.phone, label: 'اتصل بنا',           value: '0020 1102 667324',  href: 'tel:+201102667324'          },
+  { icon: ICONS.chat,  label: 'واتساب',              value: '0020 1102 667324',  href: 'https://wa.me/201102667324' },
+  { icon: ICONS.mail,  label: 'البريد الإلكتروني',  value: 'info@wslha.co',     href: 'mailto:info@wslha.co'       },
+  { icon: ICONS.pin,   label: 'الموقع',              value: 'دمياط الجديدة، مصر',    href: '#'                       },
 ];
 
 interface WorkHours {
@@ -72,12 +79,13 @@ const SUBJECTS = [
     height: 46px;
     border-radius: var(--radius);
     background: var(--color-primary-light);
+    color: var(--color-primary);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: var(--text-xl);
     flex-shrink: 0;
   }
+  .contact-card__icon svg { width: 22px; height: 22px; }
 
   .contact-card__label { font-size: var(--text-xs);  color: var(--color-text-faint); font-weight: var(--weight-bold); margin-bottom: 2px; }
   .contact-card__value { font-weight: var(--weight-black); color: var(--color-primary); font-size: var(--text-sm); }
@@ -87,11 +95,12 @@ const SUBJECTS = [
     background: var(--color-primary-light);
     border-radius: var(--radius-lg);
     padding: var(--sp-5) var(--sp-6);
-    border: 1.5px solid #C7D7FD;
+    border: 1.5px solid var(--color-border);
   }
 
   .hours__title {
-    font-weight: var(--weight-black);
+    font-family: var(--font-display);
+    font-weight: 700;
     font-size: var(--text-base);
     margin-bottom: var(--sp-4);
     color: var(--color-text);
@@ -101,7 +110,7 @@ const SUBJECTS = [
     display: flex;
     justify-content: space-between;
     padding: var(--sp-2) 0;
-    border-bottom: 1px solid #DBEAFE;
+    border-bottom: 1px solid var(--color-border);
     font-size: var(--text-sm);
   }
 
@@ -117,7 +126,7 @@ const SUBJECTS = [
     border: 1px solid var(--color-border);
   }
 
-  .form-box__title    { font-size: var(--text-xl); font-weight: var(--weight-black); margin-bottom: var(--sp-1); color: var(--color-text); }
+  .form-box__title    { font-family: var(--font-display); font-size: var(--text-xl); font-weight: 700; margin-bottom: var(--sp-1); color: var(--color-text); }
   .form-box__subtitle { color: var(--color-text-muted); font-size: var(--text-sm); margin-bottom: var(--sp-8); }
 
   .form-row {
@@ -133,7 +142,7 @@ const SUBJECTS = [
     font-weight: var(--weight-bold);
     font-size: var(--text-sm);
     margin-bottom: var(--sp-2);
-    color: #374151;
+    color: var(--color-text);
   }
 
   .field__input,
@@ -183,7 +192,7 @@ const SUBJECTS = [
   .form-success {
     display: none;
     background: var(--color-primary-light);
-    border: 1.5px solid #C7D7FD;
+    border: 1.5px solid var(--color-border);
     border-radius: var(--radius);
     padding: var(--sp-4) var(--sp-5);
     text-align: center;
@@ -321,7 +330,7 @@ const SUBJECTS = [
   page="contact"
 >
   <PageHero
-    badge="📞 تواصل معنا"
+    badge="تواصل معنا"
     title="نحن هنا لمساعدتك"
     subtitle="فريق دعمنا متاح 24/7 للإجابة على جميع استفساراتك"
   />
@@ -333,7 +342,9 @@ const SUBJECTS = [
       <div class="contact-info">
         {CONTACT_CARDS.map(card => (
           <a href={card.href} class="contact-card" rel={card.href.startsWith('http') ? 'noopener noreferrer' : undefined}>
-            <div class="contact-card__icon" aria-hidden="true">{card.icon}</div>
+            <div class="contact-card__icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" set:html={card.icon} />
+            </div>
             <div>
               <p class="contact-card__label">{card.label}</p>
               <p class="contact-card__value">{card.value}</p>
@@ -343,7 +354,7 @@ const SUBJECTS = [
       </div>
 
       <div class="hours" style="margin-top: var(--sp-4)">
-        <h2 class="hours__title">🕐 ساعات العمل</h2>
+        <h2 class="hours__title">ساعات العمل</h2>
         <dl>
           {WORK_HOURS.map(h => (
             <div class="hours__row">

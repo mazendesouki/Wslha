@@ -3,36 +3,33 @@ import Layout from '../components/layout.astro';
 import PageHero from '../components/PageHero.astro';
 import SectionHeader from '../components/SectionHeader.astro';
 
-interface Value {
-  icon: string;
-  title: string;
-  desc: string;
-}
+const ICONS = {
+  bolt:   `<path d="M13 2 4 14h6l-1 8 9-12h-6l1-8z"/>`,
+  shake:  `<path d="M8 12 3 7l2-2 5 5"/><path d="M16 12l5-5-2-2-5 5"/><path d="M8 12l3 3a2 2 0 0 0 3 0l3-3"/><path d="m11 15-2 2a1.5 1.5 0 0 1-2-2l4-4"/>`,
+  shield: `<path d="M12 3 5 6v6c0 4.6 3 8 7 9 4-1 7-4.4 7-9V6l-7-3z"/><path d="m9 12 2 2 4-4"/>`,
+  chat:   `<path d="M4 5h16v11H8l-4 4V5z"/><path d="M8 9h8M8 12.5h5"/>`,
+};
 
+interface Value { icon: string; title: string; desc: string; }
 const VALUES: Value[] = [
-  { icon: '⚡', title: 'السرعة',     desc: 'نلتزم بأسرع أوقات التوصيل دون التنازل عن الجودة.'        },
-  { icon: '🤝', title: 'الثقة',      desc: 'نبني علاقة طويلة الأمد مع عملائنا قائمة على الشفافية.'   },
-  { icon: '🛡️', title: 'الأمان',     desc: 'كل شحنة مؤمّنة بالكامل من لحظة الاستلام حتى التسليم.'   },
-  { icon: '💙', title: 'خدمة العميل', desc: 'فريق دعم متاح 24/7 يضع رضاك في المقام الأول.'           },
+  { icon: ICONS.bolt,   title: 'السرعة',      desc: 'نلتزم بأسرع أوقات التوصيل دون التنازل عن الجودة.'      },
+  { icon: ICONS.shake,  title: 'الثقة',       desc: 'نبني علاقة طويلة الأمد مع عملائنا قائمة على الشفافية.' },
+  { icon: ICONS.shield, title: 'الأمان',      desc: 'كل شحنة مؤمّنة بالكامل من لحظة الاستلام حتى التسليم.'  },
+  { icon: ICONS.chat,   title: 'خدمة العميل', desc: 'فريق دعم متاح 24/7 يضع رضاك في المقام الأول.'          },
 ];
 
-interface Milestone {
-  year: string;
-  title: string;
-  desc: string;
-}
-
+interface Milestone { year: string; title: string; desc: string; }
 const MILESTONES: Milestone[] = [
-  { year: '2026', title: 'انطلاق وصّلها',      desc: 'بدأنا رحلتنا بخدمة التوصيل المحلي في دمياط الجديدة.' },
-  { year: '2026', title: 'توصيل المطار',       desc: 'أضفنا خدمة التوصيل من وإلى مطار برج العرب باحترافية.' },
-  { year: '2026', title: 'المتاجر الشريكة',    desc: 'توسّعنا بشراكات مع المتاجر والمطاعم في دمياط.'        },
-  { year: '2027', title: 'التوسّع التدريجي',   desc: 'نخطط للوصول إلى مناطق جديدة وتقديم خدمات أوسع.'      },
+  { year: '2026', title: 'انطلاق وصّلها',    desc: 'بدأنا رحلتنا بخدمة التوصيل المحلي في دمياط الجديدة.'   },
+  { year: '2026', title: 'توصيل المطار',     desc: 'أضفنا خدمة التوصيل من وإلى مطار برج العرب باحترافية.'  },
+  { year: '2026', title: 'المتاجر الشريكة',  desc: 'توسّعنا بشراكات مع المتاجر والمطاعم في دمياط.'         },
+  { year: '2027', title: 'التوسّع التدريجي', desc: 'نخطط للوصول إلى مناطق جديدة وتقديم خدمات أوسع.'        },
 ];
 
 const STATS = [
-  { value: '+500',  label: 'عميل سعيد'      },
+  { value: '+500', label: 'عميل سعيد'      },
   { value: '30 د',  label: 'متوسط التوصيل' },
-  { value: '24/7',  label: 'خدمة متاحة'     },
+  { value: '24/7',  label: 'خدمة متاحة'    },
   { value: '99%',   label: 'نسبة الرضا'    },
 ];
 ---
@@ -51,8 +48,9 @@ const STATS = [
   }
 
   .story__title {
+    font-family: var(--font-display);
     font-size: var(--text-3xl);
-    font-weight: var(--weight-black);
+    font-weight: 800;
     margin-bottom: var(--sp-5);
     line-height: 1.2;
     color: var(--color-text);
@@ -66,7 +64,7 @@ const STATS = [
   }
 
   .story__visual {
-    background: linear-gradient(135deg, #EFF6FF, #DBEAFE);
+    background: var(--color-primary-light);
     border-radius: var(--radius-2xl);
     aspect-ratio: 1 / 1;
     display: flex;
@@ -84,7 +82,7 @@ const STATS = [
 
   /* ── Stats band ──────────────────────────────────────────── */
   .stats-band {
-    background: var(--color-primary);
+    background: var(--color-primary-dark);
     padding: var(--sp-12) var(--sp-6);
   }
 
@@ -93,12 +91,14 @@ const STATS = [
     margin: 0 auto;
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: var(--sp-4);
     text-align: center;
   }
 
-  .stats-band__value { font-size: var(--text-4xl); font-weight: var(--weight-black); color: #fff; line-height: 1; margin-bottom: var(--sp-2); }
-  .stats-band__label { color: rgba(255,255,255,0.8); font-size: var(--text-sm); font-weight: var(--weight-semi); }
+  .stats-band__grid > div { border-inline-start: 1px solid rgba(255,255,255,0.15); }
+  .stats-band__grid > div:first-child { border-inline-start: none; }
+
+  .stats-band__value { font-family: var(--font-display); font-size: var(--text-4xl); font-weight: 800; color: #fff; line-height: 1; margin-bottom: var(--sp-2); }
+  .stats-band__label { color: rgba(255,255,255,0.75); font-size: var(--text-sm); font-weight: var(--weight-semi); }
 
   /* ── Values ──────────────────────────────────────────────── */
   .values { background: var(--color-bg-soft); }
@@ -129,12 +129,13 @@ const STATS = [
     height: 56px;
     border-radius: var(--radius-lg);
     background: var(--color-primary-light);
+    color: var(--color-primary);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: var(--text-2xl);
     margin: 0 auto var(--sp-4);
   }
+  .value-card__icon svg { width: 26px; height: 26px; }
 
   .value-card__title { font-size: var(--text-lg); font-weight: var(--weight-black); margin-bottom: var(--sp-2); }
   .value-card__desc  { font-size: var(--text-sm); color: var(--color-text-muted); line-height: 1.7; }
@@ -190,7 +191,7 @@ const STATS = [
     margin-bottom: var(--sp-2);
   }
 
-  .journey__title { font-size: var(--text-lg); font-weight: var(--weight-black); margin-bottom: var(--sp-1); }
+  .journey__title { font-family: var(--font-display); font-size: var(--text-lg); font-weight: 700; margin-bottom: var(--sp-1); }
   .journey__desc  { font-size: var(--text-sm); color: var(--color-text-muted); line-height: 1.6; }
 
   /* ── CTA ─────────────────────────────────────────────────── */
@@ -200,7 +201,7 @@ const STATS = [
     text-align: center;
   }
 
-  .about-cta__title { font-size: var(--text-3xl); font-weight: var(--weight-black); margin-bottom: var(--sp-4); }
+  .about-cta__title { font-family: var(--font-display); font-size: var(--text-3xl); font-weight: 800; margin-bottom: var(--sp-4); }
   .about-cta__desc  { color: var(--color-text-muted); font-size: var(--text-base); margin-bottom: var(--sp-8); }
 
   .about-cta__actions { display: flex; gap: var(--sp-4); justify-content: center; flex-wrap: wrap; }
@@ -211,6 +212,7 @@ const STATS = [
     .story__visual     { order: -1; }
     .values__grid      { grid-template-columns: 1fr 1fr; }
     .stats-band__grid  { grid-template-columns: repeat(2, 1fr); gap: var(--sp-8); }
+    .stats-band__grid > div:nth-child(3) { border-inline-start: none; }
   }
 
   @media (max-width: 560px) {
@@ -224,7 +226,7 @@ const STATS = [
   page="about"
 >
   <PageHero
-    badge="🏢 من نحن"
+    badge="من نحن"
     title="نوصّلها لك بثقة"
     subtitle="نحن فريق شغوف بتقديم أسرع وأكثر خدمات التوصيل موثوقية"
   />
@@ -246,41 +248,31 @@ const STATS = [
       </div>
       <div class="story__visual" role="img" aria-label="صندوق توصيل">
         <svg viewBox="0 0 240 240" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-          <!-- Box body -->
-          <path d="M40 90 L120 60 L200 90 L200 180 L120 210 L40 180 Z" fill="#E8F0FE" stroke="#93C5FD" stroke-width="2.5" stroke-linejoin="round"/>
-          <!-- Box top left face -->
-          <path d="M40 90 L120 120 L120 210 L40 180 Z" fill="#BFDBFE" stroke="#93C5FD" stroke-width="2.5" stroke-linejoin="round"/>
-          <!-- Box top right face -->
-          <path d="M200 90 L120 120 L120 210 L200 180 Z" fill="#DBEAFE" stroke="#93C5FD" stroke-width="2.5" stroke-linejoin="round"/>
-          <!-- Box top face -->
-          <path d="M40 90 L120 60 L200 90 L120 120 Z" fill="#EFF6FF" stroke="#93C5FD" stroke-width="2.5" stroke-linejoin="round"/>
-          <!-- Tape strip on top -->
-          <path d="M90 75 L150 105" stroke="#93C5FD" stroke-width="5" stroke-linecap="round"/>
-          <!-- Up arrow left -->
+          <path d="M40 90 L120 60 L200 90 L200 180 L120 210 L40 180 Z" fill="#F2F7F6" stroke="#0E4B49" stroke-width="2.5" stroke-linejoin="round"/>
+          <path d="M40 90 L120 120 L120 210 L40 180 Z" fill="#C9DEDC" stroke="#0E4B49" stroke-width="2.5" stroke-linejoin="round"/>
+          <path d="M200 90 L120 120 L120 210 L200 180 Z" fill="#E3EDEC" stroke="#0E4B49" stroke-width="2.5" stroke-linejoin="round"/>
+          <path d="M40 90 L120 60 L200 90 L120 120 Z" fill="#F8FBFA" stroke="#0E4B49" stroke-width="2.5" stroke-linejoin="round"/>
+          <path d="M90 75 L150 105" stroke="#B8863B" stroke-width="5" stroke-linecap="round"/>
           <g transform="translate(62, 120)">
-            <line x1="0" y1="30" x2="0" y2="5" stroke="#3B82F6" stroke-width="3" stroke-linecap="round"/>
-            <polyline points="-8,14 0,4 8,14" fill="none" stroke="#3B82F6" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+            <line x1="0" y1="30" x2="0" y2="5" stroke="#B8863B" stroke-width="3" stroke-linecap="round"/>
+            <polyline points="-8,14 0,4 8,14" fill="none" stroke="#B8863B" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
           </g>
-          <!-- Up arrow left 2 -->
           <g transform="translate(82, 128)">
-            <line x1="0" y1="30" x2="0" y2="5" stroke="#3B82F6" stroke-width="3" stroke-linecap="round"/>
-            <polyline points="-8,14 0,4 8,14" fill="none" stroke="#3B82F6" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+            <line x1="0" y1="30" x2="0" y2="5" stroke="#B8863B" stroke-width="3" stroke-linecap="round"/>
+            <polyline points="-8,14 0,4 8,14" fill="none" stroke="#B8863B" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
           </g>
-          <!-- Up arrow right -->
           <g transform="translate(155, 120)">
-            <line x1="0" y1="30" x2="0" y2="5" stroke="#3B82F6" stroke-width="3" stroke-linecap="round"/>
-            <polyline points="-8,14 0,4 8,14" fill="none" stroke="#3B82F6" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+            <line x1="0" y1="30" x2="0" y2="5" stroke="#B8863B" stroke-width="3" stroke-linecap="round"/>
+            <polyline points="-8,14 0,4 8,14" fill="none" stroke="#B8863B" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
           </g>
-          <!-- Up arrow right 2 -->
           <g transform="translate(175, 128)">
-            <line x1="0" y1="30" x2="0" y2="5" stroke="#3B82F6" stroke-width="3" stroke-linecap="round"/>
-            <polyline points="-8,14 0,4 8,14" fill="none" stroke="#3B82F6" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+            <line x1="0" y1="30" x2="0" y2="5" stroke="#B8863B" stroke-width="3" stroke-linecap="round"/>
+            <polyline points="-8,14 0,4 8,14" fill="none" stroke="#B8863B" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
           </g>
-          <!-- Label on right face -->
-          <rect x="133" y="138" width="44" height="28" rx="3" fill="white" stroke="#BFDBFE" stroke-width="1.5"/>
-          <line x1="139" y1="147" x2="171" y2="147" stroke="#BFDBFE" stroke-width="1.5"/>
-          <line x1="139" y1="153" x2="165" y2="153" stroke="#BFDBFE" stroke-width="1.5"/>
-          <line x1="139" y1="159" x2="168" y2="159" stroke="#BFDBFE" stroke-width="1.5"/>
+          <rect x="133" y="138" width="44" height="28" rx="3" fill="white" stroke="#C9DEDC" stroke-width="1.5"/>
+          <line x1="139" y1="147" x2="171" y2="147" stroke="#C9DEDC" stroke-width="1.5"/>
+          <line x1="139" y1="153" x2="165" y2="153" stroke="#C9DEDC" stroke-width="1.5"/>
+          <line x1="139" y1="159" x2="168" y2="159" stroke="#C9DEDC" stroke-width="1.5"/>
         </svg>
       </div>
     </div>
@@ -306,7 +298,9 @@ const STATS = [
       <ul class="values__grid" role="list">
         {VALUES.map(v => (
           <li class="value-card">
-            <div class="value-card__icon" aria-hidden="true">{v.icon}</div>
+            <div class="value-card__icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" set:html={v.icon} />
+            </div>
             <h3 class="value-card__title">{v.title}</h3>
             <p class="value-card__desc">{v.desc}</p>
           </li>
@@ -337,7 +331,7 @@ const STATS = [
     <h2 class="about-cta__title" id="about-cta-title">جاهز لتجربة وصّلها؟</h2>
     <p class="about-cta__desc">اطلب أول توصيلة لك اليوم واكتشف الفرق</p>
     <div class="about-cta__actions">
-      <a href="/order"   class="btn btn--accent">🛵 اطلب الآن</a>
+      <a href="/order"   class="btn btn--accent">اطلب الآن</a>
       <a href="/contact" class="btn btn--outline">تواصل معنا</a>
     </div>
   </section>

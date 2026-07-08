@@ -105,7 +105,7 @@ import { STORES, CATEGORIES } from '../data/stores';
 
   .store-card__cover {
     height: 110px;
-    background: linear-gradient(135deg, var(--color-primary-light), #dbeafe);
+    background: var(--color-primary-light);
     display: flex; align-items: center; justify-content: center;
     font-size: 3.2rem; position: relative;
   }
@@ -153,20 +153,20 @@ import { STORES, CATEGORIES } from '../data/stores';
   /* Merchant CTA */
   .merchant-cta {
     margin-top: var(--sp-12);
-    background: linear-gradient(135deg, #1e3a5f, #1d4ed8);
+    background: var(--color-primary-dark);
     border-radius: var(--radius-2xl); padding: var(--sp-8) var(--sp-10);
     display: flex; align-items: center; gap: var(--sp-8); color: #fff;
   }
-  .merchant-cta__icon { font-size: 4rem; flex-shrink: 0; }
-  .merchant-cta__title { font-size: var(--text-2xl); font-weight: var(--weight-black); margin-bottom: var(--sp-2); }
+  .merchant-cta__icon { width: 64px; height: 64px; flex-shrink: 0; color: #fff; opacity: 0.9; }
+  .merchant-cta__title { font-family: var(--font-display); font-size: var(--text-2xl); font-weight: 800; margin-bottom: var(--sp-2); }
   .merchant-cta__sub   { opacity: 0.85; font-size: var(--text-sm); margin-bottom: var(--sp-5); line-height: 1.7; }
   .merchant-cta__btn {
     display: inline-flex; align-items: center; gap: var(--sp-2);
-    background: #fff; color: #1d4ed8; border-radius: var(--radius-lg);
+    background: var(--color-accent); color: #241a0a; border-radius: var(--radius-lg);
     padding: var(--sp-3) var(--sp-6); font-weight: var(--weight-black);
     font-size: var(--text-sm); text-decoration: none; transition: all 0.2s;
   }
-  .merchant-cta__btn:hover { background: #eff6ff; transform: translateY(-1px); }
+  .merchant-cta__btn:hover { background: var(--color-accent-dark); transform: translateY(-1px); }
 
   @media (max-width: 900px) {
     .stores-grid { grid-template-columns: repeat(2, 1fr); }
@@ -183,7 +183,7 @@ import { STORES, CATEGORIES } from '../data/stores';
   page="stores"
 >
   <PageHero
-    badge="🛍️ المتاجر المحلية"
+    badge="المتاجر المحلية"
     title="تسوّق من متاجر دمياط الجديدة"
     subtitle="مطاعم — سوبر ماركت — صيدليات — حلويات — خضار — إلكترونيات · أسعار 2026 شفافة"
   />
@@ -252,14 +252,16 @@ import { STORES, CATEGORIES } from '../data/stores';
 
     <!-- Merchant CTA -->
     <div class="merchant-cta">
-      <div class="merchant-cta__icon">🏪</div>
+      <svg class="merchant-cta__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M4 8.5 5.5 4h13L20 8.5"/><path d="M4 8.5v11a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-11"/><path d="M9 20.5v-6a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v6"/>
+      </svg>
       <div>
         <h2 class="merchant-cta__title">هل تملك متجراً في دمياط؟</h2>
         <p class="merchant-cta__sub">
           سجّل متجرك مجاناً وابدأ في استقبال الطلبات اليوم.<br>
           لوحة تحكم كاملة لإدارة المنتجات والأسعار والطلبات.
         </p>
-        <a href="/merchant-dashboard" class="merchant-cta__btn">🚀 سجّل متجرك الآن</a>
+        <a href="/merchant-dashboard" class="merchant-cta__btn">سجّل متجرك الآن</a>
       </div>
     </div>
 
