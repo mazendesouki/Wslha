@@ -218,7 +218,7 @@ import Layout from '../components/layout.astro';
   .add-product-row {
     padding: var(--sp-4) var(--sp-5);
     background: var(--color-primary-light);
-    border-top: 1px solid #bfdbfe; display: none;
+    border-top: 1px solid var(--color-border); display: none;
   }
   .add-product-row.visible { display: block; }
   .add-product-row .form-row { margin-bottom: var(--sp-3); }
@@ -305,11 +305,11 @@ import Layout from '../components/layout.astro';
   .active-order__meta { font-size: 11px; color: var(--color-text-faint); }
   .ao-driver { font-size: 11px; color:#6d28d9; font-weight: var(--weight-bold); }
   .btn-ready {
-    background:#dbeafe; color:#1e40af; border:1.5px solid #93c5fd; border-radius: var(--radius-lg);
+    background:var(--color-primary-light); color:var(--color-primary); border:1.5px solid var(--color-border); border-radius: var(--radius-lg);
     padding: var(--sp-2) var(--sp-4); font-family: var(--font-body); font-weight: var(--weight-bold);
     font-size: var(--text-xs); cursor:pointer; transition: all .2s;
   }
-  .btn-ready:hover { background:#bfdbfe; }
+  .btn-ready:hover { background:var(--color-border); }
   .searching-pill {
     display:inline-flex; align-items:center; gap:6px; font-size:11px; font-weight:var(--weight-bold);
     color:#92400e; background:#fef3c7; padding:3px 10px; border-radius:99px;
@@ -463,7 +463,7 @@ import Layout from '../components/layout.astro';
         </div>
 
         <!-- Add section inline form -->
-        <div id="add-section-form" style="display:none;background:var(--color-primary-light);border:1.5px solid #bfdbfe;border-radius:var(--radius-xl);padding:var(--sp-4);margin-bottom:var(--sp-5);">
+        <div id="add-section-form" style="display:none;background:var(--color-primary-light);border:1.5px solid var(--color-border);border-radius:var(--radius-xl);padding:var(--sp-4);margin-bottom:var(--sp-5);">
           <div style="display:flex;gap:var(--sp-3);align-items:center;">
             <input class="field__input" id="new-section-name" placeholder="اسم القسم (مثال: مشروبات، وجبات رئيسية)" style="flex:1;" />
             <button class="btn-primary" id="save-section-btn">حفظ</button>
