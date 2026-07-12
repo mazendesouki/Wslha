@@ -1,3 +1,4 @@
+---
 import Layout from '../components/layout.astro';
 ---
 
@@ -15,7 +16,7 @@ import Layout from '../components/layout.astro';
 
   /* ── Top bar ─────────────────────────────────────────────────── */
   .pf-topbar {
-    background: linear-gradient(135deg, #0E4B49 0%, #0E4B49 100%);
+    background: var(--color-primary);
     padding: var(--sp-6) var(--sp-5) var(--sp-14);
     text-align: center;
   }
@@ -239,42 +240,38 @@ import Layout from '../components/layout.astro';
   }
 
   /* ── Cards ───────────────────────────────────────────────────── */
-  .card {
-    background: #fff;
-    border: 1px solid #E3EDEC;
-    border-radius: 16px;
-    box-shadow: 0 2px 10px rgba(14,75,73,0.06);
-    overflow: hidden;
-    margin-bottom: var(--sp-4);
-  }
   .tabs-wrapper__nav { padding: 0 var(--sp-2); border-bottom: 2px solid #E2E8F0; }
   .tabs-wrapper__nav .profile-tabs-nav { border-bottom: none; margin-bottom: 0; }
   .tabs-wrapper__body { padding: var(--sp-5); }
 
   /* ── Card base ──────────────────────────────────────────────── */
-  .card {
+  .pf-card {
     background: #fff;
+    border: 1.5px solid var(--color-border);
     border-radius: 16px;
-    box-shadow: 0 2px 16px rgba(59,91,219,0.08);
+    box-shadow: 0 4px 16px rgba(14,75,73,0.08);
     overflow: hidden;
-    margin-bottom: var(--sp-4);
+    margin-bottom: var(--sp-5);
   }
-  .card:last-child { margin-bottom: 0; }
-  .card__header {
+  .pf-card:last-child { margin-bottom: 0; }
+  #info-view .pf-card { margin-bottom: var(--sp-5); }
+  .pf-card__header {
     padding: var(--sp-4) var(--sp-5);
-    border-bottom: 1px solid #E3EDEC;
+    background: var(--color-primary-light);
+    border-bottom: 1.5px solid var(--color-border);
     display: flex;
     align-items: center;
     justify-content: space-between;
   }
-  .card__title {
+  .pf-card__title {
+    font-family: var(--font-display);
     font-size: var(--text-base);
-    font-weight: var(--weight-black);
-    color: #1E293B;
+    font-weight: 700;
+    color: var(--color-text);
     margin: 0;
   }
-  .card__body { padding: var(--sp-5); }
-  .card__body--no-pad { padding: 0; overflow: hidden; }
+  .pf-card__body { padding: var(--sp-5); }
+  .pf-card__body--no-pad { padding: 0; overflow: hidden; }
 
   /* ── Info tab ────────────────────────────────────────────────── */
   .info-grid {
@@ -287,17 +284,17 @@ import Layout from '../components/layout.astro';
   .info-field__label {
     font-size: 10px;
     font-weight: var(--weight-black);
-    color: #3FA79A;
+    color: var(--color-primary);
     text-transform: uppercase;
     letter-spacing: 0.07em;
   }
   .info-field__value {
     font-size: var(--text-sm);
     font-weight: var(--weight-semi);
-    color: #1E293B;
+    color: var(--color-text);
     padding: var(--sp-2) var(--sp-3);
-    background: #F2F7F6;
-    border: 1.5px solid #E3EDEC;
+    background: var(--color-bg-soft);
+    border: 1.5px solid var(--color-border);
     border-radius: var(--radius);
     min-height: 40px;
     display: flex;
@@ -705,11 +702,11 @@ import Layout from '../components/layout.astro';
       <div class="tab-panel is-active" id="tab-info" role="tabpanel">
 
         <!-- Edit form card (hidden initially) -->
-        <div id="info-edit" class="card" hidden>
-          <div class="card__header">
-            <h2 class="card__title">✏️ تعديل البيانات</h2>
+        <div id="info-edit" class="pf-card" hidden>
+          <div class="pf-card__header">
+            <h2 class="pf-card__title">✏️ تعديل البيانات</h2>
           </div>
-          <div class="card__body">
+          <div class="pf-card__body">
             <form class="edit-form" id="profile-edit-form" novalidate>
               <div class="form-row">
                 <div class="form-group">
@@ -742,11 +739,11 @@ import Layout from '../components/layout.astro';
 
         <!-- Read view -->
         <div id="info-view">
-          <div class="card">
-            <div class="card__header">
-              <h2 class="card__title">البيانات الشخصية</h2>
+          <div class="pf-card">
+            <div class="pf-card__header">
+              <h2 class="pf-card__title">البيانات الشخصية</h2>
             </div>
-            <div class="card__body">
+            <div class="pf-card__body">
               <div class="info-grid">
                 <div class="info-field">
                   <span class="info-field__label">الاسم الكامل</span>
@@ -782,11 +779,11 @@ import Layout from '../components/layout.astro';
         </div>
 
         <!-- Driver status card -->
-        <div class="card" id="driver-status-card" style="display:none">
-          <div class="card__header">
-            <h2 class="card__title">🚗 حالة حساب السائق</h2>
+        <div class="pf-card" id="driver-status-card" style="display:none">
+          <div class="pf-card__header">
+            <h2 class="pf-card__title">🚗 حالة حساب السائق</h2>
           </div>
-          <div class="card__body">
+          <div class="pf-card__body">
             <div class="driver-status-row">
               <span class="driver-status-row__label">حالة الحساب</span>
               <span class="driver-status-row__val" id="driver-acct-status-label">—</span>
@@ -800,11 +797,11 @@ import Layout from '../components/layout.astro';
         </div>
 
         <!-- Security card -->
-        <div class="card">
-          <div class="card__header">
-            <h2 class="card__title">🔒 الحساب والأمان</h2>
+        <div class="pf-card">
+          <div class="pf-card__header">
+            <h2 class="pf-card__title">🔒 الحساب والأمان</h2>
           </div>
-          <div class="card__body">
+          <div class="pf-card__body">
             <div class="security-row">
               <div>
                 <div class="security-row__label">رقم الجوال</div>
@@ -863,8 +860,8 @@ import Layout from '../components/layout.astro';
 
       <!-- ── Tab: الطلبات ──────────────────────────────── -->
       <div class="tab-panel" id="tab-orders" role="tabpanel" hidden>
-        <div class="card">
-          <div class="card__body" style="padding-bottom:0">
+        <div class="pf-card">
+          <div class="pf-card__body" style="padding-bottom:0">
             <div class="orders-filters" id="order-filters">
               <button class="orders-filter is-active" data-filter="all">الكل</button>
               <button class="orders-filter" data-filter="active">نشط</button>
@@ -872,7 +869,7 @@ import Layout from '../components/layout.astro';
               <button class="orders-filter" data-filter="cancelled">ملغي</button>
             </div>
           </div>
-          <div class="card__body" style="padding-top:0">
+          <div class="pf-card__body" style="padding-top:0">
             <div id="orders-list">
               <div class="empty-state">
                 <div class="empty-state__icon">🛵</div>
@@ -886,8 +883,8 @@ import Layout from '../components/layout.astro';
 
       <!-- ── Tab: المشاوير ─────────────────────────────── -->
       <div class="tab-panel" id="tab-rides" role="tabpanel" hidden>
-        <div class="card">
-          <div class="card__body">
+        <div class="pf-card">
+          <div class="pf-card__body">
             <div id="rides-list">
               <div class="empty-state">
                 <div class="empty-state__icon">🚗</div>
@@ -928,27 +925,27 @@ import Layout from '../components/layout.astro';
           </div>
         </div>
 
-        <div class="card" style="margin-bottom:var(--sp-4)">
-          <div class="card__header"><h2 class="card__title">🍕 الإنفاق حسب نوع الخدمة</h2></div>
-          <div class="card__body">
+        <div class="pf-card" style="margin-bottom:var(--sp-4)">
+          <div class="pf-card__header"><h2 class="pf-card__title">🍕 الإنفاق حسب نوع الخدمة</h2></div>
+          <div class="pf-card__body">
             <div class="category-list" id="category-breakdown">
               <p style="color:var(--color-text-muted);font-size:var(--text-sm)">لا توجد بيانات كافية بعد</p>
             </div>
           </div>
         </div><!-- /.card category-breakdown -->
 
-        <div class="card" style="margin-bottom:var(--sp-4)">
-          <div class="card__header"><h2 class="card__title">⭐ المحلات المفضلة</h2></div>
-          <div class="card__body">
+        <div class="pf-card" style="margin-bottom:var(--sp-4)">
+          <div class="pf-card__header"><h2 class="pf-card__title">⭐ المحلات المفضلة</h2></div>
+          <div class="pf-card__body">
             <div id="top-stores">
               <p style="color:var(--color-text-muted);font-size:var(--text-sm)">لا توجد بيانات كافية بعد</p>
             </div>
           </div>
         </div>
 
-        <div class="card">
-          <div class="card__header"><h2 class="card__title">📅 الإنفاق الشهري</h2></div>
-          <div class="card__body" style="padding:0;overflow:hidden">
+        <div class="pf-card">
+          <div class="pf-card__header"><h2 class="pf-card__title">📅 الإنفاق الشهري</h2></div>
+          <div class="pf-card__body" style="padding:0;overflow:hidden">
             <table class="monthly-table">
               <thead>
                 <tr>
