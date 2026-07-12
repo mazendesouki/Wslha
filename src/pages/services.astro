@@ -21,11 +21,11 @@ const SERVICES: Service[] = [
   {
     id:         'local',
     emoji:      '🛵',
-    label:      '🛵 توصيل محلي',
+    label:      'توصيل محلي',
     title:      'من أي متجر لباب بيتك',
     desc:       'نوصّل طلباتك من المطاعم والمتاجر والصيدليات وأي مكان تريده، مباشرة لبابك خلال 30 دقيقة فقط.',
     features:   ['توصيل خلال 30 دقيقة', 'تتبع المندوب لحظة بلحظة', 'من أي مكان في المدينة', 'دفع عند الاستلام أو إلكتروني', 'خدمة 24 ساعة / 7 أيام'],
-    cta:        '🛍️ اطلب الآن',
+    cta:        'اطلب الآن',
     ctaHref:    '/order',
     badge:      '30',
     badgeLabel: 'دقيقة توصيل',
@@ -34,11 +34,11 @@ const SERVICES: Service[] = [
   {
     id:         'airport',
     emoji:      '✈️',
-    label:      '✈️ توصيل المطار',
+    label:      'توصيل المطار',
     title:      'توصيل احترافي من وإلى المطار',
     desc:       'من دمياط إلى جميع مطارات مصر. أدخل وقت إقلاع رحلتك ونحسب لك وقت المغادرة المثالي تلقائياً.',
     features:   ['من دمياط لكل مطارات مصر', 'حساب وقت المغادرة تلقائياً', 'سيارات مريحة ونظيفة', 'سعر ثابت حسب المسافة', 'حجز مسبق بتفاصيل الرحلة'],
-    cta:        '✈️ احجز رحلتك',
+    cta:        'احجز رحلتك',
     ctaHref:    '/airport',
     badge:      '0',
     badgeLabel: 'تأخير مضمون',
@@ -174,7 +174,7 @@ const PRICING: PricingPlan[] = [
 
   .split__visual {
     border-radius: var(--radius-2xl);
-    background: linear-gradient(135deg, var(--color-primary-light), #DBEAFE);
+    background: var(--color-primary-light);
     aspect-ratio: 4 / 3;
     position: relative;
     overflow: hidden;
@@ -186,6 +186,34 @@ const PRICING: PricingPlan[] = [
     height: 100%;
     min-height: 320px;
     border-radius: var(--radius-2xl);
+  }
+
+  /* Loading skeleton shown until the map tiles finish loading */
+  .split__map-loading {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--sp-3);
+    background: var(--color-primary-light);
+    color: var(--color-primary);
+    font-size: var(--text-sm);
+    font-weight: var(--weight-bold);
+    transition: opacity 0.3s ease;
+  }
+  .split__map-loading.is-hidden { opacity: 0; pointer-events: none; }
+  .split__map-spinner {
+    width: 28px; height: 28px;
+    border: 3px solid var(--color-border);
+    border-top-color: var(--color-primary);
+    border-radius: 50%;
+    animation: split-spin 0.8s linear infinite;
+  }
+  @keyframes split-spin { to { transform: rotate(360deg); } }
+  @media (prefers-reduced-motion: reduce) {
+    .split__map-spinner { animation-duration: 2s; }
   }
 
   .split__visual-badge {
@@ -306,6 +334,7 @@ const PRICING: PricingPlan[] = [
   .pricing-card__btn {
     display: block;
     width: 100%;
+    min-height: 48px;
     padding: var(--sp-3);
     border-radius: var(--radius);
     font-family: var(--font-body);
@@ -315,6 +344,10 @@ const PRICING: PricingPlan[] = [
     border: none;
     text-align: center;
     transition: background var(--ease), transform var(--ease);
+  }
+  .pricing-card__btn:focus-visible {
+    outline: 3px solid var(--color-accent);
+    outline-offset: 2px;
   }
 
   .pricing-card__btn--outline { background: transparent; color: var(--color-primary); border: 2px solid var(--color-primary); }
@@ -352,7 +385,7 @@ const PRICING: PricingPlan[] = [
   page="services"
 >
   <PageHero
-    badge="📦 خدماتنا"
+    badge="خدماتنا"
     title="حلول التوصيل لكل احتياج"
     subtitle="من التوصيل المحلي إلى المطار، لدينا الحل المناسب لك"
   />
@@ -375,7 +408,11 @@ const PRICING: PricingPlan[] = [
           <a href={svc.ctaHref} class="btn btn--accent">{svc.cta}</a>
         </div>
         <div class="split__visual">
-          <div id={`map-${svc.id}`} class="split__map"></div>
+          <div id={`map-${svc.id}`} class="split__map" role="img" aria-label={`خريطة توضيحية لخدمة ${svc.title}`}></div>
+          <div class="split__map-loading" id={`map-${svc.id}-loading`}>
+            <span class="split__map-spinner" aria-hidden="true"></span>
+            جارٍ تحميل الخريطة…
+          </div>
           <div class="split__visual-badge">
             <div class="split__visual-badge-num">{svc.badge}</div>
             <div class="split__visual-badge-label">{svc.badgeLabel}</div>
@@ -388,7 +425,7 @@ const PRICING: PricingPlan[] = [
   <!-- Partners -->
   <section class="section partners" id="partners" aria-labelledby="partners-title">
     <div class="container">
-      <SectionHeader badge="🛍️ المتاجر الشريكة" title="تسوّق من متاجر دمياط الجديدة" subtitle="مطاعم — سوبرماركت — صيدليات — حلويات — خضار وفاكهة — إلكترونيات" id="partners-title" />
+      <SectionHeader badge="المتاجر الشريكة" title="تسوّق من متاجر دمياط الجديدة" subtitle="مطاعم — سوبرماركت — صيدليات — حلويات — خضار وفاكهة — إلكترونيات" id="partners-title" />
       <ul class="partners__grid" role="list">
         {PARTNERS.map(p => (
           <li class="partner-card">
@@ -439,14 +476,22 @@ const PRICING: PricingPlan[] = [
   const GMAPS_KEY = 'AIzaSyAKvFfBYNDcTZgvZZH5s_lQbOc24LNjLsY';
 
   function loadGoogleMaps(): Promise<void> {
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
       if ((window as any).google?.maps) { resolve(); return; }
       (window as any).__gmInit = resolve;
       const s = document.createElement('script');
       s.src = `https://maps.googleapis.com/maps/api/js?key=${GMAPS_KEY}&callback=__gmInit&language=ar`;
       s.async = true;
+      s.onerror = () => reject(new Error('gmaps_failed'));
       document.head.appendChild(s);
     });
+  }
+
+  function showMapError(id: string) {
+    const el = document.getElementById(`${id}-loading`);
+    if (!el) return;
+    el.innerHTML = 'تعذّر تحميل الخريطة — تحقق من اتصالك بالإنترنت';
+    el.classList.remove('is-hidden');
   }
 
   function markerIcon(label: string, color: string) {
@@ -462,8 +507,19 @@ const PRICING: PricingPlan[] = [
   }
 
   async function initMaps() {
-    await loadGoogleMaps();
+    try {
+      await loadGoogleMaps();
+    } catch {
+      showMapError('map-local');
+      showMapError('map-airport');
+      return;
+    }
     const G = (window as any).google.maps;
+
+    function hideLoading(id: string) {
+      const el = document.getElementById(`${id}-loading`);
+      if (el) el.classList.add('is-hidden');
+    }
 
     // ── LOCAL MAP: Damietta areas ──
     const localEl = document.getElementById('map-local');
@@ -476,6 +532,7 @@ const PRICING: PricingPlan[] = [
         mapTypeControl: false,
         styles: [{ featureType: 'poi', elementType: 'labels', stylers: [{ visibility: 'off' }] }],
       });
+      G.event.addListenerOnce(map, 'idle', () => hideLoading('map-local'));
 
       const areas = [
         { name: 'وسط دمياط',       lat: 31.418, lng: 31.814 },
@@ -494,7 +551,7 @@ const PRICING: PricingPlan[] = [
           position: { lat: a.lat, lng: a.lng },
           map,
           title: a.name,
-          icon: { path: G.SymbolPath.CIRCLE, fillColor: '#3b82f6', fillOpacity: 1, strokeColor: '#fff', strokeWeight: 2, scale: 9 },
+          icon: { path: G.SymbolPath.CIRCLE, fillColor: '#0E4B49', fillOpacity: 1, strokeColor: '#fff', strokeWeight: 2, scale: 9 },
           label: { text: String(i + 1), color: '#fff', fontSize: '11px', fontWeight: 'bold' },
         });
         marker.addListener('click', () => {
@@ -515,6 +572,7 @@ const PRICING: PricingPlan[] = [
         mapTypeControl: false,
         styles: [{ featureType: 'poi', elementType: 'labels', stylers: [{ visibility: 'off' }] }],
       });
+      G.event.addListenerOnce(map, 'idle', () => hideLoading('map-airport'));
 
       const DAMIETTA = { lat: 31.418, lng: 31.814 };
 
@@ -522,7 +580,7 @@ const PRICING: PricingPlan[] = [
       new G.Marker({
         position: DAMIETTA, map,
         title: 'دمياط',
-        icon: { path: G.SymbolPath.CIRCLE, fillColor: '#3b82f6', fillOpacity: 1, strokeColor: '#fff', strokeWeight: 3, scale: 11 },
+        icon: { path: G.SymbolPath.CIRCLE, fillColor: '#0E4B49', fillOpacity: 1, strokeColor: '#fff', strokeWeight: 3, scale: 11 },
         label: { text: '🏠', fontSize: '14px' },
         zIndex: 10,
       });
@@ -542,7 +600,7 @@ const PRICING: PricingPlan[] = [
         new G.Polyline({
           path: [DAMIETTA, { lat: a.lat, lng: a.lng }],
           map,
-          strokeColor: '#3b82f6',
+          strokeColor: '#0E4B49',
           strokeOpacity: 0,
           icons: [{ icon: { path: 'M 0,-1 0,1', strokeOpacity: 0.6, scale: 3 }, offset: '0', repeat: '12px' }],
         });
@@ -551,7 +609,7 @@ const PRICING: PricingPlan[] = [
           position: { lat: a.lat, lng: a.lng },
           map,
           title: `مطار ${a.name}`,
-          icon: { path: G.SymbolPath.CIRCLE, fillColor: '#ef4444', fillOpacity: 1, strokeColor: '#fff', strokeWeight: 2, scale: 9 },
+          icon: { path: G.SymbolPath.CIRCLE, fillColor: '#B8863B', fillOpacity: 1, strokeColor: '#fff', strokeWeight: 2, scale: 9 },
           label: { text: '✈', color: '#fff', fontSize: '12px' },
         });
         marker.addListener('click', () => {
