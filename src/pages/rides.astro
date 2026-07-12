@@ -90,7 +90,7 @@ import { POPULAR_PLACES, PLACES, PLACE_CATEGORIES, CATEGORY_COLORS } from '../da
   }
   .intl-section.visible { display: flex; }
   .intl-field { display: flex; flex-direction: column; gap: var(--sp-2); }
-  .intl-field__label { font-weight: var(--weight-bold); font-size: var(--text-sm); color: #374151; display: flex; align-items: center; gap: 6px; }
+  .intl-field__label { font-weight: var(--weight-bold); font-size: var(--text-sm); color: var(--color-text); display: flex; align-items: center; gap: 6px; }
   .intl-field__select, .intl-field__input, .intl-field__textarea {
     width: 100%; padding: var(--sp-3) var(--sp-4);
     border: 2px solid var(--color-border); border-radius: var(--radius);
@@ -105,7 +105,7 @@ import { POPULAR_PLACES, PLACES, PLACE_CATEGORIES, CATEGORY_COLORS } from '../da
   .intl-field__textarea { resize: vertical; min-height: 70px; background-image: none; }
   .intl-field__input[type="datetime-local"] { background-image: none; cursor: pointer; }
   .depart-box {
-    background: #eff6ff; border: 1.5px solid #bfdbfe;
+    background: #E3EDEC; border: 1.5px solid #C9DEDC;
     border-radius: var(--radius-lg); padding: var(--sp-3) var(--sp-4);
     display: none; gap: var(--sp-2); align-items: center;
   }
@@ -206,8 +206,8 @@ import { POPULAR_PLACES, PLACES, PLACE_CATEGORIES, CATEGORY_COLORS } from '../da
   /* ── route summary strip ── */
   .route-summary {
     margin: var(--sp-4) var(--sp-6) 0;
-    background: linear-gradient(135deg, #f0f9ff, #eff6ff);
-    border: 1px solid #bfdbfe; border-radius: var(--radius-xl);
+    background: linear-gradient(135deg, #F2F7F6, #E3EDEC);
+    border: 1px solid #C9DEDC; border-radius: var(--radius-xl);
     padding: var(--sp-3) var(--sp-5);
     display: flex; gap: var(--sp-4); align-items: center; justify-content: space-between;
     transition: opacity 0.3s;
@@ -217,14 +217,14 @@ import { POPULAR_PLACES, PLACES, PLACE_CATEGORIES, CATEGORY_COLORS } from '../da
   .route-summary__val { font-size: var(--text-lg); font-weight: var(--weight-black); color: var(--color-primary); }
   .route-summary__val--price { color: #16a34a; }
   .route-summary__key { font-size: 10px; color: var(--color-text-faint); }
-  .route-summary__divider { width: 1px; height: 28px; background: #bfdbfe; flex-shrink: 0; }
+  .route-summary__divider { width: 1px; height: 28px; background: #C9DEDC; flex-shrink: 0; }
 
   /* ── form ── */
   .form-section { padding: var(--sp-5) var(--sp-6); border-top: 1px solid var(--color-border); margin-top: var(--sp-4); display: block; }
   .submit-hint { font-size: var(--text-xs); color: var(--color-text-faint); text-align: center; margin-top: var(--sp-2); display: none; }
   .submit-hint.visible { display: block; }
   .field { margin-bottom: var(--sp-4); }
-  .field__label { display: block; font-weight: var(--weight-bold); font-size: var(--text-sm); margin-bottom: var(--sp-2); color: #374151; }
+  .field__label { display: block; font-weight: var(--weight-bold); font-size: var(--text-sm); margin-bottom: var(--sp-2); color: var(--color-text); }
   .field__input, .field__select, .field__textarea {
     width: 100%; padding: var(--sp-3) var(--sp-4);
     border: 2px solid var(--color-border); border-radius: var(--radius);
@@ -442,7 +442,7 @@ import { POPULAR_PLACES, PLACES, PLACE_CATEGORIES, CATEGORY_COLORS } from '../da
   }
   .driver-card.visible { display: block; }
   .driver-card__header {
-    background: linear-gradient(135deg, #1d4ed8, #3b82f6);
+    background: linear-gradient(135deg, #082F2E, #0E4B49);
     padding: var(--sp-4) var(--sp-5); color: #fff;
     display: flex; align-items: center; gap: var(--sp-3);
   }
@@ -466,7 +466,7 @@ import { POPULAR_PLACES, PLACES, PLACE_CATEGORIES, CATEGORY_COLORS } from '../da
   .driver-route { display: flex; flex-direction: column; gap: var(--sp-2); margin-bottom: var(--sp-4); }
   .driver-route-row { display: flex; align-items: center; gap: var(--sp-3); font-size: var(--text-sm); }
   .d-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
-  .d-dot.from { background: #3b82f6; }
+  .d-dot.from { background: #0E4B49; }
   .d-dot.to   { background: #ef4444; }
   .driver-fare {
     display: inline-flex; align-items: center; gap: var(--sp-2);
@@ -585,7 +585,7 @@ import { POPULAR_PLACES, PLACES, PLACE_CATEGORIES, CATEGORY_COLORS } from '../da
     font-family: var(--font-body);
   }
   .ac-item:last-child { border-bottom: none; }
-  .ac-item:hover, .ac-item.ac-focused { background: #f0f7ff; }
+  .ac-item:hover, .ac-item.ac-focused { background: #E3EDEC; }
   .ac-icon-box {
     width: 38px; height: 38px; border-radius: 50%;
     display: flex; align-items: center; justify-content: center;
@@ -911,7 +911,7 @@ import { POPULAR_PLACES, PLACES, PLACE_CATEGORIES, CATEGORY_COLORS } from '../da
           ══════════════════════════════════════ -->
           <div id="intl-panel" style="display:none">
             <!-- Info strip -->
-            <div style="margin:var(--sp-4) var(--sp-6) 0;background:#eff6ff;border:1px solid #bfdbfe;border-radius:var(--radius-xl);padding:var(--sp-3) var(--sp-5);font-size:var(--text-xs);color:#1d4ed8;display:flex;align-items:center;gap:var(--sp-2);">
+            <div style="margin:var(--sp-4) var(--sp-6) 0;background:#E3EDEC;border:1px solid #C9DEDC;border-radius:var(--radius-xl);padding:var(--sp-3) var(--sp-5);font-size:var(--text-xs);color:#082F2E;display:flex;align-items:center;gap:var(--sp-2);">
               ✈️ خدمة التوصيل للمطار — سعر ثابت شامل — نحسب وقت انطلاقك تلقائياً من وقت الرحلة
             </div>
 
@@ -939,14 +939,14 @@ import { POPULAR_PLACES, PLACES, PLACE_CATEGORIES, CATEGORY_COLORS } from '../da
               <!-- Live airport summary (always visible once airport selected) -->
               <div id="airport-summary" style="display:none;flex-direction:column;gap:var(--sp-2);background:#f0fdf4;border:2px solid #16a34a;border-radius:var(--radius-xl);padding:var(--sp-4) var(--sp-5);">
                 <div style="display:flex;justify-content:space-between;align-items:center;">
-                  <span style="font-size:var(--text-sm);color:#374151;font-weight:var(--weight-bold);">💰 سعر الرحلة</span>
+                  <span style="font-size:var(--text-sm);color:var(--color-text);font-weight:var(--weight-bold);">💰 سعر الرحلة</span>
                   <span id="summary-fare" style="font-size:var(--text-2xl);font-weight:900;color:#16a34a;">— ج.م</span>
                 </div>
                 <div style="font-size:11px;color:#16a34a;">✓ سعر ثابت شامل — لا توجد رسوم إضافية</div>
                 <div id="summary-drive" style="font-size:var(--text-xs);color:var(--color-text-faint);"></div>
-                <div id="summary-depart" style="display:none;margin-top:var(--sp-2);background:#eff6ff;border-radius:var(--radius-lg);padding:var(--sp-3) var(--sp-4);">
-                  <div style="font-size:11px;color:#1d4ed8;margin-bottom:4px;">🕐 اترك البيت في موعد أقصاه:</div>
-                  <div id="summary-depart-time" style="font-size:var(--text-base);font-weight:900;color:#1d4ed8;"></div>
+                <div id="summary-depart" style="display:none;margin-top:var(--sp-2);background:#E3EDEC;border-radius:var(--radius-lg);padding:var(--sp-3) var(--sp-4);">
+                  <div style="font-size:11px;color:#082F2E;margin-bottom:4px;">🕐 اترك البيت في موعد أقصاه:</div>
+                  <div id="summary-depart-time" style="font-size:var(--text-base);font-weight:900;color:#082F2E;"></div>
                   <div style="font-size:10px;color:#6b7280;margin-top:2px;">= وقت الرحلة − 3 ساعات − وقت القيادة</div>
                 </div>
               </div>
@@ -1028,7 +1028,7 @@ import { POPULAR_PLACES, PLACES, PLACE_CATEGORIES, CATEGORY_COLORS } from '../da
           </div>
           <div style="background:#f8fafc;border-radius:12px;padding:1rem;margin-bottom:1rem;">
             <div style="display:flex;align-items:center;gap:10px;font-size:.875rem;margin-bottom:8px;">
-              <span style="width:10px;height:10px;border-radius:50%;background:#3b82f6;flex-shrink:0"></span>
+              <span style="width:10px;height:10px;border-radius:50%;background:#0E4B49;flex-shrink:0"></span>
               <span id="receipt-route-from">—</span>
             </div>
             <div style="padding-right:13px;color:#9ca3af;font-size:11px;">↓</div>
@@ -1555,7 +1555,7 @@ import { POPULAR_PLACES, PLACES, PLACE_CATEGORIES, CATEGORY_COLORS } from '../da
           <div style="font-size:13px;font-weight:700;color:#1e293b;margin-bottom:3px">${place.emoji} ${place.name}</div>
           ${place.address ? `<div style="font-size:11px;color:#64748b">${place.address}</div>` : ''}
           <div style="margin-top:8px;display:flex;gap:6px">
-            <button onclick="window.__qpSetFrom('${place.id}')" style="flex:1;padding:4px 6px;background:#3b82f6;color:#fff;border:none;border-radius:6px;font-family:Cairo,sans-serif;font-size:11px;cursor:pointer">من هنا</button>
+            <button onclick="window.__qpSetFrom('${place.id}')" style="flex:1;padding:4px 6px;background:#0E4B49;color:#fff;border:none;border-radius:6px;font-family:Cairo,sans-serif;font-size:11px;cursor:pointer">من هنا</button>
             <button onclick="window.__qpSetTo('${place.id}')" style="flex:1;padding:4px 6px;background:#ef4444;color:#fff;border:none;border-radius:6px;font-family:Cairo,sans-serif;font-size:11px;cursor:pointer">إلى هنا</button>
           </div>
         </div>`,
@@ -1617,7 +1617,7 @@ import { POPULAR_PLACES, PLACES, PLACE_CATEGORIES, CATEGORY_COLORS } from '../da
         const G = window.google.maps;
         const lat = e.latLng.lat(), lng = e.latLng.lng();
         if (pinMarker) pinMarker.setMap(null);
-        const color = pinMode === 'from' ? '#3b82f6' : '#ef4444';
+        const color = pinMode === 'from' ? '#0E4B49' : '#ef4444';
         pinMarker = new G.Marker({
           position: { lat, lng }, map, zIndex: 9999,
           animation: G.Animation.DROP,
@@ -1665,13 +1665,13 @@ import { POPULAR_PLACES, PLACES, PLACE_CATEGORIES, CATEGORY_COLORS } from '../da
     clearMap();
 
     const G = window.google.maps;
-    fromMarker = gMarker(from.lat, from.lng, 'A', '#3b82f6', 'الانطلاق: ' + from.name);
+    fromMarker = gMarker(from.lat, from.lng, 'A', '#0E4B49', 'الانطلاق: ' + from.name);
     toMarker   = gMarker(to.lat,   to.lng,   'B', '#ef4444', 'الوصول: '  + to.name);
 
     try {
       routeRenderer = new G.DirectionsRenderer({
         map, suppressMarkers: true,
-        polylineOptions: { strokeColor: '#3b82f6', strokeWeight: 5, strokeOpacity: 0.85 },
+        polylineOptions: { strokeColor: '#0E4B49', strokeWeight: 5, strokeOpacity: 0.85 },
       });
       const result = await new Promise((res, rej) =>
         new G.DirectionsService().route({

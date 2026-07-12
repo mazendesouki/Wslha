@@ -36,7 +36,7 @@ import { AIRPORTS, priceForDistance, VEHICLE_TYPES } from '../data/airports';
   }
   .air-row { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-4); }
   .field { margin-bottom: var(--sp-4); }
-  .field__label { display: block; font-weight: var(--weight-bold); font-size: var(--text-sm); margin-bottom: var(--sp-2); color: #374151; }
+  .field__label { display: block; font-weight: var(--weight-bold); font-size: var(--text-sm); margin-bottom: var(--sp-2); color: var(--color-text); }
   .field__input, .field__select, .field__textarea {
     width: 100%; padding: var(--sp-3) var(--sp-4);
     border: 2px solid var(--color-border); border-radius: var(--radius);
@@ -69,10 +69,10 @@ import { AIRPORTS, priceForDistance, VEHICLE_TYPES } from '../data/airports';
     overflow: hidden;
   }
   .air-summary__head {
-    background: linear-gradient(135deg, var(--color-primary), var(--color-primary-dark));
+    background: var(--color-primary);
     color: #fff; padding: var(--sp-5);
   }
-  .air-summary__head h2 { font-size: var(--text-lg); font-weight: var(--weight-black); }
+  .air-summary__head h2 { font-family: var(--font-display); font-size: var(--text-lg); font-weight: 700; }
   .air-summary__route { font-size: var(--text-sm); opacity: 0.9; margin-top: 2px; }
   .air-summary__body { padding: var(--sp-5); }
 
@@ -104,6 +104,10 @@ import { AIRPORTS, priceForDistance, VEHICLE_TYPES } from '../data/airports';
   }
   .air-submit:hover:not(:disabled) { background: var(--color-accent-dark); }
   .air-submit:disabled { opacity: 0.5; cursor: not-allowed; }
+  .air-submit:focus-visible, .loc-btn:focus-visible, .veh-card:focus-visible {
+    outline: 3px solid var(--color-primary); outline-offset: 2px;
+  }
+  .trip-type label:has(input:focus-visible) { outline: 3px solid var(--color-primary); outline-offset: 2px; }
   .air-note { font-size: var(--text-xs); color: var(--color-text-faint); text-align: center; margin-top: var(--sp-3); }
 
   /* ── Success Screen ───────────────────────────────────── */
@@ -167,7 +171,7 @@ import { AIRPORTS, priceForDistance, VEHICLE_TYPES } from '../data/airports';
   /* card-header + rows are injected at runtime via innerHTML, so they must be
      :global — Astro's scoped [data-astro-cid] attribute is NOT added to JS-inserted nodes */
   .air-success__card :global(.air-success__card-header) {
-    background: linear-gradient(135deg, var(--color-primary), #1d4ed8);
+    background: var(--color-primary);
     color: #fff;
     padding: var(--sp-4) var(--sp-5);
     font-size: var(--text-sm);
@@ -279,7 +283,7 @@ import { AIRPORTS, priceForDistance, VEHICLE_TYPES } from '../data/airports';
   page="airport"
 >
   <PageHero
-    badge="✈️ توصيل المطار"
+    badge="توصيل المطار"
     title="من دمياط إلى كل مطارات مصر"
     subtitle="أدخل بيانات رحلتك ووقت الإقلاع — ونحسب لك وقت المغادرة المثالي تلقائياً مع سعر ثابت حسب المسافة"
   />
@@ -336,7 +340,7 @@ import { AIRPORTS, priceForDistance, VEHICLE_TYPES } from '../data/airports';
           <label class="field__label" for="from-area">نقطة البداية (منطقتك)</label>
           <div class="loc-wrap">
             <input type="text" class="field__input" id="from-area" placeholder="اكتب منطقتك أو حيّك في دمياط..." autocomplete="off" />
-            <button type="button" class="loc-btn" id="btn-air-loc" title="موقعي الحالي">📍</button>
+            <button type="button" class="loc-btn" id="btn-air-loc" title="موقعي الحالي" aria-label="استخدم موقعي الحالي">📍</button>
           </div>
         </div>
         <div class="field">
