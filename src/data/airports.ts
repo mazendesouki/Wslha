@@ -96,3 +96,17 @@ export const CHECKIN_BUFFER = {
   international: 180,
 };
 export const SAFETY_MARGIN = 20; // extra minutes added to drive time
+
+// Arrivals: time needed after landing for immigration + baggage claim before
+// the passenger reaches the arrivals hall exit.
+export const ARRIVAL_BUFFER = {
+  domestic: 20,
+  international: 45,
+};
+// How early the driver should be waiting at the arrivals hall relative to
+// the scheduled landing time (flights can land early).
+export const DRIVER_ARRIVAL_BEFORE_LANDING = 15;
+
+// Fixed reference point used to compute driving distance/time to any airport
+// selected via the live Google Places search.
+export const DAMIETTA_ORIGIN = { lat: 31.418, lng: 31.814 };

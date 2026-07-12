@@ -1,7 +1,7 @@
 ---
 import Layout from '../components/layout.astro';
 import PageHero from '../components/PageHero.astro';
-import { AIRPORTS, priceForDistance, VEHICLE_TYPES } from '../data/airports';
+import { VEHICLE_TYPES } from '../data/airports';
 ---
 
 <style>
@@ -296,12 +296,20 @@ import { AIRPORTS, priceForDistance, VEHICLE_TYPES } from '../data/airports';
       <!-- قسم 1: نوع الرحلة -->
       <h2 class="air-form__step"><span class="air-form__num">1</span> نوع الرحلة</h2>
       <div class="field">
+        <span class="field__label">اتجاه الرحلة</span>
+        <div class="trip-type">
+          <label><input type="radio" name="direction" value="departure" id="dir-departure" checked>🛫 مغادر من مصر</label>
+          <label><input type="radio" name="direction" value="arrival" id="dir-arrival">🛬 قادم إلى مصر</label>
+        </div>
+        <p class="field__hint">مغادر: هنوصّلك من دمياط للمطار. قادم: هنستقبلك من المطار ونوصّلك لدمياط.</p>
+      </div>
+      <div class="field">
         <span class="field__label">نوع الرحلة</span>
         <div class="trip-type">
           <label><input type="radio" name="trip" value="international" checked>✈️ دولية (3 ساعات)</label>
           <label><input type="radio" name="trip" value="domestic">🛫 محلية (ساعتان)</label>
         </div>
-        <p class="field__hint">نستخدمها لحساب الوقت اللازم للوصول قبل الإقلاع.</p>
+        <p class="field__hint" id="trip-type-hint">نستخدمها لحساب الوقت اللازم للوصول قبل الإقلاع.</p>
       </div>
 
       <hr class="air-divider">
@@ -337,18 +345,19 @@ import { AIRPORTS, priceForDistance, VEHICLE_TYPES } from '../data/airports';
 
       <div class="air-row">
         <div class="field">
-          <label class="field__label" for="from-area">نقطة البداية (منطقتك)</label>
+          <label class="field__label" for="from-area" id="from-area-label">نقطة البداية (منطقتك)</label>
           <div class="loc-wrap">
             <input type="text" class="field__input" id="from-area" placeholder="اكتب منطقتك أو حيّك في دمياط..." autocomplete="off" />
             <button type="button" class="loc-btn" id="btn-air-loc" title="موقعي الحالي" aria-label="استخدم موقعي الحالي">📍</button>
           </div>
         </div>
         <div class="field">
-          <label class="field__label" for="airport-input">المطار (نقطة النهاية)</label>
+          <label class="field__label" for="airport-input" id="airport-label">المطار (نقطة النهاية)</label>
           <div class="airport-wrap">
-            <input type="text" class="field__input" id="airport-input" placeholder="ابحث: القاهرة، شرم، الغردقة..." autocomplete="off" />
-            <ul class="airport-list" id="airport-list" role="listbox"></ul>
+            <input type="text" class="field__input" id="airport-input" placeholder="ابحث باسم المطار: مطار القاهرة، مطار شرم الشيخ..." autocomplete="off" />
+            <ul class="airport-list" id="airport-list" role="listbox" hidden></ul>
           </div>
+          <p class="field__hint" id="airport-hint">بحث حي بموقع المطار الفعلي — المسافة والسعر تُحسب تلقائياً.</p>
         </div>
       </div>
 
@@ -358,9 +367,9 @@ import { AIRPORTS, priceForDistance, VEHICLE_TYPES } from '../data/airports';
       </div>
 
       <div class="field">
-        <label class="field__label" for="flight-time">تاريخ ووقت إقلاع الطائرة</label>
+        <label class="field__label" for="flight-time" id="flight-time-label">تاريخ ووقت إقلاع الطائرة</label>
         <input class="field__input" id="flight-time" type="datetime-local">
-        <p class="field__hint">سنحسب لك وقت المغادرة من بيتك ووقت الوصول للمطار تلقائياً.</p>
+        <p class="field__hint" id="flight-time-hint">سنحسب لك وقت المغادرة من بيتك ووقت الوصول للمطار تلقائياً.</p>
       </div>
 
       <hr class="air-divider">
@@ -426,9 +435,15 @@ import { AIRPORTS, priceForDistance, VEHICLE_TYPES } from '../data/airports';
           <input class="field__input" id="flight-no" type="text" placeholder="MS 712">
         </div>
       </div>
-      <div class="field">
-        <label class="field__label" for="terminal">رقم الصالة / المبنى</label>
-        <input class="field__input" id="terminal" type="text" placeholder="مثال: مبنى 2">
+      <div class="air-row">
+        <div class="field">
+          <label class="field__label" for="terminal">رقم الصالة / المبنى</label>
+          <input class="field__input" id="terminal" type="text" placeholder="مثال: مبنى 2">
+        </div>
+        <div class="field">
+          <label class="field__label" for="flight-country" id="flight-country-label">مسافر إلى (الدولة)</label>
+          <input class="field__input" id="flight-country" type="text" placeholder="مثال: السعودية">
+        </div>
       </div>
 
       <hr class="air-divider">
@@ -454,7 +469,7 @@ import { AIRPORTS, priceForDistance, VEHICLE_TYPES } from '../data/airports';
         <p class="air-summary__route" id="sum-route">اختر المطار ووقت الإقلاع</p>
       </div>
       <div class="air-summary__body">
-        <ol class="timeline" id="timeline">
+        <ol class="timeline" id="timeline-departure">
           <li class="tl-empty" id="tl-empty">أدخل وقت إقلاع الطائرة لعرض الجدول الزمني المقترح.</li>
           <li class="tl-item" id="tl-driver" hidden>
             <span class="tl-dot"></span>
@@ -487,6 +502,33 @@ import { AIRPORTS, priceForDistance, VEHICLE_TYPES } from '../data/airports';
           </li>
         </ol>
 
+        <ol class="timeline" id="timeline-arrival" hidden>
+          <li class="tl-empty" id="tl-empty-arr">أدخل وقت هبوط الطائرة لعرض الجدول الزمني المقترح.</li>
+          <li class="tl-item tl-item--flight" id="tl-land" hidden>
+            <span class="tl-dot"></span>
+            <p class="tl-label">🛬 هبوط الطائرة</p>
+            <p class="tl-time" id="tl-land-time">—</p>
+          </li>
+          <li class="tl-item" id="tl-ready" hidden>
+            <span class="tl-dot"></span>
+            <p class="tl-label">🛄 استلام الأمتعة والخروج من الصالة</p>
+            <p class="tl-time" id="tl-ready-time">—</p>
+            <p class="tl-sub" id="tl-ready-sub"></p>
+          </li>
+          <li class="tl-item tl-item--depart" id="tl-leave-airport" hidden>
+            <span class="tl-dot"></span>
+            <p class="tl-label">🚗 الانطلاق من المطار</p>
+            <p class="tl-time" id="tl-leave-airport-time">—</p>
+            <p class="tl-sub">السائق في انتظارك عند باب الوصول</p>
+          </li>
+          <li class="tl-item tl-item--arrive" id="tl-home" hidden>
+            <span class="tl-dot"></span>
+            <p class="tl-label">🏠 الوصول المتوقع لوجهتك</p>
+            <p class="tl-time" id="tl-home-time">—</p>
+            <p class="tl-sub" id="tl-home-sub"></p>
+          </li>
+        </ol>
+
         <div class="air-prices">
           <div class="row"><span>المسافة</span><span id="p-distance">—</span></div>
           <div class="row"><span>سعر المسافة</span><span id="p-base">—</span></div>
@@ -505,7 +547,6 @@ import { AIRPORTS, priceForDistance, VEHICLE_TYPES } from '../data/airports';
     </aside>
   </div>
 
-  <script type="application/json" id="airports-json" set:html={JSON.stringify(AIRPORTS)}></script>
   <script type="application/json" id="vehicles-json" set:html={JSON.stringify(VEHICLE_TYPES)}></script>
 
   <!-- Success -->
@@ -530,7 +571,7 @@ import { AIRPORTS, priceForDistance, VEHICLE_TYPES } from '../data/airports';
   </section>
 
   <script>
-    import { priceForDistance, CHECKIN_BUFFER, SAFETY_MARGIN, VEHICLE_TYPES, EXTRA_BAG_FEE, COMPANION_FEE, WAIT_PICKUP_FREE, WAIT_PICKUP_PER15, WAIT_AIRPORT_FREE, WAIT_AIRPORT_PER30 } from '../data/airports';
+    import { priceForDistance, CHECKIN_BUFFER, SAFETY_MARGIN, ARRIVAL_BUFFER, DRIVER_ARRIVAL_BEFORE_LANDING, DAMIETTA_ORIGIN, VEHICLE_TYPES, EXTRA_BAG_FEE, COMPANION_FEE, WAIT_PICKUP_FREE, WAIT_PICKUP_PER15, WAIT_AIRPORT_FREE, WAIT_AIRPORT_PER30 } from '../data/airports';
     import { isEgyptianMobile, normalizeEgyptianPhone, EG_PHONE_ERROR } from '../utils/phone';
 
     const GMAPS_KEY = 'AIzaSyAKvFfBYNDcTZgvZZH5s_lQbOc24LNjLsY';
@@ -538,106 +579,153 @@ import { AIRPORTS, priceForDistance, VEHICLE_TYPES } from '../data/airports';
     const $ = (id: string) => document.getElementById(id)!;
     const form = $('air-form') as HTMLFormElement;
     const flightInput = $('flight-time') as HTMLInputElement;
+    const errBox = $('air-error') as HTMLElement;
 
     // ── Vehicle selection ──
     interface VehicleType { id: string; name: string; maxTravelers: number; maxBags: number; freeBags: number; surcharge: number; }
     const VEHICLES_DATA: VehicleType[] = JSON.parse((document.getElementById('vehicles-json') as HTMLScriptElement).textContent || '[]');
     let selectedVehicle: VehicleType = VEHICLES_DATA[0] || { id: 'sedan', name: 'سيدان', maxTravelers: 3, maxBags: 2, freeBags: 2, surcharge: 0 };
 
-    // ── Airport search ──
-    interface AirportItem { id: string; name: string; code: string; distanceKm: number; driveMinutes: number; }
-    const AIRPORTS_DATA: AirportItem[] = JSON.parse((document.getElementById('airports-json') as HTMLScriptElement).textContent || '[]');
-    let selectedAirport: AirportItem | null = null;
+    // ── Trip direction (مغادر / قادم) ──
+    function direction(): 'departure' | 'arrival' {
+      return (form.querySelector('input[name="direction"]:checked') as HTMLInputElement)?.value === 'arrival' ? 'arrival' : 'departure';
+    }
+
+    function applyDirectionLabels(): void {
+      const dep = direction() === 'departure';
+      ($('from-area-label') as HTMLElement).textContent = dep ? 'نقطة البداية (منطقتك)' : 'وجهتك (منطقتك)';
+      ($('airport-label') as HTMLElement).textContent = dep ? 'المطار (نقطة النهاية)' : 'المطار (نقطة البداية)';
+      ($('flight-time-label') as HTMLElement).textContent = dep ? 'تاريخ ووقت إقلاع الطائرة' : 'تاريخ ووقت هبوط الطائرة';
+      ($('flight-time-hint') as HTMLElement).textContent = dep
+        ? 'سنحسب لك وقت المغادرة من بيتك ووقت الوصول للمطار تلقائياً.'
+        : 'سنحسب لك موعد وصول السائق للمطار وموعد وصولك المتوقع لوجهتك تلقائياً.';
+      ($('trip-type-hint') as HTMLElement).textContent = dep
+        ? 'نستخدمها لحساب الوقت اللازم للوصول قبل الإقلاع.'
+        : 'نستخدمها لحساب وقت استلام الأمتعة بعد الهبوط.';
+      ($('flight-country-label') as HTMLElement).textContent = dep ? 'مسافر إلى (الدولة)' : 'قادم من (الدولة)';
+      // Waiting-at-airport-lounge fee only applies when we drop you off and wait to see you through — not relevant for arrivals.
+      ($('wait-airport-field') as HTMLElement).hidden = !dep;
+      ($('timeline-departure') as HTMLElement).hidden = !dep;
+      ($('timeline-arrival') as HTMLElement).hidden = dep;
+    }
+
+    form.querySelectorAll('input[name="direction"]').forEach(r => r.addEventListener('change', () => { applyDirectionLabels(); render(); }));
+    applyDirectionLabels();
+
+    // ── Airport search (live Google Places — any real airport, precise location) ──
+    interface SelectedAirport { name: string; lat: number; lng: number; distanceKm: number; driveMinutes: number; }
+    let selectedAirport: SelectedAirport | null = null;
+    let airportLookupToken = 0;
 
     const airportInput = $('airport-input') as HTMLInputElement;
     const airportList = $('airport-list') as HTMLUListElement;
+    airportList.hidden = true; // dropdown no longer used for search — Places supplies its own UI
 
-    function filterAirports(q: string): AirportItem[] {
-      if (!q.trim()) return AIRPORTS_DATA;
-      const s = q.trim().toLowerCase();
-      return AIRPORTS_DATA.filter(a =>
-        a.name.includes(q) || a.code.toLowerCase().includes(s) || a.name.toLowerCase().includes(s)
-      );
-    }
-
-    function renderAirportList(items: AirportItem[]) {
-      airportList.innerHTML = '';
-      if (!items.length) {
-        airportList.innerHTML = '<li style="color:var(--color-text-faint);cursor:default">لا توجد نتائج</li>';
-      } else {
-        items.forEach(a => {
-          const li = document.createElement('li');
-          li.innerHTML = `<span>${a.name}</span><span><span class="airport-list__code">${a.code}</span> <span class="airport-list__km">${a.distanceKm} كم</span></span>`;
-          li.addEventListener('mousedown', (e) => {
-            e.preventDefault();
-            selectAirport(a);
-          });
-          airportList.appendChild(li);
-        });
-      }
-      airportList.classList.add('is-open');
-    }
-
-    function selectAirport(a: AirportItem) {
-      selectedAirport = a;
-      airportInput.value = `${a.name} (${a.code})`;
-      airportInput.classList.add('airport-selected');
-      airportList.classList.remove('is-open');
-      render();
-    }
-
-    airportInput.addEventListener('input', () => {
-      selectedAirport = null;
-      airportInput.classList.remove('airport-selected');
-      renderAirportList(filterAirports(airportInput.value));
-      render();
-    });
-    airportInput.addEventListener('focus', () => {
-      renderAirportList(filterAirports(airportInput.value));
-    });
-    airportInput.addEventListener('blur', () => {
-      setTimeout(() => airportList.classList.remove('is-open'), 150);
-    });
-    const errBox = $('air-error') as HTMLElement;
-
-    // ── Google Places for from-area ──
+    // ── Google Places (shared loader for from-area + airport) ──
     let fromAreaPlace: { name: string; lat: number; lng: number } | null = null;
 
     function loadGoogleMaps(): Promise<void> {
-      return new Promise((resolve) => {
+      return new Promise((resolve, reject) => {
         if ((window as any).google?.maps) { resolve(); return; }
         (window as any).__airGmInit = resolve;
         const s = document.createElement('script');
         s.src = `https://maps.googleapis.com/maps/api/js?key=${GMAPS_KEY}&libraries=places&callback=__airGmInit&language=ar&region=EG`;
         s.async = true;
+        s.onerror = () => reject(new Error('gmaps_failed'));
         document.head.appendChild(s);
       });
     }
 
-    async function initFromAreaAutocomplete(): Promise<void> {
-      await loadGoogleMaps();
+    function setAirportHint(msg: string, isError = false): void {
+      const hint = $('airport-hint') as HTMLElement;
+      hint.textContent = msg;
+      hint.style.color = isError ? '#B91C1C' : 'var(--color-text-faint)';
+    }
+
+    function computeDistance(lat: number, lng: number): Promise<{ distanceKm: number; driveMinutes: number }> {
+      return new Promise((resolve, reject) => {
+        const G = (window as any).google.maps;
+        const svc = new G.DistanceMatrixService();
+        svc.getDistanceMatrix({
+          origins: [DAMIETTA_ORIGIN],
+          destinations: [{ lat, lng }],
+          travelMode: 'DRIVING',
+        }, (res: any, status: string) => {
+          if (status !== 'OK') { reject(new Error(status)); return; }
+          const el = res?.rows?.[0]?.elements?.[0];
+          if (!el || el.status !== 'OK') { reject(new Error('no_route')); return; }
+          resolve({ distanceKm: Math.round(el.distance.value / 1000), driveMinutes: Math.round(el.duration.value / 60) });
+        });
+      });
+    }
+
+    async function selectAirportPlace(name: string, lat: number, lng: number): Promise<void> {
+      const token = ++airportLookupToken;
+      selectedAirport = null;
+      airportInput.classList.remove('airport-selected');
+      setAirportHint('جارٍ حساب المسافة والوقت من دمياط…');
+      render();
+      try {
+        const { distanceKm, driveMinutes } = await computeDistance(lat, lng);
+        if (token !== airportLookupToken) return; // a newer selection superseded this one
+        selectedAirport = { name, lat, lng, distanceKm, driveMinutes };
+        airportInput.classList.add('airport-selected');
+        setAirportHint(`${distanceKm} كم من دمياط — ~${Math.round(driveMinutes)} دقيقة بالسيارة`);
+      } catch {
+        if (token !== airportLookupToken) return;
+        setAirportHint('تعذّر حساب المسافة لهذا المطار — جرّب مطاراً آخر أو تأكد من اتصالك بالإنترنت.', true);
+      }
+      render();
+    }
+
+    async function initAutocompletes(): Promise<void> {
+      try {
+        await loadGoogleMaps();
+      } catch {
+        setAirportHint('تعذّر تحميل خرائط جوجل — تحقق من اتصالك بالإنترنت.', true);
+        return;
+      }
       const G = (window as any).google.maps;
-      // Soft bias toward Damietta — user can search anywhere in Egypt
-      const damiettaBias = new G.LatLngBounds(
-        { lat: 31.20, lng: 31.50 },
-        { lat: 31.65, lng: 32.10 }
-      );
-      const ac = new G.places.Autocomplete(document.getElementById('from-area'), {
+
+      // Soft bias toward Damietta for the "from-area" field — user can search anywhere in Egypt
+      const damiettaBias = new G.LatLngBounds({ lat: 31.20, lng: 31.50 }, { lat: 31.65, lng: 32.10 });
+      const fromAc = new G.places.Autocomplete(document.getElementById('from-area'), {
         bounds: damiettaBias,
         componentRestrictions: { country: 'eg' },
         strictBounds: false,
-        types: [],                   // all types: streets, cafes, buildings...
+        types: [],
         fields: ['geometry', 'name', 'formatted_address'],
       });
-      ac.addListener('place_changed', () => {
-        const p = ac.getPlace();
+      fromAc.addListener('place_changed', () => {
+        const p = fromAc.getPlace();
         if (!p?.geometry?.location) return;
         fromAreaPlace = { name: p.name || p.formatted_address, lat: p.geometry.location.lat(), lng: p.geometry.location.lng() };
         render();
       });
+
+      // Live airport search — any real airport in Egypt, precise coordinates
+      const airportAc = new G.places.Autocomplete(airportInput, {
+        componentRestrictions: { country: 'eg' },
+        types: ['airport'],
+        fields: ['geometry', 'name', 'formatted_address'],
+      });
+      airportAc.addListener('place_changed', () => {
+        const p = airportAc.getPlace();
+        if (!p?.geometry?.location) { setAirportHint('اختر مطاراً من نتائج البحث.', true); return; }
+        selectAirportPlace(p.name || p.formatted_address, p.geometry.location.lat(), p.geometry.location.lng());
+      });
     }
 
-    initFromAreaAutocomplete();
+    initAutocompletes();
+
+    airportInput.addEventListener('input', () => {
+      if (selectedAirport && airportInput.value !== selectedAirport.name) {
+        selectedAirport = null;
+        airportInput.classList.remove('airport-selected');
+        setAirportHint('بحث حي بموقع المطار الفعلي — المسافة والسعر تُحسب تلقائياً.');
+        render();
+      }
+    });
 
     document.getElementById('btn-air-loc')?.addEventListener('click', () => {
       if (!navigator.geolocation) return;
@@ -676,18 +764,24 @@ import { AIRPORTS, priceForDistance, VEHICLE_TYPES } from '../data/airports';
       distance: number; drive: number;
       base: number; vehSurcharge: number; extraBags: number; companionFee: number; waitPickupFee: number; waitAirportFee: number;
       total: number; buffer: number;
+      // departure fields
       flight?: Date; arrive?: Date; depart?: Date; driverArrival?: Date; checkinDeadline?: Date;
+      // arrival fields
+      land?: Date; ready?: Date; leaveAirport?: Date; home?: Date;
     }
 
     function calc(): Calc {
+      const dep = direction() === 'departure';
       const distance = selectedAirport ? selectedAirport.distanceKm : 0;
       const drive = selectedAirport ? selectedAirport.driveMinutes : 0;
       const trip = (form.querySelector('input[name="trip"]:checked') as HTMLInputElement).value as 'domestic' | 'international';
-      const buffer = trip === 'international' ? CHECKIN_BUFFER.international : CHECKIN_BUFFER.domestic;
+      const buffer = dep
+        ? (trip === 'international' ? CHECKIN_BUFFER.international : CHECKIN_BUFFER.domestic)
+        : (trip === 'international' ? ARRIVAL_BUFFER.international : ARRIVAL_BUFFER.domestic);
       const bags = Math.max(0, Number(($('bags') as HTMLInputElement).value) || 0);
       const companions = Math.max(0, Number(($('companions') as HTMLInputElement).value) || 0);
       const waitPickupMins = Number(($('wait-pickup') as HTMLSelectElement).value) || 0;
-      const waitAirportMins = Number(($('wait-airport') as HTMLSelectElement).value) || 0;
+      const waitAirportMins = dep ? (Number(($('wait-airport') as HTMLSelectElement).value) || 0) : 0;
 
       const base = distance ? priceForDistance(distance) : 0;
       const vehSurcharge = selectedVehicle.surcharge;
@@ -698,66 +792,57 @@ import { AIRPORTS, priceForDistance, VEHICLE_TYPES } from '../data/airports';
       const total = base + vehSurcharge + extraBags + companionFee + waitPickupFee + waitAirportFee;
 
       const result: Calc = { distance, drive, base, vehSurcharge, extraBags, companionFee, waitPickupFee, waitAirportFee, total, buffer };
+      if (!flightInput.value || !distance) return result;
+      const flight = new Date(flightInput.value);
+      if (isNaN(flight.getTime())) return result;
 
-      if (flightInput.value && distance) {
-        const flight = new Date(flightInput.value);
-        if (!isNaN(flight.getTime())) {
-          // checkin deadline: international 60 min before, domestic 40 min before
-          const checkinClose = trip === 'international' ? 60 : 40;
-          const checkinDeadline = new Date(flight.getTime() - checkinClose * 60000);
-          // arrive at airport = flight_time - buffer (with safety margin buffer)
-          const arrive = new Date(flight.getTime() - buffer * 60000);
-          // depart from pickup = arrive - drive - safety
-          const depart = new Date(arrive.getTime() - (drive + SAFETY_MARGIN) * 60000);
-          // driver arrives at pickup = depart - waitPickup
-          const driverArrival = new Date(depart.getTime() - waitPickupMins * 60000);
-          result.flight = flight;
-          result.arrive = arrive;
-          result.depart = depart;
-          result.driverArrival = driverArrival;
-          result.checkinDeadline = checkinDeadline;
-        }
+      if (dep) {
+        const checkinClose = trip === 'international' ? 60 : 40;
+        result.checkinDeadline = new Date(flight.getTime() - checkinClose * 60000);
+        result.arrive = new Date(flight.getTime() - buffer * 60000);
+        result.depart = new Date(result.arrive.getTime() - (drive + SAFETY_MARGIN) * 60000);
+        result.driverArrival = new Date(result.depart.getTime() - waitPickupMins * 60000);
+        result.flight = flight;
+      } else {
+        result.land = flight;
+        result.ready = new Date(flight.getTime() + buffer * 60000);
+        result.leaveAirport = result.ready;
+        result.home = new Date(result.leaveAirport.getTime() + (drive + SAFETY_MARGIN) * 60000);
       }
       return result;
     }
 
     function render(): void {
       const c = calc();
+      const dep = direction() === 'departure';
       const fromArea = fromAreaPlace?.name || (document.getElementById('from-area') as HTMLInputElement).value || '';
 
       // Route
       $('sum-route').textContent = selectedAirport
-        ? `${fromArea} ← ${selectedAirport.name}`
-        : 'اختر المطار ووقت الإقلاع';
+        ? (dep ? `${fromArea} ← ${selectedAirport.name}` : `${selectedAirport.name} ← ${fromArea}`)
+        : (dep ? 'اختر المطار ووقت الإقلاع' : 'اختر المطار ووقت الهبوط');
 
-      // Timeline
-      const hasTime = !!c.flight;
-      $('tl-empty').hidden = hasTime;
-      ['tl-driver', 'tl-depart', 'tl-arrive', 'tl-checkin', 'tl-flight'].forEach(id => ($(id) as HTMLElement).hidden = !hasTime);
-
-      if (hasTime) {
-        // Driver arrival
-        if (c.driverArrival) {
-          $('tl-driver-time').textContent = fmtDateTime(c.driverArrival);
-          $('tl-driver-sub').textContent = 'موعد وصول السائق لاستلامك';
+      if (dep) {
+        const hasTime = !!c.flight;
+        $('tl-empty').hidden = hasTime;
+        ['tl-driver', 'tl-depart', 'tl-arrive', 'tl-checkin', 'tl-flight'].forEach(id => ($(id) as HTMLElement).hidden = !hasTime);
+        if (hasTime) {
+          if (c.driverArrival) { $('tl-driver-time').textContent = fmtDateTime(c.driverArrival); $('tl-driver-sub').textContent = 'موعد وصول السائق لاستلامك'; }
+          if (c.depart)        { $('tl-depart-time').textContent  = fmtDateTime(c.depart);        $('tl-depart-sub').textContent  = `زمن الطريق ~${minutesToText(c.drive)} + هامش أمان`; }
+          if (c.arrive)        { $('tl-arrive-time').textContent  = fmtDateTime(c.arrive);         $('tl-arrive-sub').textContent  = `قبل الإقلاع بـ ${minutesToText(c.buffer)}`; }
+          if (c.checkinDeadline) { $('tl-checkin-time').textContent = fmtDateTime(c.checkinDeadline); $('tl-checkin-sub').textContent = 'آخر موعد لتسليم الأمتعة عند الكاونتر'; }
+          $('tl-flight-time').textContent = fmtDateTime(c.flight!);
         }
-        // Depart
-        if (c.depart) {
-          $('tl-depart-time').textContent = fmtDateTime(c.depart);
-          $('tl-depart-sub').textContent = `زمن الطريق ~${minutesToText(c.drive)} + هامش أمان`;
+      } else {
+        const hasTime = !!c.land;
+        $('tl-empty-arr').hidden = hasTime;
+        ['tl-land', 'tl-ready', 'tl-leave-airport', 'tl-home'].forEach(id => ($(id) as HTMLElement).hidden = !hasTime);
+        if (hasTime) {
+          $('tl-land-time').textContent = fmtDateTime(c.land!);
+          if (c.ready) { $('tl-ready-time').textContent = fmtDateTime(c.ready); $('tl-ready-sub').textContent = `هامش ${minutesToText(c.buffer)} للجوازات واستلام الأمتعة`; }
+          if (c.leaveAirport) { $('tl-leave-airport-time').textContent = fmtDateTime(c.leaveAirport); }
+          if (c.home) { $('tl-home-time').textContent = fmtDateTime(c.home); $('tl-home-sub').textContent = `زمن الطريق ~${minutesToText(c.drive)} + هامش أمان`; }
         }
-        // Arrive
-        if (c.arrive) {
-          $('tl-arrive-time').textContent = fmtDateTime(c.arrive);
-          $('tl-arrive-sub').textContent = `قبل الإقلاع بـ ${minutesToText(c.buffer)}`;
-        }
-        // Checkin deadline
-        if (c.checkinDeadline) {
-          $('tl-checkin-time').textContent = fmtDateTime(c.checkinDeadline);
-          $('tl-checkin-sub').textContent = 'آخر موعد لتسليم الأمتعة عند الكاونتر';
-        }
-        // Flight
-        $('tl-flight-time').textContent = fmtDateTime(c.flight!);
       }
 
       // Prices
@@ -815,11 +900,13 @@ import { AIRPORTS, priceForDistance, VEHICLE_TYPES } from '../data/airports';
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
       const c = calc();
+      const dep = direction() === 'departure';
       const fail = (msg: string) => { errBox.textContent = msg; errBox.classList.add('is-visible'); errBox.scrollIntoView({ block: 'center', behavior: 'smooth' }); };
 
-      if (!selectedAirport) return fail('يرجى اختيار المطار من القائمة.');
-      if (!flightInput.value || !c.flight) return fail('يرجى إدخال تاريخ ووقت إقلاع الطائرة.');
-      if (c.depart && c.depart.getTime() < Date.now()) return fail('وقت الإقلاع قريب جداً — يرجى الحجز قبل موعد كافٍ.');
+      if (!selectedAirport) return fail('يرجى اختيار المطار من نتائج البحث.');
+      const flightVal = dep ? c.flight : c.land;
+      if (!flightInput.value || !flightVal) return fail(dep ? 'يرجى إدخال تاريخ ووقت إقلاع الطائرة.' : 'يرجى إدخال تاريخ ووقت هبوط الطائرة.');
+      if (dep && c.depart && c.depart.getTime() < Date.now()) return fail('وقت الإقلاع قريب جداً — يرجى الحجز قبل موعد كافٍ.');
 
       const pax = Number(($('passengers') as HTMLInputElement).value) || 1;
       const comp = Number(($('companions') as HTMLInputElement).value) || 0;
@@ -834,24 +921,27 @@ import { AIRPORTS, priceForDistance, VEHICLE_TYPES } from '../data/airports';
       errBox.classList.remove('is-visible');
 
       const fromArea = fromAreaPlace?.name || (document.getElementById('from-area') as HTMLInputElement).value || '';
+      const country = ($('flight-country') as HTMLInputElement).value.trim();
       const orderId = 'WSL-' + new Date().getFullYear() + '-' + Math.floor(100000 + Math.random() * 900000);
       const waitPickupMins = Number(($('wait-pickup') as HTMLSelectElement).value) || 0;
-      const waitAirportMins = Number(($('wait-airport') as HTMLSelectElement).value) || 0;
+      const waitAirportMins = dep ? (Number(($('wait-airport') as HTMLSelectElement).value) || 0) : 0;
 
       const order = {
         id: orderId,
-        type: 'توصيل مطار',
-        icon: '✈️',
-        route: `${fromArea} ← ${selectedAirport!.name}`,
+        type: dep ? 'توصيل مطار (مغادرة)' : 'توصيل مطار (وصول)',
+        icon: dep ? '🛫' : '🛬',
+        direction: direction(),
+        route: dep ? `${fromArea} ← ${selectedAirport!.name}` : `${selectedAirport!.name} ← ${fromArea}`,
         date: 'الآن',
         price: `${c.total} ج.م`,
         status: 'active',
         kind: 'airport',
         airport: selectedAirport!.name,
-        flightTime: c.flight!.toISOString(),
-        driverArrivalTime: c.driverArrival?.toISOString(),
-        departTime: c.depart?.toISOString(),
-        arriveTime: c.arrive?.toISOString(),
+        country,
+        flightTime: dep ? c.flight!.toISOString() : c.land!.toISOString(),
+        driverArrivalTime: (dep ? c.driverArrival : c.leaveAirport)?.toISOString(),
+        departTime: (dep ? c.depart : c.leaveAirport)?.toISOString(),
+        arriveTime: (dep ? c.arrive : c.home)?.toISOString(),
         checkinDeadline: c.checkinDeadline?.toISOString(),
         airline: ($('airline') as HTMLInputElement).value,
         flightNo: ($('flight-no') as HTMLInputElement).value,
@@ -885,17 +975,18 @@ import { AIRPORTS, priceForDistance, VEHICLE_TYPES } from '../data/airports';
           body: JSON.stringify({
             customer_phone: order.phone,
             customer_name: order.recipient,
-            from_area: fromArea,
-            from_lat: fromAreaPlace?.lat ?? 0,
-            from_lng: fromAreaPlace?.lng ?? 0,
-            to_area: selectedAirport.name,
-            to_lat: 0, to_lng: 0,
-            distance_km: selectedAirport.distanceKm,
+            from_area: dep ? fromArea : selectedAirport!.name,
+            from_lat: dep ? (fromAreaPlace?.lat ?? 0) : selectedAirport!.lat,
+            from_lng: dep ? (fromAreaPlace?.lng ?? 0) : selectedAirport!.lng,
+            to_area: dep ? selectedAirport!.name : fromArea,
+            to_lat: dep ? selectedAirport!.lat : (fromAreaPlace?.lat ?? 0),
+            to_lng: dep ? selectedAirport!.lng : (fromAreaPlace?.lng ?? 0),
+            distance_km: selectedAirport!.distanceKm,
             fare: c.total,
-            eta_minutes: selectedAirport.driveMinutes,
+            eta_minutes: selectedAirport!.driveMinutes,
             passengers: pax,
             payment: (document.querySelector('input[name="payment"]:checked'))?.value || 'cash',
-            notes: `✈️ ${order.airline || ''} ${order.flightNo || ''} — استلام: ${order.address} — إقلاع: ${c.flight?.toLocaleString('ar-EG') || ''} — سيارة: ${order.vehicleName} — شنط: ${bagsVal}`,
+            notes: `${dep ? '🛫 مغادرة' : '🛬 وصول'} ${order.airline || ''} ${order.flightNo || ''}${country ? ' — ' + (dep ? 'إلى' : 'من') + ' ' + country : ''} — عنوان: ${order.address} — ${dep ? 'إقلاع' : 'هبوط'}: ${flightVal?.toLocaleString('ar-EG') || ''} — سيارة: ${order.vehicleName} — شنط: ${bagsVal}`,
             status: 'pending',
             ride_type: 'airport',
           }),
@@ -909,8 +1000,8 @@ import { AIRPORTS, priceForDistance, VEHICLE_TYPES } from '../data/airports';
       // Success
       $('air-success-id').textContent = orderId;
       ($('air-success-track') as HTMLAnchorElement).href = `/track?q=${encodeURIComponent(orderId)}`;
-      $('air-success-card').innerHTML = `
-        <div class="air-success__card-header">✈️ تفاصيل الرحلة</div>
+      $('air-success-card').innerHTML = dep ? `
+        <div class="air-success__card-header">🛫 تفاصيل رحلة المغادرة</div>
         <div class="row"><span class="row-label">المطار</span><span class="row-val">${selectedAirport!.name}</span></div>
         <div class="row"><span class="row-label">السيارة</span><span class="row-val">${selectedVehicle.name}</span></div>
         ${c.driverArrival ? `<div class="row"><span class="row-label">وصول السائق للاستلام</span><span class="row-val">${fmtDateTime(c.driverArrival)}</span></div>` : ''}
@@ -920,6 +1011,17 @@ import { AIRPORTS, priceForDistance, VEHICLE_TYPES } from '../data/airports';
         <div class="row"><span class="row-label">الرحلة</span><span class="row-val">${order.airline || '—'} ${order.flightNo || ''}</span></div>
         <div class="row"><span class="row-label">المسافرون</span><span class="row-val">${pax}</span></div>
         ${comp > 0 ? `<div class="row"><span class="row-label">مرافقون رايح جاي</span><span class="row-val">${comp}</span></div>` : ''}
+        <div class="row"><span class="row-label">الشنط الكبيرة</span><span class="row-val">${bagsVal}</span></div>
+        <div class="row row--total"><span class="row-label">الإجمالي</span><span class="row-val">${c.total} ج.م</span></div>` : `
+        <div class="air-success__card-header">🛬 تفاصيل رحلة الوصول</div>
+        <div class="row"><span class="row-label">المطار</span><span class="row-val">${selectedAirport!.name}</span></div>
+        <div class="row"><span class="row-label">السيارة</span><span class="row-val">${selectedVehicle.name}</span></div>
+        <div class="row"><span class="row-label">هبوط الطائرة</span><span class="row-val">${fmtDateTime(c.land!)}</span></div>
+        ${c.ready ? `<div class="row"><span class="row-label">استلام الأمتعة (متوقع)</span><span class="row-val">${fmtDateTime(c.ready)}</span></div>` : ''}
+        ${c.home ? `<div class="row"><span class="row-label">الوصول المتوقع لوجهتك</span><span class="row-val">${fmtDateTime(c.home)}</span></div>` : ''}
+        <div class="row"><span class="row-label">الرحلة</span><span class="row-val">${order.airline || '—'} ${order.flightNo || ''}</span></div>
+        <div class="row"><span class="row-label">المسافرون</span><span class="row-val">${pax}</span></div>
+        ${comp > 0 ? `<div class="row"><span class="row-label">مرافقون</span><span class="row-val">${comp}</span></div>` : ''}
         <div class="row"><span class="row-label">الشنط الكبيرة</span><span class="row-val">${bagsVal}</span></div>
         <div class="row row--total"><span class="row-label">الإجمالي</span><span class="row-val">${c.total} ج.م</span></div>`;
 
