@@ -34,6 +34,20 @@ import { VEHICLE_TYPES } from '../data/airports';
     background: var(--color-primary); color: #fff; font-size: var(--text-sm);
     display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
   }
+  .air-step3-head { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3); flex-wrap: wrap; margin: var(--sp-6) 0 var(--sp-4); }
+  .air-step3-head .air-form__step { margin: 0; }
+  .swap-dir-btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: var(--color-primary-light); color: var(--color-primary);
+    border: 1.5px solid var(--color-border); border-radius: var(--radius-full);
+    padding: 6px 14px; font-family: var(--font-body); font-weight: var(--weight-bold);
+    font-size: var(--text-xs); cursor: pointer; transition: all 0.2s; white-space: nowrap;
+  }
+  .swap-dir-btn:hover { border-color: var(--color-primary); background: var(--color-border); }
+  .swap-dir-btn:focus-visible { outline: 3px solid var(--color-accent); outline-offset: 2px; }
+  .swap-dir-btn #swap-direction-icon { display: inline-block; transition: transform 0.3s ease; font-size: 1rem; }
+  .swap-dir-btn.is-arrival #swap-direction-icon { transform: rotate(180deg); }
+  @media (prefers-reduced-motion: reduce) { .swap-dir-btn #swap-direction-icon { transition: none; } }
   .air-row { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-4); }
   .field { margin-bottom: var(--sp-4); }
   .field__label { display: block; font-weight: var(--weight-bold); font-size: var(--text-sm); margin-bottom: var(--sp-2); color: var(--color-text); }
@@ -341,7 +355,13 @@ import { VEHICLE_TYPES } from '../data/airports';
       <hr class="air-divider">
 
       <!-- قسم 3: نقطة البداية والوصول -->
-      <h2 class="air-form__step"><span class="air-form__num">3</span> نقطة البداية والوصول</h2>
+      <div class="air-step3-head">
+        <h2 class="air-form__step"><span class="air-form__num">3</span> نقطة البداية والوصول</h2>
+        <button type="button" class="swap-dir-btn" id="swap-direction-btn" title="بدّل بين مغادر وقادم">
+          <span id="swap-direction-icon" aria-hidden="true">⇄</span>
+          <span id="swap-direction-text">التبديل لوضع القادم</span>
+        </button>
+      </div>
 
       <div class="air-row">
         <div class="field">
@@ -607,9 +627,19 @@ import { VEHICLE_TYPES } from '../data/airports';
       ($('wait-airport-field') as HTMLElement).hidden = !dep;
       ($('timeline-departure') as HTMLElement).hidden = !dep;
       ($('timeline-arrival') as HTMLElement).hidden = dep;
+
+      const swapBtn = $('swap-direction-btn') as HTMLElement;
+      swapBtn.classList.toggle('is-arrival', !dep);
+      ($('swap-direction-text') as HTMLElement).textContent = dep ? 'التبديل لوضع القادم' : 'التبديل لوضع المغادر';
     }
 
     form.querySelectorAll('input[name="direction"]').forEach(r => r.addEventListener('change', () => { applyDirectionLabels(); render(); }));
+    $('swap-direction-btn').addEventListener('click', () => {
+      const target = direction() === 'departure' ? 'dir-arrival' : 'dir-departure';
+      const radio = $(target) as HTMLInputElement;
+      radio.checked = true;
+      radio.dispatchEvent(new Event('change', { bubbles: true }));
+    });
     applyDirectionLabels();
 
     // ── Airport search (live Google Places — any real airport, precise location) ──
