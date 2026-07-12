@@ -28,18 +28,21 @@ import PageHero from '../components/PageHero.astro';
 
   .post-cta {
     display: flex; align-items: center; justify-content: space-between;
-    background: linear-gradient(135deg, #059669, #047857);
+    background: var(--color-primary);
     color: #fff; border-radius: var(--radius-xl);
     padding: var(--sp-5) var(--sp-6); margin-bottom: var(--sp-6);
     gap: var(--sp-4); flex-wrap: wrap;
   }
-  .post-cta__text { font-weight: var(--weight-bold); font-size: var(--text-base); }
+  .post-cta__text { font-family: var(--font-display); font-weight: 700; font-size: var(--text-base); }
   .post-cta__sub { font-size: var(--text-xs); opacity: .85; margin-top: 2px; }
   .post-cta__btn {
-    background: #fff; color: #047857; padding: var(--sp-3) var(--sp-6);
+    background: var(--color-accent); color: #241a0a; padding: var(--sp-3) var(--sp-6);
     border-radius: var(--radius-lg); font-weight: var(--weight-black);
     font-size: var(--text-sm); text-decoration: none; white-space: nowrap;
+    transition: background var(--ease);
   }
+  .post-cta__btn:hover { background: var(--color-accent-dark); }
+  .post-cta__btn:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
 
   .cats {
     display: flex; gap: var(--sp-2); overflow-x: auto;
@@ -56,6 +59,7 @@ import PageHero from '../components/PageHero.astro';
   }
   .cat-chip:hover { border-color: var(--color-primary); color: var(--color-primary); }
   .cat-chip.is-active { background: var(--color-primary); border-color: var(--color-primary); color: #fff; }
+  .cat-chip:focus-visible { outline: 3px solid var(--color-accent); outline-offset: 2px; }
 
   .results-bar {
     display: flex; align-items: center; justify-content: space-between;
@@ -80,7 +84,7 @@ import PageHero from '../components/PageHero.astro';
   }
   .item-card:hover { border-color: var(--color-primary); box-shadow: var(--shadow-md); transform: translateY(-3px); }
   .item-card__cover {
-    height: 150px; background: linear-gradient(135deg, var(--color-primary-light), #dbeafe);
+    height: 150px; background: var(--color-primary-light);
     display: flex; align-items: center; justify-content: center; font-size: 2.6rem;
     overflow: hidden; position: relative;
   }
@@ -92,7 +96,7 @@ import PageHero from '../components/PageHero.astro';
   }
   .item-card__merchant {
     position: absolute; top: var(--sp-2); left: var(--sp-2);
-    background: #059669; color: #fff; border-radius: var(--radius-full);
+    background: var(--color-accent); color: #241a0a; border-radius: var(--radius-full);
     padding: 2px var(--sp-3); font-size: 10px; font-weight: var(--weight-bold);
   }
   .item-card__body { padding: var(--sp-3) var(--sp-4); flex: 1; display: flex; flex-direction: column; }
@@ -103,6 +107,34 @@ import PageHero from '../components/PageHero.astro';
 
   .no-results { grid-column: 1 / -1; text-align: center; padding: var(--sp-16); color: var(--color-text-muted); }
   .no-results__icon { font-size: 3rem; margin-bottom: var(--sp-3); }
+  .no-results__retry {
+    margin-top: var(--sp-4); display: inline-block; padding: var(--sp-2) var(--sp-5);
+    background: var(--color-primary); color: #fff; border: none; border-radius: var(--radius);
+    font-family: var(--font-body); font-weight: var(--weight-bold); font-size: var(--text-sm); cursor: pointer;
+  }
+  .no-results__retry:focus-visible { outline: 3px solid var(--color-accent); outline-offset: 2px; }
+
+  .skeleton-card {
+    background: var(--color-bg); border: 1.5px solid var(--color-border); border-radius: var(--radius-xl);
+    overflow: hidden;
+  }
+  .skeleton-card__cover { height: 150px; background: var(--color-bg-soft); }
+  .skeleton-card__line { height: 12px; background: var(--color-bg-soft); border-radius: 4px; margin: var(--sp-3) var(--sp-4); }
+  .skeleton-card__line--short { width: 50%; }
+  .skeleton-card, .skeleton-card__cover, .skeleton-card__line {
+    position: relative; overflow: hidden;
+  }
+  .skeleton-card__cover::after, .skeleton-card__line::after {
+    content: ''; position: absolute; inset: 0;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,.5), transparent);
+    animation: skeleton-shine 1.4s ease-in-out infinite;
+  }
+  @keyframes skeleton-shine { from { transform: translateX(-100%); } to { transform: translateX(100%); } }
+  @media (prefers-reduced-motion: reduce) {
+    .skeleton-card__cover::after, .skeleton-card__line::after { animation: none; }
+  }
+
+  .item-card:focus-visible { outline: 3px solid var(--color-accent); outline-offset: 2px; }
 
   @media (max-width: 980px) { .grid { grid-template-columns: repeat(3, 1fr); } }
   @media (max-width: 680px) { .grid { grid-template-columns: repeat(2, 1fr); } .post-cta { flex-direction: column; text-align: center; } }
@@ -144,10 +176,26 @@ import PageHero from '../components/PageHero.astro';
       </a>`).join('');
   }
 
+  function renderSkeleton() {
+    const grid = document.getElementById('mkt-grid')!;
+    grid.innerHTML = Array.from({ length: 8 }).map(() => `
+      <div class="skeleton-card" aria-hidden="true">
+        <div class="skeleton-card__cover"></div>
+        <div class="skeleton-card__line"></div>
+        <div class="skeleton-card__line skeleton-card__line--short"></div>
+      </div>`).join('');
+  }
+
   async function load() {
-    document.getElementById('mkt-grid')!.innerHTML = `<div class="no-results">جاري التحميل…</div>`;
-    all = await fetchItems();
-    render();
+    renderSkeleton();
+    try {
+      all = await fetchItems();
+      render();
+    } catch {
+      const grid = document.getElementById('mkt-grid')!;
+      grid.innerHTML = `<div class="no-results"><div class="no-results__icon">⚠️</div><p>تعذّر تحميل الإعلانات — تحقق من اتصالك بالإنترنت</p><button class="no-results__retry" id="mkt-retry">إعادة المحاولة</button></div>`;
+      document.getElementById('mkt-retry')?.addEventListener('click', load);
+    }
   }
 
   document.getElementById('mkt-search')!.addEventListener('input', render);
@@ -169,7 +217,7 @@ import PageHero from '../components/PageHero.astro';
 
 <Layout title="سوق المستعمل | وصّلها" description="بيع واشترِ مستعمل بسهولة في دمياط الجديدة" page="marketplace">
   <PageHero
-    badge="🛍️ سوق المستعمل"
+    badge="سوق المستعمل"
     title="سوق المستعمل"
     subtitle="بيع اللي مش محتاجه، واشترِ بأسعار حلوة — من الجيران في دمياط الجديدة"
   />
@@ -180,12 +228,12 @@ import PageHero from '../components/PageHero.astro';
         <div class="post-cta__text">عندك حاجة تبيعها؟</div>
         <div class="post-cta__sub">انشر إعلانك في أقل من دقيقة — مجاناً</div>
       </div>
-      <a class="post-cta__btn" href="/marketplace/post">➕ أضف إعلان</a>
+      <a class="post-cta__btn" href="/marketplace/post">أضف إعلان</a>
     </div>
 
     <div class="search-bar">
-      <span>🔍</span>
-      <input class="search-bar__input" id="mkt-search" type="search" placeholder="ابحث عن منتج…">
+      <span aria-hidden="true">🔍</span>
+      <input class="search-bar__input" id="mkt-search" type="search" placeholder="ابحث عن منتج…" aria-label="ابحث عن منتج في سوق المستعمل">
     </div>
 
     <div class="cats" id="mkt-cats"></div>

@@ -9,9 +9,9 @@ const CITIES = ['دمياط الجديدة', 'دمياط', 'كفر سعد', 'ف�
   .auth26 {
     min-height: calc(100vh - var(--nav-height));
     background:
-      radial-gradient(1200px 600px at 80% -10%, rgba(59,110,248,.18), transparent 60%),
-      radial-gradient(900px 500px at -10% 110%, rgba(245,184,0,.14), transparent 55%),
-      #F5F7FF;
+      radial-gradient(1200px 600px at 80% -10%, rgba(14,75,73,.16), transparent 60%),
+      radial-gradient(900px 500px at -10% 110%, rgba(184,134,59,.14), transparent 55%),
+      var(--color-bg-soft);
     padding: var(--sp-8) var(--sp-4) calc(var(--sp-20) + 40px);
     display: flex; justify-content: center; align-items: flex-start;
   }
@@ -30,7 +30,7 @@ const CITIES = ['دمياط الجديدة', 'دمياط', 'كفر سعد', 'ف�
 
   /* Top gradient band */
   .auth26__head {
-    background: linear-gradient(135deg, #0E4B49 0%, #6D5DF6 55%, #8B5CF6 100%);
+    background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
     padding: var(--sp-8) var(--sp-6) var(--sp-10);
     color: #fff; position: relative; overflow: hidden;
   }
@@ -40,14 +40,15 @@ const CITIES = ['دمياط الجديدة', 'دمياط', 'كفر سعد', 'ف�
     pointer-events: none;
   }
   .auth26__logo {
-    font-size: 1.65rem; font-weight: 900; letter-spacing: -.5px;
+    font-family: var(--font-display);
+    font-size: 1.65rem; font-weight: 800; letter-spacing: -.5px;
     display: flex; align-items: center; gap: 8px; margin-bottom: 6px;
   }
   .auth26__logo-dot {
     width: 10px; height: 10px; border-radius: 50%;
-    background: var(--color-accent); box-shadow: 0 0 0 4px rgba(245,184,0,.3);
+    background: var(--color-accent); box-shadow: 0 0 0 4px rgba(184,134,59,.3);
   }
-  .auth26__title { font-size: 1.5rem; font-weight: 900; margin: 10px 0 4px; }
+  .auth26__title { font-family: var(--font-display); font-size: 1.5rem; font-weight: 800; margin: 10px 0 4px; }
   .auth26__sub   { font-size: .9rem; opacity: .92; font-weight: 500; }
 
   /* Stepper */
@@ -123,7 +124,7 @@ const CITIES = ['دمياط الجديدة', 'دمياط', 'كفر سعد', 'ف�
   .field__select { padding-right: 16px; }
   .f26__wrap:focus-within .f26__icon { opacity: 1; }
   .field__input:focus, .field__select:focus {
-    border-color: var(--color-primary); box-shadow: 0 0 0 4px rgba(59,110,248,.13);
+    border-color: var(--color-primary); box-shadow: 0 0 0 4px rgba(14,75,73,.13);
   }
   .field__input::placeholder { color: var(--color-text-faint); }
   .field__input.ok    { border-color: #16a34a; }
@@ -155,11 +156,14 @@ const CITIES = ['دمياط الجديدة', 'دمياط', 'كفر سعد', 'ف�
     cursor: pointer; transition: transform .15s, background .18s, box-shadow .18s;
     display: flex; align-items: center; justify-content: center; gap: 6px;
   }
-  .btn26--primary { background: var(--color-primary); color: #fff; box-shadow: 0 8px 22px rgba(59,110,248,.32); }
+  .btn26--primary { background: var(--color-primary); color: #fff; box-shadow: 0 8px 22px rgba(14,75,73,.32); }
   .btn26--primary:hover:not(:disabled) { background: var(--color-primary-dark); transform: translateY(-2px); }
   .btn26--primary:disabled { opacity: .55; cursor: not-allowed; transform: none; box-shadow: none; }
   .btn26--ghost { background: #fff; color: var(--color-text-muted); border: 2px solid var(--color-border); flex: 0 0 46%; }
   .btn26--ghost:hover { border-color: var(--color-primary); color: var(--color-primary); }
+  .btn26:focus-visible, .alt-btn:focus-visible, .dev-notice__code:focus-visible {
+    outline: 3px solid var(--color-accent); outline-offset: 2px;
+  }
 
   /* Footer actions */
   .auth26__foot { padding: 0 var(--sp-6) var(--sp-7); }
@@ -173,7 +177,8 @@ const CITIES = ['دمياط الجديدة', 'دمياط', 'كفر سعد', 'ف�
   }
   .alt-btn--outline { border: 2px solid var(--color-border); color: var(--color-text); }
   .alt-btn--outline:hover { border-color: var(--color-primary); color: var(--color-primary); background: var(--color-primary-light); }
-  .alt-btn--driver { background: linear-gradient(135deg, #F5B800, #FF9D00); color: #1A1A2E; box-shadow: 0 6px 18px rgba(245,184,0,.32); }
+  .alt-btn--driver { background: var(--color-accent); color: #241a0a; box-shadow: 0 6px 18px rgba(184,134,59,.32); }
+  .alt-btn--driver:hover { background: var(--color-accent-dark); }
   .alt-btn--driver:hover { transform: translateY(-2px); }
   .auth-foot-note { margin-top: var(--sp-5); text-align: center; font-size: .8rem; color: var(--color-text-muted); }
   .auth-foot-note a { color: var(--color-primary); font-weight: 800; }
