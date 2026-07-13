@@ -73,31 +73,51 @@ export interface VehicleModel {
 }
 
 export const VEHICLE_MODELS: VehicleModel[] = [
-  // سيدان
-  { id: 'corolla',  category: 'sedan', name: 'تويوتا كورولا',    yearFrom: 2016, yearTo: 2026, ratePerKm: 10.5 },
-  { id: 'elantra',  category: 'sedan', name: 'هيونداي إلنترا',   yearFrom: 2016, yearTo: 2026, ratePerKm: 10   },
-  { id: 'cerato',   category: 'sedan', name: 'كيا سيراتو',       yearFrom: 2016, yearTo: 2026, ratePerKm: 10   },
-  { id: 'sunny',    category: 'sedan', name: 'نيسان صني',        yearFrom: 2016, yearTo: 2026, ratePerKm: 9    },
-  { id: 'logan',    category: 'sedan', name: 'رينو لوجان',       yearFrom: 2016, yearTo: 2026, ratePerKm: 9    },
-  // SUV
-  { id: 'landcruiser', category: 'suv', name: 'تويوتا لاند كروزر', yearFrom: 2016, yearTo: 2026, ratePerKm: 16   },
-  { id: 'patrol',      category: 'suv', name: 'نيسان باترول',      yearFrom: 2016, yearTo: 2026, ratePerKm: 15.5 },
-  { id: 'tucson',      category: 'suv', name: 'هيونداي توسان',     yearFrom: 2016, yearTo: 2026, ratePerKm: 13   },
-  { id: 'sportage',    category: 'suv', name: 'كيا سبورتاج',       yearFrom: 2016, yearTo: 2026, ratePerKm: 13   },
-  { id: 'xtrail',      category: 'suv', name: 'نيسان إكس تريل',    yearFrom: 2016, yearTo: 2026, ratePerKm: 13.5 },
-  // ميكروباص
-  { id: 'h1',       category: 'van', name: 'هيونداي H1',        yearFrom: 2016, yearTo: 2026, ratePerKm: 14   },
-  { id: 'hiace',    category: 'van', name: 'تويوتا هاي إيس',    yearFrom: 2016, yearTo: 2026, ratePerKm: 13.5 },
-  { id: 'sprinter', category: 'van', name: 'مرسيدس سبرينتر',    yearFrom: 2016, yearTo: 2026, ratePerKm: 16   },
+  // سيدان — اقتصادي
+  { id: 'logan',      category: 'sedan', name: 'رينو لوجان',        yearFrom: 2015, yearTo: 2027, ratePerKm: 9    },
+  { id: 'sunny',      category: 'sedan', name: 'نيسان صني',         yearFrom: 2015, yearTo: 2027, ratePerKm: 9    },
+  { id: 'optra',      category: 'sedan', name: 'شيفروليه أوبترا',   yearFrom: 2015, yearTo: 2027, ratePerKm: 9    },
+  { id: 'peugeot301', category: 'sedan', name: 'بيجو 301',          yearFrom: 2016, yearTo: 2027, ratePerKm: 9.5  },
+  { id: 'fiattipo',   category: 'sedan', name: 'فيات تيبو',         yearFrom: 2018, yearTo: 2027, ratePerKm: 9.5  },
+  // سيدان — عائلي/متوسط
+  { id: 'corolla',    category: 'sedan', name: 'تويوتا كورولا',     yearFrom: 2015, yearTo: 2027, ratePerKm: 10.5 },
+  { id: 'elantra',    category: 'sedan', name: 'هيونداي إلنترا',    yearFrom: 2015, yearTo: 2027, ratePerKm: 10   },
+  { id: 'cerato',     category: 'sedan', name: 'كيا سيراتو',        yearFrom: 2015, yearTo: 2027, ratePerKm: 10   },
+  { id: 'mg5',        category: 'sedan', name: 'إم جي 5',           yearFrom: 2021, yearTo: 2027, ratePerKm: 10   },
+  { id: 'octavia',    category: 'sedan', name: 'سكودا أوكتافيا',    yearFrom: 2019, yearTo: 2027, ratePerKm: 11   },
+  // سيدان — فاخر
+  { id: 'bmw3',       category: 'sedan', name: 'بي إم دبليو الفئة 3', yearFrom: 2018, yearTo: 2027, ratePerKm: 19 },
+  { id: 'mercc',      category: 'sedan', name: 'مرسيدس الفئة C',      yearFrom: 2018, yearTo: 2027, ratePerKm: 20 },
+  // SUV — مدمج/كروس أوفر
+  { id: 'mgzs',       category: 'suv', name: 'إم جي ZS',           yearFrom: 2020, yearTo: 2027, ratePerKm: 12   },
+  { id: 'creta',      category: 'suv', name: 'هيونداي كريتا',       yearFrom: 2020, yearTo: 2027, ratePerKm: 12.5 },
+  { id: 'tucson',     category: 'suv', name: 'هيونداي توسان',       yearFrom: 2015, yearTo: 2027, ratePerKm: 13   },
+  { id: 'sportage',   category: 'suv', name: 'كيا سبورتاج',         yearFrom: 2015, yearTo: 2027, ratePerKm: 13   },
+  // SUV — متوسط/كبير
+  { id: 'xtrail',     category: 'suv', name: 'نيسان إكس تريل',      yearFrom: 2015, yearTo: 2027, ratePerKm: 13.5 },
+  { id: 'tiggo8',     category: 'suv', name: 'شيري تيجو 8',         yearFrom: 2021, yearTo: 2027, ratePerKm: 14   },
+  { id: 'compass',    category: 'suv', name: 'جيب كومباس',          yearFrom: 2019, yearTo: 2027, ratePerKm: 14.5 },
+  // SUV — فل سايز/فاخر
+  { id: 'landcruiser', category: 'suv', name: 'تويوتا لاند كروزر',  yearFrom: 2015, yearTo: 2027, ratePerKm: 16   },
+  { id: 'patrol',      category: 'suv', name: 'نيسان باترول',       yearFrom: 2015, yearTo: 2027, ratePerKm: 15.5 },
+  { id: 'pajero',      category: 'suv', name: 'ميتسوبيشي باجيرو',   yearFrom: 2015, yearTo: 2027, ratePerKm: 15.5 },
+  { id: 'grandcherokee', category: 'suv', name: 'جيب جراند شيروكي', yearFrom: 2018, yearTo: 2027, ratePerKm: 19   },
+  // ميكروباص / فان
+  { id: 'xpander',    category: 'van', name: 'ميتسوبيشي إكسباندر', yearFrom: 2019, yearTo: 2027, ratePerKm: 12.5 },
+  { id: 'hiace',      category: 'van', name: 'تويوتا هاي إيس',      yearFrom: 2015, yearTo: 2027, ratePerKm: 13.5 },
+  { id: 'h1',         category: 'van', name: 'هيونداي H1',          yearFrom: 2015, yearTo: 2027, ratePerKm: 14   },
+  { id: 'carnival',   category: 'van', name: 'كيا كارنيفال',        yearFrom: 2019, yearTo: 2027, ratePerKm: 15   },
+  { id: 'traveller',  category: 'van', name: 'بيجو ترافيلر',        yearFrom: 2018, yearTo: 2027, ratePerKm: 16   },
+  { id: 'sprinter',   category: 'van', name: 'مرسيدس سبرينتر',      yearFrom: 2015, yearTo: 2027, ratePerKm: 16   },
 ];
 
-// Year adjustment: newer cars cost more to run (higher depreciation & comfort
-// premium); older cars run cheaper but with slightly higher maintenance —
-// net effect tuned per band.
+// Year adjustment: continuous per-year gradient (not fixed bands), so each model
+// year — including the newest 2026/2027 releases — gets its own distinct rate.
+// 2021 = baseline (×1.0); +3.5% per newer year, −3.5% per older year, clamped.
+// ⚠️ Any change here must be mirrored in db/rides-vehicle-pricing.sql (v_mult).
 export function yearMultiplier(year: number): number {
-  if (year >= 2024) return 1.15; // موديل حديث — راحة وضمان أعلى
-  if (year >= 2020) return 1.0;  // المعيار
-  return 0.9;                    // موديل أقدم — سعر اقتصادي
+  const raw = 1 + (year - 2021) * 0.035;
+  return Math.round(Math.min(1.35, Math.max(0.8, raw)) * 1000) / 1000;
 }
 
 // Fare for a specific model+year over a given distance.

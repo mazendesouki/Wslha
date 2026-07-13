@@ -1227,12 +1227,11 @@ import { VEHICLE_MODELS, FARE_ZONES } from '../data/airports';
 
   // نفس منطق سنة الصنع في خدمة المطار — يجب أن يطابق دالة yearMultiplier في airports.ts
   function vehYearMult(year) {
-    if (year >= 2024) return 1.15;
-    if (year >= 2020) return 1.0;
-    return 0.9;
+    const raw = 1 + (year - 2021) * 0.035;
+    return Math.round(Math.min(1.35, Math.max(0.8, raw)) * 1000) / 1000;
   }
 
-  let selVehModel = (VEHICLE_MODELS || []).find(m => m.category === 'sedan') || { id:'corolla', name:'تويوتا كورولا', ratePerKm:10.5, yearFrom:2016, yearTo:2026, category:'sedan' };
+  let selVehModel = (VEHICLE_MODELS || []).find(m => m.category === 'sedan') || { id:'corolla', name:'تويوتا كورولا', ratePerKm:10.5, yearFrom:2015, yearTo:2027, category:'sedan' };
   let selVehYear  = 2022;
 
   // بلا تقريب هنا — الحساب يجب أن يطابق حارس الأجرة على الخادم بالضبط
