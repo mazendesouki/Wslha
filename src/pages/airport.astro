@@ -352,6 +352,18 @@ import { VEHICLE_TYPES } from '../data/airports';
       </div>
       <p class="field__hint" id="veh-hint">تم اختيار السيدان — ٣ ركاب بحد أقصى، شنطتان مجانيتان</p>
 
+      <div class="air-row">
+        <div class="field">
+          <label class="field__label" for="veh-model">الماركة والموديل</label>
+          <select id="veh-model" class="field__select"></select>
+        </div>
+        <div class="field">
+          <label class="field__label" for="veh-year">سنة الصنع</label>
+          <select id="veh-year" class="field__select"></select>
+        </div>
+      </div>
+      <p class="field__hint" id="veh-rate-hint"></p>
+
       <hr class="air-divider">
 
       <!-- قسم 3: نقطة البداية والوصول -->
@@ -591,7 +603,7 @@ import { VEHICLE_TYPES } from '../data/airports';
   </section>
 
   <script>
-    import { priceForDistance, CHECKIN_BUFFER, SAFETY_MARGIN, ARRIVAL_BUFFER, DRIVER_ARRIVAL_BEFORE_LANDING, DAMIETTA_ORIGIN, VEHICLE_TYPES, EXTRA_BAG_FEE, COMPANION_FEE, WAIT_PICKUP_FREE, WAIT_PICKUP_PER15, WAIT_AIRPORT_FREE, WAIT_AIRPORT_PER30 } from '../data/airports';
+    import { CHECKIN_BUFFER, SAFETY_MARGIN, ARRIVAL_BUFFER, DRIVER_ARRIVAL_BEFORE_LANDING, DAMIETTA_ORIGIN, VEHICLE_TYPES, VEHICLE_MODELS, fareForVehicle, yearMultiplier, EXTRA_BAG_FEE, COMPANION_FEE, WAIT_PICKUP_FREE, WAIT_PICKUP_PER15, WAIT_AIRPORT_FREE, WAIT_AIRPORT_PER30 } from '../data/airports';
     import { isEgyptianMobile, normalizeEgyptianPhone, EG_PHONE_ERROR } from '../utils/phone';
 
     const GMAPS_KEY = 'AIzaSyAKvFfBYNDcTZgvZZH5s_lQbOc24LNjLsY';
@@ -605,6 +617,42 @@ import { VEHICLE_TYPES } from '../data/airports';
     interface VehicleType { id: string; name: string; maxTravelers: number; maxBags: number; freeBags: number; surcharge: number; }
     const VEHICLES_DATA: VehicleType[] = JSON.parse((document.getElementById('vehicles-json') as HTMLScriptElement).textContent || '[]');
     let selectedVehicle: VehicleType = VEHICLES_DATA[0] || { id: 'sedan', name: 'سيدان', maxTravelers: 3, maxBags: 2, freeBags: 2, surcharge: 0 };
+
+    // ── vehicle model/year selection (تسعير مرن حسب الماركة والموديل وسنة الصنع) ──
+    interface VehicleModel { id: string; category: string; name: string; yearFrom: number; yearTo: number; ratePerKm: number; }
+    const vehModelSel = $('veh-model') as HTMLSelectElement;
+    const vehYearSel  = $('veh-year') as HTMLSelectElement;
+    let selVehModel: VehicleModel = (VEHICLE_MODELS as VehicleModel[]).find(m => m.category === 'sedan') || (VEHICLE_MODELS as VehicleModel[])[0];
+    let selVehYear = 2022;
+
+    function populateVehModels(cat: string): void {
+      const models = (VEHICLE_MODELS as VehicleModel[]).filter(m => m.category === cat);
+      vehModelSel.innerHTML = models.map(m => `<option value="${m.id}">${m.name}</option>`).join('');
+      selVehModel = models[0] || selVehModel;
+      populateVehYears();
+    }
+    function populateVehYears(): void {
+      const years: number[] = [];
+      for (let y = selVehModel.yearTo; y >= selVehModel.yearFrom; y--) years.push(y);
+      vehYearSel.innerHTML = years.map(y => `<option value="${y}"${y === 2022 ? ' selected' : ''}>${y}</option>`).join('');
+      selVehYear = parseInt(vehYearSel.value, 10) || years[0];
+      updateVehRateHint();
+    }
+    function updateVehRateHint(): void {
+      const h = $('veh-rate-hint');
+      if (h) h.textContent = `${selVehModel.name} ${selVehYear} — ${(selVehModel.ratePerKm * yearMultiplier(selVehYear)).toFixed(1)} ج.م/كم`;
+    }
+    vehModelSel.addEventListener('change', () => {
+      selVehModel = (VEHICLE_MODELS as VehicleModel[]).find(m => m.id === vehModelSel.value) || selVehModel;
+      populateVehYears();
+      render();
+    });
+    vehYearSel.addEventListener('change', () => {
+      selVehYear = parseInt(vehYearSel.value, 10) || selVehYear;
+      updateVehRateHint();
+      render();
+    });
+    populateVehModels('sedan');
 
     // ── Trip direction (مغادر / قادم) ──
     function direction(): 'departure' | 'arrival' {
@@ -792,7 +840,7 @@ import { VEHICLE_TYPES } from '../data/airports';
 
     interface Calc {
       distance: number; drive: number;
-      base: number; vehSurcharge: number; extraBags: number; companionFee: number; waitPickupFee: number; waitAirportFee: number;
+      base: number; vehLabel: string; extraBags: number; companionFee: number; waitPickupFee: number; waitAirportFee: number;
       total: number; buffer: number;
       // departure fields
       flight?: Date; arrive?: Date; depart?: Date; driverArrival?: Date; checkinDeadline?: Date;
@@ -813,15 +861,15 @@ import { VEHICLE_TYPES } from '../data/airports';
       const waitPickupMins = Number(($('wait-pickup') as HTMLSelectElement).value) || 0;
       const waitAirportMins = dep ? (Number(($('wait-airport') as HTMLSelectElement).value) || 0) : 0;
 
-      const base = distance ? priceForDistance(distance) : 0;
-      const vehSurcharge = selectedVehicle.surcharge;
+      const base = distance ? fareForVehicle(distance, selVehModel, selVehYear) : 0;
+      const vehLabel = `${selVehModel.name} ${selVehYear}`;
       const extraBags = Math.max(0, bags - selectedVehicle.freeBags) * EXTRA_BAG_FEE;
       const companionFee = companions * COMPANION_FEE;
       const waitPickupFee = Math.max(0, Math.floor((waitPickupMins - WAIT_PICKUP_FREE) / 15)) * WAIT_PICKUP_PER15;
       const waitAirportFee = Math.max(0, Math.floor((waitAirportMins - WAIT_AIRPORT_FREE) / 30)) * WAIT_AIRPORT_PER30;
-      const total = base + vehSurcharge + extraBags + companionFee + waitPickupFee + waitAirportFee;
+      const total = base + extraBags + companionFee + waitPickupFee + waitAirportFee;
 
-      const result: Calc = { distance, drive, base, vehSurcharge, extraBags, companionFee, waitPickupFee, waitAirportFee, total, buffer };
+      const result: Calc = { distance, drive, base, vehLabel, extraBags, companionFee, waitPickupFee, waitAirportFee, total, buffer };
       if (!flightInput.value || !distance) return result;
       const flight = new Date(flightInput.value);
       if (isNaN(flight.getTime())) return result;
@@ -880,8 +928,9 @@ import { VEHICLE_TYPES } from '../data/airports';
       $('p-base').textContent = c.base ? `${c.base} ج.م` : '—';
 
       const vehRow = $('p-veh-row') as HTMLElement;
-      vehRow.hidden = c.vehSurcharge === 0;
-      $('p-veh').textContent = `${c.vehSurcharge} ج.م`;
+      vehRow.hidden = !c.distance;
+      ($('p-veh-label') as HTMLElement).textContent = 'السيارة';
+      $('p-veh').textContent = c.vehLabel;
 
       const bagsRow = $('p-bags-row') as HTMLElement;
       bagsRow.hidden = c.extraBags === 0;
@@ -918,6 +967,7 @@ import { VEHICLE_TYPES } from '../data/airports';
         if (Number(travInput.value) > selectedVehicle.maxTravelers) travInput.value = String(selectedVehicle.maxTravelers);
         $('veh-hint').textContent = `تم اختيار ${selectedVehicle.name} — ${selectedVehicle.maxTravelers} ركاب بحد أقصى، ${selectedVehicle.freeBags} شنط كبيرة مجانية`;
         $('bags-hint').textContent = `الحد الأقصى للعربية ${selectedVehicle.maxBags} شنطة كبيرة • ${selectedVehicle.freeBags} شنط مجانية`;
+        populateVehModels(vehId);
         render();
       });
     });
@@ -1016,7 +1066,9 @@ import { VEHICLE_TYPES } from '../data/airports';
             eta_minutes: selectedAirport!.driveMinutes,
             passengers: pax,
             payment: (document.querySelector('input[name="payment"]:checked'))?.value || 'cash',
-            notes: `${dep ? '🛫 مغادرة' : '🛬 وصول'} ${order.airline || ''} ${order.flightNo || ''}${country ? ' — ' + (dep ? 'إلى' : 'من') + ' ' + country : ''} — عنوان: ${order.address} — ${dep ? 'إقلاع' : 'هبوط'}: ${flightVal?.toLocaleString('ar-EG') || ''} — سيارة: ${order.vehicleName} — شنط: ${bagsVal}`,
+            vehicle_model: selVehModel.id,
+            vehicle_year: selVehYear,
+            notes: `${dep ? '🛫 مغادرة' : '🛬 وصول'} ${order.airline || ''} ${order.flightNo || ''}${country ? ' — ' + (dep ? 'إلى' : 'من') + ' ' + country : ''} — عنوان: ${order.address} — ${dep ? 'إقلاع' : 'هبوط'}: ${flightVal?.toLocaleString('ar-EG') || ''} — سيارة: ${order.vehicleName} (${selVehModel.name} ${selVehYear}) — شنط: ${bagsVal}`,
             status: 'pending',
             ride_type: 'airport',
           }),
