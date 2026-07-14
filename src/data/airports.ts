@@ -125,15 +125,15 @@ export function yearMultiplier(year: number): number {
 // سعر ثابت للكيلومتر لكل نوع رحلة، أساسه السيدان، وSUV/الفان أعلى بنسبة ثابتة
 // (+30% / +40%) — بدل السعر المتفاوت لكل موديل سابقًا. سعر السيدان الأساسي:
 //   داخلي (داخل دمياط)         8  ج.م/كم
-//   خارجي (خارج محافظة دمياط)  25 ج.م/كم
+//   خارجي (خارج محافظة دمياط)  7  ج.م/كم
 //   مطار                       12 ج.م/كم
 // ⚠️ أي تعديل هنا لازم يتطابق مع db/rides-vehicle-pricing.sql.
 export type TripType = 'local' | 'external' | 'airport';
 const SUV_MULT = 1.3;
 const VAN_MULT = 1.4;
 export const TRIP_RATES: Record<TripType, Record<'sedan' | 'suv' | 'van', number>> = {
-  local:    { sedan: 8,  suv: Math.round(8  * SUV_MULT * 10) / 10, van: Math.round(8  * VAN_MULT * 10) / 10 },
-  external: { sedan: 25, suv: Math.round(25 * SUV_MULT * 10) / 10, van: Math.round(25 * VAN_MULT * 10) / 10 },
+  local:    { sedan: 8, suv: Math.round(8 * SUV_MULT * 10) / 10, van: Math.round(8 * VAN_MULT * 10) / 10 },
+  external: { sedan: 7, suv: Math.round(7 * SUV_MULT * 10) / 10, van: Math.round(7 * VAN_MULT * 10) / 10 },
   airport:  { sedan: 12, suv: Math.round(12 * SUV_MULT * 10) / 10, van: Math.round(12 * VAN_MULT * 10) / 10 },
 };
 
