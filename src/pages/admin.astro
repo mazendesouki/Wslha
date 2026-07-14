@@ -2136,7 +2136,7 @@ async function execAdminWalletOp() {
 
   // The transaction-log record is the source of truth and MUST succeed first;
   // only then do we adjust the balance — so no balance change is ever unlogged.
-  const logged = await sbPost('wallet_transactions', { id: txId, phone: _walletOpPhone, amount: amt, type, note: fullNote, created_at: new Date().toISOString() });
+  const logged = await sbPost('rpc/log_wallet_transaction', { p_id: txId, p_phone: _walletOpPhone, p_amount: amt, p_type: type, p_note: fullNote });
   if (!logged) {
     btn.disabled = false;
     btn.textContent = _walletOpType === 'credit' ? '✅ تأكيد الشحن' : '⚠️ تأكيد الخصم';
@@ -2185,10 +2185,9 @@ async function adminSettlePlatform() {
   if (bal <= 0) { showToast('لا توجد عمولات مستحقة للتسوية', '#D97706'); return; }
   if (!confirm(`تسوية عمولات المنصة بقيمة ${bal.toFixed(2)} ج.م؟\nسيتم تسجيل عملية السحب في السجل.`)) return;
   const txId = `plat-settle-${Date.now()}`;
-  const ok = await sbPost('wallet_transactions', {
-    id: txId, phone: 'platform', amount: -bal,
-    type: 'withdrawal', note: 'تسوية عمولات المنصة — إداري',
-    created_at: new Date().toISOString()
+  const ok = await sbPost('rpc/log_wallet_transaction', {
+    p_id: txId, p_phone: 'platform', p_amount: -bal,
+    p_type: 'withdrawal', p_note: 'تسوية عمولات المنصة — إداري',
   });
   if (ok) { showToast('✅ تمت تسوية العمولات بنجاح', '#16A34A'); loadWalletsSection(); }
   else showToast('❌ فشلت عملية التسوية', '#DC2626');

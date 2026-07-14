@@ -1360,7 +1360,7 @@ import PageHero from '../components/PageHero.astro';
             const subtotal = Math.max(0, (currentOrder.subtotal || currentOrder.total || 0) - fee);
             await Promise.allSettled([
               fetch(`${SB_URL}/rest/v1/rpc/add_wallet_balance`, { method: 'POST', headers: SB_H, body: JSON.stringify({ p_phone: mPhone, p_amount: subtotal }) }),
-              fetch(`${SB_URL}/rest/v1/wallet_transactions`, { method: 'POST', headers: { ...SB_H, Prefer: 'return=minimal' }, body: JSON.stringify({ phone: mPhone, amount: subtotal, type: 'earning', reference_id: orderId, note: `أرباح طلب #${currentOrder.code || orderId}`, created_at: new Date().toISOString() }) }),
+              fetch(`${SB_URL}/rest/v1/rpc/log_wallet_transaction`, { method: 'POST', headers: { ...SB_H, 'Content-Type': 'application/json' }, body: JSON.stringify({ p_phone: mPhone, p_amount: subtotal, p_type: 'earning', p_reference_id: orderId, p_note: `أرباح طلب #${currentOrder.code || orderId}` }) }),
             ]);
           }
         } catch {}
@@ -1654,16 +1654,16 @@ import PageHero from '../components/PageHero.astro';
         body: JSON.stringify({ p_phone: phone, p_amount: driverEarn }),
       }),
       // Driver earning transaction
-      fetch(`${SB_URL}/rest/v1/wallet_transactions`, {
+      fetch(`${SB_URL}/rest/v1/rpc/log_wallet_transaction`, {
         method: 'POST',
-        headers: { ...SB_H, Prefer: 'return=minimal' },
-        body: JSON.stringify({ id: txId, phone, amount: driverEarn, type: 'earning', reference_id: referenceId, note: `أرباح ${typeLabel} — بعد خصم العمولة ${Math.round(rate*100)}%`, created_at: now }),
+        headers: { ...SB_H, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ p_id: txId, p_phone: phone, p_amount: driverEarn, p_type: 'earning', p_reference_id: referenceId, p_note: `أرباح ${typeLabel} — بعد خصم العمولة ${Math.round(rate*100)}%` }),
       }),
       // Platform commission transaction
-      fetch(`${SB_URL}/rest/v1/wallet_transactions`, {
+      fetch(`${SB_URL}/rest/v1/rpc/log_wallet_transaction`, {
         method: 'POST',
-        headers: { ...SB_H, Prefer: 'return=minimal' },
-        body: JSON.stringify({ id: `pcom-${Date.now()}-${Math.random().toString(36).slice(2,6)}`, phone: 'platform', amount: commission, type: 'commission', reference_id: referenceId, note: `عمولة ${typeLabel} — ${Math.round(rate*100)}% من ${fare} ج.م`, created_at: now }),
+        headers: { ...SB_H, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ p_id: `pcom-${Date.now()}-${Math.random().toString(36).slice(2,6)}`, p_phone: 'platform', p_amount: commission, p_type: 'commission', p_reference_id: referenceId, p_note: `عمولة ${typeLabel} — ${Math.round(rate*100)}% من ${fare} ج.م` }),
       }),
       // Points transaction
       fetch(`${SB_URL}/rest/v1/point_transactions`, {

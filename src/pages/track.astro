@@ -654,19 +654,14 @@ import PageHero from '../components/PageHero.astro';
       });
     } catch {}
 
-    // Update store's average rating
+    // Update store's average rating — عبر دالة محمية تحسب المتوسط التراكمي
+    // على الخادم (بدل قراءة/تعديل مباشر يقدر أي حد يزوّره بمفتاح anon)
     try {
-      const sr = await fetch(`${SB_URL}/rest/v1/stores?id=eq.${encodeURIComponent(o.store_id)}&select=rating,reviews&limit=1`, { headers: SB_H });
-      const store = (await sr.json())?.[0];
-      if (store) {
-        const reviews = (store.reviews || 0) + 1;
-        const newAvg = ((store.rating || 5) * (store.reviews || 0) + storeRating) / reviews;
-        await fetch(`${SB_URL}/rest/v1/stores?id=eq.${encodeURIComponent(o.store_id)}`, {
-          method: 'PATCH',
-          headers: { ...SB_H, 'Content-Type': 'application/json', Prefer: 'return=minimal' },
-          body: JSON.stringify({ rating: Math.round(newAvg * 100) / 100, reviews }),
-        });
-      }
+      await fetch(`${SB_URL}/rest/v1/rpc/update_store_rating`, {
+        method: 'POST',
+        headers: { ...SB_H, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ p_store_id: o.store_id, p_new_rating: storeRating }),
+      });
     } catch {}
 
     try {
@@ -949,7 +944,13 @@ import PageHero from '../components/PageHero.astro';
 
   async function fetchOrder(code) {
     try {
-      const r = await fetch(`${SB_URL}/rest/v1/orders?code=eq.${encodeURIComponent(code)}&limit=1`, { headers: SB_H });
+      // دالة SECURITY DEFINER بترجّع فقط الحقول اللازمة لصفحة التتبع العامة
+      // (بدل الصف الكامل) — التتبع بالكود بدون تسجيل دخول يفضل شغّال زي ما هو.
+      const r = await fetch(`${SB_URL}/rest/v1/rpc/lookup_order_by_code`, {
+        method: 'POST',
+        headers: { ...SB_H, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ p_code: code }),
+      });
       if (!r.ok) return null;
       const rows = await r.json();
       return rows?.[0] || null;
