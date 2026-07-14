@@ -1012,6 +1012,41 @@ import PageHero from '../components/PageHero.astro';
     }
   }
 
+  /* ── Web Push حقيقي: يوصل للسائق حتى والتطبيق مقفول ── */
+  const VAPID_PUBLIC_KEY = 'BAff2dem6ctMexZ88fk51q9YJKanqGjn1wFa1FHJx67xW_f0-m5nN2kmKSMmiCrN99S808bz3zwJb26b6Omyv3M';
+
+  function urlBase64ToUint8Array(base64) {
+    const padding = '='.repeat((4 - (base64.length % 4)) % 4);
+    const raw = atob((base64 + padding).replace(/-/g, '+').replace(/_/g, '/'));
+    return Uint8Array.from([...raw].map(c => c.charCodeAt(0)));
+  }
+
+  async function subscribeWebPush() {
+    if (!driver?.phone || !('serviceWorker' in navigator) || !('PushManager' in window)) return;
+    if (typeof Notification === 'undefined' || Notification.permission !== 'granted') return;
+    try {
+      const reg = await navigator.serviceWorker.ready;
+      let sub = await reg.pushManager.getSubscription();
+      if (!sub) {
+        sub = await reg.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
+        });
+      }
+      // upsert على (phone, role) — الاشتراك الأحدث بيحل محل القديم لنفس السائق
+      await fetch(`${SB_URL}/rest/v1/push_subscriptions?on_conflict=phone,role`, {
+        method: 'POST',
+        headers: { ...SB_H, 'Content-Type': 'application/json', Prefer: 'resolution=merge-duplicates,return=minimal' },
+        body: JSON.stringify({
+          phone: driver.phone,
+          role: 'driver',
+          subscription: sub.toJSON(),
+          updated_at: new Date().toISOString(),
+        }),
+      });
+    } catch { /* المتصفح رفض أو مفيش دعم — الإشعارات المحلية بالـ polling شغالة كخطة بديلة */ }
+  }
+
   function hideRideRequest() {
     document.getElementById('ride-request').classList.remove('visible');
     if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
@@ -1699,6 +1734,8 @@ import PageHero from '../components/PageHero.astro';
       );
     }
     await upsertLocation(true);
+    await ensureNotifyPermission();
+    subscribeWebPush();
 
     function startRealtime() {
       if (!_sb) return;
