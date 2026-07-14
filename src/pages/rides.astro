@@ -3,7 +3,7 @@ import Layout from '../components/layout.astro';
 import PageHero from '../components/PageHero.astro';
 import { AIRPORTS } from '../data/rides';
 import { POPULAR_PLACES, PLACES, PLACE_CATEGORIES, CATEGORY_COLORS } from '../data/locations';
-import { VEHICLE_MODELS, FARE_ZONES } from '../data/airports';
+import { VEHICLE_MODELS, FARE_ZONES, TRIP_RATES } from '../data/airports';
 ---
 
 <style>
@@ -1200,7 +1200,7 @@ import { VEHICLE_MODELS, FARE_ZONES } from '../data/airports';
   </div><!-- /rides-page -->
 </Layout>
 
-<script define:vars={{ AIRPORTS, PLACES, CATEGORY_COLORS, VEHICLE_MODELS, FARE_ZONES }}>
+<script define:vars={{ AIRPORTS, PLACES, CATEGORY_COLORS, VEHICLE_MODELS, FARE_ZONES, TRIP_RATES }}>
   // ── Supabase ──
   const SB_URL = 'https://vtikgyiopkjnrwlqnmfx.supabase.co';
   const SB_KEY = 'sb_publishable_PLSnpvCT-sAyUMtymNgTwA_QmL2suw4';
@@ -1216,12 +1216,12 @@ import { VEHICLE_MODELS, FARE_ZONES } from '../data/airports';
   })();
 
   // ── العدّاد المرن (أسعار 2026) ─────────────────────────────────────────
-  // السعر = ( عداد 25 + كم-متدرّج × سعرالموديل×1.2×معامل السنة ) × معامل الوجهة + رسم الوجهة
+  // السعر = ( عداد 25 + كم-متدرّج × سعر الفئة (داخلي) ×معامل السنة ) × معامل الوجهة + رسم الوجهة
+  // سعر الفئة الداخلي: سيدان 8 ج.م/كم — SUV/فان أعلى بنسبة ثابتة (TRIP_RATES.local)
   // التدرّج: أول 3 كم ×1.15 • من 3 إلى 10 كم ×1.0 • فوق 10 كم ×0.9
   // ⚠️ يجب أن يطابق حارس الأجرة على الخادم (db/rides-vehicle-pricing.sql) بالضبط
-  const BASE_FARE   = 25;
-  const MIN_FARE    = 35;
-  const CITY_FACTOR = 1.2;
+  const BASE_FARE = 25;
+  const MIN_FARE  = 35;
   const TIERS = { t1Km: 3, t1Mult: 1.15, t2Km: 10, t2Mult: 1.0, t3Mult: 0.9 };
   const STANDARD_ZONE = { id:'standard', label:'داخل المدينة', factor:1, surcharge:0, keywords:[] };
 
@@ -1231,12 +1231,12 @@ import { VEHICLE_MODELS, FARE_ZONES } from '../data/airports';
     return Math.round(Math.min(1.35, Math.max(0.8, raw)) * 1000) / 1000;
   }
 
-  let selVehModel = (VEHICLE_MODELS || []).find(m => m.category === 'sedan') || { id:'corolla', name:'تويوتا كورولا', ratePerKm:10.5, yearFrom:2015, yearTo:2027, category:'sedan' };
+  let selVehModel = (VEHICLE_MODELS || []).find(m => m.category === 'sedan') || { id:'corolla', name:'تويوتا كورولا', yearFrom:2015, yearTo:2027, category:'sedan' };
   let selVehYear  = 2022;
 
   // بلا تقريب هنا — الحساب يجب أن يطابق حارس الأجرة على الخادم بالضبط
   function vehRatePerKm() {
-    return selVehModel.ratePerKm * CITY_FACTOR * vehYearMult(selVehYear);
+    return (TRIP_RATES.local[selVehModel.category] || TRIP_RATES.local.sedan) * vehYearMult(selVehYear);
   }
 
   function resolveZone(destName) {

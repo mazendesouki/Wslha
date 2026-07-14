@@ -60,55 +60,56 @@ export const VEHICLE_TYPES: VehicleType[] = [
   },
 ];
 
-// ─── Vehicle catalog: make/model with per-km operating rate ──────────────────
-// ratePerKm = fuel (round trip) + maintenance/depreciation + driver profit,
-// per km of the customer-facing distance. Tuned per model class June 2026.
+// ─── Vehicle catalog: registered make/model available for booking ────────────
+// السعر بالكيلومتر ما عاد مربوط بالموديل نفسه — بيتحدد حسب فئة السيارة
+// (سيدان/SUV/فان) ونوع الرحلة (داخلي/خارجي/مطار) عبر TRIP_RATES تحت.
+// القائمة هنا بتمثّل السيارات المسجّلة فعليًا في النظام (نفس الكتالوج
+// المستخدم في تسجيل السائقين) — العميل يختار موديل وسنة من المسجّل فقط.
 export interface VehicleModel {
   id: string;
   category: 'sedan' | 'suv' | 'van';
   name: string;       // الماركة والموديل
   yearFrom: number;
   yearTo: number;
-  ratePerKm: number;  // EGP per km (base, before year adjustment)
 }
 
 export const VEHICLE_MODELS: VehicleModel[] = [
   // سيدان — اقتصادي
-  { id: 'logan',      category: 'sedan', name: 'رينو لوجان',        yearFrom: 2015, yearTo: 2027, ratePerKm: 9    },
-  { id: 'sunny',      category: 'sedan', name: 'نيسان صني',         yearFrom: 2015, yearTo: 2027, ratePerKm: 9    },
-  { id: 'optra',      category: 'sedan', name: 'شيفروليه أوبترا',   yearFrom: 2015, yearTo: 2027, ratePerKm: 9    },
-  { id: 'peugeot301', category: 'sedan', name: 'بيجو 301',          yearFrom: 2016, yearTo: 2027, ratePerKm: 9.5  },
-  { id: 'fiattipo',   category: 'sedan', name: 'فيات تيبو',         yearFrom: 2018, yearTo: 2027, ratePerKm: 9.5  },
+  { id: 'logan',      category: 'sedan', name: 'رينو لوجان',        yearFrom: 2015, yearTo: 2027 },
+  { id: 'sunny',      category: 'sedan', name: 'نيسان صني',         yearFrom: 2015, yearTo: 2027 },
+  { id: 'optra',      category: 'sedan', name: 'شيفروليه أوبترا',   yearFrom: 2015, yearTo: 2027 },
+  { id: 'peugeot301', category: 'sedan', name: 'بيجو 301',          yearFrom: 2016, yearTo: 2027 },
+  { id: 'fiattipo',   category: 'sedan', name: 'فيات تيبو',         yearFrom: 2018, yearTo: 2027 },
   // سيدان — عائلي/متوسط
-  { id: 'corolla',    category: 'sedan', name: 'تويوتا كورولا',     yearFrom: 2015, yearTo: 2027, ratePerKm: 10.5 },
-  { id: 'elantra',    category: 'sedan', name: 'هيونداي إلنترا',    yearFrom: 2015, yearTo: 2027, ratePerKm: 10   },
-  { id: 'cerato',     category: 'sedan', name: 'كيا سيراتو',        yearFrom: 2015, yearTo: 2027, ratePerKm: 10   },
-  { id: 'mg5',        category: 'sedan', name: 'إم جي 5',           yearFrom: 2021, yearTo: 2027, ratePerKm: 10   },
-  { id: 'octavia',    category: 'sedan', name: 'سكودا أوكتافيا',    yearFrom: 2019, yearTo: 2027, ratePerKm: 11   },
+  { id: 'corolla',    category: 'sedan', name: 'تويوتا كورولا',     yearFrom: 2015, yearTo: 2027 },
+  { id: 'elantra',    category: 'sedan', name: 'هيونداي إلنترا',    yearFrom: 2015, yearTo: 2027 },
+  { id: 'cerato',     category: 'sedan', name: 'كيا سيراتو',        yearFrom: 2015, yearTo: 2027 },
+  { id: 'mg5',        category: 'sedan', name: 'إم جي 5',           yearFrom: 2021, yearTo: 2027 },
+  { id: 'octavia',    category: 'sedan', name: 'سكودا أوكتافيا',    yearFrom: 2019, yearTo: 2027 },
   // سيدان — فاخر
-  { id: 'bmw3',       category: 'sedan', name: 'بي إم دبليو الفئة 3', yearFrom: 2018, yearTo: 2027, ratePerKm: 19 },
-  { id: 'mercc',      category: 'sedan', name: 'مرسيدس الفئة C',      yearFrom: 2018, yearTo: 2027, ratePerKm: 20 },
+  { id: 'bmw3',       category: 'sedan', name: 'بي إم دبليو الفئة 3', yearFrom: 2018, yearTo: 2027 },
+  { id: 'mercc',      category: 'sedan', name: 'مرسيدس الفئة C',      yearFrom: 2018, yearTo: 2027 },
   // SUV — مدمج/كروس أوفر
-  { id: 'mgzs',       category: 'suv', name: 'إم جي ZS',           yearFrom: 2020, yearTo: 2027, ratePerKm: 12   },
-  { id: 'creta',      category: 'suv', name: 'هيونداي كريتا',       yearFrom: 2020, yearTo: 2027, ratePerKm: 12.5 },
-  { id: 'tucson',     category: 'suv', name: 'هيونداي توسان',       yearFrom: 2015, yearTo: 2027, ratePerKm: 13   },
-  { id: 'sportage',   category: 'suv', name: 'كيا سبورتاج',         yearFrom: 2015, yearTo: 2027, ratePerKm: 13   },
+  { id: 'mgzs',       category: 'suv', name: 'إم جي ZS',           yearFrom: 2020, yearTo: 2027 },
+  { id: 'creta',      category: 'suv', name: 'هيونداي كريتا',       yearFrom: 2020, yearTo: 2027 },
+  { id: 'tucson',     category: 'suv', name: 'هيونداي توسان',       yearFrom: 2015, yearTo: 2027 },
+  { id: 'sportage',   category: 'suv', name: 'كيا سبورتاج',         yearFrom: 2015, yearTo: 2027 },
   // SUV — متوسط/كبير
-  { id: 'xtrail',     category: 'suv', name: 'نيسان إكس تريل',      yearFrom: 2015, yearTo: 2027, ratePerKm: 13.5 },
-  { id: 'tiggo8',     category: 'suv', name: 'شيري تيجو 8',         yearFrom: 2021, yearTo: 2027, ratePerKm: 14   },
-  { id: 'compass',    category: 'suv', name: 'جيب كومباس',          yearFrom: 2019, yearTo: 2027, ratePerKm: 14.5 },
+  { id: 'xtrail',     category: 'suv', name: 'نيسان إكس تريل',      yearFrom: 2015, yearTo: 2027 },
+  { id: 'tiggo8',     category: 'suv', name: 'شيري تيجو 8',         yearFrom: 2021, yearTo: 2027 },
+  { id: 'compass',    category: 'suv', name: 'جيب كومباس',          yearFrom: 2019, yearTo: 2027 },
   // SUV — فل سايز/فاخر
-  { id: 'landcruiser', category: 'suv', name: 'تويوتا لاند كروزر',  yearFrom: 2015, yearTo: 2027, ratePerKm: 16   },
-  { id: 'patrol',      category: 'suv', name: 'نيسان باترول',       yearFrom: 2015, yearTo: 2027, ratePerKm: 15.5 },
-  { id: 'pajero',      category: 'suv', name: 'ميتسوبيشي باجيرو',   yearFrom: 2015, yearTo: 2027, ratePerKm: 15.5 },
-  { id: 'grandcherokee', category: 'suv', name: 'جيب جراند شيروكي', yearFrom: 2018, yearTo: 2027, ratePerKm: 19   },
+  { id: 'landcruiser', category: 'suv', name: 'تويوتا لاند كروزر',  yearFrom: 2015, yearTo: 2027 },
+  { id: 'patrol',      category: 'suv', name: 'نيسان باترول',       yearFrom: 2015, yearTo: 2027 },
+  { id: 'pajero',      category: 'suv', name: 'ميتسوبيشي باجيرو',   yearFrom: 2015, yearTo: 2027 },
+  { id: 'grandcherokee', category: 'suv', name: 'جيب جراند شيروكي', yearFrom: 2018, yearTo: 2027 },
   // ميكروباص / فان
-  { id: 'xpander',    category: 'van', name: 'ميتسوبيشي إكسباندر', yearFrom: 2019, yearTo: 2027, ratePerKm: 12.5 },
-  { id: 'hiace',      category: 'van', name: 'تويوتا هاي إيس',      yearFrom: 2015, yearTo: 2027, ratePerKm: 13.5 },
-  { id: 'h1',         category: 'van', name: 'هيونداي H1',          yearFrom: 2015, yearTo: 2027, ratePerKm: 14   },
-  { id: 'carnival',   category: 'van', name: 'كيا كارنيفال',        yearFrom: 2019, yearTo: 2027, ratePerKm: 15   },
-  { id: 'traveller',  category: 'van', name: 'بيجو ترافيلر',        yearFrom: 2018, yearTo: 2027, ratePerKm: 16   },
-  { id: 'sprinter',   category: 'van', name: 'مرسيدس سبرينتر',      yearFrom: 2015, yearTo: 2027, ratePerKm: 16   },
+  { id: 'xpander',    category: 'van', name: 'ميتسوبيشي إكسباندر', yearFrom: 2019, yearTo: 2027 },
+  { id: 'hiace',      category: 'van', name: 'تويوتا هاي إيس',      yearFrom: 2015, yearTo: 2027 },
+  { id: 'h1',         category: 'van', name: 'هيونداي H1',          yearFrom: 2015, yearTo: 2027 },
+  { id: 'carnival',   category: 'van', name: 'كيا كارنيفال',        yearFrom: 2019, yearTo: 2027 },
+  { id: 'traveller',  category: 'van', name: 'بيجو ترافيلر',        yearFrom: 2018, yearTo: 2027 },
+  { id: 'sprinter',   category: 'van', name: 'مرسيدس سبرينتر',      yearFrom: 2015, yearTo: 2027 },
 ];
 
 // Year adjustment: continuous per-year gradient (not fixed bands), so each model
@@ -120,20 +121,39 @@ export function yearMultiplier(year: number): number {
   return Math.round(Math.min(1.35, Math.max(0.8, raw)) * 1000) / 1000;
 }
 
-// Fare for a specific model+year over a given distance.
+// ─── سعر الكيلومتر حسب نوع الرحلة وفئة السيارة ────────────────────────────────
+// سعر ثابت للكيلومتر لكل نوع رحلة، أساسه السيدان، وSUV/الفان أعلى بنسبة ثابتة
+// (+30% / +40%) — بدل السعر المتفاوت لكل موديل سابقًا. سعر السيدان الأساسي:
+//   داخلي (داخل دمياط)         8  ج.م/كم
+//   خارجي (خارج محافظة دمياط)  25 ج.م/كم
+//   مطار                       12 ج.م/كم
+// ⚠️ أي تعديل هنا لازم يتطابق مع db/rides-vehicle-pricing.sql.
+export type TripType = 'local' | 'external' | 'airport';
+const SUV_MULT = 1.3;
+const VAN_MULT = 1.4;
+export const TRIP_RATES: Record<TripType, Record<'sedan' | 'suv' | 'van', number>> = {
+  local:    { sedan: 8,  suv: Math.round(8  * SUV_MULT * 10) / 10, van: Math.round(8  * VAN_MULT * 10) / 10 },
+  external: { sedan: 25, suv: Math.round(25 * SUV_MULT * 10) / 10, van: Math.round(25 * VAN_MULT * 10) / 10 },
+  airport:  { sedan: 12, suv: Math.round(12 * SUV_MULT * 10) / 10, van: Math.round(12 * VAN_MULT * 10) / 10 },
+};
+
+// سعر الكيلومتر الفعّال لموديل بعينه في نوع رحلة معيّن، بعد تعديل سنة الصنع.
+export function ratePerKmFor(tripType: TripType, model: VehicleModel, year: number): number {
+  return TRIP_RATES[tripType][model.category] * yearMultiplier(year);
+}
+
+// Fare for a specific model+year over a given distance (airport transfer).
 export function fareForVehicle(distanceKm: number, model: VehicleModel, year: number): number {
-  const raw = AIRPORT_BASE_FEE + distanceKm * model.ratePerKm * yearMultiplier(year);
+  const raw = AIRPORT_BASE_FEE + distanceKm * ratePerKmFor('airport', model, year);
   return Math.ceil(raw / 50) * 50;
 }
 
 // ─── Local-ride flexible meter ────────────────────────────────────────────────
-// fare = ceil( max( (25 + tieredKmCost × modelRate×1.2×yearMult) × zoneFactor
-//                    + zoneSurcharge, 35) / 5 ) × 5
+// fare = ceil( max( (25 + tieredKmCost × rate) × zoneFactor + zoneSurcharge, 35) / 5 ) × 5
 // Distance tiers (like a real meter): first 3 km ×1.15, 3–10 km ×1.0, >10 km ×0.9.
 // ⚠️ Any change here must be mirrored in db/rides-vehicle-pricing.sql.
 export const RIDE_BASE_FARE   = 25;
 export const RIDE_MIN_FARE    = 35;
-export const RIDE_CITY_FACTOR = 1.2;
 export const RIDE_TIERS = { t1Km: 3, t1Mult: 1.15, t2Km: 10, t2Mult: 1.0, t3Mult: 0.9 };
 
 // Destination zones — matched by keywords in the destination name.
@@ -162,9 +182,21 @@ export function tieredKm(km: number): number {
 }
 
 export function meterFare(km: number, model: VehicleModel, year: number, zone: FareZone): number {
-  const rate = model.ratePerKm * RIDE_CITY_FACTOR * yearMultiplier(year);
+  const rate = ratePerKmFor('local', model, year);
   const raw  = (RIDE_BASE_FARE + tieredKm(km) * rate) * zone.factor + zone.surcharge;
   return Math.ceil(Math.max(raw, RIDE_MIN_FARE) / 5) * 5;
+}
+
+// ─── رحلات خارجية (خارج محافظة دمياط) — خدمة منفصلة ───────────────────────────
+// عداد أبسط: رسم أساسي + مسافة × سعر الخارجي (بدون تدرّج كيلومترات أو مناطق —
+// كله برّه الحدود بنفس السعر). ⚠️ يطابق db/rides-vehicle-pricing.sql.
+export const EXTERNAL_BASE_FARE = 50;
+export const EXTERNAL_MIN_FARE  = 150;
+
+export function externalFare(km: number, model: VehicleModel, year: number): number {
+  const rate = ratePerKmFor('external', model, year);
+  const raw  = EXTERNAL_BASE_FARE + km * rate;
+  return Math.ceil(Math.max(raw, EXTERNAL_MIN_FARE) / 5) * 5;
 }
 
 // ─── Distance-based pricing 2026 ─────────────────────────────────────────────

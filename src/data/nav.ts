@@ -7,6 +7,7 @@ export interface NavLink {
 export const NAV_LINKS: NavLink[] = [
   { label: 'الرئيسية',       href: '/',            page: 'home'        },
   { label: 'مشاوير',         href: '/rides',        page: 'rides'       },
+  { label: 'رحلات خارجية',   href: '/rides-external', page: 'rides-external' },
   { label: 'توصيل المطار',   href: '/airport',      page: 'airport'     },
   { label: 'المتاجر',        href: '/stores',       page: 'stores'      },
   { label: 'سوق المستعمل',   href: '/marketplace',  page: 'marketplace' },

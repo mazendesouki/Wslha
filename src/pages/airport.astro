@@ -603,7 +603,7 @@ import { VEHICLE_TYPES } from '../data/airports';
   </section>
 
   <script>
-    import { CHECKIN_BUFFER, SAFETY_MARGIN, ARRIVAL_BUFFER, DRIVER_ARRIVAL_BEFORE_LANDING, DAMIETTA_ORIGIN, VEHICLE_TYPES, VEHICLE_MODELS, fareForVehicle, yearMultiplier, EXTRA_BAG_FEE, COMPANION_FEE, WAIT_PICKUP_FREE, WAIT_PICKUP_PER15, WAIT_AIRPORT_FREE, WAIT_AIRPORT_PER30 } from '../data/airports';
+    import { CHECKIN_BUFFER, SAFETY_MARGIN, ARRIVAL_BUFFER, DRIVER_ARRIVAL_BEFORE_LANDING, DAMIETTA_ORIGIN, VEHICLE_TYPES, VEHICLE_MODELS, fareForVehicle, ratePerKmFor, EXTRA_BAG_FEE, COMPANION_FEE, WAIT_PICKUP_FREE, WAIT_PICKUP_PER15, WAIT_AIRPORT_FREE, WAIT_AIRPORT_PER30 } from '../data/airports';
     import { isEgyptianMobile, normalizeEgyptianPhone, EG_PHONE_ERROR } from '../utils/phone';
 
     const GMAPS_KEY = 'AIzaSyAKvFfBYNDcTZgvZZH5s_lQbOc24LNjLsY';
@@ -619,7 +619,7 @@ import { VEHICLE_TYPES } from '../data/airports';
     let selectedVehicle: VehicleType = VEHICLES_DATA[0] || { id: 'sedan', name: 'سيدان', maxTravelers: 3, maxBags: 2, freeBags: 2, surcharge: 0 };
 
     // ── vehicle model/year selection (تسعير مرن حسب الماركة والموديل وسنة الصنع) ──
-    interface VehicleModel { id: string; category: string; name: string; yearFrom: number; yearTo: number; ratePerKm: number; }
+    interface VehicleModel { id: string; category: string; name: string; yearFrom: number; yearTo: number; }
     const vehModelSel = $('veh-model') as HTMLSelectElement;
     const vehYearSel  = $('veh-year') as HTMLSelectElement;
     let selVehModel: VehicleModel = (VEHICLE_MODELS as VehicleModel[]).find(m => m.category === 'sedan') || (VEHICLE_MODELS as VehicleModel[])[0];
@@ -640,7 +640,7 @@ import { VEHICLE_TYPES } from '../data/airports';
     }
     function updateVehRateHint(): void {
       const h = $('veh-rate-hint');
-      if (h) h.textContent = `${selVehModel.name} ${selVehYear} — ${(selVehModel.ratePerKm * yearMultiplier(selVehYear)).toFixed(1)} ج.م/كم`;
+      if (h) h.textContent = `${selVehModel.name} ${selVehYear} — ${ratePerKmFor('airport', selVehModel, selVehYear).toFixed(1)} ج.م/كم`;
     }
     vehModelSel.addEventListener('change', () => {
       selVehModel = (VEHICLE_MODELS as VehicleModel[]).find(m => m.id === vehModelSel.value) || selVehModel;
