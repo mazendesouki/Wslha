@@ -101,7 +101,8 @@ import { VEHICLE_MODELS } from '../data/airports';
             </div>
             <div class="form-group">
               <label>رقم الهوية الوطنية <span class="req">*</span></label>
-              <input class="form-input" id="nat-id-num" type="text" placeholder="14 رقم" maxlength="20"/>
+              <input class="form-input" id="nat-id-num" type="text" inputmode="numeric" placeholder="14 رقم" maxlength="14"/>
+              <p id="nat-id-err" style="display:none;color:#DC2626;font-size:.78rem;margin-top:.25rem">⚠️ رقم قومي غير صحيح — لازم يكون 14 رقم ويبدأ بـ 2 أو 3</p>
             </div>
             <div class="form-group">
               <label>تاريخ انتهاء الهوية <span class="req">*</span></label>
@@ -436,6 +437,25 @@ const SB_URL = 'https://vtikgyiopkjnrwlqnmfx.supabase.co';
 const SB_KEY = 'sb_publishable_PLSnpvCT-sAyUMtymNgTwA_QmL2suw4';
 const SB_H   = { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}` };
 
+// ── الرقم القومي المصري: 14 رقم، أول رقم قرن الميلاد (2=1900، 3=2000)،
+//    يليه سنة/شهر/يوم ميلاد فعليين — يرفض أي رقم عشوائي أو تنسيق خاطئ.
+function isValidEgyptianNationalId(id) {
+  if (!/^[23]\d{13}$/.test(id)) return false;
+  const century = id[0] === '2' ? 1900 : 2000;
+  const year  = century + parseInt(id.slice(1, 3), 10);
+  const month = parseInt(id.slice(3, 5), 10);
+  const day   = parseInt(id.slice(5, 7), 10);
+  if (month < 1 || month > 12) return false;
+  const daysInMonth = new Date(year, month, 0).getDate();
+  return day >= 1 && day <= daysInMonth;
+}
+const natIdInput = document.getElementById('nat-id-num');
+const natIdErr   = document.getElementById('nat-id-err');
+natIdInput?.addEventListener('input', () => {
+  const v = natIdInput.value.trim();
+  natIdErr.style.display = (v && !isValidEgyptianNationalId(v)) ? 'block' : 'none';
+});
+
 // ── Vehicle catalog (نفس القائمة المستخدمة عند حجز العملاء — الأمانة تبدأ من التسجيل) ──
 const VEHICLE_MODELS = JSON.parse(document.getElementById('vehicle-models-json').textContent || '[]');
 const vehCatSel = document.getElementById('veh-cat');
@@ -499,12 +519,63 @@ document.querySelectorAll('.radio-group').forEach(group => {
 
 // File uploads
 const uploads = {};
+// ── كشف وجه (مجاني، في المتصفح) على صورة السائق الشخصية بس — يمنع رفع
+//    صورة عشوائية (منظر، مستند، شعار...) بدل صورة شخصية فعلية.
+let _faceApiReady = null;
+function loadFaceApi() {
+  if (_faceApiReady) return _faceApiReady;
+  _faceApiReady = new Promise((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = 'https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js';
+    s.onload = async () => {
+      try {
+        const MODEL_URL = 'https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@master/weights';
+        await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
+        resolve(true);
+      } catch (e) { reject(e); }
+    };
+    s.onerror = () => reject(new Error('face_api_load_failed'));
+    document.head.appendChild(s);
+  });
+  return _faceApiReady;
+}
+async function photoHasFace(file) {
+  await loadFaceApi();
+  const img = await new Promise((resolve, reject) => {
+    const el = new Image();
+    el.onload = () => resolve(el);
+    el.onerror = reject;
+    el.src = URL.createObjectURL(file);
+  });
+  const detection = await faceapi.detectSingleFace(img, new faceapi.TinyFaceDetectorOptions());
+  URL.revokeObjectURL(img.src);
+  return !!detection;
+}
+
 async function handleUpload(input, key, zoneId) {
   const file = input.files[0];
   if (!file) return;
   const zone  = document.getElementById(zoneId);
   const prev  = document.getElementById(`prev-${key}`);
   const nameEl= document.getElementById(`name-${key}`);
+
+  if (key === 'driver-photo') {
+    if (nameEl) nameEl.textContent = '🔍 جارٍ التحقق من وجود وجه واضح…';
+    try {
+      const hasFace = await photoHasFace(file);
+      if (!hasFace) {
+        input.value = '';
+        if (nameEl) nameEl.textContent = '';
+        zone.style.borderColor = '#DC2626';
+        alert('⚠️ الصورة دي مش واضح فيها وجه — يرجى رفع صورة شخصية حقيقية واضحة للوجه.');
+        return;
+      }
+    } catch {
+      // تعذّر تحميل أداة الكشف (مثلاً بدون إنترنت) — نكمل بدون حجب رفع الصورة
+      // بدل ما نمنع السائق من التسجيل بسبب مشكلة شبكة، لا علاقة له بها.
+    }
+  }
+
   // Show preview immediately
   const reader = new FileReader();
   reader.onload = e => { if (prev) { prev.src = e.target.result; prev.style.display = 'block'; } };
@@ -582,6 +653,12 @@ async function submitApplication() {
     if (!document.getElementById(id)?.value?.trim()) {
       err.textContent = `⚠️ الحقل "${label}" مطلوب`; err.style.display = 'block'; return;
     }
+  }
+  if (!isValidEgyptianNationalId(document.getElementById('nat-id-num').value.trim())) {
+    err.textContent = '⚠️ رقم الهوية الوطنية غير صحيح — لازم يكون 14 رقم ويبدأ بـ 2 أو 3';
+    err.style.display = 'block';
+    document.getElementById('nat-id-num').scrollIntoView({ block: 'center', behavior: 'smooth' });
+    return;
   }
   btn.disabled = true; btn.textContent = '⏳ جاري الإرسال…';
   const payload = {
