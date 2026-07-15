@@ -1157,12 +1157,18 @@ function renderUsers() {
             <option value="rejected"${(u.status||'')==='rejected'?'selected':''}>مرفوض</option>
             <option value="banned"  ${(u.status||'')==='banned'  ?'selected':''}>محظور</option>
           </select>
+          ${u.role === 'admin' ? `
+          <select class="filter-select" style="font-size:.72rem;padding:.25rem .45rem;min-width:75px" disabled title="دور المشرف لا يُغيَّر من هنا">
+            <option selected>مشرف</option>
+          </select>
+          ` : `
           <select class="filter-select" style="font-size:.72rem;padding:.25rem .45rem;min-width:75px" onchange="changeUserRole('${u.phone}',this.value)">
             <option value="customer" ${u.role==='customer'?'selected':''}>عميل</option>
             <option value="driver"   ${u.role==='driver'  ?'selected':''}>سائق</option>
             <option value="merchant" ${u.role==='merchant'?'selected':''}>تاجر</option>
-            <option value="admin"    ${u.role==='admin'   ?'selected':''}>مشرف</option>
           </select>
+          <button class="btn btn--outline btn--sm" onclick="makeAdmin('${u.phone}')" title="ترقية لمشرف — يتطلب كلمة مرور المشرف ومفتاح الأمان">🛡️ ترقية لمشرف</button>
+          `}
           <button class="btn btn--red btn--sm" onclick="deleteUser('${u.phone}')">حذف</button>
         </div>
         `}
@@ -1208,11 +1214,11 @@ async function deleteUser(phone) {
 }
 async function changeUserRole(phone, role) {
   if (!role) return;
-  if (!confirm(`تغيير دور هذا المستخدم إلى "${{driver:'سائق',merchant:'تاجر',customer:'عميل',admin:'مشرف'}[role]||role}"؟`)) {
+  // الترقية لمشرف مش من هنا — لها زرّها الخاص (makeAdmin) بتأكيد كلمة مرور
+  // ومفتاح أمان، عشان متحصلش بالغلط من ضغطة في قائمة عادية.
+  if (!confirm(`تغيير دور هذا المستخدم إلى "${{driver:'سائق',merchant:'تاجر',customer:'عميل'}[role]||role}"؟`)) {
     renderUsers(); return;
   }
-  // Promoting to admin goes through the password-verified secure RPC.
-  if (role === 'admin') { await makeAdmin(phone); return; }
   const patch = { role };
   if (role === 'driver') patch.status = 'approved';
   const ok = await sbPatch(`accounts?phone=eq.${encodeURIComponent(phone)}`, patch);
