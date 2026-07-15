@@ -964,6 +964,11 @@ function getAdminPass() {
   if (!_adminPass) _adminPass = (prompt('للأمان، أدخل كلمة مرور المشرف لتأكيد العملية:') || '').trim() || null;
   return _adminPass;
 }
+// مفتاح أمان ثانٍ منفصل تمامًا عن كلمة مرور تسجيل الدخول — يُطلب في كل مرة
+// (بلا تخزين مؤقت) لأي إجراء خطر: حذف حساب، ترقية/إنشاء أدمن.
+function getActionKey() {
+  return (prompt('🔒 إجراء حسّاس — أدخل مفتاح الأمان للتأكيد:') || '').trim() || null;
+}
 async function sbRpc(fn, body) {
   try {
     const r = await fetch(`${SB_URL}/rest/v1/rpc/${fn}`, {
@@ -1180,9 +1185,11 @@ async function makeAdmin(phone) {
   if (!confirm('منح صلاحيات المشرف لهذا المستخدم؟')) return;
   const pass = getAdminPass();
   if (!pass) return;
-  const ok = await sbRpc('grant_admin', { p_admin_phone: ADMIN.phone, p_admin_password: pass, p_target_phone: phone });
+  const key = getActionKey();
+  if (!key) return;
+  const ok = await sbRpc('grant_admin', { p_admin_phone: ADMIN.phone, p_admin_password: pass, p_target_phone: phone, p_action_key: key });
   if (ok) { showToast('✅ تم منح صلاحيات المشرف', '#16A34A'); loadUsers(); }
-  else { _adminPass = null; showToast('❌ فشل — تحقق من كلمة مرور المشرف', '#DC2626'); }
+  else { _adminPass = null; showToast('❌ فشل — تحقق من كلمة المرور ومفتاح الأمان', '#DC2626'); }
 }
 async function deleteUser(phone) {
   const user = allUsers.find(u => u.phone === phone);
@@ -1190,12 +1197,14 @@ async function deleteUser(phone) {
   if (!confirm(`⚠️ حذف حساب ${roleAr} "${user?.name || phone}"؟\nسيتم حذف جميع بياناته المرتبطة. هذا الإجراء لا يمكن التراجع عنه.`)) return;
   const pass = getAdminPass();
   if (!pass) return;
+  const key = getActionKey();
+  if (!key) return;
   // حذف الحساب بالكامل (وكل بياناته المرتبطة) يمر عبر دالة موثّقة تتحقق من
-  // كلمة مرور المشرف على الخادم — نفس نمط grant_admin/create_admin — بدل
-  // DELETE مباشر بمفتاح anon كان مفتوحاً لأي حد.
-  const ok = await sbRpc('admin_delete_account', { p_admin_phone: ADMIN.phone, p_admin_password: pass, p_target_phone: phone });
+  // كلمة مرور المشرف ومفتاح الأمان الإضافي على الخادم — نفس نمط
+  // grant_admin/create_admin — بدل DELETE مباشر بمفتاح anon كان مفتوحاً لأي حد.
+  const ok = await sbRpc('admin_delete_account', { p_admin_phone: ADMIN.phone, p_admin_password: pass, p_target_phone: phone, p_action_key: key });
   if (ok) { showToast('✅ تم الحذف بالكامل', '#16A34A'); loadUsers(); }
-  else { _adminPass = null; showToast('❌ فشل الحذف — تحقق من كلمة مرور المشرف', '#DC2626'); }
+  else { _adminPass = null; showToast('❌ فشل الحذف — تحقق من كلمة المرور ومفتاح الأمان', '#DC2626'); }
 }
 async function changeUserRole(phone, role) {
   if (!role) return;
@@ -2301,9 +2310,11 @@ document.getElementById('create-admin-form').addEventListener('submit', async e 
   if (!name || !phone || !pass) { msg.textContent='أكمل جميع الحقول'; msg.style.cssText='display:block;background:#FEE2E2;color:#DC2626'; return; }
   const adminPass = getAdminPass();
   if (!adminPass) { msg.textContent='مطلوب كلمة مرور المشرف'; msg.style.cssText='display:block;background:#FEE2E2;color:#DC2626'; return; }
+  const actionKey = getActionKey();
+  if (!actionKey) { msg.textContent='مطلوب مفتاح الأمان'; msg.style.cssText='display:block;background:#FEE2E2;color:#DC2626'; return; }
   const ok = await sbRpc('create_admin', {
     p_admin_phone: ADMIN.phone, p_admin_password: adminPass,
-    p_name: name, p_phone: phone, p_password: pass
+    p_name: name, p_phone: phone, p_password: pass, p_action_key: actionKey
   });
   if (!ok) { _adminPass = null; }
   if (ok) {
