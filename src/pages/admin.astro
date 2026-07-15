@@ -956,15 +956,6 @@ async function sbDelete(path) {
   const r = await fetch(`${SB_URL}/rest/v1/${path}`, { method:'DELETE', headers:SB_H });
   return r.ok;
 }
-// Like sbDelete, but surfaces the actual database error (e.g. a foreign-key
-// violation) instead of a generic guess — used where the failure reason matters.
-async function sbDeleteDetailed(path) {
-  const r = await fetch(`${SB_URL}/rest/v1/${path}`, { method:'DELETE', headers:SB_H });
-  if (r.ok) return { ok: true };
-  let detail = '';
-  try { detail = (await r.json())?.message || ''; } catch {}
-  return { ok: false, detail };
-}
 // Privileged admin actions (promote / create admin) require re-confirming the
 // admin password; it is verified server-side (bcrypt) by the RPC. Cached in
 // memory for the session only — never stored.
@@ -1197,25 +1188,14 @@ async function deleteUser(phone) {
   const user = allUsers.find(u => u.phone === phone);
   const roleAr = { driver:'سائق', merchant:'تاجر', customer:'عميل', admin:'مشرف' }[user?.role] || user?.role || '';
   if (!confirm(`⚠️ حذف حساب ${roleAr} "${user?.name || phone}"؟\nسيتم حذف جميع بياناته المرتبطة. هذا الإجراء لا يمكن التراجع عنه.`)) return;
-  const p = encodeURIComponent(phone);
-  // Delete all related data first to avoid FK constraint errors — every table
-  // with a foreign key on accounts.phone must be cleared before the account itself.
-  await Promise.allSettled([
-    sbDelete(`driver_applications?phone=eq.${p}`),
-    sbDelete(`merchant_applications?phone=eq.${p}`),
-    sbDelete(`driver_locations?driver_phone=eq.${p}`),
-    sbDelete(`wallet_transactions?phone=eq.${p}`),
-    sbDelete(`rides?driver_phone=eq.${p}`),
-    sbDelete(`rides?customer_phone=eq.${p}`),
-    sbDelete(`orders?customer_phone=eq.${p}`),
-    sbDelete(`points?phone=eq.${p}`),
-    sbDelete(`point_transactions?phone=eq.${p}`),
-    sbDelete(`wallets?phone=eq.${p}`),
-    sbDelete(`push_subscriptions?phone=eq.${p}`),
-  ]);
-  const { ok, detail } = await sbDeleteDetailed(`accounts?phone=eq.${p}`);
+  const pass = getAdminPass();
+  if (!pass) return;
+  // حذف الحساب بالكامل (وكل بياناته المرتبطة) يمر عبر دالة موثّقة تتحقق من
+  // كلمة مرور المشرف على الخادم — نفس نمط grant_admin/create_admin — بدل
+  // DELETE مباشر بمفتاح anon كان مفتوحاً لأي حد.
+  const ok = await sbRpc('admin_delete_account', { p_admin_phone: ADMIN.phone, p_admin_password: pass, p_target_phone: phone });
   if (ok) { showToast('✅ تم الحذف بالكامل', '#16A34A'); loadUsers(); }
-  else showToast(`❌ فشل الحذف${detail ? ' — ' + detail : ' — تحقق من الصلاحيات'}`, '#DC2626');
+  else { _adminPass = null; showToast('❌ فشل الحذف — تحقق من كلمة مرور المشرف', '#DC2626'); }
 }
 async function changeUserRole(phone, role) {
   if (!role) return;
