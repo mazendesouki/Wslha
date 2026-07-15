@@ -920,7 +920,8 @@ function orFilter(p) {
 
 function fieldErr(id, msg) {
   var el = $(id); if (!el) return;
-  el.textContent = msg; el.style.display = msg ? '' : 'none';
+  // 'block' صراحةً — القيمة الفارغة '' بتسيب قاعدة الـ CSS (display:none) تكسب تاني فالرسالة ماتظهرش
+  el.textContent = msg; el.style.display = msg ? 'block' : 'none';
   var fi = el.previousElementSibling;
   if (fi && fi.classList.contains('fi')) fi.classList.toggle('error', !!msg);
 }
