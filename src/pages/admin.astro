@@ -1315,6 +1315,13 @@ document.getElementById('drivers-tabs').querySelectorAll('.tab-btn').forEach(btn
   });
 });
 
+// نفس رقم الهاتف ممكن يتسجل بصيغة محلية (01...) أو دولية (+201...) —
+// نطابق الاتنين بدل مطابقة نصية حرفية قد تفوّت الصف.
+function phoneOrFilter(p) {
+  const intl  = p.startsWith('01') ? '+2' + p : p;
+  const local = p.startsWith('+20') ? '0' + p.slice(3) : p;
+  return `or=(phone.eq.${encodeURIComponent(intl)},phone.eq.${encodeURIComponent(local)})`;
+}
 async function openDriverModal(phone) {
   currentDriverPhone = phone;
   document.getElementById('driver-modal').classList.remove('hidden');
@@ -1322,7 +1329,7 @@ async function openDriverModal(phone) {
   document.getElementById('driver-reject-toggle').classList.remove('hidden');
   document.getElementById('driver-reject-confirm').classList.add('hidden');
   document.getElementById('driver-modal-body').innerHTML = '<p style="color:#94A3B8">جاري التحميل…</p>';
-  const rows = await sbGet(`driver_applications?phone=eq.${encodeURIComponent(phone)}&select=*&limit=1`);
+  const rows = await sbGet(`driver_applications?${phoneOrFilter(phone)}&select=*&order=created_at.desc&limit=1`);
   const a = rows?.[0];
   if (!a) { document.getElementById('driver-modal-body').innerHTML = '<p style="color:#DC2626">لم يتم العثور على الطلب</p>'; return; }
 
@@ -1479,7 +1486,7 @@ async function openMerchantModal(phone) {
   document.getElementById('merchant-reject-toggle').classList.remove('hidden');
   document.getElementById('merchant-reject-confirm').classList.add('hidden');
   document.getElementById('merchant-modal-body').innerHTML = '<p style="color:#94A3B8">جاري التحميل…</p>';
-  const rows = await sbGet(`merchant_applications?phone=eq.${encodeURIComponent(phone)}&select=*&limit=1`);
+  const rows = await sbGet(`merchant_applications?${phoneOrFilter(phone)}&select=*&order=created_at.desc&limit=1`);
   const a = rows?.[0];
   if (!a) { document.getElementById('merchant-modal-body').innerHTML = '<p style="color:#DC2626">لم يتم العثور على الطلب</p>'; return; }
 
