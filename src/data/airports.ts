@@ -121,6 +121,44 @@ export function yearMultiplier(year: number): number {
   return Math.round(Math.min(1.35, Math.max(0.8, raw)) * 1000) / 1000;
 }
 
+// ─── كتالوج السيارات المسجّلة فعليًا (سائقون معتمدون فقط) ────────────────────
+// بدل قائمة موديلات ثابتة — العميل يختار بس من عربيات سائقين معتمدين فعليًا
+// في قاعدة البيانات (نفس فئة/موديل/سنة اللي سجّلها السائق في طلبه).
+export function registeredVehicleFetchUrl(): string {
+  return 'https://vtikgyiopkjnrwlqnmfx.supabase.co/rest/v1/driver_applications' +
+    '?status=eq.approved&select=vehicle_category,vehicle_model,vehicle_year';
+}
+export const REGISTERED_VEHICLE_HEADERS = {
+  apikey: 'sb_publishable_PLSnpvCT-sAyUMtymNgTwA_QmL2suw4',
+  Authorization: 'Bearer sb_publishable_PLSnpvCT-sAyUMtymNgTwA_QmL2suw4',
+};
+
+export async function fetchRegisteredVehicles(): Promise<VehicleModel[]> {
+  try {
+    const res = await fetch(registeredVehicleFetchUrl(), { headers: REGISTERED_VEHICLE_HEADERS });
+    if (!res.ok) return [];
+    const rows: { vehicle_category: string; vehicle_model: string; vehicle_year: number | null }[] = await res.json();
+    const byKey = new Map<string, VehicleModel>();
+    for (const r of rows) {
+      const cat = r.vehicle_category;
+      const name = r.vehicle_model?.trim();
+      if (!cat || !name || !['sedan', 'suv', 'van'].includes(cat)) continue;
+      const year = r.vehicle_year || new Date().getFullYear();
+      const key = cat + '|' + name;
+      const existing = byKey.get(key);
+      if (existing) {
+        existing.yearFrom = Math.min(existing.yearFrom, year);
+        existing.yearTo   = Math.max(existing.yearTo, year);
+      } else {
+        byKey.set(key, { id: key, category: cat as 'sedan' | 'suv' | 'van', name, yearFrom: year, yearTo: year });
+      }
+    }
+    return Array.from(byKey.values());
+  } catch {
+    return [];
+  }
+}
+
 // ─── سعر الكيلومتر حسب نوع الرحلة وفئة السيارة ────────────────────────────────
 // سعر ثابت للكيلومتر لكل نوع رحلة، أساسه السيدان، وSUV/الفان أعلى بنسبة ثابتة
 // (+30% / +40%) — بدل السعر المتفاوت لكل موديل سابقًا. سعر السيدان الأساسي:

@@ -232,7 +232,7 @@ import { VEHICLE_TYPES } from '../data/airports';
   </section>
 
   <script>
-    import { VEHICLE_MODELS, externalFare, ratePerKmFor, DAMIETTA_ORIGIN } from '../data/airports';
+    import { VEHICLE_MODELS, externalFare, ratePerKmFor, fetchRegisteredVehicles, DAMIETTA_ORIGIN } from '../data/airports';
     import { isEgyptianMobile, normalizeEgyptianPhone, EG_PHONE_ERROR } from '../utils/phone';
 
     const GMAPS_KEY = 'AIzaSyAKvFfBYNDcTZgvZZH5s_lQbOc24LNjLsY';
@@ -248,11 +248,12 @@ import { VEHICLE_TYPES } from '../data/airports';
     interface VehicleModel { id: string; category: string; name: string; yearFrom: number; yearTo: number; }
     const vehModelSel = $('veh-model') as HTMLSelectElement;
     const vehYearSel  = $('veh-year') as HTMLSelectElement;
+    let REGISTERED_VEHICLES: VehicleModel[] = [];
     let selVehModel: VehicleModel = (VEHICLE_MODELS as VehicleModel[]).find(m => m.category === 'sedan') || (VEHICLE_MODELS as VehicleModel[])[0];
     let selVehYear = 2022;
 
     function populateVehModels(cat: string): void {
-      const models = (VEHICLE_MODELS as VehicleModel[]).filter(m => m.category === cat);
+      const models = REGISTERED_VEHICLES.filter(m => m.category === cat);
       vehModelSel.innerHTML = models.map(m => `<option value="${m.id}">${m.name}</option>`).join('');
       selVehModel = models[0] || selVehModel;
       populateVehYears();
@@ -269,7 +270,7 @@ import { VEHICLE_TYPES } from '../data/airports';
       if (h) h.textContent = `${selVehModel.name} ${selVehYear} — ${ratePerKmFor('external', selVehModel, selVehYear).toFixed(1)} ج.م/كم`;
     }
     vehModelSel.addEventListener('change', () => {
-      selVehModel = (VEHICLE_MODELS as VehicleModel[]).find(m => m.id === vehModelSel.value) || selVehModel;
+      selVehModel = REGISTERED_VEHICLES.find(m => m.id === vehModelSel.value) || selVehModel;
       populateVehYears();
       render();
     });
@@ -278,10 +279,34 @@ import { VEHICLE_TYPES } from '../data/airports';
       updateVehRateHint();
       render();
     });
-    populateVehModels('sedan');
+
+    async function initRegisteredVehicles(): Promise<void> {
+      REGISTERED_VEHICLES = await fetchRegisteredVehicles();
+      const availableCats = new Set(REGISTERED_VEHICLES.map(v => v.category));
+      let firstAvailable: string | null = null;
+      document.querySelectorAll('.veh-card').forEach(card => {
+        const cat = (card as HTMLElement).dataset.veh!;
+        const has = availableCats.has(cat);
+        (card as HTMLElement).hidden = !has;
+        if (has && !firstAvailable) firstAvailable = cat;
+      });
+      if (!firstAvailable) {
+        vehModelSel.innerHTML = '';
+        vehYearSel.innerHTML = '';
+        const h = $('veh-rate-hint');
+        if (h) h.textContent = 'لا يوجد سائقون معتمدون حاليًا — حاول لاحقًا.';
+        (document.getElementById('ext-submit') as HTMLButtonElement).disabled = true;
+        return;
+      }
+      document.querySelectorAll('.veh-card').forEach(c => c.classList.remove('veh-card--active'));
+      document.querySelector(`.veh-card[data-veh="${firstAvailable}"]`)?.classList.add('veh-card--active');
+      populateVehModels(firstAvailable);
+    }
+    initRegisteredVehicles();
 
     document.querySelectorAll('.veh-card').forEach(card => {
       card.addEventListener('click', () => {
+        if ((card as HTMLElement).hidden) return;
         document.querySelectorAll('.veh-card').forEach(c => c.classList.remove('veh-card--active'));
         card.classList.add('veh-card--active');
         const vehId = (card as HTMLElement).dataset.veh!;

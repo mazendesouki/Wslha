@@ -2212,12 +2212,49 @@ import { VEHICLE_MODELS, FARE_ZONES, TRIP_RATES } from '../data/airports';
   });
 
   // ── vehicle model/year selection (تسعير حسب السيارة) ──
+  // القوائم بتتبنى من سائقين معتمدين فعليًا في قاعدة البيانات — مش قائمة ثابتة.
   const vehCatSel   = document.getElementById('l-veh-cat');
   const vehModelSel = document.getElementById('l-veh-model');
   const vehYearSel  = document.getElementById('l-veh-year');
+  const CAT_LABELS  = { sedan: '🚗 سيدان', suv: '🚙 SUV / كروز', van: '🚐 ميكروباص' };
+  let REGISTERED_VEHICLES = [];
+
+  async function loadRegisteredVehicles() {
+    try {
+      const res = await fetch(
+        'https://vtikgyiopkjnrwlqnmfx.supabase.co/rest/v1/driver_applications?status=eq.approved&select=vehicle_category,vehicle_model,vehicle_year',
+        { headers: { apikey: 'sb_publishable_PLSnpvCT-sAyUMtymNgTwA_QmL2suw4', Authorization: 'Bearer sb_publishable_PLSnpvCT-sAyUMtymNgTwA_QmL2suw4' } }
+      );
+      const rows = res.ok ? await res.json() : [];
+      const byKey = new Map();
+      for (const r of rows) {
+        const cat = r.vehicle_category, name = (r.vehicle_model || '').trim();
+        if (!cat || !name || !CAT_LABELS[cat]) continue;
+        const year = r.vehicle_year || new Date().getFullYear();
+        const key = cat + '|' + name;
+        const existing = byKey.get(key);
+        if (existing) { existing.yearFrom = Math.min(existing.yearFrom, year); existing.yearTo = Math.max(existing.yearTo, year); }
+        else byKey.set(key, { id: key, category: cat, name, yearFrom: year, yearTo: year });
+      }
+      REGISTERED_VEHICLES = Array.from(byKey.values());
+    } catch { REGISTERED_VEHICLES = []; }
+
+    const cats = Array.from(new Set(REGISTERED_VEHICLES.map(v => v.category)));
+    if (!cats.length) {
+      vehCatSel.innerHTML = '<option value="">لا توجد سيارات مسجلة حالياً</option>';
+      vehModelSel.innerHTML = '';
+      vehYearSel.innerHTML = '';
+      const h = document.getElementById('l-veh-hint');
+      if (h) h.textContent = 'لا يوجد سائقون معتمدون حاليًا — حاول لاحقًا.';
+      localBtn.disabled = true;
+      return;
+    }
+    vehCatSel.innerHTML = cats.map(c => `<option value="${c}">${CAT_LABELS[c]}</option>`).join('');
+    populateVehModels(cats[0]);
+  }
 
   function populateVehModels(cat) {
-    const models = (VEHICLE_MODELS || []).filter(m => m.category === cat);
+    const models = REGISTERED_VEHICLES.filter(m => m.category === cat);
     vehModelSel.innerHTML = models.map(m => `<option value="${m.id}">${m.name}</option>`).join('');
     selVehModel = models[0] || selVehModel;
     populateVehYears();
@@ -2242,14 +2279,14 @@ import { VEHICLE_MODELS, FARE_ZONES, TRIP_RATES } from '../data/airports';
   }
   vehCatSel.addEventListener('change', () => { populateVehModels(vehCatSel.value); updateVehHint(); refreshFareDisplay(); });
   vehModelSel.addEventListener('change', () => {
-    selVehModel = (VEHICLE_MODELS || []).find(m => m.id === vehModelSel.value) || selVehModel;
+    selVehModel = REGISTERED_VEHICLES.find(m => m.id === vehModelSel.value) || selVehModel;
     populateVehYears(); refreshFareDisplay();
   });
   vehYearSel.addEventListener('change', () => {
     selVehYear = parseInt(vehYearSel.value) || selVehYear;
     updateVehHint(); refreshFareDisplay();
   });
-  populateVehModels('sedan');
+  loadRegisteredVehicles();
 
   // Local confirm
   localBtn.addEventListener('click', async () => {
