@@ -780,6 +780,7 @@ import PageHero from '../components/PageHero.astro';
     document.getElementById('driver-phone-bar').textContent = driver.phone || '';
     // Load approval status and initial account data
     loadApprovalStatus();
+    restoreActiveRide();
   }
 
   /* ── Stats ── */
@@ -1132,6 +1133,74 @@ import PageHero from '../components/PageHero.astro';
         }
       } else {
         if (pendingRide) { hideRideRequest(); pendingRide = null; }
+      }
+    } catch {}
+  }
+
+  // رحلة/طلب نشط كان بيتخزّن في متغيّر جافاسكريبت بس (currentRide/currentOrder)،
+  // فأي تحديث للصفحة كان بيفقد الحالة بالكامل رغم إن الرحلة لسه شغّالة فعليًا
+  // في قاعدة البيانات — يترجم للسائق كـ"إلغاء" الرحلة ومفيش زر توجيه شغال
+  // (destLat/destLng بيرجعوا null). هنا بنعيد بناء الحالة من قاعدة البيانات.
+  async function restoreActiveRide() {
+    if (!driver) return;
+    try {
+      const [rideRes, orderRes] = await Promise.all([
+        fetch(`${SB_URL}/rest/v1/rides?driver_phone=eq.${encodeURIComponent(driver.phone)}&status=in.(accepted,arrived,in_progress)&select=*&order=created_at.desc&limit=1`, { headers: SB_H }),
+        fetch(`${SB_URL}/rest/v1/orders?driver_phone=eq.${encodeURIComponent(driver.phone)}&status=eq.on_the_way&select=*&order=created_at.desc&limit=1`, { headers: SB_H }),
+      ]);
+      const rideRows  = rideRes.ok  ? await rideRes.json()  : [];
+      const orderRows = orderRes.ok ? await orderRes.json() : [];
+
+      const arriveBtn   = document.getElementById('btn-arrive');
+      const pickupBtn   = document.getElementById('btn-pickup');
+      const completeBtn = document.getElementById('btn-complete');
+
+      if (Array.isArray(rideRows) && rideRows.length) {
+        currentRide = rideRows[0];
+        isOnline = true;
+        await goOnline();
+        document.getElementById('reject-btn').style.display = 'none';
+
+        document.getElementById('active-customer-name').textContent = currentRide.customer_name || '—';
+        document.getElementById('active-call-btn').href = 'tel:' + (currentRide.customer_phone || '');
+        document.getElementById('active-from').textContent = currentRide.from_area;
+        document.getElementById('active-to').textContent   = currentRide.to_area;
+        document.getElementById('active-fare').textContent = currentRide.fare;
+        arriveBtn.textContent = '📍 وصلت لنقطة الاستلام';
+        arriveBtn.classList.add('arrive');
+        pickupBtn.classList.add('pickup');
+        completeBtn.classList.remove('complete');
+
+        if (currentRide.status === 'arrived') {
+          document.getElementById('active-trip-status').textContent = 'وصلت — انتظر الراكب 📍';
+          arriveBtn.disabled = true; pickupBtn.disabled = false; completeBtn.disabled = true;
+          startWaitingTimer();
+        } else if (currentRide.status === 'in_progress') {
+          document.getElementById('active-trip-status').textContent = 'في الطريق للوجهة 🚗';
+          arriveBtn.disabled = true; pickupBtn.disabled = true; completeBtn.disabled = false;
+          completeBtn.classList.add('complete');
+        } else {
+          document.getElementById('active-trip-status').textContent = 'في الطريق للإستلام';
+          arriveBtn.disabled = false; pickupBtn.disabled = true; completeBtn.disabled = true;
+        }
+
+        showState('active');
+        initDriverMap(currentRide.from_lat, currentRide.from_lng, currentRide.to_lat, currentRide.to_lng);
+        return;
+      }
+
+      if (Array.isArray(orderRows) && orderRows.length) {
+        currentOrder = orderRows[0];
+        isOnline = true;
+        await goOnline();
+        document.getElementById('reject-btn').style.display = 'none';
+        showActiveOrder();
+
+        if (currentOrder.picked_up_at) {
+          document.getElementById('active-trip-status').textContent = 'في الطريق للعميل 🚗';
+          arriveBtn.disabled = true; pickupBtn.disabled = true; completeBtn.disabled = false;
+          completeBtn.classList.add('complete');
+        }
       }
     } catch {}
   }
