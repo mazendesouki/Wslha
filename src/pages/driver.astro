@@ -1,6 +1,5 @@
 ---
 import Layout from '../components/layout.astro';
-import { VEHICLE_MODELS } from '../data/airports';
 ---
 <Layout title="انضم كسائق — وصّلها" currentPage="driver">
 
@@ -646,12 +645,12 @@ label .req { color: #DC2626; }
           </div>
           <div class="fg">
             <label for="v-model">الماركة والموديل <span class="req">*</span></label>
-            <select class="fi" id="v-model"></select>
+            <input class="fi" id="v-model" type="text" placeholder="مثال: تويوتا كورولا"/>
             <span class="field-err" id="err-v-model"></span>
           </div>
           <div class="fg">
             <label for="v-year">سنة الصنع <span class="req">*</span></label>
-            <select class="fi" id="v-year"></select>
+            <input class="fi" id="v-year" type="number" placeholder="مثال: 2020" min="2000" max="2030"/>
             <span class="field-err" id="err-v-year"></span>
           </div>
           <div class="fg">
@@ -846,8 +845,6 @@ label .req { color: #DC2626; }
 </div><!-- /.form-wrap -->
 </div><!-- /.driver-page -->
 
-<script type="application/json" id="vehicle-models-json" set:html={JSON.stringify(VEHICLE_MODELS)}></script>
-
 <script is:inline>
 (function() {
 
@@ -862,28 +859,8 @@ var uploads    = {};
 /* ── Load user ── */
 try { USER = JSON.parse(localStorage.getItem('wslha_user') || 'null'); } catch {}
 
-/* ── كتالوج السيارات: نفس القائمة المستخدمة عند حجز العملاء — السائق يختار
-      من الموديلات المسجلة فقط (قاعدة البيانات ترفض أي موديل خارج الكتالوج) ── */
-var VEHICLE_MODELS = [];
-try { VEHICLE_MODELS = JSON.parse(document.getElementById('vehicle-models-json').textContent || '[]'); } catch {}
-function populateVehModels(cat) {
-  var sel = $('v-model'); if (!sel) return;
-  var models = VEHICLE_MODELS.filter(function(m) { return m.category === cat; });
-  sel.innerHTML = models.map(function(m) { return '<option value="' + m.id + '">' + m.name + '</option>'; }).join('');
-  populateVehYears();
-}
-function populateVehYears() {
-  var modelSel = $('v-model'), yearSel = $('v-year');
-  if (!modelSel || !yearSel) return;
-  var model = VEHICLE_MODELS.find(function(m) { return m.id === modelSel.value; }) || VEHICLE_MODELS[0];
-  if (!model) return;
-  var years = [];
-  for (var y = model.yearTo; y >= model.yearFrom; y--) years.push(y);
-  yearSel.innerHTML = years.map(function(y) { return '<option value="' + y + '">' + y + '</option>'; }).join('');
-}
-$('v-cat')   && $('v-cat').addEventListener('change', function() { populateVehModels(this.value); });
-$('v-model') && $('v-model').addEventListener('change', populateVehYears);
-populateVehModels('sedan');
+/* ── فئة السيارة (سيدان/SUV/فان) تُستخدم لتحديد شريحة التسعير؛ الماركة والموديل
+      كتابة حرة يكتبها السائق كما هي في رخصة سيارته. ── */
 
 /* ── Init ── */
 if (USER && USER.phone) {
@@ -1400,10 +1377,9 @@ function buildReview() {
     }).join('') + '</div>';
 
   // Vehicle
-  var vModelSel = $('v-model');
   var vehRows = [
     ['الفئة', {sedan:'سيدان',suv:'SUV / كروز',van:'ميكروباص'}[$('v-cat').value] || $('v-cat').value],
-    ['الماركة والموديل', (vModelSel.options[vModelSel.selectedIndex] || {}).text || vModelSel.value],
+    ['الماركة والموديل', $('v-model').value],
     ['اللون', $('v-color').value],
     ['سنة الصنع', $('v-year').value],
     ['رقم اللوحة', $('v-plate').value],
@@ -1449,7 +1425,7 @@ window.submitApp = async function() {
     inspection_expiry:  $('d-insp-exp').value,
     inspection_photo_url:uploads['inspection'] || null,
     vehicle_category:   $('v-cat').value,
-    vehicle_model:      $('v-model').value,
+    vehicle_model:      $('v-model').value.trim(),
     vehicle_color:      $('v-color').value.trim(),
     vehicle_year:       parseInt($('v-year').value, 10) || null,
     vehicle_purchase_date: $('v-purchase').value || null,
