@@ -10,6 +10,8 @@ export interface Account {
   email?:    string;
   role:      Role;
   city?:     string;
+  national_id?:        string;
+  national_id_expiry?: string;
   createdAt: string;
 }
 
@@ -22,16 +24,23 @@ const SB_H   = { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}`, 'Content-Typ
 // no longer read the accounts table at all, so this is the only way to check
 // availability without exposing any user's actual data.
 export async function fieldExists(
-  field: 'phone' | 'email' | 'username',
+  field: 'phone' | 'email' | 'username' | 'national_id',
   value: string,
 ): Promise<boolean | 'error'> {
   if (!value) return false;
   try {
-    const v = field === 'phone' ? normalizeEgyptianPhone(value) : value.trim().toLowerCase();
-    const res = await fetch(`${SB_URL}/rest/v1/rpc/check_field_availability`, {
-      method: 'POST', headers: SB_H,
-      body: JSON.stringify({ p_field: field, p_value: v }),
-    });
+    const v = field === 'phone' ? normalizeEgyptianPhone(value)
+            : field === 'national_id' ? value.trim()
+            : value.trim().toLowerCase();
+    const res = field === 'national_id'
+      ? await fetch(`${SB_URL}/rest/v1/rpc/check_national_id_availability`, {
+          method: 'POST', headers: SB_H,
+          body: JSON.stringify({ p_value: v }),
+        })
+      : await fetch(`${SB_URL}/rest/v1/rpc/check_field_availability`, {
+          method: 'POST', headers: SB_H,
+          body: JSON.stringify({ p_field: field, p_value: v }),
+        });
     if (!res.ok) return 'error';
     return (await res.json()) === true;
   } catch { return 'error'; }

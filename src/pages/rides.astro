@@ -2621,4 +2621,58 @@ import { VEHICLE_MODELS, FARE_ZONES, TRIP_RATES } from '../data/airports';
     `<p style="font-size:var(--text-xs);color:var(--color-text-faint);margin-bottom:var(--sp-3);">أسعار 2026 — عداد ${BASE_FARE} ج.م + سعر الكيلومتر حسب نوع وموديل وسنة السيارة — الحد الأدنى ${MIN_FARE} ج.م</p>`
   );
   renderFareGuide(false);
+
+  // ── استرجاع الرحلة النشطة بعد تحديث الصفحة — كان تحديث الصفحة بيرجّع
+  //    العميل لفورم الحجز من الأول رغم إن رحلته لسه شغالة في قاعدة
+  //    البيانات (pending/accepted/arrived/in_progress). ──
+  async function restoreActiveRideOnLoad() {
+    let phone = null;
+    try { phone = (JSON.parse(localStorage.getItem('wslha_user') || '{}')).phone || null; } catch {}
+    if (!phone) return;
+    try {
+      const res = await fetch(
+        `${SB_URL}/rest/v1/rides?customer_phone=eq.${encodeURIComponent(phone)}&status=in.(pending,accepted,arrived,in_progress)&ride_type=in.(local,airport)&select=*&order=created_at.desc&limit=1`,
+        { headers: SB_H }
+      );
+      if (!res.ok) return;
+      const rows = await res.json();
+      if (!Array.isArray(rows) || !rows.length) return;
+      const ride = rows[0];
+
+      activeRideId = ride.id;
+      const from = { name: ride.from_area, lat: Number(ride.from_lat), lng: Number(ride.from_lng) };
+      const to   = { name: ride.to_area,   lat: Number(ride.to_lat),   lng: Number(ride.to_lng) };
+      _currentFrom = from; _currentTo = to; _currentEta = ride.eta_minutes || 0;
+      _driverShown = false; _onRide = false;
+      window._st_assigned = window._st_arrived = window._st_onride = false;
+
+      document.getElementById('ride-status').classList.add('visible');
+      document.getElementById('st-confirmed-time').textContent =
+        new Date(ride.created_at).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
+      document.getElementById('st-confirmed').className = 'status-step done';
+      document.getElementById('st-assigned').className  = 'status-step active';
+
+      await showRoute(from, to);
+
+      if (ride.status === 'pending') {
+        showSearching(from.name, to.name, ride.fare);
+      } else {
+        _driverShown = true;
+        showDriverFound(ride);
+        if (ride.status === 'arrived') {
+          window._st_arrived = true;
+          advanceStatus('arrived');
+          document.getElementById('driver-card-status').textContent = 'السائق وصل إليك 📍';
+        }
+        if (ride.status === 'in_progress') {
+          _onRide = true;
+          advanceStatus('onride');
+          document.getElementById('driver-card-status').textContent = 'في الطريق للوجهة 🚗';
+        }
+      }
+
+      subscribeRideStatus(activeRideId);
+    } catch {}
+  }
+  restoreActiveRideOnLoad();
 </script>

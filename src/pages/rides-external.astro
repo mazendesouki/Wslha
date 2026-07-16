@@ -503,6 +503,8 @@ import { VEHICLE_TYPES } from '../data/airports';
           }),
         });
         if (!res.ok) throw new Error('insert_failed');
+        const rows = await res.json();
+        const supabaseId = Array.isArray(rows) && rows[0]?.id ? rows[0].id : null;
 
         try {
           const existing = JSON.parse(localStorage.getItem('wslha_orders') || '[]');
@@ -510,20 +512,52 @@ import { VEHICLE_TYPES } from '../data/airports';
             id: orderId, type: 'رحلة خارجية', icon: '🚗', route: `${fromArea} ← ${toPlace.name}`,
             date: 'الآن', price: `${total} ج.م`, status: 'active', kind: 'ride',
             recipient: name, phone: normalizeEgyptianPhone(phone), createdAt: new Date().toISOString(),
+            supabase_id: supabaseId,
           });
           localStorage.setItem('wslha_orders', JSON.stringify(existing));
         } catch { /* storage unavailable */ }
 
-        $('ext-success-id').textContent = orderId;
-        ($('ext-success-track') as HTMLAnchorElement).href = `/track?q=${encodeURIComponent(orderId)}`;
-        ($('ext-wrap') as HTMLElement).style.display = 'none';
-        ($('ext-success') as HTMLElement).classList.add('is-visible');
-        $('ext-success').focus();
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+        showExtSuccess(orderId);
       } catch {
         fail('تعذّر تأكيد الحجز — تحقق من اتصالك بالإنترنت وحاول مرة أخرى.');
         btn.disabled = false; btn.textContent = 'تأكيد الحجز ←';
       }
     });
+
+    function showExtSuccess(orderId: string) {
+      $('ext-success-id').textContent = orderId;
+      ($('ext-success-track') as HTMLAnchorElement).href = `/track?q=${encodeURIComponent(orderId)}`;
+      ($('ext-wrap') as HTMLElement).style.display = 'none';
+      ($('ext-success') as HTMLElement).classList.add('is-visible');
+      $('ext-success').focus();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // ── استرجاع الحجز النشط بعد تحديث الصفحة — بدل ما يرجع العميل لفورم
+    //    فاضي رغم إن حجزه لسه شغّال في قاعدة البيانات. ──
+    async function restoreActiveExternalBooking() {
+      let phone: string | null = null;
+      try { phone = (JSON.parse(localStorage.getItem('wslha_user') || '{}')).phone || null; } catch {}
+      let orders: any[] = [];
+      try { orders = JSON.parse(localStorage.getItem('wslha_orders') || '[]'); } catch {}
+      const candidate = orders.find((o: any) =>
+        o.kind === 'ride' && o.type === 'رحلة خارجية' && o.status === 'active' && o.supabase_id &&
+        (!phone || normalizeEgyptianPhone(o.phone || '') === normalizeEgyptianPhone(phone))
+      );
+      if (!candidate) return;
+
+      try {
+        const SB_URL = 'https://vtikgyiopkjnrwlqnmfx.supabase.co';
+        const SB_KEY = 'sb_publishable_PLSnpvCT-sAyUMtymNgTwA_QmL2suw4';
+        const SB_H = { apikey: SB_KEY, Authorization: 'Bearer ' + SB_KEY };
+        const res = await fetch(`${SB_URL}/rest/v1/rides?id=eq.${candidate.supabase_id}&select=status&limit=1`, { headers: SB_H });
+        if (!res.ok) return;
+        const rows = await res.json();
+        const status = Array.isArray(rows) && rows[0] ? rows[0].status : null;
+        if (!status || !['pending', 'accepted', 'arrived', 'in_progress'].includes(status)) return;
+        showExtSuccess(candidate.id);
+      } catch {}
+    }
+    restoreActiveExternalBooking();
   </script>
 </Layout>

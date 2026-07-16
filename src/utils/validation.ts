@@ -55,6 +55,30 @@ export function validateEmail(input: string): { valid: boolean; message: string 
   return { valid: true, message: '' };
 }
 
+// ── National ID (Egyptian, 14 digits) ───────────────────────
+// First digit = century (2=1900s, 3=2000s+), followed by a real
+// YYMMDD birth date — rejects random 14-digit strings, not just
+// wrong-length ones. Must match the driver/merchant rules exactly.
+export function isValidEgyptianNationalId(id: string): boolean {
+  if (!/^[23]\d{13}$/.test(id)) return false;
+  const century = id[0] === '2' ? 1900 : 2000;
+  const year  = century + parseInt(id.slice(1, 3), 10);
+  const month = parseInt(id.slice(3, 5), 10);
+  const day   = parseInt(id.slice(5, 7), 10);
+  if (month < 1 || month > 12) return false;
+  const daysInMonth = new Date(year, month, 0).getDate();
+  return day >= 1 && day <= daysInMonth;
+}
+
+// Valid, non-expired date (YYYY-MM-DD, today or later).
+export function isFutureDate(v: string): boolean {
+  if (!v) return false;
+  const d = new Date(v);
+  if (isNaN(d.getTime())) return false;
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  return d >= today;
+}
+
 // ── Phone ────────────────────────────────────────────────────
 // Canonical = local 01XXXXXXXXX. Returns '' when invalid.
 export function canonicalPhone(input: string): string {

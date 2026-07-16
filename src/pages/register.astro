@@ -256,6 +256,27 @@ const CITIES = ['دمياط الجديدة', 'دمياط', 'كفر سعد', 'ف�
                 </div>
               </div>
 
+              <div class="f26">
+                <label class="f26__label" for="reg-nat-id">
+                  الرقم القومي <span id="natid-avail" class="f26__avail"></span>
+                </label>
+                <div class="f26__wrap">
+                  <span class="f26__icon">🪪</span>
+                  <input class="field__input" type="text" id="reg-nat-id"
+                    placeholder="14 رقم" inputmode="numeric"
+                    maxlength="14" required dir="ltr">
+                </div>
+                <div class="f26__hint">14 رقم ويبدأ بـ 2 أو 3</div>
+              </div>
+
+              <div class="f26">
+                <label class="f26__label" for="reg-nat-id-expiry">تاريخ انتهاء البطاقة</label>
+                <div class="f26__wrap">
+                  <span class="f26__icon">📅</span>
+                  <input class="field__input" type="date" id="reg-nat-id-expiry" required>
+                </div>
+              </div>
+
               <div class="step-nav">
                 <button type="button" class="btn26 btn26--primary" data-next="1">التالي ←</button>
               </div>
@@ -352,7 +373,7 @@ const CITIES = ['دمياط الجديدة', 'دمياط', 'كفر سعد', 'ف�
   import { isEgyptianMobile, normalizeEgyptianPhone, EG_PHONE_ERROR } from '../utils/phone';
   import { validatePassword }    from '../utils/password';
   import { addAccount, fieldExists } from '../utils/accounts';
-  import { validateFullName, defaultAvatar } from '../utils/validation';
+  import { validateFullName, defaultAvatar, isValidEgyptianNationalId, isFutureDate } from '../utils/validation';
 
   const form      = document.getElementById('register-form')   as HTMLFormElement;
   const errorBox  = document.getElementById('register-error')  as HTMLElement;
@@ -361,6 +382,8 @@ const CITIES = ['دمياط الجديدة', 'دمياط', 'كفر سعد', 'ف�
   const nameInp  = document.getElementById('reg-name')     as HTMLInputElement;
   const userInp  = document.getElementById('reg-username') as HTMLInputElement;
   const phoneInp = document.getElementById('reg-phone')    as HTMLInputElement;
+  const natIdInp = document.getElementById('reg-nat-id')       as HTMLInputElement;
+  const natIdExpInp = document.getElementById('reg-nat-id-expiry') as HTMLInputElement;
   const emailInp = document.getElementById('reg-email')    as HTMLInputElement;
   const cityInp  = document.getElementById('reg-city')     as HTMLSelectElement;
   const passInp  = document.getElementById('reg-pass')     as HTMLInputElement;
@@ -368,6 +391,7 @@ const CITIES = ['دمياط الجديدة', 'دمياط', 'كفر سعد', 'ف�
 
   const userAvail  = document.getElementById('user-avail')  as HTMLElement;
   const phoneAvail = document.getElementById('phone-avail') as HTMLElement;
+  const natIdAvail = document.getElementById('natid-avail') as HTMLElement;
   const emailAvail = document.getElementById('email-avail') as HTMLElement;
 
   // ── Password rules ──
@@ -404,7 +428,7 @@ const CITIES = ['دمياط الجديدة', 'دمياط', 'كفر سعد', 'ف�
   type AvailState = 'idle' | 'checking' | 'ok' | 'taken' | 'error';
 
   const fieldState: Record<string, AvailState> = {
-    username: 'idle', phone: 'idle', email: 'idle',
+    username: 'idle', phone: 'idle', email: 'idle', natId: 'idle',
   };
 
   function setAvail(el: HTMLElement, inp: HTMLInputElement, state: AvailState, msg = '') {
@@ -448,6 +472,21 @@ const CITIES = ['دمياط الجديدة', 'دمياط', 'كفر سعد', 'ف�
     else { setAvail(phoneAvail, phoneInp, 'idle', ''); fieldState.phone = 'idle'; }
   }, 600);
 
+  const checkNatId = debounce(async () => {
+    const v = natIdInp.value.trim();
+    if (!v) { setAvail(natIdAvail, natIdInp, 'idle', ''); fieldState.natId = 'idle'; return; }
+    if (!isValidEgyptianNationalId(v)) {
+      setAvail(natIdAvail, natIdInp, 'taken', '✗ رقم قومي غير صحيح — 14 رقم ويبدأ بـ 2 أو 3');
+      fieldState.natId = 'taken'; return;
+    }
+    setAvail(natIdAvail, natIdInp, 'checking', 'جاري الفحص...');
+    fieldState.natId = 'checking';
+    const exists = await fieldExists('national_id', v);
+    if (exists === true)  { setAvail(natIdAvail, natIdInp, 'taken', '✗ الرقم القومي مسجّل بالفعل'); fieldState.natId = 'taken'; }
+    else if (exists === false) { setAvail(natIdAvail, natIdInp, 'ok', '✓ رقم صحيح'); fieldState.natId = 'ok'; }
+    else { setAvail(natIdAvail, natIdInp, 'idle', ''); fieldState.natId = 'idle'; }
+  }, 600);
+
   const checkEmail = debounce(async () => {
     const v = emailInp.value.trim();
     if (!v) { setAvail(emailAvail, emailInp, 'idle', ''); fieldState.email = 'idle'; return; }
@@ -465,6 +504,7 @@ const CITIES = ['دمياط الجديدة', 'دمياط', 'كفر سعد', 'ف�
 
   userInp.addEventListener('input',  checkUsername);
   phoneInp.addEventListener('input', checkPhone);
+  natIdInp.addEventListener('input', checkNatId);
   emailInp.addEventListener('input', checkEmail);
 
   // ── Multi-step navigation ──
@@ -497,6 +537,10 @@ const CITIES = ['دمياط الجديدة', 'دمياط', 'كفر سعد', 'ف�
       if (fieldState.username === 'taken') { showError('اسم المستخدم محجوز، اختر اسماً آخر.'); return false; }
       if (!isEgyptianMobile(phoneInp.value.trim())) { showError(EG_PHONE_ERROR); return false; }
       if (fieldState.phone === 'taken') { showError('هذا الرقم مسجّل بالفعل. <a href="/login">سجّل الدخول</a> مباشرة.'); return false; }
+      const natId = natIdInp.value.trim();
+      if (!isValidEgyptianNationalId(natId)) { showError('رقم قومي غير صحيح — لازم يكون 14 رقم ويبدأ بـ 2 أو 3.'); return false; }
+      if (fieldState.natId === 'taken') { showError('هذا الرقم القومي مسجّل بالفعل.'); return false; }
+      if (!isFutureDate(natIdExpInp.value)) { showError('البطاقة منتهية — أدخل تاريخاً سارياً لانتهاء البطاقة.'); return false; }
     }
     if (n === 2) {
       const em = emailInp.value.trim();
@@ -539,6 +583,8 @@ const CITIES = ['دمياط الجديدة', 'دمياط', 'كفر سعد', 'ف�
     const name     = nameInp.value.trim();
     const username = userInp.value.trim();
     const phone    = phoneInp.value.trim();
+    const natId    = natIdInp.value.trim();
+    const natIdExp = natIdExpInp.value;
     const email    = emailInp.value.trim().toLowerCase();
     const city     = cityInp.value;
     const pass     = passInp.value;
@@ -550,6 +596,8 @@ const CITIES = ['دمياط الجديدة', 'دمياط', 'كفر سعد', 'ف�
     if (!username || username.length < 3) { showStep(1); showError('اسم المستخدم يجب أن يكون 3 أحرف على الأقل.'); return; }
     if (!/^[a-zA-Z0-9_\.]{3,20}$/.test(username)) { showStep(1); showError('اسم المستخدم: أحرف إنجليزية وأرقام و _ . فقط (3-20 حرف).'); return; }
     if (!isEgyptianMobile(phone)) { showStep(1); showError(EG_PHONE_ERROR); return; }
+    if (!isValidEgyptianNationalId(natId)) { showStep(1); showError('رقم قومي غير صحيح — لازم يكون 14 رقم ويبدأ بـ 2 أو 3.'); return; }
+    if (!isFutureDate(natIdExp)) { showStep(1); showError('البطاقة منتهية — أدخل تاريخاً سارياً لانتهاء البطاقة، من فضلك.'); return; }
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { showStep(2); showError('يرجى إدخال بريد إلكتروني صحيح.'); return; }
     if (!city)  { showStep(2); showError('يرجى اختيار المدينة.'); return; }
     const pwResult = validatePassword(pass);
@@ -559,17 +607,20 @@ const CITIES = ['دمياط الجديدة', 'دمياط', 'كفر سعد', 'ف�
     // ── Block if any field already known to be taken ──
     if (fieldState.username === 'taken') { showStep(1); showError('اسم المستخدم محجوز، اختر اسماً آخر.'); return; }
     if (fieldState.phone    === 'taken') { showStep(1); showError('هذا الرقم مسجّل بالفعل. <a href="/login">سجّل الدخول</a> مباشرة.'); return; }
+    if (fieldState.natId    === 'taken') { showStep(1); showError('هذا الرقم القومي مسجّل بالفعل.'); return; }
     if (fieldState.email    === 'taken') { showStep(2); showError('هذا البريد الإلكتروني مسجّل بالفعل.'); return; }
 
     // ── Final server-side uniqueness check before insert ──
     const norm = normalizeEgyptianPhone(phone);
-    const [phoneExists, emailExists, userExists] = await Promise.all([
+    const [phoneExists, emailExists, userExists, natIdExists] = await Promise.all([
       fieldExists('phone',    norm),
       fieldExists('email',    email),
       fieldExists('username', username),
+      fieldExists('national_id', natId),
     ]);
 
     if (phoneExists === true)  { showStep(1); showError('هذا الرقم مسجّل بالفعل. <a href="/login">سجّل الدخول</a> مباشرة.'); return; }
+    if (natIdExists === true)  { showStep(1); showError('هذا الرقم القومي مسجّل بالفعل.'); return; }
     if (emailExists === true)  { showStep(2); showError('هذا البريد الإلكتروني مسجّل في النظام.'); return; }
     if (userExists  === true)  { showStep(1); showError('اسم المستخدم محجوز، جرّب اسماً آخر.'); return; }
 
@@ -577,6 +628,7 @@ const CITIES = ['دمياط الجديدة', 'دمياط', 'كفر سعد', 'ف�
     const created = await addAccount({
       name, username, phone: norm, email, password: pass,
       role: 'customer', city,
+      national_id: natId, national_id_expiry: natIdExp,
       createdAt: new Date().toISOString(),
     });
 

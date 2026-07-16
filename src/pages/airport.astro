@@ -1106,39 +1106,85 @@ import { VEHICLE_TYPES } from '../data/airports';
       } catch { /* Supabase unavailable — order saved locally */ }
 
       // Success
-      $('air-success-id').textContent = orderId;
-      ($('air-success-track') as HTMLAnchorElement).href = `/track?q=${encodeURIComponent(orderId)}`;
-      $('air-success-card').innerHTML = dep ? `
+      showSuccessCard(order);
+    });
+
+    // ── Builds the success-panel card HTML from a stored `order` object
+    //    (ISO date strings) — shared by the submit handler above AND the
+    //    on-load restore below, so a refresh shows the exact same card
+    //    instead of losing the booking and resetting to an empty form. ──
+    function buildSuccessCardHtml(order: any): string {
+      const dep = order.direction === 'departure';
+      const flightDate  = order.flightTime       ? new Date(order.flightTime)       : null;
+      const driverArrival = order.driverArrivalTime ? new Date(order.driverArrivalTime) : null;
+      const depart      = order.departTime       ? new Date(order.departTime)       : null;
+      const arrive      = order.arriveTime       ? new Date(order.arriveTime)       : null;
+      const pax = order.passengers ?? 1, comp = order.companions ?? 0, bagsVal = order.bags ?? 0;
+
+      return dep ? `
         <div class="air-success__card-header">🛫 تفاصيل رحلة المغادرة</div>
-        <div class="row"><span class="row-label">المطار</span><span class="row-val">${selectedAirport!.name}</span></div>
-        <div class="row"><span class="row-label">السيارة</span><span class="row-val">${selectedVehicle.name}</span></div>
-        ${c.driverArrival ? `<div class="row"><span class="row-label">وصول السائق للاستلام</span><span class="row-val">${fmtDateTime(c.driverArrival)}</span></div>` : ''}
-        ${c.depart ? `<div class="row"><span class="row-label">المغادرة من نقطة البداية</span><span class="row-val">${fmtDateTime(c.depart)}</span></div>` : ''}
-        ${c.arrive ? `<div class="row"><span class="row-label">الوصول للمطار</span><span class="row-val">${fmtDateTime(c.arrive)}</span></div>` : ''}
-        <div class="row"><span class="row-label">إقلاع الطائرة</span><span class="row-val">${fmtDateTime(c.flight!)}</span></div>
+        <div class="row"><span class="row-label">المطار</span><span class="row-val">${order.airport}</span></div>
+        <div class="row"><span class="row-label">السيارة</span><span class="row-val">${order.vehicleName}</span></div>
+        ${driverArrival ? `<div class="row"><span class="row-label">وصول السائق للاستلام</span><span class="row-val">${fmtDateTime(driverArrival)}</span></div>` : ''}
+        ${depart ? `<div class="row"><span class="row-label">المغادرة من نقطة البداية</span><span class="row-val">${fmtDateTime(depart)}</span></div>` : ''}
+        ${arrive ? `<div class="row"><span class="row-label">الوصول للمطار</span><span class="row-val">${fmtDateTime(arrive)}</span></div>` : ''}
+        ${flightDate ? `<div class="row"><span class="row-label">إقلاع الطائرة</span><span class="row-val">${fmtDateTime(flightDate)}</span></div>` : ''}
         <div class="row"><span class="row-label">الرحلة</span><span class="row-val">${order.airline || '—'} ${order.flightNo || ''}</span></div>
         <div class="row"><span class="row-label">المسافرون</span><span class="row-val">${pax}</span></div>
         ${comp > 0 ? `<div class="row"><span class="row-label">مرافقون رايح جاي</span><span class="row-val">${comp}</span></div>` : ''}
         <div class="row"><span class="row-label">الشنط الكبيرة</span><span class="row-val">${bagsVal}</span></div>
-        <div class="row row--total"><span class="row-label">الإجمالي</span><span class="row-val">${c.total} ج.م</span></div>` : `
+        <div class="row row--total"><span class="row-label">الإجمالي</span><span class="row-val">${order.price}</span></div>` : `
         <div class="air-success__card-header">🛬 تفاصيل رحلة الوصول</div>
-        <div class="row"><span class="row-label">المطار</span><span class="row-val">${selectedAirport!.name}</span></div>
-        <div class="row"><span class="row-label">السيارة</span><span class="row-val">${selectedVehicle.name}</span></div>
-        <div class="row"><span class="row-label">هبوط الطائرة</span><span class="row-val">${fmtDateTime(c.land!)}</span></div>
-        ${c.ready ? `<div class="row"><span class="row-label">استلام الأمتعة (متوقع)</span><span class="row-val">${fmtDateTime(c.ready)}</span></div>` : ''}
-        ${c.home ? `<div class="row"><span class="row-label">الوصول المتوقع لوجهتك</span><span class="row-val">${fmtDateTime(c.home)}</span></div>` : ''}
+        <div class="row"><span class="row-label">المطار</span><span class="row-val">${order.airport}</span></div>
+        <div class="row"><span class="row-label">السيارة</span><span class="row-val">${order.vehicleName}</span></div>
+        ${flightDate ? `<div class="row"><span class="row-label">هبوط الطائرة</span><span class="row-val">${fmtDateTime(flightDate)}</span></div>` : ''}
+        ${arrive ? `<div class="row"><span class="row-label">الوصول المتوقع لوجهتك</span><span class="row-val">${fmtDateTime(arrive)}</span></div>` : ''}
         <div class="row"><span class="row-label">الرحلة</span><span class="row-val">${order.airline || '—'} ${order.flightNo || ''}</span></div>
         <div class="row"><span class="row-label">المسافرون</span><span class="row-val">${pax}</span></div>
         ${comp > 0 ? `<div class="row"><span class="row-label">مرافقون</span><span class="row-val">${comp}</span></div>` : ''}
         <div class="row"><span class="row-label">الشنط الكبيرة</span><span class="row-val">${bagsVal}</span></div>
-        <div class="row row--total"><span class="row-label">الإجمالي</span><span class="row-val">${c.total} ج.م</span></div>`;
+        <div class="row row--total"><span class="row-label">الإجمالي</span><span class="row-val">${order.price}</span></div>`;
+    }
 
+    function showSuccessCard(order: any) {
+      $('air-success-id').textContent = order.id;
+      ($('air-success-track') as HTMLAnchorElement).href = `/track?q=${encodeURIComponent(order.id)}`;
+      $('air-success-card').innerHTML = buildSuccessCardHtml(order);
       ($('air-wrap') as HTMLElement).style.display = 'none';
       ($('air-success') as HTMLElement).classList.add('is-visible');
       $('air-success').focus();
       window.scrollTo({ top: 0, behavior: 'smooth' });
-    });
+    }
+
+    // ── استرجاع الحجز النشط بعد تحديث الصفحة — بدل ما يرجع العميل لفورم
+    //    فاضي رغم إن حجزه لسه شغّال في قاعدة البيانات. بيدوّر على آخر
+    //    حجز مطار محفوظ محلياً (فيه كل التفاصيل الأصلية) ويتأكد إنه لسه
+    //    نشط عن طريق rides قبل ما يعرضه. ──
+    async function restoreActiveAirportBooking() {
+      let phone: string | null = null;
+      try { phone = (JSON.parse(localStorage.getItem('wslha_user') || '{}')).phone || null; } catch {}
+      let orders: any[] = [];
+      try { orders = JSON.parse(localStorage.getItem('wslha_orders') || '[]'); } catch {}
+      const candidate = orders.find((o: any) =>
+        o.kind === 'airport' && o.status === 'active' && o.supabase_id &&
+        (!phone || normalizeEgyptianPhone(o.phone || '') === normalizeEgyptianPhone(phone))
+      );
+      if (!candidate) return;
+
+      try {
+        const _SB = 'https://vtikgyiopkjnrwlqnmfx.supabase.co';
+        const _KEY = 'sb_publishable_PLSnpvCT-sAyUMtymNgTwA_QmL2suw4';
+        const _H = { apikey: _KEY, Authorization: 'Bearer ' + _KEY };
+        const res = await fetch(`${_SB}/rest/v1/rides?id=eq.${candidate.supabase_id}&select=status&limit=1`, { headers: _H });
+        if (!res.ok) return;
+        const rows = await res.json();
+        const status = Array.isArray(rows) && rows[0] ? rows[0].status : null;
+        if (!status || !['pending', 'accepted', 'arrived', 'in_progress'].includes(status)) return;
+        showSuccessCard(candidate);
+      } catch {}
+    }
 
     render();
+    restoreActiveAirportBooking();
   </script>
 </Layout>

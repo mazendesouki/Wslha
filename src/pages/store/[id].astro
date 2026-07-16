@@ -437,7 +437,7 @@ const staticMenuJson = JSON.stringify(
           <p class="order-id" data-success-id>—</p>
           <div class="sheet__actions">
             <a class="sheet__btn sheet__btn--ghost" href="/orders">طلباتي</a>
-            <a class="sheet__btn sheet__btn--primary" href="/track">📡 تتبع الطلب</a>
+            <a class="sheet__btn sheet__btn--primary" href="/track" data-success-track>📡 تتبع الطلب</a>
           </div>
         </div>
       </div>
@@ -931,6 +931,7 @@ const staticMenuJson = JSON.stringify(
       const succ = sheet.querySelector('[data-step="success"]') as HTMLElement;
       (succ.querySelector('[data-success-id]') as HTMLElement).textContent = code;
       (succ.querySelector('[data-success-store]') as HTMLElement).textContent = STORE.name;
+      (succ.querySelector('[data-success-track]') as HTMLAnchorElement).href = `/track?q=${encodeURIComponent(code)}`;
       succ.hidden = false;
     }
 

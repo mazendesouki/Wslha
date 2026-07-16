@@ -804,6 +804,10 @@ import PageHero from '../components/PageHero.astro';
   let pollInterval  = null;   // fallback REST poll (30s)
   let ridesChannel  = null;   // Realtime channel for new rides
   let ordersChannel = null;   // Realtime channel for new orders
+  let offerInterval = null;   // targeted dispatch-offer poll (3s, while online)
+  // مهلة قبل ما البثّ القديم (لكل السائقين المتصلين) يشتغل كخطة احتياطية —
+  // بتدي محرك التوزيع (لو شغّال) فرصة إنه يعرض الطلب على أقرب سائق الأول.
+  const BROADCAST_FALLBACK_MS = 90 * 1000;
   let geoWatchId    = null;
   let timerInterval = null;
   let waitingTimerInterval = null;
@@ -1111,7 +1115,8 @@ import PageHero from '../components/PageHero.astro';
           lng: driverLng ?? 31.814,
           is_online: online,
           updated_at: new Date().toISOString(),
-          ...(currentRide ? { ride_id: currentRide.id } : { ride_id: null }),
+          ...(currentRide  ? { ride_id: currentRide.id }   : { ride_id: null }),
+          ...(currentOrder ? { current_order_id: currentOrder.id } : { current_order_id: null }),
         }),
       });
     } catch {}
@@ -1127,14 +1132,61 @@ import PageHero from '../components/PageHero.astro';
       const rides = await res.json();
       if (Array.isArray(rides) && rides.length > 0) {
         const ride = rides[0];
+        // خطة احتياطية بثّية — تستنى شوية الأول عشان تدي محرك التوزيع
+        // (لو شغّال) فرصة يعرض الطلب على أقرب سائق بالاسم قبل ما يتبثّ للكل.
+        const age = Date.now() - new Date(ride.created_at).getTime();
+        if (age < BROADCAST_FALLBACK_MS) return;
         const reqEl = document.getElementById('ride-request');
         if (!reqEl.classList.contains('visible') || pendingRide?.id !== ride.id) {
           showRideRequest(ride);
         }
       } else {
-        if (pendingRide) { hideRideRequest(); pendingRide = null; }
+        if (pendingRide && !pendingRide.offer_id) { hideRideRequest(); pendingRide = null; }
       }
     } catch {}
+  }
+
+  // ── محرك التوزيع (سيرفر Node منفصل، اختياري) — بيعرض الرحلة/الطلب على
+  //    هالسائق تحديداً عن طريق dispatch_offers بدل البثّ للكل. لو مفيش
+  //    محرك توزيع شغّال، الدالة دي مترجعش حاجة والبثّ القديم فوق بيتكفل بالباقي.
+  async function pollDispatchOffer() {
+    if (!isOnline || currentRide || currentOrder || pendingRide || pendingOrder || !driver) return;
+    try {
+      const res = await fetch(`${SB_URL}/rest/v1/rpc/get_my_pending_offer`, {
+        method: 'POST', headers: SB_H,
+        body: JSON.stringify({ p_driver_phone: driver.phone }),
+      });
+      if (!res.ok) return;
+      const offer = await res.json();
+      if (!offer || !offer.data) return;
+      if (offer.target_type === 'ride') {
+        showRideRequest({ ...offer.data, offer_id: offer.offer_id });
+      } else {
+        showOrderRequest({ ...offer.data, offer_id: offer.offer_id });
+      }
+    } catch {}
+  }
+
+  // Atomic accept through the dispatch offer, when the request came from
+  // the targeted dispatch engine rather than the legacy broadcast poll.
+  async function acceptViaOffer(offerId) {
+    try {
+      const res = await fetch(`${SB_URL}/rest/v1/rpc/accept_dispatch_offer`, {
+        method: 'POST', headers: SB_H,
+        body: JSON.stringify({ p_offer_id: offerId, p_driver_phone: driver.phone, p_driver_name: driver.name || driver.phone }),
+      });
+      if (!res.ok) return null;
+      const result = await res.json();
+      return result && result.ok ? result.data : null;
+    } catch { return null; }
+  }
+
+  function rejectViaOffer(offerId) {
+    if (!offerId) return;
+    fetch(`${SB_URL}/rest/v1/rpc/reject_dispatch_offer`, {
+      method: 'POST', headers: SB_H,
+      body: JSON.stringify({ p_offer_id: offerId, p_driver_phone: driver.phone }),
+    }).catch(() => {});
   }
 
   // رحلة/طلب نشط كان بيتخزّن في متغيّر جافاسكريبت بس (currentRide/currentOrder)،
@@ -1246,11 +1298,14 @@ import PageHero from '../components/PageHero.astro';
       const orders = await res.json();
       if (Array.isArray(orders) && orders.length > 0) {
         const order = orders[0];
+        // نفس مهلة الاحتياطي بتاعة pollRides — تدي محرك التوزيع فرصة الأول.
+        const age = Date.now() - new Date(order.accepted_at || order.created_at).getTime();
+        if (age < BROADCAST_FALLBACK_MS) return;
         const reqEl = document.getElementById('ride-request');
         if (!reqEl.classList.contains('visible') || pendingOrder?.id !== order.id) {
           if (!pendingRide) showOrderRequest(order);  // rides take priority if already showing
         }
-      } else if (pendingOrder) {
+      } else if (pendingOrder && !pendingOrder.offer_id) {
         hideRideRequest(); pendingOrder = null;
       }
     } catch {}
@@ -1324,7 +1379,7 @@ import PageHero from '../components/PageHero.astro';
     if (pendingOrder) {
       const offer = pendingOrder;
       hideRideRequest();
-      const claimed = await claimOrder(offer);
+      const claimed = offer.offer_id ? await acceptViaOffer(offer.offer_id) : await claimOrder(offer);
       pendingOrder = null;
       if (!claimed) { showToast('سبقك سائق آخر لهذا الطلب'); return; }
       currentOrder = claimed;
@@ -1339,7 +1394,7 @@ import PageHero from '../components/PageHero.astro';
     const ride = pendingRide;
     if (!ride) return;
     hideRideRequest();
-    const accepted = await acceptRide(ride);
+    const accepted = ride.offer_id ? await acceptViaOffer(ride.offer_id) : await acceptRide(ride);
     if (!accepted) { showToast('حدث خطأ، حاول مرة أخرى'); return; }
     currentRide = accepted;
     // Lock: no cancellation after acceptance until completion
@@ -1371,6 +1426,7 @@ import PageHero from '../components/PageHero.astro';
 
   /* ── Reject ── */
   document.getElementById('reject-btn').addEventListener('click', () => {
+    rejectViaOffer(pendingRide?.offer_id || pendingOrder?.offer_id);
     hideRideRequest(); pendingRide = null; pendingOrder = null;
   });
 
@@ -1844,11 +1900,20 @@ import PageHero from '../components/PageHero.astro';
     }
 
     window._gpsInterval = setInterval(() => upsertLocation(true), 3000);
+
+    if (!offerInterval) offerInterval = setInterval(pollDispatchOffer, 3000);
+    pollDispatchOffer();
   }
 
   /* ── Toggle online/offline ── */
   document.getElementById('toggle-btn').addEventListener('click', async () => {
     if (!driver) return;
+    // منع السائق من "الهروب" من رحلة/طلب نشط عن طريق قفل التشغيل —
+    // الرحلة تفضل accepted في قاعدة البيانات لكن واجهته بتتوه من غير ده.
+    if (isOnline && (currentRide || currentOrder)) {
+      showToast('لا يمكن إيقاف التشغيل أثناء رحلة نشطة');
+      return;
+    }
     isOnline = !isOnline;
 
     if (isOnline) {
@@ -1869,6 +1934,7 @@ import PageHero from '../components/PageHero.astro';
       if (ordersChannel) { ordersChannel.unsubscribe(); ordersChannel = null; }
       clearInterval(pollInterval); pollInterval = null;
       clearInterval(window._gpsInterval); window._gpsInterval = null;
+      clearInterval(offerInterval); offerInterval = null;
       hideRideRequest(); pendingRide = null; pendingOrder = null;
       await upsertLocation(false);
       showToast('تم إيقاف التشغيل');
