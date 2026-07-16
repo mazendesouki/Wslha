@@ -780,7 +780,6 @@ import PageHero from '../components/PageHero.astro';
     document.getElementById('driver-phone-bar').textContent = driver.phone || '';
     // Load approval status and initial account data
     loadApprovalStatus();
-    loadTodayStats();
   }
 
   /* ── Stats ── */
@@ -1787,6 +1786,9 @@ import PageHero from '../components/PageHero.astro';
       await goOnline();
       showToast('أنت الآن متصل — انتظر الطلبات');
     } else {
+      const btn   = document.getElementById('toggle-btn');
+      const label = document.getElementById('toggle-label');
+      const text  = document.getElementById('toggle-text');
       btn.classList.replace('online', 'offline');
       text.textContent  = 'إيقاف';
       label.textContent = 'غير متصل';
