@@ -2203,7 +2203,7 @@ import { VEHICLE_MODELS, FARE_ZONES, TRIP_RATES } from '../data/airports';
     const ride = window._completedRide;
     if (!ride || !_selectedRating) return;
     try {
-      await fetch(`${SB_URL}/rest/v1/ratings`, {
+      const res = await fetch(`${SB_URL}/rest/v1/ratings`, {
         method: 'POST',
         headers: { ...SB_H, Prefer: 'return=minimal' },
         body: JSON.stringify({
@@ -2217,7 +2217,11 @@ import { VEHICLE_MODELS, FARE_ZONES, TRIP_RATES } from '../data/airports';
           created_at: new Date().toISOString(),
         }),
       });
-    } catch {}
+      if (!res.ok) {
+        const detail = await res.text().catch(() => '');
+        console.error('[ratings] insert failed', res.status, detail);
+      }
+    } catch (e) { console.error('[ratings] insert error', e); }
     showSuccessAfterRating(ride);
   });
 

@@ -964,7 +964,7 @@ import PageHero from '../components/PageHero.astro';
   document.getElementById('rate-customer-submit')?.addEventListener('click', async () => {
     if (!_rcSelected || !_rateCustomerTarget) return;
     try {
-      await fetch(`${SB_URL}/rest/v1/ratings`, {
+      const res = await fetch(`${SB_URL}/rest/v1/ratings`, {
         method: 'POST', headers: { ...SB_H, Prefer: 'return=minimal' },
         body: JSON.stringify({
           id: 'ratc-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6),
@@ -974,7 +974,12 @@ import PageHero from '../components/PageHero.astro';
           created_at: new Date().toISOString(),
         }),
       });
-    } catch {}
+      if (!res.ok) {
+        const detail = await res.text().catch(() => '');
+        console.error('[ratings] insert failed', res.status, detail);
+        showToast('تعذّر حفظ التقييم — حاول لاحقاً');
+      }
+    } catch (e) { console.error('[ratings] insert error', e); }
     hideRateCustomer();
   });
 
