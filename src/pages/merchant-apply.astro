@@ -258,11 +258,13 @@ import Layout from '../components/layout.astro';
           <div class="form-grid">
             <div class="form-group">
               <label>رقم الهوية الوطنية <span class="req">*</span></label>
-              <input class="form-input" id="nat-id-num" type="text" placeholder="رقم الهوية" maxlength="20"/>
+              <input class="form-input" id="nat-id-num" type="text" placeholder="14 رقم" maxlength="14" inputmode="numeric" dir="ltr"/>
+              <span id="natid-err" style="display:none;color:#dc2626;font-size:.78rem;margin-top:4px;"></span>
             </div>
             <div class="form-group">
               <label>تاريخ انتهاء الهوية <span class="req">*</span></label>
               <input class="form-input" id="nat-id-expiry" type="date"/>
+              <span id="natid-exp-err" style="display:none;color:#dc2626;font-size:.78rem;margin-top:4px;"></span>
             </div>
             <div class="form-group form-group--full">
               <label>صورة الهوية الوطنية <span class="req">*</span></label>
@@ -365,6 +367,66 @@ const SB_H   = { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}` };
 
 let USER;
 try { USER = JSON.parse(localStorage.getItem('wslha_user') || 'null'); } catch {}
+
+// ── الرقم القومي المصري: 14 رقم، أول رقم قرن الميلاد (2=1900، 3=2000)،
+//    يليه سنة/شهر/يوم ميلاد فعليين — نفس منطق driver.astro/register.astro. ──
+function isValidEgyptianNationalId(id) {
+  if (!/^[23]\d{13}$/.test(id)) return false;
+  const century = id[0] === '2' ? 1900 : 2000;
+  const year  = century + parseInt(id.slice(1, 3), 10);
+  const month = parseInt(id.slice(3, 5), 10);
+  const day   = parseInt(id.slice(5, 7), 10);
+  if (month < 1 || month > 12) return false;
+  const daysInMonth = new Date(year, month, 0).getDate();
+  return day >= 1 && day <= daysInMonth;
+}
+function isFutureDate(v) {
+  if (!v) return false;
+  const d = new Date(v);
+  if (isNaN(d.getTime())) return false;
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  return d >= today;
+}
+
+let _natIdTaken = false;
+let _natIdCheckTimer = null;
+document.getElementById('nat-id-num')?.addEventListener('input', function() {
+  const el = document.getElementById('natid-err');
+  const v = this.value.trim();
+  _natIdTaken = false;
+  clearTimeout(_natIdCheckTimer);
+  if (!v) { el.style.display = 'none'; return; }
+  if (!isValidEgyptianNationalId(v)) {
+    el.textContent = 'رقم قومي غير صحيح — لازم يكون 14 رقم ويبدأ بـ 2 أو 3';
+    el.style.display = 'block';
+    return;
+  }
+  el.style.display = 'none';
+  _natIdCheckTimer = setTimeout(async () => {
+    try {
+      const res = await fetch(`${SB_URL}/rest/v1/rpc/check_national_id_availability`, {
+        method: 'POST', headers: { ...SB_H, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ p_value: v }),
+      });
+      if (!res.ok) return;
+      const available = await res.json();
+      if (available === false) {
+        _natIdTaken = true;
+        el.textContent = 'هذا الرقم القومي مسجّل بالفعل';
+        el.style.display = 'block';
+      }
+    } catch {}
+  }, 600);
+});
+document.getElementById('nat-id-expiry')?.addEventListener('input', function() {
+  const el = document.getElementById('natid-exp-err');
+  if (this.value && !isFutureDate(this.value)) {
+    el.textContent = 'الهوية منتهية — أدخل تاريخاً سارياً';
+    el.style.display = 'block';
+  } else {
+    el.style.display = 'none';
+  }
+});
 
 function normPhone(p) {
   p = p.replace(/\s+/g, '');
@@ -564,6 +626,16 @@ async function submitApplication() {
       err.textContent = `⚠️ الحقل "${label}" مطلوب`; err.style.display = 'block'; return;
     }
   }
+  const natId = document.getElementById('nat-id-num').value.trim();
+  if (!isValidEgyptianNationalId(natId)) {
+    err.textContent = '⚠️ رقم قومي غير صحيح — لازم يكون 14 رقم ويبدأ بـ 2 أو 3'; err.style.display = 'block'; return;
+  }
+  if (_natIdTaken) {
+    err.textContent = '⚠️ هذا الرقم القومي مسجّل بالفعل'; err.style.display = 'block'; return;
+  }
+  if (!isFutureDate(document.getElementById('nat-id-expiry').value)) {
+    err.textContent = '⚠️ الهوية منتهية — أدخل تاريخاً سارياً'; err.style.display = 'block'; return;
+  }
   btn.disabled = true; btn.textContent = '⏳ جاري الإرسال…';
   const payload = {
     id: `mrc-${Date.now()}`,
@@ -605,8 +677,10 @@ async function submitApplication() {
     localStorage.setItem('wslha_user', JSON.stringify(USER));
     document.getElementById(`step-${currentStep}`).classList.add('hidden');
     document.getElementById('step-success').classList.remove('hidden');
-  } catch {
-    err.textContent = '❌ حدث خطأ أثناء الإرسال. تحقق من اتصالك وحاول مجدداً.';
+  } catch (e) {
+    err.textContent = e?.message?.includes('مسجّل بالفعل')
+      ? '❌ هذا الرقم القومي مسجّل بالفعل'
+      : '❌ حدث خطأ أثناء الإرسال. تحقق من اتصالك وحاول مجدداً.';
     err.style.display = 'block';
     btn.disabled = false; btn.textContent = '📤 إرسال الطلب';
   }

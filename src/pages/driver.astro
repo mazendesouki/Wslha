@@ -1120,10 +1120,32 @@ function isValidEgyptianNationalId(id) {
   var daysInMonth = new Date(year, month, 0).getDate();
   return day >= 1 && day <= daysInMonth;
 }
+var natIdTaken = false;
+var natIdCheckTimer = null;
 $('p-nat-id') && $('p-nat-id').addEventListener('input', function() {
   var v = this.value.trim();
-  if (v && !isValidEgyptianNationalId(v)) fieldErr('err-p-nat-id', 'رقم قومي غير صحيح — لازم يكون 14 رقم ويبدأ بـ 2 أو 3');
-  else clearFieldErr('err-p-nat-id');
+  natIdTaken = false;
+  clearTimeout(natIdCheckTimer);
+  if (v && !isValidEgyptianNationalId(v)) {
+    fieldErr('err-p-nat-id', 'رقم قومي غير صحيح — لازم يكون 14 رقم ويبدأ بـ 2 أو 3');
+    return;
+  }
+  clearFieldErr('err-p-nat-id');
+  if (!v) return;
+  natIdCheckTimer = setTimeout(async function() {
+    try {
+      var res = await fetch(SB_URL + '/rest/v1/rpc/check_national_id_availability', {
+        method: 'POST', headers: Object.assign({}, SB_H, { 'Content-Type': 'application/json' }),
+        body: JSON.stringify({ p_value: v }),
+      });
+      if (!res.ok) return;
+      var available = await res.json();
+      if (available === false) {
+        natIdTaken = true;
+        fieldErr('err-p-nat-id', 'هذا الرقم القومي مسجّل بالفعل');
+      }
+    } catch {}
+  }, 600);
 });
 
 // ── كشف وجه (مجاني، في المتصفح) على الصورة الشخصية بس — يمنع رفع صورة
@@ -1262,6 +1284,8 @@ function validatePersonal() {
     fieldErr('err-p-nat-id', 'رقم الهوية مطلوب'); ok = false;
   } else if (!isValidEgyptianNationalId(natId)) {
     fieldErr('err-p-nat-id', 'رقم قومي غير صحيح — لازم يكون 14 رقم ويبدأ بـ 2 أو 3'); ok = false;
+  } else if (natIdTaken) {
+    fieldErr('err-p-nat-id', 'هذا الرقم القومي مسجّل بالفعل'); ok = false;
   } else clearFieldErr('err-p-nat-id');
 
   var ne = $('p-nat-expiry').value;
@@ -1486,7 +1510,11 @@ window.submitApp = async function() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
 
   } catch(e) {
-    showErr('err-submit', '❌ ' + (e.message || 'حدث خطأ. تحقق من الاتصال وحاول مجدداً.'));
+    var msg = (e.message || '').indexOf('مسجّل بالفعل') !== -1
+      ? 'هذا الرقم القومي مسجّل بالفعل'
+      : (e.message || 'حدث خطأ. تحقق من الاتصال وحاول مجدداً.');
+    showErr('err-submit', '❌ ' + msg);
+    if (msg.indexOf('مسجّل بالفعل') !== -1) { fieldErr('err-p-nat-id', msg); setPanel(1); }
     btn.disabled = false;
     btn.textContent = '📤 إرسال الطلب النهائي';
   }
