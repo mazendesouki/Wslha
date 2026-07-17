@@ -583,22 +583,29 @@
 
     <!-- ═══════════════════ WALLETS ════════════════════════ -->
     <div class="section" id="sec-wallets">
-      <!-- KPIs -->
+      <!-- Net profit KPIs (server-computed — see get_platform_finance_summary) -->
       <div class="kpi-grid">
-        <div class="kpi kpi--green"><div class="kpi__icon">🏢</div><div class="kpi__val" id="w-platform-balance">—</div><div class="kpi__label">رصيد المنصة (عمولات)</div></div>
+        <div class="kpi kpi--green"><div class="kpi__icon">💰</div><div class="kpi__val" id="np-revenue">—</div><div class="kpi__label">إجمالي الإيرادات (عمولات)</div></div>
+        <div class="kpi kpi--orange"><div class="kpi__icon">💸</div><div class="kpi__val" id="np-withdrawn">—</div><div class="kpi__label">إجمالي المسحوب</div></div>
+        <div class="kpi kpi--blue"><div class="kpi__icon">🏦</div><div class="kpi__val" id="np-balance">—</div><div class="kpi__label">صافي الربح المتاح</div></div>
         <div class="kpi kpi--blue"><div class="kpi__icon">💳</div><div class="kpi__val" id="w-total-balance">—</div><div class="kpi__label">إجمالي أرصدة المستخدمين</div></div>
+      </div>
+      <div class="kpi-grid">
         <div class="kpi kpi--orange"><div class="kpi__icon">🚗</div><div class="kpi__val" id="w-driver-balance">—</div><div class="kpi__label">أرصدة السائقين</div></div>
         <div class="kpi kpi--blue"><div class="kpi__icon">🏪</div><div class="kpi__val" id="w-merchant-balance">—</div><div class="kpi__label">أرصدة التجار</div></div>
       </div>
 
-      <!-- Platform commission wallet -->
+      <!-- Platform net profit -->
       <div class="card">
         <div class="card__head">
-          <span class="card__title">🏢 محفظة المنصة — العمولات المتراكمة</span>
-          <button class="btn btn--sm btn--primary" onclick="adminSettlePlatform()">💸 تسوية العمولات</button>
+          <span class="card__title">🏢 صافي ربح المنصة</span>
+          <div style="display:flex;gap:.5rem;align-items:center">
+            <span style="font-size:.72rem;color:#94A3B8" id="np-refresh-note"></span>
+            <button class="btn btn--sm btn--primary" onclick="adminSettlePlatform()">💸 سحب أرباح</button>
+          </div>
         </div>
         <div class="card__body">
-          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:1rem">
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:1rem;margin-bottom:1.25rem">
             <div style="background:#DCFCE7;border-radius:10px;padding:.85rem 1rem;text-align:center">
               <div style="font-size:1.35rem;font-weight:900;color:#15803D" id="pw-ride">—</div>
               <div style="font-size:.72rem;color:#166534;margin-top:2px">🚗 عمولة رحلات</div>
@@ -612,6 +619,18 @@
               <div style="font-size:.72rem;color:#92400E;margin-top:2px">✈️ عمولة مطار</div>
             </div>
           </div>
+          <svg id="np-chart" viewBox="0 0 400 90" style="width:100%;max-width:420px;height:auto"></svg>
+        </div>
+      </div>
+
+      <!-- Withdrawal history -->
+      <div class="card">
+        <div class="card__head"><span class="card__title">📜 سجل عمليات سحب الأرباح</span></div>
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr><th>التاريخ</th><th>المشرف</th><th>المبلغ</th><th>الرصيد بعد السحب</th><th>ملاحظة</th></tr></thead>
+            <tbody id="withdrawals-tbody"><tr><td colspan="5" style="text-align:center;color:#94A3B8;padding:2rem">جاري التحميل…</td></tr></tbody>
+          </table>
         </div>
       </div>
 
@@ -989,6 +1008,19 @@ async function sbRpcRows(fn, body) {
     return Array.isArray(rows) ? rows : null;
   } catch { return null; }
 }
+// For RPCs that return a jsonb scalar/object rather than a boolean or row set.
+// Throws with the server's error message on failure so callers can show it.
+async function sbRpcJson(fn, body) {
+  const r = await fetch(`${SB_URL}/rest/v1/rpc/${fn}`, {
+    method:'POST', headers:{...SB_H,'Content-Type':'application/json'}, body:JSON.stringify(body)
+  });
+  if (!r.ok) {
+    let detail = '';
+    try { const j = await r.json(); detail = j.message || j.hint || ''; } catch {}
+    throw new Error(detail || `فشل الطلب (${r.status})`);
+  }
+  return await r.json();
+}
 
 // The accounts table can no longer be read directly by the anon key (closes
 // mass user-data enumeration) — every bulk listing goes through this
@@ -1038,6 +1070,7 @@ document.querySelectorAll('.nav-item').forEach(btn => {
     document.getElementById('topbar-title').textContent = sectionTitles[s] || '';
     currentSection = s;
     closeSidebar();
+    if (s !== 'wallets') clearTimeout(_npRefreshTimer);
     if (loaders[s]) loaders[s]();
   });
 });
@@ -1987,10 +2020,9 @@ async function loadWalletsSection() {
   document.getElementById('wallets-tbody').innerHTML = '<tr><td colspan="5" style="text-align:center;color:#94A3B8;padding:2rem">جاري التحميل…</td></tr>';
   document.getElementById('all-tx-tbody').innerHTML  = '<tr><td colspan="6" style="text-align:center;color:#94A3B8;padding:2rem">جاري التحميل…</td></tr>';
 
-  const [wallets, accounts, platformTxns, txData] = await Promise.all([
+  const [wallets, accounts, txData] = await Promise.all([
     sbGet('wallets?select=phone,balance,updated_at&order=balance.desc&limit=2000'),
     adminListAccounts(),
-    sbGet('wallet_transactions?phone=eq.platform&select=amount,note,created_at&order=created_at.desc&limit=5000'),
     sbGet('wallet_transactions?select=id,phone,amount,type,note,reference_id,created_at&order=created_at.desc&limit=500'),
   ]);
 
@@ -2010,26 +2042,72 @@ async function loadWalletsSection() {
   const driverBal   = allWallets.filter(w => w.role === 'driver').reduce((s,w) => s + Number(w.balance||0), 0);
   const merchantBal = allWallets.filter(w => w.role === 'merchant').reduce((s,w) => s + Number(w.balance||0), 0);
 
-  const platformComms   = (platformTxns || []).filter(t => !/تسوية/.test(t.note||''));
-  const platformSettled = (platformTxns || []).filter(t => /تسوية/.test(t.note||''));
-  const platformBal     = platformComms.reduce((s,t) => s + Number(t.amount||0), 0)
-                        - platformSettled.reduce((s,t) => s + Math.abs(Number(t.amount||0)), 0);
-  const rideComm    = (platformTxns||[]).filter(t => (t.note||'').includes('رحلة') && !(t.note||'').includes('مطار')).reduce((s,t) => s + Number(t.amount||0), 0);
-  const delivComm   = (platformTxns||[]).filter(t => (t.note||'').includes('توصيل')).reduce((s,t) => s + Number(t.amount||0), 0);
-  const airportComm = (platformTxns||[]).filter(t => (t.note||'').includes('مطار')).reduce((s,t) => s + Number(t.amount||0), 0);
-
-  document.getElementById('w-platform-balance').textContent = fmt(Math.round(platformBal)) + ' ج.م';
   document.getElementById('w-total-balance').textContent    = fmt(Math.round(totalBal))    + ' ج.م';
   document.getElementById('w-driver-balance').textContent   = fmt(Math.round(driverBal))   + ' ج.م';
   document.getElementById('w-merchant-balance').textContent = fmt(Math.round(merchantBal)) + ' ج.م';
-  document.getElementById('pw-ride').textContent     = fmt(Math.round(rideComm))    + ' ج.م';
-  document.getElementById('pw-delivery').textContent = fmt(Math.round(delivComm))   + ' ج.م';
-  document.getElementById('pw-airport').textContent  = fmt(Math.round(airportComm)) + ' ج.م';
 
   allTxLogs = (txData || []).map(t => ({ ...t, userName: acctMap[t.phone]?.name || (t.phone === 'platform' ? 'المنصة' : '') }));
 
   renderWalletsList();
   renderTxLog();
+  loadPlatformFinance();
+}
+
+// ── صافي ربح المنصة — محسوب سيرفرياً (تلاعب المتصفح مايأثرش على الرقم) ──
+let _npRefreshTimer = null;
+async function loadPlatformFinance() {
+  try {
+    const summary = await sbRpcJson('get_platform_finance_summary', { p_admin_phone: ADMIN.phone });
+    document.getElementById('np-revenue').textContent   = fmt(Math.round(summary.total_revenue))   + ' ج.م';
+    document.getElementById('np-withdrawn').textContent = fmt(Math.round(summary.total_withdrawn)) + ' ج.م';
+    document.getElementById('np-balance').textContent   = fmt(Math.round(summary.balance))          + ' ج.م';
+    document.getElementById('pw-ride').textContent     = fmt(Math.round(summary.by_type.ride))     + ' ج.م';
+    document.getElementById('pw-delivery').textContent = fmt(Math.round(summary.by_type.delivery)) + ' ج.م';
+    document.getElementById('pw-airport').textContent  = fmt(Math.round(summary.by_type.airport))  + ' ج.م';
+    renderNetProfitChart(summary.by_type);
+    document.getElementById('np-refresh-note').textContent = 'آخر تحديث: ' + new Date().toLocaleTimeString('ar-EG', { hour:'2-digit', minute:'2-digit' });
+  } catch (e) {
+    showToast('❌ تعذّر تحميل بيانات الأرباح: ' + (e.message||''), '#DC2626');
+  }
+  await loadWithdrawalHistory();
+  clearTimeout(_npRefreshTimer);
+  _npRefreshTimer = setTimeout(loadPlatformFinance, 30000); // تحديث تلقائي كل 30 ثانية
+}
+
+function renderNetProfitChart(byType) {
+  const svg = document.getElementById('np-chart');
+  const bars = [
+    { label: 'رحلات',  val: Number(byType.ride||0),     color: '#16A34A' },
+    { label: 'توصيل',  val: Number(byType.delivery||0), color: '#2563EB' },
+    { label: 'مطار',   val: Number(byType.airport||0),  color: '#D97706' },
+  ];
+  const max = Math.max(1, ...bars.map(b => b.val));
+  const barW = 100, gap = 30, top = 8, chartH = 60;
+  svg.innerHTML = bars.map((b, i) => {
+    const x = i * (barW + gap) + 20;
+    const h = Math.max(2, (b.val / max) * chartH);
+    const y = top + (chartH - h);
+    return `<rect x="${x}" y="${y}" width="${barW}" height="${h}" rx="4" fill="${b.color}"/>` +
+      `<text x="${x + barW/2}" y="${y - 4}" text-anchor="middle" font-size="11" font-weight="700" fill="#334155">${fmt(Math.round(b.val))}</text>` +
+      `<text x="${x + barW/2}" y="${top + chartH + 14}" text-anchor="middle" font-size="10" fill="#64748B">${b.label}</text>`;
+  }).join('');
+}
+
+async function loadWithdrawalHistory() {
+  const rows = await sbRpcRows('get_platform_withdrawal_history', { p_admin_phone: ADMIN.phone });
+  const tbody = document.getElementById('withdrawals-tbody');
+  if (!rows || !rows.length) {
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#94A3B8;padding:2rem">لا توجد عمليات سحب بعد</td></tr>';
+    return;
+  }
+  tbody.innerHTML = rows.map(w => `
+    <tr>
+      <td style="font-size:.78rem">${fmtTime(w.created_at)}</td>
+      <td>${escapeHtml(w.admin_name || w.admin_phone)}</td>
+      <td style="font-weight:800;color:#DC2626">− ${fmt(Math.round(w.amount))} ج.م</td>
+      <td style="font-weight:700">${fmt(Math.round(w.balance_after))} ج.م</td>
+      <td style="font-size:.78rem;color:#64748B">${escapeHtml(w.note || '—')}</td>
+    </tr>`).join('');
 }
 
 function renderWalletsList() {
@@ -2196,17 +2274,34 @@ async function viewUserTransactions(phone, name) {
 }
 
 async function adminSettlePlatform() {
-  const balText = (document.getElementById('w-platform-balance').textContent||'0').replace(/[^\d.]/g,'');
+  const balText = (document.getElementById('np-balance').textContent||'0').replace(/[^\d.]/g,'');
   const bal = parseFloat(balText) || 0;
-  if (bal <= 0) { showToast('لا توجد عمولات مستحقة للتسوية', '#D97706'); return; }
-  if (!confirm(`تسوية عمولات المنصة بقيمة ${bal.toFixed(2)} ج.م؟\nسيتم تسجيل عملية السحب في السجل.`)) return;
-  const txId = `plat-settle-${Date.now()}`;
-  const ok = await sbPost('rpc/log_wallet_transaction', {
-    p_id: txId, p_phone: 'platform', p_amount: -bal,
-    p_type: 'withdrawal', p_note: 'تسوية عمولات المنصة — إداري',
-  });
-  if (ok) { showToast('✅ تمت تسوية العمولات بنجاح', '#16A34A'); loadWalletsSection(); }
-  else showToast('❌ فشلت عملية التسوية', '#DC2626');
+  if (bal <= 0) { showToast('لا يوجد صافي ربح متاح للسحب', '#D97706'); return; }
+
+  const amountStr = prompt(`الرصيد المتاح: ${bal.toFixed(2)} ج.م\nأدخل المبلغ المطلوب سحبه:`, bal.toFixed(2));
+  if (!amountStr) return;
+  const amount = parseFloat(amountStr);
+  if (!amount || amount <= 0) { showToast('مبلغ غير صالح', '#DC2626'); return; }
+  if (amount > bal) { showToast('المبلغ أكبر من الرصيد المتاح', '#DC2626'); return; }
+
+  const note = prompt('ملاحظة (اختياري):', '') || null;
+  const pass = getAdminPass();
+  if (!pass) return;
+  const key = getActionKey();
+  if (!key) return;
+
+  if (!confirm(`تأكيد سحب ${amount.toFixed(2)} ج.م من أرباح المنصة؟`)) return;
+
+  try {
+    const result = await sbRpcJson('admin_withdraw_platform_profit', {
+      p_admin_phone: ADMIN.phone, p_admin_password: pass, p_action_key: key,
+      p_amount: amount, p_note: note,
+    });
+    showToast(`✅ تم سحب ${amount.toFixed(2)} ج.م — الرصيد المتبقي ${fmt(Math.round(result.balance_after))} ج.م`, '#16A34A');
+    loadPlatformFinance();
+  } catch (e) {
+    showToast('❌ ' + (e.message || 'فشلت عملية السحب'), '#DC2626');
+  }
 }
 
 /* ═══════════════════ SETTINGS ══════════════════════════════ */

@@ -558,6 +558,7 @@ import PageHero from '../components/PageHero.astro';
               <div>
                 <div class="customer-name" id="active-customer-name">—</div>
                 <div class="customer-status" id="active-trip-status">في الطريق للإستلام</div>
+                <div class="customer-status" id="active-customer-rep" style="opacity:.85"></div>
               </div>
               <a class="call-btn" id="active-call-btn" href="tel:">📞 اتصل</a>
             </div>
@@ -634,6 +635,27 @@ import PageHero from '../components/PageHero.astro';
           </div>
         </div>
 
+        <!-- Profile quality: badges + satisfaction + comfort/AC -->
+        <div class="acct-card">
+          <div class="acct-card__header">
+            <div class="acct-card__title">🏅 ملف الجودة</div>
+          </div>
+          <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:.85rem" id="driver-badges"></div>
+          <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:.75rem;margin-bottom:.9rem">
+            <div style="background:var(--color-bg-soft);border-radius:10px;padding:.7rem;text-align:center">
+              <div style="font-size:1.2rem;font-weight:900" id="driver-satisfaction">—</div>
+              <div style="font-size:.7rem;color:var(--color-text-faint)">نسبة الرضا</div>
+            </div>
+            <div style="background:var(--color-bg-soft);border-radius:10px;padding:.7rem;text-align:center">
+              <div style="font-size:1.2rem;font-weight:900" id="driver-trip-count">—</div>
+              <div style="font-size:.7rem;color:var(--color-text-faint)">رحلات مكتملة</div>
+            </div>
+          </div>
+          <label style="display:flex;align-items:center;gap:8px;font-size:.85rem;cursor:pointer">
+            <input type="checkbox" id="driver-ac-toggle"/> ❄️ سيارتي مكيفة
+          </label>
+        </div>
+
         <!-- Ratings -->
         <div class="acct-card">
           <div class="acct-card__header">
@@ -673,6 +695,7 @@ import PageHero from '../components/PageHero.astro';
         <div>
           <div class="ride-req-header__title">راكب جديد!</div>
           <div class="ride-req-header__sub" id="req-customer-name">يبحث عن سائق</div>
+          <div class="ride-req-header__sub" id="req-customer-rep" style="opacity:.9"></div>
         </div>
         <div class="ride-req-timer" id="req-timer">30</div>
       </div>
@@ -725,11 +748,30 @@ import PageHero from '../components/PageHero.astro';
     </div>
   </div>
 
+  <!-- Rate-the-customer modal (bidirectional ratings) -->
+  <div class="receipt-overlay" id="rate-customer-overlay">
+    <div class="receipt-card" style="max-width:380px">
+      <div class="receipt-header">
+        <div class="receipt-header__icon">⭐</div>
+        <div class="receipt-header__title">قيّم الراكب</div>
+        <div class="receipt-header__sub" id="rate-customer-name">—</div>
+      </div>
+      <div class="receipt-body" style="text-align:center">
+        <div style="font-size:2rem;margin-bottom:1.25rem">
+          <span class="rc-star" data-val="1" style="cursor:pointer">☆</span><span class="rc-star" data-val="2" style="cursor:pointer">☆</span><span class="rc-star" data-val="3" style="cursor:pointer">☆</span><span class="rc-star" data-val="4" style="cursor:pointer">☆</span><span class="rc-star" data-val="5" style="cursor:pointer">☆</span>
+        </div>
+        <button class="receipt-collect-btn" id="rate-customer-submit" type="button" disabled>إرسال التقييم</button>
+        <button class="receipt-collect-btn" id="rate-customer-skip" type="button" style="background:#94A3B8;margin-top:.6rem">تخطي</button>
+      </div>
+    </div>
+  </div>
+
   <div class="toast" id="toast"></div>
 </Layout>
 
 <script>
   import { carIcon, bearingBetween, animateMarkerTo } from '../utils/mapMarker';
+  import { computeRatingStats, isTopRated, BADGE_LABELS, AC_BADGE_LABEL, ratingStarsText } from '../utils/reputation';
 
   const SB_URL = 'https://vtikgyiopkjnrwlqnmfx.supabase.co';
   const SB_KEY = 'sb_publishable_PLSnpvCT-sAyUMtymNgTwA_QmL2suw4';
@@ -850,6 +892,7 @@ import PageHero from '../components/PageHero.astro';
   }
 
   /* ── Completion receipt modal ── */
+  let _lastCompletedRide = null;
   function showReceiptModal(ride) {
     const rate = ride?.ride_type === 'airport' ? RATES.airport : RATES.ride;
     const fare = Number(ride?.fare || 0);
@@ -871,11 +914,67 @@ import PageHero from '../components/PageHero.astro';
   function hideReceiptModal() {
     document.getElementById('receipt-overlay').classList.remove('visible');
   }
+  document.getElementById('driver-ac-toggle')?.addEventListener('change', async (e) => {
+    if (!driver) return;
+    const checked = e.target.checked;
+    _driverHasAc = checked;
+    try {
+      await fetch(`${SB_URL}/rest/v1/driver_applications?phone=eq.${encodeURIComponent(driver.phone)}`, {
+        method: 'PATCH', headers: { ...SB_H, Prefer: 'return=minimal' },
+        body: JSON.stringify({ has_ac: checked }),
+      });
+      showToast(checked ? '❄️ تم تفعيل شارة السيارة المكيفة' : 'تم إلغاء شارة السيارة المكيفة');
+    } catch {}
+  });
+
   document.getElementById('receipt-collect-btn').addEventListener('click', () => {
-    hideReceiptModal(); showState('waiting');
+    hideReceiptModal();
+    if (_lastCompletedRide) showRateCustomer(_lastCompletedRide.customer_phone, _lastCompletedRide.customer_name, _lastCompletedRide.id, 'ride');
+    else showState('waiting');
   });
   document.getElementById('receipt-overlay').addEventListener('click', (e) => {
     if (e.target === document.getElementById('receipt-overlay')) hideReceiptModal();
+  });
+
+  /* ── Driver rates the customer after completion (bidirectional ratings) ── */
+  let _rateCustomerTarget = null;
+  let _rcSelected = 0;
+  function showRateCustomer(phone, name, referenceId, serviceType) {
+    if (!phone) { showState('waiting'); return; }
+    _rateCustomerTarget = { phone, referenceId, serviceType };
+    _rcSelected = 0;
+    document.getElementById('rate-customer-name').textContent = name || 'الراكب';
+    document.querySelectorAll('.rc-star').forEach(s => { s.textContent = '☆'; });
+    document.getElementById('rate-customer-submit').disabled = true;
+    document.getElementById('rate-customer-overlay').classList.add('visible');
+  }
+  function hideRateCustomer() {
+    document.getElementById('rate-customer-overlay').classList.remove('visible');
+    showState('waiting');
+  }
+  document.querySelectorAll('.rc-star').forEach(star => {
+    star.addEventListener('click', () => {
+      _rcSelected = Number(star.dataset.val);
+      document.querySelectorAll('.rc-star').forEach((s, i) => { s.textContent = i < _rcSelected ? '⭐' : '☆'; });
+      document.getElementById('rate-customer-submit').disabled = false;
+    });
+  });
+  document.getElementById('rate-customer-skip')?.addEventListener('click', hideRateCustomer);
+  document.getElementById('rate-customer-submit')?.addEventListener('click', async () => {
+    if (!_rcSelected || !_rateCustomerTarget) return;
+    try {
+      await fetch(`${SB_URL}/rest/v1/ratings`, {
+        method: 'POST', headers: { ...SB_H, Prefer: 'return=minimal' },
+        body: JSON.stringify({
+          id: 'ratc-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6),
+          driver_phone: driver.phone, customer_phone: _rateCustomerTarget.phone,
+          rating: _rcSelected, service_type: _rateCustomerTarget.serviceType,
+          ride_id: _rateCustomerTarget.referenceId, rated_by: 'driver',
+          created_at: new Date().toISOString(),
+        }),
+      });
+    } catch {}
+    hideRateCustomer();
   });
 
   /* ── Google Maps helpers ── */
@@ -1072,11 +1171,30 @@ import PageHero from '../components/PageHero.astro';
     if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
   }
 
+  // ── تقييم العميل — يظهر للسائق قبل ما يقبل الطلب وأثناء الرحلة النشطة ──
+  async function loadCustomerReputation(phone, targetId) {
+    const el = document.getElementById(targetId || 'req-customer-rep');
+    if (!el) return;
+    el.textContent = '';
+    if (!phone) return;
+    try {
+      const res = await fetch(
+        `${SB_URL}/rest/v1/ratings?customer_phone=eq.${encodeURIComponent(phone)}&rated_by=eq.driver&select=rating`,
+        { headers: SB_H }
+      );
+      const rows = res.ok ? await res.json() : [];
+      const stats = computeRatingStats((rows || []).map(r => Number(r.rating)));
+      if (!stats.count) { el.textContent = '🆕 عميل جديد — لا يوجد تقييم بعد'; return; }
+      el.textContent = `${ratingStarsText(stats.avg)} ${stats.avg.toFixed(1)} (${stats.count} رحلة) — رضا ${stats.satisfactionPct}%`;
+    } catch { el.textContent = ''; }
+  }
+
   function showRideRequest(ride) {
     playAlert();
     pushNotify('🚗 طلب رحلة جديد!', `${ride.from_area || ''} ← ${ride.to_area || ''} — ${ride.fare || ''} ج.م`);
     pendingRide = ride;
     document.getElementById('req-customer-name').textContent = (ride.customer_name || 'راكب') + ' — راكب جديد';
+    loadCustomerReputation(ride.customer_phone);
     document.getElementById('req-from').textContent = ride.from_area;
     document.getElementById('req-to').textContent   = ride.to_area;
     document.getElementById('req-dist').textContent = (ride.distance_km * 1.35).toFixed(1);
@@ -1100,6 +1218,7 @@ import PageHero from '../components/PageHero.astro';
     const sub    = document.getElementById('req-customer-name');
     header.textContent = '🛵 طلب توصيل جديد!';
     sub.textContent = `من ${order.store_name || order.store_id}`;
+    loadCustomerReputation(order.customer_phone);
     document.getElementById('req-from').textContent = `🏪 ${order.store_name || ''} — ${order.area || ''}`;
     document.getElementById('req-to').textContent   = `🏠 ${order.customer_name || 'العميل'} — ${order.address || order.area || ''}`;
     document.getElementById('req-dist').textContent = (order.distance_km ? order.distance_km.toFixed(1) : '~3');
@@ -1232,6 +1351,7 @@ import PageHero from '../components/PageHero.astro';
 
         document.getElementById('active-customer-name').textContent = currentRide.customer_name || '—';
         document.getElementById('active-call-btn').href = 'tel:' + (currentRide.customer_phone || '');
+        loadCustomerReputation(currentRide.customer_phone, 'active-customer-rep');
         document.getElementById('active-from').textContent = currentRide.from_area;
         document.getElementById('active-to').textContent   = currentRide.to_area;
         document.getElementById('active-fare').textContent = currentRide.fare;
@@ -1369,6 +1489,7 @@ import PageHero from '../components/PageHero.astro';
     const o = currentOrder;
     document.getElementById('active-customer-name').textContent = `🛵 توصيل — ${o.store_name || ''}`;
     document.getElementById('active-call-btn').href = 'tel:' + (o.customer_phone || '');
+    loadCustomerReputation(o.customer_phone, 'active-customer-rep');
     document.getElementById('active-from').textContent = `🏪 ${o.store_name || ''} — ${o.area || ''}`;
     document.getElementById('active-to').textContent   = `🏠 ${o.customer_name || 'العميل'} — ${o.address || ''}`;
     document.getElementById('active-fare').textContent = String(o.delivery_fee ?? 20);
@@ -1428,6 +1549,7 @@ import PageHero from '../components/PageHero.astro';
 
     document.getElementById('active-customer-name').textContent = currentRide.customer_name || '—';
     document.getElementById('active-call-btn').href = 'tel:' + (currentRide.customer_phone || '');
+    loadCustomerReputation(currentRide.customer_phone, 'active-customer-rep');
     document.getElementById('active-from').textContent = currentRide.from_area;
     document.getElementById('active-to').textContent   = currentRide.to_area;
     document.getElementById('active-fare').textContent = currentRide.fare;
@@ -1551,13 +1673,14 @@ import PageHero from '../components/PageHero.astro';
           }
         } catch {}
       }
+      const completedOrder = { ...currentOrder };
       currentOrder = null;
       await upsertLocation(true);
       map = null; driverMarker = null;
       resetActionButtons();
-      showState('waiting');
       showToast(`تم توصيل الطلب! أرباح +${fee} ج.م 🎉`);
       setTimeout(() => loadActivityLog(), 600);
+      showRateCustomer(completedOrder.customer_phone, completedOrder.customer_name, orderId, 'delivery');
       return;
     }
 
@@ -1580,6 +1703,7 @@ import PageHero from '../components/PageHero.astro';
     await upsertLocation(true);
     map = null; driverMarker = null;
     resetActionButtons();
+    _lastCompletedRide = completedRide;
     showReceiptModal(completedRide);
     setTimeout(() => loadActivityLog(), 600);
   });
@@ -1706,17 +1830,35 @@ import PageHero from '../components/PageHero.astro';
   }
 
   /* ── Load wallet, points, ratings ── */
+  let _driverHasAc = false;
   async function loadAccountData() {
     if (!driver) return;
     const phone = encodeURIComponent(driver.phone);
     // Parallel fetches
-    const [walletRes, walletTxRes, pointsRes, pointsTxRes, ratingsRes] = await Promise.allSettled([
+    const [walletRes, walletTxRes, pointsRes, pointsTxRes, ratingsRes, ridesCountRes, ordersCountRes, appRes] = await Promise.allSettled([
       fetch(`${SB_URL}/rest/v1/wallets?phone=eq.${phone}&select=balance`, { headers: SB_H }),
       fetch(`${SB_URL}/rest/v1/wallet_transactions?phone=eq.${phone}&select=amount,type,note,created_at&order=created_at.desc&limit=10`, { headers: SB_H }),
       fetch(`${SB_URL}/rest/v1/points?phone=eq.${phone}&select=total_points`, { headers: SB_H }),
       fetch(`${SB_URL}/rest/v1/point_transactions?phone=eq.${phone}&select=points,type,created_at&order=created_at.desc&limit=10`, { headers: SB_H }),
-      fetch(`${SB_URL}/rest/v1/ratings?driver_phone=eq.${driver.phone}&select=id,rating,comment,service_type,created_at,driver_reply&order=created_at.desc&limit=20`, { headers: SB_H }),
+      fetch(`${SB_URL}/rest/v1/ratings?driver_phone=eq.${driver.phone}&rated_by=eq.customer&select=id,rating,comment,service_type,created_at,driver_reply&order=created_at.desc&limit=20`, { headers: SB_H }),
+      fetch(`${SB_URL}/rest/v1/rides?driver_phone=eq.${phone}&status=eq.completed&select=id`, { headers: { ...SB_H, Prefer: 'count=exact' } }),
+      fetch(`${SB_URL}/rest/v1/orders?driver_phone=eq.${phone}&status=eq.delivered&select=id`, { headers: { ...SB_H, Prefer: 'count=exact' } }),
+      fetch(`${SB_URL}/rest/v1/driver_applications?phone=eq.${phone}&select=has_ac&limit=1`, { headers: SB_H }),
     ]);
+
+    // Trip count (rides + orders completed lifetime)
+    try {
+      const ridesCount  = Number(ridesCountRes.value.headers.get('content-range')?.split('/')[1]  || 0);
+      const ordersCount = Number(ordersCountRes.value.headers.get('content-range')?.split('/')[1] || 0);
+      document.getElementById('driver-trip-count').textContent = (ridesCount + ordersCount).toLocaleString('ar-EG');
+    } catch {}
+
+    // Comfort/AC flag
+    try {
+      const appRows = await appRes.value.json();
+      _driverHasAc = !!(Array.isArray(appRows) && appRows[0]?.has_ac);
+      document.getElementById('driver-ac-toggle').checked = _driverHasAc;
+    } catch {}
 
     // Wallet
     try {
@@ -1759,9 +1901,18 @@ import PageHero from '../components/PageHero.astro';
       }
     } catch {}
 
-    // Ratings
+    // Ratings + quality badges
     try {
       const rts = await ratingsRes.value.json();
+      const stats = computeRatingStats(Array.isArray(rts) ? rts.map(r => Number(r.rating)) : []);
+      document.getElementById('driver-satisfaction').textContent = stats.count ? stats.satisfactionPct + '%' : '—';
+      const badgesEl = document.getElementById('driver-badges');
+      const badges = [];
+      if (isTopRated(stats)) badges.push(BADGE_LABELS.driver);
+      if (_driverHasAc) badges.push(AC_BADGE_LABEL);
+      badgesEl.innerHTML = badges.length
+        ? badges.map(b => `<span class="badge" style="background:#FEF3C7;color:#92400E;font-weight:800;padding:4px 10px;border-radius:99px;font-size:.78rem">${b}</span>`).join('')
+        : '<span style="font-size:.78rem;color:var(--color-text-faint)">لا توجد شارات بعد</span>';
       if (Array.isArray(rts) && rts.length) {
         const avg = rts.reduce((s, r) => s + r.rating, 0) / rts.length;
         const stars = '⭐'.repeat(Math.round(avg)) + '☆'.repeat(5 - Math.round(avg));

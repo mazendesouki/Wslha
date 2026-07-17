@@ -1115,6 +1115,7 @@ import { VEHICLE_MODELS, FARE_ZONES, TRIP_RATES } from '../data/airports';
             <div>
               <div class="driver-card__name" id="driver-card-name">—</div>
               <div class="driver-card__status" id="driver-card-status">السائق في الطريق إليك</div>
+              <div id="driver-card-badges" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px"></div>
             </div>
             <a class="driver-call-btn" id="driver-call-btn" href="tel:">📞 اتصل</a>
           </div>
@@ -1761,6 +1762,31 @@ import { VEHICLE_MODELS, FARE_ZONES, TRIP_RATES } from '../data/airports';
     marker.__moveRaf = requestAnimationFrame(step);
   }
 
+  // ── شارات السائق (تقييم متميز / سيارة مكيفة) — تظهر للعميل بعد تعيين
+  //    السائق. نفس منطق src/utils/reputation.ts لكن مكرر هنا لنفس سبب
+  //    أيقونة العربية (الصفحة دي <script define:vars> ومينفعش import). ──
+  async function loadDriverBadges(driverPhone) {
+    const el = document.getElementById('driver-card-badges');
+    if (!el) return;
+    el.innerHTML = '';
+    try {
+      const [ratingsRes, appRes] = await Promise.all([
+        fetch(`${SB_URL}/rest/v1/ratings?driver_phone=eq.${encodeURIComponent(driverPhone)}&rated_by=eq.customer&select=rating`, { headers: SB_H }),
+        fetch(`${SB_URL}/rest/v1/driver_applications?phone=eq.${encodeURIComponent(driverPhone)}&select=has_ac&limit=1`, { headers: SB_H }),
+      ]);
+      const ratingRows = ratingsRes.ok ? await ratingsRes.json() : [];
+      const appRows     = appRes.ok ? await appRes.json() : [];
+      const nums = (ratingRows || []).map(r => Number(r.rating));
+      const avg = nums.length ? nums.reduce((s, n) => s + n, 0) / nums.length : 0;
+      const badges = [];
+      if (nums.length >= 5 && avg >= 4.5) badges.push('🏆 سائق متميز');
+      if (Array.isArray(appRows) && appRows[0]?.has_ac) badges.push('❄️ سيارة مكيفة');
+      el.innerHTML = badges.map(b =>
+        `<span style="background:#FEF3C7;color:#92400E;font-weight:800;padding:2px 9px;border-radius:99px;font-size:.7rem">${b}</span>`
+      ).join('');
+    } catch {}
+  }
+
   function gMarker(lat, lng, label, color, title) {
     const G = window.google.maps;
     return new G.Marker({
@@ -2112,6 +2138,7 @@ import { VEHICLE_MODELS, FARE_ZONES, TRIP_RATES } from '../data/airports';
     advanceStatus('assigned');
     // Subscribe to real GPS from driver_locations
     if (ride.driver_phone) subscribeDriverLocation(ride.driver_phone);
+    if (ride.driver_phone) loadDriverBadges(ride.driver_phone);
     if (window._routeCoords && _currentFrom && _currentTo) {
       startLiveTracking(_currentFrom, _currentTo, _currentEta, elapsedMs);
     }

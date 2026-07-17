@@ -224,7 +224,7 @@ import { STORES, CATEGORIES } from '../data/stores';
     <div class="stores-grid" id="stores-grid">
       {STORES.map(s => (
         <a href={`/store/${s.id}`} class="store-card" data-cat={s.categoryId}
-           data-name={s.name} data-area={s.area}>
+           data-name={s.name} data-area={s.area} data-store-id={s.id}>
           <div class="store-card__cover">
             <span aria-hidden="true">{s.emoji}</span>
             <span class="store-card__badge">🚚 {s.deliveryFee} ج.م</span>
@@ -236,9 +236,10 @@ import { STORES, CATEGORIES } from '../data/stores';
             {s.address && <p class="store-card__addr">📍 {s.address}</p>}
             <p class="store-card__tagline">{s.tagline}</p>
             <div class="store-card__meta">
-              <span class="store-card__rating">★ {s.rating.toFixed(1)} ({s.reviews.toLocaleString('ar-EG')})</span>
+              <span class="store-card__rating" data-rating-slot>★ {s.rating.toFixed(1)} ({s.reviews.toLocaleString('ar-EG')})</span>
               <span>⏱️ {s.deliveryTime}</span>
               <span>حد أدنى {s.minOrder > 0 ? s.minOrder + ' ج.م' : 'لا يوجد'}</span>
+              <span data-badge-slot style="display:none;background:#FEF3C7;color:#92400E;font-weight:800;padding:2px 9px;border-radius:99px;font-size:.72rem">🏆 تاجر معتمد</span>
             </div>
             <span class="store-card__cta">تصفّح المنتجات والأسعار ←</span>
           </div>
@@ -285,6 +286,36 @@ import { STORES, CATEGORIES } from '../data/stores';
     noRes.hidden = visible > 0;
     countLbl.innerHTML = `<strong>${visible}</strong> متجر متاح في دمياط الجديدة`;
   }
+
+  // ── تقييمات المتاجر الحيّة — بدل الأرقام الثابتة في ملف البيانات ──
+  (async function loadLiveStoreRatings() {
+    const SB_URL = 'https://vtikgyiopkjnrwlqnmfx.supabase.co';
+    const SB_KEY = 'sb_publishable_PLSnpvCT-sAyUMtymNgTwA_QmL2suw4';
+    try {
+      const res = await fetch(`${SB_URL}/rest/v1/ratings?select=store_id,store_rating&store_id=not.is.null&limit=5000`, {
+        headers: { apikey: SB_KEY, Authorization: 'Bearer ' + SB_KEY },
+      });
+      if (!res.ok) return;
+      const rows = await res.json();
+      const byStore = {};
+      (rows || []).forEach(r => {
+        const v = Number(r.store_rating);
+        if (!r.store_id || !v) return;
+        (byStore[r.store_id] = byStore[r.store_id] || []).push(v);
+      });
+      Object.entries(byStore).forEach(([storeId, nums]) => {
+        const card = document.querySelector(`.store-card[data-store-id="${storeId}"]`);
+        if (!card) return;
+        const avg = nums.reduce((s, n) => s + n, 0) / nums.length;
+        const ratingEl = card.querySelector('[data-rating-slot]');
+        if (ratingEl) ratingEl.textContent = `★ ${avg.toFixed(1)} (${nums.length})`;
+        if (nums.length >= 5 && avg >= 4.5) {
+          const badgeEl = card.querySelector('[data-badge-slot]');
+          if (badgeEl) badgeEl.style.display = '';
+        }
+      });
+    } catch {}
+  })();
 
   chips.forEach(chip => {
     chip.addEventListener('click', () => {

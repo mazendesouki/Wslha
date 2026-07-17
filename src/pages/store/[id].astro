@@ -288,11 +288,12 @@ const staticMenuJson = JSON.stringify(
         <p class="store-head__cat">{store.category} · {store.area}</p>
         <h1 class="store-head__name">{store.name}</h1>
         <div class="store-head__meta">
-          <span>★ {store.rating.toFixed(1)} ({store.reviews} تقييم)</span>
+          <span id="hd-rating">★ {store.rating.toFixed(1)} ({store.reviews} تقييم)</span>
           <span>⏱️ {store.deliveryTime}</span>
           <span>🚚 <span id="hd-fee">{store.deliveryFee}</span> ج.م</span>
           <span>الحد الأدنى <span id="hd-min">{store.minOrder}</span> ج.م</span>
           <span id="hd-status" class="store-head__status open">🟢 مفتوح</span>
+          <span id="hd-badge" style="display:none;background:#FEF3C7;color:#92400E;font-weight:800;padding:2px 9px;border-radius:99px;font-size:.75rem"></span>
         </div>
       </div>
     </div>
@@ -720,6 +721,27 @@ const staticMenuJson = JSON.stringify(
       } catch { /* ignore */ }
     }
 
+    // ── التقييم الفعلي الحيّ للمتجر — الصفحة كانت بتعرض رقم ثابت من
+    //    ملف بيانات ساكن، رغم إن التقييمات الحقيقية بتتجمّع فعلاً في
+    //    قاعدة البيانات (عبر track.astro بعد كل توصيل). ──
+    async function loadStoreRatingBadge(): Promise<void> {
+      try {
+        const r = await fetch(`${SB_URL}/rest/v1/ratings?store_id=eq.${encodeURIComponent(STORE.id)}&select=store_rating`, { headers: SB_H });
+        if (!r.ok) return;
+        const rows: { store_rating: number }[] = await r.json();
+        const nums = (rows || []).map(x => Number(x.store_rating)).filter(n => n > 0);
+        if (!nums.length) return;
+        const avg = nums.reduce((s, n) => s + n, 0) / nums.length;
+        const ratingEl = document.getElementById('hd-rating');
+        if (ratingEl) ratingEl.textContent = `★ ${avg.toFixed(1)} (${nums.length} تقييم)`;
+        if (nums.length >= 5 && avg >= 4.5) {
+          const badge = document.getElementById('hd-badge')!;
+          badge.textContent = '🏆 تاجر معتمد';
+          badge.style.display = '';
+        }
+      } catch { /* ignore */ }
+    }
+
     // ── Event delegation ──────────────────────────────────────
 
     document.addEventListener('click', (e) => {
@@ -940,5 +962,6 @@ const staticMenuJson = JSON.stringify(
     render();
     loadMenu();
     loadStoreInfo();
+    loadStoreRatingBadge();
   </script>
 </Layout>
