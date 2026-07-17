@@ -345,9 +345,12 @@ import PageHero from '../components/PageHero.astro';
 </style>
 
 <script>
+  import { carIcon, bearingBetween, animateMarkerTo } from '../utils/mapMarker';
+
   const SB_URL = 'https://vtikgyiopkjnrwlqnmfx.supabase.co';
   const SB_KEY = 'sb_publishable_PLSnpvCT-sAyUMtymNgTwA_QmL2suw4';
   const SB_H   = { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}` };
+  let _prevDriverPos = null; // fallback bearing لو مفيش heading من الجهاز
 
   // ── Supabase Realtime ──
   let _sb = null;
@@ -472,15 +475,20 @@ import PageHero from '../components/PageHero.astro';
     } catch {}
   }
 
-  function updateDriverOnMap(lat, lng) {
+  function updateDriverOnMap(lat, lng, heading) {
     if (!map) return;
     const G = window.google.maps;
+    const hasHeading = typeof heading === 'number' && !isNaN(heading);
+    if (!hasHeading && _prevDriverPos) heading = bearingBetween(_prevDriverPos.lat, _prevDriverPos.lng, lat, lng);
+    _prevDriverPos = { lat, lng };
+
     if (driverMarker) {
-      driverMarker.setPosition({ lat, lng });
+      animateMarkerTo(driverMarker, lat, lng);
+      if (typeof heading === 'number' && !isNaN(heading)) driverMarker.setIcon(carIcon(heading));
     } else {
       driverMarker = new G.Marker({
         position: { lat, lng }, map, title: 'المندوب', zIndex: 999,
-        icon: { path: G.SymbolPath.FORWARD_CLOSED_ARROW, fillColor: '#16a34a', fillOpacity: 1, strokeColor: '#fff', strokeWeight: 2, scale: 7 },
+        icon: carIcon(hasHeading ? heading : 0),
       });
       // Draw route only on first appearance
       drawRoute(lat, lng);
@@ -532,7 +540,7 @@ import PageHero from '../components/PageHero.astro';
       if (!r.ok) return;
       const rows = await r.json();
       const loc = rows?.[0];
-      if (loc?.lat && loc?.lng) updateDriverOnMap(Number(loc.lat), Number(loc.lng));
+      if (loc?.lat && loc?.lng) updateDriverOnMap(Number(loc.lat), Number(loc.lng), loc.heading != null ? Number(loc.heading) : undefined);
     } catch {}
   }
 
@@ -551,7 +559,7 @@ import PageHero from '../components/PageHero.astro';
           filter: `driver_phone=eq.${driverPhone}`,
         }, payload => {
           const loc = payload.new;
-          if (loc.lat && loc.lng) updateDriverOnMap(Number(loc.lat), Number(loc.lng));
+          if (loc.lat && loc.lng) updateDriverOnMap(Number(loc.lat), Number(loc.lng), loc.heading != null ? Number(loc.heading) : undefined);
         })
         .subscribe(status => {
           if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {

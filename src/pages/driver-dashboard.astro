@@ -729,6 +729,8 @@ import PageHero from '../components/PageHero.astro';
 </Layout>
 
 <script>
+  import { carIcon, bearingBetween, animateMarkerTo } from '../utils/mapMarker';
+
   const SB_URL = 'https://vtikgyiopkjnrwlqnmfx.supabase.co';
   const SB_KEY = 'sb_publishable_PLSnpvCT-sAyUMtymNgTwA_QmL2suw4';
   const SB_H = { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}`, 'Content-Type': 'application/json' };
@@ -814,6 +816,7 @@ import PageHero from '../components/PageHero.astro';
   let waitingStartTime = null;
   let driverLat = null;
   let driverLng = null;
+  let _driverHeading = 0; // آخر اتجاه معروف — بيتحسب من إحداثيات GPS المتتالية لو الجهاز مبعتش heading
   let map = null, driverMarker = null, fromMarkerRef = null, toMarkerRef = null, routeLine = null;
 
   /* ── Toast ── */
@@ -927,7 +930,7 @@ import PageHero from '../components/PageHero.astro';
 
     if (driverLat && driverLng) {
       driverMarker = new G.Marker({ position: { lat: driverLat, lng: driverLng }, map, title: 'موقعك', zIndex: 999,
-        icon: { path: G.SymbolPath.FORWARD_CLOSED_ARROW, fillColor: '#16a34a', fillOpacity: 1, strokeColor: '#fff', strokeWeight: 2, scale: 7 } });
+        icon: carIcon(_driverHeading) });
     }
 
     await drawDriverRoute();
@@ -981,10 +984,11 @@ import PageHero from '../components/PageHero.astro';
     if (!driverLat || !driverLng || !map) return;
     const G = window.google.maps;
     if (driverMarker) {
-      driverMarker.setPosition({ lat: driverLat, lng: driverLng });
+      animateMarkerTo(driverMarker, driverLat, driverLng);
+      driverMarker.setIcon(carIcon(_driverHeading));
     } else {
       driverMarker = new G.Marker({ position: { lat: driverLat, lng: driverLng }, map, title: 'موقعك', zIndex: 999,
-        icon: { path: G.SymbolPath.FORWARD_CLOSED_ARROW, fillColor: '#16a34a', fillOpacity: 1, strokeColor: '#fff', strokeWeight: 2, scale: 7 } });
+        icon: carIcon(_driverHeading) });
     }
     // Redraw route every ~30s (every 10th GPS tick)
     _gpsCount++;
@@ -1125,6 +1129,7 @@ import PageHero from '../components/PageHero.astro';
           driver_name: driver.name || driver.phone,
           lat: driverLat ?? 31.418,
           lng: driverLng ?? 31.814,
+          heading: _driverHeading,
           is_online: online,
           updated_at: new Date().toISOString(),
           ...(currentRide  ? { ride_id: currentRide.id }   : { ride_id: null }),
@@ -1875,7 +1880,18 @@ import PageHero from '../components/PageHero.astro';
 
     if (navigator.geolocation) {
       geoWatchId = navigator.geolocation.watchPosition(
-        pos => { driverLat = pos.coords.latitude; driverLng = pos.coords.longitude; updateDriverMarker(); },
+        pos => {
+          const prevLat = driverLat, prevLng = driverLng;
+          driverLat = pos.coords.latitude; driverLng = pos.coords.longitude;
+          // heading من الجهاز لو موثوق، وإلا نحسبه من آخر نقطتين — أكتر ثبات
+          // مع الموبايلات الرخيصة أثناء القيادة.
+          if (typeof pos.coords.heading === 'number' && !isNaN(pos.coords.heading)) {
+            _driverHeading = pos.coords.heading;
+          } else if (prevLat != null && prevLng != null && (prevLat !== driverLat || prevLng !== driverLng)) {
+            _driverHeading = bearingBetween(prevLat, prevLng, driverLat, driverLng);
+          }
+          updateDriverMarker();
+        },
         () => {}, { enableHighAccuracy: true, maximumAge: 3000 }
       );
     }

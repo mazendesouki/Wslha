@@ -1713,6 +1713,51 @@ import { VEHICLE_MODELS, FARE_ZONES, TRIP_RATES } from '../data/airports';
     if (routeRenderer) { routeRenderer.setMap(null); routeRenderer = null; }
   }
 
+  // ── أيقونة عربية صغيرة (top-down) بتلف حسب اتجاه الحركة + حركة سلسة
+  //    بين تحديثات الموقع — نفس اللي في src/utils/mapMarker.ts، لكن
+  //    الصفحة دي بتستخدم <script define:vars> ومينفعش تعمل import منه. ──
+  function carIconUrl(headingDeg, color) {
+    color = color || '#16a34a';
+    const svg = `
+      <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 30 30">
+        <g transform="rotate(${headingDeg} 15 15)">
+          <ellipse cx="15" cy="16" rx="5.5" ry="3" fill="rgba(0,0,0,.18)"/>
+          <path d="M15 4 C18.5 4 20.5 8 20.5 13 L20.5 21 C20.5 23.5 18.5 25 15 25
+                   C11.5 25 9.5 23.5 9.5 21 L9.5 13 C9.5 8 11.5 4 15 4 Z"
+                fill="${color}" stroke="#fff" stroke-width="1.6"/>
+          <path d="M11.3 11.5 C11.3 9 12.8 7.3 15 7.3 C17.2 7.3 18.7 9 18.7 11.5
+                   L18.7 13.2 L11.3 13.2 Z" fill="#e8fdf1" opacity=".9"/>
+          <rect x="10.8" y="16.5" width="8.4" height="2.2" rx="1.1" fill="#0b3d3a" opacity=".55"/>
+        </g>
+      </svg>`.trim();
+    return 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(svg);
+  }
+  function carIcon(headingDeg, color) {
+    const G = window.google.maps;
+    return { url: carIconUrl(headingDeg, color), scaledSize: new G.Size(30, 30), anchor: new G.Point(15, 15) };
+  }
+  function bearingBetween(lat1, lng1, lat2, lng2) {
+    const toRad = d => (d * Math.PI) / 180;
+    const y = Math.sin(toRad(lng2 - lng1)) * Math.cos(toRad(lat2));
+    const x = Math.cos(toRad(lat1)) * Math.sin(toRad(lat2)) -
+      Math.sin(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.cos(toRad(lng2 - lng1));
+    return ((Math.atan2(y, x) * 180) / Math.PI + 360) % 360;
+  }
+  function animateMarkerTo(marker, lat, lng, ms) {
+    ms = ms || 2800;
+    const from = marker.getPosition();
+    const fromLat = from ? from.lat() : lat, fromLng = from ? from.lng() : lng;
+    if (marker.__moveRaf) cancelAnimationFrame(marker.__moveRaf);
+    const start = performance.now();
+    function step(now) {
+      const t = Math.min(1, (now - start) / ms);
+      const eased = 1 - Math.pow(1 - t, 2);
+      marker.setPosition({ lat: fromLat + (lat - fromLat) * eased, lng: fromLng + (lng - fromLng) * eased });
+      if (t < 1) marker.__moveRaf = requestAnimationFrame(step);
+    }
+    marker.__moveRaf = requestAnimationFrame(step);
+  }
+
   function gMarker(lat, lng, label, color, title) {
     const G = window.google.maps;
     return new G.Marker({
@@ -1773,9 +1818,10 @@ import { VEHICLE_MODELS, FARE_ZONES, TRIP_RATES } from '../data/airports';
     let step = 0;
 
     const G = window.google.maps;
+    const initHeading = coords.length > 1 ? bearingBetween(coords[0].lat, coords[0].lng, coords[1].lat, coords[1].lng) : 0;
     driverMarker = new G.Marker({
       position: coords[0], map, title: 'السائق', zIndex: 999,
-      icon: { path: G.SymbolPath.FORWARD_CLOSED_ARROW, fillColor: '#16a34a', fillOpacity: 1, strokeColor: '#fff', strokeWeight: 2, scale: 7 },
+      icon: carIcon(initHeading),
     });
     document.getElementById('live-badge').style.display = 'inline-flex';
 
@@ -1786,8 +1832,10 @@ import { VEHICLE_MODELS, FARE_ZONES, TRIP_RATES } from '../data/airports';
         setTimeout(() => advanceStatus('done'), 1000);
         return;
       }
+      const prevCoord = coords[step];
       step++;
-      driverMarker.setPosition(coords[step]);
+      animateMarkerTo(driverMarker, coords[step].lat, coords[step].lng, msPerStep);
+      driverMarker.setIcon(carIcon(bearingBetween(prevCoord.lat, prevCoord.lng, coords[step].lat, coords[step].lng)));
       const pct = step / (totalSteps - 1);
       if (pct >= 0.05 && !window._st_assigned) { window._st_assigned = true; advanceStatus('assigned'); }
       if (pct >= 0.15 && !window._st_arrived)  { window._st_arrived = true;  advanceStatus('arrived'); }
@@ -1887,19 +1935,26 @@ import { VEHICLE_MODELS, FARE_ZONES, TRIP_RATES } from '../data/airports';
     clearInterval(window._locPoller); window._locPoller = null;
   }
 
-  function updateRealDriverMarker(lat, lng) {
+  let _prevRealDriverPos = null;
+
+  function updateRealDriverMarker(lat, lng, heading) {
     if (!lat || !lng) return;
     // Stop the simulated animation — real GPS takes over
     if (window._liveInterval) { clearInterval(window._liveInterval); window._liveInterval = null; }
     const G = window.google?.maps;
     if (!G || !map) return;
     const pos = { lat: Number(lat), lng: Number(lng) };
+    const hasHeading = typeof heading === 'number' && !isNaN(heading);
+    if (!hasHeading && _prevRealDriverPos) heading = bearingBetween(_prevRealDriverPos.lat, _prevRealDriverPos.lng, pos.lat, pos.lng);
+    _prevRealDriverPos = pos;
+
     if (driverMarker) {
-      driverMarker.setPosition(pos);
+      animateMarkerTo(driverMarker, pos.lat, pos.lng);
+      if (typeof heading === 'number' && !isNaN(heading)) driverMarker.setIcon(carIcon(heading));
     } else {
       driverMarker = new G.Marker({
         position: pos, map, title: 'السائق', zIndex: 999,
-        icon: { path: G.SymbolPath.FORWARD_CLOSED_ARROW, fillColor: '#16a34a', fillOpacity: 1, strokeColor: '#fff', strokeWeight: 2, scale: 7 },
+        icon: carIcon(hasHeading ? heading : 0),
       });
       document.getElementById('live-badge').style.display = 'inline-flex';
     }
@@ -1910,9 +1965,9 @@ import { VEHICLE_MODELS, FARE_ZONES, TRIP_RATES } from '../data/airports';
     async function pollLocation() {
       try {
         const p = encodeURIComponent(driverPhone);
-        const res = await fetch(`${SB_URL}/rest/v1/driver_locations?driver_phone=eq.${p}&select=lat,lng&limit=1`, { headers: SB_H });
+        const res = await fetch(`${SB_URL}/rest/v1/driver_locations?driver_phone=eq.${p}&select=lat,lng,heading&limit=1`, { headers: SB_H });
         const rows = await res.json();
-        if (Array.isArray(rows) && rows[0]) updateRealDriverMarker(rows[0].lat, rows[0].lng);
+        if (Array.isArray(rows) && rows[0]) updateRealDriverMarker(rows[0].lat, rows[0].lng, rows[0].heading != null ? Number(rows[0].heading) : undefined);
       } catch {}
     }
     function tryLocRealtime() {
@@ -1923,7 +1978,7 @@ import { VEHICLE_MODELS, FARE_ZONES, TRIP_RATES } from '../data/airports';
       _locationChannel = _sb.channel('loc-' + driverPhone)
         .on('postgres_changes', { event: '*', schema: 'public', table: 'driver_locations',
           filter: `driver_phone=eq.${driverPhone}` },
-          payload => { const l = payload.new; if (l?.lat && l?.lng) updateRealDriverMarker(l.lat, l.lng); })
+          payload => { const l = payload.new; if (l?.lat && l?.lng) updateRealDriverMarker(l.lat, l.lng, l.heading != null ? Number(l.heading) : undefined); })
         .subscribe(status => {
           if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
             if (!window._locPoller) window._locPoller = setInterval(pollLocation, 3000);
