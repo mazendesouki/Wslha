@@ -7,17 +7,21 @@
 // in sync if you change something here.
 // ─────────────────────────────────────────────────────────────
 
+const CAR_SIZE = 44; // متوسط الحجم — كان 30
+
 export function carIconUrl(headingDeg: number, color = '#16a34a'): string {
+  const c = CAR_SIZE / 2;
   const svg = `
-    <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 30 30">
-      <g transform="rotate(${headingDeg} 15 15)">
-        <ellipse cx="15" cy="16" rx="5.5" ry="3" fill="rgba(0,0,0,.18)"/>
-        <path d="M15 4 C18.5 4 20.5 8 20.5 13 L20.5 21 C20.5 23.5 18.5 25 15 25
-                 C11.5 25 9.5 23.5 9.5 21 L9.5 13 C9.5 8 11.5 4 15 4 Z"
-              fill="${color}" stroke="#fff" stroke-width="1.6"/>
-        <path d="M11.3 11.5 C11.3 9 12.8 7.3 15 7.3 C17.2 7.3 18.7 9 18.7 11.5
-                 L18.7 13.2 L11.3 13.2 Z" fill="#e8fdf1" opacity=".9"/>
-        <rect x="10.8" y="16.5" width="8.4" height="2.2" rx="1.1" fill="#0b3d3a" opacity=".55"/>
+    <svg xmlns="http://www.w3.org/2000/svg" width="${CAR_SIZE}" height="${CAR_SIZE}" viewBox="0 0 ${CAR_SIZE} ${CAR_SIZE}">
+      <g transform="rotate(${headingDeg} ${c} ${c})">
+        <ellipse cx="${c}" cy="${c + 1.5}" rx="8.1" ry="4.4" fill="rgba(0,0,0,.18)"/>
+        <path d="M${c} 6 C${c + 5.1} 6 ${c + 8.1} 11.7 ${c + 8.1} 19.1 L${c + 8.1} 30.8
+                 C${c + 8.1} 34.5 ${c + 5.1} 36.7 ${c} 36.7 C${c - 5.1} 36.7 ${c - 8.1} 34.5 ${c - 8.1} 30.8
+                 L${c - 8.1} 19.1 C${c - 8.1} 11.7 ${c - 5.1} 6 ${c} 6 Z"
+              fill="${color}" stroke="#fff" stroke-width="2.3"/>
+        <path d="M${c - 5.4} 16.9 C${c - 5.4} 13.2 ${c - 3.2} 10.7 ${c} 10.7 C${c + 3.2} 10.7 ${c + 5.4} 13.2 ${c + 5.4} 16.9
+                 L${c + 5.4} 19.4 L${c - 5.4} 19.4 Z" fill="#e8fdf1" opacity=".9"/>
+        <rect x="${c - 6.2}" y="24.2" width="12.4" height="3.2" rx="1.6" fill="#0b3d3a" opacity=".55"/>
       </g>
     </svg>`.trim();
   return 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(svg);
@@ -26,8 +30,8 @@ export function carIconUrl(headingDeg: number, color = '#16a34a'): string {
 export function carIcon(headingDeg: number, color = '#16a34a') {
   return {
     url: carIconUrl(headingDeg, color),
-    scaledSize: new google.maps.Size(30, 30),
-    anchor: new google.maps.Point(15, 15),
+    scaledSize: new google.maps.Size(CAR_SIZE, CAR_SIZE),
+    anchor: new google.maps.Point(CAR_SIZE / 2, CAR_SIZE / 2),
   };
 }
 
