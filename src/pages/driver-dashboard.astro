@@ -967,7 +967,6 @@ import PageHero from '../components/PageHero.astro';
       const res = await fetch(`${SB_URL}/rest/v1/ratings`, {
         method: 'POST', headers: { ...SB_H, Prefer: 'return=minimal' },
         body: JSON.stringify({
-          id: 'ratc-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6),
           driver_phone: driver.phone, customer_phone: _rateCustomerTarget.phone,
           rating: _rcSelected, service_type: _rateCustomerTarget.serviceType,
           ride_id: _rateCustomerTarget.referenceId, rated_by: 'driver',

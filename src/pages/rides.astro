@@ -2207,7 +2207,6 @@ import { VEHICLE_MODELS, FARE_ZONES, TRIP_RATES } from '../data/airports';
         method: 'POST',
         headers: { ...SB_H, Prefer: 'return=minimal' },
         body: JSON.stringify({
-          id: 'rat-' + Date.now(),
           driver_phone: ride.driver_phone || '',
           customer_phone: ride.customer_phone || '',
           rating: _selectedRating,
