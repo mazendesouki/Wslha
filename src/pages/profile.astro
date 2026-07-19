@@ -971,7 +971,11 @@ import Layout from '../components/layout.astro';
         </div>
 
         <div class="pf-card">
-          <div class="pf-card__header"><h2 class="pf-card__title">📅 الإنفاق الشهري</h2></div>
+          <div class="pf-card__header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.5rem">
+            <h2 class="pf-card__title">📅 الإنفاق الشهري</h2>
+            <button type="button" id="monthly-export-btn" class="btn-outline" style="font-size:var(--text-xs);padding:.4rem .8rem">⬇️ تحميل كملف Excel</button>
+          </div>
+          <p style="font-size:var(--text-xs);color:var(--color-text-muted);padding:0 var(--sp-3);margin:.25rem 0 0">اضغط على أي شهر لعرض تفاصيله أسبوعياً</p>
           <div class="pf-card__body" style="padding:0;overflow:hidden">
             <table class="monthly-table">
               <thead>
@@ -1499,23 +1503,86 @@ import Layout from '../components/layout.astro';
           </div>`).join('')}</div>`
       : '<p style="color:var(--color-text-muted);font-size:var(--text-sm)">لا توجد بيانات كافية بعد</p>';
 
-    const monthMap = {};
+    // Monthly spend = all completed activity (orders + rides), same definition
+    // as the top "إنفاق" card — not just delivery orders, or a customer whose
+    // spending is entirely rides would see an empty table here.
+    const activity = [];
     orders.forEach(o => {
-      if (o.type === 'ride') return; // counted separately via `rides`, not here
-      const d = new Date(o.created_at || o.date || 0);
-      const key = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
-      if (!monthMap[key]) monthMap[key] = { label: MONTHS_AR[d.getMonth()] + ' ' + d.getFullYear(), count: 0, spent: 0 };
-      monthMap[key].count++;
-      if (o.status === 'delivered' || o.status === 'completed') monthMap[key].spent += Number(o.total) || 0;
+      if (o.type === 'ride') return;
+      if (o.status !== 'delivered' && o.status !== 'completed') return;
+      activity.push({ date: o.created_at || o.date, amount: Number(o.total) || 0 });
     });
-    const monthRows = Object.entries(monthMap).sort((a, b) => b[0].localeCompare(a[0])).slice(0, 12);
-    $('monthly-tbody').innerHTML = monthRows.length
-      ? monthRows.map(([, m]) => {
+    rides.forEach(r => {
+      if (r.status !== 'completed') return;
+      activity.push({ date: r.created_at || r.date, amount: Number(r.fare) || 0 });
+    });
+
+    const monthMap = {};
+    activity.forEach(a => {
+      const d = new Date(a.date || 0);
+      const key = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+      if (!monthMap[key]) monthMap[key] = { label: MONTHS_AR[d.getMonth()] + ' ' + d.getFullYear(), count: 0, spent: 0, weeks: {} };
+      monthMap[key].count++;
+      monthMap[key].spent += a.amount;
+      const wn = Math.ceil(d.getDate() / 7);
+      const wkey = 'w' + wn;
+      if (!monthMap[key].weeks[wkey]) monthMap[key].weeks[wkey] = { label: 'الأسبوع ' + wn, count: 0, spent: 0 };
+      monthMap[key].weeks[wkey].count++;
+      monthMap[key].weeks[wkey].spent += a.amount;
+    });
+
+    _monthlyData = Object.entries(monthMap).sort((a, b) => b[0].localeCompare(a[0])).slice(0, 12);
+    $('monthly-tbody').innerHTML = _monthlyData.length
+      ? _monthlyData.map(([key, m], i) => {
           const avg = m.count ? Math.round(m.spent / m.count) : 0;
-          return `<tr><td>${m.label}</td><td>${m.count}</td><td>${fmt(Math.round(m.spent))} ج.م</td><td>${fmt(avg)} ج.م</td></tr>`;
+          const weekRows = Object.values(m.weeks).map(w => {
+            const wavg = w.count ? Math.round(w.spent / w.count) : 0;
+            return `<tr class="monthly-week-row" data-month="${i}"><td style="padding-right:2rem;color:var(--color-text-muted)">↳ ${w.label}</td><td>${w.count}</td><td>${fmt(Math.round(w.spent))} ج.م</td><td>${fmt(wavg)} ج.م</td></tr>`;
+          }).join('');
+          return `<tr class="monthly-row" data-month="${i}" style="cursor:pointer" onclick="toggleMonthWeeks(${i})">
+              <td>▸ ${m.label}</td><td>${m.count}</td><td>${fmt(Math.round(m.spent))} ج.م</td><td>${fmt(avg)} ج.م</td>
+            </tr>${weekRows}`;
         }).join('')
       : '<tr><td colspan="4" style="text-align:center;color:var(--color-text-muted)">لا توجد بيانات بعد</td></tr>';
+    document.querySelectorAll('.monthly-week-row').forEach(r => r.style.display = 'none');
   }
+
+  let _monthlyData = [];
+  function toggleMonthWeeks(i) {
+    const rows = document.querySelectorAll(`.monthly-week-row[data-month="${i}"]`);
+    const isHidden = rows.length && rows[0].style.display === 'none';
+    rows.forEach(r => r.style.display = isHidden ? '' : 'none');
+    const arrowCell = document.querySelector(`.monthly-row[data-month="${i}"] td:first-child`);
+    if (arrowCell) arrowCell.textContent = arrowCell.textContent.replace(isHidden ? '▸' : '▾', isHidden ? '▾' : '▸');
+  }
+  // The whole script is wrapped in an IIFE, so this function is scoped
+  // locally — the row's onclick="toggleMonthWeeks(...)" attribute resolves
+  // names against the global scope, so it must be exposed on window explicitly.
+  window.toggleMonthWeeks = toggleMonthWeeks;
+
+  function downloadMonthlyExcel() {
+    if (!_monthlyData.length) { return; }
+    const rows = [['الشهر', 'الأسبوع', 'عدد الطلبات/الرحلات', 'إجمالي الإنفاق (ج.م)', 'متوسط الطلب (ج.م)']];
+    _monthlyData.forEach(([, m]) => {
+      const avg = m.count ? Math.round(m.spent / m.count) : 0;
+      rows.push([m.label, 'الإجمالي', m.count, Math.round(m.spent), avg]);
+      Object.values(m.weeks).forEach(w => {
+        const wavg = w.count ? Math.round(w.spent / w.count) : 0;
+        rows.push([m.label, w.label, w.count, Math.round(w.spent), wavg]);
+      });
+    });
+    const csv = '﻿' + rows.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\r\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'الإنفاق-الشهري.csv';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  }
+  document.getElementById('monthly-export-btn').addEventListener('click', downloadMonthlyExcel);
 
   /* ── Tab switching ─────────────────────────────────────────── */
   document.querySelectorAll('.profile-tab').forEach(btn => {
