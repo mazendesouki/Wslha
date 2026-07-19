@@ -357,6 +357,13 @@ import Layout from '../components/layout.astro';
       <a href="/login" class="gate__btn">تسجيل الدخول</a>
     </div>
 
+    <!-- Pending admin approval -->
+    <div id="md-pending" class="gate" hidden>
+      <div class="gate__icon" id="md-pending-icon">⏳</div>
+      <h1 class="gate__title" id="md-pending-title">طلبك قيد المراجعة</h1>
+      <p class="gate__sub" id="md-pending-sub">يراجع فريق وصّلها طلبك خلال 1-3 أيام عمل. سنتواصل معك فور اتخاذ القرار.</p>
+    </div>
+
     <!-- Register store -->
     <div id="md-register" hidden>
       <div class="reg-card">
@@ -776,15 +783,86 @@ import Layout from '../components/layout.astro';
 
     // Check if they have a store
     const stores = await sbGet(`stores?owner_phone=eq.${encodeURIComponent(user.phone)}&limit=1`);
-    if (!stores || stores.length === 0) {
-      // No store yet — show registration
-      show('md-register');
-      initRegisterForm(user.phone);
+    if (stores && stores.length > 0) {
+      // Already has a working store — let them straight in regardless of
+      // approval-status bookkeeping (grandfathers in merchants who started
+      // before this gate existed; don't retroactively lock out someone
+      // already legitimately operating).
+      currentStore = stores[0];
+      await loadDashboard();
       return;
     }
 
-    currentStore = stores[0];
-    await loadDashboard();
+    // No store yet: a merchant account must be admin-approved (via
+    // merchant_applications + admin.astro's review flow) before they can
+    // register a NEW store — previously this wasn't checked at all, so any
+    // logged-in customer could skip merchant-apply.astro/admin review
+    // entirely, fill the store form below, and get a fully working
+    // order-receiving dashboard with zero vetting. Mirrors the same gate
+    // driver-dashboard.astro already applies for drivers.
+    const gateOk = await checkMerchantApproval(user.phone);
+    if (!gateOk) return;
+
+    show('md-register');
+    initRegisterForm(user.phone);
+  }
+
+  // Returns true if the merchant is approved and may proceed; otherwise shows
+  // the pending/rejected screen and returns false.
+  async function checkMerchantApproval(phone: string): Promise<boolean> {
+    try {
+      const local = phone.startsWith('+20') ? '0' + phone.slice(3) : phone;
+      const intl  = phone.startsWith('01')  ? '+2' + phone : phone;
+      const orFilter = `or=(phone.eq.${encodeURIComponent(intl)},phone.eq.${encodeURIComponent(local)})`;
+
+      const [acctRes, appRes] = await Promise.all([
+        fetch(`${SB_URL}/rest/v1/rpc/lookup_account?p_phone=${encodeURIComponent(phone)}`, { headers: SB_H }),
+        fetch(`${SB_URL}/rest/v1/merchant_applications?${orFilter}&select=status,rejection_reason&order=created_at.desc&limit=1`, { headers: SB_H }),
+      ]);
+      const acctRows = acctRes.ok ? await acctRes.json() : [];
+      const appRows  = appRes.ok  ? await appRes.json()  : [];
+      const acct = Array.isArray(acctRows) && acctRows[0] ? acctRows[0] : null;
+      const app  = Array.isArray(appRows)  && appRows[0]  ? appRows[0] : null;
+
+      if (acct && acct.status === 'banned') {
+        document.getElementById('md-pending-icon')!.textContent = '🚫';
+        document.getElementById('md-pending-title')!.textContent = 'حسابك محظور';
+        document.getElementById('md-pending-sub')!.textContent = 'يرجى التواصل مع الدعم.';
+        show('md-pending');
+        return false;
+      }
+
+      // Already approved either via the account status or an existing store
+      // (accounts created before this gate existed) — let them through.
+      const effectiveStatus = (app && app.status) || (acct && acct.status === 'approved' ? 'approved' : null);
+      if (effectiveStatus === 'approved') return true;
+
+      if (effectiveStatus === 'rejected') {
+        document.getElementById('md-pending-icon')!.textContent = '❌';
+        document.getElementById('md-pending-title')!.textContent = 'تم رفض طلبك';
+        document.getElementById('md-pending-sub')!.textContent =
+          (app?.rejection_reason ? `سبب الرفض: ${app.rejection_reason}. ` : '') + 'تواصل معنا لمزيد من التفاصيل.';
+        show('md-pending');
+        return false;
+      }
+
+      if (!effectiveStatus) {
+        document.getElementById('md-pending-icon')!.textContent = '📋';
+        document.getElementById('md-pending-title')!.textContent = 'لم تقدّم طلب انضمام بعد';
+        document.getElementById('md-pending-sub')!.innerHTML = 'قدّم طلبك لبدء البيع كتاجر. <a href="/merchant-apply" style="color:var(--color-primary);font-weight:700">تقديم الطلب الآن</a>';
+        show('md-pending');
+        return false;
+      }
+
+      // effectiveStatus === 'pending' (or any other in-review value)
+      show('md-pending');
+      return false;
+    } catch (e) {
+      console.error('checkMerchantApproval error', e);
+      // Fail closed — don't grant dashboard access if we couldn't verify approval.
+      show('md-pending');
+      return false;
+    }
   }
 
   // ── Register new store ──
