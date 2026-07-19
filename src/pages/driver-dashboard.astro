@@ -781,11 +781,11 @@ import PageHero from '../components/PageHero.astro';
   const SB_H = { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}`, 'Content-Type': 'application/json' };
 
   // Commission rates (loaded from app_settings, defaults to 15%)
-  const RATES = { ride: 0.15, delivery: 0.15, airport: 0.15 };
+  const RATES = { ride: 0.15, delivery: 0.15, airport: 0.15, external: 0.15 };
 
   async function loadCommissionRates() {
     try {
-      const res = await fetch(`${SB_URL}/rest/v1/app_settings?key=in.(commission_ride,commission_delivery,commission_airport)&select=key,value`, { headers: SB_H });
+      const res = await fetch(`${SB_URL}/rest/v1/app_settings?key=in.(commission_ride,commission_delivery,commission_airport,commission_external)&select=key,value`, { headers: SB_H });
       const rows = await res.json();
       if (Array.isArray(rows)) {
         rows.forEach(r => {
@@ -794,6 +794,7 @@ import PageHero from '../components/PageHero.astro';
             if (r.key === 'commission_ride')     RATES.ride     = val;
             if (r.key === 'commission_delivery') RATES.delivery = val;
             if (r.key === 'commission_airport')  RATES.airport  = val;
+            if (r.key === 'commission_external') RATES.external = val;
           }
         });
       }
@@ -898,7 +899,7 @@ import PageHero from '../components/PageHero.astro';
   /* ── Completion receipt modal ── */
   let _lastCompletedRide = null;
   function showReceiptModal(ride) {
-    const rate = ride?.ride_type === 'airport' ? RATES.airport : RATES.ride;
+    const rate = ride?.ride_type === 'airport' ? RATES.airport : ride?.ride_type === 'external' ? RATES.external : RATES.ride;
     const fare = Number(ride?.fare || 0);
     const commission = Math.round(fare * rate);
     const net = fare - commission;
@@ -1703,7 +1704,9 @@ import PageHero from '../components/PageHero.astro';
       localStorage.setItem(key, JSON.stringify(todayStats));
       renderStats();
     } catch {}
-    const rideType = currentRide ? (currentRide.ride_type === 'airport' ? 'airport' : 'ride') : 'ride';
+    const rideType = currentRide
+      ? (currentRide.ride_type === 'airport' ? 'airport' : currentRide.ride_type === 'external' ? 'external' : 'ride')
+      : 'ride';
     const completedRide = { ...currentRide };
     await recordCompletion(rideType, rideId, fare || 0);
     currentRide = null;
@@ -2014,15 +2017,15 @@ import PageHero from '../components/PageHero.astro';
   /* ── Award points & update wallet on trip completion ── */
   async function recordCompletion(type, referenceId, fare) {
     if (!driver) return;
-    const rate         = type === 'airport' ? RATES.airport : type === 'delivery' ? RATES.delivery : RATES.ride;
+    const rate         = type === 'airport' ? RATES.airport : type === 'delivery' ? RATES.delivery : type === 'external' ? RATES.external : RATES.ride;
     const commission   = Math.round(fare * rate);
     const driverEarn   = fare - commission;
-    const pointsEarned = type === 'airport' ? 50 : type === 'delivery' ? 20 : 10;
+    const pointsEarned = type === 'airport' ? 50 : type === 'delivery' ? 20 : type === 'external' ? 20 : 10;
     const phone = driver.phone;
     const now   = new Date().toISOString();
     const txId  = `wtx-${Date.now()}`;
     const ptId  = `ptx-${Date.now()}`;
-    const typeLabel = type === 'delivery' ? 'توصيل' : type === 'airport' ? 'مطار' : 'رحلة';
+    const typeLabel = type === 'delivery' ? 'توصيل' : type === 'airport' ? 'مطار' : type === 'external' ? 'رحلة خارجية' : 'رحلة';
 
     await Promise.allSettled([
       // Accumulate driver wallet balance via RPC (prevents overwrite)

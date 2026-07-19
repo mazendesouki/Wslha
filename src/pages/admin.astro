@@ -714,6 +714,13 @@
                   <span style="font-size:.82rem;color:#64748B">% من قيمة الرحلة</span>
                 </div>
               </div>
+              <div>
+                <label style="font-size:.78rem;font-weight:700;color:#64748B;display:block;margin-bottom:.3rem">🛣️ عمولة الرحلات خارج المحافظة (%)</label>
+                <div style="display:flex;align-items:center;gap:.5rem">
+                  <input class="search-input" id="rate-external" type="number" min="0" max="50" step="0.5" value="15" style="width:100px;text-align:center;font-weight:700;font-size:1.1rem"/>
+                  <span style="font-size:.82rem;color:#64748B">% من قيمة الرحلة</span>
+                </div>
+              </div>
               <button class="btn btn--primary" onclick="saveCommissionRates()" id="save-rates-btn">💾 حفظ النسب</button>
               <div id="rates-msg" style="display:none;font-size:.82rem;font-weight:700;padding:.5rem .75rem;border-radius:6px"></div>
             </div>
@@ -2006,11 +2013,12 @@ async function loadFinance() {
 /* ═══════════════════ SETTINGS — Commission rates ════════════ */
 async function loadCommissionRates() {
   try {
-    const rows = await sbGet('app_settings?key=in.(commission_ride,commission_delivery,commission_airport)&select=key,value');
+    const rows = await sbGet('app_settings?key=in.(commission_ride,commission_delivery,commission_airport,commission_external)&select=key,value');
     (rows||[]).forEach(r => {
       if (r.key === 'commission_ride')     { const el = document.getElementById('rate-ride');     if(el) el.value = r.value; }
       if (r.key === 'commission_delivery') { const el = document.getElementById('rate-delivery'); if(el) el.value = r.value; }
       if (r.key === 'commission_airport')  { const el = document.getElementById('rate-airport');  if(el) el.value = r.value; }
+      if (r.key === 'commission_external') { const el = document.getElementById('rate-external'); if(el) el.value = r.value; }
     });
   } catch {}
 }
@@ -2025,6 +2033,7 @@ async function saveCommissionRates() {
     { key:'commission_ride',     value: document.getElementById('rate-ride').value },
     { key:'commission_delivery', value: document.getElementById('rate-delivery').value },
     { key:'commission_airport',  value: document.getElementById('rate-airport').value },
+    { key:'commission_external', value: document.getElementById('rate-external').value },
   ];
   try {
     const results = await Promise.all(pairs.map(p =>
@@ -2512,7 +2521,8 @@ CREATE TABLE IF NOT EXISTS app_settings (
 INSERT INTO app_settings (key, value) VALUES
   ('commission_ride', '15'),
   ('commission_delivery', '15'),
-  ('commission_airport', '15')
+  ('commission_airport', '15'),
+  ('commission_external', '15')
 ON CONFLICT (key) DO NOTHING;
 
 -- 5. wallet_transactions: platform phone key
