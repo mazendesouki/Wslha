@@ -559,6 +559,30 @@ import Layout from '../components/layout.astro';
           </div>
         </div>
 
+        <!-- Monthly/weekly sales -->
+        <div class="acct-card">
+          <div class="acct-card__header" style="flex-wrap:wrap;gap:.5rem">
+            <div class="acct-card__title">📅 المبيعات الشهرية</div>
+            <button type="button" id="m-sales-export-btn" class="btn-outline" style="font-size:var(--text-xs);padding:.4rem .8rem">⬇️ تحميل كملف Excel</button>
+          </div>
+          <div style="font-size:var(--text-xs);color:var(--color-text-faint);margin-bottom:var(--sp-3)">اضغط على أي شهر لعرض تفاصيله أسبوعياً</div>
+          <div style="overflow-x:auto">
+            <table style="width:100%;border-collapse:collapse;font-size:var(--text-sm)">
+              <thead>
+                <tr style="text-align:right;font-size:var(--text-xs);color:#3FA79A;background:#F2F7F6">
+                  <th style="padding:.5rem .75rem">الشهر</th>
+                  <th style="padding:.5rem .75rem">عدد الطلبات</th>
+                  <th style="padding:.5rem .75rem">إجمالي المبيعات</th>
+                  <th style="padding:.5rem .75rem">متوسط الطلب</th>
+                </tr>
+              </thead>
+              <tbody id="m-sales-tbody">
+                <tr><td colspan="4" style="text-align:center;color:var(--color-text-faint);padding:1rem">لا توجد بيانات بعد</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
       </div><!-- /tab-account -->
 
       <!-- Tab: Settings -->
@@ -1356,13 +1380,16 @@ import Layout from '../components/layout.astro';
     if (!user?.phone) return;
     const phone = encodeURIComponent(user.phone);
 
-    const [walletRes, walletTxRes, pointsRes, pointsTxRes, ratingsRes] = await Promise.allSettled([
+    const [walletRes, walletTxRes, pointsRes, pointsTxRes, ratingsRes, salesRes] = await Promise.allSettled([
       sbGet(`wallets?phone=eq.${phone}&select=balance`),
       sbGet(`wallet_transactions?phone=eq.${phone}&select=amount,type,note,created_at&order=created_at.desc&limit=10`),
       sbGet(`points?phone=eq.${phone}&select=total_points`),
       sbGet(`point_transactions?phone=eq.${phone}&select=points,type,created_at&order=created_at.desc&limit=10`),
       currentStore?.id
         ? sbGet(`ratings?store_id=eq.${encodeURIComponent(currentStore.id)}&store_rating=not.is.null&select=store_rating,comment,order_code,created_at&order=created_at.desc&limit=10`)
+        : Promise.resolve(null),
+      currentStore?.id
+        ? sbGet(`orders?store_id=eq.${encodeURIComponent(currentStore.id)}&status=in.(delivered,completed)&select=total,created_at&order=created_at.desc&limit=1000`)
         : Promise.resolve(null),
     ]);
 
@@ -1416,7 +1443,83 @@ import Layout from '../components/layout.astro';
         }).join('');
       }
     }
+    // Monthly/weekly sales
+    if (salesRes.status === 'fulfilled') {
+      renderMerchantSales((salesRes.value as any[]) || []);
+    }
   }
+
+  const MONTHS_AR_M = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
+  let _merchantSalesData: any[] = [];
+
+  function renderMerchantSales(orders: any[]) {
+    const monthMap: Record<string, any> = {};
+    orders.forEach(o => {
+      const d = new Date(o.created_at || 0);
+      const key = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+      if (!monthMap[key]) monthMap[key] = { label: MONTHS_AR_M[d.getMonth()] + ' ' + d.getFullYear(), count: 0, spent: 0, weeks: {} as Record<string, any> };
+      monthMap[key].count++;
+      monthMap[key].spent += Number(o.total) || 0;
+      const wn = Math.ceil(d.getDate() / 7);
+      const wkey = 'w' + wn;
+      if (!monthMap[key].weeks[wkey]) monthMap[key].weeks[wkey] = { label: 'الأسبوع ' + wn, count: 0, spent: 0 };
+      monthMap[key].weeks[wkey].count++;
+      monthMap[key].weeks[wkey].spent += Number(o.total) || 0;
+    });
+
+    _merchantSalesData = Object.entries(monthMap).sort((a, b) => b[0].localeCompare(a[0])).slice(0, 12);
+    const tbody = document.getElementById('m-sales-tbody')!;
+    if (!_merchantSalesData.length) {
+      tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--color-text-faint);padding:1rem">لا توجد بيانات بعد</td></tr>';
+      return;
+    }
+    tbody.innerHTML = _merchantSalesData.map(([, m]: [string, any], i: number) => {
+      const avg = m.count ? Math.round(m.spent / m.count) : 0;
+      const weekRows = Object.values(m.weeks).map((w: any) => {
+        const wavg = w.count ? Math.round(w.spent / w.count) : 0;
+        return `<tr class="m-sales-week-row" data-month="${i}" style="display:none"><td style="padding-right:2rem;color:var(--color-text-faint)">↳ ${w.label}</td><td>${w.count}</td><td>${Math.round(w.spent).toLocaleString('ar-EG')} ج.م</td><td>${wavg.toLocaleString('ar-EG')} ج.م</td></tr>`;
+      }).join('');
+      return `<tr class="m-sales-row" data-month="${i}" style="cursor:pointer;border-bottom:1px solid #E3EDEC" onclick="toggleMerchantSalesWeeks(${i})">
+          <td style="padding:.5rem .75rem">▸ ${m.label}</td><td style="padding:.5rem .75rem">${m.count}</td><td style="padding:.5rem .75rem">${Math.round(m.spent).toLocaleString('ar-EG')} ج.م</td><td style="padding:.5rem .75rem">${avg.toLocaleString('ar-EG')} ج.م</td>
+        </tr>${weekRows}`;
+    }).join('');
+  }
+
+  function toggleMerchantSalesWeeks(i: number) {
+    const rows = document.querySelectorAll(`.m-sales-week-row[data-month="${i}"]`) as NodeListOf<HTMLElement>;
+    const isHidden = rows.length > 0 && rows[0].style.display === 'none';
+    rows.forEach(r => r.style.display = isHidden ? '' : 'none');
+    const arrowCell = document.querySelector(`.m-sales-row[data-month="${i}"] td:first-child`);
+    if (arrowCell) arrowCell.textContent = arrowCell.textContent!.replace(isHidden ? '▸' : '▾', isHidden ? '▾' : '▸');
+  }
+  // The whole script is bundled as an ES module, so plain function
+  // declarations aren't reachable from onclick="..." attributes (which
+  // resolve names against the global scope) — expose explicitly.
+  (window as any).toggleMerchantSalesWeeks = toggleMerchantSalesWeeks;
+
+  function downloadMerchantSalesExcel() {
+    if (!_merchantSalesData.length) return;
+    const rows: any[][] = [['الشهر', 'الأسبوع', 'عدد الطلبات', 'إجمالي المبيعات (ج.م)', 'متوسط الطلب (ج.م)']];
+    _merchantSalesData.forEach(([, m]: [string, any]) => {
+      const avg = m.count ? Math.round(m.spent / m.count) : 0;
+      rows.push([m.label, 'الإجمالي', m.count, Math.round(m.spent), avg]);
+      Object.values(m.weeks).forEach((w: any) => {
+        const wavg = w.count ? Math.round(w.spent / w.count) : 0;
+        rows.push([m.label, w.label, w.count, Math.round(w.spent), wavg]);
+      });
+    });
+    const csv = '﻿' + rows.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\r\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'المبيعات-الشهرية.csv';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  }
+  document.getElementById('m-sales-export-btn')?.addEventListener('click', downloadMerchantSalesExcel);
 
   // ── Bootstrap ──
   init();
