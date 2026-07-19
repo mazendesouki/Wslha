@@ -1731,6 +1731,12 @@ import PageHero from '../components/PageHero.astro';
     if (name === 'account')  loadAccountData();
     if (name === 'activity') loadActivityLog();
   }
+  // This <script> is compiled as an ES module (it has imports), so its top-level
+  // functions aren't on `window` — but the buttons above call them via inline
+  // onclick="...", which resolves names against the global scope. Expose the two
+  // that are invoked that way.
+  window.switchTab = switchTab;
+  window.sendReply = sendReply;
 
   /* ── Load approval status ── */
   async function loadApprovalStatus() {
@@ -1940,6 +1946,33 @@ import PageHero from '../components/PageHero.astro';
         }).join('');
       }
     } catch {}
+  }
+
+  async function sendReply(ratingId, btn) {
+    const form = btn.closest('.rating-reply-form');
+    const textarea = form.querySelector('.rating-reply-input');
+    const text = (textarea.value || '').trim();
+    if (!text) return;
+    btn.disabled = true;
+    btn.textContent = 'جارٍ الإرسال...';
+    try {
+      const res = await fetch(`${SB_URL}/rest/v1/ratings?id=eq.${ratingId}`, {
+        method: 'PATCH',
+        headers: { ...SB_H, Prefer: 'return=minimal' },
+        body: JSON.stringify({ driver_reply: text }),
+      });
+      if (res.ok) {
+        form.outerHTML = `<div class="rating-item__reply"><div class="rating-item__reply-label">ردك:</div>${escapeHtml(text)}</div>`;
+      } else {
+        btn.disabled = false;
+        btn.textContent = 'إرسال';
+        showToast('تعذّر إرسال الرد — حاول مرة أخرى');
+      }
+    } catch {
+      btn.disabled = false;
+      btn.textContent = 'إرسال';
+      showToast('تعذّر إرسال الرد — تحقق من الاتصال');
+    }
   }
 
   /* ── Load activity log ── */
