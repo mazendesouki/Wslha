@@ -1442,7 +1442,7 @@ import Layout from '../components/layout.astro';
     const avgOrder   = delivered.length ? Math.round(totalSpent / delivered.length) : 0;
     const now = new Date();
     const thisMonth = orders.filter(o => {
-      const d = new Date(o.created_at || 0);
+      const d = new Date(o.created_at || o.date || 0);
       return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
     });
 
@@ -1455,6 +1455,7 @@ import Layout from '../components/layout.astro';
 
     const catMap = {};
     orders.forEach(o => {
+      if (o.type === 'ride') return; // counted separately below via `rides`
       const key = o.store_name || o.type || 'توصيل';
       catMap[key] = (catMap[key] || 0) + (Number(o.total) || 0);
     });
@@ -1494,7 +1495,8 @@ import Layout from '../components/layout.astro';
 
     const monthMap = {};
     orders.forEach(o => {
-      const d = new Date(o.created_at || 0);
+      if (o.type === 'ride') return; // counted separately via `rides`, not here
+      const d = new Date(o.created_at || o.date || 0);
       const key = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
       if (!monthMap[key]) monthMap[key] = { label: MONTHS_AR[d.getMonth()] + ' ' + d.getFullYear(), count: 0, spent: 0 };
       monthMap[key].count++;
@@ -1780,7 +1782,10 @@ import Layout from '../components/layout.astro';
 
   function mergeOrders(sbOrders, lsOrders) {
     const ids = new Set(sbOrders.map(o => o.id));
-    const extra = lsOrders.filter(o => !ids.has(o.id));
+    // Some cached localStorage entries are actually rides (different shape —
+    // .fare instead of .total, no store_name), not delivery orders; merging
+    // those in here poisoned the order-only stats/category breakdown below.
+    const extra = lsOrders.filter(o => !ids.has(o.id) && o.type !== 'ride');
     return [...sbOrders, ...extra].sort((a, b) =>
       new Date(b.created_at || b.date || 0) - new Date(a.created_at || a.date || 0));
   }
