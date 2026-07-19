@@ -892,11 +892,11 @@
       <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:.75rem;margin-bottom:1rem">
         <div style="background:#F1F5F9;border-radius:10px;padding:.75rem;text-align:center">
           <div style="font-size:1.3rem;font-weight:900;color:#0E4B49" id="us-orders">—</div>
-          <div style="font-size:.72rem;color:#64748B">🛵 طلبات</div>
+          <div style="font-size:.72rem;color:#64748B" id="us-orders-lbl">🛵 طلبات</div>
         </div>
         <div style="background:#F1F5F9;border-radius:10px;padding:.75rem;text-align:center">
           <div style="font-size:1.3rem;font-weight:900;color:#0E4B49" id="us-rides">—</div>
-          <div style="font-size:.72rem;color:#64748B">🚗 رحلات</div>
+          <div style="font-size:.72rem;color:#64748B" id="us-rides-lbl">🚗 رحلات</div>
         </div>
         <div style="background:#F1F5F9;border-radius:10px;padding:.75rem;text-align:center">
           <div style="font-size:1.3rem;font-weight:900;color:#0E4B49" id="us-amount">—</div>
@@ -1505,6 +1505,7 @@ function renderMerchantAccounts() {
             <option value="banned"   ${(u.status||'')==='banned'  ?'selected':''}>محظور</option>
           </select>
           <button class="btn btn--ghost btn--sm" onclick="openMerchantModal('${u.phone}')">📋 ملف</button>
+          <button class="btn btn--outline btn--sm" onclick="viewMerchantStats('${u.phone}','${(u.name||'').replace(/'/g,"\\'")}')">📊 المبيعات</button>
           <button class="btn btn--red btn--sm" onclick="deleteUser('${u.phone}')">حذف</button>
         </div>
       </td>
@@ -2352,6 +2353,48 @@ async function viewUserStats(phone, name, role) {
         <td>${badge(r.status)}</td>
       </tr>`).join('')
     : '<tr><td colspan="4" style="text-align:center;color:#94A3B8;padding:2rem">لا توجد بيانات بعد</td></tr>';
+}
+
+async function viewMerchantStats(phone, name) {
+  document.getElementById('user-stats-modal-title').textContent = `📊 مبيعات: ${name || phone}`;
+  document.getElementById('user-stats-tbody').innerHTML = '<tr><td colspan="4" style="text-align:center;color:#94A3B8;padding:2rem">جاري التحميل…</td></tr>';
+  ['us-orders','us-rides','us-amount','us-balance'].forEach(id => document.getElementById(id).textContent = '—');
+  document.getElementById('us-orders-lbl').textContent = '🛍️ طلبات مكتملة';
+  document.getElementById('us-rides-lbl').textContent  = '⭐ متوسط التقييم';
+  document.getElementById('us-amount-lbl').textContent = '💰 المبيعات';
+  document.getElementById('user-stats-modal').classList.remove('hidden');
+
+  const store = await sbGet(`stores?owner_phone=eq.${encodeURIComponent(phone)}&select=id,name&limit=1`);
+  const storeId = store && store[0] && store[0].id;
+  if (!storeId) {
+    document.getElementById('user-stats-tbody').innerHTML = '<tr><td colspan="4" style="text-align:center;color:#94A3B8;padding:2rem">هذا الحساب ليس له متجر مسجَّل بعد</td></tr>';
+    return;
+  }
+
+  const [orders, ratings, wallet] = await Promise.all([
+    sbGet(`orders?store_id=eq.${encodeURIComponent(storeId)}&status=in.(delivered,completed)&select=total,status,created_at&order=created_at.desc&limit=300`),
+    sbGet(`ratings?store_id=eq.${encodeURIComponent(storeId)}&store_rating=not.is.null&select=store_rating`),
+    sbGet(`wallets?${phoneOrFilter(phone)}&select=balance&limit=1`),
+  ]);
+
+  const ordersArr = orders || [];
+  const ratingsArr = ratings || [];
+  const amount = ordersArr.reduce((s, o) => s + (Number(o.total) || 0), 0);
+  const avgRating = ratingsArr.length ? ratingsArr.reduce((s, r) => s + Number(r.store_rating), 0) / ratingsArr.length : 0;
+
+  document.getElementById('us-orders').textContent = ordersArr.length;
+  document.getElementById('us-rides').textContent  = ratingsArr.length ? avgRating.toFixed(1) : '—';
+  document.getElementById('us-amount').textContent = fmt(Math.round(amount)) + ' ج.م';
+  document.getElementById('us-balance').textContent = fmt(Math.round((wallet && wallet[0] && wallet[0].balance) || 0)) + ' ج.م';
+
+  document.getElementById('user-stats-tbody').innerHTML = ordersArr.length
+    ? ordersArr.map(o => `<tr>
+        <td style="font-size:.78rem">طلب</td>
+        <td style="font-size:.78rem">${fmtTime(o.created_at)}</td>
+        <td style="font-weight:800">${fmt(Math.round(Number(o.total) || 0))} ج.م</td>
+        <td>${badge(o.status)}</td>
+      </tr>`).join('')
+    : '<tr><td colspan="4" style="text-align:center;color:#94A3B8;padding:2rem">لا توجد طلبات مكتملة بعد</td></tr>';
 }
 
 async function adminSettlePlatform() {
