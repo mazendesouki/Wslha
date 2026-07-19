@@ -1358,7 +1358,9 @@ import Layout from '../components/layout.astro';
       sbGet(`wallet_transactions?phone=eq.${phone}&select=amount,type,note,created_at&order=created_at.desc&limit=10`),
       sbGet(`points?phone=eq.${phone}&select=total_points`),
       sbGet(`point_transactions?phone=eq.${phone}&select=points,type,created_at&order=created_at.desc&limit=10`),
-      sbGet(`ratings?driver_phone=eq.${user.phone}&select=rating,comment,service_type,created_at&order=created_at.desc&limit=10`),
+      currentStore?.id
+        ? sbGet(`ratings?store_id=eq.${encodeURIComponent(currentStore.id)}&store_rating=not.is.null&select=store_rating,comment,order_code,created_at&order=created_at.desc&limit=10`)
+        : Promise.resolve(null),
     ]);
 
     // Wallet
@@ -1395,18 +1397,18 @@ import Layout from '../components/layout.astro';
         }).join('');
       }
     }
-    // Store ratings
+    // Store ratings (order.store_rating — customers rate the store after delivery)
     if (ratingsRes.status === 'fulfilled') {
       const rts = ratingsRes.value as any[];
       if (Array.isArray(rts) && rts.length) {
-        const avg = rts.reduce((s: number, r: any) => s + r.rating, 0) / rts.length;
+        const avg = rts.reduce((s: number, r: any) => s + r.store_rating, 0) / rts.length;
         const stars = '⭐'.repeat(Math.round(avg)) + '☆'.repeat(5 - Math.round(avg));
         document.getElementById('m-rating-avg')!.textContent   = avg.toFixed(1);
         document.getElementById('m-rating-stars')!.textContent = stars;
         document.getElementById('m-rating-count')!.textContent = `${rts.length} تقييم`;
         document.getElementById('m-ratings-list')!.innerHTML = rts.map((r: any) => {
           const d = new Date(r.created_at).toLocaleDateString('ar-EG', { month: 'short', day: 'numeric' });
-          const s = '⭐'.repeat(r.rating) + '☆'.repeat(5 - r.rating);
+          const s = '⭐'.repeat(r.store_rating) + '☆'.repeat(5 - r.store_rating);
           return `<div class="rating-item"><div class="rating-item__top"><span class="rating-item__stars">${s}</span><span class="rating-item__date">${d}</span></div>${r.comment ? `<div class="rating-item__comment">"${r.comment}"</div>` : ''}</div>`;
         }).join('');
       }

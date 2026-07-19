@@ -628,6 +628,16 @@ import Layout from '../components/layout.astro';
     .pf-avatar { width: 64px; height: 64px; font-size: 1.4rem; }
     .pf-stats { gap: var(--sp-2); }
   }
+
+  .rating-big { font-size: var(--text-4xl); font-weight: var(--weight-black); color: var(--color-primary); line-height: 1; }
+  .rating-item {
+    padding: 10px 0; border-bottom: 1px solid var(--color-border, #E5E7EB);
+  }
+  .rating-item:last-child { border-bottom: none; }
+  .rating-item__top { display: flex; align-items: center; justify-content: space-between; }
+  .rating-item__stars { font-size: var(--text-sm); }
+  .rating-item__date  { font-size: 10px; color: var(--color-text-faint); }
+  .rating-item__comment { font-size: var(--text-xs); color: var(--color-text-muted); margin-top: 2px; }
 </style>
 
 <div class="profile-wrap">
@@ -734,6 +744,23 @@ import Layout from '../components/layout.astro';
                 <span class="save-success" id="save-success-msg">✅ تم الحفظ!</span>
               </div>
             </form>
+          </div>
+        </div>
+
+        <!-- My ratings (as rated by drivers) -->
+        <div class="pf-card">
+          <div class="pf-card__header">
+            <h2 class="pf-card__title">⭐ تقييمي</h2>
+          </div>
+          <div class="pf-card__body">
+            <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1rem">
+              <div class="rating-big" id="cust-rating-avg">—</div>
+              <div>
+                <div id="cust-rating-stars" style="font-size:1.1rem"></div>
+                <div id="cust-rating-count" style="font-size:.78rem;color:var(--color-text-muted)">لا يوجد تقييم بعد</div>
+              </div>
+            </div>
+            <div id="cust-ratings-list"></div>
           </div>
         </div>
 
@@ -1236,6 +1263,26 @@ import Layout from '../components/layout.astro';
     $('stat-month').textContent  = thisMonth.length;
   }
 
+  /* ── My ratings (as rated by drivers after a trip) ────────────── */
+  async function loadCustomerRatings(phone) {
+    try {
+      const rts = await sbFetch(SB_URL + '/rest/v1/ratings?customer_phone=eq.' + encodeURIComponent(phone) +
+        '&rated_by=eq.driver&select=rating,comment,service_type,created_at&order=created_at.desc&limit=10');
+      if (!Array.isArray(rts) || !rts.length) return;
+      const avg = rts.reduce((s, r) => s + r.rating, 0) / rts.length;
+      $('cust-rating-avg').textContent   = avg.toFixed(1);
+      $('cust-rating-stars').textContent = '⭐'.repeat(Math.round(avg)) + '☆'.repeat(5 - Math.round(avg));
+      $('cust-rating-count').textContent = rts.length + ' تقييم من السائقين';
+      $('cust-ratings-list').innerHTML = rts.map(r => {
+        const d = new Date(r.created_at).toLocaleDateString('ar-EG', { month: 'short', day: 'numeric' });
+        const s = '⭐'.repeat(r.rating) + '☆'.repeat(5 - r.rating);
+        return '<div class="rating-item"><div class="rating-item__top"><span class="rating-item__stars">' + s +
+          '</span><span class="rating-item__date">' + d + '</span></div>' +
+          (r.comment ? '<div class="rating-item__comment">"' + r.comment + '"</div>' : '') + '</div>';
+      }).join('');
+    } catch (e) { console.warn('[profile] loadCustomerRatings', e); }
+  }
+
   /* ── Orders ────────────────────────────────────────────────── */
   function orderStatusGroup(status) {
     if (!status) return 'active';
@@ -1732,6 +1779,10 @@ import Layout from '../components/layout.astro';
       try { renderRides(rides); }             catch(e) { console.warn('[profile] renderRides', e); }
       try { renderStatisticsTab(orders, rides); } catch(e) { console.warn('[profile] renderStatTab', e); }
       var role = (acc && acc.role) || user.role || 'customer';
+      if (role !== 'driver' && role !== 'merchant') {
+        var ratingPhone = (acc && acc.phone) || user.phone;
+        if (ratingPhone) loadCustomerRatings(ratingPhone);
+      }
       if (role === 'driver' && acctStatus) {
         try { renderStatusChips(acctStatus, appData ? appData.status : null); } catch(e) {}
         try { renderDriverStatusCard(acctStatus, appData); } catch(e) {}
