@@ -881,6 +881,42 @@
   </div>
 </div>
 
+<!-- User stats detail modal -->
+<div class="modal hidden" id="user-stats-modal">
+  <div class="modal__box" style="max-width:640px">
+    <div class="modal__head">
+      <span id="user-stats-modal-title">إحصائيات المستخدم</span>
+      <button class="modal__close" onclick="closeModal('user-stats-modal')">✕</button>
+    </div>
+    <div class="modal__body">
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:.75rem;margin-bottom:1rem">
+        <div style="background:#F1F5F9;border-radius:10px;padding:.75rem;text-align:center">
+          <div style="font-size:1.3rem;font-weight:900;color:#0E4B49" id="us-orders">—</div>
+          <div style="font-size:.72rem;color:#64748B">🛵 طلبات</div>
+        </div>
+        <div style="background:#F1F5F9;border-radius:10px;padding:.75rem;text-align:center">
+          <div style="font-size:1.3rem;font-weight:900;color:#0E4B49" id="us-rides">—</div>
+          <div style="font-size:.72rem;color:#64748B">🚗 رحلات</div>
+        </div>
+        <div style="background:#F1F5F9;border-radius:10px;padding:.75rem;text-align:center">
+          <div style="font-size:1.3rem;font-weight:900;color:#0E4B49" id="us-amount">—</div>
+          <div style="font-size:.72rem;color:#64748B" id="us-amount-lbl">💰 إنفاق</div>
+        </div>
+        <div style="background:#F1F5F9;border-radius:10px;padding:.75rem;text-align:center">
+          <div style="font-size:1.3rem;font-weight:900;color:#0E4B49" id="us-balance">—</div>
+          <div style="font-size:.72rem;color:#64748B">👛 رصيد المحفظة</div>
+        </div>
+      </div>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>النوع</th><th>التاريخ</th><th>المبلغ</th><th>الحالة</th></tr></thead>
+          <tbody id="user-stats-tbody"><tr><td colspan="4" style="text-align:center;color:#94A3B8;padding:2rem">جاري التحميل…</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script is:inline>
@@ -1183,6 +1219,7 @@ function renderUsers() {
         <span style="display:inline-flex;align-items:center;gap:6px;font-size:.78rem;font-weight:700;color:#64748B">🔒 حساب مشرف محميّ</span>
         ` : `
         <div class="btn-row" style="flex-wrap:nowrap;align-items:center;gap:4px">
+          <button class="btn btn--outline btn--sm" onclick="viewUserStats('${u.phone}','${(u.name||'').replace(/'/g,"\\'")}','${u.role}')" title="عرض إحصائيات المستخدم">📊 التفاصيل</button>
           <select class="filter-select" style="font-size:.72rem;padding:.25rem .45rem;min-width:75px" onchange="changeUserStatus('${u.phone}',this.value);this.value='${u.status||'active'}'">
             <option value="active"  ${(u.status||'active')==='active'  ?'selected':''}>نشط</option>
             <option value="pending" ${(u.status||'')==='pending' ?'selected':''}>معلق</option>
@@ -2271,6 +2308,50 @@ async function viewUserTransactions(phone, name) {
       <td style="font-size:.78rem;color:#64748B">${t.note||t.reference_id||'—'}</td>
     </tr>`;
   }).join('');
+}
+
+async function viewUserStats(phone, name, role) {
+  document.getElementById('user-stats-modal-title').textContent = `📊 إحصائيات: ${name || phone}`;
+  document.getElementById('user-stats-tbody').innerHTML = '<tr><td colspan="4" style="text-align:center;color:#94A3B8;padding:2rem">جاري التحميل…</td></tr>';
+  ['us-orders','us-rides','us-amount','us-balance'].forEach(id => document.getElementById(id).textContent = '—');
+  document.getElementById('user-stats-modal').classList.remove('hidden');
+
+  const intl  = phone.startsWith('01') ? '+2' + phone : phone;
+  const local = phone.startsWith('+20') ? '0' + phone.slice(3) : phone;
+  const col = role === 'driver' ? 'driver_phone' : 'customer_phone';
+  const filter = `or=(${col}.eq.${encodeURIComponent(intl)},${col}.eq.${encodeURIComponent(local)})`;
+
+  const [orders, rides, wallet] = await Promise.all([
+    sbGet(`orders?${filter}&select=total,status,created_at&order=created_at.desc&limit=200`),
+    sbGet(`rides?${filter}&select=fare,status,created_at,from_area,to_area&order=created_at.desc&limit=200`),
+    sbGet(`wallets?${phoneOrFilter(phone)}&select=balance&limit=1`),
+  ]);
+
+  const ordersArr = orders || [];
+  const ridesArr  = rides || [];
+  const amount =
+    ordersArr.filter(o => o.status === 'delivered' || o.status === 'completed').reduce((s, o) => s + (Number(o.total) || 0), 0) +
+    ridesArr.filter(r => r.status === 'completed').reduce((s, r) => s + (Number(r.fare) || 0), 0);
+
+  document.getElementById('us-orders').textContent = ordersArr.length;
+  document.getElementById('us-rides').textContent  = ridesArr.length;
+  document.getElementById('us-amount').textContent = fmt(Math.round(amount)) + ' ج.م';
+  document.getElementById('us-amount-lbl').textContent = role === 'driver' ? '💰 أرباح' : '💰 إنفاق';
+  document.getElementById('us-balance').textContent = fmt(Math.round((wallet && wallet[0] && wallet[0].balance) || 0)) + ' ج.م';
+
+  const rows = [
+    ...ordersArr.map(o => ({ type: 'طلب', date: o.created_at, amount: o.total, status: o.status })),
+    ...ridesArr.map(r => ({ type: 'رحلة', date: r.created_at, amount: r.fare, status: r.status })),
+  ].sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
+
+  document.getElementById('user-stats-tbody').innerHTML = rows.length
+    ? rows.map(r => `<tr>
+        <td style="font-size:.78rem">${r.type}</td>
+        <td style="font-size:.78rem">${fmtTime(r.date)}</td>
+        <td style="font-weight:800">${fmt(Math.round(Number(r.amount) || 0))} ج.م</td>
+        <td>${badge(r.status)}</td>
+      </tr>`).join('')
+    : '<tr><td colspan="4" style="text-align:center;color:#94A3B8;padding:2rem">لا توجد بيانات بعد</td></tr>';
 }
 
 async function adminSettlePlatform() {
