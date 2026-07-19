@@ -66,6 +66,11 @@ export async function fetchItems(filters: { category?: string; city?: string; se
   return items;
 }
 
+export async function fetchMyItems(phone: string): Promise<MarketItem[]> {
+  const rows = await sb<MarketItem[]>(`marketplace_items?seller_phone=eq.${encodeURIComponent(phone)}&order=created_at.desc&limit=200&select=*`);
+  return rows ?? [];
+}
+
 export async function fetchItem(id: string): Promise<MarketItem | null> {
   const rows = await sb<MarketItem[]>(`marketplace_items?id=eq.${encodeURIComponent(id)}&select=*&limit=1`);
   return rows?.[0] ?? null;
