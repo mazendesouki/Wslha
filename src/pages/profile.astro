@@ -999,6 +999,9 @@ import Layout from '../components/layout.astro';
 <script is:inline>
 (function () {
   /* ── Constants ─────────────────────────────────────────────── */
+  function escapeHtml(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function(c) { return { '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]; });
+  }
   const SB_URL = 'https://vtikgyiopkjnrwlqnmfx.supabase.co';
   const SB_KEY = 'sb_publishable_PLSnpvCT-sAyUMtymNgTwA_QmL2suw4';
   const SB_H   = { apikey: SB_KEY, Authorization: 'Bearer ' + SB_KEY };
@@ -1278,7 +1281,7 @@ import Layout from '../components/layout.astro';
         const s = '⭐'.repeat(r.rating) + '☆'.repeat(5 - r.rating);
         return '<div class="rating-item"><div class="rating-item__top"><span class="rating-item__stars">' + s +
           '</span><span class="rating-item__date">' + d + '</span></div>' +
-          (r.comment ? '<div class="rating-item__comment">"' + r.comment + '"</div>' : '') + '</div>';
+          (r.comment ? '<div class="rating-item__comment">"' + escapeHtml(r.comment) + '"</div>' : '') + '</div>';
       }).join('');
     } catch (e) { console.warn('[profile] loadCustomerRatings', e); }
   }

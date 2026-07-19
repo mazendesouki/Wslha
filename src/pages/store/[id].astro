@@ -328,6 +328,11 @@ const staticMenuJson = JSON.stringify(
     </aside>
   </div>
 
+  <section class="store-reviews" id="store-reviews" style="display:none;max-width:960px;margin:1.5rem auto;padding:0 1rem">
+    <h2 style="font-size:1.05rem;font-weight:800;margin-bottom:.75rem">⭐ آراء العملاء</h2>
+    <div id="store-reviews-list"></div>
+  </section>
+
   <button class="cart-fab" data-fab data-count="0" data-checkout>
     <span>🛒 <span data-cart-count>0</span> عناصر</span>
     <span data-total>{store.deliveryFee} ج.م</span>
@@ -724,11 +729,18 @@ const staticMenuJson = JSON.stringify(
     // ── التقييم الفعلي الحيّ للمتجر — الصفحة كانت بتعرض رقم ثابت من
     //    ملف بيانات ساكن، رغم إن التقييمات الحقيقية بتتجمّع فعلاً في
     //    قاعدة البيانات (عبر track.astro بعد كل توصيل). ──
+    function escapeHtml(s: string): string {
+      return s.replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' } as Record<string,string>)[c]);
+    }
+
     async function loadStoreRatingBadge(): Promise<void> {
       try {
-        const r = await fetch(`${SB_URL}/rest/v1/ratings?store_id=eq.${encodeURIComponent(STORE.id)}&select=store_rating`, { headers: SB_H });
+        const r = await fetch(
+          `${SB_URL}/rest/v1/ratings?store_id=eq.${encodeURIComponent(STORE.id)}&store_rating=not.is.null&select=store_rating,comment,created_at&order=created_at.desc&limit=30`,
+          { headers: SB_H }
+        );
         if (!r.ok) return;
-        const rows: { store_rating: number }[] = await r.json();
+        const rows: { store_rating: number; comment: string | null; created_at: string }[] = await r.json();
         const nums = (rows || []).map(x => Number(x.store_rating)).filter(n => n > 0);
         if (!nums.length) return;
         const avg = nums.reduce((s, n) => s + n, 0) / nums.length;
@@ -738,6 +750,21 @@ const staticMenuJson = JSON.stringify(
           const badge = document.getElementById('hd-badge')!;
           badge.textContent = '🏆 تاجر معتمد';
           badge.style.display = '';
+        }
+
+        const withComments = (rows || []).filter(x => x.comment && x.comment.trim());
+        if (withComments.length) {
+          const section = document.getElementById('store-reviews')!;
+          const list = document.getElementById('store-reviews-list')!;
+          list.innerHTML = withComments.map(x => {
+            const stars = '⭐'.repeat(Math.round(Number(x.store_rating))) + '☆'.repeat(5 - Math.round(Number(x.store_rating)));
+            const d = new Date(x.created_at).toLocaleDateString('ar-EG', { month: 'short', day: 'numeric' });
+            return `<div style="background:#F8FAFC;border-radius:10px;padding:.75rem 1rem;margin-bottom:.6rem">
+              <div style="display:flex;justify-content:space-between;font-size:.85rem"><span>${stars}</span><span style="color:#94A3B8;font-size:.72rem">${d}</span></div>
+              <div style="font-size:.85rem;color:#334155;margin-top:4px">"${escapeHtml(x.comment!)}"</div>
+            </div>`;
+          }).join('');
+          section.style.display = '';
         }
       } catch { /* ignore */ }
     }

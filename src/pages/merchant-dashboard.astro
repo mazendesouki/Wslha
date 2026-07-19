@@ -593,6 +593,9 @@ import Layout from '../components/layout.astro';
 </Layout>
 
 <script>
+  function escapeHtml(s: string | null | undefined): string {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' } as Record<string,string>)[c]);
+  }
   const SB_URL = 'https://vtikgyiopkjnrwlqnmfx.supabase.co';
   const SB_KEY = 'sb_publishable_PLSnpvCT-sAyUMtymNgTwA_QmL2suw4';
   const SB_H   = { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}`, 'Content-Type': 'application/json' };
@@ -1409,7 +1412,7 @@ import Layout from '../components/layout.astro';
         document.getElementById('m-ratings-list')!.innerHTML = rts.map((r: any) => {
           const d = new Date(r.created_at).toLocaleDateString('ar-EG', { month: 'short', day: 'numeric' });
           const s = '⭐'.repeat(r.store_rating) + '☆'.repeat(5 - r.store_rating);
-          return `<div class="rating-item"><div class="rating-item__top"><span class="rating-item__stars">${s}</span><span class="rating-item__date">${d}</span></div>${r.comment ? `<div class="rating-item__comment">"${r.comment}"</div>` : ''}</div>`;
+          return `<div class="rating-item"><div class="rating-item__top"><span class="rating-item__stars">${s}</span><span class="rating-item__date">${d}</span></div>${r.comment ? `<div class="rating-item__comment">"${escapeHtml(r.comment)}"</div>` : ''}</div>`;
         }).join('');
       }
     }

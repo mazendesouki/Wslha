@@ -773,9 +773,6 @@ import PageHero from '../components/PageHero.astro';
   import { carIcon, bearingBetween, animateMarkerTo } from '../utils/mapMarker';
   import { computeRatingStats, isTopRated, BADGE_LABELS, AC_BADGE_LABEL, ratingStarsText } from '../utils/reputation';
 
-  function escapeHtml(s) {
-    return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
-  }
   const SB_URL = 'https://vtikgyiopkjnrwlqnmfx.supabase.co';
   const SB_KEY = 'sb_publishable_PLSnpvCT-sAyUMtymNgTwA_QmL2suw4';
   const SB_H = { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}`, 'Content-Type': 'application/json' };
@@ -827,7 +824,6 @@ import PageHero from '../components/PageHero.astro';
     document.getElementById('driver-phone-bar').textContent = driver.phone || '';
     // Load approval status and initial account data
     loadApprovalStatus();
-    loadAccountData();
     restoreActiveRide();
   }
 
@@ -967,21 +963,17 @@ import PageHero from '../components/PageHero.astro';
   document.getElementById('rate-customer-submit')?.addEventListener('click', async () => {
     if (!_rcSelected || !_rateCustomerTarget) return;
     try {
-      const res = await fetch(`${SB_URL}/rest/v1/ratings`, {
+      await fetch(`${SB_URL}/rest/v1/ratings`, {
         method: 'POST', headers: { ...SB_H, Prefer: 'return=minimal' },
         body: JSON.stringify({
+          id: 'ratc-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6),
           driver_phone: driver.phone, customer_phone: _rateCustomerTarget.phone,
           rating: _rcSelected, service_type: _rateCustomerTarget.serviceType,
           ride_id: _rateCustomerTarget.referenceId, rated_by: 'driver',
           created_at: new Date().toISOString(),
         }),
       });
-      if (!res.ok) {
-        const detail = await res.text().catch(() => '');
-        console.error('[ratings] insert failed', res.status, detail);
-        showToast('تعذّر حفظ التقييم — حاول لاحقاً');
-      }
-    } catch (e) { console.error('[ratings] insert error', e); }
+    } catch {}
     hideRateCustomer();
   });
 
@@ -1932,9 +1924,9 @@ import PageHero from '../components/PageHero.astro';
           const d = new Date(r.created_at).toLocaleDateString('ar-EG', { month: 'short', day: 'numeric' });
           const s = '⭐'.repeat(r.rating) + '☆'.repeat(5 - r.rating);
           const typeIcon = r.service_type === 'delivery' ? '🛵' : r.service_type === 'airport' ? '✈️' : '🚗';
-          const commentHtml = r.comment ? `<div class="rating-item__comment">"${escapeHtml(r.comment)}"</div>` : '';
+          const commentHtml = r.comment ? `<div class="rating-item__comment">"${r.comment}"</div>` : '';
           const replyHtml = r.driver_reply
-            ? `<div class="rating-item__reply"><div class="rating-item__reply-label">ردك:</div>${escapeHtml(r.driver_reply)}</div>`
+            ? `<div class="rating-item__reply"><div class="rating-item__reply-label">ردك:</div>${r.driver_reply}</div>`
             : `<div class="rating-reply-form"><textarea class="rating-reply-input" rows="1" placeholder="اكتب ردك..."></textarea><button class="rating-reply-send" onclick="sendReply('${r.id}',this)">إرسال</button></div>`;
           return `<div class="rating-item" id="rt-${r.id}"><div class="rating-item__top"><span class="rating-item__stars">${s}</span><span class="rating-item__date">${typeIcon} ${d}</span></div>${commentHtml}${replyHtml}</div>`;
         }).join('');

@@ -1116,6 +1116,7 @@ import { VEHICLE_MODELS, FARE_ZONES, TRIP_RATES } from '../data/airports';
               <div class="driver-card__name" id="driver-card-name">—</div>
               <div class="driver-card__status" id="driver-card-status">السائق في الطريق إليك</div>
               <div id="driver-card-badges" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px"></div>
+              <div id="driver-card-review"></div>
             </div>
             <a class="driver-call-btn" id="driver-call-btn" href="tel:">📞 اتصل</a>
           </div>
@@ -1203,6 +1204,9 @@ import { VEHICLE_MODELS, FARE_ZONES, TRIP_RATES } from '../data/airports';
 
 <script define:vars={{ AIRPORTS, PLACES, CATEGORY_COLORS, VEHICLE_MODELS, FARE_ZONES, TRIP_RATES }}>
   // ── Supabase ──
+  function escapeHtml(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+  }
   const SB_URL = 'https://vtikgyiopkjnrwlqnmfx.supabase.co';
   const SB_KEY = 'sb_publishable_PLSnpvCT-sAyUMtymNgTwA_QmL2suw4';
   const SB_H = { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}`, 'Content-Type': 'application/json' };
@@ -1767,11 +1771,13 @@ import { VEHICLE_MODELS, FARE_ZONES, TRIP_RATES } from '../data/airports';
   //    أيقونة العربية (الصفحة دي <script define:vars> ومينفعش import). ──
   async function loadDriverBadges(driverPhone) {
     const el = document.getElementById('driver-card-badges');
+    const reviewEl = document.getElementById('driver-card-review');
     if (!el) return;
     el.innerHTML = '';
+    if (reviewEl) reviewEl.innerHTML = '';
     try {
       const [ratingsRes, appRes] = await Promise.all([
-        fetch(`${SB_URL}/rest/v1/ratings?driver_phone=eq.${encodeURIComponent(driverPhone)}&rated_by=eq.customer&select=rating`, { headers: SB_H }),
+        fetch(`${SB_URL}/rest/v1/ratings?driver_phone=eq.${encodeURIComponent(driverPhone)}&rated_by=eq.customer&select=rating,comment,created_at&order=created_at.desc&limit=20`, { headers: SB_H }),
         fetch(`${SB_URL}/rest/v1/driver_applications?phone=eq.${encodeURIComponent(driverPhone)}&select=has_ac&limit=1`, { headers: SB_H }),
       ]);
       const ratingRows = ratingsRes.ok ? await ratingsRes.json() : [];
@@ -1779,11 +1785,18 @@ import { VEHICLE_MODELS, FARE_ZONES, TRIP_RATES } from '../data/airports';
       const nums = (ratingRows || []).map(r => Number(r.rating));
       const avg = nums.length ? nums.reduce((s, n) => s + n, 0) / nums.length : 0;
       const badges = [];
+      if (nums.length) badges.push(`⭐ ${avg.toFixed(1)} (${nums.length})`);
       if (nums.length >= 5 && avg >= 4.5) badges.push('🏆 سائق متميز');
       if (Array.isArray(appRows) && appRows[0]?.has_ac) badges.push('❄️ سيارة مكيفة');
       el.innerHTML = badges.map(b =>
         `<span style="background:#FEF3C7;color:#92400E;font-weight:800;padding:2px 9px;border-radius:99px;font-size:.7rem">${b}</span>`
       ).join('');
+      if (reviewEl) {
+        const withComment = (ratingRows || []).find(r => r.comment && r.comment.trim());
+        if (withComment) {
+          reviewEl.innerHTML = `<div style="font-size:.75rem;color:#64748B;margin-top:4px">"${escapeHtml(withComment.comment)}"</div>`;
+        }
+      }
     } catch {}
   }
 
