@@ -1811,22 +1811,12 @@ import Layout from '../components/layout.astro';
     }
   }
 
-  function init() {
-    const phone = user.phone;
-
-    let lsOrders = [];
-    try {
-      const _pk = phone ? 'wslha_orders_' + phone : 'wslha_orders';
-      lsOrders = JSON.parse(localStorage.getItem(_pk) || '[]');
-    } catch {}
-    const lsAcc = buildAccFromLocal(phone);
-    showContent(lsAcc, mergeOrders([], lsOrders), [], null, null);
-
+  function refreshFromServer(phone, lsOrders, lsAcc) {
     var role = user.role || 'customer';
     var fetches = [fetchAccount(phone), fetchOrders(phone, role), fetchRides(phone, role), fetchWallet(phone)];
     if (role === 'driver') fetches.push(fetchDriverApp(phone));
 
-    Promise.all(fetches)
+    return Promise.all(fetches)
       .then(function(results) {
         var sbAcc    = results[0];
         var sbOrders = results[1];
@@ -1838,6 +1828,30 @@ import Layout from '../components/layout.astro';
         showContent(acc, orders, sbRides || [], acctStatus, appData);
       })
       .catch(function(err) { console.warn('[profile] refresh failed', err); });
+  }
+
+  function init() {
+    const phone = user.phone;
+
+    let lsOrders = [];
+    try {
+      const _pk = phone ? 'wslha_orders_' + phone : 'wslha_orders';
+      lsOrders = JSON.parse(localStorage.getItem(_pk) || '[]');
+    } catch {}
+    const lsAcc = buildAccFromLocal(phone);
+    showContent(lsAcc, mergeOrders([], lsOrders), [], null, null);
+
+    refreshFromServer(phone, lsOrders, lsAcc);
+
+    // Stats/orders/rides were a one-shot fetch — a customer who completes an
+    // order or ride in another tab and comes back here saw stale numbers
+    // until a manual reload. Refresh periodically and whenever the tab
+    // regains focus, matching the pattern already used in admin.astro/
+    // driver-dashboard.astro for live data.
+    setInterval(function() { refreshFromServer(phone, lsOrders, lsAcc); }, 30000);
+    document.addEventListener('visibilitychange', function() {
+      if (document.visibilityState === 'visible') refreshFromServer(phone, lsOrders, lsAcc);
+    });
   }
 
   init();
