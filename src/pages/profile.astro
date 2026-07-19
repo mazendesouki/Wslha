@@ -638,6 +638,8 @@ import Layout from '../components/layout.astro';
   .rating-item__stars { font-size: var(--text-sm); }
   .rating-item__date  { font-size: 10px; color: var(--color-text-faint); }
   .rating-item__comment { font-size: var(--text-xs); color: var(--color-text-muted); margin-top: 2px; }
+  .rating-item__reply { margin-top:6px; padding:6px 10px; background:#E3EDEC; border-radius:8px; font-size:var(--text-xs); color:#0E4B49; border-right:3px solid #0E4B49; }
+  .rating-item__reply-label { font-size:10px; color:#64748b; margin-bottom:2px; }
 </style>
 
 <div class="profile-wrap">
@@ -761,6 +763,16 @@ import Layout from '../components/layout.astro';
               </div>
             </div>
             <div id="cust-ratings-list"></div>
+          </div>
+        </div>
+
+        <!-- My reviews of drivers (with their reply, if any) -->
+        <div class="pf-card" id="my-driver-reviews-card" hidden>
+          <div class="pf-card__header">
+            <h2 class="pf-card__title">🚗 تقييماتي للسائقين</h2>
+          </div>
+          <div class="pf-card__body">
+            <div id="my-driver-reviews-list"></div>
           </div>
         </div>
 
@@ -1302,6 +1314,27 @@ import Layout from '../components/layout.astro';
           (r.comment ? '<div class="rating-item__comment">"' + escapeHtml(r.comment) + '"</div>' : '') + '</div>';
       }).join('');
     } catch (e) { console.warn('[profile] loadCustomerRatings', e); }
+  }
+
+  /* ── My reviews of drivers (the ones this customer submitted), with the
+     driver's reply if they left one via their dashboard's "رد" feature ─── */
+  async function loadMyDriverReviews(phone) {
+    try {
+      const rts = await sbFetch(SB_URL + '/rest/v1/ratings?customer_phone=eq.' + encodeURIComponent(phone) +
+        '&rated_by=eq.customer&select=rating,comment,driver_reply,service_type,created_at&order=created_at.desc&limit=10');
+      if (!Array.isArray(rts) || !rts.length) return;
+      $('my-driver-reviews-card').hidden = false;
+      $('my-driver-reviews-list').innerHTML = rts.map(r => {
+        const d = new Date(r.created_at).toLocaleDateString('ar-EG', { month: 'short', day: 'numeric' });
+        const s = '⭐'.repeat(r.rating) + '☆'.repeat(5 - r.rating);
+        const commentHtml = r.comment ? '<div class="rating-item__comment">"' + escapeHtml(r.comment) + '"</div>' : '';
+        const replyHtml = r.driver_reply
+          ? '<div class="rating-item__reply"><div class="rating-item__reply-label">رد السائق:</div>' + escapeHtml(r.driver_reply) + '</div>'
+          : '';
+        return '<div class="rating-item"><div class="rating-item__top"><span class="rating-item__stars">' + s +
+          '</span><span class="rating-item__date">' + d + '</span></div>' + commentHtml + replyHtml + '</div>';
+      }).join('');
+    } catch (e) { console.warn('[profile] loadMyDriverReviews', e); }
   }
 
   /* ── Orders ────────────────────────────────────────────────── */
@@ -1876,7 +1909,7 @@ import Layout from '../components/layout.astro';
       try { renderStatisticsTab(orders, rides); } catch(e) { console.warn('[profile] renderStatTab', e); }
       if (role !== 'driver' && role !== 'merchant') {
         var ratingPhone = (acc && acc.phone) || user.phone;
-        if (ratingPhone) loadCustomerRatings(ratingPhone);
+        if (ratingPhone) { loadCustomerRatings(ratingPhone); loadMyDriverReviews(ratingPhone); }
       }
       if (role === 'driver' && acctStatus) {
         try { renderStatusChips(acctStatus, appData ? appData.status : null); } catch(e) {}
