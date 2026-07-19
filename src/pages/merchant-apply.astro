@@ -701,7 +701,16 @@ async function submitApplication() {
     const G = window.google.maps;
     const input = document.getElementById('biz-address');
     if (!input) return;
+    // Business address must be within Damietta Governorate, matching the
+    // area dropdown above it — this used to have no geographic restriction
+    // at all, so it could resolve to a street address anywhere in Egypt.
+    const damiettaBounds = new G.LatLngBounds(
+      { lat: 31.20, lng: 31.50 },
+      { lat: 31.65, lng: 32.10 }
+    );
     const ac = new G.places.Autocomplete(input, {
+      bounds: damiettaBounds,
+      strictBounds: true,
       componentRestrictions: { country: 'eg' },
       types: ['geocode'],
       fields: ['formatted_address', 'name', 'geometry'],

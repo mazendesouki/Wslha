@@ -1310,17 +1310,20 @@ import { VEHICLE_MODELS, FARE_ZONES, TRIP_RATES } from '../data/airports';
     await loadGoogleMaps();
     const G = window.google.maps;
 
-    // ── Full Egypt search — no bounds restriction, all place types ──────
-    // Soft bias toward Damietta (non-strict) so nearby results appear first
-    // but any place in Egypt can be found (cafes, beaches, shops, banks...)
+    // ── Local rides stay within Damietta Governorate — the service's stated
+    // coverage area. strictBounds enforces this as a hard filter (not just a
+    // ranking hint), so a "local" pickup/destination can't resolve to a place
+    // anywhere else in Egypt. Out-of-governorate trips go through the
+    // separate intl-panel/rides-external.astro flow below, which intentionally
+    // keeps its own search unrestricted.
     const damiettaBias = new G.LatLngBounds(
       { lat: 31.20, lng: 31.50 },
       { lat: 31.65, lng: 32.10 }
     );
     const opts = {
-      bounds: damiettaBias,         // soft bias only — user can search anywhere
+      bounds: damiettaBias,
       componentRestrictions: { country: 'eg' },
-      strictBounds: false,          // allow results outside Damietta
+      strictBounds: true,           // hard filter — Damietta only for local rides
       types: [],                    // empty = all types (cafes, stores, streets, everything)
       fields: ['geometry', 'name', 'formatted_address', 'types'],
     };
