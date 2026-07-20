@@ -173,7 +173,12 @@ const FILTERS: { value: string; label: string }[] = [
   /* ── Load real orders from localStorage ────────────────── */
   function formatDate(isoStr: string): string {
     try {
-      const d    = new Date(isoStr);
+      if (!isoStr) return '—';
+      const d = new Date(isoStr);
+      if (isNaN(d.getTime())) return '—'; // new Date() never throws on a bad input, it just
+                                           // produces an Invalid Date — the old code rendered
+                                           // that straight to the page as the literal text
+                                           // "Invalid Date" for any cached order missing this field.
       const now  = new Date();
       const diff = now.getTime() - d.getTime();
       if (diff < 60_000)     return 'الآن';
