@@ -938,8 +938,15 @@ const staticMenuJson = JSON.stringify(
         if (res.ok) {
           const rows = await res.json();
           dbId = Array.isArray(rows) ? rows[0]?.id : null;
+        } else {
+          // This used to fail silently and fall through to the local-only
+          // order below, showing the customer a fake "confirmed" screen
+          // while the merchant never received anything — log it so a
+          // schema mismatch like this is visible instead of invisible.
+          const detail = await res.text().catch(() => '');
+          console.error('[checkout] orders insert failed', res.status, detail);
         }
-      } catch { /* offline — still keep a local copy below */ }
+      } catch (e) { console.error('[checkout] orders insert error', e); }
 
       const order = {
         id: dbId || code,
