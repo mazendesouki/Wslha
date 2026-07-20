@@ -760,6 +760,8 @@ import PageHero from '../components/PageHero.astro';
         <div style="font-size:2rem;margin-bottom:1.25rem">
           <span class="rc-star" data-val="1" style="cursor:pointer">☆</span><span class="rc-star" data-val="2" style="cursor:pointer">☆</span><span class="rc-star" data-val="3" style="cursor:pointer">☆</span><span class="rc-star" data-val="4" style="cursor:pointer">☆</span><span class="rc-star" data-val="5" style="cursor:pointer">☆</span>
         </div>
+        <textarea id="rate-customer-comment" rows="2" placeholder="اكتب ملاحظتك عن الراكب (اختياري)..."
+          style="width:100%;box-sizing:border-box;border:1.5px solid var(--color-border);border-radius:var(--radius-lg);padding:.6rem .75rem;font-family:var(--font-body);font-size:var(--text-sm);resize:none;margin-bottom:1rem"></textarea>
         <button class="receipt-collect-btn" id="rate-customer-submit" type="button" disabled>إرسال التقييم</button>
         <button class="receipt-collect-btn" id="rate-customer-skip" type="button" style="background:#94A3B8;margin-top:.6rem">تخطي</button>
       </div>
@@ -951,6 +953,7 @@ import PageHero from '../components/PageHero.astro';
     document.getElementById('rate-customer-name').textContent = name || 'الراكب';
     document.querySelectorAll('.rc-star').forEach(s => { s.textContent = '☆'; });
     document.getElementById('rate-customer-submit').disabled = true;
+    document.getElementById('rate-customer-comment').value = '';
     document.getElementById('rate-customer-overlay').classList.add('visible');
   }
   function hideRateCustomer() {
@@ -974,6 +977,7 @@ import PageHero from '../components/PageHero.astro';
           driver_phone: driver.phone, customer_phone: _rateCustomerTarget.phone,
           rating: _rcSelected, service_type: _rateCustomerTarget.serviceType,
           ride_id: _rateCustomerTarget.referenceId, rated_by: 'driver',
+          comment: document.getElementById('rate-customer-comment').value.trim() || null,
           created_at: new Date().toISOString(),
         }),
       });
