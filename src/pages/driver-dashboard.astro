@@ -1661,7 +1661,21 @@ import PageHero from '../components/PageHero.astro';
   document.getElementById('btn-complete').addEventListener('click', async () => {
     // Delivery order branch — delivered to customer
     if (currentOrder) {
-      await patchOrder(currentOrder.id, { status: 'delivered', delivered_at: new Date().toISOString() });
+      // Require the code shown on the customer's tracking page — proves
+      // the driver actually handed the order to them, not just a
+      // self-reported tap with zero verification.
+      const otp = (prompt('اطلب من العميل كود التسليم (4 أرقام) المعروض في صفحة التتبّع بتاعته، واكتبه هنا:') || '').trim();
+      if (!otp) return;
+      let confirmed = false;
+      try {
+        const res = await fetch(`${SB_URL}/rest/v1/rpc/confirm_order_delivery`, {
+          method: 'POST', headers: { ...SB_H, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ p_order_id: currentOrder.id, p_otp: otp, p_driver_phone: driver.phone }),
+        });
+        confirmed = res.ok && (await res.json()) === true;
+      } catch (e) { console.error('[delivery] confirm_order_delivery error', e); }
+      if (!confirmed) { showToast('❌ كود التسليم غير صحيح'); return; }
+
       const fee = currentOrder.delivery_fee || 0;
       const orderId = currentOrder.id;
       try {
