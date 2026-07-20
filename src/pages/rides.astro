@@ -876,7 +876,7 @@ import { VEHICLE_MODELS, FARE_ZONES, TRIP_RATES } from '../data/airports';
 
             <div class="form-section">
               <div id="local-alert" class="alert-error"></div>
-              <div class="form-row">
+              <div class="form-row" id="l-contact-row">
                 <div class="field"><label class="field__label" for="l-name">الاسم الكامل</label><input id="l-name" type="text" class="field__input" placeholder="محمد أحمد" /></div>
                 <div class="field"><label class="field__label" for="l-phone">رقم الجوال</label><input id="l-phone" type="tel" class="field__input" placeholder="010 1234 5678" /></div>
               </div>
@@ -1191,8 +1191,9 @@ import { VEHICLE_MODELS, FARE_ZONES, TRIP_RATES } from '../data/airports';
           </div>
         </div>
 
-        <!-- Fare guide -->
-        <div class="fare-section" id="fare-section">
+        <!-- Fare guide (removed per request — kept in DOM so the JS below
+             that still populates it doesn't need touching, just hidden) -->
+        <div class="fare-section" id="fare-section" hidden>
           <h2 class="fare-section__title">دليل الأسعار 2026</h2>
           <div class="fare-grid" id="fare-grid"></div>
         </div>
@@ -1514,6 +1515,23 @@ import { VEHICLE_MODELS, FARE_ZONES, TRIP_RATES } from '../data/airports';
       initPlaces();
     }, { once: true });
   });
+
+  // ── Logged-in users don't need to type their name/phone again — the
+  // account already has both. Guests (not logged in) still see the fields
+  // so they can book without an account. Re-applied after "new ride" resets
+  // the form below, so a logged-in user's 2nd/3rd booking stays pre-filled. ──
+  function hideContactFieldsIfLoggedIn() {
+    try {
+      const u = JSON.parse(localStorage.getItem('wslha_user') || 'null');
+      if (u && u.name && u.phone) {
+        document.getElementById('l-name').value  = u.name;
+        document.getElementById('l-phone').value = u.phone;
+        const row = document.getElementById('l-contact-row');
+        if (row) row.hidden = true;
+      }
+    } catch {}
+  }
+  hideContactFieldsIfLoggedIn();
 
   // ── Quick Pick Panel ─────────────────────────────────────────────────
   let qpMode = 'from'; // 'from' | 'to'
@@ -2675,6 +2693,7 @@ import { VEHICLE_MODELS, FARE_ZONES, TRIP_RATES } from '../data/airports';
   // ── new ride ──
   document.getElementById('new-ride-btn').addEventListener('click', () => {
     ['l-name','l-phone','l-notes','i-name','i-phone','i-notes'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+    hideContactFieldsIfLoggedIn();
     fromPlace = null; toPlace = null; intlOriginPlace = null;
     document.getElementById('from-area').value = '';
     document.getElementById('to-area').value = '';
