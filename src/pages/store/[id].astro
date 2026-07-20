@@ -348,11 +348,11 @@ const staticMenuJson = JSON.stringify(
           <div class="cart__total"><span>الإجمالي</span><b data-total>{store.deliveryFee} ج.م</b></div>
         </div>
         <div class="sheet-error" data-error role="alert"></div>
-        <div class="field">
+        <div class="field" id="co-name-field">
           <label class="field__label" for="co-name">اسم المستلم</label>
           <input class="field__input" id="co-name" type="text" placeholder="محمد أحمد" autocomplete="name">
         </div>
-        <div class="field">
+        <div class="field" id="co-phone-field">
           <label class="field__label" for="co-phone">رقم الجوال</label>
           <input class="field__input" id="co-phone" type="tel" placeholder="010 1234 5678" inputmode="numeric" maxlength="11" pattern="01[0125][0-9]{8}" autocomplete="tel">
         </div>
@@ -990,5 +990,18 @@ const staticMenuJson = JSON.stringify(
     loadMenu();
     loadStoreInfo();
     loadStoreRatingBadge();
+
+    // Logged-in users don't need to type their name/phone again.
+    try {
+      const _u = JSON.parse(localStorage.getItem('wslha_user') || 'null');
+      if (_u && _u.name && _u.phone) {
+        (document.getElementById('co-name') as HTMLInputElement).value  = _u.name;
+        (document.getElementById('co-phone') as HTMLInputElement).value = _u.phone;
+        const nameField  = document.getElementById('co-name-field');
+        const phoneField = document.getElementById('co-phone-field');
+        if (nameField)  nameField.hidden  = true;
+        if (phoneField) phoneField.hidden = true;
+      }
+    } catch { /* ignore */ }
   </script>
 </Layout>

@@ -1,0 +1,2180 @@
+---
+import Layout from '../components/layout.astro';
+import PageHero from '../components/PageHero.astro';
+---
+
+<style>
+  .dash-page {
+    max-width: 520px;
+    margin: 0 auto;
+    padding: var(--sp-6) var(--sp-4) var(--sp-20);
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-4);
+  }
+
+  /* Status bar */
+  .status-bar {
+    background: var(--color-bg);
+    border: 1.5px solid var(--color-border);
+    border-radius: var(--radius-xl);
+    padding: var(--sp-4) var(--sp-5);
+    display: flex;
+    align-items: center;
+    gap: var(--sp-4);
+    box-shadow: var(--shadow-md);
+  }
+  .status-bar__info { flex: 1; min-width: 0; }
+  .status-bar__label { font-size: 11px; color: var(--color-text-faint); }
+  .status-bar__name  { font-weight: var(--weight-black); font-size: var(--text-base); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .status-bar__phone { font-size: var(--text-xs); color: var(--color-text-muted); }
+
+  /* Toggle */
+  .toggle-wrap { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  .toggle-btn {
+    position: relative;
+    width: 64px; height: 34px;
+    border-radius: 999px;
+    border: none; cursor: pointer;
+    display: flex; align-items: center;
+    transition: background 0.3s;
+    padding: 0 4px;
+  }
+  .toggle-btn.offline { background: #d1d5db; justify-content: flex-start; }
+  .toggle-btn.online  { background: #16a34a; justify-content: flex-end; }
+  .toggle-btn__knob {
+    width: 26px; height: 26px;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 1px 4px rgba(0,0,0,.3);
+    flex-shrink: 0;
+  }
+  .toggle-label { font-size: 11px; font-weight: var(--weight-bold); white-space: nowrap; }
+  .toggle-label.online-text  { color: #16a34a; }
+  .toggle-label.offline-text { color: #6b7280; }
+
+  /* Stats */
+  .stats-strip {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--sp-3);
+  }
+  .stat-card {
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-xl);
+    padding: var(--sp-4) var(--sp-3);
+    text-align: center;
+    box-shadow: var(--shadow-md);
+  }
+  .stat-card__val  { font-size: var(--text-2xl); font-weight: var(--weight-black); color: var(--color-primary); line-height: 1; }
+  .stat-card__key  { font-size: 11px; color: var(--color-text-faint); margin-top: var(--sp-1); }
+
+  /* Offline state */
+  #state-offline {
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-xl);
+    padding: var(--sp-10) var(--sp-6);
+    text-align: center;
+    box-shadow: var(--shadow-md);
+  }
+  #state-offline.hidden { display: none; }
+  .offline-icon  { font-size: 3.5rem; margin-bottom: var(--sp-4); }
+  .offline-title { font-size: var(--text-xl); font-weight: var(--weight-black); margin-bottom: var(--sp-2); }
+  .offline-sub   { color: var(--color-text-faint); font-size: var(--text-sm); }
+
+  /* Waiting state */
+  #state-waiting {
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-xl);
+    padding: var(--sp-10) var(--sp-6);
+    text-align: center;
+    box-shadow: var(--shadow-md);
+    display: none;
+  }
+  #state-waiting.visible { display: block; }
+  .radar-wrap {
+    position: relative; width: 140px; height: 140px;
+    margin: 0 auto var(--sp-6);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .radar-ring {
+    position: absolute;
+    border-radius: 50%;
+    border: 2px solid var(--color-primary);
+    opacity: 0;
+    animation: radar-pulse 2.4s ease-out infinite;
+  }
+  .radar-ring:nth-child(1) { width: 140px; height: 140px; animation-delay: 0s; }
+  .radar-ring:nth-child(2) { width: 100px; height: 100px; animation-delay: 0.6s; }
+  .radar-ring:nth-child(3) { width:  60px; height:  60px; animation-delay: 1.2s; }
+  @keyframes radar-pulse {
+    0%   { opacity: 0.8; transform: scale(0.6); }
+    100% { opacity: 0;   transform: scale(1); }
+  }
+  .radar-center {
+    position: relative; z-index: 2;
+    width: 52px; height: 52px;
+    background: var(--color-primary);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.6rem;
+    box-shadow: 0 0 0 6px var(--color-primary-light);
+  }
+  .waiting-title { font-size: var(--text-lg); font-weight: var(--weight-black); margin-bottom: var(--sp-2); }
+  .waiting-sub   { color: var(--color-text-faint); font-size: var(--text-sm); }
+
+  /* Active trip */
+  #state-active { display: none; flex-direction: column; gap: var(--sp-4); }
+  #state-active.visible { display: flex; }
+
+  .customer-card {
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-xl);
+    padding: var(--sp-5);
+    box-shadow: var(--shadow-md);
+  }
+  .customer-card__header {
+    display: flex; align-items: center; gap: var(--sp-3);
+    margin-bottom: var(--sp-4); padding-bottom: var(--sp-4);
+    border-bottom: 1px solid var(--color-border);
+  }
+  .customer-avatar {
+    width: 50px; height: 50px; border-radius: 50%;
+    background: var(--color-primary-light);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.5rem; flex-shrink: 0;
+  }
+  .customer-name   { font-weight: var(--weight-black); font-size: var(--text-base); }
+  .customer-status { font-size: var(--text-xs); color: var(--color-text-faint); }
+  .call-btn {
+    margin-right: auto;
+    display: flex; align-items: center; gap: var(--sp-2);
+    background: #dcfce7; color: #16a34a;
+    border-radius: var(--radius-lg);
+    padding: var(--sp-2) var(--sp-4);
+    font-size: var(--text-sm); font-weight: var(--weight-bold);
+    text-decoration: none; transition: background 0.2s;
+  }
+  .call-btn:hover { background: #bbf7d0; }
+
+  .trip-route { display: flex; flex-direction: column; gap: var(--sp-2); margin-bottom: var(--sp-4); }
+  .trip-route-row { display: flex; align-items: center; gap: var(--sp-3); font-size: var(--text-sm); }
+  .trip-route-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .trip-route-dot.from { background: #0E4B49; }
+  .trip-route-dot.to   { background: #ef4444; }
+  .fare-badge {
+    display: inline-flex; align-items: center; gap: var(--sp-2);
+    background: #dcfce7; color: #16a34a;
+    border-radius: var(--radius-lg);
+    padding: var(--sp-2) var(--sp-4);
+    font-weight: var(--weight-black); font-size: var(--text-base);
+  }
+
+  .trip-map-card {
+    background: var(--color-bg); border: 1px solid var(--color-border);
+    border-radius: var(--radius-xl); overflow: hidden; box-shadow: var(--shadow-md);
+  }
+  .trip-map-header {
+    padding: var(--sp-3) var(--sp-4); border-bottom: 1px solid var(--color-border);
+    font-weight: var(--weight-black); font-size: var(--text-sm);
+    display: flex; align-items: center; gap: var(--sp-2);
+  }
+  #driver-map { width: 100%; height: 280px; }
+
+  .driver-map-stats {
+    display: grid; grid-template-columns: 1fr 1fr;
+    border-top: 1px solid var(--color-border);
+  }
+  .driver-map-stat {
+    padding: var(--sp-3); text-align: center;
+    border-left: 1px solid var(--color-border);
+  }
+  .driver-map-stat:last-child { border-left: none; }
+  .driver-map-stat__val { font-size: var(--text-base); font-weight: var(--weight-black); color: var(--color-primary); }
+  .driver-map-stat__lbl { font-size: 10px; color: var(--color-text-faint); margin-top: 2px; }
+
+  .nav-to-btn {
+    width: 100%; padding: var(--sp-3); border: none; border-top: 1px solid var(--color-border);
+    background: var(--color-primary); color: #fff; font-family: var(--font-body);
+    font-weight: var(--weight-black); font-size: var(--text-sm); cursor: pointer;
+    display: flex; align-items: center; justify-content: center; gap: var(--sp-2);
+    transition: background 0.2s;
+  }
+  .nav-to-btn:hover { background: var(--color-primary-dark); }
+
+  .action-card {
+    background: var(--color-bg); border: 1px solid var(--color-border);
+    border-radius: var(--radius-xl); padding: var(--sp-5); box-shadow: var(--shadow-md);
+  }
+  .action-card__title { font-weight: var(--weight-black); font-size: var(--text-sm); margin-bottom: var(--sp-4); color: var(--color-text-faint); }
+  .action-btn {
+    width: 100%; padding: var(--sp-4); border-radius: var(--radius-lg);
+    border: none; cursor: pointer;
+    font-family: var(--font-body); font-size: var(--text-base); font-weight: var(--weight-black);
+    transition: all 0.2s; margin-bottom: var(--sp-3);
+    display: flex; align-items: center; justify-content: center; gap: var(--sp-2);
+  }
+  .action-btn:last-child { margin-bottom: 0; }
+  .action-btn.arrive  { background: #E3EDEC; color: #082F2E; border: 1.5px solid #C9DEDC; }
+  .action-btn.arrive:hover  { background: #bfdbfe; transform: translateY(-1px); }
+  .action-btn.pickup  { background: var(--color-primary); color: #fff; }
+  .action-btn.pickup:hover  { background: #082F2E; transform: translateY(-1px); }
+  .action-btn.complete { background: #16a34a; color: #fff; }
+  .action-btn.complete:hover { background: #15803d; transform: translateY(-1px); }
+  .action-btn:disabled { background: #f3f4f6; color: #9ca3af; cursor: not-allowed; transform: none !important; }
+
+  /* Ride request notification */
+  #ride-request {
+    position: fixed; bottom: -100%; left: 0; right: 0; z-index: 500; padding: var(--sp-4);
+    transition: bottom 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  #ride-request.visible { bottom: 0; }
+  .ride-req-card {
+    background: #fff; border-radius: var(--radius-xl);
+    box-shadow: 0 -4px 40px rgba(0,0,0,.25), 0 0 0 1px rgba(0,0,0,.06);
+    overflow: hidden; max-width: 480px; margin: 0 auto;
+  }
+  .ride-req-header {
+    background: linear-gradient(135deg, #082F2E, #0E4B49);
+    padding: var(--sp-4) var(--sp-5);
+    display: flex; align-items: center; gap: var(--sp-3); color: #fff;
+  }
+  .bell-icon { font-size: 2rem; animation: bell-shake 0.5s ease-in-out infinite alternate; }
+  @keyframes bell-shake {
+    0%   { transform: rotate(-15deg); }
+    100% { transform: rotate(15deg); }
+  }
+  .ride-req-header__title { font-size: var(--text-lg); font-weight: var(--weight-black); }
+  .ride-req-header__sub   { font-size: var(--text-xs); opacity: 0.85; }
+  .ride-req-timer {
+    margin-right: auto; width: 48px; height: 48px; border-radius: 50%;
+    border: 3px solid rgba(255,255,255,.4);
+    display: flex; align-items: center; justify-content: center;
+    font-size: var(--text-lg); font-weight: var(--weight-black);
+    background: rgba(255,255,255,.15);
+  }
+  .ride-req-body { padding: var(--sp-5); }
+  .route-display {
+    display: flex; flex-direction: column; gap: var(--sp-2);
+    background: #f8fafc; border-radius: var(--radius-lg); padding: var(--sp-4); margin-bottom: var(--sp-4);
+  }
+  .route-point { display: flex; align-items: center; gap: var(--sp-3); font-size: var(--text-sm); }
+  .route-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .route-dot.from { background: #0E4B49; }
+  .route-dot.to   { background: #ef4444; }
+  .ride-meta { display: flex; gap: var(--sp-3); margin-bottom: var(--sp-5); }
+  .ride-meta__item {
+    flex: 1; background: var(--color-primary-light);
+    border-radius: var(--radius-lg); padding: var(--sp-3); text-align: center;
+  }
+  .ride-meta__val { font-size: var(--text-base); font-weight: var(--weight-black); color: var(--color-primary); }
+  .ride-meta__key { font-size: 10px; color: var(--color-text-faint); }
+  .ride-meta__item.fare { background: #dcfce7; }
+  .ride-meta__item.fare .ride-meta__val { color: #16a34a; }
+  .req-btns { display: flex; gap: var(--sp-3); align-items: center; }
+  .accept-btn {
+    flex: 1; padding: var(--sp-4); background: #16a34a; color: #fff;
+    border: none; border-radius: var(--radius-lg);
+    font-family: var(--font-body); font-size: var(--text-base); font-weight: var(--weight-black);
+    cursor: pointer; transition: all 0.2s;
+  }
+  .accept-btn:hover { background: #15803d; transform: translateY(-1px); }
+  .reject-btn {
+    padding: var(--sp-3) var(--sp-4); background: #f3f4f6; color: #6b7280;
+    border: 1.5px solid #d1d5db; border-radius: var(--radius-lg);
+    font-family: var(--font-body); font-size: var(--text-sm); font-weight: var(--weight-bold);
+    cursor: pointer; transition: all 0.2s; white-space: nowrap;
+  }
+  .reject-btn:hover { background: #fee2e2; color: #dc2626; border-color: #fca5a5; }
+
+  /* Waiting timer banner */
+  .waiting-banner {
+    display: none; align-items: center; justify-content: center; gap: var(--sp-3);
+    background: #dc2626; color: #fff;
+    padding: var(--sp-3) var(--sp-4); border-radius: var(--radius-lg);
+    font-size: var(--text-sm); font-weight: var(--weight-bold);
+    margin-bottom: var(--sp-3); text-align: center;
+    animation: pulse-banner 2s ease-in-out infinite;
+  }
+  .waiting-banner.visible { display: flex; }
+  @keyframes pulse-banner { 0%,100% { background: #dc2626; } 50% { background: #b91c1c; } }
+  .waiting-banner__timer { font-size: var(--text-lg); font-weight: 900; min-width: 40px; text-align: center; }
+
+  /* Completion receipt modal */
+  .receipt-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,.55);
+    z-index: 700; display: none; align-items: flex-end; justify-content: center; padding: var(--sp-4);
+  }
+  .receipt-overlay.visible { display: flex; }
+  .receipt-card {
+    background: #fff; border-radius: 20px 20px 16px 16px;
+    width: 100%; max-width: 480px; overflow: hidden;
+    box-shadow: 0 -8px 40px rgba(0,0,0,.3);
+    animation: slide-up-receipt .35s cubic-bezier(.34,1.56,.64,1);
+  }
+  @keyframes slide-up-receipt { from { transform: translateY(100%); opacity:0; } to { transform: translateY(0); opacity:1; } }
+  .receipt-header { background: #16a34a; color: #fff; text-align: center; padding: var(--sp-5) var(--sp-5) var(--sp-4); }
+  .receipt-header__icon { font-size: 2.5rem; margin-bottom: var(--sp-2); }
+  .receipt-header__title { font-size: var(--text-xl); font-weight: 900; }
+  .receipt-header__sub { font-size: var(--text-xs); opacity: .85; margin-top: 4px; }
+  .receipt-body { padding: var(--sp-5); }
+  .receipt-customer { display: flex; align-items: center; gap: var(--sp-3); background: #f8fafc; border-radius: var(--radius-lg); padding: var(--sp-4); margin-bottom: var(--sp-4); }
+  .receipt-avatar { width: 42px; height: 42px; border-radius: 50%; background: linear-gradient(135deg,#0E4B49,#082F2E); color:#fff; font-size:1.1rem; font-weight:900; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .receipt-customer__name { font-weight: var(--weight-black); font-size: var(--text-base); }
+  .receipt-route { display: flex; flex-direction: column; gap: var(--sp-2); background: #f8fafc; border-radius: var(--radius-lg); padding: var(--sp-4); margin-bottom: var(--sp-4); }
+  .receipt-route-row { display: flex; align-items: center; gap: var(--sp-3); font-size: var(--text-sm); }
+  .receipt-route-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .receipt-route-dot.from { background: #0E4B49; }
+  .receipt-route-dot.to   { background: #ef4444; }
+  .receipt-fare-box { background: #f0fdf4; border: 1.5px solid #86efac; border-radius: var(--radius-lg); padding: var(--sp-4); margin-bottom: var(--sp-4); }
+  .receipt-fare-row { display: flex; justify-content: space-between; align-items: center; font-size: var(--text-sm); color: var(--color-text-muted); padding: var(--sp-1) 0; }
+  .receipt-fare-row.total { border-top: 1.5px solid #86efac; margin-top: var(--sp-2); padding-top: var(--sp-3); font-size: var(--text-base); font-weight: 900; color: #15803d; }
+  .receipt-collect-btn { width: 100%; padding: var(--sp-4); background: #082F2E; color: #fff; border: none; border-radius: var(--radius-lg); font-family: var(--font-body); font-size: var(--text-base); font-weight: 900; cursor: pointer; transition: background .2s; }
+  .receipt-collect-btn:hover { background: #0E4B49; }
+
+  /* Toast */
+  .toast {
+    position: fixed; top: 80px; left: 50%;
+    transform: translateX(-50%) translateY(-20px);
+    background: #1f2937; color: #fff;
+    padding: var(--sp-3) var(--sp-5); border-radius: var(--radius-lg);
+    font-size: var(--text-sm); font-weight: var(--weight-bold);
+    z-index: 600; opacity: 0; transition: all 0.3s ease; white-space: nowrap;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* Auth prompt */
+  .auth-prompt {
+    background: var(--color-bg); border: 1px solid var(--color-border);
+    border-radius: var(--radius-xl); padding: var(--sp-10) var(--sp-6);
+    text-align: center; box-shadow: var(--shadow-md);
+  }
+  .auth-prompt__icon  { font-size: 3rem; margin-bottom: var(--sp-4); }
+  .auth-prompt__title { font-size: var(--text-xl); font-weight: var(--weight-black); margin-bottom: var(--sp-3); }
+  .auth-prompt__desc  { color: var(--color-text-muted); font-size: var(--text-sm); margin-bottom: var(--sp-6); }
+
+  /* ── Dashboard Tabs ── */
+  .dash-tabs {
+    display: flex; gap: 0; border-bottom: 2px solid var(--color-border);
+    margin-bottom: var(--sp-4); overflow-x: auto; scrollbar-width: none;
+  }
+  .dash-tabs::-webkit-scrollbar { display: none; }
+  .dash-tab {
+    padding: var(--sp-3) var(--sp-5); background: none; border: none;
+    font-family: var(--font-body); font-weight: var(--weight-bold);
+    font-size: var(--text-sm); cursor: pointer; color: var(--color-text-faint);
+    border-bottom: 3px solid transparent; margin-bottom: -2px; white-space: nowrap;
+    transition: all 0.2s;
+  }
+  .dash-tab.active { color: var(--color-primary); border-bottom-color: var(--color-primary); }
+  .tab-pane { display: none; flex-direction: column; gap: var(--sp-4); }
+  .tab-pane.active { display: flex; }
+
+  /* ── Approval banner ── */
+  .approval-banner {
+    border-radius: var(--radius-xl); padding: var(--sp-4) var(--sp-5);
+    display: flex; align-items: flex-start; gap: var(--sp-3);
+    box-shadow: var(--shadow-md);
+  }
+  .approval-banner.pending  { background: #FEF9C3; border: 1.5px solid #FDE047; }
+  .approval-banner.approved { background: #DCFCE7; border: 1.5px solid #86EFAC; }
+  .approval-banner.rejected { background: #FEE2E2; border: 1.5px solid #FCA5A5; }
+  .approval-banner__icon  { font-size: 1.8rem; flex-shrink: 0; }
+  .approval-banner__title { font-weight: var(--weight-black); font-size: var(--text-sm); margin-bottom: 2px; }
+  .approval-banner.pending  .approval-banner__title { color: #92400E; }
+  .approval-banner.approved .approval-banner__title { color: #14532D; }
+  .approval-banner.rejected .approval-banner__title { color: #991B1B; }
+  .approval-banner__sub   { font-size: var(--text-xs); color: var(--color-text-muted); line-height: 1.5; }
+
+  /* ── Wallet & Points cards ── */
+  .acct-card {
+    background: var(--color-bg); border: 1px solid var(--color-border);
+    border-radius: var(--radius-xl); padding: var(--sp-5); box-shadow: var(--shadow-md);
+  }
+  .acct-card__header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: var(--sp-4); padding-bottom: var(--sp-3);
+    border-bottom: 1px solid var(--color-border);
+  }
+  .acct-card__title { font-weight: var(--weight-black); font-size: var(--text-base); display: flex; align-items: center; gap: var(--sp-2); }
+  .acct-card__big   { font-size: var(--text-3xl); font-weight: var(--weight-black); color: var(--color-primary); }
+  .acct-card__unit  { font-size: var(--text-sm); color: var(--color-text-muted); }
+  .acct-tx-list     { display: flex; flex-direction: column; gap: var(--sp-2); }
+  .acct-tx {
+    display: flex; align-items: center; justify-content: space-between;
+    font-size: var(--text-xs); padding: var(--sp-2) 0;
+    border-bottom: 1px solid var(--color-border);
+  }
+  .acct-tx:last-child { border-bottom: none; }
+  .acct-tx__note  { color: var(--color-text-muted); flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .acct-tx__date  { color: var(--color-text-faint); font-size: 10px; margin: 0 var(--sp-2); flex-shrink: 0; }
+  .acct-tx__amt   { font-weight: var(--weight-bold); flex-shrink: 0; }
+  .acct-tx__amt.pos { color: #16a34a; }
+  .acct-tx__amt.neg { color: #dc2626; }
+  .acct-empty { text-align: center; color: var(--color-text-faint); font-size: var(--text-xs); padding: var(--sp-4); }
+
+  /* ── Ratings ── */
+  .rating-summary {
+    display: flex; align-items: center; gap: var(--sp-5);
+    margin-bottom: var(--sp-4); padding-bottom: var(--sp-4);
+    border-bottom: 1px solid var(--color-border);
+  }
+  .rating-big { font-size: var(--text-4xl); font-weight: var(--weight-black); color: var(--color-primary); line-height: 1; }
+  .rating-stars { font-size: var(--text-lg); }
+  .rating-count { font-size: var(--text-xs); color: var(--color-text-faint); }
+  .rating-item {
+    display: flex; flex-direction: column; gap: 2px;
+    padding: var(--sp-3) 0; border-bottom: 1px solid var(--color-border);
+  }
+  .rating-item:last-child { border-bottom: none; }
+  .rating-item__top { display: flex; align-items: center; justify-content: space-between; }
+  .rating-item__stars { font-size: var(--text-sm); }
+  .rating-item__date  { font-size: 10px; color: var(--color-text-faint); }
+  .rating-item__comment { font-size: var(--text-xs); color: var(--color-text-muted); margin-top: 2px; }
+  .rating-item__reply { margin-top:6px; padding:6px 10px; background:#E3EDEC; border-radius:8px; font-size:var(--text-xs); color:#0E4B49; border-right:3px solid #0E4B49; }
+  .rating-item__reply-label { font-size:10px; color:#64748b; margin-bottom:2px; }
+  .rating-reply-form { margin-top:6px; display:flex; gap:6px; }
+  .rating-reply-input { flex:1; padding:6px 10px; border:1.5px solid var(--color-border); border-radius:8px; font-size:var(--text-xs); resize:none; direction:rtl; font-family:var(--font-body); background:var(--color-bg); color:var(--color-text); }
+  .rating-reply-send { padding:6px 14px; background:var(--color-primary); color:#fff; border:none; border-radius:8px; font-size:var(--text-xs); cursor:pointer; }
+
+  /* ── Activity log ── */
+  .activity-item {
+    background: var(--color-bg); border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg); padding: var(--sp-4);
+    display: flex; align-items: center; gap: var(--sp-3);
+    box-shadow: var(--shadow-sm);
+  }
+  .activity-icon { font-size: 1.6rem; flex-shrink: 0; }
+  .activity-info { flex: 1; min-width: 0; }
+  .activity-title { font-weight: var(--weight-bold); font-size: var(--text-sm); }
+  .activity-sub   { font-size: var(--text-xs); color: var(--color-text-muted); }
+  .activity-right { text-align: left; flex-shrink: 0; }
+  .activity-earn  { font-weight: var(--weight-black); color: #16a34a; font-size: var(--text-sm); }
+  .activity-date  { font-size: 10px; color: var(--color-text-faint); }
+  .activity-status {
+    font-size: 10px; font-weight: var(--weight-bold); padding: 2px 8px;
+    border-radius: var(--radius-full); display: inline-block; margin-top: 2px;
+  }
+  .activity-status.completed { background: #DCFCE7; color: #14532D; }
+  .activity-status.cancelled { background: #FEE2E2; color: #991B1B; }
+</style>
+
+<Layout title="لوحة السائق | وصّلها" description="لوحة تحكم السائق — استقبل الطلبات وابدأ رحلتك" page="driver-dashboard">
+  <PageHero
+    title="لوحة السائق 🚗"
+    subtitle="استقبل الطلبات وابدأ رحلتك"
+  />
+
+  <div class="dash-page" id="dash-page">
+
+    <!-- Auth prompt (shown if not logged in as driver) -->
+    <div class="auth-prompt" id="auth-prompt" style="display:none">
+      <div class="auth-prompt__icon">🔒</div>
+      <div class="auth-prompt__title">تسجيل الدخول مطلوب</div>
+      <div class="auth-prompt__desc">هذه الصفحة للسائقين المسجلين فقط. يرجى تسجيل الدخول أو التسجيل كسائق.</div>
+      <div style="display:flex;gap:var(--sp-3);justify-content:center;flex-wrap:wrap;">
+        <a href="/login" class="btn btn--primary">تسجيل الدخول</a>
+        <a href="/driver" class="btn btn--outline">التسجيل كسائق</a>
+      </div>
+    </div>
+
+    <!-- Main dashboard (hidden until auth check passes) -->
+    <div id="main-dash" style="display:none;flex-direction:column;gap:var(--sp-4);">
+
+      <!-- Status bar -->
+      <div class="status-bar">
+        <div class="status-bar__info">
+          <div class="status-bar__label">مرحباً بك</div>
+          <div class="status-bar__name" id="driver-name-bar">—</div>
+          <div class="status-bar__phone" id="driver-phone-bar">—</div>
+          <div style="display:flex;gap:.4rem;flex-wrap:wrap;margin-top:6px">
+            <span id="acct-status-chip" style="display:none;font-size:.7rem;font-weight:800;padding:2px 10px;border-radius:99px"></span>
+            <span id="app-status-chip"  style="display:none;font-size:.7rem;font-weight:800;padding:2px 10px;border-radius:99px"></span>
+          </div>
+        </div>
+        <div class="toggle-wrap">
+          <button class="toggle-btn offline" id="toggle-btn" type="button">
+            <span class="toggle-btn__knob"></span>
+            <span id="toggle-text" style="position:relative;z-index:1;font-size:11px;">إيقاف</span>
+          </button>
+          <span class="toggle-label offline-text" id="toggle-label">غير متصل</span>
+        </div>
+      </div>
+
+      <!-- Stats -->
+      <div class="stats-strip">
+        <div class="stat-card"><div class="stat-card__val" id="stat-trips">0</div><div class="stat-card__key">رحلات اليوم</div></div>
+        <div class="stat-card"><div class="stat-card__val" id="stat-earn">0</div><div class="stat-card__key">ج.م اليوم</div></div>
+        <div class="stat-card"><div class="stat-card__val" id="stat-rating">—</div><div class="stat-card__key">⭐ التقييم</div></div>
+      </div>
+
+      <!-- Tabs -->
+      <div class="dash-tabs">
+        <button class="dash-tab active" data-tab="rides"    onclick="switchTab('rides')">🚗 الرحلات</button>
+        <button class="dash-tab"        data-tab="account"  onclick="switchTab('account')">💳 الحساب</button>
+        <button class="dash-tab"        data-tab="activity" onclick="switchTab('activity')">📋 السجل</button>
+      </div>
+
+      <!-- Tab: Rides (operational) -->
+      <div class="tab-pane active" id="tab-rides">
+
+        <!-- Approval banner -->
+        <div id="approval-banner" style="display:none"></div>
+
+        <!-- Offline state -->
+        <div id="state-offline">
+          <div class="offline-icon">🔴</div>
+          <div class="offline-title">أنت غير متصل</div>
+          <div class="offline-sub">فعّل التشغيل لاستقبال الطلبات</div>
+        </div>
+
+        <!-- Waiting state -->
+        <div id="state-waiting">
+          <div class="radar-wrap">
+            <div class="radar-ring"></div>
+            <div class="radar-ring"></div>
+            <div class="radar-ring"></div>
+            <div class="radar-center">🚗</div>
+          </div>
+          <div class="waiting-title">جاري الانتظار على طلبات...</div>
+          <div class="waiting-sub">ستصلك إشعار فور وجود راكب قريب منك</div>
+        </div>
+
+        <!-- Active trip -->
+        <div id="state-active">
+          <!-- Waiting banner: shown when driver arrived and waiting for passenger -->
+          <div class="waiting-banner" id="waiting-banner">
+            <span>⏳ أنت تنتظر منذ</span>
+            <span class="waiting-banner__timer" id="waiting-timer-text">0:00</span>
+            <span>دقيقة</span>
+          </div>
+          <div class="customer-card">
+            <div class="customer-card__header">
+              <div class="customer-avatar">👤</div>
+              <div>
+                <div class="customer-name" id="active-customer-name">—</div>
+                <div class="customer-status" id="active-trip-status">في الطريق للإستلام</div>
+                <div class="customer-status" id="active-customer-rep" style="opacity:.85"></div>
+              </div>
+              <a class="call-btn" id="active-call-btn" href="tel:">📞 اتصل</a>
+            </div>
+            <div class="trip-route">
+              <div class="trip-route-row"><span class="trip-route-dot from"></span><span id="active-from">—</span></div>
+              <div class="trip-route-row" style="padding-right:13px;color:var(--color-text-faint);font-size:11px;">↓</div>
+              <div class="trip-route-row"><span class="trip-route-dot to"></span><span id="active-to">—</span></div>
+            </div>
+            <span class="fare-badge">💵 <span id="active-fare">—</span> ج.م</span>
+          </div>
+
+          <div class="trip-map-card">
+            <div class="trip-map-header">🗺️ خريطة الرحلة — مسار فعلي</div>
+            <div id="driver-map"></div>
+            <div class="driver-map-stats">
+              <div class="driver-map-stat">
+                <div class="driver-map-stat__val" id="driver-stat-dist">—</div>
+                <div class="driver-map-stat__lbl">المسافة المتبقية</div>
+              </div>
+              <div class="driver-map-stat">
+                <div class="driver-map-stat__val" id="driver-stat-dur">—</div>
+                <div class="driver-map-stat__lbl">الوقت المتوقع</div>
+              </div>
+            </div>
+            <button class="nav-to-btn" id="btn-navigate" type="button">
+              🧭 افتح Google Maps للملاحة
+            </button>
+          </div>
+
+          <div class="action-card">
+            <div class="action-card__title">الإجراءات</div>
+            <button class="action-btn arrive" id="btn-arrive" type="button">📍 وصلت لنقطة الاستلام</button>
+            <button class="action-btn pickup" id="btn-pickup" type="button" disabled>✓ التقطت الراكب / الطلب</button>
+            <button class="action-btn" id="btn-complete" type="button" disabled>✓ وصلت للوجهة</button>
+          </div>
+        </div>
+
+      </div><!-- /tab-rides -->
+
+      <!-- Tab: Account (wallet, points, ratings) -->
+      <div class="tab-pane" id="tab-account">
+
+        <!-- Wallet -->
+        <div class="acct-card">
+          <div class="acct-card__header">
+            <div class="acct-card__title">💰 المحفظة</div>
+            <div>
+              <span class="acct-card__big" id="wallet-balance">0</span>
+              <span class="acct-card__unit"> ج.م</span>
+            </div>
+          </div>
+          <div style="font-size:var(--text-xs);color:var(--color-text-faint);margin-bottom:var(--sp-3);">
+            نسبة عمولة المنصة 15% تُخصم تلقائياً عند إتمام كل رحلة
+          </div>
+          <div class="acct-tx-list" id="wallet-txs">
+            <div class="acct-empty">لا توجد معاملات بعد</div>
+          </div>
+        </div>
+
+        <!-- Points -->
+        <div class="acct-card">
+          <div class="acct-card__header">
+            <div class="acct-card__title">⭐ نقاط الولاء</div>
+            <div>
+              <span class="acct-card__big" id="points-total">0</span>
+              <span class="acct-card__unit"> نقطة</span>
+            </div>
+          </div>
+          <div style="font-size:var(--text-xs);color:var(--color-text-faint);margin-bottom:var(--sp-3);">
+            10 نقاط لكل مشوار · 20 نقطة لكل توصيل متجر · 50 نقطة لرحلة مطار
+          </div>
+          <div class="acct-tx-list" id="points-txs">
+            <div class="acct-empty">لا توجد نقاط بعد</div>
+          </div>
+        </div>
+
+        <!-- Profile quality: badges + satisfaction + comfort/AC -->
+        <div class="acct-card">
+          <div class="acct-card__header">
+            <div class="acct-card__title">🏅 ملف الجودة</div>
+          </div>
+          <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:.85rem" id="driver-badges"></div>
+          <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:.75rem;margin-bottom:.9rem">
+            <div style="background:var(--color-bg-soft);border-radius:10px;padding:.7rem;text-align:center">
+              <div style="font-size:1.2rem;font-weight:900" id="driver-satisfaction">—</div>
+              <div style="font-size:.7rem;color:var(--color-text-faint)">نسبة الرضا</div>
+            </div>
+            <div style="background:var(--color-bg-soft);border-radius:10px;padding:.7rem;text-align:center">
+              <div style="font-size:1.2rem;font-weight:900" id="driver-trip-count">—</div>
+              <div style="font-size:.7rem;color:var(--color-text-faint)">رحلات مكتملة</div>
+            </div>
+          </div>
+          <label style="display:flex;align-items:center;gap:8px;font-size:.85rem;cursor:pointer">
+            <input type="checkbox" id="driver-ac-toggle"/> ❄️ سيارتي مكيفة
+          </label>
+        </div>
+
+        <!-- Ratings -->
+        <div class="acct-card">
+          <div class="acct-card__header">
+            <div class="acct-card__title">🌟 تقييمات العملاء</div>
+          </div>
+          <div class="rating-summary">
+            <div>
+              <div class="rating-big" id="rating-avg">—</div>
+              <div class="rating-stars" id="rating-stars"></div>
+            </div>
+            <div>
+              <div class="rating-count" id="rating-count">لا توجد تقييمات</div>
+            </div>
+          </div>
+          <div id="ratings-list">
+            <div class="acct-empty">لا توجد تقييمات بعد</div>
+          </div>
+        </div>
+
+      </div><!-- /tab-account -->
+
+      <!-- Tab: Activity log -->
+      <div class="tab-pane" id="tab-activity">
+        <div id="activity-list" style="display:flex;flex-direction:column;gap:var(--sp-3);">
+          <div class="acct-empty">لا يوجد سجل نشاط بعد</div>
+        </div>
+      </div>
+
+    </div><!-- /main-dash -->
+  </div><!-- /dash-page -->
+
+  <!-- Ride request notification -->
+  <div id="ride-request">
+    <div class="ride-req-card">
+      <div class="ride-req-header">
+        <span class="bell-icon">🔔</span>
+        <div>
+          <div class="ride-req-header__title">راكب جديد!</div>
+          <div class="ride-req-header__sub" id="req-customer-name">يبحث عن سائق</div>
+          <div class="ride-req-header__sub" id="req-customer-rep" style="opacity:.9"></div>
+        </div>
+        <div class="ride-req-timer" id="req-timer">30</div>
+      </div>
+      <div class="ride-req-body">
+        <div class="route-display">
+          <div class="route-point"><span class="route-dot from"></span><span id="req-from">—</span></div>
+          <div class="route-point" style="padding-right:13px;color:var(--color-text-faint);font-size:11px;"><span>↓</span></div>
+          <div class="route-point"><span class="route-dot to"></span><span id="req-to">—</span></div>
+        </div>
+        <div class="ride-meta">
+          <div class="ride-meta__item"><div class="ride-meta__val" id="req-dist">—</div><div class="ride-meta__key">كم</div></div>
+          <div class="ride-meta__item"><div class="ride-meta__val" id="req-eta">—</div><div class="ride-meta__key">دقيقة</div></div>
+          <div class="ride-meta__item fare"><div class="ride-meta__val" id="req-fare">—</div><div class="ride-meta__key">ج.م</div></div>
+        </div>
+        <div class="req-btns">
+          <button class="accept-btn" id="accept-btn" type="button">✅ قبول الرحلة</button>
+          <button class="reject-btn" id="reject-btn" type="button">✗ رفض</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Completion receipt modal -->
+  <div class="receipt-overlay" id="receipt-overlay">
+    <div class="receipt-card">
+      <div class="receipt-header">
+        <div class="receipt-header__icon">✅</div>
+        <div class="receipt-header__title">لقد تم انهاء الرحلة بنجاح</div>
+        <div class="receipt-header__sub" id="receipt-date">—</div>
+      </div>
+      <div class="receipt-body">
+        <div class="receipt-customer">
+          <div class="receipt-avatar" id="receipt-avatar">؟</div>
+          <div><div class="receipt-customer__name" id="receipt-customer-name">—</div></div>
+        </div>
+        <div class="receipt-route">
+          <div class="receipt-route-row"><span class="receipt-route-dot from"></span><span id="receipt-from">—</span></div>
+          <div class="receipt-route-row" style="padding-right:13px;color:var(--color-text-faint);font-size:11px;">↓</div>
+          <div class="receipt-route-row"><span class="receipt-route-dot to"></span><span id="receipt-to">—</span></div>
+        </div>
+        <div class="receipt-fare-box">
+          <div class="receipt-fare-row"><span>الأجرة الإجمالية</span><span id="receipt-gross">— ج.م</span></div>
+          <div class="receipt-fare-row"><span>عمولة المنصة (15%)</span><span id="receipt-commission" style="color:#dc2626">— ج.م</span></div>
+          <div class="receipt-fare-row total"><span>صافي أرباحك</span><span id="receipt-net">— ج.م</span></div>
+        </div>
+        <button class="receipt-collect-btn" id="receipt-collect-btn" type="button">
+          استلم <span id="receipt-collect-amount">—</span> ج.م
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Rate-the-customer modal (bidirectional ratings) -->
+  <div class="receipt-overlay" id="rate-customer-overlay">
+    <div class="receipt-card" style="max-width:380px">
+      <div class="receipt-header">
+        <div class="receipt-header__icon">⭐</div>
+        <div class="receipt-header__title">قيّم الراكب</div>
+        <div class="receipt-header__sub" id="rate-customer-name">—</div>
+      </div>
+      <div class="receipt-body" style="text-align:center">
+        <div style="font-size:2rem;margin-bottom:1.25rem">
+          <span class="rc-star" data-val="1" style="cursor:pointer">☆</span><span class="rc-star" data-val="2" style="cursor:pointer">☆</span><span class="rc-star" data-val="3" style="cursor:pointer">☆</span><span class="rc-star" data-val="4" style="cursor:pointer">☆</span><span class="rc-star" data-val="5" style="cursor:pointer">☆</span>
+        </div>
+        <textarea id="rate-customer-comment" rows="2" placeholder="اكتب ملاحظتك عن الراكب (اختياري)..."
+          style="width:100%;box-sizing:border-box;border:1.5px solid var(--color-border);border-radius:var(--radius-lg);padding:.6rem .75rem;font-family:var(--font-body);font-size:var(--text-sm);resize:none;margin-bottom:1rem"></textarea>
+        <button class="receipt-collect-btn" id="rate-customer-submit" type="button" disabled>إرسال التقييم</button>
+        <button class="receipt-collect-btn" id="rate-customer-skip" type="button" style="background:#94A3B8;margin-top:.6rem">تخطي</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+</Layout>
+
+<script>
+  import { carIcon, bearingBetween, animateMarkerTo } from '../utils/mapMarker';
+  import { computeRatingStats, isTopRated, BADGE_LABELS, AC_BADGE_LABEL, ratingStarsText } from '../utils/reputation';
+
+  function escapeHtml(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+  }
+  const SB_URL = 'https://vtikgyiopkjnrwlqnmfx.supabase.co';
+  const SB_KEY = 'sb_publishable_PLSnpvCT-sAyUMtymNgTwA_QmL2suw4';
+  const SB_H = { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}`, 'Content-Type': 'application/json' };
+
+  // Commission rates (loaded from app_settings, defaults to 15%)
+  const RATES = { ride: 0.15, delivery: 0.15, airport: 0.15, external: 0.15 };
+
+  async function loadCommissionRates() {
+    try {
+      const res = await fetch(`${SB_URL}/rest/v1/app_settings?key=in.(commission_ride,commission_delivery,commission_airport,commission_external)&select=key,value`, { headers: SB_H });
+      const rows = await res.json();
+      if (Array.isArray(rows)) {
+        rows.forEach(r => {
+          const val = parseFloat(r.value) / 100;
+          if (!isNaN(val) && val >= 0 && val < 1) {
+            if (r.key === 'commission_ride')     RATES.ride     = val;
+            if (r.key === 'commission_delivery') RATES.delivery = val;
+            if (r.key === 'commission_airport')  RATES.airport  = val;
+            if (r.key === 'commission_external') RATES.external = val;
+          }
+        });
+      }
+    } catch {}
+  }
+  loadCommissionRates();
+
+  // Supabase Realtime client
+  let _sb = null;
+  try {
+    const script = document.createElement('script');
+    script.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js';
+    script.onload = () => {
+      _sb = window.supabase.createClient(SB_URL, SB_KEY);
+    };
+    document.head.appendChild(script);
+  } catch {}
+
+  /* ── Auth guard ── */
+  let driver = null;
+  try { const raw = localStorage.getItem('wslha_user'); driver = raw ? JSON.parse(raw) : null; } catch {}
+
+  const authPrompt = document.getElementById('auth-prompt');
+  const mainDash   = document.getElementById('main-dash');
+
+  if (!driver || driver.role !== 'driver') {
+    authPrompt.style.display = 'block';
+  } else {
+    mainDash.style.display = 'flex';
+    document.getElementById('driver-name-bar').textContent  = driver.name  || driver.phone;
+    document.getElementById('driver-phone-bar').textContent = driver.phone || '';
+    // Load approval status and initial account data
+    loadApprovalStatus();
+    loadAccountData();
+    restoreActiveRide();
+  }
+
+  /* ── Stats ── */
+  let todayStats = { trips: 0, earn: 0 };
+  try {
+    const key = 'wslha_driver_stats_' + (driver?.phone || '') + '_' + new Date().toDateString();
+    todayStats = JSON.parse(localStorage.getItem(key) || '{"trips":0,"earn":0}');
+  } catch {}
+  function renderStats() {
+    document.getElementById('stat-trips').textContent = String(todayStats.trips);
+    document.getElementById('stat-earn').textContent  = String(todayStats.earn);
+  }
+  renderStats();
+
+  /* ── State ── */
+  let isOnline      = false;
+  let currentRide   = null;
+  let pendingRide   = null;
+  let currentOrder  = null;   // active delivery order
+  let pendingOrder  = null;   // delivery offer awaiting accept
+  let pollInterval  = null;   // fallback REST poll (30s)
+  let ridesChannel  = null;   // Realtime channel for new rides
+  let ordersChannel = null;   // Realtime channel for new orders
+  let offerInterval = null;   // targeted dispatch-offer poll (3s, while online)
+  // مهلة قبل ما البثّ القديم (لكل السائقين المتصلين) يشتغل كخطة احتياطية —
+  // بتدي محرك التوزيع (لو شغّال) فرصة إنه يعرض الطلب على أقرب سائق الأول.
+  const BROADCAST_FALLBACK_MS = 90 * 1000;
+  let geoWatchId    = null;
+  let timerInterval = null;
+  let waitingTimerInterval = null;
+  let waitingStartTime = null;
+  let driverLat = null;
+  let driverLng = null;
+  let _driverHeading = 0; // آخر اتجاه معروف — بيتحسب من إحداثيات GPS المتتالية لو الجهاز مبعتش heading
+  let map = null, driverMarker = null, fromMarkerRef = null, toMarkerRef = null, routeLine = null;
+
+  /* ── Toast ── */
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2800);
+  }
+
+  /* ── Waiting timer ── */
+  function startWaitingTimer() {
+    stopWaitingTimer();
+    waitingStartTime = Date.now();
+    const banner = document.getElementById('waiting-banner');
+    const timerEl = document.getElementById('waiting-timer-text');
+    banner.classList.add('visible');
+    function tick() {
+      const elapsed = Math.floor((Date.now() - waitingStartTime) / 1000);
+      const mins = Math.floor(elapsed / 60), secs = elapsed % 60;
+      timerEl.textContent = `${mins}:${String(secs).padStart(2, '0')}`;
+    }
+    tick();
+    waitingTimerInterval = setInterval(tick, 1000);
+  }
+  function stopWaitingTimer() {
+    if (waitingTimerInterval) { clearInterval(waitingTimerInterval); waitingTimerInterval = null; }
+    const banner = document.getElementById('waiting-banner');
+    if (banner) banner.classList.remove('visible');
+    waitingStartTime = null;
+  }
+
+  /* ── Completion receipt modal ── */
+  let _lastCompletedRide = null;
+  function showReceiptModal(ride) {
+    const rate = ride?.ride_type === 'airport' ? RATES.airport : ride?.ride_type === 'external' ? RATES.external : RATES.ride;
+    const fare = Number(ride?.fare || 0);
+    const commission = Math.round(fare * rate);
+    const net = fare - commission;
+    const name = ride?.customer_name || '—';
+    const now = new Date().toLocaleDateString('ar-EG', { year:'numeric', month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' });
+    document.getElementById('receipt-avatar').textContent = name.trim().slice(0, 2) || '؟';
+    document.getElementById('receipt-customer-name').textContent = name;
+    document.getElementById('receipt-date').textContent = now;
+    document.getElementById('receipt-from').textContent = ride?.from_area || '—';
+    document.getElementById('receipt-to').textContent = ride?.to_area || '—';
+    document.getElementById('receipt-gross').textContent = fare + ' ج.م';
+    document.getElementById('receipt-commission').textContent = '− ' + commission + ' ج.م';
+    document.getElementById('receipt-net').textContent = net + ' ج.م';
+    document.getElementById('receipt-collect-amount').textContent = net;
+    document.getElementById('receipt-overlay').classList.add('visible');
+  }
+  function hideReceiptModal() {
+    document.getElementById('receipt-overlay').classList.remove('visible');
+  }
+  document.getElementById('driver-ac-toggle')?.addEventListener('change', async (e) => {
+    if (!driver) return;
+    const checked = e.target.checked;
+    _driverHasAc = checked;
+    try {
+      await fetch(`${SB_URL}/rest/v1/driver_applications?phone=eq.${encodeURIComponent(driver.phone)}`, {
+        method: 'PATCH', headers: { ...SB_H, Prefer: 'return=minimal' },
+        body: JSON.stringify({ has_ac: checked }),
+      });
+      showToast(checked ? '❄️ تم تفعيل شارة السيارة المكيفة' : 'تم إلغاء شارة السيارة المكيفة');
+    } catch {}
+  });
+
+  document.getElementById('receipt-collect-btn').addEventListener('click', () => {
+    hideReceiptModal();
+    if (_lastCompletedRide) showRateCustomer(_lastCompletedRide.customer_phone, _lastCompletedRide.customer_name, _lastCompletedRide.id, 'ride');
+    else showState('waiting');
+  });
+  document.getElementById('receipt-overlay').addEventListener('click', (e) => {
+    if (e.target === document.getElementById('receipt-overlay')) hideReceiptModal();
+  });
+
+  /* ── Driver rates the customer after completion (bidirectional ratings) ── */
+  let _rateCustomerTarget = null;
+  let _rcSelected = 0;
+  function showRateCustomer(phone, name, referenceId, serviceType) {
+    if (!phone) { showState('waiting'); return; }
+    _rateCustomerTarget = { phone, referenceId, serviceType };
+    _rcSelected = 0;
+    document.getElementById('rate-customer-name').textContent = name || 'الراكب';
+    document.querySelectorAll('.rc-star').forEach(s => { s.textContent = '☆'; });
+    document.getElementById('rate-customer-submit').disabled = true;
+    document.getElementById('rate-customer-comment').value = '';
+    document.getElementById('rate-customer-overlay').classList.add('visible');
+  }
+  function hideRateCustomer() {
+    document.getElementById('rate-customer-overlay').classList.remove('visible');
+    showState('waiting');
+  }
+  document.querySelectorAll('.rc-star').forEach(star => {
+    star.addEventListener('click', () => {
+      _rcSelected = Number(star.dataset.val);
+      document.querySelectorAll('.rc-star').forEach((s, i) => { s.textContent = i < _rcSelected ? '⭐' : '☆'; });
+      document.getElementById('rate-customer-submit').disabled = false;
+    });
+  });
+  document.getElementById('rate-customer-skip')?.addEventListener('click', hideRateCustomer);
+  document.getElementById('rate-customer-submit')?.addEventListener('click', async () => {
+    if (!_rcSelected || !_rateCustomerTarget) return;
+    try {
+      const res = await fetch(`${SB_URL}/rest/v1/ratings`, {
+        method: 'POST', headers: { ...SB_H, Prefer: 'return=minimal' },
+        body: JSON.stringify({
+          driver_phone: driver.phone, customer_phone: _rateCustomerTarget.phone,
+          rating: _rcSelected, service_type: _rateCustomerTarget.serviceType,
+          ride_id: _rateCustomerTarget.referenceId, rated_by: 'driver',
+          comment: document.getElementById('rate-customer-comment').value.trim() || null,
+          created_at: new Date().toISOString(),
+        }),
+      });
+      if (!res.ok) {
+        const detail = await res.text().catch(() => '');
+        console.error('[ratings] insert failed', res.status, detail);
+        showToast('تعذّر حفظ التقييم — حاول لاحقاً');
+      }
+    } catch (e) { console.error('[ratings] insert error', e); }
+    hideRateCustomer();
+  });
+
+  /* ── Google Maps helpers ── */
+  const GMAPS_KEY = 'AIzaSyAKvFfBYNDcTZgvZZH5s_lQbOc24LNjLsY';
+  let _dirRenderer = null;
+  let _gpsCount = 0;
+
+  function loadGoogleMaps() {
+    return new Promise((resolve) => {
+      if (window.google?.maps) { resolve(); return; }
+      window.__gmInit = resolve;
+      const s = document.createElement('script');
+      s.src = `https://maps.googleapis.com/maps/api/js?key=${GMAPS_KEY}&callback=__gmInit&language=ar`;
+      s.async = true;
+      document.head.appendChild(s);
+    });
+  }
+
+  let destLat = null;
+  let destLng = null;
+
+  // targetLat/targetLng = المرحلة الحالية للملاحة (نقطة الاستلام أولاً، ثم
+  // الوجهة النهائية بعد الالتقاط) — لو مُرّرتش، الافتراضي نقطة الاستلام
+  // لأن ده أول شيء بيروحله السائق دايماً بعد قبول الرحلة.
+  async function initDriverMap(fromLat, fromLng, toLat, toLng, targetLat = fromLat, targetLng = fromLng) {
+    try { await loadGoogleMaps(); } catch { return; }
+    destLat = targetLat; destLng = targetLng;
+    const mapEl = document.getElementById('driver-map');
+    if (!mapEl) return;
+    const G = window.google.maps;
+
+    if (map) {
+      if (fromMarkerRef) fromMarkerRef.setMap(null);
+      if (toMarkerRef)   toMarkerRef.setMap(null);
+      fromMarkerRef = new G.Marker({ position: { lat: fromLat, lng: fromLng }, map, title: 'نقطة الاستلام',
+        icon: { path: G.SymbolPath.CIRCLE, fillColor: '#0E4B49', fillOpacity: 1, strokeColor: '#fff', strokeWeight: 3, scale: 10 } });
+      toMarkerRef = new G.Marker({ position: { lat: toLat, lng: toLng }, map, title: 'الوجهة',
+        icon: { path: G.SymbolPath.CIRCLE, fillColor: '#ef4444', fillOpacity: 1, strokeColor: '#fff', strokeWeight: 3, scale: 10 } });
+      await drawDriverRoute();
+      return;
+    }
+
+    map = new G.Map(mapEl, {
+      center: { lat: fromLat, lng: fromLng }, zoom: 13,
+      mapTypeControl: false, fullscreenControl: false, streetViewControl: false,
+    });
+
+    fromMarkerRef = new G.Marker({ position: { lat: fromLat, lng: fromLng }, map, title: 'نقطة الاستلام',
+      icon: { path: G.SymbolPath.CIRCLE, fillColor: '#0E4B49', fillOpacity: 1, strokeColor: '#fff', strokeWeight: 3, scale: 10 } });
+    toMarkerRef = new G.Marker({ position: { lat: toLat, lng: toLng }, map, title: 'الوجهة',
+      icon: { path: G.SymbolPath.CIRCLE, fillColor: '#ef4444', fillOpacity: 1, strokeColor: '#fff', strokeWeight: 3, scale: 10 } });
+
+    if (driverLat && driverLng) {
+      driverMarker = new G.Marker({ position: { lat: driverLat, lng: driverLng }, map, title: 'موقعك', zIndex: 999,
+        icon: carIcon(_driverHeading) });
+    }
+
+    await drawDriverRoute();
+
+    const bounds = new G.LatLngBounds();
+    bounds.extend({ lat: fromLat, lng: fromLng });
+    bounds.extend({ lat: toLat, lng: toLng });
+    if (driverLat && driverLng) bounds.extend({ lat: driverLat, lng: driverLng });
+    map.fitBounds(bounds);
+  }
+
+  async function drawDriverRoute() {
+    if (!map || !destLat || !destLng) return;
+    const G = window.google.maps;
+    const oLat = driverLat ?? destLat;
+    const oLng = driverLng ?? destLng;
+
+    if (!_dirRenderer) {
+      _dirRenderer = new G.DirectionsRenderer({
+        map, suppressMarkers: true,
+        polylineOptions: { strokeColor: '#16a34a', strokeWeight: 5, strokeOpacity: 0.85 },
+      });
+    }
+    try {
+      const result = await new Promise((res, rej) =>
+        new G.DirectionsService().route({
+          origin: { lat: oLat, lng: oLng },
+          destination: { lat: destLat, lng: destLng },
+          travelMode: G.TravelMode.DRIVING,
+        }, (r, s) => s === 'OK' ? res(r) : rej(s))
+      );
+      _dirRenderer.setDirections(result);
+      const leg = result.routes[0].legs[0];
+      const distEl = document.getElementById('driver-stat-dist');
+      const durEl  = document.getElementById('driver-stat-dur');
+      if (distEl) distEl.textContent = (leg.distance.value / 1000).toFixed(1) + ' كم';
+      if (durEl)  durEl.textContent  = Math.ceil(leg.duration.value / 60) + ' دق';
+    } catch {}
+  }
+
+  // بيتنادى لما مرحلة الرحلة تتغيّر (استلمت الراكب/الطلب) — يحوّل هدف
+  // الملاحة (زرار "افتح خرائط Google" وخط المسار على الخريطة) من نقطة
+  // الاستلام للوجهة النهائية، بدل ما يفضلوا واقفين على نقطة الاستلام.
+  function setNavTarget(lat, lng) {
+    if (lat == null || lng == null) return;
+    destLat = lat; destLng = lng;
+    drawDriverRoute();
+  }
+
+  function updateDriverMarker() {
+    if (!driverLat || !driverLng || !map) return;
+    const G = window.google.maps;
+    if (driverMarker) {
+      animateMarkerTo(driverMarker, driverLat, driverLng);
+      driverMarker.setIcon(carIcon(_driverHeading));
+    } else {
+      driverMarker = new G.Marker({ position: { lat: driverLat, lng: driverLng }, map, title: 'موقعك', zIndex: 999,
+        icon: carIcon(_driverHeading) });
+    }
+    // Redraw route every ~30s (every 10th GPS tick)
+    _gpsCount++;
+    if (_gpsCount === 1 || _gpsCount % 10 === 0) drawDriverRoute();
+  }
+
+  /* ── UI state ── */
+  function showState(name) {
+    document.getElementById('state-offline').classList.toggle('hidden', name !== 'offline');
+    document.getElementById('state-waiting').classList.toggle('visible', name === 'waiting');
+    document.getElementById('state-active').classList.toggle('visible',  name === 'active');
+  }
+
+  /* ── Notification helpers ── */
+  function playAlert() {
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      [[880,0],[660,0.18],[880,0.36]].forEach(([freq,t]) => {
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.connect(g); g.connect(ctx.destination);
+        o.type = 'sine'; o.frequency.value = freq;
+        g.gain.setValueAtTime(0.5, ctx.currentTime + t);
+        g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + t + 0.17);
+        o.start(ctx.currentTime + t); o.stop(ctx.currentTime + t + 0.18);
+      });
+    } catch {}
+    if (navigator.vibrate) navigator.vibrate([150, 80, 150, 80, 300]);
+  }
+
+  function pushNotify(title, body) {
+    if (typeof Notification === 'undefined' || Notification.permission !== 'granted') return;
+    try {
+      const n = new Notification(title, { body, icon: '/favicon.ico', tag: 'wslha-req', requireInteraction: true });
+      n.onclick = () => { window.focus(); n.close(); };
+    } catch {}
+  }
+
+  async function ensureNotifyPermission() {
+    if (typeof Notification !== 'undefined' && Notification.permission === 'default') {
+      await Notification.requestPermission();
+    }
+  }
+
+  /* ── Web Push حقيقي: يوصل للسائق حتى والتطبيق مقفول ── */
+  const VAPID_PUBLIC_KEY = 'BAff2dem6ctMexZ88fk51q9YJKanqGjn1wFa1FHJx67xW_f0-m5nN2kmKSMmiCrN99S808bz3zwJb26b6Omyv3M';
+
+  function urlBase64ToUint8Array(base64) {
+    const padding = '='.repeat((4 - (base64.length % 4)) % 4);
+    const raw = atob((base64 + padding).replace(/-/g, '+').replace(/_/g, '/'));
+    return Uint8Array.from([...raw].map(c => c.charCodeAt(0)));
+  }
+
+  async function subscribeWebPush() {
+    if (!driver?.phone || !('serviceWorker' in navigator) || !('PushManager' in window)) return;
+    if (typeof Notification === 'undefined' || Notification.permission !== 'granted') return;
+    try {
+      const reg = await navigator.serviceWorker.ready;
+      let sub = await reg.pushManager.getSubscription();
+      if (!sub) {
+        sub = await reg.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
+        });
+      }
+      // upsert على (phone, role) — الاشتراك الأحدث بيحل محل القديم لنفس السائق
+      await fetch(`${SB_URL}/rest/v1/push_subscriptions?on_conflict=phone,role`, {
+        method: 'POST',
+        headers: { ...SB_H, 'Content-Type': 'application/json', Prefer: 'resolution=merge-duplicates,return=minimal' },
+        body: JSON.stringify({
+          phone: driver.phone,
+          role: 'driver',
+          subscription: sub.toJSON(),
+          updated_at: new Date().toISOString(),
+        }),
+      });
+    } catch { /* المتصفح رفض أو مفيش دعم — الإشعارات المحلية بالـ polling شغالة كخطة بديلة */ }
+  }
+
+  function hideRideRequest() {
+    document.getElementById('ride-request').classList.remove('visible');
+    if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
+  }
+
+  // ── تقييم العميل — يظهر للسائق قبل ما يقبل الطلب وأثناء الرحلة النشطة ──
+  async function loadCustomerReputation(phone, targetId) {
+    const el = document.getElementById(targetId || 'req-customer-rep');
+    if (!el) return;
+    el.textContent = '';
+    if (!phone) return;
+    try {
+      const res = await fetch(
+        `${SB_URL}/rest/v1/ratings?customer_phone=eq.${encodeURIComponent(phone)}&rated_by=eq.driver&select=rating`,
+        { headers: SB_H }
+      );
+      const rows = res.ok ? await res.json() : [];
+      const stats = computeRatingStats((rows || []).map(r => Number(r.rating)));
+      if (!stats.count) { el.textContent = '🆕 عميل جديد — لا يوجد تقييم بعد'; return; }
+      el.textContent = `${ratingStarsText(stats.avg)} ${stats.avg.toFixed(1)} (${stats.count} رحلة) — رضا ${stats.satisfactionPct}%`;
+    } catch { el.textContent = ''; }
+  }
+
+  function showRideRequest(ride) {
+    playAlert();
+    pushNotify('🚗 طلب رحلة جديد!', `${ride.from_area || ''} ← ${ride.to_area || ''} — ${ride.fare || ''} ج.م`);
+    pendingRide = ride;
+    document.getElementById('req-customer-name').textContent = (ride.customer_name || 'راكب') + ' — راكب جديد';
+    loadCustomerReputation(ride.customer_phone);
+    document.getElementById('req-from').textContent = ride.from_area;
+    document.getElementById('req-to').textContent   = ride.to_area;
+    document.getElementById('req-dist').textContent = (ride.distance_km * 1.35).toFixed(1);
+    document.getElementById('req-eta').textContent  = ride.eta_minutes;
+    document.getElementById('req-fare').textContent = ride.fare;
+    document.getElementById('ride-request').classList.add('visible');
+    let secs = 30;
+    document.getElementById('req-timer').textContent = String(secs);
+    if (timerInterval) clearInterval(timerInterval);
+    timerInterval = setInterval(() => {
+      secs--;
+      document.getElementById('req-timer').textContent = String(secs);
+      if (secs <= 0) { clearInterval(timerInterval); timerInterval = null; hideRideRequest(); pendingRide = null; }
+    }, 1000);
+  }
+
+  /* ── Delivery-order request (HungerStation-style) ── */
+  function showOrderRequest(order) {
+    pendingOrder = order;
+    const header = document.querySelector('.ride-req-header__title');
+    const sub    = document.getElementById('req-customer-name');
+    header.textContent = '🛵 طلب توصيل جديد!';
+    sub.textContent = `من ${order.store_name || order.store_id}`;
+    loadCustomerReputation(order.customer_phone);
+    document.getElementById('req-from').textContent = `🏪 ${order.store_name || ''} — ${order.area || ''}`;
+    document.getElementById('req-to').textContent   = `🏠 ${order.customer_name || 'العميل'} — ${order.address || order.area || ''}`;
+    document.getElementById('req-dist').textContent = (order.distance_km ? order.distance_km.toFixed(1) : '~3');
+    document.getElementById('req-eta').textContent  = '15';
+    document.getElementById('req-fare').textContent = String(order.delivery_fee ?? 20);
+    document.getElementById('ride-request').classList.add('visible');
+
+    let secs = 30;
+    document.getElementById('req-timer').textContent = String(secs);
+    if (timerInterval) clearInterval(timerInterval);
+    timerInterval = setInterval(() => {
+      secs--;
+      document.getElementById('req-timer').textContent = String(secs);
+      if (secs <= 0) { clearInterval(timerInterval); timerInterval = null; hideRideRequest(); pendingOrder = null; }
+    }, 1000);
+  }
+
+  /* ── Supabase helpers ── */
+  async function upsertLocation(online) {
+    if (!driver) return;
+    try {
+      await fetch(`${SB_URL}/rest/v1/driver_locations`, {
+        method: 'POST',
+        headers: { ...SB_H, Prefer: 'resolution=merge-duplicates,return=minimal' },
+        body: JSON.stringify({
+          driver_phone: driver.phone,
+          driver_name: driver.name || driver.phone,
+          lat: driverLat ?? 31.418,
+          lng: driverLng ?? 31.814,
+          heading: _driverHeading,
+          is_online: online,
+          updated_at: new Date().toISOString(),
+          ...(currentRide  ? { ride_id: currentRide.id }   : { ride_id: null }),
+          ...(currentOrder ? { current_order_id: currentOrder.id } : { current_order_id: null }),
+        }),
+      });
+    } catch {}
+  }
+
+  async function pollRides() {
+    if (!isOnline || currentRide) return;
+    try {
+      const res = await fetch(
+        `${SB_URL}/rest/v1/rides?status=eq.pending&driver_phone=is.null&select=*&order=created_at.asc&limit=1`,
+        { headers: SB_H }
+      );
+      const rides = await res.json();
+      if (Array.isArray(rides) && rides.length > 0) {
+        const ride = rides[0];
+        // خطة احتياطية بثّية — تستنى شوية الأول عشان تدي محرك التوزيع
+        // (لو شغّال) فرصة يعرض الطلب على أقرب سائق بالاسم قبل ما يتبثّ للكل.
+        const age = Date.now() - new Date(ride.created_at).getTime();
+        if (age < BROADCAST_FALLBACK_MS) return;
+        const reqEl = document.getElementById('ride-request');
+        if (!reqEl.classList.contains('visible') || pendingRide?.id !== ride.id) {
+          showRideRequest(ride);
+        }
+      } else {
+        if (pendingRide && !pendingRide.offer_id) { hideRideRequest(); pendingRide = null; }
+      }
+    } catch {}
+  }
+
+  // ── محرك التوزيع (سيرفر Node منفصل، اختياري) — بيعرض الرحلة/الطلب على
+  //    هالسائق تحديداً عن طريق dispatch_offers بدل البثّ للكل. لو مفيش
+  //    محرك توزيع شغّال، الدالة دي مترجعش حاجة والبثّ القديم فوق بيتكفل بالباقي.
+  async function pollDispatchOffer() {
+    if (!isOnline || currentRide || currentOrder || pendingRide || pendingOrder || !driver) return;
+    try {
+      const res = await fetch(`${SB_URL}/rest/v1/rpc/get_my_pending_offer`, {
+        method: 'POST', headers: SB_H,
+        body: JSON.stringify({ p_driver_phone: driver.phone }),
+      });
+      if (!res.ok) return;
+      const offer = await res.json();
+      if (!offer || !offer.data) return;
+      if (offer.target_type === 'ride') {
+        showRideRequest({ ...offer.data, offer_id: offer.offer_id });
+      } else {
+        showOrderRequest({ ...offer.data, offer_id: offer.offer_id });
+      }
+    } catch {}
+  }
+
+  // Atomic accept through the dispatch offer, when the request came from
+  // the targeted dispatch engine rather than the legacy broadcast poll.
+  async function acceptViaOffer(offerId) {
+    try {
+      const res = await fetch(`${SB_URL}/rest/v1/rpc/accept_dispatch_offer`, {
+        method: 'POST', headers: SB_H,
+        body: JSON.stringify({ p_offer_id: offerId, p_driver_phone: driver.phone, p_driver_name: driver.name || driver.phone }),
+      });
+      if (!res.ok) return null;
+      const result = await res.json();
+      return result && result.ok ? result.data : null;
+    } catch { return null; }
+  }
+
+  function rejectViaOffer(offerId) {
+    if (!offerId) return;
+    fetch(`${SB_URL}/rest/v1/rpc/reject_dispatch_offer`, {
+      method: 'POST', headers: SB_H,
+      body: JSON.stringify({ p_offer_id: offerId, p_driver_phone: driver.phone }),
+    }).catch(() => {});
+  }
+
+  // رحلة/طلب نشط كان بيتخزّن في متغيّر جافاسكريبت بس (currentRide/currentOrder)،
+  // فأي تحديث للصفحة كان بيفقد الحالة بالكامل رغم إن الرحلة لسه شغّالة فعليًا
+  // في قاعدة البيانات — يترجم للسائق كـ"إلغاء" الرحلة ومفيش زر توجيه شغال
+  // (destLat/destLng بيرجعوا null). هنا بنعيد بناء الحالة من قاعدة البيانات.
+  async function restoreActiveRide() {
+    if (!driver) return;
+    try {
+      const [rideRes, orderRes] = await Promise.all([
+        fetch(`${SB_URL}/rest/v1/rides?driver_phone=eq.${encodeURIComponent(driver.phone)}&status=in.(accepted,arrived,in_progress)&select=*&order=created_at.desc&limit=1`, { headers: SB_H }),
+        fetch(`${SB_URL}/rest/v1/orders?driver_phone=eq.${encodeURIComponent(driver.phone)}&status=eq.on_the_way&select=*&order=created_at.desc&limit=1`, { headers: SB_H }),
+      ]);
+      const rideRows  = rideRes.ok  ? await rideRes.json()  : [];
+      const orderRows = orderRes.ok ? await orderRes.json() : [];
+
+      const arriveBtn   = document.getElementById('btn-arrive');
+      const pickupBtn   = document.getElementById('btn-pickup');
+      const completeBtn = document.getElementById('btn-complete');
+
+      if (Array.isArray(rideRows) && rideRows.length) {
+        currentRide = rideRows[0];
+        isOnline = true;
+        await goOnline();
+        document.getElementById('reject-btn').style.display = 'none';
+
+        document.getElementById('active-customer-name').textContent = currentRide.customer_name || '—';
+        document.getElementById('active-call-btn').href = 'tel:' + (currentRide.customer_phone || '');
+        loadCustomerReputation(currentRide.customer_phone, 'active-customer-rep');
+        document.getElementById('active-from').textContent = currentRide.from_area;
+        document.getElementById('active-to').textContent   = currentRide.to_area;
+        document.getElementById('active-fare').textContent = currentRide.fare;
+        arriveBtn.textContent = '📍 وصلت لنقطة الاستلام';
+        arriveBtn.classList.add('arrive');
+        pickupBtn.classList.add('pickup');
+        completeBtn.classList.remove('complete');
+
+        if (currentRide.status === 'arrived') {
+          document.getElementById('active-trip-status').textContent = 'وصلت — انتظر الراكب 📍';
+          arriveBtn.disabled = true; pickupBtn.disabled = false; completeBtn.disabled = true;
+          startWaitingTimer();
+        } else if (currentRide.status === 'in_progress') {
+          document.getElementById('active-trip-status').textContent = 'في الطريق للوجهة 🚗';
+          arriveBtn.disabled = true; pickupBtn.disabled = true; completeBtn.disabled = false;
+          completeBtn.classList.add('complete');
+        } else {
+          document.getElementById('active-trip-status').textContent = 'في الطريق للإستلام';
+          arriveBtn.disabled = false; pickupBtn.disabled = true; completeBtn.disabled = true;
+        }
+
+        showState('active');
+        // هدف الملاحة يتبع مرحلة الرحلة: لسه رايح للاستلام، ولا خالص وماشي للوجهة.
+        const navTarget = currentRide.status === 'in_progress'
+          ? [currentRide.to_lat, currentRide.to_lng]
+          : [currentRide.from_lat, currentRide.from_lng];
+        initDriverMap(currentRide.from_lat, currentRide.from_lng, currentRide.to_lat, currentRide.to_lng, navTarget[0], navTarget[1]);
+        return;
+      }
+
+      if (Array.isArray(orderRows) && orderRows.length) {
+        currentOrder = orderRows[0];
+        isOnline = true;
+        await goOnline();
+        document.getElementById('reject-btn').style.display = 'none';
+        showActiveOrder();
+
+        if (currentOrder.picked_up_at) {
+          document.getElementById('active-trip-status').textContent = 'في الطريق للعميل 🚗';
+          arriveBtn.disabled = true; pickupBtn.disabled = true; completeBtn.disabled = false;
+          completeBtn.classList.add('complete');
+        }
+      }
+    } catch {}
+  }
+
+  async function acceptRide(ride) {
+    try {
+      const res = await fetch(`${SB_URL}/rest/v1/rides?id=eq.${ride.id}`, {
+        method: 'PATCH',
+        headers: { ...SB_H, Prefer: 'return=representation' },
+        body: JSON.stringify({
+          status: 'accepted',
+          driver_phone: driver.phone,
+          driver_name: driver.name || driver.phone,
+          accepted_at: new Date().toISOString(),
+        }),
+      });
+      const rows = await res.json();
+      return Array.isArray(rows) ? rows[0] : null;
+    } catch { return null; }
+  }
+
+  async function patchRide(id, data) {
+    try {
+      const res = await fetch(`${SB_URL}/rest/v1/rides?id=eq.${id}`, {
+        method: 'PATCH',
+        headers: { ...SB_H, Prefer: 'return=representation' },
+        body: JSON.stringify(data),
+      });
+      const rows = await res.json();
+      return Array.isArray(rows) ? rows[0] : null;
+    } catch { return null; }
+  }
+
+  /* ── Delivery orders polling + actions ── */
+  async function pollOrders() {
+    if (!isOnline || currentRide || currentOrder) return;
+    try {
+      // Broadcast model: any order the merchant accepted (preparing) with no driver yet
+      const res = await fetch(
+        `${SB_URL}/rest/v1/orders?status=eq.preparing&driver_phone=is.null&select=*&order=accepted_at.asc&limit=1`,
+        { headers: SB_H }
+      );
+      const orders = await res.json();
+      if (Array.isArray(orders) && orders.length > 0) {
+        const order = orders[0];
+        // نفس مهلة الاحتياطي بتاعة pollRides — تدي محرك التوزيع فرصة الأول.
+        const age = Date.now() - new Date(order.accepted_at || order.created_at).getTime();
+        if (age < BROADCAST_FALLBACK_MS) return;
+        const reqEl = document.getElementById('ride-request');
+        if (!reqEl.classList.contains('visible') || pendingOrder?.id !== order.id) {
+          if (!pendingRide) showOrderRequest(order);  // rides take priority if already showing
+        }
+      } else if (pendingOrder && !pendingOrder.offer_id) {
+        hideRideRequest(); pendingOrder = null;
+      }
+    } catch {}
+  }
+
+  async function patchOrder(id, data) {
+    try {
+      const res = await fetch(`${SB_URL}/rest/v1/orders?id=eq.${id}`, {
+        method: 'PATCH',
+        headers: { ...SB_H, Prefer: 'return=representation' },
+        body: JSON.stringify(data),
+      });
+      const rows = await res.json();
+      return Array.isArray(rows) ? rows[0] : null;
+    } catch { return null; }
+  }
+
+  // Atomic-ish claim: only set driver if still unclaimed
+  async function claimOrder(order) {
+    try {
+      const res = await fetch(
+        `${SB_URL}/rest/v1/orders?id=eq.${order.id}&driver_phone=is.null&status=eq.preparing`,
+        {
+          method: 'PATCH',
+          headers: { ...SB_H, Prefer: 'return=representation' },
+          body: JSON.stringify({
+            status: 'on_the_way',
+            driver_phone: driver.phone,
+            driver_name: driver.name || driver.phone,
+            picked_up_at: null,
+          }),
+        }
+      );
+      const rows = await res.json();
+      return Array.isArray(rows) && rows.length ? rows[0] : null;  // empty array = already claimed
+    } catch { return null; }
+  }
+
+  function showActiveOrder() {
+    const o = currentOrder;
+    document.getElementById('active-customer-name').textContent = `🛵 توصيل — ${o.store_name || ''}`;
+    document.getElementById('active-call-btn').href = 'tel:' + (o.customer_phone || '');
+    loadCustomerReputation(o.customer_phone, 'active-customer-rep');
+    document.getElementById('active-from').textContent = `🏪 ${o.store_name || ''} — ${o.area || ''}`;
+    document.getElementById('active-to').textContent   = `🏠 ${o.customer_name || 'العميل'} — ${o.address || ''}`;
+    document.getElementById('active-fare').textContent = String(o.delivery_fee ?? 20);
+    document.getElementById('active-trip-status').textContent = 'توجّه للمتجر لاستلام الطلب';
+
+    const arriveBtn3  = document.getElementById('btn-arrive');
+    const pickupBtn   = document.getElementById('btn-pickup');
+    const completeBtn = document.getElementById('btn-complete');
+    arriveBtn3.textContent  = '📍 وصلت للمتجر';
+    arriveBtn3.disabled     = false;
+    arriveBtn3.classList.add('arrive');
+    pickupBtn.textContent   = '📦 استلمت الطلب من المتجر';
+    completeBtn.textContent = '✅ سلّمت الطلب للعميل';
+    pickupBtn.disabled      = true;
+    completeBtn.disabled    = true;
+    pickupBtn.classList.add('pickup');
+    completeBtn.classList.remove('complete');
+
+    showState('active');
+    if (o.store_lat && o.store_lng) {
+      const storeLat = Number(o.store_lat), storeLng = Number(o.store_lng);
+      const custLat  = Number(o.customer_lat ?? o.store_lat), custLng = Number(o.customer_lng ?? o.store_lng);
+      // لو الطلب اتستلم بالفعل من المتجر (حالة الاسترجاع بعد رفرش)، هدف
+      // الملاحة يبقى العميل مباشرة بدل ما يفضل واقف على المتجر.
+      const navTarget = o.picked_up_at ? [custLat, custLng] : [storeLat, storeLng];
+      initDriverMap(storeLat, storeLng, custLat, custLng, navTarget[0], navTarget[1]);
+    }
+  }
+
+  /* ── Accept ── */
+  document.getElementById('accept-btn').addEventListener('click', async () => {
+    // Delivery order takes this branch
+    if (pendingOrder) {
+      const offer = pendingOrder;
+      hideRideRequest();
+      const claimed = offer.offer_id ? await acceptViaOffer(offer.offer_id) : await claimOrder(offer);
+      pendingOrder = null;
+      if (!claimed) { showToast('سبقك سائق آخر لهذا الطلب'); return; }
+      currentOrder = claimed;
+      await upsertLocation(true);
+      showActiveOrder();
+      // Lock: no cancellation after acceptance
+      document.getElementById('reject-btn').style.display = 'none';
+      showToast('تم قبول الطلب! توجّه إلى المتجر');
+      return;
+    }
+
+    const ride = pendingRide;
+    if (!ride) return;
+    hideRideRequest();
+    const accepted = ride.offer_id ? await acceptViaOffer(ride.offer_id) : await acceptRide(ride);
+    if (!accepted) { showToast('حدث خطأ، حاول مرة أخرى'); return; }
+    currentRide = accepted;
+    // Lock: no cancellation after acceptance until completion
+    document.getElementById('reject-btn').style.display = 'none';
+    await upsertLocation(true);
+
+    document.getElementById('active-customer-name').textContent = currentRide.customer_name || '—';
+    document.getElementById('active-call-btn').href = 'tel:' + (currentRide.customer_phone || '');
+    loadCustomerReputation(currentRide.customer_phone, 'active-customer-rep');
+    document.getElementById('active-from').textContent = currentRide.from_area;
+    document.getElementById('active-to').textContent   = currentRide.to_area;
+    document.getElementById('active-fare').textContent = currentRide.fare;
+    document.getElementById('active-trip-status').textContent = 'في الطريق للإستلام';
+
+    const arriveBtn2  = document.getElementById('btn-arrive');
+    const pickupBtn   = document.getElementById('btn-pickup');
+    const completeBtn = document.getElementById('btn-complete');
+    arriveBtn2.textContent = '📍 وصلت لنقطة الاستلام';
+    arriveBtn2.disabled    = false;
+    arriveBtn2.classList.add('arrive');
+    pickupBtn.disabled     = true;
+    pickupBtn.classList.add('pickup');
+    completeBtn.disabled   = true;
+    completeBtn.classList.remove('complete');
+
+    showState('active');
+    initDriverMap(currentRide.from_lat, currentRide.from_lng, currentRide.to_lat, currentRide.to_lng);
+    showToast('تم قبول الرحلة! توجه إلى الراكب');
+  });
+
+  /* ── Reject ── */
+  document.getElementById('reject-btn').addEventListener('click', () => {
+    rejectViaOffer(pendingRide?.offer_id || pendingOrder?.offer_id);
+    hideRideRequest(); pendingRide = null; pendingOrder = null;
+  });
+
+  /* ── Arrived at pickup point ── */
+  document.getElementById('btn-arrive').addEventListener('click', async () => {
+    const arriveBtn  = document.getElementById('btn-arrive');
+    const pickupBtn  = document.getElementById('btn-pickup');
+    if (currentRide) {
+      await patchRide(currentRide.id, { status: 'arrived' });
+      currentRide.status = 'arrived';
+      document.getElementById('active-trip-status').textContent = 'وصلت — انتظر الراكب 📍';
+    }
+    // For deliveries: no DB update needed, just unlock pickup button
+    arriveBtn.disabled = true;
+    arriveBtn.classList.remove('arrive');
+    pickupBtn.disabled = false;
+    if (currentRide) startWaitingTimer();
+    showToast(currentRide ? 'وصلت لنقطة الاستلام — انتظر الراكب' : 'وصلت للمتجر — استلم الطلب');
+  });
+
+  /* ── Picked up ── */
+  document.getElementById('btn-pickup').addEventListener('click', async () => {
+    // Delivery order branch — picked up from store
+    if (currentOrder) {
+      await patchOrder(currentOrder.id, { status: 'on_the_way', picked_up_at: new Date().toISOString() });
+      currentOrder.status = 'on_the_way';
+      document.getElementById('active-trip-status').textContent = 'في الطريق للعميل 🚗';
+      const pickupBtn   = document.getElementById('btn-pickup');
+      const completeBtn = document.getElementById('btn-complete');
+      pickupBtn.disabled   = true;
+      pickupBtn.classList.remove('pickup');
+      completeBtn.disabled = false;
+      completeBtn.classList.add('complete');
+      setNavTarget(Number(currentOrder.customer_lat ?? currentOrder.store_lat), Number(currentOrder.customer_lng ?? currentOrder.store_lng));
+      showToast('تم الاستلام — توجّه للعميل!');
+      return;
+    }
+
+    if (!currentRide) return;
+    stopWaitingTimer();
+    await patchRide(currentRide.id, { status: 'in_progress' });
+    currentRide.status = 'in_progress';
+    document.getElementById('active-trip-status').textContent = 'في الطريق للوجهة 🚗';
+    const pickupBtn   = document.getElementById('btn-pickup');
+    const completeBtn = document.getElementById('btn-complete');
+    pickupBtn.disabled   = true;
+    pickupBtn.classList.remove('pickup');
+    completeBtn.disabled = false;
+    completeBtn.classList.add('complete');
+    setNavTarget(currentRide.to_lat, currentRide.to_lng);
+    showToast('تم التأكيد — استمر في الرحلة!');
+  });
+
+  function resetActionButtons() {
+    const arriveBtn  = document.getElementById('btn-arrive');
+    const pickupBtn  = document.getElementById('btn-pickup');
+    const completeBtn = document.getElementById('btn-complete');
+    arriveBtn.textContent   = '📍 وصلت لنقطة الاستلام';
+    arriveBtn.disabled      = false;
+    arriveBtn.classList.add('arrive');
+    pickupBtn.textContent   = '✓ التقطت الراكب / الطلب';
+    pickupBtn.disabled      = true;
+    pickupBtn.classList.add('pickup');
+    completeBtn.textContent = '✓ وصلت للوجهة';
+    completeBtn.disabled    = true;
+    completeBtn.classList.remove('complete');
+    // Restore reject button for next trip
+    document.getElementById('reject-btn').style.display = '';
+  }
+
+  /* ── Complete ── */
+  document.getElementById('btn-complete').addEventListener('click', async () => {
+    // Delivery order branch — delivered to customer
+    if (currentOrder) {
+      await patchOrder(currentOrder.id, { status: 'delivered', delivered_at: new Date().toISOString() });
+      const fee = currentOrder.delivery_fee || 0;
+      const orderId = currentOrder.id;
+      try {
+        const key = 'wslha_driver_stats_' + (driver?.phone || '') + '_' + new Date().toDateString();
+        todayStats.trips += 1;
+        todayStats.earn  += fee;
+        localStorage.setItem(key, JSON.stringify(todayStats));
+        renderStats();
+      } catch {}
+      await recordCompletion('delivery', orderId, fee);
+      // Credit merchant wallet with order subtotal (order total minus delivery fee)
+      if (storeId) {
+        try {
+          const storeData = await fetch(`${SB_URL}/rest/v1/stores?id=eq.${storeId}&select=owner_phone`, { headers: SB_H }).then(r => r.json());
+          const mPhone = storeData?.[0]?.owner_phone;
+          if (mPhone) {
+            const subtotal = Math.max(0, (currentOrder.subtotal || currentOrder.total || 0) - fee);
+            await Promise.allSettled([
+              fetch(`${SB_URL}/rest/v1/rpc/add_wallet_balance`, { method: 'POST', headers: SB_H, body: JSON.stringify({ p_phone: mPhone, p_amount: subtotal }) }),
+              fetch(`${SB_URL}/rest/v1/rpc/log_wallet_transaction`, { method: 'POST', headers: { ...SB_H, 'Content-Type': 'application/json' }, body: JSON.stringify({ p_phone: mPhone, p_amount: subtotal, p_type: 'earning', p_reference_id: orderId, p_note: `أرباح طلب #${currentOrder.code || orderId}` }) }),
+            ]);
+          }
+        } catch {}
+      }
+      const completedOrder = { ...currentOrder };
+      currentOrder = null;
+      await upsertLocation(true);
+      map = null; driverMarker = null;
+      resetActionButtons();
+      showToast(`تم توصيل الطلب! أرباح +${fee} ج.م 🎉`);
+      setTimeout(() => loadActivityLog(), 600);
+      showRateCustomer(completedOrder.customer_phone, completedOrder.customer_name, orderId, 'delivery');
+      return;
+    }
+
+    if (!currentRide) return;
+    await patchRide(currentRide.id, { status: 'completed', completed_at: new Date().toISOString() });
+    const fare   = currentRide.fare;
+    const rideId = currentRide.id;
+    try {
+      const key = 'wslha_driver_stats_' + (driver?.phone || '') + '_' + new Date().toDateString();
+      todayStats.trips += 1;
+      todayStats.earn  += fare || 0;
+      localStorage.setItem(key, JSON.stringify(todayStats));
+      renderStats();
+    } catch {}
+    const rideType = currentRide
+      ? (currentRide.ride_type === 'airport' ? 'airport' : currentRide.ride_type === 'external' ? 'external' : 'ride')
+      : 'ride';
+    const completedRide = { ...currentRide };
+    await recordCompletion(rideType, rideId, fare || 0);
+    currentRide = null;
+    stopWaitingTimer();
+    await upsertLocation(true);
+    map = null; driverMarker = null;
+    resetActionButtons();
+    _lastCompletedRide = completedRide;
+    showReceiptModal(completedRide);
+    setTimeout(() => loadActivityLog(), 600);
+  });
+
+  /* ── Navigate button: open Google Maps ── */
+  document.getElementById('btn-navigate').addEventListener('click', () => {
+    if (!destLat || !destLng) return;
+    const origin = (driverLat && driverLng) ? `${driverLat},${driverLng}` : '';
+    const url = `https://www.google.com/maps/dir/${origin}/${destLat},${destLng}`;
+    window.open(url, '_blank');
+  });
+
+  /* ── Tab switching ── */
+  function switchTab(name) {
+    document.querySelectorAll('.dash-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === name));
+    document.querySelectorAll('.tab-pane').forEach(p => p.classList.toggle('active', p.id === `tab-${name}`));
+    if (name === 'account')  loadAccountData();
+    if (name === 'activity') loadActivityLog();
+  }
+  // This <script> is compiled as an ES module (it has imports), so its top-level
+  // functions aren't on `window` — but the buttons above call them via inline
+  // onclick="...", which resolves names against the global scope. Expose the two
+  // that are invoked that way.
+  window.switchTab = switchTab;
+  window.sendReply = sendReply;
+
+  /* ── Load approval status ── */
+  async function loadApprovalStatus() {
+    if (!driver) return;
+    try {
+      // Support both phone formats
+      const p = driver.phone;
+      const local  = p.startsWith('+20') ? '0' + p.slice(3) : p;
+      const intl   = p.startsWith('01')  ? '+2' + p : p;
+      const orFilter = `or=(phone.eq.${encodeURIComponent(intl)},phone.eq.${encodeURIComponent(local)})`;
+
+      const [acctRes, appRes] = await Promise.all([
+        fetch(`${SB_URL}/rest/v1/rpc/lookup_account?p_phone=${encodeURIComponent(p)}`, { headers: SB_H }),
+        fetch(`${SB_URL}/rest/v1/driver_applications?${orFilter}&select=status,rejection_reason,created_at&order=created_at.desc&limit=1`, { headers: SB_H }),
+      ]);
+
+      const acctRows = acctRes.ok ? await acctRes.json() : [];
+      const appRows  = appRes.ok  ? await appRes.json()  : [];
+
+      const acctStatus = Array.isArray(acctRows) && acctRows[0] ? (acctRows[0].status || 'active') : null;
+      const acctRole   = Array.isArray(acctRows) && acctRows[0] ? acctRows[0].role : null;
+      const appStatus  = Array.isArray(appRows)  && appRows[0]  ? appRows[0].status : null;
+      const rejection  = Array.isArray(appRows)  && appRows[0]  ? appRows[0].rejection_reason : null;
+
+      // ── Status chips in status bar ──
+      const acctChip = document.getElementById('acct-status-chip');
+      const appChip  = document.getElementById('app-status-chip');
+
+      const acctStyles = {
+        active:   { bg:'#DCFCE7', color:'#14532D', label:'🟢 الحساب: نشط' },
+        approved: { bg:'#DBEAFE', color:'#1E3A8A', label:'✅ الحساب: معتمد' },
+        pending:  { bg:'#FEF9C3', color:'#92400E', label:'🟡 الحساب: معلق' },
+        rejected: { bg:'#FEE2E2', color:'#991B1B', label:'❌ الحساب: مرفوض' },
+        banned:   { bg:'#FEE2E2', color:'#991B1B', label:'🚫 الحساب: محظور' },
+      };
+      const appStyles = {
+        pending:  { bg:'#FEF9C3', color:'#92400E', label:'⏳ الطلب: قيد المراجعة' },
+        approved: { bg:'#DCFCE7', color:'#14532D', label:'✅ الطلب: مقبول' },
+        rejected: { bg:'#FEE2E2', color:'#991B1B', label:'❌ الطلب: مرفوض' },
+      };
+
+      if (acctChip && acctStatus) {
+        const s = acctStyles[acctStatus] || { bg:'#F1F5F9', color:'#334155', label:'الحساب: ' + acctStatus };
+        acctChip.style.cssText = `display:inline-block;font-size:.7rem;font-weight:800;padding:2px 10px;border-radius:99px;background:${s.bg};color:${s.color}`;
+        acctChip.textContent = s.label;
+      }
+      if (appChip && appStatus) {
+        const s = appStyles[appStatus] || { bg:'#F1F5F9', color:'#334155', label:'الطلب: ' + appStatus };
+        appChip.style.cssText = `display:inline-block;font-size:.7rem;font-weight:800;padding:2px 10px;border-radius:99px;background:${s.bg};color:${s.color}`;
+        appChip.textContent = s.label;
+      }
+
+      // ── Approval banner ──
+      const banner = document.getElementById('approval-banner');
+      if (!banner) return;
+
+      // Handle banned account first
+      if (acctStatus === 'banned') {
+        banner.innerHTML = `<div class="approval-banner rejected"><div class="approval-banner__icon">🚫</div><div><div class="approval-banner__title">حسابك محظور</div><div class="approval-banner__sub">يرجى التواصل مع الدعم. <a href="/contact" style="color:#991B1B;font-weight:700">تواصل معنا</a></div></div></div>`;
+        banner.style.display = 'block';
+        document.getElementById('toggle-btn').disabled = true;
+        return;
+      }
+
+      // If account itself is approved, or role is driver (admin set it), treat as approved
+      const effectiveAppStatus = appStatus || (acctStatus === 'approved' || acctRole === 'driver' ? 'approved' : null);
+
+      if (!effectiveAppStatus) {
+        banner.innerHTML = `<div class="approval-banner pending"><div class="approval-banner__icon">📋</div><div><div class="approval-banner__title">لم تقدّم طلب انضمام بعد</div><div class="approval-banner__sub">قدّم طلبك لبدء العمل كسائق. <a href="/driver" style="color:var(--color-primary);font-weight:700">تقديم الطلب الآن</a></div></div></div>`;
+        banner.style.display = 'block';
+        document.getElementById('toggle-btn').disabled = true;
+        return;
+      }
+
+      const configs = {
+        pending: {
+          cls:'pending', icon:'⏳',
+          title:'طلبك قيد المراجعة',
+          sub:'يراجع فريق وصّلها وثائقك خلال 1-3 أيام عمل. سنتواصل معك فور اتخاذ القرار.'
+        },
+        approved: {
+          cls:'approved', icon:'✅',
+          title:'تم اعتمادك كسائق! 🎉',
+          sub:'يمكنك الآن تفعيل التشغيل واستقبال الطلبات.'
+        },
+        rejected: {
+          cls:'rejected', icon:'❌',
+          title:'تم رفض طلبك',
+          sub:(rejection ? `سبب الرفض: ${rejection}. ` : '') + '<a href="/contact" style="color:#991B1B;font-weight:700">تواصل معنا</a> لمزيد من التفاصيل أو <a href="/driver" style="color:#991B1B;font-weight:700">أعد التقديم</a>.'
+        },
+      };
+
+      const c = configs[effectiveAppStatus] || configs.pending;
+      banner.innerHTML = `<div class="approval-banner ${c.cls}"><div class="approval-banner__icon">${c.icon}</div><div><div class="approval-banner__title">${c.title}</div><div class="approval-banner__sub">${c.sub}</div></div></div>`;
+      banner.style.display = 'block';
+
+      if (effectiveAppStatus !== 'approved') {
+        document.getElementById('toggle-btn').disabled = true;
+        document.getElementById('toggle-btn').title = 'يجب اعتماد طلبك أولاً';
+      } else {
+        // Auto-activate: go online immediately when driver is approved
+        await goOnline();
+      }
+    } catch(e) { console.error('loadApprovalStatus error', e); }
+  }
+
+  /* ── Load wallet, points, ratings ── */
+  let _driverHasAc = false;
+  async function loadAccountData() {
+    if (!driver) return;
+    const phone = encodeURIComponent(driver.phone);
+    // Parallel fetches
+    const [walletRes, walletTxRes, pointsRes, pointsTxRes, ratingsRes, ridesCountRes, ordersCountRes, appRes] = await Promise.allSettled([
+      fetch(`${SB_URL}/rest/v1/wallets?phone=eq.${phone}&select=balance`, { headers: SB_H }),
+      fetch(`${SB_URL}/rest/v1/wallet_transactions?phone=eq.${phone}&select=amount,type,note,created_at&order=created_at.desc&limit=10`, { headers: SB_H }),
+      fetch(`${SB_URL}/rest/v1/points?phone=eq.${phone}&select=total_points`, { headers: SB_H }),
+      fetch(`${SB_URL}/rest/v1/point_transactions?phone=eq.${phone}&select=points,type,created_at&order=created_at.desc&limit=10`, { headers: SB_H }),
+      fetch(`${SB_URL}/rest/v1/ratings?driver_phone=eq.${driver.phone}&rated_by=eq.customer&select=id,rating,comment,service_type,created_at,driver_reply&order=created_at.desc&limit=20`, { headers: SB_H }),
+      fetch(`${SB_URL}/rest/v1/rides?driver_phone=eq.${phone}&status=eq.completed&select=id`, { headers: { ...SB_H, Prefer: 'count=exact' } }),
+      fetch(`${SB_URL}/rest/v1/orders?driver_phone=eq.${phone}&status=eq.delivered&select=id`, { headers: { ...SB_H, Prefer: 'count=exact' } }),
+      fetch(`${SB_URL}/rest/v1/driver_applications?phone=eq.${phone}&select=has_ac&limit=1`, { headers: SB_H }),
+    ]);
+
+    // Trip count (rides + orders completed lifetime)
+    try {
+      const ridesCount  = Number(ridesCountRes.value.headers.get('content-range')?.split('/')[1]  || 0);
+      const ordersCount = Number(ordersCountRes.value.headers.get('content-range')?.split('/')[1] || 0);
+      document.getElementById('driver-trip-count').textContent = (ridesCount + ordersCount).toLocaleString('ar-EG');
+    } catch {}
+
+    // Comfort/AC flag
+    try {
+      const appRows = await appRes.value.json();
+      _driverHasAc = !!(Array.isArray(appRows) && appRows[0]?.has_ac);
+      document.getElementById('driver-ac-toggle').checked = _driverHasAc;
+    } catch {}
+
+    // Wallet
+    try {
+      const walletData = await walletRes.value.json();
+      const balance = walletData?.[0]?.balance ?? 0;
+      document.getElementById('wallet-balance').textContent = Number(balance).toLocaleString('ar-EG');
+    } catch {}
+    try {
+      const txs = await walletTxRes.value.json();
+      const container = document.getElementById('wallet-txs');
+      if (Array.isArray(txs) && txs.length) {
+        container.innerHTML = txs.map(t => {
+          const amt = Number(t.amount);
+          const sign = amt >= 0 ? '+' : '';
+          const cls  = amt >= 0 ? 'pos' : 'neg';
+          const d = new Date(t.created_at).toLocaleDateString('ar-EG', { month: 'short', day: 'numeric' });
+          const typeLabel = { commission:'عمولة منصة', earning:'أرباح', topup:'إضافة رصيد', withdrawal:'سحب', refund:'استرداد' }[t.type] || t.type;
+          return `<div class="acct-tx"><span class="acct-tx__note">${t.note || typeLabel}</span><span class="acct-tx__date">${d}</span><span class="acct-tx__amt ${cls}">${sign}${Math.abs(amt)} ج.م</span></div>`;
+        }).join('');
+      }
+    } catch {}
+
+    // Points
+    try {
+      const pointsData = await pointsRes.value.json();
+      document.getElementById('points-total').textContent = (pointsData?.[0]?.total_points ?? 0).toLocaleString('ar-EG');
+    } catch {}
+    try {
+      const ptxs = await pointsTxRes.value.json();
+      const container = document.getElementById('points-txs');
+      if (Array.isArray(ptxs) && ptxs.length) {
+        container.innerHTML = ptxs.map(t => {
+          const p = Number(t.points);
+          const sign = p >= 0 ? '+' : '';
+          const cls  = p >= 0 ? 'pos' : 'neg';
+          const d = new Date(t.created_at).toLocaleDateString('ar-EG', { month: 'short', day: 'numeric' });
+          const typeLabel = { ride:'مشوار', delivery:'توصيل متجر', airport:'رحلة مطار', bonus:'مكافأة', redeem:'استبدال' }[t.type] || t.type;
+          return `<div class="acct-tx"><span class="acct-tx__note">${typeLabel}</span><span class="acct-tx__date">${d}</span><span class="acct-tx__amt ${cls}">${sign}${Math.abs(p)} نقطة</span></div>`;
+        }).join('');
+      }
+    } catch {}
+
+    // Ratings + quality badges
+    try {
+      const rts = await ratingsRes.value.json();
+      const stats = computeRatingStats(Array.isArray(rts) ? rts.map(r => Number(r.rating)) : []);
+      document.getElementById('driver-satisfaction').textContent = stats.count ? stats.satisfactionPct + '%' : '—';
+      const badgesEl = document.getElementById('driver-badges');
+      const badges = [];
+      if (isTopRated(stats)) badges.push(BADGE_LABELS.driver);
+      if (_driverHasAc) badges.push(AC_BADGE_LABEL);
+      badgesEl.innerHTML = badges.length
+        ? badges.map(b => `<span class="badge" style="background:#FEF3C7;color:#92400E;font-weight:800;padding:4px 10px;border-radius:99px;font-size:.78rem">${b}</span>`).join('')
+        : '<span style="font-size:.78rem;color:var(--color-text-faint)">لا توجد شارات بعد</span>';
+      if (Array.isArray(rts) && rts.length) {
+        const avg = rts.reduce((s, r) => s + r.rating, 0) / rts.length;
+        const stars = '⭐'.repeat(Math.round(avg)) + '☆'.repeat(5 - Math.round(avg));
+        document.getElementById('rating-avg').textContent   = avg.toFixed(1);
+        document.getElementById('rating-stars').textContent = stars;
+        document.getElementById('rating-count').textContent = `${rts.length} تقييم`;
+        document.getElementById('stat-rating').textContent  = avg.toFixed(1);
+        document.getElementById('ratings-list').innerHTML = rts.map(r => {
+          const d = new Date(r.created_at).toLocaleDateString('ar-EG', { month: 'short', day: 'numeric' });
+          const s = '⭐'.repeat(r.rating) + '☆'.repeat(5 - r.rating);
+          const typeIcon = r.service_type === 'delivery' ? '🛵' : r.service_type === 'airport' ? '✈️' : '🚗';
+          const commentHtml = r.comment ? `<div class="rating-item__comment">"${escapeHtml(r.comment)}"</div>` : '';
+          const replyHtml = r.driver_reply
+            ? `<div class="rating-item__reply"><div class="rating-item__reply-label">ردك:</div>${escapeHtml(r.driver_reply)}</div>`
+            : `<div class="rating-reply-form"><textarea class="rating-reply-input" rows="1" placeholder="اكتب ردك..."></textarea><button class="rating-reply-send" onclick="sendReply('${r.id}',this)">إرسال</button></div>`;
+          return `<div class="rating-item" id="rt-${r.id}"><div class="rating-item__top"><span class="rating-item__stars">${s}</span><span class="rating-item__date">${typeIcon} ${d}</span></div>${commentHtml}${replyHtml}</div>`;
+        }).join('');
+      }
+    } catch {}
+  }
+
+  async function sendReply(ratingId, btn) {
+    const form = btn.closest('.rating-reply-form');
+    const textarea = form.querySelector('.rating-reply-input');
+    const text = (textarea.value || '').trim();
+    if (!text) return;
+    btn.disabled = true;
+    btn.textContent = 'جارٍ الإرسال...';
+    try {
+      const res = await fetch(`${SB_URL}/rest/v1/ratings?id=eq.${ratingId}`, {
+        method: 'PATCH',
+        headers: { ...SB_H, Prefer: 'return=minimal' },
+        body: JSON.stringify({ driver_reply: text }),
+      });
+      if (res.ok) {
+        form.outerHTML = `<div class="rating-item__reply"><div class="rating-item__reply-label">ردك:</div>${escapeHtml(text)}</div>`;
+      } else {
+        btn.disabled = false;
+        btn.textContent = 'إرسال';
+        showToast('تعذّر إرسال الرد — حاول مرة أخرى');
+      }
+    } catch {
+      btn.disabled = false;
+      btn.textContent = 'إرسال';
+      showToast('تعذّر إرسال الرد — تحقق من الاتصال');
+    }
+  }
+
+  /* ── Load activity log ── */
+  async function loadActivityLog() {
+    if (!driver) return;
+    const phone = encodeURIComponent(driver.phone);
+    const [ridesRes, ordersRes] = await Promise.allSettled([
+      fetch(`${SB_URL}/rest/v1/rides?driver_phone=eq.${driver.phone}&select=id,from_area,to_area,fare,status,completed_at&order=completed_at.desc&limit=20`, { headers: SB_H }),
+      fetch(`${SB_URL}/rest/v1/orders?driver_phone=eq.${driver.phone}&select=id,store_name,address,delivery_fee,status,delivered_at&order=delivered_at.desc&limit=20`, { headers: SB_H }),
+    ]);
+
+    const items = [];
+    try {
+      const rides = await ridesRes.value.json();
+      if (Array.isArray(rides)) rides.forEach(r => items.push({
+        icon: '🚗', title: `${r.from_area} ← ${r.to_area}`, earn: r.fare,
+        status: r.status, type: 'ride', date: r.completed_at,
+      }));
+    } catch {}
+    try {
+      const orders = await ordersRes.value.json();
+      if (Array.isArray(orders)) orders.forEach(o => items.push({
+        icon: '🛵', title: `توصيل — ${o.store_name || ''}`, earn: o.delivery_fee,
+        status: o.status, type: 'delivery', date: o.delivered_at,
+      }));
+    } catch {}
+
+    items.sort((a, b) => new Date(b.date||0) - new Date(a.date||0));
+    const container = document.getElementById('activity-list');
+    if (!items.length) { container.innerHTML = '<div class="acct-empty">لا يوجد سجل نشاط بعد</div>'; return; }
+    container.innerHTML = items.map(it => {
+      const d = it.date ? new Date(it.date).toLocaleDateString('ar-EG', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—';
+      const statusLabel = { completed:'مكتملة', delivered:'مكتمل', cancelled:'ملغاة' }[it.status] || it.status;
+      const statusCls   = (it.status === 'completed' || it.status === 'delivered') ? 'completed' : 'cancelled';
+      return `<div class="activity-item"><div class="activity-icon">${it.icon}</div><div class="activity-info"><div class="activity-title">${it.title}</div><div class="activity-sub"><span class="activity-status ${statusCls}">${statusLabel}</span></div></div><div class="activity-right"><div class="activity-earn">+${it.earn || 0} ج.م</div><div class="activity-date">${d}</div></div></div>`;
+    }).join('');
+  }
+
+  /* ── Award points & update wallet on trip completion ── */
+  async function recordCompletion(type, referenceId, fare) {
+    if (!driver) return;
+    const rate         = type === 'airport' ? RATES.airport : type === 'delivery' ? RATES.delivery : type === 'external' ? RATES.external : RATES.ride;
+    const commission   = Math.round(fare * rate);
+    const driverEarn   = fare - commission;
+    const pointsEarned = type === 'airport' ? 50 : type === 'delivery' ? 20 : type === 'external' ? 20 : 10;
+    const phone = driver.phone;
+    const now   = new Date().toISOString();
+    const txId  = `wtx-${Date.now()}`;
+    const ptId  = `ptx-${Date.now()}`;
+    const typeLabel = type === 'delivery' ? 'توصيل' : type === 'airport' ? 'مطار' : type === 'external' ? 'رحلة خارجية' : 'رحلة';
+
+    await Promise.allSettled([
+      // Accumulate driver wallet balance via RPC (prevents overwrite)
+      fetch(`${SB_URL}/rest/v1/rpc/add_wallet_balance`, {
+        method: 'POST',
+        headers: { ...SB_H },
+        body: JSON.stringify({ p_phone: phone, p_amount: driverEarn }),
+      }),
+      // Driver earning transaction
+      fetch(`${SB_URL}/rest/v1/rpc/log_wallet_transaction`, {
+        method: 'POST',
+        headers: { ...SB_H, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ p_id: txId, p_phone: phone, p_amount: driverEarn, p_type: 'earning', p_reference_id: referenceId, p_note: `أرباح ${typeLabel} — بعد خصم العمولة ${Math.round(rate*100)}%` }),
+      }),
+      // Platform commission transaction
+      fetch(`${SB_URL}/rest/v1/rpc/log_wallet_transaction`, {
+        method: 'POST',
+        headers: { ...SB_H, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ p_id: `pcom-${Date.now()}-${Math.random().toString(36).slice(2,6)}`, p_phone: 'platform', p_amount: commission, p_type: 'commission', p_reference_id: referenceId, p_note: `عمولة ${typeLabel} — ${Math.round(rate*100)}% من ${fare} ج.م` }),
+      }),
+      // Points transaction
+      fetch(`${SB_URL}/rest/v1/point_transactions`, {
+        method: 'POST',
+        headers: { ...SB_H, Prefer: 'return=minimal' },
+        body: JSON.stringify({ id: ptId, phone, points: pointsEarned, type, reference_id: referenceId, created_at: now }),
+      }),
+      // Accumulate points total via RPC (prevents overwrite)
+      fetch(`${SB_URL}/rest/v1/rpc/add_points`, {
+        method: 'POST',
+        headers: { ...SB_H },
+        body: JSON.stringify({ p_phone: phone, p_amount: pointsEarned }),
+      }),
+    ]);
+  }
+
+  /* ── Go online (shared by auto-activate and toggle) ── */
+  async function goOnline() {
+    isOnline = true;
+    const btn   = document.getElementById('toggle-btn');
+    const label = document.getElementById('toggle-label');
+    const text  = document.getElementById('toggle-text');
+    btn.classList.replace('offline', 'online');
+    text.textContent  = 'تشغيل';
+    label.textContent = 'متصل الآن';
+    label.className   = 'toggle-label online-text';
+    showState('waiting');
+
+    if (navigator.geolocation) {
+      geoWatchId = navigator.geolocation.watchPosition(
+        pos => {
+          const prevLat = driverLat, prevLng = driverLng;
+          driverLat = pos.coords.latitude; driverLng = pos.coords.longitude;
+          // heading من الجهاز لو موثوق، وإلا نحسبه من آخر نقطتين — أكتر ثبات
+          // مع الموبايلات الرخيصة أثناء القيادة.
+          if (typeof pos.coords.heading === 'number' && !isNaN(pos.coords.heading)) {
+            _driverHeading = pos.coords.heading;
+          } else if (prevLat != null && prevLng != null && (prevLat !== driverLat || prevLng !== driverLng)) {
+            _driverHeading = bearingBetween(prevLat, prevLng, driverLat, driverLng);
+          }
+          updateDriverMarker();
+        },
+        () => {}, { enableHighAccuracy: true, maximumAge: 3000 }
+      );
+    }
+    await upsertLocation(true);
+    await ensureNotifyPermission();
+    subscribeWebPush();
+
+    function startRealtime() {
+      if (!_sb) return;
+      ridesChannel = _sb.channel('driver-new-rides')
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'rides' }, payload => {
+          const ride = payload.new;
+          if (ride.status === 'pending' && !ride.driver_phone && isOnline && !currentRide && !currentOrder) {
+            const reqEl = document.getElementById('ride-request');
+            if (!reqEl.classList.contains('visible') || pendingRide?.id !== ride.id) showRideRequest(ride);
+          }
+        })
+        .subscribe(status => {
+          if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+            if (!pollInterval) pollInterval = setInterval(() => { pollRides(); pollOrders(); }, 4000);
+          }
+          if (status === 'SUBSCRIBED') { clearInterval(pollInterval); pollInterval = null; }
+        });
+      ordersChannel = _sb.channel('driver-new-orders')
+        .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'orders' }, payload => {
+          const order = payload.new;
+          if (order.status === 'preparing' && !order.driver_phone && isOnline && !currentRide && !currentOrder) {
+            const reqEl = document.getElementById('ride-request');
+            if (!reqEl.classList.contains('visible') || pendingOrder?.id !== order.id) {
+              if (!pendingRide) showOrderRequest(order);
+            }
+          }
+        })
+        .subscribe();
+    }
+
+    if (_sb) {
+      startRealtime();
+    } else {
+      setTimeout(() => {
+        if (_sb) startRealtime();
+        else pollInterval = setInterval(() => { pollRides(); pollOrders(); }, 2500);
+      }, 1500);
+    }
+
+    window._gpsInterval = setInterval(() => upsertLocation(true), 3000);
+
+    if (!offerInterval) offerInterval = setInterval(pollDispatchOffer, 3000);
+    pollDispatchOffer();
+  }
+
+  /* ── Toggle online/offline ── */
+  document.getElementById('toggle-btn').addEventListener('click', async () => {
+    if (!driver) return;
+    // منع السائق من "الهروب" من رحلة/طلب نشط عن طريق قفل التشغيل —
+    // الرحلة تفضل accepted في قاعدة البيانات لكن واجهته بتتوه من غير ده.
+    if (isOnline && (currentRide || currentOrder)) {
+      showToast('لا يمكن إيقاف التشغيل أثناء رحلة نشطة');
+      return;
+    }
+    isOnline = !isOnline;
+
+    if (isOnline) {
+      await goOnline();
+      showToast('أنت الآن متصل — انتظر الطلبات');
+    } else {
+      const btn   = document.getElementById('toggle-btn');
+      const label = document.getElementById('toggle-label');
+      const text  = document.getElementById('toggle-text');
+      btn.classList.replace('online', 'offline');
+      text.textContent  = 'إيقاف';
+      label.textContent = 'غير متصل';
+      label.className   = 'toggle-label offline-text';
+      showState('offline');
+      if (geoWatchId !== null) { navigator.geolocation.clearWatch(geoWatchId); geoWatchId = null; }
+      // إلغاء Realtime channels
+      if (ridesChannel)  { ridesChannel.unsubscribe();  ridesChannel  = null; }
+      if (ordersChannel) { ordersChannel.unsubscribe(); ordersChannel = null; }
+      clearInterval(pollInterval); pollInterval = null;
+      clearInterval(window._gpsInterval); window._gpsInterval = null;
+      clearInterval(offerInterval); offerInterval = null;
+      hideRideRequest(); pendingRide = null; pendingOrder = null;
+      await upsertLocation(false);
+      showToast('تم إيقاف التشغيل');
+    }
+  });
+</script>

@@ -155,11 +155,30 @@ import Layout from '../../components/layout.astro';
     if (ok) {
       toast('✅ تم إرسال طلب التوصيل — سيتواصل معك فريقنا لتأكيد السائق');
       (document.getElementById('delivery-form') as HTMLFormElement).reset();
+      prefillContactIfLoggedIn();
     } else {
       toast('❌ حدث خطأ، حاول مرة أخرى');
     }
     btn.disabled = false; btn.textContent = '🚚 اطلب توصيل عبر وصّلها';
   });
+
+  // Logged-in users don't need to type their name/phone again.
+  function prefillContactIfLoggedIn() {
+    try {
+      const u = JSON.parse(localStorage.getItem('wslha_user') || 'null');
+      if (u && u.name && u.phone) {
+        const nameInput  = document.getElementById('d-name') as HTMLInputElement;
+        const phoneInput = document.getElementById('d-phone') as HTMLInputElement;
+        nameInput.value  = u.name;
+        phoneInput.value = u.phone;
+        nameInput.required  = false;
+        phoneInput.required = false;
+        nameInput.hidden  = true;
+        phoneInput.hidden = true;
+      }
+    } catch { /* ignore */ }
+  }
+  prefillContactIfLoggedIn();
 
   init();
 </script>

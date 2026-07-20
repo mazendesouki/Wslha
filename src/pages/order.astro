@@ -437,6 +437,21 @@ const CITIES = ['دمياط الجديدة', 'دمياط', 'كفر سعد', 'ف�
   });
 
   recalc();
+
+  // Logged-in users don't need to type their name/phone again.
+  try {
+    const _u = JSON.parse(localStorage.getItem('wslha_user') || 'null');
+    if (_u && _u.name && _u.phone) {
+      const recipientInput = document.getElementById('recipient') as HTMLInputElement;
+      const phoneInput     = document.getElementById('phone') as HTMLInputElement;
+      recipientInput.value = _u.name;
+      phoneInput.value     = _u.phone;
+      recipientInput.required = false;
+      phoneInput.required     = false;
+      const row = document.getElementById('recipient-contact-row');
+      if (row) row.hidden = true;
+    }
+  } catch { /* ignore */ }
 </script>
 
 <Layout
@@ -511,7 +526,7 @@ const CITIES = ['دمياط الجديدة', 'دمياط', 'كفر سعد', 'ف�
         <span class="order-form__step-num" aria-hidden="true">3</span>
         بيانات المستلم
       </h2>
-      <div class="order-form__row">
+      <div class="order-form__row" id="recipient-contact-row">
         <div class="field">
           <label class="field__label" for="recipient">اسم المستلم</label>
           <input class="field__input" type="text" id="recipient" placeholder="محمد أحمد" required autocomplete="name">

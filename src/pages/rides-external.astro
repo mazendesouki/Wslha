@@ -178,7 +178,7 @@ import { VEHICLE_TYPES } from '../data/airports';
 
       <!-- قسم 3: بيانات الراكب -->
       <h2 class="ext-form__step"><span class="ext-form__num">3</span> بيانات الراكب</h2>
-      <div class="ext-row">
+      <div class="ext-row" id="trav-contact-row">
         <div class="field">
           <label class="field__label" for="trav-name">الاسم الكامل</label>
           <input class="field__input" id="trav-name" type="text" placeholder="محمد أحمد" autocomplete="name">
@@ -559,5 +559,16 @@ import { VEHICLE_TYPES } from '../data/airports';
       } catch {}
     }
     restoreActiveExternalBooking();
+
+    // Logged-in users don't need to type their name/phone again.
+    try {
+      const _u = JSON.parse(localStorage.getItem('wslha_user') || 'null');
+      if (_u && _u.name && _u.phone) {
+        (document.getElementById('trav-name')).value  = _u.name;
+        (document.getElementById('trav-phone')).value = _u.phone;
+        const row = document.getElementById('trav-contact-row');
+        if (row) row.hidden = true;
+      }
+    } catch {}
   </script>
 </Layout>

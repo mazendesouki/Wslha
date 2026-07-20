@@ -482,7 +482,7 @@ import { VEHICLE_TYPES } from '../data/airports';
 
       <!-- قسم 7: بيانات المسافر -->
       <h2 class="air-form__step"><span class="air-form__num">7</span> بيانات المسافر</h2>
-      <div class="air-row">
+      <div class="air-row" id="trav-contact-row">
         <div class="field">
           <label class="field__label" for="trav-name">اسم المسافر</label>
           <input class="field__input" id="trav-name" type="text" placeholder="محمد أحمد" autocomplete="name">
@@ -1186,5 +1186,16 @@ import { VEHICLE_TYPES } from '../data/airports';
 
     render();
     restoreActiveAirportBooking();
+
+    // Logged-in users don't need to type their name/phone again.
+    try {
+      const _u = JSON.parse(localStorage.getItem('wslha_user') || 'null');
+      if (_u && _u.name && _u.phone) {
+        (document.getElementById('trav-name')).value  = _u.name;
+        (document.getElementById('trav-phone')).value = _u.phone;
+        const row = document.getElementById('trav-contact-row');
+        if (row) row.hidden = true;
+      }
+    } catch {}
   </script>
 </Layout>
