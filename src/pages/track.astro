@@ -807,6 +807,16 @@ import PageHero from '../components/PageHero.astro';
     document.getElementById('info-driver').textContent = o.driver_name || (o.status === 'preparing' ? 'جارٍ التعيين…' : '—');
     document.getElementById('info-total').textContent  = `${o.total || 0} ج.م`;
 
+    const otpBox = document.getElementById('delivery-otp-box');
+    if (otpBox) {
+      if (o.delivery_otp && o.status !== 'delivered' && o.status !== 'rejected') {
+        document.getElementById('delivery-otp-value').textContent = o.delivery_otp;
+        otpBox.style.display = '';
+      } else {
+        otpBox.style.display = 'none';
+      }
+    }
+
     renderTimeline(o.status);
 
     // Status-change notification
@@ -884,6 +894,8 @@ import PageHero from '../components/PageHero.astro';
     document.getElementById('result-empty').style.display = 'none';
     document.getElementById('result-timeline').style.display = '';
     document.querySelector('.result__info').style.display = '';
+    const otpBoxEl = document.getElementById('delivery-otp-box');
+    if (otpBoxEl) otpBoxEl.style.display = 'none';
 
     // Switch track card to airport mode (green theme)
     result.classList.add('airport-mode');
@@ -1125,6 +1137,11 @@ import PageHero from '../components/PageHero.astro';
           <div><dt class="result__info-label" id="lbl-driver">المندوب</dt>     <dd class="result__info-value" id="info-driver">—</dd></div>
           <div><dt class="result__info-label" id="lbl-total">الإجمالي</dt>    <dd class="result__info-value" id="info-total">—</dd></div>
         </dl>
+
+        <div id="delivery-otp-box" style="display:none;margin:.75rem 0;background:#DCFCE7;border:1.5px solid #86EFAC;border-radius:12px;padding:.85rem 1rem;text-align:center">
+          <div style="font-size:.78rem;color:#166534;font-weight:700;margin-bottom:.3rem">🔑 كود التسليم — اديه للمندوب لما يوصلّك الطلب</div>
+          <div style="font-size:1.6rem;font-weight:900;color:#15803D;letter-spacing:.2em" id="delivery-otp-value">—</div>
+        </div>
 
         <!-- Live driver map -->
         <div class="track-map-card" id="track-map-card">
