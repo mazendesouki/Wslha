@@ -1895,31 +1895,25 @@ import { VEHICLE_MODELS, FARE_ZONES, TRIP_RATES } from '../data/airports';
     });
     document.getElementById('live-badge').style.display = 'inline-flex';
 
-    // رجّع شريط حالة الرحلة (status stepper) لنفس نسبة التقدّم المستعادة
-    const initPct = step / (totalSteps - 1 || 1);
-    if (initPct >= 0.05 && !window._st_assigned) { window._st_assigned = true; advanceStatus('assigned'); }
-    if (initPct >= 0.15 && !window._st_arrived)  { window._st_arrived = true;  advanceStatus('arrived'); }
-    if (initPct >= 0.20 && !window._st_onride)   { window._st_onride  = true;  advanceStatus('onride'); }
-
-    if (step >= totalSteps - 1) {
-      setTimeout(() => advanceStatus('done'), 1000);
-      return;
-    }
+    // ⚠️ This loop only animates the car icon along the route — it must
+    // NEVER advance the status stepper (arrived/onride/done). Those steps
+    // reflect the driver's real actions (via driver-dashboard.astro's
+    // "arrived"/"start trip"/"complete trip" buttons → rides.status in the
+    // DB) and arrive through handleRideUpdate()'s realtime/poll subscription.
+    // This used to fake-advance the stepper off the animation's own timer,
+    // so a trip could show "completed" in a few minutes with zero real
+    // driver interaction.
+    if (step >= totalSteps - 1) return;
 
     window._liveInterval = setInterval(() => {
       if (step >= totalSteps - 1) {
         clearInterval(window._liveInterval);
-        setTimeout(() => advanceStatus('done'), 1000);
         return;
       }
       const prevCoord = coords[step];
       step++;
       animateMarkerTo(driverMarker, coords[step].lat, coords[step].lng, msPerStep);
       driverMarker.setIcon(carIcon(bearingBetween(prevCoord.lat, prevCoord.lng, coords[step].lat, coords[step].lng)));
-      const pct = step / (totalSteps - 1);
-      if (pct >= 0.05 && !window._st_assigned) { window._st_assigned = true; advanceStatus('assigned'); }
-      if (pct >= 0.15 && !window._st_arrived)  { window._st_arrived = true;  advanceStatus('arrived'); }
-      if (pct >= 0.20 && !window._st_onride)   { window._st_onride  = true;  advanceStatus('onride'); }
     }, msPerStep);
   }
 
