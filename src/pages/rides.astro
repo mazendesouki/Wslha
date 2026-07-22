@@ -1174,7 +1174,7 @@ import { VEHICLE_MODELS, FARE_ZONES, TRIP_RATES } from '../data/airports';
             </div>
             <div class="status-step" id="st-assigned">
               <div class="step-dot">🚗</div>
-              <div class="step-info"><div class="step-info__label">السائق في الطريق إليك</div><div class="step-info__time">جاري التعيين...</div></div>
+              <div class="step-info"><div class="step-info__label">السائق في الطريق إليك</div><div class="step-info__time" id="st-assigned-time">جاري التعيين...</div></div>
             </div>
             <div class="status-step" id="st-arrived">
               <div class="step-dot">📍</div>
@@ -1928,6 +1928,7 @@ import { VEHICLE_MODELS, FARE_ZONES, TRIP_RATES } from '../data/airports';
     if (stage === 'assigned') {
       document.getElementById('st-confirmed').className = 'status-step done';
       document.getElementById('st-assigned').className  = 'status-step active';
+      document.getElementById('st-assigned-time').textContent = 'تم تعيين السائق ✅';
     }
     if (stage === 'arrived') {
       document.getElementById('st-assigned').className  = 'status-step done';
