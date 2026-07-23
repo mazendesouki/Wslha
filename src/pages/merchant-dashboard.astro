@@ -817,7 +817,7 @@ import Layout from '../components/layout.astro';
 
       const [acctRes, appRes] = await Promise.all([
         fetch(`${SB_URL}/rest/v1/rpc/lookup_account?p_phone=${encodeURIComponent(phone)}`, { headers: SB_H }),
-        fetch(`${SB_URL}/rest/v1/merchant_applications?${orFilter}&select=status,rejection_reason&order=created_at.desc&limit=1`, { headers: SB_H }),
+        fetch(`${SB_URL}/rest/v1/merchant_applications?${orFilter}&select=status&order=created_at.desc&limit=1`, { headers: SB_H }),
       ]);
       const acctRows = acctRes.ok ? await acctRes.json() : [];
       const appRows  = appRes.ok  ? await appRes.json()  : [];
