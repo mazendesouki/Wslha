@@ -24,6 +24,7 @@
     "playwright": "^1.60.0"
   },
   "dependencies": {
+    "@astrojs/vercel": "^7.8.2",
     "@capacitor/android": "^5.7.8",
     "@capacitor/app": "^5.0.8",
     "@capacitor/core": "^5.7.8",
