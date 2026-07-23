@@ -17,7 +17,7 @@
   },
   "devDependencies": {
     "@astrojs/preact": "^3.5.4",
-    "@capacitor/cli": "^5.7.8",
+    "@capacitor/cli": "^8.4.2",
     "@netlify/netlify-marketing-tokens": "^1.1.0",
     "@resvg/resvg-js": "^2.6.2",
     "astro": "^4.16.19",
