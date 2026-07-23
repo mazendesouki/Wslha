@@ -678,6 +678,7 @@ async function submitApplication() {
     document.getElementById(`step-${currentStep}`).classList.add('hidden');
     document.getElementById('step-success').classList.remove('hidden');
   } catch (e) {
+    console.error('[merchant-apply] submit failed', e);
     err.textContent = e?.message?.includes('مسجّل بالفعل')
       ? '❌ هذا الرقم القومي مسجّل بالفعل'
       : '❌ حدث خطأ أثناء الإرسال. تحقق من اتصالك وحاول مجدداً.';
