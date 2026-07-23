@@ -3,6 +3,14 @@ import Layout from '../components/layout.astro';
 ---
 
 <style>
+  /* Several sections below (e.g. #md-loading) carry an inline
+     `style="display:flex"` for their visible state — an inline style
+     always beats the browser's default `[hidden]{display:none}` rule,
+     so toggling the `hidden` attribute alone silently failed to hide
+     them, leaving "جاري التحميل..." stacked on top of whatever showed
+     next. `!important` here is what actually wins over the inline style. */
+  [hidden] { display: none !important; }
+
   /* ── Layout ── */
   .md-page { max-width: 1100px; margin: 0 auto; padding: var(--sp-8) var(--sp-5) var(--sp-20); }
 
