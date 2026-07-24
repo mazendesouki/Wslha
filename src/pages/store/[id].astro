@@ -2,8 +2,59 @@
 import Layout from '../../components/layout.astro';
 import { STORES } from '../../data/stores';
 
-export function getStaticPaths() {
-  return STORES.map(s => ({ params: { id: s.id }, props: { store: s } }));
+// Demo stores ship pre-written data in src/data/stores.ts. Real stores a
+// merchant registered via merchant-dashboard.astro's `stores` table insert
+// don't — this route is statically prerendered (no server adapter is
+// configured, so a plain `prerender = false` page would 404 with no
+// fallback), meaning any id outside getStaticPaths' returned list has no
+// build output and Vercel 404s before the page or its client JS ever runs.
+// Fetching real stores from Supabase here at BUILD time and adding them to
+// the static path list fixes that — a merchant's store page appears after
+// the next deploy (this site redeploys on every push, so in practice within
+// minutes of approval), instead of never at all.
+export async function getStaticPaths() {
+  const demo = STORES.map(s => ({ params: { id: s.id }, props: { store: s } }));
+
+  let live: typeof demo = [];
+  try {
+    const SB_URL = 'https://vtikgyiopkjnrwlqnmfx.supabase.co';
+    const SB_KEY = 'sb_publishable_PLSnpvCT-sAyUMtymNgTwA_QmL2suw4';
+    const res = await fetch(`${SB_URL}/rest/v1/stores?select=*`, {
+      headers: { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}` },
+    });
+    if (!res.ok) {
+      console.error(`[store/[id]] build-time stores fetch failed: ${res.status} ${await res.text().catch(() => '')}`);
+    }
+    const rows = res.ok ? await res.json() : [];
+    console.log(`[store/[id]] build-time stores fetch returned ${Array.isArray(rows) ? rows.length : 0} row(s)`);
+    const demoIds = new Set(STORES.map(s => s.id));
+    live = (Array.isArray(rows) ? rows : [])
+      .filter((row: any) => row.id && !demoIds.has(row.id))
+      .map((row: any) => ({
+        params: { id: row.id },
+        props: {
+          store: {
+            id: row.id,
+            name: row.name,
+            emoji: row.emoji || '🏪',
+            category: row.category || '',
+            area: row.area || '',
+            tagline: row.tagline || '',
+            rating: Number(row.rating) || 0,
+            reviews: Number(row.reviews) || 0,
+            deliveryTime: row.delivery_time || '30–45 دقيقة',
+            deliveryFee: Number(row.delivery_fee) || 0,
+            minOrder: Number(row.min_order) || 0,
+            menu: [],
+          },
+        },
+      }));
+  } catch (e) {
+    console.error('[store/[id]] build-time stores fetch threw', e);
+    /* build proceeds with just the demo stores if Supabase is unreachable at build time */
+  }
+
+  return [...demo, ...live];
 }
 
 const { store } = Astro.props;
