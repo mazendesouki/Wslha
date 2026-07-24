@@ -1192,6 +1192,8 @@ import Layout from '../components/layout.astro';
   }
 
   async function saveNewProduct(sid: string) {
+    const btn = document.querySelector(`.save-product-btn[data-sid="${sid}"]`) as HTMLButtonElement | null;
+    if (btn?.disabled) return; // already saving — prevents a double-click from inserting the product twice
     const name  = (document.getElementById(`np-name-${sid}`) as HTMLInputElement).value.trim();
     const emoji = (document.getElementById(`np-emoji-${sid}`) as HTMLInputElement).value.trim() || '📦';
     const price = parseInt((document.getElementById(`np-price-${sid}`) as HTMLInputElement).value) || 0;
@@ -1199,6 +1201,7 @@ import Layout from '../components/layout.astro';
 
     if (!name || !price) { toast('❌ اسم المنتج والسعر مطلوبان'); return; }
 
+    if (btn) btn.disabled = true;
     const secProds = products.filter(p => p.section_id === sid);
     const rows = await sbPost('products', {
       store_id: currentStore.id, section_id: sid,
@@ -1210,7 +1213,10 @@ import Layout from '../components/layout.astro';
       renderMenu();
       loadStats();
       toast('✅ تم إضافة المنتج');
-    } else toast('❌ فشل إضافة المنتج');
+    } else {
+      toast('❌ فشل إضافة المنتج');
+      if (btn) btn.disabled = false;
+    }
   }
 
   async function saveProductEdit(pid: string) {

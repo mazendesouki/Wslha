@@ -1,7 +1,62 @@
 ---
 import Layout from '../components/layout.astro';
 import PageHero from '../components/PageHero.astro';
-import { STORES, CATEGORIES } from '../data/stores';
+import { CATEGORIES } from '../data/stores';
+
+// Demo/fake stores previously came from src/data/stores.ts. Replaced with a
+// build-time fetch of the real `stores` table so this page — and the
+// product search below it — only ever shows stores merchants actually
+// registered through merchant-dashboard.astro. Products live in a separate
+// `products` table (not on the store row), so they're fetched and joined
+// here too, to keep the search box working the same way it did with the
+// old static data.
+const SB_URL = 'https://vtikgyiopkjnrwlqnmfx.supabase.co';
+const SB_KEY = 'sb_publishable_PLSnpvCT-sAyUMtymNgTwA_QmL2suw4';
+const SB_HEADERS = { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}` };
+
+let STORES: any[] = [];
+try {
+  const res = await fetch(`${SB_URL}/rest/v1/stores?select=*&order=created_at.desc`, { headers: SB_HEADERS });
+  const rows = res.ok ? await res.json() : [];
+  STORES = (Array.isArray(rows) ? rows : [])
+    .filter((r: any) => r.is_active !== false)
+    .map((r: any) => ({
+      id: r.id,
+      name: r.name,
+      category: r.category || '',
+      categoryId: r.category_id || '',
+      emoji: r.emoji || '🏪',
+      area: r.area || '',
+      address: r.address || '',
+      rating: Number(r.rating) || 0,
+      reviews: Number(r.reviews) || 0,
+      deliveryTime: r.delivery_time || '30–45 دقيقة',
+      deliveryFee: Number(r.delivery_fee) || 0,
+      minOrder: Number(r.min_order) || 0,
+      tagline: r.tagline || '',
+      isOpen: r.is_open !== false,
+    }));
+} catch { /* build proceeds with an empty store list if Supabase is unreachable at build time */ }
+
+let ALL_PRODUCTS: any[] = [];
+try {
+  const storeIds = new Set(STORES.map(s => s.id));
+  const pres = await fetch(
+    `${SB_URL}/rest/v1/products?select=id,name,description,price,emoji,store_id&is_available=eq.true`,
+    { headers: SB_HEADERS }
+  );
+  const prows = pres.ok ? await pres.json() : [];
+  const storeById = new Map(STORES.map(s => [s.id, s]));
+  ALL_PRODUCTS = (Array.isArray(prows) ? prows : [])
+    .filter((p: any) => storeIds.has(p.store_id))
+    .map((p: any) => {
+      const store = storeById.get(p.store_id);
+      return {
+        id: p.id, name: p.name, desc: p.description || '', price: p.price,
+        emoji: p.emoji || '🍽️', storeName: store.name, storeId: store.id, storeEmoji: store.emoji,
+      };
+    });
+} catch { /* search index just stays empty if this fetch fails */ }
 ---
 
 <style>
@@ -228,7 +283,7 @@ import { STORES, CATEGORIES } from '../data/stores';
           <div class="store-card__cover">
             <span aria-hidden="true">{s.emoji}</span>
             <span class="store-card__badge">🚚 {s.deliveryFee} ج.م</span>
-            <span class="store-card__open">مفتوح</span>
+            {s.isOpen && <span class="store-card__open">مفتوح</span>}
           </div>
           <div class="store-card__body">
             <p class="store-card__cat">{s.category}</p>
@@ -245,9 +300,9 @@ import { STORES, CATEGORIES } from '../data/stores';
           </div>
         </a>
       ))}
-      <div class="no-results" id="no-results" hidden>
-        <div class="no-results__icon">🔍</div>
-        <p>لا توجد نتائج لهذا التصنيف</p>
+      <div class="no-results" id="no-results" hidden={STORES.length > 0}>
+        <div class="no-results__icon">🏪</div>
+        <p id="no-results-text">{STORES.length > 0 ? 'لا توجد نتائج لهذا التصنيف' : 'لا توجد متاجر مسجَّلة بعد — كن أول تاجر في وصّلها!'}</p>
       </div>
     </div>
 
@@ -269,7 +324,7 @@ import { STORES, CATEGORIES } from '../data/stores';
   </div>
 </Layout>
 
-<script define:vars={{ STORES }}>
+<script define:vars={{ STORES, ALL_PRODUCTS }}>
   // ── Category filtering ──
   const chips   = document.querySelectorAll('.cat-chip');
   const cards   = document.querySelectorAll('.store-card');
@@ -332,16 +387,8 @@ import { STORES, CATEGORIES } from '../data/stores';
     });
   });
 
-  // ── Product search (client-side across static menu data) ──
-  const ALL_PRODUCTS = [];
-  STORES.forEach(store => {
-    store.menu.forEach(section => {
-      section.items.forEach(item => {
-        ALL_PRODUCTS.push({ ...item, storeName: store.name, storeId: store.id, storeEmoji: store.emoji });
-      });
-    });
-  });
-
+  // ── Product search — ALL_PRODUCTS comes pre-built from the live
+  //    `products` table via define:vars above ──
   const searchInp = document.getElementById('product-search');
   const searchRes = document.getElementById('search-results');
   const clearBtn  = document.getElementById('search-clear');

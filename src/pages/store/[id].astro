@@ -76,7 +76,14 @@ const staticMenuJson = JSON.stringify(
 );
 ---
 
-<style>
+<style is:global>
+  /* is:global — the menu/cart sections below are injected via
+     buildMenuHTML()'s innerHTML at runtime. Astro's default scoped CSS
+     only tags elements present in this file's own template at build
+     time, so dynamically-injected product rows never got the scoping
+     attribute and every .product/.menu-section rule below silently
+     failed to match them — the product list rendered with zero styling
+     despite the CSS being correct. */
   .store-head {
     background: linear-gradient(135deg, var(--color-primary), var(--color-primary-dark));
     color: #fff;
