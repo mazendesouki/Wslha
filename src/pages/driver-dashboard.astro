@@ -1344,18 +1344,27 @@ import PageHero from '../components/PageHero.astro';
   // (destLat/destLng بيرجعوا null). هنا بنعيد بناء الحالة من قاعدة البيانات.
   async function restoreActiveRide() {
     if (!driver) return;
+    let rideRows = [], orderRows = [];
     try {
       const [rideRes, orderRes] = await Promise.all([
         fetch(`${SB_URL}/rest/v1/rides?driver_phone=eq.${encodeURIComponent(driver.phone)}&status=in.(accepted,arrived,in_progress)&select=*&order=created_at.desc&limit=1`, { headers: SB_H }),
         fetch(`${SB_URL}/rest/v1/orders?driver_phone=eq.${encodeURIComponent(driver.phone)}&status=eq.on_the_way&select=*&order=created_at.desc&limit=1`, { headers: SB_H }),
       ]);
-      const rideRows  = rideRes.ok  ? await rideRes.json()  : [];
-      const orderRows = orderRes.ok ? await orderRes.json() : [];
+      if (!rideRes.ok) console.error('[restoreActiveRide] rides fetch failed', rideRes.status, await rideRes.text().catch(() => ''));
+      if (!orderRes.ok) console.error('[restoreActiveRide] orders fetch failed', orderRes.status, await orderRes.text().catch(() => ''));
+      rideRows  = rideRes.ok  ? await rideRes.json()  : [];
+      orderRows = orderRes.ok ? await orderRes.json() : [];
+      console.log('[restoreActiveRide] phone=' + driver.phone, 'rides=' + (Array.isArray(rideRows) ? rideRows.length : 'n/a'), 'orders=' + (Array.isArray(orderRows) ? orderRows.length : 'n/a'));
+    } catch (e) {
+      console.error('[restoreActiveRide] fetch threw', e);
+      return;
+    }
 
-      const arriveBtn   = document.getElementById('btn-arrive');
-      const pickupBtn   = document.getElementById('btn-pickup');
-      const completeBtn = document.getElementById('btn-complete');
+    const arriveBtn   = document.getElementById('btn-arrive');
+    const pickupBtn   = document.getElementById('btn-pickup');
+    const completeBtn = document.getElementById('btn-complete');
 
+    try {
       if (Array.isArray(rideRows) && rideRows.length) {
         currentRide = rideRows[0];
         isOnline = true;
@@ -1394,7 +1403,11 @@ import PageHero from '../components/PageHero.astro';
         initDriverMap(currentRide.from_lat, currentRide.from_lng, currentRide.to_lat, currentRide.to_lng, navTarget[0], navTarget[1]);
         return;
       }
+    } catch (e) {
+      console.error('[restoreActiveRide] ride-restore threw', e);
+    }
 
+    try {
       if (Array.isArray(orderRows) && orderRows.length) {
         currentOrder = orderRows[0];
         isOnline = true;
@@ -1408,7 +1421,9 @@ import PageHero from '../components/PageHero.astro';
           completeBtn.classList.add('complete');
         }
       }
-    } catch {}
+    } catch (e) {
+      console.error('[restoreActiveRide] order-restore threw', e);
+    }
   }
 
   async function acceptRide(ride) {
