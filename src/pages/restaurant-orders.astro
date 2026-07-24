@@ -569,7 +569,7 @@
     </div>
     <div class="stat-sep"></div>
     <div class="stat-item">
-      <div class="stat-value" id="stat-revenue">0 ر.س</div>
+      <div class="stat-value" id="stat-revenue">0 ج.م</div>
       <div class="stat-label">إيرادات اليوم</div>
     </div>
     <div class="stat-sep"></div>
@@ -1126,7 +1126,7 @@
 
   function formatCurrency(val) {
     const n = parseFloat(val) || 0;
-    return n.toLocaleString('ar-SA', { minimumFractionDigits: 0, maximumFractionDigits: 2 }) + ' ر.س';
+    return n.toLocaleString('ar-EG', { minimumFractionDigits: 0, maximumFractionDigits: 2 }) + ' ج.م';
   }
 
   function esc(str) {
