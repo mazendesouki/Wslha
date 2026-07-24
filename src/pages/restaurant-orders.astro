@@ -1182,9 +1182,17 @@
 
     await requestNotificationPermission();
 
-    // Load store by phone
+    // Load store by owner phone — stores.phone is the store's public
+    // contact number (a separate field the merchant fills in at
+    // registration, often different from their own login number), so
+    // looking it up by `phone` failed to find the store for any merchant
+    // whose business contact number differs from their account phone.
+    // owner_phone is always the actual logged-in account's number.
     try {
-      const stores = await sbGet('stores?phone=eq.' + encodeURIComponent(currentUser.phone) + '&limit=1');
+      const local = currentUser.phone.startsWith('+20') ? '0' + currentUser.phone.slice(3) : currentUser.phone;
+      const intl  = currentUser.phone.startsWith('01')  ? '+2' + currentUser.phone : currentUser.phone;
+      const orFilter = 'or=(owner_phone.eq.' + encodeURIComponent(intl) + ',owner_phone.eq.' + encodeURIComponent(local) + ')';
+      const stores = await sbGet('stores?' + orFilter + '&limit=1');
       if (!stores || !stores.length) {
         document.getElementById('loader').style.display = 'none';
         const aw = document.getElementById('auth-wall');
