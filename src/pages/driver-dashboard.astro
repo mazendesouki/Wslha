@@ -2089,7 +2089,13 @@ import PageHero from '../components/PageHero.astro';
     text.textContent  = 'تشغيل';
     label.textContent = 'متصل الآن';
     label.className   = 'toggle-label online-text';
-    showState('waiting');
+    // loadApprovalStatus() and restoreActiveRide() both fire on load without
+    // awaiting each other, and both may call goOnline() — if this runs
+    // AFTER restoreActiveRide() already restored an active order/ride, a
+    // blind showState('waiting') here would silently wipe that screen back
+    // to empty on refresh even though the order/ride was never actually
+    // lost (currentRide/currentOrder stayed set the whole time).
+    if (!currentRide && !currentOrder) showState('waiting');
 
     if (navigator.geolocation) {
       geoWatchId = navigator.geolocation.watchPosition(
