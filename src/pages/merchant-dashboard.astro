@@ -2,7 +2,16 @@
 import Layout from '../components/layout.astro';
 ---
 
-<style>
+<style is:global>
+  /* is:global — this page injects large parts of its own DOM (product
+     rows, section blocks, etc.) via renderMenu()'s innerHTML at runtime.
+     Astro's default scoped CSS only tags elements present in this file's
+     own template at build time, so dynamically-injected elements never
+     get the scoping attribute and every rule below silently failed to
+     match them — the product list rendered with zero styling despite the
+     CSS being correct. is:global drops the scoping so these class-name
+     rules apply to the whole page regardless of when elements appear. */
+
   /* Several sections below (e.g. #md-loading) carry an inline
      `style="display:flex"` for their visible state — an inline style
      always beats the browser's default `[hidden]{display:none}` rule,
