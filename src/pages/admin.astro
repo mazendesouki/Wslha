@@ -213,6 +213,10 @@
     <button class="nav-item" data-section="stores">
       <span class="nav-item__icon">🏬</span> المتاجر
     </button>
+    <button class="nav-item" data-section="courier">
+      <span class="nav-item__icon">🚚</span> الطرود والمستندات
+      <span class="nav-item__badge hidden" id="badge-courier">0</span>
+    </button>
     <button class="nav-item" data-section="marketplace">
       <span class="nav-item__icon">🛍️</span> سوق المستعمل
       <span class="nav-item__badge hidden" id="badge-marketplace">0</span>
@@ -431,6 +435,29 @@
           <table>
             <thead><tr><th>رقم الطلب</th><th>العميل</th><th>الجوال</th><th>المتجر</th><th>الإجمالي</th><th>السائق</th><th>الحالة</th><th>التاريخ</th><th>إجراءات</th></tr></thead>
             <tbody id="orders-tbody"><tr><td colspan="9" style="text-align:center;color:#94A3B8;padding:2rem">جاري التحميل…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════ COURIER (documents/parcels) ══════ -->
+    <div class="section" id="sec-courier">
+      <div class="filters-bar">
+        <input class="search-input" id="courier-search" type="search" placeholder="🔍 بحث برقم الشحنة أو جوال المرسل/المستلم…"/>
+        <select class="filter-select" id="courier-status-filter">
+          <option value="">جميع الحالات</option>
+          <option value="preparing">بانتظار سائق</option>
+          <option value="on_the_way">في الطريق</option>
+          <option value="delivered">تم التسليم</option>
+          <option value="rejected">مرفوض</option>
+        </select>
+        <button class="btn btn--primary" onclick="loadCourierOrders()">🔄 تحديث</button>
+      </div>
+      <div class="card">
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr><th>كود الشحنة</th><th>المستلم</th><th>جوال المستلم</th><th>الشحنة</th><th>الأجرة</th><th>السائق</th><th>الحالة</th><th>التاريخ</th><th>إجراءات</th></tr></thead>
+            <tbody id="courier-tbody"><tr><td colspan="9" style="text-align:center;color:#94A3B8;padding:2rem">جاري التحميل…</td></tr></tbody>
           </table>
         </div>
       </div>
@@ -1084,7 +1111,7 @@ async function adminListAccounts(roleFilter) {
 const sectionTitles = {
   dash:'لوحة التحكم', users:'إدارة المستخدمين', drivers:'إدارة السائقين',
   merchants:'إدارة التجار', orders:'إدارة الطلبات', rides:'إدارة الرحلات',
-  stores:'إدارة المتاجر', marketplace:'سوق المستعمل',
+  stores:'إدارة المتاجر', courier:'الطرود والمستندات', marketplace:'سوق المستعمل',
   finance:'التقارير المالية', wallets:'إدارة المحافظ', settings:'الإعدادات'
 };
 let currentSection = 'dash';
@@ -1100,7 +1127,7 @@ function loadMerchantsSection() {
 }
 const loaders = { dash:loadDash, users:loadUsers, drivers:loadDriversSection,
   merchants:loadMerchantsSection, orders:loadOrders, rides:loadRides, stores:loadStores,
-  marketplace:loadMarketplaceSection,
+  courier:loadCourierOrders, marketplace:loadMarketplaceSection,
   messages:loadMessages, finance:loadFinance, wallets:loadWalletsSection, settings:loadSettingsSection };
 
 document.querySelectorAll('.nav-item').forEach(btn => {
@@ -1680,6 +1707,39 @@ function renderOrders() {
 }
 document.getElementById('orders-search').addEventListener('input', renderOrders);
 document.getElementById('orders-status-filter').addEventListener('change', renderOrders);
+
+/* ═══════════════════ COURIER (documents/parcels) ═══════════ */
+let allCourierOrders = [];
+async function loadCourierOrders() {
+  const data = await sbGet('orders?store_id=eq.courier&select=*&order=created_at.desc&limit=500');
+  allCourierOrders = data || [];
+  const pending = allCourierOrders.filter(o => o.status === 'preparing' && !o.driver_phone).length;
+  const badge = document.getElementById('badge-courier');
+  if (pending > 0) { badge.hidden = false; badge.textContent = String(pending); } else badge.hidden = true;
+  renderCourierOrders();
+}
+function renderCourierOrders() {
+  const search = document.getElementById('courier-search').value.trim().toLowerCase();
+  const status = document.getElementById('courier-status-filter').value;
+  let rows = allCourierOrders;
+  if (search) rows = rows.filter(o => (o.code||o.id||'').toLowerCase().includes(search)||(o.customer_phone||'').includes(search)||(o.notes||'').toLowerCase().includes(search));
+  if (status) rows = rows.filter(o => o.status === status);
+  const html = rows.map(o => `
+    <tr>
+      <td style="direction:ltr;font-size:.75rem;font-weight:700;color:#0E4B49">${o.code||o.id?.slice(0,10)||'—'}</td>
+      <td style="font-weight:600">${escapeHtml(o.customer_name)||'—'}</td>
+      <td style="direction:ltr;font-size:.82rem">${escapeHtml(o.customer_phone)||'—'}</td>
+      <td style="font-size:.8rem">${escapeHtml(o.items_summary)||'—'}</td>
+      <td style="font-weight:700;color:var(--pr)">${fmt(o.delivery_fee)} ج.م</td>
+      <td style="font-size:.82rem">${escapeHtml(o.driver_name)||'—'}</td>
+      <td>${badge(o.status)}</td>
+      <td style="font-size:.75rem">${fmtTime(o.created_at)}</td>
+      <td><button class="btn btn--ghost btn--sm" onclick="openOrderModal('${o.id}')">تفاصيل</button></td>
+    </tr>`).join('') || '<tr><td colspan="9" style="text-align:center;color:#94A3B8;padding:2rem">لا توجد شحنات بعد</td></tr>';
+  document.getElementById('courier-tbody').innerHTML = html;
+}
+document.getElementById('courier-search').addEventListener('input', renderCourierOrders);
+document.getElementById('courier-status-filter').addEventListener('change', renderCourierOrders);
 
 function openOrderModal(id) {
   currentOrderId = id;

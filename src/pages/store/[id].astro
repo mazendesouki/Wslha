@@ -29,7 +29,13 @@ export async function getStaticPaths() {
     console.log(`[store/[id]] build-time stores fetch returned ${Array.isArray(rows) ? rows.length : 0} row(s)`);
     const demoIds = new Set(STORES.map(s => s.id));
     live = (Array.isArray(rows) ? rows : [])
-      .filter((row: any) => row.id && !demoIds.has(row.id))
+      // is_active === false (not just falsy/null) excludes internal
+      // placeholder rows (e.g. 'courier', 'marketplace') created only to
+      // satisfy orders.store_id's foreign key for services that aren't
+      // real browsable stores — same "opt-out, not opt-in" rule
+      // stores.astro's public listing already uses, so a legitimate store
+      // with is_active left null isn't accidentally hidden too.
+      .filter((row: any) => row.id && !demoIds.has(row.id) && row.is_active !== false)
       .map((row: any) => ({
         params: { id: row.id },
         props: {
