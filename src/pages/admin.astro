@@ -1784,7 +1784,7 @@ function renderCourierOrders() {
           <button class="btn btn--green btn--sm" onclick="courierAccept('${o.id}')">✅ قبول</button>
           <button class="btn btn--red btn--sm" onclick="courierReject('${o.id}')">✗ رفض</button>
         ` : ''}
-        <button class="btn btn--ghost btn--sm" onclick="openOrderModal('${o.id}')">تفاصيل</button>
+        <button class="btn btn--ghost btn--sm" onclick="openCourierOrderModal('${o.id}')">تفاصيل</button>
       </td>
     </tr>`).join('') || '<tr><td colspan="9" style="text-align:center;color:#94A3B8;padding:2rem">لا توجد شحنات بعد</td></tr>';
   document.getElementById('courier-tbody').innerHTML = html;
@@ -1805,6 +1805,32 @@ async function courierReject(id) {
   const ok = await sbPatch(`orders?id=eq.${encodeURIComponent(id)}`, { status: 'rejected' });
   if (ok) { showToast('تم رفض الشحنة', '#DC2626'); loadCourierOrders(); }
   else showToast('❌ حدث خطأ', '#DC2626');
+}
+
+// Reuses the same order-modal markup openOrderModal() uses, but looks the
+// row up in allCourierOrders instead of allOrders — the courier tab never
+// populates allOrders, so the shared "تفاصيل" button silently found
+// nothing and did nothing when courier rows called openOrderModal() directly.
+function openCourierOrderModal(id) {
+  currentOrderId = id;
+  const o = allCourierOrders.find(x => x.id === id);
+  if (!o) return;
+  document.getElementById('order-status-select').value = o.status||'pending';
+  document.getElementById('order-modal-body').innerHTML = `
+    <div class="info-grid">
+      <div class="info-field"><div class="info-field__label">كود الشحنة</div><div class="info-field__val" style="direction:ltr">${o.code||o.id||'—'}</div></div>
+      <div class="info-field"><div class="info-field__label">الشحنة</div><div class="info-field__val">${escapeHtml(o.items_summary)||'—'}</div></div>
+      <div class="info-field"><div class="info-field__label">المستلم</div><div class="info-field__val">${escapeHtml(o.customer_name)||'—'}</div></div>
+      <div class="info-field"><div class="info-field__label">جوال المستلم</div><div class="info-field__val" style="direction:ltr">${escapeHtml(o.customer_phone)||'—'}</div></div>
+      <div class="info-field"><div class="info-field__label">عنوان التسليم</div><div class="info-field__val">${escapeHtml(o.address||o.area)||'—'}</div></div>
+      <div class="info-field"><div class="info-field__label">السائق</div><div class="info-field__val">${escapeHtml(o.driver_name)||'—'}</div></div>
+      <div class="info-field"><div class="info-field__label">الأجرة</div><div class="info-field__val" style="font-size:1.1rem;color:var(--pr)">${fmt(o.delivery_fee)} ج.م</div></div>
+      <div class="info-field"><div class="info-field__label">طريقة الدفع</div><div class="info-field__val">${o.payment==='cash'?'💵 نقداً':'💳 بطاقة'}</div></div>
+      <div class="info-field"><div class="info-field__label">تاريخ الطلب</div><div class="info-field__val">${fmtTime(o.created_at)}</div></div>
+      <div class="info-field"><div class="info-field__label">الحالة الحالية</div><div class="info-field__val">${badge(o.status)}</div></div>
+    </div>
+    ${o.notes ? `<div class="info-field" style="margin-top:.5rem"><div class="info-field__label">ملاحظات (تشمل بيانات المُرسِل)</div><div class="info-field__val">${escapeHtml(o.notes)}</div></div>` : ''}`;
+  document.getElementById('order-modal').classList.remove('hidden');
 }
 
 /* ═══════════════════ CORPORATE CONTRACTS ════════════════════
