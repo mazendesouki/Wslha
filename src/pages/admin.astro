@@ -226,6 +226,11 @@
       <span class="nav-item__badge hidden" id="badge-messages">0</span>
     </button>
     <div class="nav-divider"></div>
+    <button class="nav-item" data-section="corporate">
+      <span class="nav-item__icon">🏢</span> عقود الشركات
+      <span class="nav-item__badge hidden" id="badge-corporate">0</span>
+    </button>
+    <div class="nav-divider"></div>
     <button class="nav-item" data-section="finance">
       <span class="nav-item__icon">💰</span> التقارير المالية
     </button>
@@ -446,6 +451,7 @@
         <input class="search-input" id="courier-search" type="search" placeholder="🔍 بحث برقم الشحنة أو جوال المرسل/المستلم…"/>
         <select class="filter-select" id="courier-status-filter">
           <option value="">جميع الحالات</option>
+          <option value="pending">بانتظار مراجعة</option>
           <option value="preparing">بانتظار سائق</option>
           <option value="on_the_way">في الطريق</option>
           <option value="delivered">تم التسليم</option>
@@ -570,6 +576,28 @@
             <button id="msg-mark-replied" style="padding:.5rem 1rem;background:#16A34A;color:#fff;border:none;border-radius:6px;font-size:.8rem;font-weight:700;cursor:pointer">↩ تم الرد</button>
             <button id="msg-reply-email" style="padding:.5rem 1rem;background:#F59E0B;color:#fff;border:none;border-radius:6px;font-size:.8rem;font-weight:700;cursor:pointer">✉ رد بالبريد</button>
           </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════ CORPORATE CONTRACTS ═════════════ -->
+    <div class="section" id="sec-corporate">
+      <div class="filters-bar">
+        <input class="search-input" id="corporate-search" type="search" placeholder="🔍 بحث باسم الشركة أو الجوال…"/>
+        <select class="filter-select" id="corporate-status-filter">
+          <option value="">جميع الحالات</option>
+          <option value="pending">قيد المراجعة</option>
+          <option value="approved">معتمد</option>
+          <option value="rejected">مرفوض</option>
+        </select>
+        <button class="btn btn--primary" onclick="loadCorporateContracts()">🔄 تحديث</button>
+      </div>
+      <div class="card">
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr><th>الشركة</th><th>المسؤول</th><th>الجوال</th><th>نوع الخدمة</th><th>الحجم الشهري</th><th>الحالة</th><th>التاريخ</th><th>إجراءات</th></tr></thead>
+            <tbody id="corporate-tbody"><tr><td colspan="8" style="text-align:center;color:#94A3B8;padding:2rem">جاري التحميل…</td></tr></tbody>
+          </table>
         </div>
       </div>
     </div>
@@ -865,6 +893,22 @@
   </div>
 </div>
 
+<!-- Corporate contract review modal -->
+<div class="modal-bg hidden" id="corporate-modal">
+  <div class="modal">
+    <div class="modal__head">
+      <span class="modal__title">🏢 مراجعة طلب تعاقد</span>
+      <button class="modal__close" onclick="closeModal('corporate-modal')">✕</button>
+    </div>
+    <div class="modal__body" id="corporate-modal-body"></div>
+    <div class="modal__foot" style="flex-wrap:wrap">
+      <input class="search-input" id="corporate-fee-input" type="number" min="0" placeholder="السعر الشهري المتفق عليه (ج.م)" style="flex:1;min-width:180px" />
+      <button class="btn btn--green" id="corporate-approve-btn" onclick="corporateApprove()">✅ اعتماد العقد</button>
+      <button class="btn btn--red" onclick="corporateReject()">✗ رفض</button>
+    </div>
+  </div>
+</div>
+
 <!-- Image lightbox -->
 <div class="modal-bg hidden" id="lightbox" onclick="closeModal('lightbox')">
   <img id="lightbox-img" src="" alt="" style="max-width:95vw;max-height:95vh;border-radius:8px;box-shadow:0 25px 50px rgba(0,0,0,.5)"/>
@@ -1112,6 +1156,7 @@ const sectionTitles = {
   dash:'لوحة التحكم', users:'إدارة المستخدمين', drivers:'إدارة السائقين',
   merchants:'إدارة التجار', orders:'إدارة الطلبات', rides:'إدارة الرحلات',
   stores:'إدارة المتاجر', courier:'الطرود والمستندات', marketplace:'سوق المستعمل',
+  corporate:'عقود الشركات',
   finance:'التقارير المالية', wallets:'إدارة المحافظ', settings:'الإعدادات'
 };
 let currentSection = 'dash';
@@ -1127,7 +1172,7 @@ function loadMerchantsSection() {
 }
 const loaders = { dash:loadDash, users:loadUsers, drivers:loadDriversSection,
   merchants:loadMerchantsSection, orders:loadOrders, rides:loadRides, stores:loadStores,
-  courier:loadCourierOrders, marketplace:loadMarketplaceSection,
+  courier:loadCourierOrders, marketplace:loadMarketplaceSection, corporate:loadCorporateContracts,
   messages:loadMessages, finance:loadFinance, wallets:loadWalletsSection, settings:loadSettingsSection };
 
 document.querySelectorAll('.nav-item').forEach(btn => {
@@ -1713,7 +1758,7 @@ let allCourierOrders = [];
 async function loadCourierOrders() {
   const data = await sbGet('orders?store_id=eq.courier&select=*&order=created_at.desc&limit=500');
   allCourierOrders = data || [];
-  const pending = allCourierOrders.filter(o => o.status === 'preparing' && !o.driver_phone).length;
+  const pending = allCourierOrders.filter(o => o.status === 'pending').length;
   const badge = document.getElementById('badge-courier');
   if (pending > 0) { badge.hidden = false; badge.textContent = String(pending); } else badge.hidden = true;
   renderCourierOrders();
@@ -1734,12 +1779,116 @@ function renderCourierOrders() {
       <td style="font-size:.82rem">${escapeHtml(o.driver_name)||'—'}</td>
       <td>${badge(o.status)}</td>
       <td style="font-size:.75rem">${fmtTime(o.created_at)}</td>
-      <td><button class="btn btn--ghost btn--sm" onclick="openOrderModal('${o.id}')">تفاصيل</button></td>
+      <td style="white-space:nowrap">
+        ${o.status === 'pending' ? `
+          <button class="btn btn--green btn--sm" onclick="courierAccept('${o.id}')">✅ قبول</button>
+          <button class="btn btn--red btn--sm" onclick="courierReject('${o.id}')">✗ رفض</button>
+        ` : ''}
+        <button class="btn btn--ghost btn--sm" onclick="openOrderModal('${o.id}')">تفاصيل</button>
+      </td>
     </tr>`).join('') || '<tr><td colspan="9" style="text-align:center;color:#94A3B8;padding:2rem">لا توجد شحنات بعد</td></tr>';
   document.getElementById('courier-tbody').innerHTML = html;
 }
 document.getElementById('courier-search').addEventListener('input', renderCourierOrders);
 document.getElementById('courier-status-filter').addEventListener('change', renderCourierOrders);
+
+async function courierAccept(id) {
+  // 'preparing' is what trg_dispatch_new_order actually watches for — this
+  // is the moment the shipment goes out to the nearest available driver,
+  // same as a merchant accepting a store order.
+  const ok = await sbPatch(`orders?id=eq.${encodeURIComponent(id)}`, { status: 'preparing', accepted_at: new Date().toISOString() });
+  if (ok) { showToast('✅ تم قبول الشحنة — جارٍ البحث عن سائق', '#16A34A'); loadCourierOrders(); }
+  else showToast('❌ حدث خطأ', '#DC2626');
+}
+async function courierReject(id) {
+  if (!confirm('رفض هذه الشحنة؟')) return;
+  const ok = await sbPatch(`orders?id=eq.${encodeURIComponent(id)}`, { status: 'rejected' });
+  if (ok) { showToast('تم رفض الشحنة', '#DC2626'); loadCourierOrders(); }
+  else showToast('❌ حدث خطأ', '#DC2626');
+}
+
+/* ═══════════════════ CORPORATE CONTRACTS ════════════════════
+   Deliberately its own top-level nav section (not folded into
+   courier/stores/orders) — B2B monthly contracts are a distinct
+   business line with their own review/approval flow. */
+let allCorporateContracts = [], currentContractId = '';
+const SERVICE_TYPE_AR = { delivery: 'توصيل طلبات', rides: 'مشاوير موظفين', both: 'توصيل ومشاوير' };
+
+async function loadCorporateContracts() {
+  const data = await sbGet('corporate_contracts?select=*&order=created_at.desc&limit=500');
+  allCorporateContracts = data || [];
+  const pending = allCorporateContracts.filter(c => c.status === 'pending').length;
+  const b = document.getElementById('badge-corporate');
+  if (pending > 0) { b.hidden = false; b.textContent = String(pending); } else b.hidden = true;
+  renderCorporateContracts();
+}
+function renderCorporateContracts() {
+  const search = document.getElementById('corporate-search').value.trim().toLowerCase();
+  const status = document.getElementById('corporate-status-filter').value;
+  let rows = allCorporateContracts;
+  if (search) rows = rows.filter(c => (c.company_name||'').toLowerCase().includes(search)||(c.contact_phone||'').includes(search));
+  if (status) rows = rows.filter(c => c.status === status);
+  const html = rows.map(c => `
+    <tr>
+      <td style="font-weight:700">${escapeHtml(c.company_name)||'—'}</td>
+      <td>${escapeHtml(c.contact_name)||'—'}</td>
+      <td style="direction:ltr;font-size:.82rem">${escapeHtml(c.contact_phone)||'—'}</td>
+      <td style="font-size:.82rem">${SERVICE_TYPE_AR[c.service_type]||c.service_type||'—'}</td>
+      <td style="font-size:.82rem">${escapeHtml(c.monthly_volume)||'—'}</td>
+      <td>${badge(c.status)}</td>
+      <td style="font-size:.75rem">${fmtTime(c.created_at)}</td>
+      <td><button class="btn btn--primary btn--sm" onclick="openCorporateModal('${c.id}')">📋 مراجعة</button></td>
+    </tr>`).join('') || '<tr><td colspan="8" style="text-align:center;color:#94A3B8;padding:2rem">لا توجد طلبات تعاقد بعد</td></tr>';
+  document.getElementById('corporate-tbody').innerHTML = html;
+}
+document.getElementById('corporate-search').addEventListener('input', renderCorporateContracts);
+document.getElementById('corporate-status-filter').addEventListener('change', renderCorporateContracts);
+
+function openCorporateModal(id) {
+  currentContractId = id;
+  const c = allCorporateContracts.find(x => x.id === id);
+  if (!c) return;
+  document.getElementById('corporate-modal-body').innerHTML = `
+    <div class="info-grid">
+      <div class="info-field"><div style="font-size:.68rem;color:#64748B;margin-bottom:.15rem">اسم الشركة</div><div style="font-weight:700">${escapeHtml(c.company_name)||'—'}</div></div>
+      <div class="info-field"><div style="font-size:.68rem;color:#64748B;margin-bottom:.15rem">المسؤول</div><div style="font-weight:700">${escapeHtml(c.contact_name)||'—'}</div></div>
+      <div class="info-field"><div style="font-size:.68rem;color:#64748B;margin-bottom:.15rem">الجوال</div><div style="font-weight:700;direction:ltr">${escapeHtml(c.contact_phone)||'—'}</div></div>
+      <div class="info-field"><div style="font-size:.68rem;color:#64748B;margin-bottom:.15rem">البريد الإلكتروني</div><div style="font-weight:700">${escapeHtml(c.contact_email)||'—'}</div></div>
+      <div class="info-field"><div style="font-size:.68rem;color:#64748B;margin-bottom:.15rem">نوع الخدمة</div><div style="font-weight:700">${SERVICE_TYPE_AR[c.service_type]||c.service_type||'—'}</div></div>
+      <div class="info-field"><div style="font-size:.68rem;color:#64748B;margin-bottom:.15rem">الحجم الشهري المتوقع</div><div style="font-weight:700">${escapeHtml(c.monthly_volume)||'—'}</div></div>
+      <div class="info-field"><div style="font-size:.68rem;color:#64748B;margin-bottom:.15rem">الحالة</div><div>${badge(c.status)}</div></div>
+      <div class="info-field"><div style="font-size:.68rem;color:#64748B;margin-bottom:.15rem">تاريخ الطلب</div><div style="font-weight:700">${fmtTime(c.created_at)}</div></div>
+    </div>
+    ${c.notes ? `<div class="info-field" style="margin-bottom:1rem"><div style="font-size:.68rem;color:#64748B;margin-bottom:.15rem">تفاصيل إضافية</div><div>${escapeHtml(c.notes)}</div></div>` : ''}
+    ${c.status === 'approved' && c.proposed_fee ? `<div class="info-field" style="margin-bottom:1rem;background:#DCFCE7"><div style="font-size:.68rem;color:#14532D;margin-bottom:.15rem">السعر الشهري المعتمد</div><div style="font-weight:700;color:#14532D">${fmt(c.proposed_fee)} ج.م</div></div>` : ''}
+    ${c.status === 'rejected' && c.rejection_reason ? `<div class="info-field" style="margin-bottom:1rem;background:#FEE2E2"><div style="font-size:.68rem;color:#991B1B;margin-bottom:.15rem">سبب الرفض</div><div style="color:#991B1B">${escapeHtml(c.rejection_reason)}</div></div>` : ''}
+  `;
+  const feeInput = document.getElementById('corporate-fee-input');
+  const approveBtn = document.getElementById('corporate-approve-btn');
+  const isPending = c.status === 'pending';
+  feeInput.value = c.proposed_fee || '';
+  feeInput.style.display = isPending ? '' : 'none';
+  approveBtn.style.display = isPending ? '' : 'none';
+  document.getElementById('corporate-modal').classList.remove('hidden');
+}
+async function corporateApprove() {
+  const fee = parseFloat(document.getElementById('corporate-fee-input').value);
+  if (!fee || fee <= 0) { showToast('⚠️ أدخل السعر الشهري المتفق عليه أولاً', '#D97706'); return; }
+  const ok = await sbPatch(`corporate_contracts?id=eq.${encodeURIComponent(currentContractId)}`, {
+    status: 'approved', proposed_fee: fee, reviewed_at: new Date().toISOString(),
+  });
+  if (ok) { showToast('✅ تم اعتماد العقد', '#16A34A'); closeModal('corporate-modal'); loadCorporateContracts(); }
+  else showToast('❌ حدث خطأ', '#DC2626');
+}
+async function corporateReject() {
+  const reason = prompt('سبب رفض هذا الطلب؟') || '';
+  if (!reason.trim()) return;
+  const ok = await sbPatch(`corporate_contracts?id=eq.${encodeURIComponent(currentContractId)}`, {
+    status: 'rejected', rejection_reason: reason.trim(), reviewed_at: new Date().toISOString(),
+  });
+  if (ok) { showToast('تم رفض الطلب', '#DC2626'); closeModal('corporate-modal'); loadCorporateContracts(); }
+  else showToast('❌ حدث خطأ', '#DC2626');
+}
 
 function openOrderModal(id) {
   currentOrderId = id;

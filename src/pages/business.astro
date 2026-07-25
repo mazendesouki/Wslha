@@ -1,0 +1,148 @@
+---
+import Layout from '../components/layout.astro';
+import PageHero from '../components/PageHero.astro';
+---
+
+<style>
+  .biz-page { max-width: 640px; margin: 0 auto; padding: var(--sp-8) var(--sp-6) var(--sp-20); }
+  .biz-card {
+    background: var(--color-bg); border: 1px solid var(--color-border);
+    border-radius: var(--radius-xl); box-shadow: var(--shadow-md); overflow: hidden;
+  }
+  .form-section { padding: var(--sp-6); }
+  .field { margin-bottom: var(--sp-4); }
+  .field__label { display: block; font-weight: var(--weight-bold); font-size: var(--text-sm); margin-bottom: var(--sp-2); color: var(--color-text); }
+  .field__input, .field__select, .field__textarea {
+    width: 100%; padding: var(--sp-3) var(--sp-4);
+    border: 2px solid var(--color-border); border-radius: var(--radius);
+    font-family: var(--font-body); font-size: var(--text-sm);
+    direction: rtl; background: var(--color-bg); color: var(--color-text); outline: none; transition: border-color var(--ease);
+    box-sizing: border-box;
+  }
+  .field__input:focus, .field__select:focus, .field__textarea:focus { border-color: var(--color-primary); }
+  .field__textarea { resize: vertical; min-height: 70px; }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-3); }
+
+  .submit-btn {
+    width: 100%; padding: var(--sp-4); border-radius: var(--radius-lg);
+    background: var(--color-primary); color: #fff; font-family: var(--font-body);
+    font-size: var(--text-sm); font-weight: var(--weight-black);
+    border: none; cursor: pointer; transition: all var(--ease);
+  }
+  .submit-btn:hover:not(:disabled) { background: var(--color-primary-dark); }
+  .submit-btn:disabled { opacity: .6; cursor: not-allowed; }
+  .alert-error { padding: var(--sp-3); border-radius: var(--radius); font-size: var(--text-sm); margin-bottom: var(--sp-3); display: none; background: #fef2f2; border: 1px solid #fca5a5; color: #b91c1c; }
+  .alert-error.visible { display: block; }
+
+  .success-card { background: var(--color-bg); border: 1px solid var(--color-border); border-radius: var(--radius-xl); box-shadow: var(--shadow-md); padding: var(--sp-10) var(--sp-6); text-align: center; display: none; }
+  .success-card.visible { display: block; }
+  .success-card__icon { font-size: 3rem; margin-bottom: var(--sp-3); }
+  .success-card__title { font-size: var(--text-xl); font-weight: var(--weight-black); margin-bottom: var(--sp-2); }
+  .success-card__sub { color: var(--color-text-faint); font-size: var(--text-sm); }
+
+  @media (max-width: 560px) { .form-row { grid-template-columns: 1fr; } }
+</style>
+
+<Layout title="عقود الشركات الشهرية | وصّلها" page="business">
+  <PageHero
+    title="عقود الشركات الشهرية 🏢"
+    subtitle="خدمة توصيل ومشاوير ثابتة لشركتك بأسعار تعاقدية — تواصل معنا وفريقنا هيرد عليك خلال 2-3 أيام عمل"
+  />
+
+  <div class="biz-page">
+    <div class="biz-card" id="form-card">
+      <div class="form-section">
+        <div id="biz-alert" class="alert-error"></div>
+
+        <div class="field"><label class="field__label" for="b-company">اسم الشركة</label><input id="b-company" type="text" class="field__input" placeholder="اسم شركتك أو مؤسستك" /></div>
+        <div class="form-row">
+          <div class="field"><label class="field__label" for="b-name">اسم المسؤول</label><input id="b-name" type="text" class="field__input" placeholder="اسمك" /></div>
+          <div class="field"><label class="field__label" for="b-phone">رقم الجوال</label><input id="b-phone" type="tel" class="field__input" placeholder="010 1234 5678" /></div>
+        </div>
+        <div class="field"><label class="field__label" for="b-email">البريد الإلكتروني (اختياري)</label><input id="b-email" type="email" class="field__input" placeholder="company@example.com" /></div>
+        <div class="form-row">
+          <div class="field">
+            <label class="field__label" for="b-service">نوع الخدمة المطلوبة</label>
+            <select id="b-service" class="field__select">
+              <option value="delivery">توصيل طلبات فقط</option>
+              <option value="rides">مشاوير موظفين فقط</option>
+              <option value="both" selected>توصيل ومشاوير معاً</option>
+            </select>
+          </div>
+          <div class="field">
+            <label class="field__label" for="b-volume">الحجم الشهري المتوقع</label>
+            <select id="b-volume" class="field__select">
+              <option value="أقل من 50 عملية شهرياً">أقل من 50 عملية</option>
+              <option value="50-200 عملية شهرياً">50-200 عملية</option>
+              <option value="200-500 عملية شهرياً">200-500 عملية</option>
+              <option value="أكثر من 500 عملية شهرياً">أكثر من 500 عملية</option>
+            </select>
+          </div>
+        </div>
+        <div class="field"><label class="field__label" for="b-notes">تفاصيل إضافية (اختياري)</label><textarea id="b-notes" class="field__textarea" placeholder="مثلاً: مواعيد الذروة، عدد الفروع، احتياجات خاصة..."></textarea></div>
+
+        <button id="biz-submit-btn" class="submit-btn" type="button">📩 إرسال طلب التعاقد</button>
+      </div>
+    </div>
+
+    <div class="success-card" id="success-card">
+      <div class="success-card__icon">✅</div>
+      <h2 class="success-card__title">تم إرسال طلبك بنجاح!</h2>
+      <p class="success-card__sub">سيراجع فريق وصّلها طلبك ويتواصل معك خلال 2-3 أيام عمل لمناقشة تفاصيل التعاقد.</p>
+    </div>
+  </div>
+</Layout>
+
+<script>
+  const SB_URL = 'https://vtikgyiopkjnrwlqnmfx.supabase.co';
+  const SB_KEY = 'sb_publishable_PLSnpvCT-sAyUMtymNgTwA_QmL2suw4';
+  const SB_H = { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}`, 'Content-Type': 'application/json' };
+
+  function normPhone(s: string) { return s.replace(/[\s\-()+]/g, ''); }
+  const EG = /^01[0125][0-9]{8}$/;
+
+  document.getElementById('biz-submit-btn')?.addEventListener('click', async () => {
+    const errEl = document.getElementById('biz-alert')!;
+    errEl.classList.remove('visible');
+
+    const company = (document.getElementById('b-company') as HTMLInputElement).value.trim();
+    const name    = (document.getElementById('b-name') as HTMLInputElement).value.trim();
+    const phone   = normPhone((document.getElementById('b-phone') as HTMLInputElement).value.trim());
+    const email   = (document.getElementById('b-email') as HTMLInputElement).value.trim();
+    const service = (document.getElementById('b-service') as HTMLSelectElement).value;
+    const volume  = (document.getElementById('b-volume') as HTMLSelectElement).value;
+    const notes   = (document.getElementById('b-notes') as HTMLTextAreaElement).value.trim();
+
+    if (!company)         { errEl.textContent = 'يرجى إدخال اسم الشركة.'; errEl.classList.add('visible'); return; }
+    if (!name)             { errEl.textContent = 'يرجى إدخال اسم المسؤول.'; errEl.classList.add('visible'); return; }
+    if (!EG.test(phone))   { errEl.textContent = 'رقم جوال غير صحيح (01...)'; errEl.classList.add('visible'); return; }
+
+    const btn = document.getElementById('biz-submit-btn') as HTMLButtonElement;
+    btn.disabled = true; btn.textContent = 'جاري الإرسال...';
+
+    try {
+      const res = await fetch(`${SB_URL}/rest/v1/corporate_contracts`, {
+        method: 'POST',
+        headers: { ...SB_H, Prefer: 'return=minimal' },
+        body: JSON.stringify({
+          company_name: company, contact_name: name, contact_phone: phone,
+          contact_email: email || null, service_type: service, monthly_volume: volume,
+          notes: notes || null, status: 'pending',
+        }),
+      });
+      if (!res.ok) {
+        const detail = await res.text().catch(() => '');
+        console.error('[business] contract insert failed', res.status, detail);
+        errEl.textContent = 'تعذر إرسال الطلب، حاول مرة أخرى.'; errEl.classList.add('visible');
+        btn.disabled = false; btn.textContent = '📩 إرسال طلب التعاقد';
+        return;
+      }
+      document.getElementById('form-card')!.style.display = 'none';
+      document.getElementById('success-card')!.classList.add('visible');
+    } catch (e) {
+      console.error('[business] contract insert error', e);
+      errEl.textContent = 'تعذر إرسال الطلب، تحقق من الاتصال وحاول مرة أخرى.'; errEl.classList.add('visible');
+      btn.disabled = false; btn.textContent = '📩 إرسال طلب التعاقد';
+    }
+  });
+</script>

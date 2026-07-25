@@ -293,8 +293,10 @@ const SIZES = [
           delivery_fee: fee,
           total: fee,
           payment,
-          status: 'preparing', // no merchant to accept — goes straight to driver dispatch
-          accepted_at: new Date().toISOString(),
+          // pending until the courier team reviews it in the admin panel's
+          // "الطرود والمستندات" tab — accepting there flips this to
+          // 'preparing', which is what actually triggers driver dispatch.
+          status: 'pending',
           store_lat: fromPlace.lat,
           store_lng: fromPlace.lng,
           customer_lat: toPlace.lat,
