@@ -1212,6 +1212,39 @@ import { VEHICLE_MODELS, FARE_ZONES, TRIP_RATES } from '../data/airports';
   const SB_KEY = 'sb_publishable_PLSnpvCT-sAyUMtymNgTwA_QmL2suw4';
   const SB_H = { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}`, 'Content-Type': 'application/json' };
 
+  // ── Web Push — real notification the moment a driver accepts, even if
+  //    the customer isn't looking at this tab. Same pattern/edge function
+  //    driver-dashboard.astro already uses for "new ride" alerts to
+  //    drivers, just subscribed under role:'customer' instead. ──
+  const VAPID_PUBLIC_KEY = 'BAff2dem6ctMexZ88fk51q9YJKanqGjn1wFa1FHJx67xW_f0-m5nN2kmKSMmiCrN99S808bz3zwJb26b6Omyv3M';
+  function urlBase64ToUint8Array(base64) {
+    const padding = '='.repeat((4 - (base64.length % 4)) % 4);
+    const raw = atob((base64 + padding).replace(/-/g, '+').replace(/_/g, '/'));
+    return Uint8Array.from([...raw].map(c => c.charCodeAt(0)));
+  }
+  async function subscribeCustomerWebPush(phone) {
+    if (!phone || !('serviceWorker' in navigator) || !('PushManager' in window)) return;
+    try {
+      if (typeof Notification !== 'undefined' && Notification.permission === 'default') {
+        await Notification.requestPermission();
+      }
+      if (typeof Notification === 'undefined' || Notification.permission !== 'granted') return;
+      const reg = await navigator.serviceWorker.ready;
+      let sub = await reg.pushManager.getSubscription();
+      if (!sub) {
+        sub = await reg.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
+        });
+      }
+      await fetch(`${SB_URL}/rest/v1/push_subscriptions?on_conflict=phone,role`, {
+        method: 'POST',
+        headers: { ...SB_H, Prefer: 'resolution=merge-duplicates,return=minimal' },
+        body: JSON.stringify({ phone, role: 'customer', subscription: sub.toJSON(), updated_at: new Date().toISOString() }),
+      });
+    } catch { /* browser declined or unsupported — the in-page driver-card UI still updates via polling/realtime */ }
+  }
+
   // ── Supabase Realtime ──
   let _sb = null;
   (function loadSbClient() {
@@ -2457,6 +2490,7 @@ import { VEHICLE_MODELS, FARE_ZONES, TRIP_RATES } from '../data/airports';
       status: 'pending', ride_type: 'local',
     });
     activeRideId = ride?.id || null;
+    if (activeRideId) subscribeCustomerWebPush(phone);
 
     try {
       const _ru = JSON.parse(localStorage.getItem('wslha_user') || '{}');
@@ -2634,6 +2668,7 @@ import { VEHICLE_MODELS, FARE_ZONES, TRIP_RATES } from '../data/airports';
       status: 'pending', ride_type: 'airport',
     });
     activeRideId = ride?.id || null;
+    if (activeRideId) subscribeCustomerWebPush(phone);
 
     try {
       const _au = JSON.parse(localStorage.getItem('wslha_user') || '{}');
@@ -2775,6 +2810,7 @@ import { VEHICLE_MODELS, FARE_ZONES, TRIP_RATES } from '../data/airports';
       const ride = rows[0];
 
       activeRideId = ride.id;
+      subscribeCustomerWebPush(phone);
       const from = { name: ride.from_area, lat: Number(ride.from_lat), lng: Number(ride.from_lng) };
       const to   = { name: ride.to_area,   lat: Number(ride.to_lat),   lng: Number(ride.to_lng) };
       _currentFrom = from; _currentTo = to; _currentEta = ride.eta_minutes || 0;
