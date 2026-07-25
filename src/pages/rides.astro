@@ -2801,7 +2801,7 @@ import { VEHICLE_MODELS, FARE_ZONES, TRIP_RATES } from '../data/airports';
     if (!phone) return;
     try {
       const res = await fetch(
-        `${SB_URL}/rest/v1/rides?customer_phone=eq.${encodeURIComponent(phone)}&status=in.(pending,accepted,arrived,in_progress)&ride_type=in.(local,airport)&select=*&order=created_at.desc&limit=1`,
+        `${SB_URL}/rest/v1/rides?customer_phone=eq.${encodeURIComponent(phone)}&status=in.(pending,accepted,arrived,in_progress)&ride_type=in.(local,airport,hourly)&select=*&order=created_at.desc&limit=1`,
         { headers: SB_H }
       );
       if (!res.ok) return;
