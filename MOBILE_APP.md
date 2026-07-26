@@ -59,10 +59,15 @@ npm run app:sync       # astro build + npx cap sync
 
 التطبيق جاهز لاستقبال الإشعارات:
 - **محلية (Local):** شغّالة فورًا — تنبيهات الطلبات والحالة.
-- **Push (من سيرفر):** محتاجة إعداد **Firebase Cloud Messaging**:
+- **Web Push (متصفح):** شغّالة فعليًا عبر `supabase/functions/send-push` (VAPID).
+- **Native Push (FCM/APNs):** الكود جاهز — `src/components/layout.astro` بيسجّل
+  الجهاز ويحفظ التوكن في جدول `device_tokens` (شغّل `db/security-04-device-tokens.sql`
+  مرة واحدة) — لكن الإرسال الفعلي محتاج إعداد **Firebase Cloud Messaging**:
   1. أنشئ مشروع على [Firebase Console](https://console.firebase.google.com).
   2. نزّل `google-services.json` وحطه في `android/app/`.
   3. لـ iOS: نزّل `GoogleService-Info.plist` وحطه في مشروع Xcode + فعّل Push على Apple Developer.
+  4. لسه محتاج توسيع `send-push` (أو دالة جديدة) عشان تبعت عبر FCM Admin SDK
+     لأصحاب توكنات `device_tokens` — مش موجود حاليًا، الجدول بس اللي جاهز.
 
 > الجسر البرمجي موجود في `src/components/layout.astro` ويتفعّل تلقائيًا داخل التطبيق فقط.
 
@@ -91,6 +96,24 @@ android/                مشروع أندرويد (افتحه في Android Studi
 ios/                    مشروع iOS (افتحه في Xcode على ماك)
 dist/                   ناتج بناء الموقع — هو اللي بيتغلّف
 ```
+
+---
+
+## ✅ الجاهزية للنشر على المتاجر
+
+الأيقونات والـ Splash والبناء نفسه جاهزين. الباقي محتاج حسابات حقيقية
+مقدرش أعملها بدالك — دي قائمة يدوية:
+
+- [ ] حساب [Google Play Console](https://play.google.com/console) (رسوم تسجيل لمرة واحدة).
+- [ ] حساب [Apple Developer Program](https://developer.apple.com/programs/) (اشتراك سنوي، محتاج ماك للنشر).
+- [ ] مشروع Firebase + `google-services.json` / `GoogleService-Info.plist` (قسم الإشعارات فوق).
+- [ ] Keystore موقّع لأندرويد (يتولّد أول مرة من Android Studio) — احتفظ بيه بمكان آمن.
+- [ ] صور شاشة (screenshots) للمتجرين — مقاسات Google Play وApp Store مختلفة.
+- [ ] نص وصف التطبيق + كلمات مفتاحية بالعربي (وبالإنجليزي لو هتستهدف غير مصر).
+- [ ] رابط سياسة الخصوصية — `privacy.astro` موجود بالفعل، تقدر تنشره وتستخدم رابطه.
+- [ ] تصنيف عمري ومحتوى (Content rating) — يتم تعبيته داخل كل لوحة تحكم.
+
+بمجرد توفر الحسابات، الخطوات في قسم "بناء ملف النشر" فوق هي المطلوبة فعليًا للرفع.
 
 ---
 

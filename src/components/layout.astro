@@ -403,6 +403,26 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site ?? 'https://wslha.co
           P.PushNotifications.requestPermissions().then(function (r) {
             if (r && r.receive === 'granted') P.PushNotifications.register();
           });
+          // Capture the FCM/APNs device token once registration succeeds and
+          // save it server-side via a security-definer RPC (never a direct
+          // table write) so a future native push send can reach this device.
+          P.PushNotifications.addListener('registration', function (token) {
+            try {
+              var raw = localStorage.getItem('wslha_user');
+              var user = raw ? JSON.parse(raw) : null;
+              if (!user || !user.phone || !token || !token.value) return;
+              var SB_URL = 'https://vtikgyiopkjnrwlqnmfx.supabase.co';
+              var SB_KEY = 'sb_publishable_PLSnpvCT-sAyUMtymNgTwA_QmL2suw4';
+              fetch(SB_URL + '/rest/v1/rpc/upsert_device_token', {
+                method: 'POST',
+                headers: { apikey: SB_KEY, Authorization: 'Bearer ' + SB_KEY, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ p_phone: user.phone, p_token: token.value, p_platform: Cap.getPlatform() }),
+              }).catch(function () {});
+            } catch (e) {}
+          });
+          P.PushNotifications.addListener('registrationError', function (err) {
+            console.error('Push registration failed:', err);
+          });
         } catch (e) {}
       }
       if (P.LocalNotifications) {

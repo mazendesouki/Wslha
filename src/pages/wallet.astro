@@ -206,6 +206,14 @@ import Layout from '../components/layout.astro';
         <label class="pay-opt"><input type="radio" name="charge-method" value="bank" /><span class="pay-opt__icon">🏦</span><span><div class="pay-opt__name">تحويل بنكي</div><div class="pay-opt__sub">24 ساعة</div></span><span class="pay-opt__dot"></span></label>
       </div>
       <button class="s-btn" id="charge-btn" type="button">إيداع الرصيد</button>
+      <button class="s-btn" id="charge-paymob-btn" type="button" style="margin-top:8px;background:#0f9d58">💳 ادفع الآن أونلاين (فيزا / فودافون كاش / فوري)</button>
+    </div>
+  </div>
+
+  <!-- Paymob checkout sheet (web only — native opens the in-app browser instead) -->
+  <div class="sheet-overlay" id="sheet-paymob">
+    <div class="sheet" style="padding:0;overflow:hidden;height:85vh">
+      <iframe id="paymob-iframe" style="width:100%;height:100%;border:0" title="Paymob"></iframe>
     </div>
   </div>
 
@@ -265,7 +273,7 @@ import Layout from '../components/layout.astro';
   }
   function openSheet(id) { document.getElementById(id).classList.add('visible'); }
   function closeSheet(id) { document.getElementById(id).classList.remove('visible'); }
-  ['sheet-deposit','sheet-withdraw','sheet-transfer'].forEach(function(id) {
+  ['sheet-deposit','sheet-withdraw','sheet-transfer','sheet-paymob'].forEach(function(id) {
     document.getElementById(id).addEventListener('click', function(e) { if (e.target === this) closeSheet(id); });
   });
   document.getElementById('btn-deposit').addEventListener('click', function() { openSheet('sheet-deposit'); });
@@ -301,7 +309,7 @@ import Layout from '../components/layout.astro';
       var txs = await res.json();
       var el = document.getElementById('tx-list');
       if (!Array.isArray(txs) || !txs.length) { el.innerHTML = '<div class="tx-empty">لا توجد معاملات بعد</div>'; return; }
-      var labels = { topup:'إيداع', earning:'أرباح', refund:'استرداد', transfer_in:'تحويل وارد', commission:'عمولة', payment:'مدفوعات', withdrawal:'سحب', transfer_out:'تحويل صادر' };
+      var labels = { topup:'إيداع', deposit:'إيداع', earning:'أرباح', refund:'استرداد', transfer_in:'تحويل وارد', commission:'عمولة', payment:'مدفوعات', withdrawal:'سحب', transfer_out:'تحويل صادر', admin_credit:'شحن يدوي', admin_debit:'خصم يدوي' };
       var today = new Date().toDateString();
       var groups = {};
       txs.forEach(function(t) {
@@ -344,8 +352,7 @@ import Layout from '../components/layout.astro';
   }
 
   // ── Deposit: never changes the balance on the client. It records a
-  //    top-up request the admin confirms once the real money arrives
-  //    (Paymob online charging is wired separately). No forgery possible.
+  //    top-up request the admin confirms once the real money arrives.
   document.getElementById('charge-btn').addEventListener('click', async function() {
     if (!user) return;
     var amt = parseFloat(document.getElementById('charge-amount').value);
@@ -360,6 +367,58 @@ import Layout from '../components/layout.astro';
     } catch(ex) { toast(ex.message, false); }
     btn.disabled = false; btn.textContent = 'إيداع الرصيد';
   });
+
+  // ── Online deposit via Paymob: server creates the checkout intention,
+  //    balance is only ever credited by the paymob-webhook function once
+  //    Paymob confirms the payment (HMAC-verified) — never from the client.
+  document.getElementById('charge-paymob-btn').addEventListener('click', async function() {
+    if (!user) return;
+    var amt = parseFloat(document.getElementById('charge-amount').value);
+    if (!amt || amt < 10) { toast('أدخل مبلغاً لا يقل عن 10 جنيه', false); return; }
+    var btn = this; btn.disabled = true; btn.textContent = 'جاري التحضير...';
+    try {
+      var res = await fetch(SB_URL + '/functions/v1/paymob-create-intention', {
+        method: 'POST', headers: SB_H, body: JSON.stringify({ phone: user.phone, amount: amt }),
+      });
+      var data = await res.json();
+      if (!res.ok || !data.iframe_url) throw new Error(data.error === 'gateway_not_configured' ? 'الدفع الإلكتروني غير مفعّل حالياً' : 'تعذّر بدء عملية الدفع');
+      closeSheet('sheet-deposit');
+      if (window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()) {
+        var Browser = window.Capacitor.Plugins.Browser;
+        Browser.addListener('browserFinished', function() { loadWallet(); loadLog(); });
+        await Browser.open({ url: data.iframe_url });
+      } else {
+        document.getElementById('paymob-iframe').src = data.iframe_url;
+        openSheet('sheet-paymob');
+        pollPaymobRequest(data.request_id);
+      }
+    } catch(ex) { toast(ex.message, false); }
+    btn.disabled = false; btn.textContent = '💳 ادفع الآن أونلاين (فيزا / فودافون كاش / فوري)';
+  });
+
+  // Polls the wallet_requests row while the Paymob sheet is open so we can
+  // close it and refresh the balance the moment paymob-webhook marks it
+  // done/rejected — the client never decides this itself.
+  function pollPaymobRequest(requestId) {
+    var tries = 0;
+    var timer = setInterval(async function() {
+      tries++;
+      if (!document.getElementById('sheet-paymob').classList.contains('visible') || tries > 100) {
+        clearInterval(timer); return;
+      }
+      try {
+        var res = await fetch(SB_URL + '/rest/v1/wallet_requests?id=eq.' + encodeURIComponent(requestId) + '&select=status', { headers: SB_H });
+        var rows = await res.json();
+        var status = rows && rows[0] && rows[0].status;
+        if (status === 'done' || status === 'rejected') {
+          clearInterval(timer);
+          closeSheet('sheet-paymob');
+          loadWallet(); loadLog();
+          toast(status === 'done' ? '✅ تم الإيداع بنجاح' : '❌ لم تكتمل عملية الدفع', status === 'done');
+        }
+      } catch {}
+    }, 3000);
+  }
 
   // ── Withdraw: the server reserves the funds atomically (checks the
   //    balance, deducts, logs) and opens an admin payout request. The
