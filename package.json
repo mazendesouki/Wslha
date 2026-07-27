@@ -16,11 +16,11 @@
     "app:run:android": "npm run app:sync && npx cap run android"
   },
   "devDependencies": {
-    "@astrojs/preact": "^3.5.4",
-    "@capacitor/cli": "^5.7.8",
+    "@astrojs/preact": "^6.0.1",
+    "@capacitor/cli": "^8.4.2",
     "@netlify/netlify-marketing-tokens": "^1.1.0",
     "@resvg/resvg-js": "^2.6.2",
-    "astro": "^4.16.19",
+    "astro": "^7.1.0",
     "playwright": "^1.60.0"
   },
   "dependencies": {
