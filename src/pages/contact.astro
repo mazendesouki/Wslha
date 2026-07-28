@@ -225,8 +225,13 @@ const SUBJECTS = [
   import { isEgyptianMobile, EG_PHONE_ERROR } from '../utils/phone';
 
   /* ── Config ─────────────────────────────────────────────── */
-  const SB_URL  = import.meta.env.PUBLIC_SB_URL  || (window as any).__SB_URL;
-  const SB_KEY  = import.meta.env.PUBLIC_SB_KEY  || (window as any).__SB_KEY;
+  // Hardcoded like every other page's Supabase client (wallet.astro,
+  // courier.astro, etc.) — this used to read PUBLIC_SB_URL/PUBLIC_SB_KEY
+  // from env vars, which were never actually set at deploy time, so
+  // saveToSupabase() silently no-opped (`if (!SB_URL || !SB_KEY) return`)
+  // on every submission while the form still showed a fake success message.
+  const SB_URL  = 'https://vtikgyiopkjnrwlqnmfx.supabase.co';
+  const SB_KEY  = 'sb_publishable_PLSnpvCT-sAyUMtymNgTwA_QmL2suw4';
   const SB_H    = { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}` };
 
   const EJS_SERVICE  = import.meta.env.PUBLIC_EMAILJS_SERVICE_ID   || '';
