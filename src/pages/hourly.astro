@@ -2,11 +2,12 @@
 import Layout from '../components/layout.astro';
 import PageHero from '../components/PageHero.astro';
 
+const HOURLY_RATE = 400; // ج.م/ساعة — سعر موحّد بغضّ النظر عن فئة السيارة
 const HOURS_OPTIONS = [2, 4, 6, 8, 12];
 const CATEGORIES = [
-  { id: 'sedan', label: '🚗 سيدان',       rate: 80  },
-  { id: 'suv',   label: '🚙 SUV / كروز',  rate: 100 },
-  { id: 'van',   label: '🚐 ميكروباص',    rate: 120 },
+  { id: 'sedan', label: '🚗 سيدان',      note: 'حتى 3 ركاب'  },
+  { id: 'suv',   label: '🚙 SUV / كروز', note: 'حتى 6 ركاب'  },
+  { id: 'van',   label: '🚐 ميكروباص',   note: 'حتى 8 ركاب'  },
 ];
 ---
 
@@ -72,10 +73,10 @@ const CATEGORIES = [
   }
 </style>
 
-<Layout title="احجز سائق بالساعة | وصّلها" page="hourly">
+<Layout title="سائق تحت الطلب | وصّلها" page="hourly">
   <PageHero
-    title="احجز سائق بالساعة 🕐"
-    subtitle="سائق تحت أمرك لعدة محطات — للمشاوير المتعددة، أو انتظارك أثناء إنجاز أعمالك"
+    title="سائق تحت الطلب 🕐"
+    subtitle="للرحلات والسفر الطويل بين المحافظات — القاهرة، الإسكندرية، وأي وجهة بعيدة — وقضاء حوائجك اليومية، بسعر ثابت 400 ج.م للساعة"
   />
 
   <div class="hourly-page">
@@ -102,7 +103,7 @@ const CATEGORIES = [
               <label class="opt">
                 <input type="radio" name="h-cat" value={c.id} checked={i === 0} />
                 <div class="opt__label">{c.label}</div>
-                <div class="opt__sub">{c.rate} ج.م/ساعة</div>
+                <div class="opt__sub">{c.note}</div>
               </label>
             ))}
           </div>
@@ -111,6 +112,11 @@ const CATEGORIES = [
         <div class="field">
           <label class="field__label" for="h-from">نقطة الانطلاق</label>
           <input id="h-from" type="text" class="field__input" placeholder="من أين يبدأ السائق معك؟" autocomplete="off" />
+        </div>
+
+        <div class="field">
+          <label class="field__label" for="h-notes-2">الوجهة أو الغرض من الرحلة</label>
+          <input id="h-notes-2" type="text" class="field__input" placeholder="مثلاً: القاهرة والعودة، الإسكندرية، قضاء حوائج داخل دمياط..." />
         </div>
 
         <div class="form-row" id="h-contact-row">
@@ -131,7 +137,7 @@ const CATEGORIES = [
             </select>
           </div>
         </div>
-        <div class="field"><label class="field__label" for="h-notes">ملاحظات (اختياري)</label><textarea id="h-notes" class="field__textarea" placeholder="مثلاً: عدة محطات في دمياط الجديدة، انتظار أمام..."></textarea></div>
+        <div class="field"><label class="field__label" for="h-notes">ملاحظات إضافية (اختياري)</label><textarea id="h-notes" class="field__textarea" placeholder="مثلاً: عدد الأمتعة، مواعيد محددة، توقفات إضافية..."></textarea></div>
         <div class="field">
           <label class="field__label">طريقة الدفع</label>
           <select id="h-payment" class="field__select">
@@ -144,11 +150,13 @@ const CATEGORIES = [
       <div id="route-summary" class="route-summary">
         <div class="route-summary__stat"><div id="sum-hours" class="route-summary__val">4</div><div class="route-summary__key">ساعات</div></div>
         <div class="route-summary__divider"></div>
-        <div class="route-summary__stat"><div id="sum-price" class="route-summary__val route-summary__val--price">320</div><div class="route-summary__key">إجمالي الأجرة</div></div>
+        <div class="route-summary__stat"><div class="route-summary__val">400</div><div class="route-summary__key">ج.م / ساعة</div></div>
+        <div class="route-summary__divider"></div>
+        <div class="route-summary__stat"><div id="sum-price" class="route-summary__val route-summary__val--price">1600</div><div class="route-summary__key">إجمالي الأجرة</div></div>
       </div>
 
       <div class="form-section" style="padding-top:0">
-        <button id="hourly-submit-btn" class="submit-btn" type="button" disabled>🕐 احجز السائق الآن</button>
+        <button id="hourly-submit-btn" class="submit-btn" type="button" disabled>🕐 اطلب سائقك الآن</button>
         <div id="hourly-hint" style="font-size:var(--text-xs);color:var(--color-text-faint);text-align:center;margin-top:var(--sp-2)">اختر نقطة الانطلاق أولاً</div>
       </div>
     </div>
@@ -160,7 +168,7 @@ const CATEGORIES = [
   const SB_KEY = 'sb_publishable_PLSnpvCT-sAyUMtymNgTwA_QmL2suw4';
   const SB_H = { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}`, 'Content-Type': 'application/json' };
 
-  const RATES: Record<string, number> = { sedan: 80, suv: 100, van: 120 };
+  const HOURLY_RATE = 400; // ج.م/ساعة — نفس القيمة لكل فئات السيارات
 
   function normPhone(s: string) { return s.replace(/[\s\-()+]/g, ''); }
   const EG = /^01[0125][0-9]{8}$/;
@@ -172,7 +180,7 @@ const CATEGORIES = [
     return (document.querySelector('input[name="h-cat"]:checked') as HTMLInputElement)?.value || 'sedan';
   }
   function fareFor(): number {
-    return currentHours() * (RATES[currentCat()] ?? 80);
+    return currentHours() * HOURLY_RATE;
   }
   function updateSummary() {
     document.getElementById('sum-hours')!.textContent = String(currentHours());
@@ -250,6 +258,7 @@ const CATEGORIES = [
     const fare   = fareFor();
     const pax    = (document.getElementById('h-passengers') as HTMLSelectElement).value;
     const pay    = (document.getElementById('h-payment') as HTMLSelectElement).value;
+    const destination = (document.getElementById('h-notes-2') as HTMLInputElement).value.trim();
     const notes  = (document.getElementById('h-notes') as HTMLTextAreaElement).value.trim();
 
     const btn = document.getElementById('hourly-submit-btn') as HTMLButtonElement;
@@ -262,11 +271,14 @@ const CATEGORIES = [
         body: JSON.stringify({
           customer_phone: phone, customer_name: name,
           from_area: fromPlace.name, from_lat: fromPlace.lat, from_lng: fromPlace.lng,
-          // لا وجهة ثابتة في الحجز بالساعة — السائق يفضل مع العميل طول المدة.
+          // لا وجهة ثابتة في الحجز بالساعة — السائق يفضل مع العميل طول المدة
+          // (ممكن تشمل رحلة طويلة بين المحافظات، الوجهة/الغرض بيتسجّل في notes).
           to_area: fromPlace.name, to_lat: fromPlace.lat, to_lng: fromPlace.lng,
           distance_km: 0, fare, eta_minutes: hours * 60,
           passengers: parseInt(pax), payment: pay,
-          notes: `🕐 حجز بالساعة — ${hours} ساعات — 🚘 ${cat}` + (notes ? ' — ' + notes : ''),
+          notes: `🕐 سائق تحت الطلب — ${hours} ساعات — 🚘 ${cat}`
+            + (destination ? ` — الوجهة/الغرض: ${destination}` : '')
+            + (notes ? ' — ' + notes : ''),
           vehicle_year: 2022,
           status: 'pending', ride_type: 'hourly',
         }),
@@ -275,14 +287,14 @@ const CATEGORIES = [
         const detail = await res.text().catch(() => '');
         console.error('[hourly] ride insert failed', res.status, detail);
         errEl.textContent = 'تعذر إرسال الطلب، حاول مرة أخرى.'; errEl.classList.add('visible');
-        btn.disabled = false; btn.textContent = '🕐 احجز السائق الآن';
+        btn.disabled = false; btn.textContent = '🕐 اطلب سائقك الآن';
         return;
       }
       window.location.href = '/rides';
     } catch (e) {
       console.error('[hourly] ride insert error', e);
       errEl.textContent = 'تعذر إرسال الطلب، تحقق من الاتصال وحاول مرة أخرى.'; errEl.classList.add('visible');
-      btn.disabled = false; btn.textContent = '🕐 احجز السائق الآن';
+      btn.disabled = false; btn.textContent = '🕐 اطلب سائقك الآن';
     }
   });
 </script>
