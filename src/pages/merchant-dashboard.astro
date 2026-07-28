@@ -503,6 +503,11 @@ import Layout from '../components/layout.astro';
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--sp-5);flex-wrap:wrap;gap:var(--sp-3);">
           <h2 style="font-weight:var(--weight-black);font-size:var(--text-lg);">الطلبات المباشرة 📡</h2>
           <div style="display:flex;gap:var(--sp-3);align-items:center;flex-wrap:wrap;">
+            <a href="/merchant-delivery" target="_blank"
+               style="display:inline-flex;align-items:center;gap:6px;background:#0E4B49;color:#fff;border:none;border-radius:var(--radius-lg);padding:var(--sp-2) var(--sp-4);font-weight:var(--weight-black);font-size:var(--text-sm);text-decoration:none;transition:background .2s;"
+               onmouseover="this.style.background='#082F2E'" onmouseout="this.style.background='#0E4B49'">
+              🛵 طلب توصيل جديد
+            </a>
             <a href="/restaurant-orders" target="_blank"
                style="display:inline-flex;align-items:center;gap:6px;background:#16a34a;color:#fff;border:none;border-radius:var(--radius-lg);padding:var(--sp-2) var(--sp-4);font-weight:var(--weight-black);font-size:var(--text-sm);text-decoration:none;transition:background .2s;"
                onmouseover="this.style.background='#15803d'" onmouseout="this.style.background='#16a34a'">

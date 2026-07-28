@@ -1,0 +1,370 @@
+---
+import Layout from '../components/layout.astro';
+import PageHero from '../components/PageHero.astro';
+---
+
+<style>
+  .md-page { max-width: 720px; margin: 0 auto; padding: var(--sp-8) var(--sp-6) var(--sp-20); }
+  .md-card {
+    background: var(--color-bg); border: 1px solid var(--color-border);
+    border-radius: var(--radius-xl); box-shadow: var(--shadow-md); overflow: hidden;
+  }
+  .form-section { padding: var(--sp-6); }
+  .field { margin-bottom: var(--sp-4); }
+  .field__label { display: block; font-weight: var(--weight-bold); font-size: var(--text-sm); margin-bottom: var(--sp-2); color: var(--color-text); }
+  .field__input, .field__select, .field__textarea {
+    width: 100%; padding: var(--sp-3) var(--sp-4);
+    border: 2px solid var(--color-border); border-radius: var(--radius);
+    font-family: var(--font-body); font-size: var(--text-sm);
+    direction: rtl; background: var(--color-bg); color: var(--color-text); outline: none; transition: border-color var(--ease);
+    box-sizing: border-box;
+  }
+  .field__input:focus, .field__select:focus, .field__textarea:focus { border-color: var(--color-primary); }
+  .field__textarea { resize: vertical; min-height: 60px; }
+  .field__input[readonly] { background: var(--color-primary-light); color: var(--color-text-faint); }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-3); }
+
+  .route-block {
+    display: flex; align-items: center; gap: var(--sp-3); margin-bottom: var(--sp-4);
+  }
+  .route-block__fields { flex: 1; display: flex; flex-direction: column; gap: var(--sp-3); }
+  .flip-btn {
+    width: 44px; height: 44px; border-radius: 50%; flex-shrink: 0;
+    border: 2px solid var(--color-border); background: var(--color-bg);
+    cursor: pointer; font-size: 1.1rem; transition: all var(--ease);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .flip-btn:hover { border-color: var(--color-primary); background: var(--color-primary-light); }
+
+  .fee-summary {
+    margin: 0 var(--sp-6) var(--sp-4);
+    background: linear-gradient(135deg, #F2F7F6, #E3EDEC);
+    border: 1px solid #C9DEDC; border-radius: var(--radius-xl);
+    padding: var(--sp-4) var(--sp-5);
+  }
+  .fee-row { display: flex; justify-content: space-between; font-size: var(--text-sm); padding: 4px 0; }
+  .fee-row__label { color: var(--color-text-faint); }
+  .fee-row--total { border-top: 1px solid #C9DEDC; margin-top: 6px; padding-top: 8px; font-weight: var(--weight-black); font-size: var(--text-base); }
+  .fee-row--total .fee-row__val { color: #16a34a; }
+
+  .submit-btn {
+    width: 100%; padding: var(--sp-4); border-radius: var(--radius-lg);
+    background: var(--color-primary); color: #fff; font-family: var(--font-body);
+    font-size: var(--text-sm); font-weight: var(--weight-black);
+    border: none; cursor: pointer; transition: all var(--ease);
+  }
+  .submit-btn:hover:not(:disabled) { background: var(--color-primary-dark); }
+  .submit-btn:disabled { opacity: .45; cursor: not-allowed; }
+  .alert-error { padding: var(--sp-3); border-radius: var(--radius); font-size: var(--text-sm); margin-bottom: var(--sp-3); display: none; background: #fef2f2; border: 1px solid #fca5a5; color: #b91c1c; }
+  .alert-error.visible { display: block; }
+  .gate-box { text-align: center; padding: var(--sp-20) var(--sp-6); }
+
+  @media (max-width: 560px) {
+    .form-row { grid-template-columns: 1fr; }
+  }
+</style>
+
+<Layout title="طلب توصيل جديد | وصّلها" page="merchant-delivery">
+  <PageHero
+    title="طلب توصيل 🛵"
+    subtitle="اطلب مندوباً لتوصيل طلب عميل من متجرك — أو لاستلام إرجاع من عميل لمتجرك"
+  />
+
+  <div class="md-page">
+    <div id="gate-box" class="gate-box" hidden>
+      <div style="font-size:3rem;margin-bottom:16px">🔒</div>
+      <div style="font-size:1.1rem;font-weight:900;margin-bottom:10px">تسجيل دخول تاجر مطلوب</div>
+      <div style="color:var(--color-text-faint);font-size:.875rem;margin-bottom:24px">هذه الخدمة متاحة فقط للتجار المسجّلين ولهم متجر معتمد</div>
+      <a href="/login" style="padding:12px 24px;background:var(--color-primary);color:#fff;border-radius:12px;text-decoration:none;font-weight:900;">تسجيل الدخول</a>
+    </div>
+
+    <div class="md-card" id="booking-card" hidden>
+      <div class="form-section">
+        <div id="md-alert" class="alert-error"></div>
+
+        <div class="route-block">
+          <div class="route-block__fields">
+            <div class="field" style="margin-bottom:var(--sp-3)">
+              <label class="field__label" id="origin-label">من (نقطة الاستلام)</label>
+              <input id="origin-input" type="text" class="field__input" readonly />
+            </div>
+            <div class="field" style="margin-bottom:0">
+              <label class="field__label" id="dest-label">إلى (نقطة التسليم)</label>
+              <input id="dest-input" type="text" class="field__input" placeholder="عنوان العميل" autocomplete="off" />
+            </div>
+          </div>
+          <button id="flip-btn" class="flip-btn" type="button" title="عكس اتجاه التوصيل">↕️</button>
+        </div>
+
+        <div class="form-row">
+          <div class="field"><label class="field__label" for="md-cust-name">اسم العميل</label><input id="md-cust-name" type="text" class="field__input" placeholder="اسم العميل" /></div>
+          <div class="field"><label class="field__label" for="md-cust-phone">رقم جوال العميل</label><input id="md-cust-phone" type="tel" class="field__input" placeholder="01xxxxxxxxx" /></div>
+        </div>
+
+        <div class="field">
+          <label class="field__label" for="md-items">المنتجات المطلوبة</label>
+          <textarea id="md-items" class="field__textarea" placeholder="مثال: قميص مقاس L × 1، بنطلون جينز × 2"></textarea>
+        </div>
+        <div class="field">
+          <label class="field__label" for="md-subtotal">تكلفة المنتجات (جنيه)</label>
+          <input id="md-subtotal" type="number" min="0" step="1" class="field__input" placeholder="0" />
+        </div>
+        <div class="field">
+          <label class="field__label">طريقة الدفع</label>
+          <select id="md-payment" class="field__select">
+            <option value="cash">💵 كاش عند الاستلام</option>
+            <option value="wallet">📱 فودافون كاش / إنستاباي</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="fee-summary">
+        <div class="fee-row"><span class="fee-row__label">تكلفة المنتجات</span><span class="fee-row__val" id="fee-subtotal">0 ج.م</span></div>
+        <div class="fee-row"><span class="fee-row__label">رسوم خدمة التطبيق</span><span class="fee-row__val" id="fee-service">— ج.م</span></div>
+        <div class="fee-row"><span class="fee-row__label">رسوم التوصيل</span><span class="fee-row__val" id="fee-delivery">— كم أولاً</span></div>
+        <div class="fee-row fee-row--total"><span class="fee-row__label">الإجمالي</span><span class="fee-row__val" id="fee-total">—</span></div>
+      </div>
+
+      <div class="form-section" style="padding-top:0">
+        <button id="md-submit-btn" class="submit-btn" type="button" disabled>🛵 إرسال طلب التوصيل</button>
+      </div>
+    </div>
+  </div>
+</Layout>
+
+<script>
+  const SB_URL = 'https://vtikgyiopkjnrwlqnmfx.supabase.co';
+  const SB_KEY = 'sb_publishable_PLSnpvCT-sAyUMtymNgTwA_QmL2suw4';
+  const SB_H = { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}`, 'Content-Type': 'application/json' };
+  const GMAPS_KEY = 'AIzaSyAKvFfBYNDcTZgvZZH5s_lQbOc24LNjLsY';
+
+  const EG = /^01[0125][0-9]{8}$/;
+  function normPhone(s: string) { return s.replace(/[\s\-()+]/g, ''); }
+
+  function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number) {
+    const R = 6371, dLat = (lat2 - lat1) * Math.PI / 180, dLng = (lng2 - lng1) * Math.PI / 180;
+    const a = Math.sin(dLat / 2) ** 2 + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLng / 2) ** 2;
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  }
+  // Same base/slope shape as courier.astro's feeFor(), using its "medium
+  // parcel" tier as the flat base since there's no package-size picker here.
+  function deliveryFeeFor(km: number): number {
+    const base = 30;
+    const raw = base + Math.max(0, km - 3) * 3;
+    return Math.ceil(raw / 5) * 5;
+  }
+
+  type Place = { name: string; lat: number; lng: number };
+  let store: { id: string; name: string; address: string; area: string; lat: number | null; lng: number | null } | null = null;
+  let storePlace: Place | null = null;
+  let customerPlace: Place | null = null;
+  let direction: 'store_to_customer' | 'customer_to_store' = 'store_to_customer';
+  let serviceFee = 10;
+  let realRoadKm = 0;
+
+  async function sbGet(path: string) {
+    try {
+      const r = await fetch(`${SB_URL}/rest/v1/${path}`, { headers: SB_H });
+      if (!r.ok) return null;
+      return await r.json();
+    } catch { return null; }
+  }
+
+  function loadGoogleMaps(): Promise<void> {
+    return new Promise((resolve) => {
+      if ((window as any).google?.maps) { resolve(); return; }
+      (window as any).__gmMerchantDeliveryInit = resolve;
+      const s = document.createElement('script');
+      s.src = `https://maps.googleapis.com/maps/api/js?key=${GMAPS_KEY}&libraries=places&callback=__gmMerchantDeliveryInit&language=ar&region=EG`;
+      s.async = true;
+      document.head.appendChild(s);
+    });
+  }
+
+  // Geocodes the store's stored address text into lat/lng once, only when
+  // the `stores` row itself doesn't already have lat/lng populated — many
+  // existing stores were registered before that column was ever filled in.
+  async function geocodeStoreAddress(): Promise<Place | null> {
+    if (!store) return null;
+    if (store.lat != null && store.lng != null) {
+      return { name: `${store.name} — ${store.address || store.area || ''}`, lat: store.lat, lng: store.lng };
+    }
+    await loadGoogleMaps();
+    const G = (window as any).google.maps;
+    const geocoder = new G.Geocoder();
+    const query = [store.address, store.area, 'دمياط الجديدة', 'مصر'].filter(Boolean).join('، ');
+    return new Promise((resolve) => {
+      geocoder.geocode({ address: query }, (results: any[], status: string) => {
+        if (status === 'OK' && results?.[0]?.geometry?.location) {
+          const loc = results[0].geometry.location;
+          resolve({ name: `${store!.name} — ${store!.address || store!.area || ''}`, lat: loc.lat(), lng: loc.lng() });
+        } else {
+          resolve(null);
+        }
+      });
+    });
+  }
+
+  // The two inputs never swap roles on the DOM level — #origin-input is
+  // always the store's auto-detected address (readonly) and #dest-input is
+  // always where the merchant types the customer's address (Places
+  // Autocomplete bound to it once). Flipping `direction` only changes the
+  // Arabic labels and which resolved place becomes the pickup vs. drop-off
+  // coordinates on submit — this keeps the Autocomplete binding simple.
+  function updateRouteLabels() {
+    const originLabel = document.getElementById('origin-label')!;
+    const destLabel = document.getElementById('dest-label')!;
+    const originInput = document.getElementById('origin-input') as HTMLInputElement;
+    originInput.value = storePlace?.name || 'جارٍ تحديد عنوان المتجر...';
+    if (direction === 'store_to_customer') {
+      originLabel.textContent = 'من (المتجر — تلقائي)';
+      destLabel.textContent = 'إلى (عنوان العميل)';
+    } else {
+      originLabel.textContent = 'إلى (المتجر — تلقائي)';
+      destLabel.textContent = 'من (عنوان العميل)';
+    }
+    updateSummary();
+  }
+
+  document.getElementById('flip-btn')?.addEventListener('click', () => {
+    direction = direction === 'store_to_customer' ? 'customer_to_store' : 'store_to_customer';
+    updateRouteLabels();
+    computeRoute();
+  });
+
+  async function computeRoute() {
+    const pickup = direction === 'store_to_customer' ? storePlace : customerPlace;
+    const dropoff = direction === 'store_to_customer' ? customerPlace : storePlace;
+    if (!pickup || !dropoff) { realRoadKm = 0; updateSummary(); return; }
+    realRoadKm = haversineKm(pickup.lat, pickup.lng, dropoff.lat, dropoff.lng) * 1.35;
+    updateSummary();
+  }
+
+  function updateSummary() {
+    const subtotal = Number((document.getElementById('md-subtotal') as HTMLInputElement).value) || 0;
+    const deliveryFee = realRoadKm > 0 ? deliveryFeeFor(realRoadKm) : 0;
+    const total = subtotal + serviceFee + deliveryFee;
+    document.getElementById('fee-subtotal')!.textContent = subtotal.toLocaleString('ar-EG') + ' ج.م';
+    document.getElementById('fee-service')!.textContent = serviceFee.toLocaleString('ar-EG') + ' ج.م';
+    document.getElementById('fee-delivery')!.textContent = realRoadKm > 0
+      ? `${deliveryFee.toLocaleString('ar-EG')} ج.م (~${realRoadKm.toFixed(1)} كم)`
+      : '— أدخل عنوان العميل';
+    document.getElementById('fee-total')!.textContent = total.toLocaleString('ar-EG') + ' ج.م';
+
+    const btn = document.getElementById('md-submit-btn') as HTMLButtonElement;
+    const custPlaceReady = !!customerPlace;
+    btn.disabled = !custPlaceReady || !storePlace;
+  }
+  document.getElementById('md-subtotal')?.addEventListener('input', updateSummary);
+
+  let placesInited = false;
+  async function initPlaces() {
+    if (placesInited) return;
+    placesInited = true;
+    await loadGoogleMaps();
+    const G = (window as any).google.maps;
+    const damiettaBias = new G.LatLngBounds({ lat: 31.20, lng: 31.50 }, { lat: 31.65, lng: 32.10 });
+    const opts = { bounds: damiettaBias, componentRestrictions: { country: 'eg' }, strictBounds: true, types: [], fields: ['geometry', 'name', 'formatted_address'] };
+    const destInput = document.getElementById('dest-input') as HTMLInputElement;
+    const ac = new G.places.Autocomplete(destInput, opts);
+    ac.addListener('place_changed', () => {
+      const p = ac.getPlace();
+      if (!p?.geometry?.location) return;
+      customerPlace = { name: p.name || p.formatted_address, lat: p.geometry.location.lat(), lng: p.geometry.location.lng() };
+      computeRoute();
+    });
+  }
+  document.getElementById('dest-input')?.addEventListener('focus', () => { initPlaces(); }, { once: true });
+
+  async function init() {
+    let user: { phone: string; name?: string } | null = null;
+    try { user = JSON.parse(localStorage.getItem('wslha_user') || 'null'); } catch {}
+    if (!user?.phone) { document.getElementById('gate-box')!.hidden = false; return; }
+
+    const stores = await sbGet(`stores?owner_phone=eq.${encodeURIComponent(user.phone)}&limit=1`);
+    if (!stores?.length) { document.getElementById('gate-box')!.hidden = false; return; }
+    const s = stores[0];
+    store = { id: s.id, name: s.name, address: s.address, area: s.area, lat: s.lat != null ? Number(s.lat) : null, lng: s.lng != null ? Number(s.lng) : null };
+
+    const settings = await sbGet(`app_settings?key=eq.merchant_delivery_service_fee&select=value`);
+    if (settings?.[0]?.value != null) serviceFee = Number(settings[0].value);
+
+    document.getElementById('booking-card')!.hidden = false;
+    storePlace = await geocodeStoreAddress();
+    updateRouteLabels();
+  }
+
+  document.getElementById('md-submit-btn')?.addEventListener('click', async () => {
+    const errEl = document.getElementById('md-alert')!;
+    errEl.classList.remove('visible');
+
+    const custName = (document.getElementById('md-cust-name') as HTMLInputElement).value.trim();
+    const custPhone = normPhone((document.getElementById('md-cust-phone') as HTMLInputElement).value.trim());
+    const items = (document.getElementById('md-items') as HTMLTextAreaElement).value.trim();
+    const subtotal = Number((document.getElementById('md-subtotal') as HTMLInputElement).value) || 0;
+    const payment = (document.getElementById('md-payment') as HTMLSelectElement).value;
+
+    if (!custName) { errEl.textContent = 'يرجى إدخال اسم العميل.'; errEl.classList.add('visible'); return; }
+    if (!EG.test(custPhone)) { errEl.textContent = 'رقم جوال العميل غير صحيح (01...)'; errEl.classList.add('visible'); return; }
+    if (!items) { errEl.textContent = 'يرجى إدخال المنتجات المطلوبة.'; errEl.classList.add('visible'); return; }
+    if (!storePlace || !customerPlace) { errEl.textContent = 'تعذّر تحديد عنوان المتجر أو العميل — تأكد من عنوان المتجر في إعدادات المتجر.'; errEl.classList.add('visible'); return; }
+    if (!store) return;
+
+    const pickup = direction === 'store_to_customer' ? storePlace : customerPlace;
+    const dropoff = direction === 'store_to_customer' ? customerPlace : storePlace;
+    const deliveryFee = deliveryFeeFor(realRoadKm);
+    const total = subtotal + serviceFee + deliveryFee;
+    const code = 'WSL-' + new Date().getFullYear() + '-' + Math.floor(100000 + Math.random() * 900000);
+
+    const btn = document.getElementById('md-submit-btn') as HTMLButtonElement;
+    btn.disabled = true; btn.textContent = 'جاري إرسال الطلب...';
+
+    try {
+      const res = await fetch(`${SB_URL}/rest/v1/orders`, {
+        method: 'POST',
+        headers: { ...SB_H, Prefer: 'return=representation' },
+        body: JSON.stringify({
+          code,
+          store_id: store.id,
+          store_name: store.name,
+          customer_name: custName,
+          customer_phone: custPhone,
+          area: customerPlace.name,
+          address: dropoff.name,
+          items: [{ name: items, qty: 1, price: subtotal }],
+          items_summary: items,
+          subtotal,
+          service_fee: serviceFee,
+          delivery_fee: deliveryFee,
+          total,
+          payment,
+          direction,
+          source: 'merchant_delivery',
+          // Reviewed in admin.astro's "توصيل التجار" tab first — accepting
+          // there flips status to 'preparing', which is what actually
+          // triggers driver dispatch (trg_dispatch_new_order), same as the
+          // existing courier flow.
+          status: 'pending',
+          store_lat: pickup.lat,
+          store_lng: pickup.lng,
+          customer_lat: dropoff.lat,
+          customer_lng: dropoff.lng,
+        }),
+      });
+      if (!res.ok) {
+        const detail = await res.text().catch(() => '');
+        console.error('[merchant-delivery] order insert failed', res.status, detail);
+        errEl.textContent = 'تعذر إرسال الطلب، حاول مرة أخرى.'; errEl.classList.add('visible');
+        btn.disabled = false; btn.textContent = '🛵 إرسال طلب التوصيل';
+        return;
+      }
+      window.location.href = `/track?q=${encodeURIComponent(code)}`;
+    } catch (e) {
+      console.error('[merchant-delivery] order insert error', e);
+      errEl.textContent = 'تعذر إرسال الطلب، تحقق من الاتصال وحاول مرة أخرى.'; errEl.classList.add('visible');
+      btn.disabled = false; btn.textContent = '🛵 إرسال طلب التوصيل';
+    }
+  });
+
+  init();
+</script>

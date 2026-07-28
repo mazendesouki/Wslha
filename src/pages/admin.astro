@@ -217,6 +217,10 @@
       <span class="nav-item__icon">🚚</span> الطرود والمستندات
       <span class="nav-item__badge hidden" id="badge-courier">0</span>
     </button>
+    <button class="nav-item" data-section="merchant-delivery">
+      <span class="nav-item__icon">🛵</span> توصيل التجار
+      <span class="nav-item__badge hidden" id="badge-merchant-delivery">0</span>
+    </button>
     <button class="nav-item" data-section="marketplace">
       <span class="nav-item__icon">🛍️</span> سوق المستعمل
       <span class="nav-item__badge hidden" id="badge-marketplace">0</span>
@@ -464,6 +468,30 @@
           <table>
             <thead><tr><th>كود الشحنة</th><th>المستلم</th><th>جوال المستلم</th><th>الشحنة</th><th>الأجرة</th><th>السائق</th><th>الحالة</th><th>التاريخ</th><th>إجراءات</th></tr></thead>
             <tbody id="courier-tbody"><tr><td colspan="9" style="text-align:center;color:#94A3B8;padding:2rem">جاري التحميل…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════ MERCHANT DELIVERY (store↔customer) ═══ -->
+    <div class="section" id="sec-merchant-delivery">
+      <div class="filters-bar">
+        <input class="search-input" id="mdlv-search" type="search" placeholder="🔍 بحث برقم الطلب أو اسم المتجر أو جوال العميل…"/>
+        <select class="filter-select" id="mdlv-status-filter">
+          <option value="">جميع الحالات</option>
+          <option value="pending">بانتظار مراجعة</option>
+          <option value="preparing">بانتظار سائق</option>
+          <option value="on_the_way">في الطريق</option>
+          <option value="delivered">تم التسليم</option>
+          <option value="rejected">مرفوض</option>
+        </select>
+        <button class="btn btn--primary" onclick="loadMerchantDeliveries()">🔄 تحديث</button>
+      </div>
+      <div class="card">
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr><th>كود الطلب</th><th>المتجر</th><th>العميل</th><th>جوال العميل</th><th>الاتجاه</th><th>الإجمالي</th><th>السائق</th><th>الحالة</th><th>التاريخ</th><th>إجراءات</th></tr></thead>
+            <tbody id="mdlv-tbody"><tr><td colspan="10" style="text-align:center;color:#94A3B8;padding:2rem">جاري التحميل…</td></tr></tbody>
           </table>
         </div>
       </div>
@@ -778,6 +806,24 @@
               </div>
               <button class="btn btn--primary" onclick="saveCommissionRates()" id="save-rates-btn">💾 حفظ النسب</button>
               <div id="rates-msg" style="display:none;font-size:.82rem;font-weight:700;padding:.5rem .75rem;border-radius:6px"></div>
+            </div>
+          </div>
+        </div>
+        <!-- Merchant-delivery flat service fee -->
+        <div class="card">
+          <div class="card__head"><span class="card__title">🛵 رسوم توصيل التجار</span></div>
+          <div class="card__body">
+            <p style="font-size:.8rem;color:#64748B;margin-bottom:1rem">مبلغ ثابت يُضاف على كل طلب توصيل ينشئه تاجر من لوحته (بين المتجر والعميل)، بجانب تكلفة المنتجات ورسوم التوصيل.</p>
+            <div style="display:flex;flex-direction:column;gap:.85rem">
+              <div>
+                <label style="font-size:.78rem;font-weight:700;color:#64748B;display:block;margin-bottom:.3rem">💰 رسوم خدمة التطبيق (جنيه)</label>
+                <div style="display:flex;align-items:center;gap:.5rem">
+                  <input class="search-input" id="mdlv-fee-input" type="number" min="0" step="1" value="10" style="width:100px;text-align:center;font-weight:700;font-size:1.1rem"/>
+                  <span style="font-size:.82rem;color:#64748B">ج.م لكل طلب</span>
+                </div>
+              </div>
+              <button class="btn btn--primary" onclick="saveMerchantDeliveryFee()" id="save-mdlv-fee-btn">💾 حفظ</button>
+              <div id="mdlv-fee-msg" style="display:none;font-size:.82rem;font-weight:700;padding:.5rem .75rem;border-radius:6px"></div>
             </div>
           </div>
         </div>
@@ -1155,7 +1201,7 @@ async function adminListAccounts(roleFilter) {
 const sectionTitles = {
   dash:'لوحة التحكم', users:'إدارة المستخدمين', drivers:'إدارة السائقين',
   merchants:'إدارة التجار', orders:'إدارة الطلبات', rides:'إدارة الرحلات',
-  stores:'إدارة المتاجر', courier:'الطرود والمستندات', marketplace:'سوق المستعمل',
+  stores:'إدارة المتاجر', courier:'الطرود والمستندات', 'merchant-delivery':'توصيل التجار', marketplace:'سوق المستعمل',
   corporate:'عقود الشركات',
   finance:'التقارير المالية', wallets:'إدارة المحافظ', settings:'الإعدادات'
 };
@@ -1172,7 +1218,7 @@ function loadMerchantsSection() {
 }
 const loaders = { dash:loadDash, users:loadUsers, drivers:loadDriversSection,
   merchants:loadMerchantsSection, orders:loadOrders, rides:loadRides, stores:loadStores,
-  courier:loadCourierOrders, marketplace:loadMarketplaceSection, corporate:loadCorporateContracts,
+  courier:loadCourierOrders, 'merchant-delivery':loadMerchantDeliveries, marketplace:loadMarketplaceSection, corporate:loadCorporateContracts,
   messages:loadMessages, finance:loadFinance, wallets:loadWalletsSection, settings:loadSettingsSection };
 
 document.querySelectorAll('.nav-item').forEach(btn => {
@@ -1807,6 +1853,86 @@ async function courierReject(id) {
   else showToast('❌ حدث خطأ', '#DC2626');
 }
 
+/* ═══════════════════ MERCHANT DELIVERY (store↔customer) ════ */
+let allMerchantDeliveries = [];
+const DIRECTION_AR = { store_to_customer: '🏬→👤 متجر↦عميل', customer_to_store: '👤→🏬 عميل↦متجر' };
+async function loadMerchantDeliveries() {
+  const data = await sbGet('orders?source=eq.merchant_delivery&select=*&order=created_at.desc&limit=500');
+  allMerchantDeliveries = data || [];
+  const pending = allMerchantDeliveries.filter(o => o.status === 'pending').length;
+  const badge = document.getElementById('badge-merchant-delivery');
+  if (pending > 0) { badge.hidden = false; badge.textContent = String(pending); } else badge.hidden = true;
+  renderMerchantDeliveries();
+}
+function renderMerchantDeliveries() {
+  const search = document.getElementById('mdlv-search').value.trim().toLowerCase();
+  const status = document.getElementById('mdlv-status-filter').value;
+  let rows = allMerchantDeliveries;
+  if (search) rows = rows.filter(o => (o.code||o.id||'').toLowerCase().includes(search)||(o.store_name||'').toLowerCase().includes(search)||(o.customer_phone||'').includes(search));
+  if (status) rows = rows.filter(o => o.status === status);
+  const html = rows.map(o => `
+    <tr>
+      <td style="direction:ltr;font-size:.75rem;font-weight:700;color:#0E4B49">${o.code||o.id?.slice(0,10)||'—'}</td>
+      <td style="font-weight:600">${escapeHtml(o.store_name)||'—'}</td>
+      <td style="font-weight:600">${escapeHtml(o.customer_name)||'—'}</td>
+      <td style="direction:ltr;font-size:.82rem">${escapeHtml(o.customer_phone)||'—'}</td>
+      <td style="font-size:.78rem">${DIRECTION_AR[o.direction]||'—'}</td>
+      <td style="font-weight:700;color:var(--pr)">${fmt(o.total)} ج.م</td>
+      <td style="font-size:.82rem">${escapeHtml(o.driver_name)||'—'}</td>
+      <td>${badge(o.status)}</td>
+      <td style="font-size:.75rem">${fmtTime(o.created_at)}</td>
+      <td style="white-space:nowrap">
+        ${o.status === 'pending' ? `
+          <button class="btn btn--green btn--sm" onclick="merchantDeliveryAccept('${o.id}')">✅ قبول</button>
+          <button class="btn btn--red btn--sm" onclick="merchantDeliveryReject('${o.id}')">✗ رفض</button>
+        ` : ''}
+        <button class="btn btn--ghost btn--sm" onclick="openMerchantDeliveryModal('${o.id}')">تفاصيل</button>
+      </td>
+    </tr>`).join('') || '<tr><td colspan="10" style="text-align:center;color:#94A3B8;padding:2rem">لا توجد طلبات بعد</td></tr>';
+  document.getElementById('mdlv-tbody').innerHTML = html;
+}
+document.getElementById('mdlv-search').addEventListener('input', renderMerchantDeliveries);
+document.getElementById('mdlv-status-filter').addEventListener('change', renderMerchantDeliveries);
+
+async function merchantDeliveryAccept(id) {
+  // Same 'preparing' flip trg_dispatch_new_order watches for — see
+  // courierAccept() above, identical dispatch trigger point.
+  const ok = await sbPatch(`orders?id=eq.${encodeURIComponent(id)}`, { status: 'preparing', accepted_at: new Date().toISOString() });
+  if (ok) { showToast('✅ تم قبول الطلب — جارٍ البحث عن سائق', '#16A34A'); loadMerchantDeliveries(); }
+  else showToast('❌ حدث خطأ', '#DC2626');
+}
+async function merchantDeliveryReject(id) {
+  if (!confirm('رفض هذا الطلب؟')) return;
+  const ok = await sbPatch(`orders?id=eq.${encodeURIComponent(id)}`, { status: 'rejected' });
+  if (ok) { showToast('تم رفض الطلب', '#DC2626'); loadMerchantDeliveries(); }
+  else showToast('❌ حدث خطأ', '#DC2626');
+}
+function openMerchantDeliveryModal(id) {
+  currentOrderId = id;
+  const o = allMerchantDeliveries.find(x => x.id === id);
+  if (!o) return;
+  document.getElementById('order-status-select').value = o.status||'pending';
+  document.getElementById('order-modal-body').innerHTML = `
+    <div class="info-grid">
+      <div class="info-field"><div class="info-field__label">كود الطلب</div><div class="info-field__val" style="direction:ltr">${o.code||o.id||'—'}</div></div>
+      <div class="info-field"><div class="info-field__label">المتجر</div><div class="info-field__val">${escapeHtml(o.store_name)||'—'}</div></div>
+      <div class="info-field"><div class="info-field__label">الاتجاه</div><div class="info-field__val">${DIRECTION_AR[o.direction]||'—'}</div></div>
+      <div class="info-field"><div class="info-field__label">المنتجات</div><div class="info-field__val">${escapeHtml(o.items_summary)||'—'}</div></div>
+      <div class="info-field"><div class="info-field__label">العميل</div><div class="info-field__val">${escapeHtml(o.customer_name)||'—'}</div></div>
+      <div class="info-field"><div class="info-field__label">جوال العميل</div><div class="info-field__val" style="direction:ltr">${escapeHtml(o.customer_phone)||'—'}</div></div>
+      <div class="info-field"><div class="info-field__label">عنوان التسليم</div><div class="info-field__val">${escapeHtml(o.address||o.area)||'—'}</div></div>
+      <div class="info-field"><div class="info-field__label">السائق</div><div class="info-field__val">${escapeHtml(o.driver_name)||'—'}</div></div>
+      <div class="info-field"><div class="info-field__label">تكلفة المنتجات</div><div class="info-field__val">${fmt(o.subtotal)} ج.م</div></div>
+      <div class="info-field"><div class="info-field__label">رسوم الخدمة</div><div class="info-field__val">${fmt(o.service_fee)} ج.م</div></div>
+      <div class="info-field"><div class="info-field__label">رسوم التوصيل</div><div class="info-field__val">${fmt(o.delivery_fee)} ج.م</div></div>
+      <div class="info-field"><div class="info-field__label">الإجمالي</div><div class="info-field__val" style="font-size:1.1rem;color:var(--pr)">${fmt(o.total)} ج.م</div></div>
+      <div class="info-field"><div class="info-field__label">طريقة الدفع</div><div class="info-field__val">${o.payment==='cash'?'💵 نقداً':'💳 محفظة'}</div></div>
+      <div class="info-field"><div class="info-field__label">تاريخ الطلب</div><div class="info-field__val">${fmtTime(o.created_at)}</div></div>
+      <div class="info-field"><div class="info-field__label">الحالة الحالية</div><div class="info-field__val">${badge(o.status)}</div></div>
+    </div>`;
+  document.getElementById('order-modal').classList.remove('hidden');
+}
+
 // Reuses the same order-modal markup openOrderModal() uses, but looks the
 // row up in allCourierOrders instead of allOrders — the courier tab never
 // populates allOrders, so the shared "تفاصيل" button silently found
@@ -2248,12 +2374,13 @@ async function loadFinance() {
 /* ═══════════════════ SETTINGS — Commission rates ════════════ */
 async function loadCommissionRates() {
   try {
-    const rows = await sbGet('app_settings?key=in.(commission_ride,commission_delivery,commission_airport,commission_external)&select=key,value');
+    const rows = await sbGet('app_settings?key=in.(commission_ride,commission_delivery,commission_airport,commission_external,merchant_delivery_service_fee)&select=key,value');
     (rows||[]).forEach(r => {
       if (r.key === 'commission_ride')     { const el = document.getElementById('rate-ride');     if(el) el.value = r.value; }
       if (r.key === 'commission_delivery') { const el = document.getElementById('rate-delivery'); if(el) el.value = r.value; }
       if (r.key === 'commission_airport')  { const el = document.getElementById('rate-airport');  if(el) el.value = r.value; }
       if (r.key === 'commission_external') { const el = document.getElementById('rate-external'); if(el) el.value = r.value; }
+      if (r.key === 'merchant_delivery_service_fee') { const el = document.getElementById('mdlv-fee-input'); if(el) el.value = r.value; }
     });
   } catch {}
 }
@@ -2288,6 +2415,31 @@ async function saveCommissionRates() {
     msg.style.cssText = 'display:block;background:#FEE2E2;color:#991B1B;font-size:.82rem;font-weight:700;padding:.5rem .75rem;border-radius:6px';
   }
   btn.disabled = false; btn.textContent = '💾 حفظ النسب';
+  setTimeout(() => { msg.style.display = 'none'; }, 4000);
+}
+
+async function saveMerchantDeliveryFee() {
+  const btn = document.getElementById('save-mdlv-fee-btn');
+  const msg = document.getElementById('mdlv-fee-msg');
+  const pass = getAdminPass();
+  if (!pass) { msg.textContent='مطلوب كلمة مرور المشرف'; msg.style.cssText='display:block;background:#FEE2E2;color:#991B1B;font-size:.82rem;font-weight:700;padding:.5rem .75rem;border-radius:6px'; return; }
+  btn.disabled = true; btn.textContent = 'جاري الحفظ...';
+  try {
+    const ok = await sbRpc('admin_set_setting', { p_admin_phone: ADMIN.phone, p_admin_password: pass, p_key: 'merchant_delivery_service_fee', p_value: document.getElementById('mdlv-fee-input').value });
+    if (ok) {
+      msg.textContent = '✅ تم حفظ الرسوم بنجاح — ستطبق على الطلبات القادمة';
+      msg.style.cssText = 'display:block;background:#DCFCE7;color:#14532D;font-size:.82rem;font-weight:700;padding:.5rem .75rem;border-radius:6px';
+      showToast('✅ تم حفظ رسوم توصيل التجار', '#16A34A');
+    } else {
+      _adminPass = null;
+      msg.textContent = '❌ فشل — تحقق من كلمة مرور المشرف';
+      msg.style.cssText = 'display:block;background:#FEE2E2;color:#991B1B;font-size:.82rem;font-weight:700;padding:.5rem .75rem;border-radius:6px';
+    }
+  } catch {
+    msg.textContent = 'حدث خطأ، حاول مرة أخرى';
+    msg.style.cssText = 'display:block;background:#FEE2E2;color:#991B1B;font-size:.82rem;font-weight:700;padding:.5rem .75rem;border-radius:6px';
+  }
+  btn.disabled = false; btn.textContent = '💾 حفظ';
   setTimeout(() => { msg.style.display = 'none'; }, 4000);
 }
 
