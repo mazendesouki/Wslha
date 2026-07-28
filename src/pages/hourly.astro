@@ -3,11 +3,6 @@ import Layout from '../components/layout.astro';
 import PageHero from '../components/PageHero.astro';
 
 const HOURS_OPTIONS = [2, 4, 6, 8, 12];
-const CATEGORIES = [
-  { id: 'sedan', label: '🚗 سيدان (سيارات حديثة)', rate: 300, note: 'من 300 ج.م/ساعة — حتى 3 ركاب' },
-  { id: 'suv',   label: '🚙 SUV / كروز',            rate: 500, note: 'من 500 ج.م/ساعة — حتى 6 ركاب' },
-  { id: 'van',   label: '🚐 ميكروباص',              rate: 600, note: 'من 600 ج.م/ساعة — حتى 8 ركاب' },
-];
 ---
 
 <style>
@@ -97,16 +92,25 @@ const CATEGORIES = [
           </div>
         </div>
 
-        <div class="field">
-          <label class="field__label">فئة السيارة</label>
-          <div class="opt-grid" id="cat-grid">
-            {CATEGORIES.map((c, i) => (
-              <label class="opt">
-                <input type="radio" name="h-cat" value={c.id} checked={i === 0} />
-                <div class="opt__label">{c.label}</div>
-                <div class="opt__sub">{c.note}</div>
-              </label>
-            ))}
+        <!-- القوائم دي بتتبنى من سائقين معتمدين فعليًا في قاعدة البيانات
+             (driver_applications) — مش قائمة ثابتة، نفس النمط في rides.astro. -->
+        <div class="form-row">
+          <div class="field">
+            <label class="field__label" for="h-veh-cat">فئة السيارة</label>
+            <select id="h-veh-cat" class="field__select"></select>
+          </div>
+          <div class="field">
+            <label class="field__label" for="h-veh-model">الماركة والموديل</label>
+            <select id="h-veh-model" class="field__select"></select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="field">
+            <label class="field__label" for="h-veh-year">سنة الصنع</label>
+            <select id="h-veh-year" class="field__select"></select>
+          </div>
+          <div class="field" style="display:flex;align-items:flex-end">
+            <p id="h-veh-hint" style="margin:0;font-size:var(--text-xs);color:var(--color-text-faint)"></p>
           </div>
         </div>
 
@@ -181,7 +185,7 @@ const CATEGORIES = [
     return parseInt((document.querySelector('input[name="h-hours"]:checked') as HTMLInputElement)?.value || '4');
   }
   function currentCat(): string {
-    return (document.querySelector('input[name="h-cat"]:checked') as HTMLInputElement)?.value || 'sedan';
+    return selVehModel?.category || 'sedan';
   }
   function baseFareFor(): number {
     return currentHours() * (RATES[currentCat()] ?? RATES.sedan);
@@ -198,8 +202,85 @@ const CATEGORIES = [
     document.getElementById('sum-fee')!.textContent = String(serviceFeeFor());
     document.getElementById('sum-price')!.textContent = String(fareFor());
   }
-  document.querySelectorAll('input[name="h-hours"], input[name="h-cat"]').forEach(r => r.addEventListener('change', updateSummary));
+  document.querySelectorAll('input[name="h-hours"]').forEach(r => r.addEventListener('change', updateSummary));
   updateSummary();
+
+  // ── vehicle category/model/year selection (سائقين معتمدين فعليًا) ──
+  // القوائم بتتبنى من قاعدة البيانات (driver_applications) — نفس نمط rides.astro.
+  const vehCatSel   = document.getElementById('h-veh-cat') as HTMLSelectElement;
+  const vehModelSel = document.getElementById('h-veh-model') as HTMLSelectElement;
+  const vehYearSel  = document.getElementById('h-veh-year') as HTMLSelectElement;
+  const CAT_LABELS: Record<string, string> = { sedan: '🚗 سيدان', suv: '🚙 SUV / كروز', van: '🚐 ميكروباص' };
+  type RegVehicle = { id: string; category: string; name: string; yearFrom: number; yearTo: number };
+  let REGISTERED_VEHICLES: RegVehicle[] = [];
+  let selVehModel: RegVehicle | null = null;
+  let selVehYear = new Date().getFullYear();
+
+  async function loadRegisteredVehicles() {
+    try {
+      const res = await fetch(
+        `${SB_URL}/rest/v1/driver_applications?status=eq.approved&select=vehicle_category,vehicle_model,vehicle_year`,
+        { headers: SB_H }
+      );
+      const rows = res.ok ? await res.json() : [];
+      const byKey = new Map<string, RegVehicle>();
+      for (const r of rows) {
+        const cat = r.vehicle_category, name = (r.vehicle_model || '').trim();
+        if (!cat || !name || !CAT_LABELS[cat]) continue;
+        const year = r.vehicle_year || new Date().getFullYear();
+        const key = cat + '|' + name;
+        const existing = byKey.get(key);
+        if (existing) { existing.yearFrom = Math.min(existing.yearFrom, year); existing.yearTo = Math.max(existing.yearTo, year); }
+        else byKey.set(key, { id: key, category: cat, name, yearFrom: year, yearTo: year });
+      }
+      REGISTERED_VEHICLES = Array.from(byKey.values());
+    } catch { REGISTERED_VEHICLES = []; }
+
+    const cats = Array.from(new Set(REGISTERED_VEHICLES.map(v => v.category)));
+    const btn = document.getElementById('hourly-submit-btn') as HTMLButtonElement;
+    if (!cats.length) {
+      vehCatSel.innerHTML = '<option value="">لا توجد سيارات مسجلة حالياً</option>';
+      vehModelSel.innerHTML = '';
+      vehYearSel.innerHTML = '';
+      const h = document.getElementById('h-veh-hint');
+      if (h) h.textContent = 'لا يوجد سائقون معتمدون حاليًا — حاول لاحقًا.';
+      btn.disabled = true;
+      return;
+    }
+    vehCatSel.innerHTML = cats.map(c => `<option value="${c}">${CAT_LABELS[c]}</option>`).join('');
+    populateVehModels(cats[0]);
+    refreshReadiness();
+  }
+
+  function populateVehModels(cat: string) {
+    const models = REGISTERED_VEHICLES.filter(m => m.category === cat);
+    vehModelSel.innerHTML = models.map(m => `<option value="${m.id}">${m.name}</option>`).join('');
+    selVehModel = models[0] || selVehModel;
+    populateVehYears();
+  }
+  function populateVehYears() {
+    if (!selVehModel) return;
+    const years: number[] = [];
+    for (let y = selVehModel.yearTo; y >= selVehModel.yearFrom; y--) years.push(y);
+    vehYearSel.innerHTML = years.map(y => `<option value="${y}"${y === selVehModel!.yearTo ? ' selected' : ''}>${y}</option>`).join('');
+    selVehYear = parseInt(vehYearSel.value) || years[0];
+    updateVehHint();
+  }
+  function updateVehHint() {
+    const h = document.getElementById('h-veh-hint');
+    if (h && selVehModel) h.textContent = `${selVehModel.name} ${selVehYear} — ${RATES[selVehModel.category] ?? RATES.sedan} ج.م/ساعة`;
+    updateSummary();
+  }
+  vehCatSel.addEventListener('change', () => { populateVehModels(vehCatSel.value); });
+  vehModelSel.addEventListener('change', () => {
+    selVehModel = REGISTERED_VEHICLES.find(m => m.id === vehModelSel.value) || selVehModel;
+    populateVehYears();
+  });
+  vehYearSel.addEventListener('change', () => {
+    selVehYear = parseInt(vehYearSel.value) || selVehYear;
+    updateVehHint();
+  });
+  loadRegisteredVehicles();
 
   function hideContactFieldsIfLoggedIn() {
     try {
@@ -232,7 +313,7 @@ const CATEGORIES = [
   function refreshReadiness() {
     const btn  = document.getElementById('hourly-submit-btn') as HTMLButtonElement;
     const hint = document.getElementById('hourly-hint')!;
-    if (fromPlace) { btn.disabled = false; hint.style.display = 'none'; }
+    if (fromPlace && REGISTERED_VEHICLES.length) { btn.disabled = false; hint.style.display = 'none'; }
     else            { btn.disabled = true;  hint.style.display = ''; }
   }
 
@@ -290,10 +371,10 @@ const CATEGORIES = [
           to_area: fromPlace.name, to_lat: fromPlace.lat, to_lng: fromPlace.lng,
           distance_km: 0, fare, eta_minutes: hours * 60,
           passengers: parseInt(pax), payment: pay,
-          notes: `🕐 سائق تحت الطلب — ${hours} ساعات — 🚘 ${cat} — الأجرة ${baseFare} ج.م + رسوم خدمة 5% (${serviceFee} ج.م)`
+          notes: `🕐 سائق تحت الطلب — ${hours} ساعات — 🚘 ${CAT_LABELS[cat] ?? cat}${selVehModel ? ' ' + selVehModel.name : ''} ${selVehYear} — الأجرة ${baseFare} ج.م + رسوم خدمة 5% (${serviceFee} ج.م)`
             + (destination ? ` — الوجهة/الغرض: ${destination}` : '')
             + (notes ? ' — ' + notes : ''),
-          vehicle_year: 2022,
+          vehicle_year: selVehYear,
           status: 'pending', ride_type: 'hourly',
         }),
       });
