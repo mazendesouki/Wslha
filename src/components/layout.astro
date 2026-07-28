@@ -310,15 +310,21 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site ?? 'https://wslha.co
       var steps      = document.getElementById('pwa-steps');
       var modalClose = document.getElementById('pwa-modal-close');
 
-      // امسح كل مفاتيح localStorage القديمة
-      try {
-        localStorage.removeItem('wslha_dismissed');
-        localStorage.removeItem('wslha_installed');
-        localStorage.removeItem('wslha_dismissed_at');
-        localStorage.removeItem('wslha_da');
-      } catch(x) {}
-
       function hide(el) { if (el) el.classList.add('pwa-hidden'); }
+
+      // أخفِ لو التطبيق مثبّت فعلاً، أو لو المستخدم قفل البانر مؤخراً —
+      // بيرجع يظهر تاني بعد 14 يوم بس، مش مع كل تنقل بين الصفحات
+      // (كان بيتمسح من localStorage في كل تحميل صفحة قبل كده، فكان
+      // البانر بيرجع يظهر فورًا حتى لو المستخدم قفله).
+      try {
+        var installed = localStorage.getItem('wslha_installed') === '1';
+        var dismissedAt = Number(localStorage.getItem('wslha_pwa_dismissed_at') || 0);
+        var cooldownMs = 14 * 24 * 60 * 60 * 1000;
+        if (installed || (dismissedAt && (Date.now() - dismissedAt) < cooldownMs)) {
+          hide(banner);
+          return;
+        }
+      } catch(x) {}
 
       // أخفِ فقط لو التطبيق مفتوح من الشاشة الرئيسية (مثبّت فعلاً)
       var inStandalone = window.matchMedia('(display-mode: standalone)').matches
@@ -330,25 +336,28 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site ?? 'https://wslha.co
       var isSafari = isIOS && /WebKit/.test(ua) && !/CriOS|FxiOS/.test(ua);
       var isFF     = /Firefox\//.test(ua);
 
-      // زر الإغلاق — يخفي البانر للجلسة فقط (يرجع عند إعادة الفتح)
-      if (closeBtn) closeBtn.addEventListener('click', function() {
+      function dismiss() {
         hide(banner);
-      });
+        try { localStorage.setItem('wslha_pwa_dismissed_at', String(Date.now())); } catch(x) {}
+      }
+
+      // زر الإغلاق — يقفل البانر لمدة 14 يوم (مش يظهر تاني كل ما المستخدم يتنقل)
+      if (closeBtn) closeBtn.addEventListener('click', dismiss);
 
       // زر التثبيت
       if (installBtn) installBtn.addEventListener('click', function() {
         if (window.__pwaPrompt) {
-          hide(banner);
+          dismiss();
           window.__pwaPrompt.prompt();
           window.__pwaPrompt.userChoice.then(function(c) {
             if (c.outcome === 'accepted') try { localStorage.setItem('wslha_installed','1'); } catch(x) {}
             window.__pwaPrompt = null;
           });
         } else if (isSafari) {
-          hide(banner);
+          dismiss();
           openModal(['اضغط زر المشاركة 🔗 أسفل شاشة Safari','اختر "إضافة إلى الشاشة الرئيسية" 📲','اضغط "إضافة" ✅']);
         } else {
-          hide(banner);
+          dismiss();
           openModal(['افتح قائمة المتصفح ⋮ أو ⋯','اختر "إضافة إلى الشاشة الرئيسية" 📲','اضغط "تثبيت" أو "إضافة" ✅']);
         }
       });
