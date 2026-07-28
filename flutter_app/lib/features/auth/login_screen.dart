@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
+import '../../core/flavor.dart';
 import '../../core/session.dart';
 import '../../core/theme.dart';
 import 'auth_repository.dart';
 import 'register_screen.dart';
 
 class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
+  final FlavorConfig config;
+  const LoginScreen({super.key, required this.config});
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
@@ -34,13 +36,19 @@ class _LoginScreenState extends State<LoginScreen> {
 
     switch (result) {
       case LoginSuccess(:final session):
+        // This build only accepts one role (customer/driver/merchant app —
+        // separate installs, not one app that branches after login).
+        if (session.role != widget.config.allowedRole) {
+          setState(() => _error = widget.config.wrongRoleMessage);
+          return;
+        }
         await SessionStore.save(session);
         if (!mounted) return;
         Navigator.of(context).pushNamedAndRemoveUntil('/home', (route) => false);
       case LoginFailure(:final reason):
         setState(() {
           _error = switch (reason) {
-            'not_found' => 'لا يوجد حساب بهذا الرقم — سجّل حساباً جديداً.',
+            'not_found' => 'لا يوجد حساب بهذا الرقم.',
             'bad_password' => 'كلمة المرور غير صحيحة.',
             _ => 'تعذّر الاتصال، تحقق من الإنترنت وحاول مجدداً.',
           };
@@ -50,6 +58,8 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isCustomerApp = widget.config.flavor == AppFlavor.customer;
+
     return Scaffold(
       body: SafeArea(
         child: Center(
@@ -62,10 +72,10 @@ class _LoginScreenState extends State<LoginScreen> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   const SizedBox(height: 32),
-                  const Text(
-                    'وصّلها',
+                  Text(
+                    widget.config.appTitle,
                     textAlign: TextAlign.center,
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontSize: 34,
                       fontWeight: FontWeight.w900,
                       color: AppColors.primary,
@@ -116,12 +126,26 @@ class _LoginScreenState extends State<LoginScreen> {
                         : const Text('دخول'),
                   ),
                   const SizedBox(height: 16),
-                  TextButton(
-                    onPressed: () => Navigator.of(context).push(
-                      MaterialPageRoute(builder: (_) => const RegisterScreen()),
+                  if (isCustomerApp)
+                    TextButton(
+                      onPressed: () => Navigator.of(context).push(
+                        MaterialPageRoute(builder: (_) => const RegisterScreen()),
+                      ),
+                      child: const Text('ليس لديك حساب؟ سجّل الآن'),
+                    )
+                  else
+                    // Driver/merchant onboarding is a KYC application flow
+                    // (national ID, docs, admin review) — not instant
+                    // registration, so it stays on the website for now
+                    // rather than being rebuilt here.
+                    const Padding(
+                      padding: EdgeInsets.only(top: 4),
+                      child: Text(
+                        'لطلب الانضمام كسائق أو تاجر، قدّم الطلب من موقع وصّلها أولاً.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(fontSize: 12, color: AppColors.textFaint),
+                      ),
                     ),
-                    child: const Text('ليس لديك حساب؟ سجّل الآن'),
-                  ),
                 ],
               ),
             ),

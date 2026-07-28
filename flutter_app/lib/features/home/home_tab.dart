@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../core/session.dart';
 import '../../core/theme.dart';
+import '../../shared/widgets/logout_button.dart';
 import '../../shared/widgets/placeholder_screen.dart';
 import '../rides/rides_screen.dart';
 
@@ -19,6 +20,7 @@ class HomeTab extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: Text('مرحباً، ${session.name.isNotEmpty ? session.name : 'بك'} 👋'),
+        actions: const [LogoutButton()],
       ),
       body: SafeArea(
         child: ListView(

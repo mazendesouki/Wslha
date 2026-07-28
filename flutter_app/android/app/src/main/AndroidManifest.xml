@@ -1,6 +1,12 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Only used by the driver flavor (one-shot position fetch when going
+         online, see features/driver/driver_repository.dart) — harmless to
+         declare in every flavor, the customer/merchant builds just never
+         prompt for it since they never call Geolocator. -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
     <application
-        android:label="wslha_app"
+        android:label="${appName}"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity
