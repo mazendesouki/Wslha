@@ -2352,12 +2352,14 @@ async function marketplaceModerate(itemId, action) {
 
 /* ═══════════════════ MESSAGES ══════════════════════════════ */
 let currentMsg = null;
+let allMessages = [];
 
 async function loadMessages() {
   const filterEl = document.getElementById('msg-filter');
   const filter = filterEl ? filterEl.value : '';
   const q = filter ? `messages?status=eq.${filter}&order=created_at.desc` : 'messages?order=created_at.desc';
   const rows = await sbGet(q);
+  allMessages = rows || [];
   const tbody = document.getElementById('messages-tbody');
   if (!tbody) return;
   if (!rows || !rows.length) { tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#94A3B8;padding:2rem">لا توجد رسائل</td></tr>'; return; }
@@ -2380,13 +2382,14 @@ async function loadMessages() {
       <td>${escapeHtml(m.subject)}</td>
       <td><span style="padding:2px 8px;border-radius:99px;font-size:.75rem;font-weight:700;background:${(statusColor[m.status]||'#94A3B8')}22;color:${statusColor[m.status]||'#94A3B8'}">${statusLabel[m.status] || m.status}</span></td>
       <td style="font-size:.78rem;color:#64748B">${new Date(m.created_at).toLocaleDateString('ar-EG')}</td>
-      <td><button onclick="openMsg(${JSON.stringify(JSON.stringify(m))})" style="padding:.3rem .7rem;background:#0E4B49;color:#fff;border:none;border-radius:5px;font-size:.78rem;cursor:pointer">عرض</button></td>
+      <td><button onclick="openMsg('${m.id}')" style="padding:.3rem .7rem;background:#0E4B49;color:#fff;border:none;border-radius:5px;font-size:.78rem;cursor:pointer">عرض</button></td>
     </tr>`).join('');
 }
 
-function openMsg(jsonStr) {
-  currentMsg = JSON.parse(jsonStr);
-  const m = currentMsg;
+function openMsg(id) {
+  const m = allMessages.find(x => x.id === id);
+  if (!m) return;
+  currentMsg = m;
   document.getElementById('msg-modal-subject').textContent = m.subject;
   document.getElementById('msg-modal-name').textContent = m.name;
   document.getElementById('msg-modal-phone').textContent = m.phone;
