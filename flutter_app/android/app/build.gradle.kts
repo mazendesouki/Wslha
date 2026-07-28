@@ -6,7 +6,10 @@ plugins {
 
 android {
     namespace = "co.wslha.wslha_app"
-    compileSdk = flutter.compileSdkVersion
+    // Pinned to 37 (not flutter.compileSdkVersion) — androidx.core:core:1.19.0
+    // (pulled in transitively by plugins like shared_preferences) requires
+    // compileSdk 37+; the Flutter-default SDK level was still 36.
+    compileSdk = 37
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
