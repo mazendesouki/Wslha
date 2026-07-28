@@ -1120,6 +1120,23 @@ else {
   document.getElementById('admin-name').textContent = n;
   document.getElementById('admin-avatar').textContent = n[0] || 'م';
   document.getElementById('topbar-date').textContent = new Date().toLocaleDateString('ar-EG', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+
+  // ── Auto-logout after 5 minutes with no activity ────────────
+  const IDLE_LIMIT_MS = 5 * 60 * 1000;
+  let idleTimer = null;
+  function idleLogout() {
+    localStorage.removeItem('wslha_admin');
+    clearAdminPass();
+    window.location.href = '/admin-login?reason=idle';
+  }
+  function resetIdleTimer() {
+    clearTimeout(idleTimer);
+    idleTimer = setTimeout(idleLogout, IDLE_LIMIT_MS);
+  }
+  ['mousemove', 'mousedown', 'keydown', 'scroll', 'touchstart', 'click'].forEach((evt) =>
+    window.addEventListener(evt, resetIdleTimer, { passive: true })
+  );
+  resetIdleTimer();
 }
 
 /* ── Helpers ────────────────────────────────────────────────── */

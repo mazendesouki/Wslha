@@ -58,6 +58,14 @@
     const SB_KEY = 'sb_publishable_PLSnpvCT-sAyUMtymNgTwA_QmL2suw4';
     const SB_H   = { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}` };
 
+    // Explains an auto-logout redirect from the admin panel (5 min idle)
+    // instead of just landing back here with no context.
+    if (new URLSearchParams(location.search).get('reason') === 'idle') {
+      const err = document.getElementById('err');
+      err.textContent = '⏱️ تم تسجيل خروجك تلقائياً بعد 5 دقائق بدون نشاط — سجّل دخولك مرة أخرى.';
+      err.style.display = 'block';
+    }
+
     function toIntl(p) {
       if (!p) return '';
       p = p.trim().replace(/\s+/g,'');
