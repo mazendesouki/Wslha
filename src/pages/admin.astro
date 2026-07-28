@@ -2415,12 +2415,28 @@ const msgMarkReplied = document.getElementById('msg-mark-replied');
 const msgReplyEmail = document.getElementById('msg-reply-email');
 const msgFilter = document.getElementById('msg-filter');
 const msgModalEl = document.getElementById('msg-modal');
-if (msgMarkRead) msgMarkRead.addEventListener('click', () => { if (currentMsg) updateMsgStatus(currentMsg.id, 'read'); });
-if (msgMarkReplied) msgMarkReplied.addEventListener('click', () => { if (currentMsg) updateMsgStatus(currentMsg.id, 'replied'); });
-if (msgReplyEmail) msgReplyEmail.addEventListener('click', () => {
-  if (!currentMsg || !currentMsg.email) { showToast('لا يوجد بريد إلكتروني', '#F59E0B'); return; }
+
+// These buttons all worked before (the PATCH request fired fine) — but gave
+// zero visible feedback: no toast, no modal update, nothing closed. From the
+// admin's side that read as "the buttons don't do anything". Add the same
+// showToast()/close-modal feedback every other admin action already gives.
+if (msgMarkRead) msgMarkRead.addEventListener('click', async () => {
+  if (!currentMsg) return;
+  await updateMsgStatus(currentMsg.id, 'read');
+  showToast('✅ تم التحديد كمقروء', '#3B82F6');
+});
+if (msgMarkReplied) msgMarkReplied.addEventListener('click', async () => {
+  if (!currentMsg) return;
+  await updateMsgStatus(currentMsg.id, 'replied');
+  showToast('✅ تم تحديد الرسالة كـ"تم الرد"', '#16A34A');
+  if (msgModalEl) msgModalEl.style.display = 'none';
+});
+if (msgReplyEmail) msgReplyEmail.addEventListener('click', async () => {
+  if (!currentMsg || !currentMsg.email) { showToast('❌ لا يوجد بريد إلكتروني لهذه الرسالة', '#F59E0B'); return; }
   window.open(`mailto:${currentMsg.email}?subject=رد: ${currentMsg.subject}`);
-  updateMsgStatus(currentMsg.id, 'replied');
+  await updateMsgStatus(currentMsg.id, 'replied');
+  showToast('📧 تم فتح تطبيق البريد وتحديد الرسالة كـ"تم الرد"', '#16A34A');
+  if (msgModalEl) msgModalEl.style.display = 'none';
 });
 if (msgFilter) msgFilter.addEventListener('change', loadMessages);
 if (msgModalEl) msgModalEl.addEventListener('click', (e) => {
