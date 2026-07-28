@@ -58,6 +58,19 @@ const SERVICES: Service[] = [
     variant:    'light',
   },
   {
+    id:         'merchant-delivery',
+    emoji:      '🏬',
+    label:      'توصيل للتجار',
+    title:      'اطلب توصيل لعملائك مباشرة من متجرك',
+    desc:       'عندك متجر على وصّلها؟ سجّل طلب توصيل لعميلك في ثوانٍ — عنوان متجرك يتحدد تلقائياً، وتقدر تعكس الاتجاه لو الطلب استرجاع من العميل.',
+    features:   ['عنوان المتجر تلقائي', 'اتجاه التوصيل قابل للعكس (بيع أو استرجاع)', 'تفصيل رسوم واضح قبل الإرسال', 'مراجعة سريعة قبل توزيع الطلب', 'دفع كاش أو إلكتروني'],
+    cta:        'ادخل كتاجر',
+    ctaHref:    '/merchant-delivery',
+    badge:      '🏬',
+    badgeLabel: 'خدمة التجار',
+    variant:    'tinted',
+  },
+  {
     id:         'hourly',
     emoji:      '🕐',
     label:      'سائق بالساعة',
@@ -68,7 +81,7 @@ const SERVICES: Service[] = [
     ctaHref:    '/hourly',
     badge:      '🕐',
     badgeLabel: 'سائق بالساعة',
-    variant:    'tinted',
+    variant:    'light',
   },
   {
     id:         'business',
@@ -81,7 +94,7 @@ const SERVICES: Service[] = [
     ctaHref:    '/business',
     badge:      '🏢',
     badgeLabel: 'عقود الشركات',
-    variant:    'light',
+    variant:    'tinted',
   },
 ];
 
