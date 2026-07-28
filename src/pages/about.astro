@@ -331,8 +331,18 @@ const STATS = [
     <h2 class="about-cta__title" id="about-cta-title">جاهز لتجربة وصّلها؟</h2>
     <p class="about-cta__desc">اطلب أول توصيلة لك اليوم واكتشف الفرق</p>
     <div class="about-cta__actions">
-      <a href="/stores"  class="btn btn--accent">اطلب الآن</a>
+      <a href="/register" id="about-cta-order" class="btn btn--accent">اطلب الآن</a>
       <a href="/contact" class="btn btn--outline">تواصل معنا</a>
     </div>
   </section>
 </Layout>
+
+<script>
+  // "اطلب الآن" sends a logged-in user straight to رحلات (rides), and an
+  // anonymous visitor to التسجيل first — no store browsing detour.
+  try {
+    const user = JSON.parse(localStorage.getItem('wslha_user') || 'null');
+    const link = document.getElementById('about-cta-order') as HTMLAnchorElement | null;
+    if (link) link.href = user?.phone ? '/rides' : '/register';
+  } catch {}
+</script>
