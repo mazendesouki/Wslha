@@ -1181,13 +1181,24 @@ async function sbDelete(path) {
   const r = await fetch(`${SB_URL}/rest/v1/${path}`, { method:'DELETE', headers:SB_H });
   return r.ok;
 }
-// Privileged admin actions (promote / create admin) require re-confirming the
-// admin password; it is verified server-side (bcrypt) by the RPC. Cached in
-// memory for the session only — never stored.
+// Privileged admin actions (promote / create admin, delete, approve, list
+// PII, change settings) require the admin password; it is verified
+// server-side (bcrypt) by the RPC. Cached in sessionStorage — asked once per
+// browser tab session, not re-prompted on every page reload/tab switch —
+// and cleared automatically when the tab closes (never persisted longer
+// than that) or on a wrong-password failure / explicit logout.
 let _adminPass = null;
+try { _adminPass = sessionStorage.getItem('wslha_admin_pass') || null; } catch {}
 function getAdminPass() {
-  if (!_adminPass) _adminPass = (prompt('للأمان، أدخل كلمة مرور المشرف لتأكيد العملية:') || '').trim() || null;
+  if (!_adminPass) {
+    _adminPass = (prompt('للأمان، أدخل كلمة مرور المشرف لتأكيد العملية:') || '').trim() || null;
+    if (_adminPass) { try { sessionStorage.setItem('wslha_admin_pass', _adminPass); } catch {} }
+  }
   return _adminPass;
+}
+function clearAdminPass() {
+  _adminPass = null;
+  try { sessionStorage.removeItem('wslha_admin_pass'); } catch {}
 }
 // مفتاح أمان ثانٍ منفصل تمامًا عن كلمة مرور تسجيل الدخول — يُطلب في كل مرة
 // (بلا تخزين مؤقت) لأي إجراء خطر: حذف حساب، ترقية/إنشاء أدمن.
@@ -1239,7 +1250,7 @@ async function adminListAccounts(roleFilter) {
   const pass = getAdminPass();
   if (!pass) return [];
   const rows = await sbRpcRows('admin_list_accounts', { p_admin_phone: ADMIN.phone, p_admin_password: pass, p_role: roleFilter || null });
-  if (rows === null) { _adminPass = null; return []; }
+  if (rows === null) { clearAdminPass(); return []; }
   return rows;
 }
 
@@ -1296,6 +1307,7 @@ document.getElementById('overlay').addEventListener('click', closeSidebar);
 /* ── Logout ──────────────────────────────────────────────────── */
 document.getElementById('logout-btn').addEventListener('click', () => {
   localStorage.removeItem('wslha_admin');
+  clearAdminPass();
   window.location.href = '/admin-login';
 });
 
@@ -1436,7 +1448,7 @@ async function makeAdmin(phone) {
   if (!key) return;
   const ok = await sbRpc('grant_admin', { p_admin_phone: ADMIN.phone, p_admin_password: pass, p_target_phone: phone, p_action_key: key });
   if (ok) { showToast('✅ تم منح صلاحيات المشرف', '#16A34A'); loadUsers(); }
-  else { _adminPass = null; showToast('❌ فشل — تحقق من كلمة المرور ومفتاح الأمان', '#DC2626'); }
+  else { clearAdminPass(); showToast('❌ فشل — تحقق من كلمة المرور ومفتاح الأمان', '#DC2626'); }
 }
 async function deleteUser(phone) {
   const user = allUsers.find(u => u.phone === phone);
@@ -1451,7 +1463,7 @@ async function deleteUser(phone) {
   // grant_admin/create_admin — بدل DELETE مباشر بمفتاح anon كان مفتوحاً لأي حد.
   const ok = await sbRpc('admin_delete_account', { p_admin_phone: ADMIN.phone, p_admin_password: pass, p_target_phone: phone, p_action_key: key });
   if (ok) { showToast('✅ تم الحذف بالكامل', '#16A34A'); loadUsers(); }
-  else { _adminPass = null; showToast('❌ فشل الحذف — تحقق من كلمة المرور ومفتاح الأمان', '#DC2626'); }
+  else { clearAdminPass(); showToast('❌ فشل الحذف — تحقق من كلمة المرور ومفتاح الأمان', '#DC2626'); }
 }
 async function changeUserRole(phone, role) {
   if (!role) return;
@@ -1793,7 +1805,7 @@ async function confirmApprove(type) {
     closeModal(`${type}-modal`);
     type === 'driver' ? loadDriverApps() : loadMerchantApps();
     loadDash();
-  } else { _adminPass = null; showToast('❌ فشل — تحقق من كلمة مرور المشرف', '#DC2626'); }
+  } else { clearAdminPass(); showToast('❌ فشل — تحقق من كلمة مرور المشرف', '#DC2626'); }
 }
 
 async function confirmReject(type) {
@@ -1812,7 +1824,7 @@ async function confirmReject(type) {
     closeModal(`${type}-modal`);
     type === 'driver' ? loadDriverApps() : loadMerchantApps();
     loadDash();
-  } else { _adminPass = null; showToast('❌ فشل — تحقق من كلمة مرور المشرف', '#DC2626'); }
+  } else { clearAdminPass(); showToast('❌ فشل — تحقق من كلمة مرور المشرف', '#DC2626'); }
 }
 
 /* ═══════════════════ ORDERS ════════════════════════════════ */
@@ -2347,7 +2359,7 @@ async function marketplaceModerate(itemId, action) {
   if (!pass) return;
   const ok = await sbRpc('admin_moderate_item', { p_admin_phone: ADMIN.phone, p_admin_password: pass, p_item_id: itemId, p_action: action });
   if (ok) { showToast(action === 'approve' ? '✅ تم الاعتماد' : '✅ تم الحذف', '#16A34A'); loadMarketplaceSection(); }
-  else { _adminPass = null; showToast('❌ فشل — تحقق من كلمة مرور المشرف', '#DC2626'); }
+  else { clearAdminPass(); showToast('❌ فشل — تحقق من كلمة مرور المشرف', '#DC2626'); }
 }
 
 /* ═══════════════════ MESSAGES ══════════════════════════════ */
@@ -2550,7 +2562,7 @@ async function saveCommissionRates() {
       msg.style.cssText = 'display:block;background:#DCFCE7;color:#14532D;font-size:.82rem;font-weight:700;padding:.5rem .75rem;border-radius:6px';
       showToast('✅ تم حفظ نسب العمولة', '#16A34A');
     } else {
-      _adminPass = null;
+      clearAdminPass();
       msg.textContent = '❌ فشل — تحقق من كلمة مرور المشرف';
       msg.style.cssText = 'display:block;background:#FEE2E2;color:#991B1B;font-size:.82rem;font-weight:700;padding:.5rem .75rem;border-radius:6px';
     }
@@ -2575,7 +2587,7 @@ async function saveMerchantDeliveryFee() {
       msg.style.cssText = 'display:block;background:#DCFCE7;color:#14532D;font-size:.82rem;font-weight:700;padding:.5rem .75rem;border-radius:6px';
       showToast('✅ تم حفظ رسوم توصيل التجار', '#16A34A');
     } else {
-      _adminPass = null;
+      clearAdminPass();
       msg.textContent = '❌ فشل — تحقق من كلمة مرور المشرف';
       msg.style.cssText = 'display:block;background:#FEE2E2;color:#991B1B;font-size:.82rem;font-weight:700;padding:.5rem .75rem;border-radius:6px';
     }
@@ -2600,7 +2612,7 @@ async function saveGeneralDeliveryFee() {
       msg.style.cssText = 'display:block;background:#DCFCE7;color:#14532D;font-size:.82rem;font-weight:700;padding:.5rem .75rem;border-radius:6px';
       showToast('✅ تم حفظ رسوم خدمة دليفري', '#16A34A');
     } else {
-      _adminPass = null;
+      clearAdminPass();
       msg.textContent = '❌ فشل — تحقق من كلمة مرور المشرف';
       msg.style.cssText = 'display:block;background:#FEE2E2;color:#991B1B;font-size:.82rem;font-weight:700;padding:.5rem .75rem;border-radius:6px';
     }
@@ -3114,7 +3126,7 @@ document.getElementById('create-admin-form').addEventListener('submit', async e 
     p_admin_phone: ADMIN.phone, p_admin_password: adminPass,
     p_name: name, p_phone: phone, p_password: pass, p_action_key: actionKey
   });
-  if (!ok) { _adminPass = null; }
+  if (!ok) { clearAdminPass(); }
   if (ok) {
     msg.textContent = '✅ تم إنشاء حساب المشرف بنجاح';
     msg.style.cssText = 'display:block;background:#DCFCE7;color:#16A34A';
