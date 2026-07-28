@@ -2,12 +2,11 @@
 import Layout from '../components/layout.astro';
 import PageHero from '../components/PageHero.astro';
 
-const HOURLY_RATE = 400; // ج.م/ساعة — سعر موحّد بغضّ النظر عن فئة السيارة
 const HOURS_OPTIONS = [2, 4, 6, 8, 12];
 const CATEGORIES = [
-  { id: 'sedan', label: '🚗 سيدان',      note: 'حتى 3 ركاب'  },
-  { id: 'suv',   label: '🚙 SUV / كروز', note: 'حتى 6 ركاب'  },
-  { id: 'van',   label: '🚐 ميكروباص',   note: 'حتى 8 ركاب'  },
+  { id: 'sedan', label: '🚗 سيدان (سيارات حديثة)', rate: 300, note: 'من 300 ج.م/ساعة — حتى 3 ركاب' },
+  { id: 'suv',   label: '🚙 SUV / كروز',            rate: 500, note: 'من 500 ج.م/ساعة — حتى 6 ركاب' },
+  { id: 'van',   label: '🚐 ميكروباص',              rate: 600, note: 'من 600 ج.م/ساعة — حتى 8 ركاب' },
 ];
 ---
 
@@ -76,7 +75,7 @@ const CATEGORIES = [
 <Layout title="سائق تحت الطلب | وصّلها" page="hourly">
   <PageHero
     title="سائق تحت الطلب 🕐"
-    subtitle="للرحلات والسفر الطويل بين المحافظات — القاهرة، الإسكندرية، وأي وجهة بعيدة — وقضاء حوائجك اليومية، بسعر ثابت 400 ج.م للساعة"
+    subtitle="للرحلات والسفر الطويل بين المحافظات — القاهرة، الإسكندرية، وأي وجهة بعيدة — وقضاء حوائجك اليومية، بالساعة حسب فئة السيارة"
   />
 
   <div class="hourly-page">
@@ -150,9 +149,9 @@ const CATEGORIES = [
       <div id="route-summary" class="route-summary">
         <div class="route-summary__stat"><div id="sum-hours" class="route-summary__val">4</div><div class="route-summary__key">ساعات</div></div>
         <div class="route-summary__divider"></div>
-        <div class="route-summary__stat"><div class="route-summary__val">400</div><div class="route-summary__key">ج.م / ساعة</div></div>
+        <div class="route-summary__stat"><div id="sum-rate" class="route-summary__val">300</div><div class="route-summary__key">ج.م / ساعة</div></div>
         <div class="route-summary__divider"></div>
-        <div class="route-summary__stat"><div id="sum-price" class="route-summary__val route-summary__val--price">1600</div><div class="route-summary__key">إجمالي الأجرة</div></div>
+        <div class="route-summary__stat"><div id="sum-price" class="route-summary__val route-summary__val--price">1200</div><div class="route-summary__key">إجمالي الأجرة</div></div>
       </div>
 
       <div class="form-section" style="padding-top:0">
@@ -168,7 +167,7 @@ const CATEGORIES = [
   const SB_KEY = 'sb_publishable_PLSnpvCT-sAyUMtymNgTwA_QmL2suw4';
   const SB_H = { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}`, 'Content-Type': 'application/json' };
 
-  const HOURLY_RATE = 400; // ج.م/ساعة — نفس القيمة لكل فئات السيارات
+  const RATES: Record<string, number> = { sedan: 300, suv: 500, van: 600 };
 
   function normPhone(s: string) { return s.replace(/[\s\-()+]/g, ''); }
   const EG = /^01[0125][0-9]{8}$/;
@@ -180,10 +179,11 @@ const CATEGORIES = [
     return (document.querySelector('input[name="h-cat"]:checked') as HTMLInputElement)?.value || 'sedan';
   }
   function fareFor(): number {
-    return currentHours() * HOURLY_RATE;
+    return currentHours() * (RATES[currentCat()] ?? RATES.sedan);
   }
   function updateSummary() {
     document.getElementById('sum-hours')!.textContent = String(currentHours());
+    document.getElementById('sum-rate')!.textContent = String(RATES[currentCat()] ?? RATES.sedan);
     document.getElementById('sum-price')!.textContent = String(fareFor());
   }
   document.querySelectorAll('input[name="h-hours"], input[name="h-cat"]').forEach(r => r.addEventListener('change', updateSummary));
