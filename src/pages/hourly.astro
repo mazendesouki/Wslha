@@ -69,6 +69,8 @@ const CATEGORIES = [
   @media (max-width: 560px) {
     .form-row { grid-template-columns: 1fr; }
     .opt-grid { grid-template-columns: repeat(2, 1fr); }
+    .route-summary { flex-wrap: wrap; gap: var(--sp-3); }
+    .route-summary__val { font-size: var(--text-base); }
   }
 </style>
 
@@ -151,7 +153,9 @@ const CATEGORIES = [
         <div class="route-summary__divider"></div>
         <div class="route-summary__stat"><div id="sum-rate" class="route-summary__val">300</div><div class="route-summary__key">ج.م / ساعة</div></div>
         <div class="route-summary__divider"></div>
-        <div class="route-summary__stat"><div id="sum-price" class="route-summary__val route-summary__val--price">1200</div><div class="route-summary__key">إجمالي الأجرة</div></div>
+        <div class="route-summary__stat"><div id="sum-fee" class="route-summary__val">60</div><div class="route-summary__key">رسوم الخدمة 5%</div></div>
+        <div class="route-summary__divider"></div>
+        <div class="route-summary__stat"><div id="sum-price" class="route-summary__val route-summary__val--price">1260</div><div class="route-summary__key">الإجمالي</div></div>
       </div>
 
       <div class="form-section" style="padding-top:0">
@@ -168,6 +172,7 @@ const CATEGORIES = [
   const SB_H = { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}`, 'Content-Type': 'application/json' };
 
   const RATES: Record<string, number> = { sedan: 300, suv: 500, van: 600 };
+  const SERVICE_FEE_PERCENT = 5;
 
   function normPhone(s: string) { return s.replace(/[\s\-()+]/g, ''); }
   const EG = /^01[0125][0-9]{8}$/;
@@ -178,12 +183,19 @@ const CATEGORIES = [
   function currentCat(): string {
     return (document.querySelector('input[name="h-cat"]:checked') as HTMLInputElement)?.value || 'sedan';
   }
-  function fareFor(): number {
+  function baseFareFor(): number {
     return currentHours() * (RATES[currentCat()] ?? RATES.sedan);
+  }
+  function serviceFeeFor(): number {
+    return Math.round(baseFareFor() * SERVICE_FEE_PERCENT / 100);
+  }
+  function fareFor(): number {
+    return baseFareFor() + serviceFeeFor();
   }
   function updateSummary() {
     document.getElementById('sum-hours')!.textContent = String(currentHours());
     document.getElementById('sum-rate')!.textContent = String(RATES[currentCat()] ?? RATES.sedan);
+    document.getElementById('sum-fee')!.textContent = String(serviceFeeFor());
     document.getElementById('sum-price')!.textContent = String(fareFor());
   }
   document.querySelectorAll('input[name="h-hours"], input[name="h-cat"]').forEach(r => r.addEventListener('change', updateSummary));
@@ -253,9 +265,11 @@ const CATEGORIES = [
     if (!EG.test(phone)) { errEl.textContent = 'رقم جوال غير صحيح (01...)'; errEl.classList.add('visible'); return; }
     if (!fromPlace)       { errEl.textContent = 'يرجى اختيار نقطة الانطلاق.'; errEl.classList.add('visible'); return; }
 
-    const hours  = currentHours();
-    const cat    = currentCat();
-    const fare   = fareFor();
+    const hours   = currentHours();
+    const cat     = currentCat();
+    const baseFare = baseFareFor();
+    const serviceFee = serviceFeeFor();
+    const fare    = fareFor();
     const pax    = (document.getElementById('h-passengers') as HTMLSelectElement).value;
     const pay    = (document.getElementById('h-payment') as HTMLSelectElement).value;
     const destination = (document.getElementById('h-notes-2') as HTMLInputElement).value.trim();
@@ -276,7 +290,7 @@ const CATEGORIES = [
           to_area: fromPlace.name, to_lat: fromPlace.lat, to_lng: fromPlace.lng,
           distance_km: 0, fare, eta_minutes: hours * 60,
           passengers: parseInt(pax), payment: pay,
-          notes: `🕐 سائق تحت الطلب — ${hours} ساعات — 🚘 ${cat}`
+          notes: `🕐 سائق تحت الطلب — ${hours} ساعات — 🚘 ${cat} — الأجرة ${baseFare} ج.م + رسوم خدمة 5% (${serviceFee} ج.م)`
             + (destination ? ` — الوجهة/الغرض: ${destination}` : '')
             + (notes ? ' — ' + notes : ''),
           vehicle_year: 2022,
