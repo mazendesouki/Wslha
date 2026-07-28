@@ -30,7 +30,6 @@ export const FOOTER_LINKS = {
     { label: 'مشاوير دمياط',   href: '/rides'    },
     { label: 'المتاجر المحلية', href: '/stores'   },
     { label: 'سوق المستعمل',   href: '/marketplace' },
-    { label: 'الأسعار',        href: '/services#pricing' },
   ],
   contact: [
     { label: '📞 0020 1102 667324',   href: 'tel:+201102667324'              },
