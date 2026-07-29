@@ -14,10 +14,12 @@ android {
     // shared_preferences/url_launcher's Android plugins require 28.2.13676358;
     // newer NDKs stay backward compatible with older ones.
     ndkVersion = "28.2.13676358"
-    // Pinned to 37 (not flutter.compileSdkVersion) — androidx.core:core:1.19.0
-    // (pulled in transitively by plugins like shared_preferences) requires
-    // compileSdk 37+; the Flutter-default SDK level was still 36.
-    compileSdk = 37
+    // Stays on 36 — the "android-37" SDK platform package has a naming bug
+    // in current sdkmanager/AGP tooling (installs as "android-37.0", which
+    // AGP then can't resolve as target hash "android-37"), so compileSdk 37
+    // is not usable yet. androidx.core:core is force-resolved to a version
+    // compatible with 36 below instead of bumping compileSdk.
+    compileSdk = 36
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
@@ -71,6 +73,16 @@ android {
 kotlin {
     compilerOptions {
         jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17
+    }
+}
+
+// androidx.core:core resolves to 1.19.0 transitively (via a Flutter plugin),
+// which requires compileSdk 37+. Pin it back to a version compatible with
+// compileSdk 36 instead of bumping compileSdk (see note above).
+configurations.all {
+    resolutionStrategy {
+        force("androidx.core:core:1.13.1")
+        force("androidx.core:core-ktx:1.13.1")
     }
 }
 
