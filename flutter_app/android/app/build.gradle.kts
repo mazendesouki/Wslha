@@ -10,11 +10,14 @@ plugins {
 
 android {
     namespace = "co.wslha.wslha_app"
+    // Pinned above the Flutter-default NDK — geolocator/path_provider/
+    // shared_preferences/url_launcher's Android plugins require 28.2.13676358;
+    // newer NDKs stay backward compatible with older ones.
+    ndkVersion = "28.2.13676358"
     // Pinned to 37 (not flutter.compileSdkVersion) — androidx.core:core:1.19.0
     // (pulled in transitively by plugins like shared_preferences) requires
     // compileSdk 37+; the Flutter-default SDK level was still 36.
     compileSdk = 37
-    ndkVersion = flutter.ndkVersion
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
