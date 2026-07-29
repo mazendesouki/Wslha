@@ -1,3 +1,9 @@
+# Flutter SDK itself, if extracted inside this project folder locally
+# (some setups keep it here for disk-space reasons instead of C:\flutter)
+/flutter/
+flutter_windows_*-stable/
+flutter_windows_*-stable.zip
+
 # Miscellaneous
 *.class
 *.log
