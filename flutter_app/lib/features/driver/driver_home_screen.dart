@@ -40,6 +40,16 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
   bool _pickedUp = false; // orders only
 
   @override
+  void initState() {
+    super.initState();
+    // Go online automatically as soon as the driver opens the app, instead
+    // of always starting offline and requiring a manual tap first — the
+    // driver can still switch back off with the same toggle at any time
+    // (e.g. after finishing their last trip for the day).
+    _toggleOnline(true);
+  }
+
+  @override
   void dispose() {
     _pollTimer?.cancel();
     _countdownTimer?.cancel();
