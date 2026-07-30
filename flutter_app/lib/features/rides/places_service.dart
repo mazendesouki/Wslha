@@ -10,6 +10,19 @@ import 'package:http/http.dart' as http;
 /// bounding box bias as the web app's rides.astro.
 const String _gmapsKey = 'AIzaSyCSJQuStVvhhNhbAZF1tuwO_IacicXqyhM';
 
+/// Android-app-restricted Maps keys only accept requests carrying these two
+/// headers — normally added automatically by Google's own Android SDKs, but
+/// we're calling the REST API directly (package:http), so they have to be
+/// set by hand or every call comes back REQUEST_DENIED with "empty referer"
+/// even though the restriction itself is configured correctly.
+/// TODO: this is the customer flavor's package + the shared debug signing
+/// cert — re-derive both once release signing replaces the debug keystore
+/// (rides booking is customer-only for now, see app.dart's flavor routing).
+const Map<String, String> _androidKeyHeaders = {
+  'X-Android-Package': 'co.wslha.wslha_app',
+  'X-Android-Cert': 'E607280747B7CA9067705DE266C45ADABC035458',
+};
+
 class PlaceSuggestion {
   final String description;
   final String placeId;
@@ -41,7 +54,7 @@ class PlacesService {
       'locationbias': 'rectangle:31.20,31.50|31.65,32.10',
     });
     try {
-      final res = await http.get(uri);
+      final res = await http.get(uri, headers: _androidKeyHeaders);
       if (res.statusCode != 200) {
         lastError = 'HTTP ${res.statusCode}: ${res.body}';
         return [];
@@ -70,7 +83,7 @@ class PlacesService {
       'language': 'ar',
       'fields': 'name,formatted_address,geometry',
     });
-    final res = await http.get(uri);
+    final res = await http.get(uri, headers: _androidKeyHeaders);
     if (res.statusCode != 200) return null;
     final body = jsonDecode(res.body) as Map<String, dynamic>;
     final result = body['result'] as Map<String, dynamic>?;
