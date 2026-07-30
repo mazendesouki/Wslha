@@ -91,10 +91,21 @@ class DriverRepository {
     await sb.rpc('confirm_order_delivery', params: {'p_order_id': orderId, 'p_driver_phone': driverPhone});
   }
 
-  /// Rides don't have the same granular accepted/arrived/in_progress RPC
-  /// flow wired here yet (web-only for now) — a single "trip finished"
-  /// status flip covers the basic case.
+  /// Same status column driver-dashboard.astro's markArrived()/startTrip()
+  /// PATCH — the customer-side tracking screen's icon timeline expects
+  /// exactly these transitions (pending→accepted→arrived→in_progress→completed).
+  Future<void> markRideArrived(String rideId) async {
+    await sb.from('rides').update({'status': 'arrived'}).eq('id', rideId);
+  }
+
+  Future<void> markRideInProgress(String rideId) async {
+    await sb.from('rides').update({'status': 'in_progress'}).eq('id', rideId);
+  }
+
   Future<void> completeRide(String rideId) async {
-    await sb.from('rides').update({'status': 'completed'}).eq('id', rideId);
+    await sb.from('rides').update({
+      'status': 'completed',
+      'completed_at': DateTime.now().toIso8601String(),
+    }).eq('id', rideId);
   }
 }
