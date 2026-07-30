@@ -89,6 +89,7 @@ class _RidesScreenState extends State<RidesScreen> {
               AddressField(
                 label: 'من',
                 hint: 'نقطة الانطلاق',
+                showLocationButton: true,
                 onSelected: (r) => setState(() => _from = r),
               ),
               const SizedBox(height: 16),

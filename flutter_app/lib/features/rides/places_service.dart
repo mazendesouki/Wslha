@@ -76,6 +76,29 @@ class PlacesService {
     }
   }
 
+  /// Turns a GPS fix into a readable address — same Geocoding API call
+  /// rides.astro's "📍 موقعي" button makes. Falls back to a generic label
+  /// (matching the web's fallback) if the lookup fails, since the caller
+  /// already has real lat/lng regardless of whether this succeeds.
+  Future<String> reverseGeocode(double lat, double lng) async {
+    final uri = Uri.https('maps.googleapis.com', '/maps/api/geocode/json', {
+      'latlng': '$lat,$lng',
+      'key': _gmapsKey,
+      'language': 'ar',
+    });
+    try {
+      final res = await http.get(uri, headers: _androidKeyHeaders);
+      if (res.statusCode != 200) return 'موقعي الحالي';
+      final body = jsonDecode(res.body) as Map<String, dynamic>;
+      if (body['status'] != 'OK') return 'موقعي الحالي';
+      final results = body['results'] as List<dynamic>? ?? [];
+      if (results.isEmpty) return 'موقعي الحالي';
+      return (results.first['formatted_address'] as String?) ?? 'موقعي الحالي';
+    } catch (_) {
+      return 'موقعي الحالي';
+    }
+  }
+
   Future<PlaceResult?> details(String placeId) async {
     final uri = Uri.https('maps.googleapis.com', '/maps/api/place/details/json', {
       'place_id': placeId,

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
 import '../../core/theme.dart';
 import 'places_service.dart';
 
@@ -7,12 +8,17 @@ class AddressField extends StatefulWidget {
   final String label;
   final String hint;
   final void Function(PlaceResult) onSelected;
+  /// Shows a "📍 موقعي الحالي" GPS button — same button rides.astro shows
+  /// on the "من" field only, not "إلى" (you don't ride to where you
+  /// already are).
+  final bool showLocationButton;
 
   const AddressField({
     super.key,
     required this.label,
     required this.hint,
     required this.onSelected,
+    this.showLocationButton = false,
   });
 
   @override
@@ -25,6 +31,8 @@ class _AddressFieldState extends State<AddressField> {
   Timer? _debounce;
   List<PlaceSuggestion> _suggestions = [];
   bool _loading = false;
+  bool _locLoading = false;
+  String? _locError;
 
   void _onChanged(String value) {
     _debounce?.cancel();
@@ -43,6 +51,46 @@ class _AddressFieldState extends State<AddressField> {
       // ignore: avoid_print
       print('[AddressField] "${widget.label}" query="$value" results=${results.length} error=${_places.lastError}');
     });
+  }
+
+  Future<void> _useMyLocation() async {
+    setState(() {
+      _locLoading = true;
+      _locError = null;
+      _suggestions = [];
+    });
+    try {
+      var permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+      }
+      if (permission == LocationPermission.denied || permission == LocationPermission.deniedForever) {
+        setState(() {
+          _locLoading = false;
+          _locError = 'محتاجين إذن الموقع عشان نحدد نقطة انطلاقك';
+        });
+        return;
+      }
+      if (!await Geolocator.isLocationServiceEnabled()) {
+        setState(() {
+          _locLoading = false;
+          _locError = 'خدمة تحديد الموقع (GPS) مقفولة على جهازك';
+        });
+        return;
+      }
+      final pos = await Geolocator.getCurrentPosition();
+      final name = await _places.reverseGeocode(pos.latitude, pos.longitude);
+      if (!mounted) return;
+      _controller.text = name;
+      widget.onSelected(PlaceResult(name, pos.latitude, pos.longitude));
+      setState(() => _locLoading = false);
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _locLoading = false;
+        _locError = 'تعذّر تحديد موقعك، حاول تاني';
+      });
+    }
   }
 
   Future<void> _select(PlaceSuggestion s) async {
@@ -70,14 +118,25 @@ class _AddressFieldState extends State<AddressField> {
           decoration: InputDecoration(
             labelText: widget.label,
             hintText: widget.hint,
-            suffixIcon: _loading
+            suffixIcon: _loading || _locLoading
                 ? const Padding(
                     padding: EdgeInsets.all(12),
                     child: SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)),
                   )
-                : null,
+                : widget.showLocationButton
+                    ? IconButton(
+                        icon: const Icon(Icons.my_location, color: AppColors.primary),
+                        tooltip: 'استخدم موقعي الحالي',
+                        onPressed: _useMyLocation,
+                      )
+                    : null,
           ),
         ),
+        if (_locError != null)
+          Padding(
+            padding: const EdgeInsets.only(top: 4),
+            child: Text(_locError!, style: const TextStyle(fontSize: 11, color: AppColors.error)),
+          ),
         // TEMPORARY diagnostic — surfaces the Places API failure reason
         // directly on screen since wireless-ADB logcat has been unreliable
         // for debugging this on-device. Remove once autocomplete is confirmed

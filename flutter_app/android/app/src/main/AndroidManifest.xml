@@ -1,8 +1,10 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-    <!-- Only used by the driver flavor (one-shot position fetch when going
-         online, see features/driver/driver_repository.dart) — harmless to
-         declare in every flavor, the customer/merchant builds just never
-         prompt for it since they never call Geolocator. -->
+    <!-- Driver flavor: one-shot position fetch when going online (see
+         features/driver/driver_repository.dart). Customer flavor: the
+         "استخدم موقعي" GPS button on the rides "من" field (see
+         features/rides/address_field.dart). Harmless to declare in every
+         flavor — merchant just never prompts for it since it never calls
+         Geolocator. -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
     <!-- Flutter's tooling auto-injects this for debug/profile builds, but
