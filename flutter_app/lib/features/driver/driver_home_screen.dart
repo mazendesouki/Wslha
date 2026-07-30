@@ -1,17 +1,19 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../../core/maps_launcher.dart';
 import '../../core/session.dart';
 import '../../core/theme.dart';
 import '../../shared/widgets/logout_button.dart';
 import 'driver_repository.dart';
 
 /// Visual language ported from driver-dashboard.astro: teal online toggle,
-/// pulsing "radar" while idle, a 30s-countdown offer sheet, and sequential
+/// pulsing "radar" while idle, a 30s-countdown offer sheet, sequential
 /// trip-progress buttons (arrived → picked up → completed) instead of one
-/// generic "finish" button. Live map / earnings-and-ratings tabs / receipt
-/// & rating modals are bigger Phase-2 scope — same call made for the
-/// customer tracking screen's map earlier.
+/// generic "finish" button, and a route preview + "open in Google Maps"
+/// button for the current leg. Earnings/ratings tabs and the receipt/
+/// rating modals are bigger Phase-2 scope — same call made for the
+/// customer tracking screen's live map earlier.
 const int _offerCountdownSeconds = 30;
 
 class DriverHomeScreen extends StatefulWidget {
@@ -251,50 +253,80 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
     );
   }
 
+  double? _num(dynamic v) => v == null ? null : (v as num).toDouble();
+
+  /// Coordinates for the leg the driver is currently on — pickup while
+  /// heading to collect the rider/order, dropoff once they've got them.
+  (double, double)? _currentLegOrigin(Map<String, dynamic> job, bool isOrder) {
+    final lat = _num(isOrder ? job['store_lat'] : job['from_lat']);
+    final lng = _num(isOrder ? job['store_lng'] : job['from_lng']);
+    return (lat != null && lng != null) ? (lat, lng) : null;
+  }
+
+  (double, double)? _currentLegDestination(Map<String, dynamic> job, bool isOrder) {
+    if (isOrder) {
+      final lat = _num(job['customer_lat']) ?? _num(job['store_lat']);
+      final lng = _num(job['customer_lng']) ?? _num(job['store_lng']);
+      return (lat != null && lng != null) ? (lat, lng) : null;
+    }
+    // Rides: heading to pick up the rider first, then to their destination.
+    final headingToPickup = _rideStep == 'accepted';
+    final lat = _num(headingToPickup ? job['from_lat'] : job['to_lat']);
+    final lng = _num(headingToPickup ? job['from_lng'] : job['to_lng']);
+    return (lat != null && lng != null) ? (lat, lng) : null;
+  }
+
   Widget _buildActiveJob() {
     final job = _activeJob!;
     final isOrder = _activeJobType == 'order';
     final from = isOrder ? (job['store_name'] as String? ?? '') : (job['from_area'] as String? ?? '');
     final to = isOrder ? (job['address'] as String? ?? job['area'] as String? ?? '') : (job['to_area'] as String? ?? '');
     final fare = job['fare'] ?? job['total'] ?? job['delivery_fee'] ?? 0;
+    final origin = _currentLegOrigin(job, isOrder);
+    final destination = _currentLegDestination(job, isOrder);
 
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: const [BoxShadow(color: Color(0x14000000), blurRadius: 12, offset: Offset(0, 4))],
-          ),
-          child: Column(
-            children: [
-              Text(isOrder ? '📦 طلب قيد التنفيذ' : '🚖 مشوار قيد التنفيذ', style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16)),
-              const SizedBox(height: 14),
-              _RouteRow(from: from, to: to),
-              const SizedBox(height: 12),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                decoration: BoxDecoration(color: const Color(0xFFDCFCE7), borderRadius: BorderRadius.circular(999)),
-                child: Text('$fare ج.م', style: const TextStyle(fontWeight: FontWeight.w900, color: AppColors.success)),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 20),
-        if (isOrder)
-          ElevatedButton(
-            onPressed: _busy ? null : _advanceOrder,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: _pickedUp ? AppColors.success : AppColors.primary,
-              padding: const EdgeInsets.symmetric(vertical: 16),
+    return SingleChildScrollView(
+      child: Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: const [BoxShadow(color: Color(0x14000000), blurRadius: 12, offset: Offset(0, 4))],
             ),
-            child: Text(_pickedUp ? '✓ تم التسليم' : '📦 التقطت الطلب من المتجر'),
-          )
-        else
-          _RideStepButtons(step: _rideStep, busy: _busy, onTap: _advanceRide),
-      ],
+            child: Column(
+              children: [
+                Text(isOrder ? '📦 طلب قيد التنفيذ' : '🚖 مشوار قيد التنفيذ', style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16)),
+                const SizedBox(height: 14),
+                _RouteRow(from: from, to: to),
+                const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                  decoration: BoxDecoration(color: const Color(0xFFDCFCE7), borderRadius: BorderRadius.circular(999)),
+                  child: Text('$fare ج.م', style: const TextStyle(fontWeight: FontWeight.w900, color: AppColors.success)),
+                ),
+              ],
+            ),
+          ),
+          if (destination != null) ...[
+            const SizedBox(height: 16),
+            _RouteMapCard(origin: origin, destination: destination),
+          ],
+          const SizedBox(height: 20),
+          if (isOrder)
+            ElevatedButton(
+              onPressed: _busy ? null : _advanceOrder,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: _pickedUp ? AppColors.success : AppColors.primary,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+              ),
+              child: Text(_pickedUp ? '✓ تم التسليم' : '📦 التقطت الطلب من المتجر'),
+            )
+          else
+            _RideStepButtons(step: _rideStep, busy: _busy, onTap: _advanceRide),
+        ],
+      ),
     );
   }
 }
@@ -552,6 +584,68 @@ class _OfferSheet extends StatelessWidget {
         Text(value, style: const TextStyle(fontWeight: FontWeight.w900)),
         Text(label, style: const TextStyle(fontSize: 9, color: AppColors.textFaint)),
       ],
+    );
+  }
+}
+
+/// Static-map route preview (pickup/dropoff pins, no live tracking or
+/// polyline — see the file-level doc comment) + a button that hands off to
+/// the Google Maps app for actual turn-by-turn navigation.
+class _RouteMapCard extends StatelessWidget {
+  final (double, double)? origin;
+  final (double, double) destination;
+  const _RouteMapCard({required this.origin, required this.destination});
+
+  @override
+  Widget build(BuildContext context) {
+    final o = origin ?? destination;
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: const [BoxShadow(color: Color(0x14000000), blurRadius: 12, offset: Offset(0, 4))],
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(14, 10, 14, 6),
+            child: Row(
+              children: const [
+                Text('🗺️', style: TextStyle(fontSize: 14)),
+                SizedBox(width: 6),
+                Text('خريطة المسار', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 12)),
+              ],
+            ),
+          ),
+          AspectRatio(
+            aspectRatio: 640 / 280,
+            child: Image.network(
+              staticRouteMapUrl(fromLat: o.$1, fromLng: o.$2, toLat: destination.$1, toLng: destination.$2),
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) => Container(
+                color: const Color(0xFFF3F4F6),
+                alignment: Alignment.center,
+                child: const Text('تعذّر تحميل معاينة الخريطة', style: TextStyle(fontSize: 11, color: AppColors.textFaint)),
+              ),
+              loadingBuilder: (context, child, progress) =>
+                  progress == null ? child : const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(12),
+            child: SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: () => openMapsNavigation(destination.$1, destination.$2),
+                icon: const Icon(Icons.navigation_outlined),
+                label: const Text('افتح Google Maps للملاحة'),
+                style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, padding: const EdgeInsets.symmetric(vertical: 12)),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

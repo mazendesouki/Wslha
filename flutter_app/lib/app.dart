@@ -6,7 +6,7 @@ import 'core/session.dart';
 import 'core/supabase_client.dart';
 import 'core/theme.dart';
 import 'features/auth/login_screen.dart';
-import 'features/driver/driver_home_screen.dart';
+import 'features/driver/driver_home_shell.dart';
 import 'features/home/home_shell.dart';
 import 'features/merchant/merchant_home_screen.dart';
 
@@ -78,7 +78,7 @@ class _SessionGate extends StatelessWidget {
 
         return switch (config.flavor) {
           AppFlavor.customer => HomeShell(session: session),
-          AppFlavor.driver => DriverHomeScreen(session: session),
+          AppFlavor.driver => DriverHomeShell(session: session),
           AppFlavor.merchant => MerchantHomeScreen(session: session),
         };
       },

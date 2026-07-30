@@ -1,0 +1,136 @@
+import 'package:flutter/material.dart';
+import '../../core/session.dart';
+import '../../core/theme.dart';
+import '../orders/orders_repository.dart';
+
+const Map<String, Color> _statusColor = {
+  'delivered': AppColors.success,
+  'completed': AppColors.success,
+  'rejected': AppColors.error,
+  'cancelled': AppColors.error,
+  'pending': AppColors.textFaint,
+  'preparing': AppColors.accent,
+  'on_the_way': AppColors.primary,
+  'accepted': AppColors.primary,
+  'arrived': AppColors.primary,
+  'in_progress': AppColors.primary,
+};
+
+/// Same combined orders+rides feed as the customer's OrdersScreen, filtered
+/// by driver_phone instead of customer_phone (fetchDriverHistory).
+class DriverOrdersScreen extends StatefulWidget {
+  const DriverOrdersScreen({super.key});
+
+  @override
+  State<DriverOrdersScreen> createState() => _DriverOrdersScreenState();
+}
+
+class _DriverOrdersScreenState extends State<DriverOrdersScreen> {
+  final _repo = OrdersRepository();
+  List<HistoryItem>? _items;
+  bool _loading = true;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+    final session = await SessionStore.load();
+    if (session == null) {
+      setState(() => _loading = false);
+      return;
+    }
+    try {
+      final items = await _repo.fetchDriverHistory(session.phone);
+      if (!mounted) return;
+      setState(() {
+        _items = items;
+        _loading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _error = e.toString();
+        _loading = false;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('طلباتي ورحلاتي')),
+      body: _loading
+          ? const Center(child: CircularProgressIndicator())
+          : _error != null
+              ? Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Text('⚠️', style: TextStyle(fontSize: 40)),
+                        const SizedBox(height: 12),
+                        Text(_error!, style: const TextStyle(fontSize: 11, color: AppColors.error), textAlign: TextAlign.center),
+                        const SizedBox(height: 16),
+                        OutlinedButton(onPressed: _load, child: const Text('إعادة المحاولة')),
+                      ],
+                    ),
+                  ),
+                )
+              : (_items == null || _items!.isEmpty)
+                  ? const Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text('📦', style: TextStyle(fontSize: 48)),
+                          SizedBox(height: 12),
+                          Text('لسه مفيش طلبات أو رحلات مكتملة', style: TextStyle(color: AppColors.textFaint)),
+                        ],
+                      ),
+                    )
+                  : RefreshIndicator(
+                      onRefresh: _load,
+                      child: ListView.separated(
+                        padding: const EdgeInsets.all(16),
+                        itemCount: _items!.length,
+                        separatorBuilder: (_, _) => const SizedBox(height: 10),
+                        itemBuilder: (context, i) {
+                          final item = _items![i];
+                          final color = _statusColor[item.status] ?? AppColors.textFaint;
+                          return Container(
+                            padding: const EdgeInsets.all(14),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(14),
+                              boxShadow: const [BoxShadow(color: Color(0x0F000000), blurRadius: 8, offset: Offset(0, 2))],
+                            ),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(item.title, style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 13)),
+                                      const SizedBox(height: 4),
+                                      Text(item.subtitle, style: TextStyle(fontSize: 11, color: color, fontWeight: FontWeight.w700)),
+                                    ],
+                                  ),
+                                ),
+                                Text('${item.total} ج.م', style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 14, color: AppColors.primary)),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+    );
+  }
+}

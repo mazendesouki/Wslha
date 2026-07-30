@@ -92,4 +92,52 @@ class OrdersRepository {
     all.sort((a, b) => (b.createdAt ?? DateTime(0)).compareTo(a.createdAt ?? DateTime(0)));
     return all;
   }
+
+  /// Same shape as fetchHistory() above, but for a driver's own completed/
+  /// active jobs (orders.driver_phone / rides.driver_phone — confirmed real
+  /// columns, driver-dashboard.astro filters on both the same way).
+  Future<List<HistoryItem>> fetchDriverHistory(String driverPhone) async {
+    final results = await Future.wait([
+      sb
+          .from('orders')
+          .select('id,status,store_name,total,created_at')
+          .eq('driver_phone', driverPhone)
+          .order('created_at', ascending: false)
+          .limit(50),
+      sb
+          .from('rides')
+          .select('id,status,from_area,to_area,fare,created_at')
+          .eq('driver_phone', driverPhone)
+          .order('created_at', ascending: false)
+          .limit(50),
+    ]);
+
+    final orders = (results[0] as List).map((o) {
+      return HistoryItem(
+        kind: 'order',
+        id: '${o['id']}',
+        status: o['status'] as String? ?? 'pending',
+        title: '📦 طلب من ${o['store_name'] ?? 'المتجر'}',
+        subtitle: statusAr[o['status']] ?? '${o['status']}',
+        total: (o['total'] as num?) ?? 0,
+        createdAt: DateTime.tryParse(o['created_at'] as String? ?? ''),
+      );
+    });
+
+    final rides = (results[1] as List).map((r) {
+      return HistoryItem(
+        kind: 'ride',
+        id: '${r['id']}',
+        status: r['status'] as String? ?? 'pending',
+        title: '🚖 ${r['from_area'] ?? ''} ← ${r['to_area'] ?? ''}',
+        subtitle: statusAr[r['status']] ?? '${r['status']}',
+        total: (r['fare'] as num?) ?? 0,
+        createdAt: DateTime.tryParse(r['created_at'] as String? ?? ''),
+      );
+    });
+
+    final all = [...orders, ...rides];
+    all.sort((a, b) => (b.createdAt ?? DateTime(0)).compareTo(a.createdAt ?? DateTime(0)));
+    return all;
+  }
 }
