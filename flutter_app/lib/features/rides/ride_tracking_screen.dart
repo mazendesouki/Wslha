@@ -2,14 +2,25 @@ import 'package:flutter/material.dart';
 import '../../core/theme.dart';
 import 'ride_repository.dart';
 
-const Map<String, String> _statusAr = {
-  'pending': 'بانتظار سائق',
-  'accepted': 'تم القبول',
-  'arrived': 'السائق وصل',
-  'in_progress': 'في الطريق',
-  'completed': 'اكتملت',
-  'cancelled': 'ملغاة',
-};
+/// Ordered ride statuses (rides.astro / driver-dashboard.astro write these
+/// same values to rides.status), mirrored on the icon timeline below —
+/// same visual language as the web's track.astro "HungerStation-style"
+/// timeline (icon steps + progress bar + ETA card), just without the live
+/// map/rating modules, which are a bigger Phase-2 scope.
+const List<_Step> _steps = [
+  _Step('pending', '📋', 'تم استلام الطلب'),
+  _Step('accepted', '🚗', 'تم قبول الطلب'),
+  _Step('arrived', '📍', 'السائق وصل'),
+  _Step('in_progress', '🛣️', 'في الطريق'),
+  _Step('completed', '✅', 'اكتملت الرحلة'),
+];
+
+class _Step {
+  final String key;
+  final String icon;
+  final String label;
+  const _Step(this.key, this.icon, this.label);
+}
 
 class RideTrackingScreen extends StatefulWidget {
   final String rideId;
@@ -22,10 +33,15 @@ class RideTrackingScreen extends StatefulWidget {
 class _RideTrackingScreenState extends State<RideTrackingScreen> {
   final _rideRepo = RideRepository();
 
+  int _stepIndex(String status) {
+    final i = _steps.indexWhere((s) => s.key == status);
+    return i < 0 ? 0 : i;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('تتبّع الرحلة')),
+      backgroundColor: const Color(0xFFF7FAF9),
       body: StreamBuilder<List<Map<String, dynamic>>>(
         stream: _rideRepo.watchRide(widget.rideId),
         builder: (context, snapshot) {
@@ -34,49 +50,195 @@ class _RideTrackingScreenState extends State<RideTrackingScreen> {
           }
           final ride = snapshot.data!.first;
           final status = ride['status'] as String? ?? 'pending';
+          final isCancelled = status == 'cancelled';
           final driverName = ride['driver_name'] as String?;
+          final curIdx = _stepIndex(status);
 
-          return Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: AppColors.primaryLight,
-                    borderRadius: BorderRadius.circular(16),
-                  ),
+          return CustomScrollView(
+            slivers: [
+              SliverAppBar(
+                pinned: true,
+                backgroundColor: isCancelled ? AppColors.error : AppColors.primary,
+                foregroundColor: Colors.white,
+                title: const Text('تتبّع الرحلة'),
+              ),
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
                   child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      Text(
-                        _statusAr[status] ?? status,
-                        style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: AppColors.primary),
+                      Container(
+                        padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: const [BoxShadow(color: Color(0x14000000), blurRadius: 12, offset: Offset(0, 4))],
+                        ),
+                        child: isCancelled
+                            ? Column(
+                                children: const [
+                                  Text('❌', style: TextStyle(fontSize: 32)),
+                                  SizedBox(height: 8),
+                                  Text('الرحلة ملغاة', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: AppColors.error)),
+                                ],
+                              )
+                            : _Timeline(curIdx: curIdx),
                       ),
-                      const SizedBox(height: 8),
-                      Text('${ride['from_area']} ← ${ride['to_area']}'),
-                      const SizedBox(height: 4),
-                      Text('${ride['fare']} ج.م', style: const TextStyle(fontWeight: FontWeight.w900)),
-                      if (driverName != null && driverName.isNotEmpty) ...[
-                        const SizedBox(height: 12),
-                        Text('السائق: $driverName', style: const TextStyle(fontWeight: FontWeight.w700)),
-                      ],
+                      const SizedBox(height: 16),
+                      if (!isCancelled) _EtaCard(status: status),
+                      const SizedBox(height: 16),
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            _infoRow('من', '${ride['from_area'] ?? '—'}'),
+                            const Divider(height: 20),
+                            _infoRow('إلى', '${ride['to_area'] ?? '—'}'),
+                            const Divider(height: 20),
+                            _infoRow('السائق', driverName?.isNotEmpty == true ? driverName! : 'جارٍ التعيين…'),
+                            const Divider(height: 20),
+                            _infoRow('الأجرة', '${ride['fare'] ?? 0} ج.م', highlight: true),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      if (status == 'pending')
+                        OutlinedButton(
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: AppColors.error,
+                            side: const BorderSide(color: AppColors.error),
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                          ),
+                          onPressed: () async {
+                            await _rideRepo.cancelRide(widget.rideId);
+                            if (context.mounted) Navigator.of(context).pop();
+                          },
+                          child: const Text('إلغاء الرحلة'),
+                        ),
                     ],
                   ),
                 ),
-                const Spacer(),
-                if (status == 'pending')
-                  OutlinedButton(
-                    onPressed: () async {
-                      await _rideRepo.cancelRide(widget.rideId);
-                      if (context.mounted) Navigator.of(context).pop();
-                    },
-                    child: const Text('إلغاء الرحلة'),
-                  ),
-              ],
-            ),
+              ),
+            ],
           );
         },
+      ),
+    );
+  }
+
+  Widget _infoRow(String label, String value, {bool highlight = false}) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(label, style: const TextStyle(fontSize: 12, color: AppColors.textFaint, fontWeight: FontWeight.w700)),
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: highlight ? 16 : 13,
+            fontWeight: FontWeight.w900,
+            color: highlight ? AppColors.success : Colors.black87,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _Timeline extends StatelessWidget {
+  final int curIdx;
+  const _Timeline({required this.curIdx});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: List.generate(_steps.length * 2 - 1, (i) {
+        if (i.isOdd) {
+          final segDone = (i ~/ 2) < curIdx;
+          return Expanded(
+            child: Container(height: 3, color: segDone ? AppColors.primary : const Color(0xFFE5E7EB)),
+          );
+        }
+        final idx = i ~/ 2;
+        final step = _steps[idx];
+        final done = idx < curIdx;
+        final active = idx == curIdx;
+        final bg = done || active ? AppColors.primary : Colors.white;
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: bg,
+                border: Border.all(color: done || active ? AppColors.primary : const Color(0xFFE5E7EB), width: 2.5),
+                boxShadow: active
+                    ? [BoxShadow(color: AppColors.primary.withValues(alpha: 0.35), blurRadius: 10, spreadRadius: 2)]
+                    : null,
+              ),
+              alignment: Alignment.center,
+              child: Text(step.icon, style: TextStyle(fontSize: 16, color: done || active ? Colors.white : null)),
+            ),
+            const SizedBox(height: 6),
+            SizedBox(
+              width: 56,
+              child: Text(
+                step.label,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 9.5,
+                  fontWeight: FontWeight.w700,
+                  color: done || active ? Colors.black87 : AppColors.textFaint,
+                ),
+              ),
+            ),
+          ],
+        );
+      }),
+    );
+  }
+}
+
+class _EtaCard extends StatelessWidget {
+  final String status;
+  const _EtaCard({required this.status});
+
+  @override
+  Widget build(BuildContext context) {
+    final (label, badge, badgeColor) = switch (status) {
+      'completed' => ('وصل طلبك بنجاح', '🎉 مكتمل', AppColors.success),
+      'in_progress' => ('السائق في الطريق إليك', '🛣️ في الطريق', AppColors.primary),
+      'arrived' => ('السائق بانتظارك في نقطة الانطلاق', '📍 وصل', AppColors.primary),
+      'accepted' => ('السائق في طريقه لاستلامك', '🚗 مقبولة', AppColors.primary),
+      _ => ('بانتظار سائق يقبل الرحلة', '📋 جديدة', AppColors.textFaint),
+    };
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.primaryLight,
+        border: Border.all(color: AppColors.primary.withValues(alpha: 0.3), width: 1.5),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Row(
+        children: [
+          const Text('🕐', style: TextStyle(fontSize: 24)),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(label, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Colors.black87)),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(999)),
+            child: Text(badge, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w900, color: badgeColor)),
+          ),
+        ],
       ),
     );
   }
