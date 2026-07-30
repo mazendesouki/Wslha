@@ -35,6 +35,8 @@ class PlacesService {
       'locationbias': 'rectangle:31.20,31.50|31.65,32.10',
     });
     final res = await http.get(uri);
+    // ignore: avoid_print
+    print('[places] autocomplete status=${res.statusCode} body=${res.body}');
     if (res.statusCode != 200) return [];
     final body = jsonDecode(res.body) as Map<String, dynamic>;
     final predictions = body['predictions'] as List<dynamic>? ?? [];

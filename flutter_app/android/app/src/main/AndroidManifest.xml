@@ -5,6 +5,10 @@
          prompt for it since they never call Geolocator. -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
+    <!-- Flutter's tooling auto-injects this for debug/profile builds, but
+         NOT for release — declare it explicitly so Supabase/Places/HTTP
+         calls keep working once we build a real release APK. -->
+    <uses-permission android:name="android.permission.INTERNET"/>
     <application
         android:label="${appName}"
         android:name="${applicationName}"
