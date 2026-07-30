@@ -47,7 +47,7 @@ class OrdersRepository {
     final results = await Future.wait([
       sb
           .from('orders')
-          .select('id,status,store_name,type,icon,total,created_at')
+          .select('id,status,store_name,source,icon,total,created_at')
           .or(filter)
           .order('created_at', ascending: false)
           .limit(50),
@@ -60,7 +60,7 @@ class OrdersRepository {
     ]);
 
     final orders = (results[0] as List).map((o) {
-      final title = '${o['icon'] ?? '📦'} طلب من ${o['store_name'] ?? (o['type'] == 'general_delivery' ? 'خدمة دليفري' : 'المتجر')}';
+      final title = '${o['icon'] ?? '📦'} طلب من ${o['store_name'] ?? (o['source'] == 'general_delivery' ? 'خدمة دليفري' : 'المتجر')}';
       return HistoryItem(
         kind: 'order',
         id: '${o['id']}',
