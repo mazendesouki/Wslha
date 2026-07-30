@@ -12,6 +12,9 @@ class AddressField extends StatefulWidget {
   /// on the "من" field only, not "إلى" (you don't ride to where you
   /// already are).
   final bool showLocationButton;
+  /// Passed through to PlacesService.autocomplete's `types` — e.g.
+  /// 'airport' for the airport picker (airport.astro's #airport-input).
+  final String? placesTypes;
 
   const AddressField({
     super.key,
@@ -19,6 +22,7 @@ class AddressField extends StatefulWidget {
     required this.hint,
     required this.onSelected,
     this.showLocationButton = false,
+    this.placesTypes,
   });
 
   @override
@@ -42,7 +46,7 @@ class _AddressFieldState extends State<AddressField> {
         return;
       }
       setState(() => _loading = true);
-      final results = await _places.autocomplete(value);
+      final results = await _places.autocomplete(value, types: widget.placesTypes);
       if (!mounted) return;
       setState(() {
         _suggestions = results;

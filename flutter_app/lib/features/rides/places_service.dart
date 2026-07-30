@@ -43,16 +43,25 @@ class PlacesService {
   /// surfaces this directly in the UI instead of requiring a terminal.
   String? lastError;
 
-  Future<List<PlaceSuggestion>> autocomplete(String input) async {
+  /// [types] mirrors the web's Autocomplete `types` option — e.g. 'airport'
+  /// for airport.astro's airport picker (restricts results to airports
+  /// instead of the Damietta-biased general address search).
+  Future<List<PlaceSuggestion>> autocomplete(String input, {String? types}) async {
     if (input.trim().isEmpty) return [];
-    final uri = Uri.https('maps.googleapis.com', '/maps/api/place/autocomplete/json', {
+    final params = <String, String>{
       'input': input,
       'key': _gmapsKey,
       'language': 'ar',
       'components': 'country:eg',
-      // Damietta bounding rectangle bias, same as the web app.
-      'locationbias': 'rectangle:31.20,31.50|31.65,32.10',
-    });
+    };
+    if (types != null) {
+      params['types'] = types;
+    } else {
+      // Damietta bounding rectangle bias, same as the web app — only for
+      // the general address search, not the airport-restricted one.
+      params['locationbias'] = 'rectangle:31.20,31.50|31.65,32.10';
+    }
+    final uri = Uri.https('maps.googleapis.com', '/maps/api/place/autocomplete/json', params);
     try {
       final res = await http.get(uri, headers: _androidKeyHeaders);
       if (res.statusCode != 200) {
