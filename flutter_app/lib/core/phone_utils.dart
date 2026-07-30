@@ -21,5 +21,14 @@ bool isEgyptianMobile(String input) {
   return _egMobile.hasMatch(normalizeEgyptianPhone(input));
 }
 
+/// The web app stores orders/rides under whichever phone format the
+/// customer happened to submit with (+20... or 0...) — queries there use
+/// `or=(customer_phone.eq.<intl>,customer_phone.eq.<local>)` to catch both.
+/// This derives the +20 form from the normalized local one.
+String toIntlEgyptianPhone(String input) {
+  final local = normalizeEgyptianPhone(input);
+  return local.startsWith('0') ? '+20${local.substring(1)}' : local;
+}
+
 const String egPhoneError =
     'يرجى إدخال رقم جوال مصري صحيح: 11 رقمًا يبدأ بـ 010 أو 011 أو 012 أو 015.';

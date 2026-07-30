@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import '../../core/session.dart';
-import '../../shared/widgets/placeholder_screen.dart';
+import '../account/account_screen.dart';
+import '../orders/orders_screen.dart';
 import '../rides/rides_screen.dart';
+import '../settings/settings_screen.dart';
 import '../wallet/wallet_screen.dart';
 import 'home_tab.dart';
 
@@ -18,13 +20,15 @@ class HomeShell extends StatefulWidget {
 class _HomeShellState extends State<HomeShell> {
   int _index = 0;
 
+  void _goToTab(int i) => setState(() => _index = i);
+
   late final List<Widget> _tabs = [
     HomeTab(session: widget.session),
     const WalletScreen(),
-    const PlaceholderScreen(title: 'حسابي', emoji: '👤'),
-    const PlaceholderScreen(title: 'الطلبات', emoji: '📦'),
+    const AccountScreen(),
+    const OrdersScreen(),
     const RidesScreen(),
-    const PlaceholderScreen(title: 'الإعدادات', emoji: '⚙️'),
+    SettingsScreen(onNavigateTab: _goToTab),
   ];
 
   @override
