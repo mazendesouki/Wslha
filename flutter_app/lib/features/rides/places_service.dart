@@ -2,10 +2,13 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 
-/// Same Google Maps key + Damietta bounding box the web app uses
-/// (rides.astro's LatLngBounds({lat:31.20,lng:31.50},{lat:31.65,lng:32.10})),
-/// just called via the REST Places API instead of the JS SDK.
-const String _gmapsKey = 'AIzaSyAKvFfBYNDcTZgvZZH5s_lQbOc24LNjLsY';
+/// Separate key from the one the web app uses — that key is restricted to
+/// HTTP referrers (browser-only), which Google's Places API rejects outright
+/// for any server-to-server call ("API keys with referer restrictions cannot
+/// be used with this API"). This key is restricted to the three Android
+/// app package IDs + debug signing fingerprint instead. Same Damietta
+/// bounding box bias as the web app's rides.astro.
+const String _gmapsKey = 'AIzaSyCSJQuStVvhhNhbAZF1tuwO_IacicXqyhM';
 
 class PlaceSuggestion {
   final String description;
