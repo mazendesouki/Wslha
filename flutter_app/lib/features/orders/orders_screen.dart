@@ -27,6 +27,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
   final _repo = OrdersRepository();
   List<HistoryItem>? _items;
   bool _loading = true;
+  String? _error;
 
   @override
   void initState() {
@@ -35,17 +36,29 @@ class _OrdersScreenState extends State<OrdersScreen> {
   }
 
   Future<void> _load() async {
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
     final session = await SessionStore.load();
     if (session == null) {
       setState(() => _loading = false);
       return;
     }
-    final items = await _repo.fetchHistory(session.phone);
-    if (!mounted) return;
-    setState(() {
-      _items = items;
-      _loading = false;
-    });
+    try {
+      final items = await _repo.fetchHistory(session.phone);
+      if (!mounted) return;
+      setState(() {
+        _items = items;
+        _loading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _error = e.toString();
+        _loading = false;
+      });
+    }
   }
 
   @override
@@ -54,7 +67,23 @@ class _OrdersScreenState extends State<OrdersScreen> {
       appBar: AppBar(title: const Text('طلباتي ومشاويري')),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
-          : (_items == null || _items!.isEmpty)
+          : _error != null
+              ? Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Text('⚠️', style: TextStyle(fontSize: 40)),
+                        const SizedBox(height: 12),
+                        Text(_error!, style: const TextStyle(fontSize: 11, color: AppColors.error), textAlign: TextAlign.center),
+                        const SizedBox(height: 16),
+                        OutlinedButton(onPressed: _load, child: const Text('إعادة المحاولة')),
+                      ],
+                    ),
+                  ),
+                )
+              : (_items == null || _items!.isEmpty)
               ? Center(
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
