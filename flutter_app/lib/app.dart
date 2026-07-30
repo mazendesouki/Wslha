@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'core/flavor.dart';
 import 'core/session.dart';
 import 'core/supabase_client.dart';
@@ -29,9 +30,17 @@ class WslhaApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: buildAppTheme(),
       locale: const Locale('ar'),
+      // DefaultMaterialLocalizations/DefaultWidgetsLocalizations only ever
+      // support English — that's the "no real localization" fallback, not
+      // an Arabic implementation. Using them with locale('ar') left every
+      // Material widget (TextField, Form, ...) unable to resolve
+      // MaterialLocalizations at all, crashing with "No MaterialLocalizations
+      // found". The Global* delegates from flutter_localizations ship
+      // Flutter's real Arabic translations.
       localizationsDelegates: const [
-        DefaultMaterialLocalizations.delegate,
-        DefaultWidgetsLocalizations.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
       ],
       supportedLocales: const [Locale('ar'), Locale('en')],
       builder: (context, child) => Directionality(textDirection: TextDirection.rtl, child: child!),
