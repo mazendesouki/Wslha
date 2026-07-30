@@ -47,7 +47,9 @@ class OrdersRepository {
     final results = await Future.wait([
       sb
           .from('orders')
-          .select('id,status,store_name,source,icon,total,created_at')
+          // 'source' and 'icon' were guessed wrong (confirmed via direct
+          // REST probing — neither exists on this table) and removed.
+          .select('id,status,store_name,total,created_at')
           .or(filter)
           .order('created_at', ascending: false)
           .limit(50),
@@ -60,7 +62,7 @@ class OrdersRepository {
     ]);
 
     final orders = (results[0] as List).map((o) {
-      final title = '${o['icon'] ?? '📦'} طلب من ${o['store_name'] ?? (o['source'] == 'general_delivery' ? 'خدمة دليفري' : 'المتجر')}';
+      final title = '📦 طلب من ${o['store_name'] ?? 'المتجر'}';
       return HistoryItem(
         kind: 'order',
         id: '${o['id']}',

@@ -77,6 +77,10 @@ class _OrdersScreenState extends State<OrdersScreen> {
                         const Text('⚠️', style: TextStyle(fontSize: 40)),
                         const SizedBox(height: 12),
                         Text(_error!, style: const TextStyle(fontSize: 11, color: AppColors.error), textAlign: TextAlign.center),
+                        const SizedBox(height: 8),
+                        // TEMPORARY — confirms this exact build is running,
+                        // to rule out a stale-install caching issue.
+                        const Text('build-marker: orders-fix-v2', style: TextStyle(fontSize: 9, color: AppColors.textFaint)),
                         const SizedBox(height: 16),
                         OutlinedButton(onPressed: _load, child: const Text('إعادة المحاولة')),
                       ],
