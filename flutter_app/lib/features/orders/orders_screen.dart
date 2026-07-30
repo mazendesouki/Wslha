@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../core/session.dart';
 import '../../core/theme.dart';
+import '../rides/ride_tracking_screen.dart';
 import 'orders_repository.dart';
 
 const Map<String, Color> _statusColor = {
@@ -107,34 +108,50 @@ class _OrdersScreenState extends State<OrdersScreen> {
                     itemBuilder: (context, i) {
                       final item = _items![i];
                       final color = _statusColor[item.status] ?? AppColors.textFaint;
-                      return Container(
-                        padding: const EdgeInsets.all(14),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
+                      final isRide = item.kind == 'ride';
+                      return Material(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(14),
+                        child: InkWell(
                           borderRadius: BorderRadius.circular(14),
-                          boxShadow: const [BoxShadow(color: Color(0x0F000000), blurRadius: 8, offset: Offset(0, 2))],
-                        ),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(item.title, style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 13)),
-                                  const SizedBox(height: 4),
-                                  Text(item.subtitle, style: TextStyle(fontSize: 11, color: color, fontWeight: FontWeight.w700)),
-                                  if (item.createdAt != null) ...[
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      _formatDate(item.createdAt!),
-                                      style: const TextStyle(fontSize: 10, color: AppColors.textFaint),
-                                    ),
-                                  ],
-                                ],
-                              ),
+                          onTap: isRide
+                              ? () => Navigator.of(context).push(
+                                    MaterialPageRoute(builder: (_) => RideTrackingScreen(rideId: item.id)),
+                                  )
+                              : null,
+                          child: Container(
+                            padding: const EdgeInsets.all(14),
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(14),
+                              boxShadow: const [BoxShadow(color: Color(0x0F000000), blurRadius: 8, offset: Offset(0, 2))],
                             ),
-                            Text('${item.total} ج.م', style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 14, color: AppColors.primary)),
-                          ],
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(item.title, style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 13)),
+                                      const SizedBox(height: 4),
+                                      Text(item.subtitle, style: TextStyle(fontSize: 11, color: color, fontWeight: FontWeight.w700)),
+                                      if (item.createdAt != null) ...[
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          _formatDate(item.createdAt!),
+                                          style: const TextStyle(fontSize: 10, color: AppColors.textFaint),
+                                        ),
+                                      ],
+                                    ],
+                                  ),
+                                ),
+                                Text('${item.total} ج.م', style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 14, color: AppColors.primary)),
+                                if (isRide) ...[
+                                  const SizedBox(width: 4),
+                                  const Icon(Icons.chevron_left, color: AppColors.textFaint, size: 18),
+                                ],
+                              ],
+                            ),
+                          ),
                         ),
                       );
                     },
