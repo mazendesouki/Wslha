@@ -311,10 +311,15 @@ class _DriverCard extends StatelessWidget {
                       const SizedBox(height: 2),
                       Text(carLine, style: const TextStyle(fontSize: 12, color: AppColors.textFaint, fontWeight: FontWeight.w700)),
                     ],
-                    if (regNumber != null && regNumber.isNotEmpty) ...[
-                      const SizedBox(height: 2),
-                      Text('🚘 $regNumber', style: const TextStyle(fontSize: 12, color: Colors.black87, fontWeight: FontWeight.w700)),
-                    ],
+                    const SizedBox(height: 2),
+                    Text(
+                      (regNumber != null && regNumber.isNotEmpty) ? '🚘 $regNumber' : '🚘 رقم اللوحة غير مسجّل',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: (regNumber != null && regNumber.isNotEmpty) ? Colors.black87 : AppColors.textFaint,
+                      ),
+                    ),
                   ],
                 ),
               ),
