@@ -1,6 +1,16 @@
 import 'package:flutter/material.dart';
+import '../../core/notifications.dart';
 import '../../core/theme.dart';
 import 'ride_repository.dart';
+
+/// Same status → message mapping as track.astro's notifyStatusChange().
+const Map<String, String> _statusNotif = {
+  'accepted': '🚗 قبِل السائق طلبك وهو في طريقه إليك',
+  'arrived': '📍 السائق وصل لنقطة الانطلاق',
+  'in_progress': '🛣️ رحلتك بدأت الآن',
+  'completed': '✅ وصلت رحلتك بسلام، شكرًا لاستخدامك وصّلها',
+  'cancelled': '❌ تم إلغاء الرحلة',
+};
 
 /// Ordered ride statuses (rides.astro / driver-dashboard.astro write these
 /// same values to rides.status), mirrored on the icon timeline below —
@@ -38,6 +48,11 @@ class _RideTrackingScreenState extends State<RideTrackingScreen> {
   String? _driverProfilePhone;
   Future<Map<String, dynamic>?>? _driverProfileFuture;
 
+  // Tracks the last status we already notified for, so a notification only
+  // fires on an actual transition (not on every Realtime tick that repeats
+  // the same status) — mirrors track.astro's `lastStatus` check.
+  String? _lastNotifiedStatus;
+
   int _stepIndex(String status) {
     final i = _steps.indexWhere((s) => s.key == status);
     return i < 0 ? 0 : i;
@@ -59,6 +74,11 @@ class _RideTrackingScreenState extends State<RideTrackingScreen> {
           final driverName = ride['driver_name'] as String?;
           final driverPhone = ride['driver_phone'] as String?;
           final curIdx = _stepIndex(status);
+
+          if (_lastNotifiedStatus != null && _lastNotifiedStatus != status && _statusNotif.containsKey(status)) {
+            AppNotifications.instance.show('وصّلها — تحديث رحلتك', _statusNotif[status]!);
+          }
+          _lastNotifiedStatus = status;
 
           if (driverPhone != null && driverPhone.isNotEmpty && driverPhone != _driverProfilePhone) {
             _driverProfilePhone = driverPhone;

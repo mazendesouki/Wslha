@@ -9,6 +9,10 @@
          NOT for release — declare it explicitly so Supabase/Places/HTTP
          calls keep working once we build a real release APK. -->
     <uses-permission android:name="android.permission.INTERNET"/>
+    <!-- Android 13+ requires this to actually show notifications — the
+         flutter_local_notifications requestNotificationsPermission() call
+         in core/notifications.dart prompts the user for it at runtime. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
     <application
         android:label="${appName}"
         android:name="${applicationName}"

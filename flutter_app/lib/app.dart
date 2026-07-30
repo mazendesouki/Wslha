@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'core/flavor.dart';
+import 'core/notifications.dart';
 import 'core/session.dart';
 import 'core/supabase_client.dart';
 import 'core/theme.dart';
@@ -16,6 +17,7 @@ import 'features/merchant/merchant_home_screen.dart';
 Future<void> runWslhaApp(FlavorConfig config) async {
   WidgetsFlutterBinding.ensureInitialized();
   await initSupabase();
+  await AppNotifications.instance.init();
   runApp(WslhaApp(config: config));
 }
 
