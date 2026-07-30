@@ -24,6 +24,12 @@ class PlaceResult {
 }
 
 class PlacesService {
+  /// Set after every autocomplete() call — null on success, otherwise a
+  /// human-readable reason. TEMPORARY diagnostic aid: on-device debugging
+  /// (logcat over wireless ADB) has proven unreliable here, so AddressField
+  /// surfaces this directly in the UI instead of requiring a terminal.
+  String? lastError;
+
   Future<List<PlaceSuggestion>> autocomplete(String input) async {
     if (input.trim().isEmpty) return [];
     final uri = Uri.https('maps.googleapis.com', '/maps/api/place/autocomplete/json', {
@@ -34,15 +40,27 @@ class PlacesService {
       // Damietta bounding rectangle bias, same as the web app.
       'locationbias': 'rectangle:31.20,31.50|31.65,32.10',
     });
-    final res = await http.get(uri);
-    // ignore: avoid_print
-    print('[places] autocomplete status=${res.statusCode} body=${res.body}');
-    if (res.statusCode != 200) return [];
-    final body = jsonDecode(res.body) as Map<String, dynamic>;
-    final predictions = body['predictions'] as List<dynamic>? ?? [];
-    return predictions
-        .map((p) => PlaceSuggestion(p['description'] as String, p['place_id'] as String))
-        .toList();
+    try {
+      final res = await http.get(uri);
+      if (res.statusCode != 200) {
+        lastError = 'HTTP ${res.statusCode}: ${res.body}';
+        return [];
+      }
+      final body = jsonDecode(res.body) as Map<String, dynamic>;
+      final status = body['status'] as String?;
+      if (status != 'OK' && status != 'ZERO_RESULTS') {
+        lastError = '${status ?? '?'}: ${body['error_message'] ?? ''}';
+        return [];
+      }
+      lastError = null;
+      final predictions = body['predictions'] as List<dynamic>? ?? [];
+      return predictions
+          .map((p) => PlaceSuggestion(p['description'] as String, p['place_id'] as String))
+          .toList();
+    } catch (e) {
+      lastError = 'Exception: $e';
+      return [];
+    }
   }
 
   Future<PlaceResult?> details(String placeId) async {

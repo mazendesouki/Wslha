@@ -40,6 +40,8 @@ class _AddressFieldState extends State<AddressField> {
         _suggestions = results;
         _loading = false;
       });
+      // ignore: avoid_print
+      print('[AddressField] "${widget.label}" query="$value" results=${results.length} error=${_places.lastError}');
     });
   }
 
@@ -76,6 +78,18 @@ class _AddressFieldState extends State<AddressField> {
                 : null,
           ),
         ),
+        // TEMPORARY diagnostic — surfaces the Places API failure reason
+        // directly on screen since wireless-ADB logcat has been unreliable
+        // for debugging this on-device. Remove once autocomplete is confirmed
+        // working end to end.
+        if (!_loading && _suggestions.isEmpty && _places.lastError != null)
+          Padding(
+            padding: const EdgeInsets.only(top: 4),
+            child: Text(
+              _places.lastError!,
+              style: const TextStyle(fontSize: 11, color: Colors.red),
+            ),
+          ),
         if (_suggestions.isNotEmpty)
           Container(
             margin: const EdgeInsets.only(top: 4),
