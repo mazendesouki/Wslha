@@ -112,3 +112,58 @@ const Map<String, VehicleCategoryInfo> vehicleCategoryInfo = {
 /// avoiding another Google API scope requirement for this pass.
 const double damiettaLat = 31.418;
 const double damiettaLng = 31.814;
+
+// ─── Timeline (رحلتك) — ported from airport.astro's live schedule preview ──
+const Map<String, int> checkinBufferMinutes = {'domestic': 120, 'international': 180};
+const int safetyMarginMinutes = 20;
+const Map<String, int> arrivalBufferMinutes = {'domestic': 20, 'international': 45};
+const int driverArrivalBeforeLandingMinutes = 15;
+// Airline check-in desks typically close ~1h before departure — airport.astro
+// shows this as a distinct "آخر موعد للتسجيل" step; not one of the named
+// exported constants in airports.ts, so this is a best-effort match to the
+// timing shown there rather than a verified shared constant.
+const int checkinDeskClosesBeforeFlightMinutes = 60;
+
+class TimelineStep {
+  final String icon;
+  final String label;
+  final String sub;
+  final DateTime time;
+  const TimelineStep({required this.icon, required this.label, required this.sub, required this.time});
+}
+
+/// Builds the same event sequence airport.astro's sidebar timeline shows,
+/// for whichever direction is selected.
+List<TimelineStep> buildTimeline({
+  required String direction, // departure | arrival
+  required String tripType, // international | domestic
+  required DateTime flightTime,
+  required int driveMinutes,
+}) {
+  final buffer = checkinBufferMinutes[tripType] ?? checkinBufferMinutes['international']!;
+  final arrivalBuf = arrivalBufferMinutes[tripType] ?? arrivalBufferMinutes['international']!;
+
+  if (direction == 'departure') {
+    final airportArrival = flightTime.subtract(Duration(minutes: buffer));
+    final pickupDeparture = airportArrival.subtract(Duration(minutes: driveMinutes + safetyMarginMinutes));
+    final checkinDeadline = flightTime.subtract(const Duration(minutes: checkinDeskClosesBeforeFlightMinutes));
+    return [
+      TimelineStep(icon: '🚗', label: 'وصول السائق للاستلام', sub: 'موعد وصول السائق للاستلام', time: pickupDeparture),
+      TimelineStep(icon: '⏳', label: 'المغادرة من نقطة البداية', sub: 'زمن الطريق ~$driveMinutes دقيقة + هامش أمان', time: pickupDeparture),
+      TimelineStep(icon: '📍', label: 'الوصول إلى المطار', sub: 'قبل الإقلاع بـ ${(buffer / 60).round()} ساعة', time: airportArrival),
+      TimelineStep(icon: '🎫', label: 'آخر موعد للتسجيل', sub: 'آخر موعد لتسليم الأمتعة عند الكاونتر', time: checkinDeadline),
+      TimelineStep(icon: '🛫', label: 'إقلاع الطائرة', sub: '', time: flightTime),
+    ];
+  }
+
+  final driverAtAirport = flightTime.subtract(Duration(minutes: driverArrivalBeforeLandingMinutes));
+  final passengerReady = flightTime.add(Duration(minutes: arrivalBuf));
+  final homeArrival = passengerReady.add(Duration(minutes: driveMinutes + safetyMarginMinutes));
+  return [
+    TimelineStep(icon: '🛬', label: 'هبوط الطائرة', sub: '', time: flightTime),
+    TimelineStep(icon: '🚗', label: 'وصول السائق للمطار', sub: 'قبل الهبوط بـ $driverArrivalBeforeLandingMinutes دقيقة', time: driverAtAirport),
+    TimelineStep(icon: '🛄', label: 'جاهزية المسافر', sub: 'بعد إنهاء إجراءات الجوازات والأمتعة', time: passengerReady),
+    TimelineStep(icon: '📍', label: 'المغادرة من المطار', sub: 'زمن الطريق ~$driveMinutes دقيقة + هامش أمان', time: passengerReady),
+    TimelineStep(icon: '🏠', label: 'الوصول للوجهة', sub: '', time: homeArrival),
+  ];
+}

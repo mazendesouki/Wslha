@@ -10,12 +10,10 @@ import 'airport_repository.dart';
 
 /// Ported from airport.astro — same fields, same fare formula
 /// (db/rides-vehicle-pricing.sql / src/data/airports.ts), same real-driver
-/// vehicle catalog. Distance is estimated via haversine × road factor
-/// (same fallback rides_screen.dart uses) instead of a live Distance
-/// Matrix call, and the full multi-step arrival-time timeline preview is
-/// skipped — same "map/live-timeline is bigger scope" call made for the
-/// ride tracking screen — this still collects every data field and
-/// computes the same total price.
+/// vehicle catalog, and the same "رحلتك" trip-summary card (route + live
+/// timeline + price breakdown) shown before booking. Distance/drive-time
+/// are estimated via haversine × road factor (same fallback
+/// rides_screen.dart uses) instead of a live Distance Matrix call.
 class AirportScreen extends StatefulWidget {
   const AirportScreen({super.key});
 
@@ -107,6 +105,7 @@ class _AirportScreenState extends State<AirportScreen> {
   }
 
   double get _roadKm => _straightKm * fare_calc.roadFactor;
+  int get _driveMinutes => _straightKm > 0 ? fare_calc.etaMinutes(_straightKm) : 0;
 
   int get _baseFare {
     if (_roadKm <= 0 || _selectedVehicle == null) return 0;
@@ -398,56 +397,170 @@ class _AirportScreenState extends State<AirportScreen> {
           ),
           const SizedBox(height: 20),
 
-          if (_roadKm > 0) _fareSummary(),
-          const SizedBox(height: 16),
-          if (_error != null)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 12),
-              child: Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(color: const Color(0xFFFEF2F2), border: Border.all(color: const Color(0xFFFCA5A5)), borderRadius: BorderRadius.circular(10)),
-                child: Text(_error!, style: const TextStyle(color: AppColors.error, fontSize: 13)),
+          if (_roadKm > 0 && _flightTime != null)
+            _tripSummaryCard()
+          else ...[
+            if (_error != null)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(color: const Color(0xFFFEF2F2), border: Border.all(color: const Color(0xFFFCA5A5)), borderRadius: BorderRadius.circular(10)),
+                  child: Text(_error!, style: const TextStyle(color: AppColors.error, fontSize: 13)),
+                ),
               ),
+            OutlinedButton(
+              onPressed: _submitting ? null : _submit,
+              style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16)),
+              child: const Text('تأكيد الحجز ←'),
             ),
-          ElevatedButton(
-            onPressed: _submitting ? null : _submit,
-            style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16)),
-            child: _submitting
-                ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                : const Text('تأكيد الحجز ←'),
+            const SizedBox(height: 6),
+            const Text('كمّل اختيار المطار وتاريخ الرحلة عشان يظهر الجدول الزمني والسعر', style: TextStyle(fontSize: 11, color: AppColors.textFaint), textAlign: TextAlign.center),
+          ],
+        ],
+      ),
+    );
+  }
+
+  /// Matches airport.astro's "رحلتك" sidebar: route header, live timeline,
+  /// price breakdown table, total, error box, and the confirm button.
+  Widget _tripSummaryCard() {
+    final steps = fare.buildTimeline(
+      direction: _direction,
+      tripType: _tripType,
+      flightTime: _flightTime!,
+      driveMinutes: _driveMinutes,
+    );
+    final vehicleLabel = _selectedVehicle != null ? '${_selectedVehicle!.name} $_selectedYear' : '—';
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: const [BoxShadow(color: Color(0x14000000), blurRadius: 12, offset: Offset(0, 4))],
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: const BoxDecoration(gradient: LinearGradient(colors: [AppColors.primaryDark, AppColors.primary])),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('رحلتك', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 15)),
+                const SizedBox(height: 4),
+                Text(
+                  '${_from?.name ?? "—"} ← ${_airport?.name ?? "—"}',
+                  style: const TextStyle(color: Colors.white70, fontSize: 12),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                for (var i = 0; i < steps.length; i++) _timelineRow(steps[i], isLast: i == steps.length - 1),
+                const Divider(height: 24),
+                _fareLine('المسافة', '${_roadKm.toStringAsFixed(0)} كم', isText: true),
+                _fareLine('سعر المسافة', '$_baseFare ج.م', isText: true),
+                _fareLine('السيارة', vehicleLabel, isText: true),
+                if (_extraBagsFee > 0) _fareLine('شنط إضافية', '$_extraBagsFee ج.م', isText: true),
+                if (_companionsFee > 0) _fareLine('مرافق رايح جاي', '$_companionsFee ج.م', isText: true),
+                if (_waitPickupFee > 0) _fareLine('انتظار عند الاستلام', '$_waitPickupFee ج.م', isText: true),
+                if (_waitAirportFee > 0) _fareLine('انتظار في ساحة المطار', '$_waitAirportFee ج.م', isText: true),
+                const Divider(height: 24),
+                _fareLine('الإجمالي', '$_total ج.م', bold: true),
+                const SizedBox(height: 16),
+                if (_error != null)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(color: const Color(0xFFFEF2F2), border: Border.all(color: const Color(0xFFFCA5A5)), borderRadius: BorderRadius.circular(10)),
+                      child: Text(_error!, style: const TextStyle(color: AppColors.error, fontSize: 13)),
+                    ),
+                  ),
+                ElevatedButton(
+                  onPressed: _submitting ? null : _submit,
+                  style: ElevatedButton.styleFrom(backgroundColor: AppColors.accent, padding: const EdgeInsets.symmetric(vertical: 16)),
+                  child: _submitting
+                      ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                      : const Text('تأكيد الحجز ←'),
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'سعر ثابت حسب المسافة — الدفع نقدًا أو إلكترونيًا',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 10, color: AppColors.textFaint),
+                ),
+              ],
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _fareSummary() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(color: AppColors.primaryLight, borderRadius: BorderRadius.circular(14)),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+  Widget _timelineRow(fare.TimelineStep step, {required bool isLast}) {
+    final timeStr = TimeOfDay.fromDateTime(step.time).format(context);
+    final dateStr = '${_weekday(step.time.weekday)} ${step.time.day} ${_month(step.time.month)}';
+    return IntrinsicHeight(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _fareLine('الأجرة الأساسية (${_roadKm.toStringAsFixed(0)} كم)', _baseFare),
-          if (_extraBagsFee > 0) _fareLine('شنط إضافية', _extraBagsFee),
-          if (_companionsFee > 0) _fareLine('مرافقين', _companionsFee),
-          if (_waitPickupFee > 0) _fareLine('انتظار الاستلام', _waitPickupFee),
-          if (_waitAirportFee > 0) _fareLine('انتظار المطار', _waitAirportFee),
-          const Divider(),
-          _fareLine('الإجمالي', _total, bold: true),
+          Column(
+            children: [
+              Container(
+                width: 22,
+                height: 22,
+                decoration: const BoxDecoration(color: AppColors.primary, shape: BoxShape.circle),
+                alignment: Alignment.center,
+                child: Text(step.icon, style: const TextStyle(fontSize: 11)),
+              ),
+              if (!isLast) Expanded(child: Container(width: 1.5, color: const Color(0xFFE5E7EB))),
+            ],
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.only(bottom: 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(step.label, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 12)),
+                  Text('$dateStr في $timeStr', style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 13, color: AppColors.primary)),
+                  if (step.sub.isNotEmpty)
+                    Text(step.sub, style: const TextStyle(fontSize: 10, color: AppColors.textFaint)),
+                ],
+              ),
+            ),
+          ),
         ],
       ),
     );
   }
 
-  Widget _fareLine(String label, int value, {bool bold = false}) {
+  String _weekday(int w) => const ['الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت', 'الأحد'][w - 1];
+  String _month(int m) => const [
+        'يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو',
+        'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر',
+      ][m - 1];
+
+  Widget _fareLine(String label, String value, {bool bold = false, bool isText = false}) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 2),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: TextStyle(fontSize: bold ? 14 : 12, fontWeight: bold ? FontWeight.w900 : FontWeight.w600)),
-          Text('$value ج.م', style: TextStyle(fontSize: bold ? 16 : 12, fontWeight: FontWeight.w900, color: bold ? AppColors.success : Colors.black87)),
+          Text(label, style: TextStyle(fontSize: bold ? 14 : 12, fontWeight: bold ? FontWeight.w900 : FontWeight.w600, color: AppColors.textFaint)),
+          Text(value, style: TextStyle(fontSize: bold ? 16 : 12, fontWeight: FontWeight.w900, color: bold ? AppColors.success : Colors.black87)),
         ],
       ),
     );
