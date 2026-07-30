@@ -33,6 +33,11 @@ class RideTrackingScreen extends StatefulWidget {
 class _RideTrackingScreenState extends State<RideTrackingScreen> {
   final _rideRepo = RideRepository();
 
+  // Cached by driver phone so the lookup only fires once per assigned
+  // driver, not on every Realtime tick of the ride row.
+  String? _driverProfilePhone;
+  Future<Map<String, dynamic>?>? _driverProfileFuture;
+
   int _stepIndex(String status) {
     final i = _steps.indexWhere((s) => s.key == status);
     return i < 0 ? 0 : i;
@@ -52,7 +57,16 @@ class _RideTrackingScreenState extends State<RideTrackingScreen> {
           final status = ride['status'] as String? ?? 'pending';
           final isCancelled = status == 'cancelled';
           final driverName = ride['driver_name'] as String?;
+          final driverPhone = ride['driver_phone'] as String?;
           final curIdx = _stepIndex(status);
+
+          if (driverPhone != null && driverPhone.isNotEmpty && driverPhone != _driverProfilePhone) {
+            _driverProfilePhone = driverPhone;
+            _driverProfileFuture = _rideRepo.fetchDriverProfile(driverPhone);
+          } else if (driverPhone == null || driverPhone.isEmpty) {
+            _driverProfilePhone = null;
+            _driverProfileFuture = null;
+          }
 
           return CustomScrollView(
             slivers: [
@@ -87,6 +101,25 @@ class _RideTrackingScreenState extends State<RideTrackingScreen> {
                       ),
                       const SizedBox(height: 16),
                       if (!isCancelled) _EtaCard(status: status),
+                      if (!isCancelled && _driverProfileFuture != null) ...[
+                        const SizedBox(height: 16),
+                        FutureBuilder<Map<String, dynamic>?>(
+                          future: _driverProfileFuture,
+                          builder: (context, snap) {
+                            if (snap.connectionState != ConnectionState.done) {
+                              return const Center(
+                                child: Padding(
+                                  padding: EdgeInsets.all(12),
+                                  child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)),
+                                ),
+                              );
+                            }
+                            final profile = snap.data;
+                            if (profile == null) return const SizedBox.shrink();
+                            return _DriverCard(profile: profile, fallbackName: driverName);
+                          },
+                        ),
+                      ],
                       const SizedBox(height: 16),
                       Container(
                         padding: const EdgeInsets.all(16),
@@ -202,6 +235,93 @@ class _Timeline extends StatelessWidget {
           ],
         );
       }),
+    );
+  }
+}
+
+class _DriverCard extends StatelessWidget {
+  final Map<String, dynamic> profile;
+  final String? fallbackName;
+  const _DriverCard({required this.profile, required this.fallbackName});
+
+  @override
+  Widget build(BuildContext context) {
+    final name = (profile['full_name'] as String?)?.trim();
+    final photoUrl = profile['driver_photo_url'] as String?;
+    final vehicleModel = profile['vehicle_model'] as String?;
+    final vehicleColor = profile['vehicle_color'] as String?;
+    final vehicleYear = profile['vehicle_year'];
+    final regNumber = profile['vehicle_reg_number'] as String?;
+    final carPhotoUrl = profile['vehicle_front_url'] as String?;
+
+    final carLine = [vehicleColor, vehicleModel, if (vehicleYear != null) '$vehicleYear']
+        .where((s) => s != null && s.isNotEmpty)
+        .join(' — ');
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: const [BoxShadow(color: Color(0x14000000), blurRadius: 12, offset: Offset(0, 4))],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              CircleAvatar(
+                radius: 28,
+                backgroundColor: AppColors.primaryLight,
+                backgroundImage: (photoUrl != null && photoUrl.isNotEmpty) ? NetworkImage(photoUrl) : null,
+                child: (photoUrl == null || photoUrl.isEmpty)
+                    ? const Text('🧑‍✈️', style: TextStyle(fontSize: 22))
+                    : null,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      (name != null && name.isNotEmpty) ? name : (fallbackName ?? 'السائق'),
+                      style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w900, color: Colors.black87),
+                    ),
+                    if (carLine.isNotEmpty) ...[
+                      const SizedBox(height: 2),
+                      Text(carLine, style: const TextStyle(fontSize: 12, color: AppColors.textFaint, fontWeight: FontWeight.w700)),
+                    ],
+                    if (regNumber != null && regNumber.isNotEmpty) ...[
+                      const SizedBox(height: 2),
+                      Text('🚘 $regNumber', style: const TextStyle(fontSize: 12, color: Colors.black87, fontWeight: FontWeight.w700)),
+                    ],
+                  ],
+                ),
+              ),
+            ],
+          ),
+          if (carPhotoUrl != null && carPhotoUrl.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: Image.network(
+                carPhotoUrl,
+                height: 140,
+                width: double.infinity,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) => const SizedBox.shrink(),
+                loadingBuilder: (context, child, progress) {
+                  if (progress == null) return child;
+                  return const SizedBox(
+                    height: 140,
+                    child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                  );
+                },
+              ),
+            ),
+          ],
+        ],
+      ),
     );
   }
 }

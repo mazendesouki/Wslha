@@ -48,4 +48,20 @@ class RideRepository {
   Future<void> cancelRide(String rideId) async {
     await sb.from('rides').update({'status': 'cancelled'}).eq('id', rideId);
   }
+
+  /// `rides` only carries driver_name/driver_phone once a driver accepts —
+  /// vehicle/photo details live on the driver's approved application row
+  /// (driver_applications, keyed by phone). Same lookup the web app would
+  /// need to do if it showed this card (it currently doesn't).
+  Future<Map<String, dynamic>?> fetchDriverProfile(String driverPhone) async {
+    final rows = await sb
+        .from('driver_applications')
+        .select(
+          'full_name,driver_photo_url,vehicle_model,vehicle_color,vehicle_year,vehicle_reg_number,vehicle_front_url',
+        )
+        .eq('phone', driverPhone)
+        .eq('status', 'approved')
+        .limit(1);
+    return rows.isEmpty ? null : rows.first;
+  }
 }
