@@ -168,7 +168,7 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
           });
           return;
         default:
-          await _repo.completeRide(rideId);
+          await _repo.completeRide(rideId, widget.session.phone);
           if (!mounted) return;
           setState(() {
             _activeJob = null;

@@ -2047,37 +2047,33 @@ import PageHero from '../components/PageHero.astro';
     }).join('');
   }
 
-  /* ── Award points & update wallet on trip completion ── */
+  /* ── Award points & settle commission on trip completion ──
+     Wallet crediting/commission split moved server-side
+     (db/security-07-commission-settlement.sql) — this used to compute
+     the commission and both wallet_transactions rows itself and just log
+     whatever numbers it came up with, meaning anyone who could edit the
+     requests this page sends could zero out their own commission. Now it
+     only tells the server WHICH ride/order to settle; the server reads
+     the real fare and the real commission rate itself and does the math,
+     with a driver-ownership check and duplicate-settlement guard. `fare`
+     is kept as a parameter only for the points calc below (points aren't
+     real money, so that stays as-is). */
   async function recordCompletion(type, referenceId, fare) {
     if (!driver) return;
-    const rate         = type === 'airport' ? RATES.airport : type === 'delivery' ? RATES.delivery : type === 'external' ? RATES.external : RATES.ride;
-    const commission   = Math.round(fare * rate);
-    const driverEarn   = fare - commission;
     const pointsEarned = type === 'airport' ? 50 : type === 'delivery' ? 20 : type === 'external' ? 20 : 10;
     const phone = driver.phone;
     const now   = new Date().toISOString();
-    const txId  = `wtx-${Date.now()}`;
     const ptId  = `ptx-${Date.now()}`;
-    const typeLabel = type === 'delivery' ? 'توصيل' : type === 'airport' ? 'مطار' : type === 'external' ? 'رحلة خارجية' : 'رحلة';
+
+    const settleRpc = type === 'delivery' ? 'settle_order_commission' : 'settle_ride_commission';
+    const settleParam = type === 'delivery' ? { p_order_id: referenceId, p_driver_phone: phone }
+                                             : { p_ride_id: referenceId, p_driver_phone: phone };
 
     await Promise.allSettled([
-      // Accumulate driver wallet balance via RPC (prevents overwrite)
-      fetch(`${SB_URL}/rest/v1/rpc/add_wallet_balance`, {
-        method: 'POST',
-        headers: { ...SB_H },
-        body: JSON.stringify({ p_phone: phone, p_amount: driverEarn }),
-      }),
-      // Driver earning transaction
-      fetch(`${SB_URL}/rest/v1/rpc/log_wallet_transaction`, {
+      fetch(`${SB_URL}/rest/v1/rpc/${settleRpc}`, {
         method: 'POST',
         headers: { ...SB_H, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ p_id: txId, p_phone: phone, p_amount: driverEarn, p_type: 'earning', p_reference_id: referenceId, p_note: `أرباح ${typeLabel} — بعد خصم العمولة ${Math.round(rate*100)}%` }),
-      }),
-      // Platform commission transaction
-      fetch(`${SB_URL}/rest/v1/rpc/log_wallet_transaction`, {
-        method: 'POST',
-        headers: { ...SB_H, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ p_id: `pcom-${Date.now()}-${Math.random().toString(36).slice(2,6)}`, p_phone: 'platform', p_amount: commission, p_type: 'commission', p_reference_id: referenceId, p_note: `عمولة ${typeLabel} — ${Math.round(rate*100)}% من ${fare} ج.م` }),
+        body: JSON.stringify(settleParam),
       }),
       // Points transaction
       fetch(`${SB_URL}/rest/v1/point_transactions`, {

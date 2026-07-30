@@ -102,10 +102,18 @@ class DriverRepository {
     await sb.from('rides').update({'status': 'in_progress'}).eq('id', rideId);
   }
 
-  Future<void> completeRide(String rideId) async {
+  Future<void> completeRide(String rideId, String driverPhone) async {
     await sb.from('rides').update({
       'status': 'completed',
       'completed_at': DateTime.now().toIso8601String(),
     }).eq('id', rideId);
+    // Server reads the real fare + commission rate itself and credits the
+    // driver's wallet — see db/security-07-commission-settlement.sql.
+    // (This app never credited ride earnings at all before; orders already
+    // went through the equally server-side confirm_order_delivery RPC.)
+    await sb.rpc('settle_ride_commission', params: {
+      'p_ride_id': rideId,
+      'p_driver_phone': driverPhone,
+    });
   }
 }
