@@ -91,27 +91,50 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
     }
   }
 
+  void _showError(Object e) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('خطأ: $e'), backgroundColor: AppColors.error, duration: const Duration(seconds: 6)),
+    );
+  }
+
   Future<void> _accept() async {
     if (_offer == null) return;
     _countdownTimer?.cancel();
     setState(() => _busy = true);
-    final ok = await _repo.acceptOffer(_offer!.offerId, widget.session.phone, widget.session.name);
-    setState(() {
-      _busy = false;
-      if (ok) {
-        _activeJob = _offer!.data;
-        _activeJobType = _offer!.targetType;
-        _rideStep = 'accepted';
-        _pickedUp = false;
-      }
-      _offer = null;
-    });
+    try {
+      final ok = await _repo.acceptOffer(_offer!.offerId, widget.session.phone, widget.session.name);
+      if (!mounted) return;
+      if (!ok && mounted) _showError('السائق لم يستطع قبول الطلب (اتقبل من غيرك أو انتهت صلاحيته)');
+      setState(() {
+        _busy = false;
+        if (ok) {
+          _activeJob = _offer!.data;
+          _activeJobType = _offer!.targetType;
+          _rideStep = 'accepted';
+          _pickedUp = false;
+        }
+        _offer = null;
+      });
+    } catch (e) {
+      _showError(e);
+      if (!mounted) return;
+      setState(() {
+        _busy = false;
+        _offer = null;
+      });
+    }
   }
 
   Future<void> _reject({bool auto = false}) async {
     if (_offer == null) return;
     setState(() => _busy = true);
-    await _repo.rejectOffer(_offer!.offerId, widget.session.phone);
+    try {
+      await _repo.rejectOffer(_offer!.offerId, widget.session.phone);
+    } catch (e) {
+      _showError(e);
+    }
+    if (!mounted) return;
     setState(() {
       _busy = false;
       _offer = null;
@@ -123,28 +146,37 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
     if (job == null) return;
     final rideId = job['id'].toString();
     setState(() => _busy = true);
-    switch (_rideStep) {
-      case 'accepted':
-        await _repo.markRideArrived(rideId);
-        setState(() {
-          _rideStep = 'arrived';
-          _busy = false;
-        });
-        return;
-      case 'arrived':
-        await _repo.markRideInProgress(rideId);
-        setState(() {
-          _rideStep = 'in_progress';
-          _busy = false;
-        });
-        return;
-      default:
-        await _repo.completeRide(rideId);
-        setState(() {
-          _activeJob = null;
-          _activeJobType = null;
-          _busy = false;
-        });
+    try {
+      switch (_rideStep) {
+        case 'accepted':
+          await _repo.markRideArrived(rideId);
+          if (!mounted) return;
+          setState(() {
+            _rideStep = 'arrived';
+            _busy = false;
+          });
+          return;
+        case 'arrived':
+          await _repo.markRideInProgress(rideId);
+          if (!mounted) return;
+          setState(() {
+            _rideStep = 'in_progress';
+            _busy = false;
+          });
+          return;
+        default:
+          await _repo.completeRide(rideId);
+          if (!mounted) return;
+          setState(() {
+            _activeJob = null;
+            _activeJobType = null;
+            _busy = false;
+          });
+      }
+    } catch (e) {
+      _showError(e);
+      if (!mounted) return;
+      setState(() => _busy = false);
     }
   }
 
@@ -153,20 +185,28 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
     if (job == null) return;
     setState(() => _busy = true);
     final orderId = job['id'].toString();
-    if (!_pickedUp) {
-      await _repo.markOrderPickedUp(orderId);
+    try {
+      if (!_pickedUp) {
+        await _repo.markOrderPickedUp(orderId);
+        if (!mounted) return;
+        setState(() {
+          _pickedUp = true;
+          _busy = false;
+        });
+        return;
+      }
+      await _repo.confirmOrderDelivery(orderId, widget.session.phone);
+      if (!mounted) return;
       setState(() {
-        _pickedUp = true;
+        _activeJob = null;
+        _activeJobType = null;
         _busy = false;
       });
-      return;
+    } catch (e) {
+      _showError(e);
+      if (!mounted) return;
+      setState(() => _busy = false);
     }
-    await _repo.confirmOrderDelivery(orderId, widget.session.phone);
-    setState(() {
-      _activeJob = null;
-      _activeJobType = null;
-      _busy = false;
-    });
   }
 
   @override
