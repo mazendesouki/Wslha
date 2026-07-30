@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../../core/contact_launcher.dart';
 import '../../core/maps_launcher.dart';
 import '../../core/session.dart';
 import '../../core/theme.dart';
@@ -284,6 +285,8 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
     final fare = job['fare'] ?? job['total'] ?? job['delivery_fee'] ?? 0;
     final origin = _currentLegOrigin(job, isOrder);
     final destination = _currentLegDestination(job, isOrder);
+    final customerName = job['customer_name'] as String?;
+    final customerPhone = job['customer_phone'] as String?;
 
     return SingleChildScrollView(
       child: Column(
@@ -298,6 +301,10 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
             child: Column(
               children: [
                 Text(isOrder ? '📦 طلب قيد التنفيذ' : '🚖 مشوار قيد التنفيذ', style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16)),
+                if (customerPhone != null && customerPhone.isNotEmpty) ...[
+                  const SizedBox(height: 12),
+                  _CustomerContactRow(name: customerName, phone: customerPhone),
+                ],
                 const SizedBox(height: 14),
                 _RouteRow(from: from, to: to),
                 const SizedBox(height: 12),
@@ -591,6 +598,46 @@ class _OfferSheet extends StatelessWidget {
 /// Static-map route preview (pickup/dropoff pins, no live tracking or
 /// polyline — see the file-level doc comment) + a button that hands off to
 /// the Google Maps app for actual turn-by-turn navigation.
+/// Call + WhatsApp buttons for reaching the customer — the WhatsApp option
+/// covers cases where a call doesn't get the driver to the right spot
+/// (customer describes a landmark, sends a location pin, etc).
+class _CustomerContactRow extends StatelessWidget {
+  final String? name;
+  final String phone;
+  const _CustomerContactRow({required this.name, required this.phone});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(color: const Color(0xFFF7FAF9), borderRadius: BorderRadius.circular(12)),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              (name != null && name!.isNotEmpty) ? name! : 'العميل',
+              style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          IconButton(
+            onPressed: () => callPhone(phone),
+            icon: const Icon(Icons.call, color: AppColors.success),
+            tooltip: 'اتصل بالعميل',
+            visualDensity: VisualDensity.compact,
+          ),
+          IconButton(
+            onPressed: () => openWhatsApp(phone),
+            icon: const Icon(Icons.chat, color: Color(0xFF25D366)),
+            tooltip: 'تواصل عبر واتساب',
+            visualDensity: VisualDensity.compact,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _RouteMapCard extends StatelessWidget {
   final (double, double)? origin;
   final (double, double) destination;

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/contact_launcher.dart';
 import '../../core/notifications.dart';
 import '../../core/theme.dart';
 import 'ride_repository.dart';
@@ -136,7 +137,7 @@ class _RideTrackingScreenState extends State<RideTrackingScreen> {
                             }
                             final profile = snap.data;
                             if (profile == null) return const SizedBox.shrink();
-                            return _DriverCard(profile: profile, fallbackName: driverName);
+                            return _DriverCard(profile: profile, fallbackName: driverName, driverPhone: driverPhone);
                           },
                         ),
                       ],
@@ -262,7 +263,8 @@ class _Timeline extends StatelessWidget {
 class _DriverCard extends StatelessWidget {
   final Map<String, dynamic> profile;
   final String? fallbackName;
-  const _DriverCard({required this.profile, required this.fallbackName});
+  final String? driverPhone;
+  const _DriverCard({required this.profile, required this.fallbackName, required this.driverPhone});
 
   @override
   Widget build(BuildContext context) {
@@ -323,6 +325,16 @@ class _DriverCard extends StatelessWidget {
                   ],
                 ),
               ),
+              if (driverPhone != null && driverPhone!.isNotEmpty)
+                Container(
+                  margin: const EdgeInsets.only(right: 8),
+                  decoration: BoxDecoration(color: const Color(0xFFDCFCE7), borderRadius: BorderRadius.circular(12)),
+                  child: IconButton(
+                    onPressed: () => callPhone(driverPhone!),
+                    icon: const Icon(Icons.call, color: AppColors.success),
+                    tooltip: 'اتصل بالسائق',
+                  ),
+                ),
             ],
           ),
           if (carPhotoUrl != null && carPhotoUrl.isNotEmpty) ...[
