@@ -663,6 +663,11 @@ label .req { color: #DC2626; }
               <input type="checkbox" id="v-has-ac"/> ❄️ سيارتي مكيفة
             </label>
           </div>
+          <div class="fg" style="display:flex;align-items:center">
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;margin:0">
+              <input type="checkbox" id="v-is-clean"/> 🧼 سيارتي نظيفة
+            </label>
+          </div>
           <div class="fg">
             <label for="v-plate">رقم اللوحة <span class="req">*</span></label>
             <input class="fi" id="v-plate" type="text" placeholder="مثال: أ ب ج 1234" dir="ltr"/>
@@ -1455,6 +1460,7 @@ window.submitApp = async function() {
     inspection_photo_url:uploads['inspection'] || null,
     vehicle_category:   $('v-cat').value,
     has_ac:             $('v-has-ac').checked,
+    is_clean:           $('v-is-clean').checked,
     vehicle_model:      $('v-model').value.trim(),
     vehicle_color:      $('v-color').value.trim(),
     vehicle_year:       parseInt($('v-year').value, 10) || null,

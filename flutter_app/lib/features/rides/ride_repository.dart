@@ -57,7 +57,7 @@ class RideRepository {
     final rows = await sb
         .from('driver_applications')
         .select(
-          'full_name,driver_photo_url,vehicle_model,vehicle_color,vehicle_year,vehicle_reg_number,vehicle_front_url',
+          'full_name,driver_photo_url,vehicle_model,vehicle_color,vehicle_year,vehicle_reg_number,vehicle_front_url,has_ac,is_clean',
         )
         .eq('phone', driverPhone)
         .eq('status', 'approved')

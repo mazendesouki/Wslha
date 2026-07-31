@@ -275,6 +275,8 @@ class _DriverCard extends StatelessWidget {
     final vehicleYear = profile['vehicle_year'];
     final regNumber = profile['vehicle_reg_number'] as String?;
     final carPhotoUrl = profile['vehicle_front_url'] as String?;
+    final hasAc = profile['has_ac'] == true;
+    final isClean = profile['is_clean'] == true;
 
     final carLine = [vehicleColor, vehicleModel, if (vehicleYear != null) '$vehicleYear']
         .where((s) => s != null && s.isNotEmpty)
@@ -337,6 +339,16 @@ class _DriverCard extends StatelessWidget {
                 ),
             ],
           ),
+          if (hasAc || isClean) ...[
+            const SizedBox(height: 10),
+            Wrap(
+              spacing: 6,
+              children: [
+                if (hasAc) _badge('❄️ مكيّفة'),
+                if (isClean) _badge('🧼 نظيفة'),
+              ],
+            ),
+          ],
           if (carPhotoUrl != null && carPhotoUrl.isNotEmpty) ...[
             const SizedBox(height: 12),
             ClipRRect(
@@ -359,6 +371,14 @@ class _DriverCard extends StatelessWidget {
           ],
         ],
       ),
+    );
+  }
+
+  Widget _badge(String label) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(color: AppColors.primaryLight, borderRadius: BorderRadius.circular(999)),
+      child: Text(label, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: AppColors.primary)),
     );
   }
 }
