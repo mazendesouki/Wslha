@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../core/session.dart';
 import '../../core/theme.dart';
 import '../orders/orders_repository.dart';
+import '../rides/ride_tracking_screen.dart';
 
 const Map<String, Color> _statusColor = {
   'delivered': AppColors.success,
@@ -105,27 +106,45 @@ class _DriverOrdersScreenState extends State<DriverOrdersScreen> {
                         itemBuilder: (context, i) {
                           final item = _items![i];
                           final color = _statusColor[item.status] ?? AppColors.textFaint;
-                          return Container(
-                            padding: const EdgeInsets.all(14),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
+                          final isRide = item.kind == 'ride';
+                          return Material(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(14),
+                            child: InkWell(
                               borderRadius: BorderRadius.circular(14),
-                              boxShadow: const [BoxShadow(color: Color(0x0F000000), blurRadius: 8, offset: Offset(0, 2))],
-                            ),
-                            child: Row(
-                              children: [
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(item.title, style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 13)),
-                                      const SizedBox(height: 4),
-                                      Text(item.subtitle, style: TextStyle(fontSize: 11, color: color, fontWeight: FontWeight.w700)),
-                                    ],
-                                  ),
+                              onTap: isRide
+                                  ? () => Navigator.of(context).push(
+                                        MaterialPageRoute(
+                                          builder: (_) => RideTrackingScreen(rideId: item.id, isDriverView: true),
+                                        ),
+                                      )
+                                  : null,
+                              child: Container(
+                                padding: const EdgeInsets.all(14),
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(14),
+                                  boxShadow: const [BoxShadow(color: Color(0x0F000000), blurRadius: 8, offset: Offset(0, 2))],
                                 ),
-                                Text('${item.total} ج.م', style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 14, color: AppColors.primary)),
-                              ],
+                                child: Row(
+                                  children: [
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(item.title, style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 13)),
+                                          const SizedBox(height: 4),
+                                          Text(item.subtitle, style: TextStyle(fontSize: 11, color: color, fontWeight: FontWeight.w700)),
+                                        ],
+                                      ),
+                                    ),
+                                    Text('${item.total} ج.م', style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 14, color: AppColors.primary)),
+                                    if (isRide) ...[
+                                      const SizedBox(width: 4),
+                                      const Icon(Icons.chevron_left, color: AppColors.textFaint, size: 18),
+                                    ],
+                                  ],
+                                ),
+                              ),
                             ),
                           );
                         },

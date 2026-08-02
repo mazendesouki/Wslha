@@ -4,6 +4,10 @@ import '../../core/notifications.dart';
 import '../../core/theme.dart';
 import 'ride_repository.dart';
 
+// Passing isDriverView flips the driver-facing card off (a driver looking at
+// their own trip shouldn't see a "call the driver" card pointing at
+// themselves) and shows the customer's contact info instead.
+
 /// Same status → message mapping as track.astro's notifyStatusChange().
 const Map<String, String> _statusNotif = {
   'accepted': '🚗 قبِل السائق طلبك وهو في طريقه إليك',
@@ -35,7 +39,8 @@ class _Step {
 
 class RideTrackingScreen extends StatefulWidget {
   final String rideId;
-  const RideTrackingScreen({super.key, required this.rideId});
+  final bool isDriverView;
+  const RideTrackingScreen({super.key, required this.rideId, this.isDriverView = false});
 
   @override
   State<RideTrackingScreen> createState() => _RideTrackingScreenState();
@@ -74,19 +79,26 @@ class _RideTrackingScreenState extends State<RideTrackingScreen> {
           final isCancelled = status == 'cancelled';
           final driverName = ride['driver_name'] as String?;
           final driverPhone = ride['driver_phone'] as String?;
+          final customerName = ride['customer_name'] as String?;
+          final customerPhone = ride['customer_phone'] as String?;
           final curIdx = _stepIndex(status);
 
-          if (_lastNotifiedStatus != null && _lastNotifiedStatus != status && _statusNotif.containsKey(status)) {
+          if (!widget.isDriverView &&
+              _lastNotifiedStatus != null &&
+              _lastNotifiedStatus != status &&
+              _statusNotif.containsKey(status)) {
             AppNotifications.instance.show('وصّلها — تحديث رحلتك', _statusNotif[status]!);
           }
           _lastNotifiedStatus = status;
 
-          if (driverPhone != null && driverPhone.isNotEmpty && driverPhone != _driverProfilePhone) {
-            _driverProfilePhone = driverPhone;
-            _driverProfileFuture = _rideRepo.fetchDriverProfile(driverPhone);
-          } else if (driverPhone == null || driverPhone.isEmpty) {
-            _driverProfilePhone = null;
-            _driverProfileFuture = null;
+          if (!widget.isDriverView) {
+            if (driverPhone != null && driverPhone.isNotEmpty && driverPhone != _driverProfilePhone) {
+              _driverProfilePhone = driverPhone;
+              _driverProfileFuture = _rideRepo.fetchDriverProfile(driverPhone);
+            } else if (driverPhone == null || driverPhone.isEmpty) {
+              _driverProfilePhone = null;
+              _driverProfileFuture = null;
+            }
           }
 
           return CustomScrollView(
@@ -95,7 +107,7 @@ class _RideTrackingScreenState extends State<RideTrackingScreen> {
                 pinned: true,
                 backgroundColor: isCancelled ? AppColors.error : AppColors.primary,
                 foregroundColor: Colors.white,
-                title: const Text('تتبّع الرحلة'),
+                title: Text(widget.isDriverView ? 'تفاصيل الرحلة' : 'تتبّع الرحلة'),
               ),
               SliverToBoxAdapter(
                 child: Padding(
@@ -122,7 +134,7 @@ class _RideTrackingScreenState extends State<RideTrackingScreen> {
                       ),
                       const SizedBox(height: 16),
                       if (!isCancelled) _EtaCard(status: status),
-                      if (!isCancelled && _driverProfileFuture != null) ...[
+                      if (!isCancelled && !widget.isDriverView && _driverProfileFuture != null) ...[
                         const SizedBox(height: 16),
                         FutureBuilder<Map<String, dynamic>?>(
                           future: _driverProfileFuture,
@@ -140,6 +152,10 @@ class _RideTrackingScreenState extends State<RideTrackingScreen> {
                             return _DriverCard(profile: profile, fallbackName: driverName, driverPhone: driverPhone);
                           },
                         ),
+                      ],
+                      if (widget.isDriverView && customerPhone != null && customerPhone.isNotEmpty) ...[
+                        const SizedBox(height: 16),
+                        _CustomerCard(name: customerName, phone: customerPhone),
                       ],
                       const SizedBox(height: 16),
                       Container(
@@ -162,7 +178,7 @@ class _RideTrackingScreenState extends State<RideTrackingScreen> {
                         ),
                       ),
                       const SizedBox(height: 20),
-                      if (status == 'pending')
+                      if (!widget.isDriverView && status == 'pending')
                         OutlinedButton(
                           style: OutlinedButton.styleFrom(
                             foregroundColor: AppColors.error,
@@ -379,6 +395,57 @@ class _DriverCard extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(color: AppColors.primaryLight, borderRadius: BorderRadius.circular(999)),
       child: Text(label, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: AppColors.primary)),
+    );
+  }
+}
+
+class _CustomerCard extends StatelessWidget {
+  final String? name;
+  final String phone;
+  const _CustomerCard({required this.name, required this.phone});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: const [BoxShadow(color: Color(0x14000000), blurRadius: 12, offset: Offset(0, 4))],
+      ),
+      child: Row(
+        children: [
+          const CircleAvatar(
+            radius: 24,
+            backgroundColor: AppColors.primaryLight,
+            child: Text('🧑', style: TextStyle(fontSize: 20)),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              (name != null && name!.isNotEmpty) ? name! : 'العميل',
+              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w900, color: Colors.black87),
+            ),
+          ),
+          Container(
+            margin: const EdgeInsets.only(left: 6),
+            decoration: BoxDecoration(color: const Color(0xFFDCFCE7), borderRadius: BorderRadius.circular(12)),
+            child: IconButton(
+              onPressed: () => callPhone(phone),
+              icon: const Icon(Icons.call, color: AppColors.success),
+              tooltip: 'اتصل بالعميل',
+            ),
+          ),
+          Container(
+            decoration: BoxDecoration(color: const Color(0xFFDCFCE7), borderRadius: BorderRadius.circular(12)),
+            child: IconButton(
+              onPressed: () => openWhatsApp(phone),
+              icon: const Icon(Icons.chat, color: AppColors.success),
+              tooltip: 'واتساب',
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
