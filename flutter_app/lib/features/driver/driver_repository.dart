@@ -63,14 +63,20 @@ class DriverRepository {
     );
   }
 
-  Future<bool> acceptOffer(String offerId, String phone, String name) async {
+  /// Returns 'ok', or a failure reason string ('vehicle_category_mismatch',
+  /// 'expired_or_taken', 'already_taken') so the caller can show a specific
+  /// message instead of a generic error.
+  Future<String> acceptOffer(String offerId, String phone, String name) async {
     final result = await sb.rpc('accept_dispatch_offer', params: {
       'p_offer_id': offerId,
       'p_driver_phone': phone,
       'p_driver_name': name,
     });
-    if (result is Map) return result['ok'] == true;
-    return result == true;
+    if (result is Map) {
+      if (result['ok'] == true) return 'ok';
+      return (result['reason'] as String?) ?? 'error';
+    }
+    return result == true ? 'ok' : 'error';
   }
 
   Future<void> rejectOffer(String offerId, String phone) async {

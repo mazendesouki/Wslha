@@ -209,6 +209,7 @@ class _AirportScreenState extends State<AirportScreen> {
         etaMinutes: fare_calc.etaMinutes(_straightKm),
         passengers: _passengers,
         vehicleYear: _selectedYear,
+        vehicleCategory: _selectedVehicle!.category,
         notes: notes,
       );
 

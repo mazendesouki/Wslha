@@ -116,9 +116,16 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
     _countdownTimer?.cancel();
     setState(() => _busy = true);
     try {
-      final ok = await _repo.acceptOffer(_offer!.offerId, widget.session.phone, widget.session.name);
+      final result = await _repo.acceptOffer(_offer!.offerId, widget.session.phone, widget.session.name);
+      final ok = result == 'ok';
       if (!mounted) return;
-      if (!ok && mounted) _showError('السائق لم يستطع قبول الطلب (اتقبل من غيرك أو انتهت صلاحيته)');
+      if (!ok) {
+        _showError(
+          result == 'vehicle_category_mismatch'
+              ? 'نوع سيارتك لا يطابق نوع السيارة المطلوب لرحلة المطار دي'
+              : 'السائق لم يستطع قبول الطلب (اتقبل من غيرك أو انتهت صلاحيته)',
+        );
+      }
       setState(() {
         _busy = false;
         if (ok) {

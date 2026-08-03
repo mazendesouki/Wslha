@@ -1094,6 +1094,7 @@ import { VEHICLE_TYPES } from '../data/airports';
             payment: (document.querySelector('input[name="payment"]:checked'))?.value || 'cash',
             vehicle_model: selVehModel.id,
             vehicle_year: selVehYear,
+            airport_vehicle_category: selVehModel.category,
             notes: `${dep ? '🛫 مغادرة' : '🛬 وصول'} ${order.airline || ''} ${order.flightNo || ''}${country ? ' — ' + (dep ? 'إلى' : 'من') + ' ' + country : ''} — عنوان: ${order.address} — ${dep ? 'إقلاع' : 'هبوط'}: ${flightVal?.toLocaleString('ar-EG') || ''} — سيارة: ${order.vehicleName} (${selVehModel.name} ${selVehYear}) — شنط: ${bagsVal}`,
             status: 'pending',
             ride_type: 'airport',
