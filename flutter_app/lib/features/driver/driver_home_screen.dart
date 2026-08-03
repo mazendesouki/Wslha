@@ -559,7 +559,8 @@ class _OfferSheet extends StatelessWidget {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceAround,
                     children: [
-                      if (data['distance_km'] != null) _metaChip('${data['distance_km']} كم', 'المسافة'),
+                      if (data['distance_km'] != null)
+                        _metaChip('${(data['distance_km'] as num).toStringAsFixed(1)} كم', 'المسافة'),
                       if (data['eta_minutes'] != null) _metaChip('${data['eta_minutes']} د', 'الوقت'),
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
