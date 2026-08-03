@@ -131,7 +131,9 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
         _showError(
           result == 'vehicle_category_mismatch'
               ? 'نوع سيارتك لا يطابق نوع السيارة المطلوب لرحلة المطار دي'
-              : 'السائق لم يستطع قبول الطلب (اتقبل من غيرك أو انتهت صلاحيته)',
+              : result == 'quality_tier_mismatch'
+                  ? 'سيارتك المسجّلة لا تطابق مستوى الخدمة المطلوب لرحلة المطار دي (مكيّفة/نظيفة/موديل حديث)'
+                  : 'السائق لم يستطع قبول الطلب (اتقبل من غيرك أو انتهت صلاحيته)',
         );
       }
       setState(() {

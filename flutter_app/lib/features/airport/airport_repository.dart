@@ -49,6 +49,7 @@ class AirportRepository {
     required int passengers,
     required int vehicleYear,
     required String vehicleCategory,
+    required String qualityTier,
     required String notes,
   }) async {
     final row = await sb.from('rides').insert({
@@ -67,6 +68,7 @@ class AirportRepository {
       'payment': 'cash',
       'vehicle_year': vehicleYear,
       'airport_vehicle_category': vehicleCategory,
+      'airport_quality_tier': qualityTier,
       'notes': notes,
       'status': 'pending',
       'ride_type': 'airport',

@@ -1328,6 +1328,7 @@ import PageHero from '../components/PageHero.astro';
       const result = await res.json();
       if (result && result.ok) return result.data;
       if (result && result.reason === 'vehicle_category_mismatch') return 'vehicle_category_mismatch';
+      if (result && result.reason === 'quality_tier_mismatch') return 'quality_tier_mismatch';
       return null;
     } catch { return null; }
   }
@@ -1573,6 +1574,10 @@ import PageHero from '../components/PageHero.astro';
     const accepted = ride.offer_id ? await acceptViaOffer(ride.offer_id) : await acceptRide(ride);
     if (accepted === 'vehicle_category_mismatch') {
       showToast('نوع سيارتك لا يطابق نوع السيارة المطلوب لرحلة المطار دي');
+      return;
+    }
+    if (accepted === 'quality_tier_mismatch') {
+      showToast('سيارتك المسجّلة لا تطابق مستوى الخدمة المطلوب لرحلة المطار دي (مكيّفة/نظيفة/موديل حديث)');
       return;
     }
     if (!accepted) { showToast('حدث خطأ، حاول مرة أخرى'); return; }

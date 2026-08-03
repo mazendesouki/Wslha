@@ -215,6 +215,7 @@ class _AirportScreenState extends State<AirportScreen> {
         passengers: _passengers,
         vehicleYear: _selectedYear,
         vehicleCategory: _selectedVehicle!.category,
+        qualityTier: _quality,
         notes: notes,
       );
 
