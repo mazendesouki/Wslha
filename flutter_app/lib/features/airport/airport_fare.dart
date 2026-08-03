@@ -22,6 +22,24 @@ const Map<String, String> categoryLabels = {
   'van': '🚐 ميكروباص',
 };
 
+/// App-only preference on top of the base category+year price (not yet
+/// mirrored on the web or enforced server-side — same trust model as the
+/// rest of airport pricing today). Percentages are a starting point, not a
+/// confirmed business number — adjust freely.
+const Map<String, String> qualityLabels = {
+  'regular': 'عادية',
+  'clean': '🧼 نظيفة',
+  'ac': '❄️ مكيّفة',
+  'modern': '✨ موديل حديث',
+};
+
+const Map<String, double> qualityMultiplier = {
+  'regular': 1.0,
+  'clean': 1.08,
+  'ac': 1.12,
+  'modern': 1.20,
+};
+
 const double _suvMult = 1.3;
 const double _vanMult = 1.4;
 
@@ -49,11 +67,14 @@ double airportRatePerKm(String category, int year) {
 }
 
 const int airportBaseFee = 300;
+const int airportMinFare = 2500; // ج.م — الحد الأدنى لأي رحلة مطار
 
-/// fareForVehicle() — base + distance × effective rate, rounded up to 50.
+/// fareForVehicle() — base + distance × effective rate, rounded up to 50,
+/// floored at airportMinFare.
 int fareForVehicle(double distanceKm, String category, int year) {
   final raw = airportBaseFee + distanceKm * airportRatePerKm(category, year);
-  return (raw / 50).ceil() * 50;
+  final rounded = (raw / 50).ceil() * 50;
+  return rounded < airportMinFare ? airportMinFare : rounded;
 }
 
 const int extraBagFee = 25;

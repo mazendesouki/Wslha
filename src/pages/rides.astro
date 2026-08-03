@@ -1260,7 +1260,7 @@ import { VEHICLE_MODELS, FARE_ZONES, TRIP_RATES } from '../data/airports';
   // التدرّج: أول 3 كم ×1.15 • من 3 إلى 10 كم ×1.0 • فوق 10 كم ×0.9
   // ⚠️ يجب أن يطابق حارس الأجرة على الخادم (db/rides-vehicle-pricing.sql) بالضبط
   const BASE_FARE = 25;
-  const MIN_FARE  = 35;
+  const MIN_FARE  = 40;
   const TIERS = { t1Km: 3, t1Mult: 1.15, t2Km: 10, t2Mult: 1.0, t3Mult: 0.9 };
   const STANDARD_ZONE = { id:'standard', label:'داخل المدينة', factor:1, surcharge:0, keywords:[] };
 

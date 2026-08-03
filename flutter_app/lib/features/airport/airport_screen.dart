@@ -32,6 +32,7 @@ class _AirportScreenState extends State<AirportScreen> {
   String _category = 'sedan';
   fare.RegisteredVehicle? _selectedVehicle;
   int _selectedYear = DateTime.now().year;
+  String _quality = 'regular';
 
   PlaceResult? _from;
   PlaceResult? _airport;
@@ -109,7 +110,10 @@ class _AirportScreenState extends State<AirportScreen> {
 
   int get _baseFare {
     if (_roadKm <= 0 || _selectedVehicle == null) return 0;
-    return fare.fareForVehicle(_roadKm, _selectedVehicle!.category, _selectedYear);
+    final raw = fare.fareForVehicle(_roadKm, _selectedVehicle!.category, _selectedYear);
+    final withQuality = raw * (fare.qualityMultiplier[_quality] ?? 1.0);
+    final rounded = (withQuality / 50).ceil() * 50;
+    return rounded < fare.airportMinFare ? fare.airportMinFare : rounded;
   }
 
   int get _extraBagsFee {
@@ -185,6 +189,7 @@ class _AirportScreenState extends State<AirportScreen> {
       final notes = [
         '🛫 توصيل مطار — $directionLabel ($tripLabel)',
         '🚘 ${fare.categoryLabels[_category]} ${_selectedVehicle!.name} $_selectedYear',
+        if (_quality != 'regular') '⭐ الخدمة المطلوبة: ${fare.qualityLabels[_quality]}',
         if (_companions > 0) '👥 مرافقين رايح جاي: $_companions',
         if (_bags > 0) '🧳 شنط: $_bags',
         if (_airlineCtrl.text.trim().isNotEmpty) '✈️ شركة الطيران: ${_airlineCtrl.text.trim()}',
@@ -303,6 +308,23 @@ class _AirportScreenState extends State<AirportScreen> {
                     .toList(),
                 onChanged: (y) => setState(() => _selectedYear = y ?? _selectedYear),
               ),
+            const SizedBox(height: 14),
+            const Text('مستوى الخدمة المطلوب', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13)),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: fare.qualityLabels.keys
+                  .map((q) => ChoiceChip(
+                        label: Text(
+                          '${fare.qualityLabels[q]}'
+                          '${q == 'regular' ? '' : ' (+${(((fare.qualityMultiplier[q] ?? 1) - 1) * 100).round()}%)'}',
+                        ),
+                        selected: _quality == q,
+                        onSelected: (_) => setState(() => _quality = q),
+                      ))
+                  .toList(),
+            ),
           ],
           const Divider(height: 32),
 

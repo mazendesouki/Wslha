@@ -180,10 +180,12 @@ export function ratePerKmFor(tripType: TripType, model: VehicleModel, year: numb
   return TRIP_RATES[tripType][model.category] * yearMultiplier(year);
 }
 
+export const AIRPORT_MIN_FARE = 2500; // ج.م — الحد الأدنى لأي رحلة مطار
+
 // Fare for a specific model+year over a given distance (airport transfer).
 export function fareForVehicle(distanceKm: number, model: VehicleModel, year: number): number {
   const raw = AIRPORT_BASE_FEE + distanceKm * ratePerKmFor('airport', model, year);
-  return Math.ceil(raw / 50) * 50;
+  return Math.max(AIRPORT_MIN_FARE, Math.ceil(raw / 50) * 50);
 }
 
 // ─── Local-ride flexible meter ────────────────────────────────────────────────

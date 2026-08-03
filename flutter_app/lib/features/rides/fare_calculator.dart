@@ -10,7 +10,7 @@ import 'dart:math' as math;
 // airport does), so it always books as the same sedan/2022 default the
 // server falls back to when vehicle_model/vehicle_year are omitted.
 const double baseFare = 25;
-const double minFare = 35;
+const double minFare = 40;
 const double roadFactor = 1.35;
 const double _sedanRatePerKm = 8; // TRIP_RATES.local.sedan
 const double _defaultYearMult = 1.035; // yearMultiplier(2022) — the server's fallback year

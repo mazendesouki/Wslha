@@ -45,7 +45,7 @@ export const AIRPORTS: Airport[] = [
 export const BASE_FARE    = 25;   // ج.م — عداد الانطلاق
 export const RATE_PER_KM  = 12;   // ج.م / كم
 export const ROAD_FACTOR  = 1.35; // طرق مصرية ~35% أطول من الخط المستقيم
-export const MIN_FARE     = 35;   // ج.م — الحد الأدنى للرحلة
+export const MIN_FARE     = 40;   // ج.م — الحد الأدنى للرحلة
 
 export function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): number {
   const R = 6371;
