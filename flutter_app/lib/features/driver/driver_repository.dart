@@ -1,6 +1,14 @@
 import 'package:geolocator/geolocator.dart';
 import '../../core/supabase_client.dart';
 
+class RideSettlement {
+  final double fare;
+  final double commission;
+  final double driverEarn;
+  final double rate;
+  RideSettlement({required this.fare, required this.commission, required this.driverEarn, required this.rate});
+}
+
 class PendingOffer {
   final String offerId;
   final String targetType; // 'ride' | 'order'
@@ -108,18 +116,26 @@ class DriverRepository {
     await sb.from('rides').update({'status': 'in_progress'}).eq('id', rideId);
   }
 
-  Future<void> completeRide(String rideId, String driverPhone) async {
-    await sb.from('rides').update({
+  Future<RideSettlement?> completeRide(String rideId, String driverPhone) async {
+    final ride = await sb.from('rides').update({
       'status': 'completed',
       'completed_at': DateTime.now().toIso8601String(),
-    }).eq('id', rideId);
+    }).eq('id', rideId).select('fare').single();
     // Server reads the real fare + commission rate itself and credits the
     // driver's wallet — see db/security-07-commission-settlement.sql.
     // (This app never credited ride earnings at all before; orders already
     // went through the equally server-side confirm_order_delivery RPC.)
-    await sb.rpc('settle_ride_commission', params: {
+    final result = await sb.rpc('settle_ride_commission', params: {
       'p_ride_id': rideId,
       'p_driver_phone': driverPhone,
     });
+    final row = result is List ? (result.isNotEmpty ? result.first : null) : result;
+    if (row == null) return null;
+    return RideSettlement(
+      fare: ((ride['fare'] as num?) ?? 0).toDouble(),
+      commission: ((row['commission'] as num?) ?? 0).toDouble(),
+      driverEarn: ((row['driver_earn'] as num?) ?? 0).toDouble(),
+      rate: ((row['rate'] as num?) ?? 0).toDouble(),
+    );
   }
 }

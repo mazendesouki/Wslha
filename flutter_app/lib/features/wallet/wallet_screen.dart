@@ -299,7 +299,7 @@ class _WalletScreenState extends State<WalletScreen> {
                   const Text('رصيدك الآن', style: TextStyle(color: Colors.white70, fontSize: 12)),
                   const SizedBox(height: 4),
                   Text(
-                    'EGP ${_balance.toStringAsFixed(0)}',
+                    '${_balance.toStringAsFixed(0)} ج.م',
                     style: const TextStyle(color: Colors.white, fontSize: 26, fontWeight: FontWeight.w900),
                   ),
                   const SizedBox(height: 16),
@@ -355,6 +355,7 @@ class _WalletScreenState extends State<WalletScreen> {
                 final amount = (t['amount'] as num).toDouble();
                 final isPos = amount >= 0;
                 final label = _txLabels[t['type']] ?? t['type'] as String;
+                final note = (t['note'] as String?)?.trim();
                 return Container(
                   margin: const EdgeInsets.only(bottom: 8),
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
@@ -365,16 +366,29 @@ class _WalletScreenState extends State<WalletScreen> {
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
-                        children: [
-                          Icon(isPos ? Icons.check_circle : Icons.cancel, size: 16, color: isPos ? AppColors.success : AppColors.error),
-                          const SizedBox(width: 6),
-                          Text(label, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
-                        ],
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Icon(isPos ? Icons.check_circle : Icons.cancel, size: 16, color: isPos ? AppColors.success : AppColors.error),
+                                const SizedBox(width: 6),
+                                Text(label, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
+                              ],
+                            ),
+                            if (note != null && note.isNotEmpty) ...[
+                              const SizedBox(height: 4),
+                              Text(note, style: const TextStyle(fontSize: 11, color: AppColors.textFaint)),
+                            ],
+                          ],
+                        ),
                       ),
+                      const SizedBox(width: 8),
                       Text(
-                        '${isPos ? '+' : ''}${amount.abs().toStringAsFixed(0)}',
+                        '${isPos ? '+' : '-'}${amount.abs().toStringAsFixed(0)} ج.م',
                         style: TextStyle(fontWeight: FontWeight.w900, color: isPos ? AppColors.success : AppColors.error),
                       ),
                     ],

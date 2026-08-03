@@ -111,6 +111,14 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
     );
   }
 
+  void _showReceipt(RideSettlement s) {
+    if (!mounted) return;
+    showDialog(
+      context: context,
+      builder: (_) => _ReceiptDialog(settlement: s),
+    );
+  }
+
   Future<void> _accept() async {
     if (_offer == null) return;
     _countdownTimer?.cancel();
@@ -185,13 +193,14 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
           });
           return;
         default:
-          await _repo.completeRide(rideId, widget.session.phone);
+          final settlement = await _repo.completeRide(rideId, widget.session.phone);
           if (!mounted) return;
           setState(() {
             _activeJob = null;
             _activeJobType = null;
             _busy = false;
           });
+          if (settlement != null) _showReceipt(settlement);
       }
     } catch (e) {
       _showError(e);
@@ -741,6 +750,65 @@ class _RouteRow extends StatelessWidget {
             const SizedBox(width: 8),
             Expanded(child: Text(to, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700))),
           ],
+        ),
+      ],
+    );
+  }
+}
+
+class _ReceiptDialog extends StatelessWidget {
+  final RideSettlement settlement;
+  const _ReceiptDialog({required this.settlement});
+
+  String _egp(double v) => '${v.toStringAsFixed(0)} ج.م';
+
+  @override
+  Widget build(BuildContext context) {
+    final s = settlement;
+    return Dialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('✅', style: TextStyle(fontSize: 40)),
+            const SizedBox(height: 8),
+            const Text('فاتورة الرحلة', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w900)),
+            const SizedBox(height: 20),
+            _row('المبلغ الأصلي (الأجرة)', _egp(s.fare)),
+            const Divider(height: 24),
+            _row('رسوم التطبيق (${s.rate.toStringAsFixed(0)}%)', '- ${_egp(s.commission)}', color: AppColors.error),
+            const Divider(height: 24),
+            _row('الإجمالي المستحق لك', _egp(s.driverEarn), bold: true, color: AppColors.success),
+            const SizedBox(height: 24),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('تمام'),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _row(String label, String value, {bool bold = false, Color? color}) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Expanded(
+          child: Text(label, style: const TextStyle(fontSize: 13, color: AppColors.textFaint, fontWeight: FontWeight.w700)),
+        ),
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: bold ? 17 : 14,
+            fontWeight: bold ? FontWeight.w900 : FontWeight.w800,
+            color: color ?? Colors.black87,
+          ),
         ),
       ],
     );
