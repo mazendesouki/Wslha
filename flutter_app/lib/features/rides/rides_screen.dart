@@ -30,7 +30,7 @@ class _RidesScreenState extends State<RidesScreen> {
   }
 
   double get _roadKm => _straightKm * fare_calc.roadFactor;
-  int get _fare => _straightKm > 0 ? fare_calc.fareForDistance(_straightKm) : 0;
+  int get _fare => _straightKm > 0 ? fare_calc.fareForDistance(_straightKm, toArea: _to?.name) : 0;
   int get _eta => _straightKm > 0 ? fare_calc.etaMinutes(_straightKm) : 0;
 
   @override
