@@ -1115,6 +1115,7 @@ import { VEHICLE_MODELS, FARE_ZONES, TRIP_RATES } from '../data/airports';
             <div>
               <div class="driver-card__name" id="driver-card-name">—</div>
               <div class="driver-card__status" id="driver-card-status">السائق في الطريق إليك</div>
+              <div id="driver-card-vehicle" style="font-size:.75rem;color:var(--color-text-faint);font-weight:700;margin-top:2px"></div>
               <div id="driver-card-badges" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px"></div>
               <div id="driver-card-review"></div>
             </div>
@@ -1820,31 +1821,42 @@ import { VEHICLE_MODELS, FARE_ZONES, TRIP_RATES } from '../data/airports';
     marker.__moveRaf = requestAnimationFrame(step);
   }
 
-  // ── شارات السائق (تقييم متميز / سيارة مكيفة) — تظهر للعميل بعد تعيين
-  //    السائق. نفس منطق src/utils/reputation.ts لكن مكرر هنا لنفس سبب
-  //    أيقونة العربية (الصفحة دي <script define:vars> ومينفعش import). ──
+  // ── شارات السائق (تقييم متميز / سيارة مكيفة أو نظيفة) + مواصفات
+  //    المركبة — تظهر للعميل بعد تعيين السائق. نفس منطق
+  //    src/utils/reputation.ts لكن مكرر هنا لنفس سبب أيقونة العربية
+  //    (الصفحة دي <script define:vars> ومينفعش import). ──
   async function loadDriverBadges(driverPhone) {
     const el = document.getElementById('driver-card-badges');
     const reviewEl = document.getElementById('driver-card-review');
+    const vehicleEl = document.getElementById('driver-card-vehicle');
     if (!el) return;
     el.innerHTML = '';
     if (reviewEl) reviewEl.innerHTML = '';
+    if (vehicleEl) vehicleEl.textContent = '';
     try {
       const [ratingsRes, appRes] = await Promise.all([
         fetch(`${SB_URL}/rest/v1/ratings?driver_phone=eq.${encodeURIComponent(driverPhone)}&rated_by=eq.customer&select=rating,comment,created_at&order=created_at.desc&limit=20`, { headers: SB_H }),
-        fetch(`${SB_URL}/rest/v1/driver_applications?phone=eq.${encodeURIComponent(driverPhone)}&select=has_ac&limit=1`, { headers: SB_H }),
+        fetch(`${SB_URL}/rest/v1/driver_applications?phone=eq.${encodeURIComponent(driverPhone)}&select=vehicle_category,vehicle_model,vehicle_year,vehicle_color,has_ac,is_clean&status=eq.approved&order=created_at.desc&limit=1`, { headers: SB_H }),
       ]);
       const ratingRows = ratingsRes.ok ? await ratingsRes.json() : [];
       const appRows     = appRes.ok ? await appRes.json() : [];
+      const app = Array.isArray(appRows) && appRows[0] ? appRows[0] : null;
       const nums = (ratingRows || []).map(r => Number(r.rating));
       const avg = nums.length ? nums.reduce((s, n) => s + n, 0) / nums.length : 0;
       const badges = [];
       if (nums.length) badges.push(`⭐ ${avg.toFixed(1)} (${nums.length})`);
       if (nums.length >= 5 && avg >= 4.5) badges.push('🏆 سائق متميز');
-      if (Array.isArray(appRows) && appRows[0]?.has_ac) badges.push('❄️ سيارة مكيفة');
+      if (app?.has_ac) badges.push('❄️ سيارة مكيفة');
+      if (app?.is_clean) badges.push('🧼 سيارة نظيفة');
       el.innerHTML = badges.map(b =>
         `<span style="background:#FEF3C7;color:#92400E;font-weight:800;padding:2px 9px;border-radius:99px;font-size:.7rem">${b}</span>`
       ).join('');
+      if (vehicleEl && app) {
+        const catLabels = { sedan: 'سيدان', suv: 'SUV / كروز', van: 'ميكروباص' };
+        const line = [catLabels[app.vehicle_category] || app.vehicle_category, app.vehicle_model, app.vehicle_color, app.vehicle_year]
+          .filter(Boolean).join(' — ');
+        vehicleEl.textContent = line;
+      }
       if (reviewEl) {
         const withComment = (ratingRows || []).find(r => r.comment && r.comment.trim());
         if (withComment) {

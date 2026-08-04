@@ -51,13 +51,13 @@ class RideRepository {
 
   /// `rides` only carries driver_name/driver_phone once a driver accepts —
   /// vehicle/photo details live on the driver's approved application row
-  /// (driver_applications, keyed by phone). Same lookup the web app would
-  /// need to do if it showed this card (it currently doesn't).
+  /// (driver_applications, keyed by phone). Same lookup rides.astro's
+  /// loadDriverBadges() does on the web.
   Future<Map<String, dynamic>?> fetchDriverProfile(String driverPhone) async {
     final rows = await sb
         .from('driver_applications')
         .select(
-          'full_name,driver_photo_url,vehicle_model,vehicle_color,vehicle_year,vehicle_reg_number,vehicle_front_url,has_ac,is_clean',
+          'full_name,driver_photo_url,vehicle_category,vehicle_model,vehicle_color,vehicle_year,vehicle_reg_number,vehicle_front_url,has_ac,is_clean',
         )
         .eq('phone', driverPhone)
         .eq('status', 'approved')

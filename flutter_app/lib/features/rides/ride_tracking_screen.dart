@@ -286,6 +286,7 @@ class _DriverCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final name = (profile['full_name'] as String?)?.trim();
     final photoUrl = profile['driver_photo_url'] as String?;
+    final vehicleCategory = profile['vehicle_category'] as String?;
     final vehicleModel = profile['vehicle_model'] as String?;
     final vehicleColor = profile['vehicle_color'] as String?;
     final vehicleYear = profile['vehicle_year'];
@@ -294,9 +295,13 @@ class _DriverCard extends StatelessWidget {
     final hasAc = profile['has_ac'] == true;
     final isClean = profile['is_clean'] == true;
 
-    final carLine = [vehicleColor, vehicleModel, if (vehicleYear != null) '$vehicleYear']
-        .where((s) => s != null && s.isNotEmpty)
-        .join(' — ');
+    const categoryLabels = {'sedan': 'سيدان', 'suv': 'SUV / كروز', 'van': 'ميكروباص'};
+    final carLine = [
+      categoryLabels[vehicleCategory] ?? vehicleCategory,
+      vehicleColor,
+      vehicleModel,
+      if (vehicleYear != null) '$vehicleYear',
+    ].where((s) => s != null && s.isNotEmpty).join(' — ');
 
     return Container(
       padding: const EdgeInsets.all(16),
