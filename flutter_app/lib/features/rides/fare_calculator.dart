@@ -1,4 +1,5 @@
 import 'dart:math' as math;
+import '../../core/pricing_settings.dart';
 
 // Ported 1:1 from rides.astro's fareFor()/tieredKm()/resolveZone(), which is
 // the formula actually enforced server-side by guard_ride_fare() (see
@@ -9,10 +10,14 @@ import 'dart:math' as math;
 // doesn't offer a vehicle-category picker on the regular rides screen (only
 // airport does), so it always books as the same sedan/2022 default the
 // server falls back to when vehicle_model/vehicle_year are omitted.
-const double baseFare = 25;
-const double minFare = 40;
+//
+// baseFare/minFare/sedan rate are admin-configurable (PricingSettings) —
+// this is only a client-side preview, guard_ride_fare() re-enforces the
+// real numbers server-side regardless of what this shows.
+double get baseFare => PricingSettings.localBaseFee;
+double get minFare => PricingSettings.localMinFare;
 const double roadFactor = 1.35;
-const double _sedanRatePerKm = 8; // TRIP_RATES.local.sedan
+double get _sedanRatePerKm => PricingSettings.localRateSedan; // TRIP_RATES.local.sedan
 const double _defaultYearMult = 1.035; // yearMultiplier(2022) — the server's fallback year
 
 class _FareZone {

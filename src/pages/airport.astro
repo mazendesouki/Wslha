@@ -603,8 +603,16 @@ import { VEHICLE_TYPES } from '../data/airports';
   </section>
 
   <script>
-    import { CHECKIN_BUFFER, SAFETY_MARGIN, ARRIVAL_BUFFER, DRIVER_ARRIVAL_BEFORE_LANDING, DAMIETTA_ORIGIN, VEHICLE_TYPES, VEHICLE_MODELS, fareForVehicle, ratePerKmFor, fetchRegisteredVehicles, EXTRA_BAG_FEE, COMPANION_FEE, WAIT_PICKUP_FREE, WAIT_PICKUP_PER15, WAIT_AIRPORT_FREE, WAIT_AIRPORT_PER30 } from '../data/airports';
+    import { CHECKIN_BUFFER, SAFETY_MARGIN, ARRIVAL_BUFFER, DRIVER_ARRIVAL_BEFORE_LANDING, DAMIETTA_ORIGIN, VEHICLE_TYPES, VEHICLE_MODELS, fareForVehicle, ratePerKmFor, fetchRegisteredVehicles, EXTRA_BAG_FEE, COMPANION_FEE, WAIT_PICKUP_FREE, WAIT_PICKUP_PER15, WAIT_AIRPORT_FREE, WAIT_AIRPORT_PER30, loadPricingSettings } from '../data/airports';
     import { isEgyptianMobile, normalizeEgyptianPhone, EG_PHONE_ERROR } from '../utils/phone';
+
+    // Admin-configurable pricing (app_settings) — mutates TRIP_RATES/
+    // AIRPORT_BASE_FEE/AIRPORT_MIN_FARE in data/airports.ts in place, so
+    // fareForVehicle() below picks it up automatically once this resolves.
+    // Airport rides have no server-side fare recompute, so this call is
+    // what actually makes airport pricing admin-configurable (unlike
+    // local/external, which guard_ride_fare() re-enforces server-side).
+    loadPricingSettings();
 
     const GMAPS_KEY = 'AIzaSyAKvFfBYNDcTZgvZZH5s_lQbOc24LNjLsY';
 

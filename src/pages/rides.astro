@@ -1260,10 +1260,35 @@ import { VEHICLE_MODELS, FARE_ZONES, TRIP_RATES } from '../data/airports';
   // سعر الفئة الداخلي: سيدان 8 ج.م/كم — SUV/فان أعلى بنسبة ثابتة (TRIP_RATES.local)
   // التدرّج: أول 3 كم ×1.15 • من 3 إلى 10 كم ×1.0 • فوق 10 كم ×0.9
   // ⚠️ يجب أن يطابق حارس الأجرة على الخادم (db/rides-vehicle-pricing.sql) بالضبط
-  const BASE_FARE = 25;
-  const MIN_FARE  = 40;
+  let BASE_FARE = 25;
+  let MIN_FARE  = 40;
   const TIERS = { t1Km: 3, t1Mult: 1.15, t2Km: 10, t2Mult: 1.0, t3Mult: 0.9 };
   const STANDARD_ZONE = { id:'standard', label:'داخل المدينة', factor:1, surcharge:0, keywords:[] };
+
+  // Admin-configurable pricing (app_settings) — this page is a `<script
+  // define:vars>` block, so TRIP_RATES/BASE_FARE/MIN_FARE above are a
+  // build-time snapshot, not a live import from data/airports.ts. Fetch
+  // the same keys guard_ride_fare() reads server-side and overwrite these
+  // in place; falls back to the hardcoded defaults above on any failure.
+  // guard_ride_fare() (db/security-11-pricing-settings.sql) is still what
+  // actually determines the charged fare — this only keeps the customer's
+  // live preview in sync with it.
+  (async function loadPricingSettings() {
+    try {
+      const res = await fetch(
+        `${SB_URL}/rest/v1/app_settings?key=in.(local_base_fee,local_min_fare,local_rate_sedan,local_rate_suv,local_rate_van)&select=key,value`,
+        { headers: SB_H },
+      );
+      if (!res.ok) return;
+      const rows = await res.json();
+      const num = (key) => { const r = (rows || []).find(x => x.key === key); const n = r ? Number(r.value) : NaN; return Number.isFinite(n) ? n : null; };
+      BASE_FARE = num('local_base_fee') ?? BASE_FARE;
+      MIN_FARE  = num('local_min_fare') ?? MIN_FARE;
+      TRIP_RATES.local.sedan = num('local_rate_sedan') ?? TRIP_RATES.local.sedan;
+      TRIP_RATES.local.suv   = num('local_rate_suv')   ?? TRIP_RATES.local.suv;
+      TRIP_RATES.local.van   = num('local_rate_van')   ?? TRIP_RATES.local.van;
+    } catch {}
+  })();
 
   // نفس منطق سنة الصنع في خدمة المطار — يجب أن يطابق دالة yearMultiplier في airports.ts
   function vehYearMult(year) {

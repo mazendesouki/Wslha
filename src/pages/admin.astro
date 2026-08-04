@@ -837,6 +837,67 @@
             </div>
           </div>
         </div>
+        <!-- Trip pricing -->
+        <div class="card" style="grid-column:1/-1">
+          <div class="card__head"><span class="card__title">💰 تسعيرة المشاوير</span></div>
+          <div class="card__body">
+            <p style="font-size:.8rem;color:#64748B;margin-bottom:1rem">
+              الأرقام دي هي اللي بيتحسب بيها سعر أي رحلة محلية أو خارج المحافظة فعليًا (السيرفر بيعيد حساب السعر بيها وقت إنشاء الرحلة، مش مجرد عرض). رحلات المطار مفيهاش إعادة حساب من السيرفر حاليًا، فالأرقام دي هي اللي بتتحسب بيها فعليًا في تطبيق/موقع الحجز مباشرة — أي تعديل هنا يتطبق فورًا على الرحلات الجديدة.
+            </p>
+            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:1.25rem">
+              <div>
+                <div style="font-weight:800;font-size:.85rem;margin-bottom:.5rem">🚗 محلي (داخل دمياط)</div>
+                <label style="font-size:.75rem;color:#64748B;display:block;margin-top:.4rem">رسم أساسي (ج.م)</label>
+                <input class="search-input" id="price-local-base" type="number" min="0" step="1"/>
+                <label style="font-size:.75rem;color:#64748B;display:block;margin-top:.4rem">الحد الأدنى (ج.م)</label>
+                <input class="search-input" id="price-local-min" type="number" min="0" step="1"/>
+                <label style="font-size:.75rem;color:#64748B;display:block;margin-top:.4rem">سعر الكم — سيدان</label>
+                <input class="search-input" id="price-local-sedan" type="number" min="0" step="0.1"/>
+                <label style="font-size:.75rem;color:#64748B;display:block;margin-top:.4rem">سعر الكم — SUV</label>
+                <input class="search-input" id="price-local-suv" type="number" min="0" step="0.1"/>
+                <label style="font-size:.75rem;color:#64748B;display:block;margin-top:.4rem">سعر الكم — ميكروباص</label>
+                <input class="search-input" id="price-local-van" type="number" min="0" step="0.1"/>
+              </div>
+              <div>
+                <div style="font-weight:800;font-size:.85rem;margin-bottom:.5rem">🛣️ خارج المحافظة</div>
+                <label style="font-size:.75rem;color:#64748B;display:block;margin-top:.4rem">رسم أساسي (ج.م)</label>
+                <input class="search-input" id="price-external-base" type="number" min="0" step="1"/>
+                <label style="font-size:.75rem;color:#64748B;display:block;margin-top:.4rem">الحد الأدنى (ج.م)</label>
+                <input class="search-input" id="price-external-min" type="number" min="0" step="1"/>
+                <label style="font-size:.75rem;color:#64748B;display:block;margin-top:.4rem">سعر الكم — سيدان</label>
+                <input class="search-input" id="price-external-sedan" type="number" min="0" step="0.1"/>
+                <label style="font-size:.75rem;color:#64748B;display:block;margin-top:.4rem">سعر الكم — SUV</label>
+                <input class="search-input" id="price-external-suv" type="number" min="0" step="0.1"/>
+                <label style="font-size:.75rem;color:#64748B;display:block;margin-top:.4rem">سعر الكم — ميكروباص</label>
+                <input class="search-input" id="price-external-van" type="number" min="0" step="0.1"/>
+              </div>
+              <div>
+                <div style="font-weight:800;font-size:.85rem;margin-bottom:.5rem">✈️ توصيل المطار</div>
+                <label style="font-size:.75rem;color:#64748B;display:block;margin-top:.4rem">رسم أساسي (ج.م)</label>
+                <input class="search-input" id="price-airport-base" type="number" min="0" step="1"/>
+                <label style="font-size:.75rem;color:#64748B;display:block;margin-top:.4rem">الحد الأدنى (ج.م)</label>
+                <input class="search-input" id="price-airport-min" type="number" min="0" step="1"/>
+                <label style="font-size:.75rem;color:#64748B;display:block;margin-top:.4rem">سعر الكم — سيدان</label>
+                <input class="search-input" id="price-airport-sedan" type="number" min="0" step="0.1"/>
+                <label style="font-size:.75rem;color:#64748B;display:block;margin-top:.4rem">سعر الكم — SUV</label>
+                <input class="search-input" id="price-airport-suv" type="number" min="0" step="0.1"/>
+                <label style="font-size:.75rem;color:#64748B;display:block;margin-top:.4rem">سعر الكم — ميكروباص</label>
+                <input class="search-input" id="price-airport-van" type="number" min="0" step="0.1"/>
+              </div>
+            </div>
+            <div style="margin-top:1.25rem;padding:.85rem 1rem;background:#F1F5F9;border-radius:10px;display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap">
+              <div>
+                <div style="font-weight:800;font-size:.85rem">🧠 التسعير الذكي الديناميكي (Surge)</div>
+                <div style="font-size:.75rem;color:#64748B;margin-top:.2rem">رفع السعر تلقائيًا وقت ارتفاع الطلب مقارنة بعدد السائقين المتاحين — لسه قيد التطوير، مفيش تأثير فعلي على السعر لحد ما يتفعّل.</div>
+              </div>
+              <label style="display:flex;align-items:center;gap:.5rem;font-size:.8rem;font-weight:700;white-space:nowrap;opacity:.6">
+                <input type="checkbox" id="dynamic-pricing-toggle" disabled/> قريبًا
+              </label>
+            </div>
+            <button class="btn btn--primary" onclick="saveTripPricing()" id="save-pricing-btn" style="margin-top:1rem">💾 حفظ تسعيرة المشاوير</button>
+            <div id="pricing-msg" style="display:none;font-size:.82rem;font-weight:700;padding:.5rem .75rem;border-radius:6px;margin-top:.5rem"></div>
+          </div>
+        </div>
         <!-- Merchant-delivery flat service fee -->
         <div class="card">
           <div class="card__head"><span class="card__title">🛵 رسوم توصيل التجار</span></div>
@@ -2591,6 +2652,58 @@ async function saveCommissionRates() {
   setTimeout(() => { msg.style.display = 'none'; }, 4000);
 }
 
+/* ═══════════════════ SETTINGS — Trip pricing (local/external/airport) ══ */
+const PRICING_FIELD_MAP = {
+  local_base_fee: 'price-local-base', local_min_fare: 'price-local-min',
+  local_rate_sedan: 'price-local-sedan', local_rate_suv: 'price-local-suv', local_rate_van: 'price-local-van',
+  external_base_fee: 'price-external-base', external_min_fare: 'price-external-min',
+  external_rate_sedan: 'price-external-sedan', external_rate_suv: 'price-external-suv', external_rate_van: 'price-external-van',
+  airport_base_fee: 'price-airport-base', airport_min_fare: 'price-airport-min',
+  airport_rate_sedan: 'price-airport-sedan', airport_rate_suv: 'price-airport-suv', airport_rate_van: 'price-airport-van',
+};
+
+async function loadTripPricing() {
+  try {
+    const rows = await sbGet(`app_settings?key=in.(${Object.keys(PRICING_FIELD_MAP).join(',')},dynamic_pricing_enabled)&select=key,value`);
+    (rows||[]).forEach(r => {
+      const elId = PRICING_FIELD_MAP[r.key];
+      if (elId) { const el = document.getElementById(elId); if (el) el.value = r.value; }
+      if (r.key === 'dynamic_pricing_enabled') {
+        const el = document.getElementById('dynamic-pricing-toggle');
+        if (el) el.checked = r.value === 'true';
+      }
+    });
+  } catch {}
+}
+
+async function saveTripPricing() {
+  const btn = document.getElementById('save-pricing-btn');
+  const msg = document.getElementById('pricing-msg');
+  const pass = getAdminPass();
+  if (!pass) { msg.textContent='مطلوب كلمة مرور المشرف'; msg.style.cssText='display:block;background:#FEE2E2;color:#991B1B;font-size:.82rem;font-weight:700;padding:.5rem .75rem;border-radius:6px'; return; }
+  btn.disabled = true; btn.textContent = 'جاري الحفظ...';
+  const pairs = Object.entries(PRICING_FIELD_MAP).map(([key, elId]) => ({ key, value: document.getElementById(elId).value }));
+  try {
+    const results = await Promise.all(pairs.map(p =>
+      sbRpc('admin_set_setting', { p_admin_phone: ADMIN.phone, p_admin_password: pass, p_key: p.key, p_value: p.value })
+    ));
+    if (results.every(Boolean)) {
+      msg.textContent = '✅ تم حفظ تسعيرة المشاوير بنجاح — ستطبق على الرحلات الجديدة';
+      msg.style.cssText = 'display:block;background:#DCFCE7;color:#14532D;font-size:.82rem;font-weight:700;padding:.5rem .75rem;border-radius:6px';
+      showToast('✅ تم حفظ تسعيرة المشاوير', '#16A34A');
+    } else {
+      clearAdminPass();
+      msg.textContent = '❌ فشل — تحقق من كلمة مرور المشرف';
+      msg.style.cssText = 'display:block;background:#FEE2E2;color:#991B1B;font-size:.82rem;font-weight:700;padding:.5rem .75rem;border-radius:6px';
+    }
+  } catch {
+    msg.textContent = 'حدث خطأ، حاول مرة أخرى';
+    msg.style.cssText = 'display:block;background:#FEE2E2;color:#991B1B;font-size:.82rem;font-weight:700;padding:.5rem .75rem;border-radius:6px';
+  }
+  btn.disabled = false; btn.textContent = '💾 حفظ تسعيرة المشاوير';
+  setTimeout(() => { msg.style.display = 'none'; }, 4000);
+}
+
 async function saveMerchantDeliveryFee() {
   const btn = document.getElementById('save-mdlv-fee-btn');
   const msg = document.getElementById('mdlv-fee-msg');
@@ -2643,6 +2756,7 @@ async function saveGeneralDeliveryFee() {
 
 async function loadSettingsSection() {
   await loadCommissionRates();
+  await loadTripPricing();
 }
 
 /* ═══════════════════ WALLETS ═══════════════════════════════ */

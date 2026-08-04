@@ -1,6 +1,8 @@
 // Ported 1:1 from src/data/airports.ts — keep both in sync (also mirrored in
 // db/rides-vehicle-pricing.sql per that file's own warning comments).
 
+import '../../core/pricing_settings.dart';
+
 class RegisteredVehicle {
   final String id; // category|name
   final String category; // sedan | suv | van
@@ -40,18 +42,18 @@ const Map<String, double> qualityMultiplier = {
   'modern': 1.20,
 };
 
-const double _suvMult = 1.3;
-const double _vanMult = 1.4;
-
-/// TRIP_RATES.airport — sedan/SUV/van per-km rate before the year adjustment.
+/// TRIP_RATES.airport — sedan/SUV/van per-km rate before the year
+/// adjustment. Admin-configurable (PricingSettings) — airport rides have
+/// no server-side fare recompute, so this IS the real charged rate, not
+/// just a preview.
 double _airportRatePerKmBase(String category) {
   switch (category) {
     case 'suv':
-      return (12 * _suvMult * 10).roundToDouble() / 10;
+      return PricingSettings.airportRateSuv;
     case 'van':
-      return (12 * _vanMult * 10).roundToDouble() / 10;
+      return PricingSettings.airportRateVan;
     default:
-      return 12;
+      return PricingSettings.airportRateSedan;
   }
 }
 
@@ -66,15 +68,15 @@ double airportRatePerKm(String category, int year) {
   return _airportRatePerKmBase(category) * yearMultiplier(year);
 }
 
-const int airportBaseFee = 300;
-const int airportMinFare = 2500; // ج.م — الحد الأدنى لأي رحلة مطار
+double get airportBaseFee => PricingSettings.airportBaseFee;
+double get airportMinFare => PricingSettings.airportMinFare; // ج.م — الحد الأدنى لأي رحلة مطار
 
 /// fareForVehicle() — base + distance × effective rate, rounded up to 50,
 /// floored at airportMinFare.
 int fareForVehicle(double distanceKm, String category, int year) {
   final raw = airportBaseFee + distanceKm * airportRatePerKm(category, year);
   final rounded = (raw / 50).ceil() * 50;
-  return rounded < airportMinFare ? airportMinFare : rounded;
+  return rounded < airportMinFare ? airportMinFare.round() : rounded;
 }
 
 const int extraBagFee = 25;

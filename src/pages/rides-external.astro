@@ -232,8 +232,13 @@ import { VEHICLE_TYPES } from '../data/airports';
   </section>
 
   <script>
-    import { VEHICLE_MODELS, externalFare, ratePerKmFor, fetchRegisteredVehicles, DAMIETTA_ORIGIN } from '../data/airports';
+    import { VEHICLE_MODELS, externalFare, ratePerKmFor, fetchRegisteredVehicles, DAMIETTA_ORIGIN, loadPricingSettings } from '../data/airports';
     import { isEgyptianMobile, normalizeEgyptianPhone, EG_PHONE_ERROR } from '../utils/phone';
+
+    // Admin-configurable pricing (app_settings) — mutates TRIP_RATES/
+    // EXTERNAL_BASE_FARE/EXTERNAL_MIN_FARE in data/airports.ts in place, so
+    // externalFare() below picks it up automatically once this resolves.
+    loadPricingSettings();
 
     const GMAPS_KEY = 'AIzaSyAKvFfBYNDcTZgvZZH5s_lQbOc24LNjLsY';
 

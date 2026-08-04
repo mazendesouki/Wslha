@@ -113,7 +113,7 @@ class _AirportScreenState extends State<AirportScreen> {
     final raw = fare.fareForVehicle(_roadKm, _selectedVehicle!.category, _selectedYear);
     final withQuality = raw * (fare.qualityMultiplier[_quality] ?? 1.0);
     final rounded = (withQuality / 50).ceil() * 50;
-    return rounded < fare.airportMinFare ? fare.airportMinFare : rounded;
+    return rounded < fare.airportMinFare ? fare.airportMinFare.round() : rounded;
   }
 
   int get _extraBagsFee {

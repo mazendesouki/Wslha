@@ -1,6 +1,8 @@
 // Egyptian airports served from Damietta governorate.
 // Pricing model updated June 2026 for current Egyptian fuel costs.
 
+import { supabase } from '../utils/supabaseClient';
+
 // ─── Airports ────────────────────────────────────────────────────────────────
 export interface Airport {
   id: string;
@@ -169,6 +171,10 @@ export async function fetchRegisteredVehicles(): Promise<VehicleModel[]> {
 export type TripType = 'local' | 'external' | 'airport';
 const SUV_MULT = 1.3;
 const VAN_MULT = 1.4;
+// Mutated in place by loadPricingSettings() once admin-configured values
+// come back from app_settings — keep this a `const` object (only its
+// properties change, not the binding) so every importer that already
+// destructured TRIP_RATES sees the update via the same object reference.
 export const TRIP_RATES: Record<TripType, Record<'sedan' | 'suv' | 'van', number>> = {
   local:    { sedan: 8, suv: Math.round(8 * SUV_MULT * 10) / 10, van: Math.round(8 * VAN_MULT * 10) / 10 },
   external: { sedan: 7, suv: Math.round(7 * SUV_MULT * 10) / 10, van: Math.round(7 * VAN_MULT * 10) / 10 },
@@ -180,7 +186,7 @@ export function ratePerKmFor(tripType: TripType, model: VehicleModel, year: numb
   return TRIP_RATES[tripType][model.category] * yearMultiplier(year);
 }
 
-export const AIRPORT_MIN_FARE = 2500; // ج.م — الحد الأدنى لأي رحلة مطار
+export let AIRPORT_MIN_FARE = 2500; // ج.م — الحد الأدنى لأي رحلة مطار — admin-configurable, see loadPricingSettings()
 
 // Fare for a specific model+year over a given distance (airport transfer).
 export function fareForVehicle(distanceKm: number, model: VehicleModel, year: number): number {
@@ -192,8 +198,8 @@ export function fareForVehicle(distanceKm: number, model: VehicleModel, year: nu
 // fare = ceil( max( (25 + tieredKmCost × rate) × zoneFactor + zoneSurcharge, 35) / 5 ) × 5
 // Distance tiers (like a real meter): first 3 km ×1.15, 3–10 km ×1.0, >10 km ×0.9.
 // ⚠️ Any change here must be mirrored in db/rides-vehicle-pricing.sql.
-export const RIDE_BASE_FARE   = 25;
-export const RIDE_MIN_FARE    = 35;
+export let RIDE_BASE_FARE     = 25;
+export let RIDE_MIN_FARE      = 40; // admin-configurable, see loadPricingSettings()
 export const RIDE_TIERS = { t1Km: 3, t1Mult: 1.15, t2Km: 10, t2Mult: 1.0, t3Mult: 0.9 };
 
 // Destination zones — matched by keywords in the destination name.
@@ -230,8 +236,8 @@ export function meterFare(km: number, model: VehicleModel, year: number, zone: F
 // ─── رحلات خارجية (خارج محافظة دمياط) — خدمة منفصلة ───────────────────────────
 // عداد أبسط: رسم أساسي + مسافة × سعر الخارجي (بدون تدرّج كيلومترات أو مناطق —
 // كله برّه الحدود بنفس السعر). ⚠️ يطابق db/rides-vehicle-pricing.sql.
-export const EXTERNAL_BASE_FARE = 50;
-export const EXTERNAL_MIN_FARE  = 150;
+export let EXTERNAL_BASE_FARE = 50;
+export let EXTERNAL_MIN_FARE  = 150; // admin-configurable, see loadPricingSettings()
 
 export function externalFare(km: number, model: VehicleModel, year: number): number {
   const rate = ratePerKmFor('external', model, year);
@@ -242,7 +248,7 @@ export function externalFare(km: number, model: VehicleModel, year: number): num
 // ─── Distance-based pricing 2026 ─────────────────────────────────────────────
 // base 300 EGP + tiered per-km rate (driver goes & returns — fuel cost baked in)
 // ≤150 km : 11 EGP/km  |  151-400 km : 10 EGP/km  |  401 km+ : 9 EGP/km
-export const AIRPORT_BASE_FEE = 300;
+export let AIRPORT_BASE_FEE = 300; // admin-configurable, see loadPricingSettings()
 
 export function priceForDistance(distanceKm: number): number {
   const TIERS: { upTo: number; rate: number }[] = [
@@ -259,6 +265,56 @@ export function priceForDistance(distanceKm: number): number {
     covered = tier.upTo;
   }
   return Math.ceil(cost / 50) * 50;
+}
+
+// ─── Admin-configurable pricing (app_settings) ─────────────────────────────────
+// Overwrites the constants above in place from the values an admin set in
+// admin.astro's pricing panel (falls back to the hardcoded defaults above if
+// a key is missing/invalid/unreachable). guard_ride_fare() (db/security-11-
+// pricing-settings.sql) reads the same app_settings keys server-side for
+// local/external rides — that's the actually-charged fare. Airport rides have
+// no server-side recompute, so calling this before fareForVehicle() IS what
+// makes airport pricing admin-configurable at all.
+//
+// Call once per page load, before the first fare computation, e.g.:
+//   await loadPricingSettings();
+let _pricingSettingsLoaded = false;
+export async function loadPricingSettings(): Promise<void> {
+  if (_pricingSettingsLoaded) return;
+  try {
+    const { data, error } = await supabase
+      .from('app_settings')
+      .select('key,value')
+      .in('key', [
+        'local_base_fee', 'local_min_fare', 'local_rate_sedan', 'local_rate_suv', 'local_rate_van',
+        'external_base_fee', 'external_min_fare', 'external_rate_sedan', 'external_rate_suv', 'external_rate_van',
+        'airport_base_fee', 'airport_min_fare', 'airport_rate_sedan', 'airport_rate_suv', 'airport_rate_van',
+      ]);
+    if (error || !data) return;
+    const num = (key: string): number | null => {
+      const row = data.find((r: { key: string; value: string | null }) => r.key === key);
+      const n = row ? Number(row.value) : NaN;
+      return Number.isFinite(n) ? n : null;
+    };
+    RIDE_BASE_FARE          = num('local_base_fee')      ?? RIDE_BASE_FARE;
+    RIDE_MIN_FARE           = num('local_min_fare')      ?? RIDE_MIN_FARE;
+    TRIP_RATES.local.sedan  = num('local_rate_sedan')    ?? TRIP_RATES.local.sedan;
+    TRIP_RATES.local.suv    = num('local_rate_suv')      ?? TRIP_RATES.local.suv;
+    TRIP_RATES.local.van    = num('local_rate_van')      ?? TRIP_RATES.local.van;
+    EXTERNAL_BASE_FARE        = num('external_base_fee')   ?? EXTERNAL_BASE_FARE;
+    EXTERNAL_MIN_FARE         = num('external_min_fare')   ?? EXTERNAL_MIN_FARE;
+    TRIP_RATES.external.sedan = num('external_rate_sedan') ?? TRIP_RATES.external.sedan;
+    TRIP_RATES.external.suv   = num('external_rate_suv')   ?? TRIP_RATES.external.suv;
+    TRIP_RATES.external.van   = num('external_rate_van')   ?? TRIP_RATES.external.van;
+    AIRPORT_BASE_FEE         = num('airport_base_fee')   ?? AIRPORT_BASE_FEE;
+    AIRPORT_MIN_FARE         = num('airport_min_fare')   ?? AIRPORT_MIN_FARE;
+    TRIP_RATES.airport.sedan = num('airport_rate_sedan') ?? TRIP_RATES.airport.sedan;
+    TRIP_RATES.airport.suv   = num('airport_rate_suv')   ?? TRIP_RATES.airport.suv;
+    TRIP_RATES.airport.van   = num('airport_rate_van')   ?? TRIP_RATES.airport.van;
+    _pricingSettingsLoaded = true;
+  } catch {
+    // Network hiccup — keep the hardcoded defaults, don't block booking.
+  }
 }
 
 // ─── Extra fees ───────────────────────────────────────────────────────────────
