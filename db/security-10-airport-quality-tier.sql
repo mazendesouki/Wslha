@@ -11,6 +11,12 @@
 -- still see the offer, but accepting it is rejected server-side if their
 -- driver_applications row doesn't match what was requested.
 --
+-- Built on top of security-09b's fixed accept_dispatch_offer (::text
+-- casts on id/phone lookups — some columns are uuid in production even
+-- though older schema files here assumed text). Do NOT rebase this off
+-- security-09's original version, which throws
+-- "operator does not exist: uuid = text".
+--
 -- Same limitation as security-09: this does not change candidate
 -- selection in the Node dispatch server (server/index.js), which still
 -- offers the ride to nearby drivers regardless of tier — only accept is
@@ -49,7 +55,7 @@ declare
 begin
   select * into v_offer
   from public.dispatch_offers
-  where id = p_offer_id and driver_phone = p_driver_phone
+  where id::text = p_offer_id and driver_phone::text = p_driver_phone
   for update;
 
   if not found or v_offer.status <> 'pending' or v_offer.expires_at <= now() then
@@ -60,18 +66,18 @@ begin
     select airport_vehicle_category, airport_quality_tier
       into v_required_cat, v_required_tier
     from public.rides
-    where id = v_offer.target_id and ride_type = 'airport';
+    where id::text = v_offer.target_id and ride_type = 'airport';
 
     if v_required_cat is not null or v_required_tier is not null then
       select vehicle_category, has_ac, is_clean, vehicle_year
         into v_driver_cat, v_driver_has_ac, v_driver_is_clean, v_driver_year
       from public.driver_applications
-      where phone = p_driver_phone and status = 'approved'
+      where phone::text = p_driver_phone and status = 'approved'
       order by created_at desc
       limit 1;
 
       if v_required_cat is not null and v_driver_cat is distinct from v_required_cat then
-        update public.dispatch_offers set status = 'rejected', responded_at = now() where id = p_offer_id;
+        update public.dispatch_offers set status = 'rejected', responded_at = now() where id::text = p_offer_id;
         return jsonb_build_object('ok', false, 'reason', 'vehicle_category_mismatch');
       end if;
 
@@ -85,7 +91,7 @@ begin
         end;
 
         if not v_tier_ok then
-          update public.dispatch_offers set status = 'rejected', responded_at = now() where id = p_offer_id;
+          update public.dispatch_offers set status = 'rejected', responded_at = now() where id::text = p_offer_id;
           return jsonb_build_object('ok', false, 'reason', 'quality_tier_mismatch');
         end if;
       end if;
@@ -94,22 +100,22 @@ begin
     update public.rides
        set status = 'accepted', driver_phone = p_driver_phone,
            driver_name = coalesce(p_driver_name, driver_name), accepted_at = now()
-     where id = v_offer.target_id and driver_phone is null
+     where id::text = v_offer.target_id and driver_phone is null
      returning to_jsonb(rides.*) into v_row;
   else
     update public.orders
        set status = 'on_the_way', driver_phone = p_driver_phone,
            driver_name = coalesce(p_driver_name, driver_name), picked_up_at = null
-     where id = v_offer.target_id and driver_phone is null and status = 'preparing'
+     where id::text = v_offer.target_id and driver_phone is null and status = 'preparing'
      returning to_jsonb(orders.*) into v_row;
   end if;
 
   if v_row is null then
-    update public.dispatch_offers set status = 'expired', responded_at = now() where id = p_offer_id;
+    update public.dispatch_offers set status = 'expired', responded_at = now() where id::text = p_offer_id;
     return jsonb_build_object('ok', false, 'reason', 'already_taken');
   end if;
 
-  update public.dispatch_offers set status = 'accepted', responded_at = now() where id = p_offer_id;
+  update public.dispatch_offers set status = 'accepted', responded_at = now() where id::text = p_offer_id;
 
   return jsonb_build_object('ok', true, 'target_type', v_offer.target_type, 'data', v_row);
 end;
