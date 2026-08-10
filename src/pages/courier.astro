@@ -160,7 +160,7 @@ const SIZES = [
     return (document.querySelector('input[name="c-size"]:checked') as HTMLInputElement)?.value || 'doc';
   }
   function feeFor(km: number): number {
-    const base = SIZES[currentSizeId()]?.base ?? 25;
+    const base = SIZES.find(s => s.id === currentSizeId())?.base ?? 25;
     const raw  = base + Math.max(0, km - 3) * 3;
     return Math.ceil(raw / 5) * 5;
   }
@@ -272,7 +272,7 @@ const SIZES = [
     const sizeId = currentSizeId();
     const fee = feeFor(realRoadKm);
     const code = 'WSL-' + new Date().getFullYear() + '-' + Math.floor(100000 + Math.random() * 900000);
-    const itemLabel = SIZES[sizeId].label + (notes ? ' — ' + notes : '');
+    const itemLabel = (SIZES.find(s => s.id === sizeId)?.label ?? SIZES[0].label) + (notes ? ' — ' + notes : '');
 
     try {
       const res = await fetch(`${SB_URL}/rest/v1/orders`, {
@@ -289,6 +289,7 @@ const SIZES = [
           address: toPlace.name,
           items: [{ name: itemLabel, qty: 1, price: 0 }],
           items_summary: itemLabel,
+          package_size: sizeId,
           subtotal: 0,
           delivery_fee: fee,
           total: fee,
