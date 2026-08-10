@@ -58,8 +58,13 @@ import PageHero from '../../components/PageHero.astro';
 </style>
 
 <script>
-  import { CATEGORIES, CONDITIONS, createItem, uploadImage } from '../../utils/marketplaceApi';
+  import { CATEGORIES, CONDITIONS, createItem, uploadImage, fetchMarketplaceListingFee } from '../../utils/marketplaceApi';
   import { isEgyptianMobile, EG_PHONE_ERROR } from '../../utils/phone';
+
+  fetchMarketplaceListingFee().then(fee => {
+    const el = document.getElementById('listing-fee-note');
+    if (el) el.textContent = fee > 0 ? `💳 رسم نشر الإعلان: ${fee} ج.م — هيتخصم من محفظتك عند النشر.` : '';
+  });
 
   let user: any = null;
   try { user = JSON.parse(localStorage.getItem('wslha_user') || 'null'); } catch {}
@@ -164,9 +169,12 @@ import PageHero from '../../components/PageHero.astro';
     };
 
     const created = await createItem(payload);
-    if (created) {
+    if (created && 'id' in created) {
       showStep(4 as any);
       document.getElementById('success-link')!.setAttribute('href', `/marketplace/item?id=${created.id}`);
+    } else if (created && 'reason' in created && created.reason === 'insufficient_balance') {
+      showErr(`رصيد محفظتك (${created.has} ج.م) لا يكفي رسم النشر (${created.needs} ج.م) — اشحن محفظتك من صفحة "المحفظة" وحاول تاني.`);
+      btn.disabled = false; btn.textContent = '✅ نشر الإعلان';
     } else {
       showErr('حدث خطأ أثناء النشر، حاول مرة أخرى.');
       btn.disabled = false; btn.textContent = '✅ نشر الإعلان';
@@ -250,6 +258,7 @@ import PageHero from '../../components/PageHero.astro';
             <input type="checkbox" id="c-whatsapp" checked style="width:auto">
             <label for="c-whatsapp">هذا الرقم يعمل على واتساب</label>
           </div>
+          <div id="listing-fee-note" style="font-size:var(--text-sm);color:var(--color-text-faint);background:var(--color-bg-soft);border-radius:var(--radius);padding:var(--sp-3) var(--sp-4);margin-bottom:var(--sp-4)"></div>
           <div class="nav-btns">
             <button type="button" class="btn-back" data-back="3">→ رجوع</button>
             <button type="submit" id="submit-btn" class="btn-submit">✅ نشر الإعلان</button>

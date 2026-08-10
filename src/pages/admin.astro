@@ -934,6 +934,24 @@
             </div>
           </div>
         </div>
+        <!-- Marketplace listing fee -->
+        <div class="card">
+          <div class="card__head"><span class="card__title">🛍️ رسم نشر إعلان — سوق المستعمل</span></div>
+          <div class="card__body">
+            <p style="font-size:.8rem;color:#64748B;margin-bottom:1rem">مبلغ ثابت يُخصم من محفظة البائع عند نشر أي إعلان جديد في سوق المستعمل. لو الرصيد ماكفاش، الإعلان ماينشرش خالص.</p>
+            <div style="display:flex;flex-direction:column;gap:.85rem">
+              <div>
+                <label style="font-size:.78rem;font-weight:700;color:#64748B;display:block;margin-bottom:.3rem">💰 رسم النشر (جنيه)</label>
+                <div style="display:flex;align-items:center;gap:.5rem">
+                  <input class="search-input" id="mkt-fee-input" type="number" min="0" step="1" value="5" style="width:100px;text-align:center;font-weight:700;font-size:1.1rem"/>
+                  <span style="font-size:.82rem;color:#64748B">ج.م لكل إعلان</span>
+                </div>
+              </div>
+              <button class="btn btn--primary" onclick="saveMarketplaceListingFee()" id="save-mkt-fee-btn">💾 حفظ</button>
+              <div id="mkt-fee-msg" style="display:none;font-size:.82rem;font-weight:700;padding:.5rem .75rem;border-radius:6px"></div>
+            </div>
+          </div>
+        </div>
         <!-- Create admin account -->
         <div class="card">
           <div class="card__head"><span class="card__title">➕ إنشاء حساب مشرف جديد</span></div>
@@ -2607,7 +2625,7 @@ async function loadFinance() {
 /* ═══════════════════ SETTINGS — Commission rates ════════════ */
 async function loadCommissionRates() {
   try {
-    const rows = await sbGet('app_settings?key=in.(commission_ride,commission_delivery,commission_airport,commission_external,merchant_delivery_service_fee,general_delivery_service_fee)&select=key,value');
+    const rows = await sbGet('app_settings?key=in.(commission_ride,commission_delivery,commission_airport,commission_external,merchant_delivery_service_fee,general_delivery_service_fee,marketplace_listing_fee)&select=key,value');
     (rows||[]).forEach(r => {
       if (r.key === 'commission_ride')     { const el = document.getElementById('rate-ride');     if(el) el.value = r.value; }
       if (r.key === 'commission_delivery') { const el = document.getElementById('rate-delivery'); if(el) el.value = r.value; }
@@ -2615,6 +2633,7 @@ async function loadCommissionRates() {
       if (r.key === 'commission_external') { const el = document.getElementById('rate-external'); if(el) el.value = r.value; }
       if (r.key === 'merchant_delivery_service_fee') { const el = document.getElementById('mdlv-fee-input'); if(el) el.value = r.value; }
       if (r.key === 'general_delivery_service_fee')  { const el = document.getElementById('gdlv-fee-input'); if(el) el.value = r.value; }
+      if (r.key === 'marketplace_listing_fee')       { const el = document.getElementById('mkt-fee-input');  if(el) el.value = r.value; }
     });
   } catch {}
 }
@@ -2741,6 +2760,31 @@ async function saveGeneralDeliveryFee() {
       msg.textContent = '✅ تم حفظ الرسوم بنجاح — ستطبق على الطلبات القادمة';
       msg.style.cssText = 'display:block;background:#DCFCE7;color:#14532D;font-size:.82rem;font-weight:700;padding:.5rem .75rem;border-radius:6px';
       showToast('✅ تم حفظ رسوم خدمة دليفري', '#16A34A');
+    } else {
+      clearAdminPass();
+      msg.textContent = '❌ فشل — تحقق من كلمة مرور المشرف';
+      msg.style.cssText = 'display:block;background:#FEE2E2;color:#991B1B;font-size:.82rem;font-weight:700;padding:.5rem .75rem;border-radius:6px';
+    }
+  } catch {
+    msg.textContent = 'حدث خطأ، حاول مرة أخرى';
+    msg.style.cssText = 'display:block;background:#FEE2E2;color:#991B1B;font-size:.82rem;font-weight:700;padding:.5rem .75rem;border-radius:6px';
+  }
+  btn.disabled = false; btn.textContent = '💾 حفظ';
+  setTimeout(() => { msg.style.display = 'none'; }, 4000);
+}
+
+async function saveMarketplaceListingFee() {
+  const btn = document.getElementById('save-mkt-fee-btn');
+  const msg = document.getElementById('mkt-fee-msg');
+  const pass = getAdminPass();
+  if (!pass) { msg.textContent='مطلوب كلمة مرور المشرف'; msg.style.cssText='display:block;background:#FEE2E2;color:#991B1B;font-size:.82rem;font-weight:700;padding:.5rem .75rem;border-radius:6px'; return; }
+  btn.disabled = true; btn.textContent = 'جاري الحفظ...';
+  try {
+    const ok = await sbRpc('admin_set_setting', { p_admin_phone: ADMIN.phone, p_admin_password: pass, p_key: 'marketplace_listing_fee', p_value: document.getElementById('mkt-fee-input').value });
+    if (ok) {
+      msg.textContent = '✅ تم حفظ رسم النشر بنجاح — سيطبق على الإعلانات القادمة';
+      msg.style.cssText = 'display:block;background:#DCFCE7;color:#14532D;font-size:.82rem;font-weight:700;padding:.5rem .75rem;border-radius:6px';
+      showToast('✅ تم حفظ رسم نشر إعلانات سوق المستعمل', '#16A34A');
     } else {
       clearAdminPass();
       msg.textContent = '❌ فشل — تحقق من كلمة مرور المشرف';

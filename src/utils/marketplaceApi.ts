@@ -85,17 +85,46 @@ export async function incrementViews(id: string, currentViews: number): Promise<
   }).catch(() => {});
 }
 
+export interface InsufficientBalanceError {
+  reason: 'insufficient_balance';
+  needs: number;
+  has: number;
+}
+
+// A flat listing fee (marketplace_listing_fee in app_settings) is charged
+// from the seller's wallet by guard_marketplace_item() on every insert —
+// see db/security-14-marketplace-listing-fee.sql. Insufficient balance
+// raises a Postgres exception whose message we pattern-match on below,
+// rather than the generic "something went wrong" createItem() used to
+// collapse every failure into.
 export async function createItem(payload: {
   seller_phone: string; title: string; description?: string; category: string;
   condition: string; price: number; quantity?: number; city?: string; area?: string;
   images: string[]; contact_phone: string; whatsapp: boolean;
-}): Promise<MarketItem | null> {
-  const rows = await sb<MarketItem[]>('marketplace_items', {
-    method: 'POST',
-    headers: { Prefer: 'return=representation' },
-    body: JSON.stringify(payload),
-  });
-  return rows?.[0] ?? null;
+}): Promise<MarketItem | InsufficientBalanceError | null> {
+  try {
+    const res = await fetch(`${SB_URL}/rest/v1/marketplace_items`, {
+      method: 'POST',
+      headers: { ...SB_H, Prefer: 'return=representation' },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) {
+      const text = await res.text().catch(() => '');
+      const m = text.match(/insufficient_wallet_balance:needs=([\d.]+):has=([\d.]+)/);
+      if (m) return { reason: 'insufficient_balance', needs: Number(m[1]), has: Number(m[2]) };
+      return null;
+    }
+    const rows = (await res.json()) as MarketItem[];
+    return rows?.[0] ?? null;
+  } catch {
+    return null;
+  }
+}
+
+export async function fetchMarketplaceListingFee(): Promise<number> {
+  const rows = await sb<{ value: string }[]>('app_settings?key=eq.marketplace_listing_fee&select=value');
+  const n = Number(rows?.[0]?.value);
+  return Number.isFinite(n) ? n : 5;
 }
 
 export async function reportItem(itemId: string, reporterPhone: string, reason: string): Promise<boolean> {
