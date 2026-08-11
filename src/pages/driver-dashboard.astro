@@ -659,6 +659,27 @@ import PageHero from '../components/PageHero.astro';
           </div>
         </div>
 
+        <!-- Plate number/photo — editable without redoing the whole
+             application (was previously fixed at registration time). -->
+        <div class="acct-card">
+          <div class="acct-card__header">
+            <div class="acct-card__title">🚘 رقم لوحة السيارة</div>
+          </div>
+          <div style="font-size:var(--text-xs);color:var(--color-text-faint);margin-bottom:var(--sp-3);">
+            ده الرقم اللي بيظهر للعميل عشان يتعرف على عربيتك — تقدر تصححه هنا من غير ما تعيد التسجيل من الأول.
+          </div>
+          <div style="margin-bottom:.6rem">
+            <input id="plate-num-input" type="text" placeholder="مثال: أ ب ج 1234" dir="ltr" style="width:100%;box-sizing:border-box;padding:10px 12px;border:1.5px solid var(--color-border);border-radius:8px;font-size:.9rem;font-family:inherit"/>
+          </div>
+          <div style="margin-bottom:.6rem">
+            <label style="display:block;font-size:.78rem;color:var(--color-text-faint);margin-bottom:4px">صورة اللوحة (اختياري)</label>
+            <input type="file" id="plate-photo-input" accept="image/*"/>
+            <img id="plate-photo-preview" alt="" style="display:none;max-width:160px;border-radius:8px;margin-top:6px"/>
+          </div>
+          <button class="btn btn--primary" id="save-plate-btn" style="width:100%">💾 حفظ رقم اللوحة</button>
+          <div id="plate-msg" style="display:none;font-size:.78rem;font-weight:700;padding:.5rem .75rem;border-radius:6px;margin-top:.5rem"></div>
+        </div>
+
         <!-- Ratings -->
         <div class="acct-card">
           <div class="acct-card__header">
@@ -935,6 +956,56 @@ import PageHero from '../components/PageHero.astro';
       });
       showToast(checked ? '❄️ تم تفعيل شارة السيارة المكيفة' : 'تم إلغاء شارة السيارة المكيفة');
     } catch {}
+  });
+
+  document.getElementById('plate-photo-input')?.addEventListener('change', (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const prev = document.getElementById('plate-photo-preview');
+      if (prev) { prev.src = ev.target.result; prev.style.display = 'block'; }
+    };
+    reader.readAsDataURL(file);
+  });
+
+  document.getElementById('save-plate-btn')?.addEventListener('click', async () => {
+    if (!driver) return;
+    const btn = document.getElementById('save-plate-btn');
+    const msg = document.getElementById('plate-msg');
+    const plateNum = (document.getElementById('plate-num-input').value || '').trim();
+    if (!plateNum) {
+      msg.textContent = '⚠️ أدخل رقم اللوحة';
+      msg.style.cssText = 'display:block;background:#FEE2E2;color:#991B1B;font-size:.78rem;font-weight:700;padding:.5rem .75rem;border-radius:6px;margin-top:.5rem';
+      return;
+    }
+    btn.disabled = true; btn.textContent = 'جاري الحفظ...';
+    try {
+      const patch = { vehicle_reg_number: plateNum };
+      const file = document.getElementById('plate-photo-input').files?.[0];
+      if (file) {
+        const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
+        const path = `driver-apps/${driver.phone}/plate-${Date.now()}.${ext}`;
+        const uploadRes = await fetch(`${SB_URL}/storage/v1/object/documents/${path}`, {
+          method: 'POST',
+          headers: { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}`, 'Content-Type': file.type || 'image/jpeg' },
+          body: file,
+        });
+        if (uploadRes.ok) patch.plate_photo_url = `${SB_URL}/storage/v1/object/public/documents/${path}`;
+      }
+      await fetch(`${SB_URL}/rest/v1/driver_applications?phone=eq.${encodeURIComponent(driver.phone)}`, {
+        method: 'PATCH', headers: { ...SB_H, Prefer: 'return=minimal' },
+        body: JSON.stringify(patch),
+      });
+      msg.textContent = '✅ تم حفظ رقم اللوحة بنجاح';
+      msg.style.cssText = 'display:block;background:#DCFCE7;color:#14532D;font-size:.78rem;font-weight:700;padding:.5rem .75rem;border-radius:6px;margin-top:.5rem';
+      showToast('✅ تم حفظ رقم اللوحة');
+    } catch {
+      msg.textContent = 'حدث خطأ، حاول مرة أخرى';
+      msg.style.cssText = 'display:block;background:#FEE2E2;color:#991B1B;font-size:.78rem;font-weight:700;padding:.5rem .75rem;border-radius:6px;margin-top:.5rem';
+    }
+    btn.disabled = false; btn.textContent = '💾 حفظ رقم اللوحة';
+    setTimeout(() => { msg.style.display = 'none'; }, 4000);
   });
 
   document.getElementById('receipt-collect-btn').addEventListener('click', () => {
@@ -1912,7 +1983,7 @@ import PageHero from '../components/PageHero.astro';
       fetch(`${SB_URL}/rest/v1/ratings?driver_phone=eq.${driver.phone}&rated_by=eq.customer&select=id,rating,comment,service_type,created_at,driver_reply&order=created_at.desc&limit=20`, { headers: SB_H }),
       fetch(`${SB_URL}/rest/v1/rides?driver_phone=eq.${phone}&status=eq.completed&select=id`, { headers: { ...SB_H, Prefer: 'count=exact' } }),
       fetch(`${SB_URL}/rest/v1/orders?driver_phone=eq.${phone}&status=eq.delivered&select=id`, { headers: { ...SB_H, Prefer: 'count=exact' } }),
-      fetch(`${SB_URL}/rest/v1/driver_applications?phone=eq.${phone}&select=has_ac&limit=1`, { headers: SB_H }),
+      fetch(`${SB_URL}/rest/v1/driver_applications?phone=eq.${phone}&select=has_ac,vehicle_reg_number,plate_photo_url&order=created_at.desc&limit=1`, { headers: SB_H }),
     ]);
 
     // Trip count (rides + orders completed lifetime)
@@ -1922,11 +1993,16 @@ import PageHero from '../components/PageHero.astro';
       document.getElementById('driver-trip-count').textContent = (ridesCount + ordersCount).toLocaleString('ar-EG');
     } catch {}
 
-    // Comfort/AC flag
+    // Comfort/AC flag + plate number/photo
     try {
       const appRows = await appRes.value.json();
-      _driverHasAc = !!(Array.isArray(appRows) && appRows[0]?.has_ac);
+      const app = Array.isArray(appRows) && appRows[0] ? appRows[0] : null;
+      _driverHasAc = !!app?.has_ac;
       document.getElementById('driver-ac-toggle').checked = _driverHasAc;
+      const plateInput = document.getElementById('plate-num-input');
+      if (plateInput && app?.vehicle_reg_number) plateInput.value = app.vehicle_reg_number;
+      const platePrev = document.getElementById('plate-photo-preview');
+      if (platePrev && app?.plate_photo_url) { platePrev.src = app.plate_photo_url; platePrev.style.display = 'block'; }
     } catch {}
 
     // Wallet
