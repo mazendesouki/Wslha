@@ -81,6 +81,7 @@ try { USER = JSON.parse(localStorage.getItem('wslha_user') || 'null'); } catch {
 // saved once submitApp() sends the complete row.
 var qsPhone = new URLSearchParams(window.location.search).get('phone');
 var qsPhoto = new URLSearchParams(window.location.search).get('photo');
+var qsName  = new URLSearchParams(window.location.search).get('name');
 if (qsPhone) {
   setPanel(0);
   var normalizedQsPhone = qsPhone.replace(/^\+20/, '0');
@@ -96,7 +97,12 @@ if (qsPhone) {
           return;
         }
         var acc = rows[0];
-        USER = { phone: acc.phone, name: acc.name || '', role: 'driver', status: acc.status || 'pending', city: acc.city || '' };
+        // The name just typed on the app's registration screen wins over
+        // whatever's on the account row — e.g. the account already
+        // existed under a different name (upgraded from another role),
+        // or lookup_account simply didn't return one. Either way, don't
+        // make them retype what they already gave the app.
+        USER = { phone: acc.phone, name: (qsName && qsName.trim()) || acc.name || '', role: 'driver', status: acc.status || 'pending', city: acc.city || '' };
         USER.avatar = dAvatar(USER.name);
         localStorage.setItem('wslha_user', JSON.stringify(USER));
 
