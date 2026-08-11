@@ -112,4 +112,125 @@ class AuthRepository {
     );
     return res.statusCode == 201 || res.statusCode == 200;
   }
+
+  /// Ported from driver.astro's doRegister()/merchant-apply.astro's
+  /// registerMerchantAndProceed() — same lookup_account → create-or-
+  /// upgrade-role flow. Unlike those pages, this does NOT log the user
+  /// into the app on success: the rest of the KYC (documents, vehicle/
+  /// store info, admin review) still only exists on the web, and this
+  /// app has no gate anywhere that checks driver_applications.status
+  /// before letting a 'driver'-role session go online — so auto-login
+  /// here would let a brand-new, unreviewed account straight into the
+  /// live driver dashboard. The caller sends the user to finish on the
+  /// website instead.
+  Future<DriverMerchantRegisterResult> registerDriverOrMerchant({
+    required String role, // 'driver' | 'merchant'
+    required String name,
+    required String phone,
+    required String password,
+    required String city,
+  }) async {
+    final normalizedPhone = normalizeEgyptianPhone(phone);
+    try {
+      final lookupRes = await http.post(
+        Uri.parse('$supabaseUrl/rest/v1/rpc/lookup_account'),
+        headers: _sbHeaders,
+        body: jsonEncode({'p_phone': normalizedPhone}),
+      );
+      final existing = lookupRes.statusCode == 200 ? jsonDecode(lookupRes.body) as List : [];
+
+      if (existing.isNotEmpty) {
+        final acc = existing.first as Map<String, dynamic>;
+        if (acc['role'] == role) {
+          return DriverMerchantRegisterResult(alreadyRegistered: true, phone: normalizedPhone);
+        }
+        final patchRes = await http.patch(
+          Uri.parse('$supabaseUrl/rest/v1/accounts?phone=eq.${Uri.encodeComponent(acc['phone'] as String)}'),
+          headers: {..._sbHeaders, 'Prefer': 'return=minimal'},
+          body: jsonEncode({'role': role, 'status': 'pending'}),
+        );
+        if (patchRes.statusCode != 204 && patchRes.statusCode != 200) {
+          return DriverMerchantRegisterResult(error: true, phone: normalizedPhone);
+        }
+      } else {
+        final createRes = await http.post(
+          Uri.parse('$supabaseUrl/rest/v1/accounts'),
+          headers: {..._sbHeaders, 'Prefer': 'return=minimal'},
+          body: jsonEncode({
+            'phone': normalizedPhone,
+            'password': password,
+            'name': name,
+            'role': role,
+            'status': 'pending',
+            'city': city,
+            'created_at': DateTime.now().toIso8601String(),
+          }),
+        );
+        if (createRes.statusCode != 201 && createRes.statusCode != 200) {
+          return DriverMerchantRegisterResult(error: true, phone: normalizedPhone);
+        }
+      }
+
+      if (role == 'driver') {
+        // Preliminary driver_applications row — same as driver.astro's
+        // panel-0 submit, so the web KYC steps have something to PATCH
+        // into rather than starting from nothing.
+        final existingApp = await http.get(
+          Uri.parse('$supabaseUrl/rest/v1/driver_applications?phone=eq.${Uri.encodeComponent(normalizedPhone)}&select=id&limit=1'),
+          headers: _sbHeaders,
+        );
+        final hasApp = existingApp.statusCode == 200 && (jsonDecode(existingApp.body) as List).isNotEmpty;
+        if (!hasApp) {
+          await http.post(
+            Uri.parse('$supabaseUrl/rest/v1/driver_applications'),
+            headers: {..._sbHeaders, 'Prefer': 'return=minimal'},
+            body: jsonEncode({
+              'phone': normalizedPhone,
+              'full_name': name,
+              'status': 'pending',
+              'created_at': DateTime.now().toIso8601String(),
+            }),
+          );
+        }
+      }
+
+      return DriverMerchantRegisterResult(phone: normalizedPhone);
+    } catch (_) {
+      return DriverMerchantRegisterResult(error: true, phone: normalizeEgyptianPhone(phone));
+    }
+  }
+
+  /// Uploads the driver's personal photo (captured via camera on the
+  /// native registration screen) to the same `documents` bucket/path
+  /// convention driver.astro's handleUpload() uses, then patches it onto
+  /// the preliminary driver_applications row.
+  Future<bool> uploadDriverPhoto(String phone, List<int> bytes, String fileExt) async {
+    final path = 'driver-apps/$phone/driver-photo-${DateTime.now().millisecondsSinceEpoch}.$fileExt';
+    final uploadRes = await http.post(
+      Uri.parse('$supabaseUrl/storage/v1/object/documents/$path'),
+      headers: {
+        'apikey': supabaseAnonKey,
+        'Authorization': 'Bearer $supabaseAnonKey',
+        'Content-Type': 'image/$fileExt',
+      },
+      body: bytes,
+    );
+    if (uploadRes.statusCode != 200 && uploadRes.statusCode != 201) return false;
+
+    final url = '$supabaseUrl/storage/v1/object/public/documents/$path';
+    final patchRes = await http.patch(
+      Uri.parse('$supabaseUrl/rest/v1/driver_applications?phone=eq.${Uri.encodeComponent(phone)}'),
+      headers: {..._sbHeaders, 'Prefer': 'return=minimal'},
+      body: jsonEncode({'driver_photo_url': url}),
+    );
+    return patchRes.statusCode == 204 || patchRes.statusCode == 200;
+  }
+}
+
+class DriverMerchantRegisterResult {
+  final bool error;
+  final bool alreadyRegistered;
+  final String phone;
+  DriverMerchantRegisterResult({this.error = false, this.alreadyRegistered = false, required this.phone});
+  bool get ok => !error && !alreadyRegistered;
 }

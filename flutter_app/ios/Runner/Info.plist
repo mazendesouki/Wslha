@@ -66,5 +66,7 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<key>NSCameraUsageDescription</key>
+	<string>يستخدم التطبيق الكاميرا لالتقاط صورتك الشخصية عند التسجيل كسائق.</string>
 </dict>
 </plist>

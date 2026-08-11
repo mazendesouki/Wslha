@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:url_launcher/url_launcher.dart';
 import '../../core/flavor.dart';
 import '../../core/session.dart';
 import '../../core/theme.dart';
 import 'auth_repository.dart';
+import 'driver_merchant_register_screen.dart';
 import 'register_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -135,37 +135,25 @@ class _LoginScreenState extends State<LoginScreen> {
                       child: const Text('ليس لديك حساب؟ سجّل الآن'),
                     )
                   else
-                    // Driver/merchant onboarding is a KYC application flow
-                    // (national ID, docs, admin review) — not instant
-                    // registration, so it opens the same web form
-                    // driver.astro/merchant-apply.astro rather than being
-                    // rebuilt as a native flow here.
+                    // Account creation (name/phone/password/city, +
+                    // personal photo for drivers) happens natively —
+                    // DriverMerchantRegisterScreen. The rest of the KYC
+                    // (documents, vehicle/store info, admin review) still
+                    // only exists on the website, which that screen links
+                    // out to once the account step is done.
                     Padding(
                       padding: const EdgeInsets.only(top: 4),
-                      child: Column(
-                        children: [
-                          const Text(
-                            'لطلب الانضمام كسائق أو تاجر، قدّم الطلب من موقع وصّلها.',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(fontSize: 12, color: AppColors.textFaint),
+                      child: TextButton(
+                        onPressed: () => Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => DriverMerchantRegisterScreen(flavor: widget.config.flavor),
                           ),
-                          const SizedBox(height: 6),
-                          TextButton(
-                            onPressed: () => launchUrl(
-                              Uri.parse(
-                                widget.config.flavor == AppFlavor.driver
-                                    ? 'https://wslha.co/driver'
-                                    : 'https://wslha.co/merchant-apply',
-                              ),
-                              mode: LaunchMode.externalApplication,
-                            ),
-                            child: Text(
-                              widget.config.flavor == AppFlavor.driver
-                                  ? '📝 سجّل كسائق الآن'
-                                  : '📝 سجّل كتاجر الآن',
-                            ),
-                          ),
-                        ],
+                        ),
+                        child: Text(
+                          widget.config.flavor == AppFlavor.driver
+                              ? '📝 سجّل كسائق الآن'
+                              : '📝 سجّل كتاجر الآن',
+                        ),
                       ),
                     ),
                 ],
