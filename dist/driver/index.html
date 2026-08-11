@@ -66,13 +66,21 @@ try { USER = JSON.parse(localStorage.getItem('wslha_user') || 'null'); } catch {
 // has a stale wslha_user sitting there, which would otherwise resume
 // THAT session instead of the fresh registration this link is actually
 // for. The account and a preliminary driver_applications row already
-// exist at this point (personal photo included), so this skips straight
-// past panel 0 (account) to panel 1 (البيانات الشخصية — still needs the
-// national ID number/expiry, which the native step doesn't collect)
-// instead of making them re-enter everything and re-upload the photo.
-// Session storage isn't shared between the app and this page, so this
-// re-does the lookup rather than trusting the URL.
+// exist at this point, so this skips straight past panel 0 (account) to
+// panel 1 (البيانات الشخصية — still needs the national ID number/expiry,
+// which the native step doesn't collect) instead of making them
+// re-enter everything. Session storage isn't shared between the app and
+// this page, so this re-does the lookup rather than trusting the URL.
+//
+// The personal photo (?photo=<url>) rides along as its own query param
+// rather than being looked up from driver_applications — that table's
+// national_id_number/expiry, license_number/expiry, and every vehicle
+// column are NOT NULL with no default, so the app can never successfully
+// pre-create a row with just phone/name/photo; there's nothing in the DB
+// yet to look the photo up from. It's picked up here and only actually
+// saved once submitApp() sends the complete row.
 var qsPhone = new URLSearchParams(window.location.search).get('phone');
+var qsPhoto = new URLSearchParams(window.location.search).get('photo');
 if (qsPhone) {
   setPanel(0);
   var normalizedQsPhone = qsPhone.replace(/^\+20/, '0');
@@ -92,15 +100,10 @@ if (qsPhone) {
         USER.avatar = dAvatar(USER.name);
         localStorage.setItem('wslha_user', JSON.stringify(USER));
 
-        var appRes = await fetch(
-          SB_URL + '/rest/v1/driver_applications?' + orFilter(USER.phone) + '&select=driver_photo_url&order=created_at.desc&limit=1',
-          { headers: SB_H }
-        );
-        var appRows = appRes.ok ? await appRes.json() : [];
-        if (appRows[0] && appRows[0].driver_photo_url) {
-          uploads['driver-photo'] = appRows[0].driver_photo_url;
+        if (qsPhoto) {
+          uploads['driver-photo'] = qsPhoto;
           var prev = $('prev-driver-photo');
-          if (prev) { prev.src = appRows[0].driver_photo_url; prev.style.display = 'block'; }
+          if (prev) { prev.src = qsPhoto; prev.style.display = 'block'; }
           var zone = $('zone-driver-photo');
           if (zone) zone.classList.add('has-file');
           var status = $('status-driver-photo');
