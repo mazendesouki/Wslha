@@ -98,7 +98,7 @@ class _DriverMerchantRegisterScreenState extends State<DriverMerchantRegisterScr
       return;
     }
 
-    if (_isDriver && _photo != null) {
+    if (_isDriver && _photo != null && !result.photoUploadUnavailable) {
       final bytes = await File(_photo!.path).readAsBytes();
       final ext = _photo!.path.split('.').last.toLowerCase();
       await _authRepo.uploadDriverPhoto(result.phone, bytes, ext.isEmpty ? 'jpg' : ext);

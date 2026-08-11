@@ -190,14 +190,21 @@ class AuthRepository {
           headers: _sbHeaders,
         );
         final hasApp = existingApp.statusCode == 200 && (jsonDecode(existingApp.body) as List).isNotEmpty;
+        bool appReady = hasApp;
         if (!hasApp) {
           // driver_applications.id is `text primary key` with NO default —
           // the web always generates one client-side (crypto.randomUUID())
-          // before inserting. Omitting it here made every native
-          // registration's preliminary-row insert fail its NOT NULL
-          // constraint silently (this POST's result was never checked),
-          // so uploadDriverPhoto()'s later PATCH matched zero rows and the
-          // web resume step never found a photo to skip re-uploading.
+          // before inserting; omitting it here made this insert fail
+          // outright. This row is optional, though — driver.astro's own
+          // final-submit step (submitApp) creates it from scratch if no
+          // preliminary row exists, so a failure here must NOT block
+          // account creation (it very nearly did: this used to return
+          // error:true and made the whole registration look broken even
+          // though the account itself was created fine). Worst case if
+          // this insert still fails for some other reason (e.g. a NOT
+          // NULL column beyond id), the personal photo just can't be
+          // pre-attached and the web step re-asks for it — annoying, not
+          // broken.
           final insertRes = await http.post(
             Uri.parse('$supabaseUrl/rest/v1/driver_applications'),
             headers: {..._sbHeaders, 'Prefer': 'return=minimal'},
@@ -209,9 +216,10 @@ class AuthRepository {
               'created_at': DateTime.now().toIso8601String(),
             }),
           );
-          if (insertRes.statusCode != 201 && insertRes.statusCode != 200) {
-            return DriverMerchantRegisterResult(error: true, phone: normalizedPhone);
-          }
+          appReady = insertRes.statusCode == 201 || insertRes.statusCode == 200;
+        }
+        if (!appReady) {
+          return DriverMerchantRegisterResult(phone: normalizedPhone, photoUploadUnavailable: true);
         }
       }
 
@@ -252,6 +260,15 @@ class DriverMerchantRegisterResult {
   final bool error;
   final bool alreadyRegistered;
   final String phone;
-  DriverMerchantRegisterResult({this.error = false, this.alreadyRegistered = false, required this.phone});
+  // The account was created fine, but the preliminary driver_applications
+  // row wasn't — the caller should skip uploadDriverPhoto() (there's
+  // nothing to PATCH yet) rather than silently no-op it.
+  final bool photoUploadUnavailable;
+  DriverMerchantRegisterResult({
+    this.error = false,
+    this.alreadyRegistered = false,
+    this.photoUploadUnavailable = false,
+    required this.phone,
+  });
   bool get ok => !error && !alreadyRegistered;
 }
