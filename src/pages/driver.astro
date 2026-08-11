@@ -367,6 +367,11 @@ label .req { color: #DC2626; }
             <span class="field-err" id="err-r-pass"></span>
           </div>
           <div class="fg">
+            <label for="r-pass-confirm">تأكيد كلمة المرور <span class="req">*</span></label>
+            <input class="fi" id="r-pass-confirm" type="password" placeholder="أعد كتابة كلمة المرور"/>
+            <span class="field-err" id="err-r-pass-confirm"></span>
+          </div>
+          <div class="fg">
             <label for="r-city">المدينة <span class="req">*</span></label>
             <select class="fi" id="r-city">
               <option value="دمياط الجديدة">دمياط الجديدة</option>
@@ -1009,16 +1014,18 @@ function prefillUser() {
 
 /* ── Register ── */
 window.doRegister = async function() {
-  var name  = ($('r-name').value  || '').trim();
-  var phone = ($('r-phone').value || '').trim();
-  var pass  = ($('r-pass').value  || '').trim();
-  var city  = $('r-city').value;
-  var btn   = $('btn-register');
+  var name    = ($('r-name').value  || '').trim();
+  var phone   = ($('r-phone').value || '').trim();
+  var pass    = ($('r-pass').value  || '').trim();
+  var passConfirm = ($('r-pass-confirm').value || '').trim();
+  var city    = $('r-city').value;
+  var btn     = $('btn-register');
 
   var ok = true;
   clearFieldErr('err-r-name');
   clearFieldErr('err-r-phone');
   clearFieldErr('err-r-pass');
+  clearFieldErr('err-r-pass-confirm');
   showErr('err-register', '');
 
   var nameMsg = vName(name);
@@ -1029,6 +1036,7 @@ window.doRegister = async function() {
   }
   var passMsg = vPass(pass);
   if (passMsg) { fieldErr('err-r-pass', passMsg); ok = false; }
+  if (!passMsg && pass !== passConfirm) { fieldErr('err-r-pass-confirm', 'كلمة المرور غير متطابقة'); ok = false; }
   if (!ok) return;
 
   var phone14 = pLocal;

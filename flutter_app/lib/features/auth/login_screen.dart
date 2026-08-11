@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../core/flavor.dart';
 import '../../core/session.dart';
 import '../../core/theme.dart';
@@ -136,14 +137,35 @@ class _LoginScreenState extends State<LoginScreen> {
                   else
                     // Driver/merchant onboarding is a KYC application flow
                     // (national ID, docs, admin review) — not instant
-                    // registration, so it stays on the website for now
-                    // rather than being rebuilt here.
-                    const Padding(
-                      padding: EdgeInsets.only(top: 4),
-                      child: Text(
-                        'لطلب الانضمام كسائق أو تاجر، قدّم الطلب من موقع وصّلها أولاً.',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(fontSize: 12, color: AppColors.textFaint),
+                    // registration, so it opens the same web form
+                    // driver.astro/merchant-apply.astro rather than being
+                    // rebuilt as a native flow here.
+                    Padding(
+                      padding: const EdgeInsets.only(top: 4),
+                      child: Column(
+                        children: [
+                          const Text(
+                            'لطلب الانضمام كسائق أو تاجر، قدّم الطلب من موقع وصّلها.',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(fontSize: 12, color: AppColors.textFaint),
+                          ),
+                          const SizedBox(height: 6),
+                          TextButton(
+                            onPressed: () => launchUrl(
+                              Uri.parse(
+                                widget.config.flavor == AppFlavor.driver
+                                    ? 'https://wslha.co/driver'
+                                    : 'https://wslha.co/merchant-apply',
+                              ),
+                              mode: LaunchMode.externalApplication,
+                            ),
+                            child: Text(
+                              widget.config.flavor == AppFlavor.driver
+                                  ? '📝 سجّل كسائق الآن'
+                                  : '📝 سجّل كتاجر الآن',
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                 ],
