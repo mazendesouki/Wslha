@@ -1,8 +1,18 @@
 import 'dart:convert';
+import 'dart:math';
 import 'package:http/http.dart' as http;
 import '../../core/phone_utils.dart';
 import '../../core/supabase_client.dart';
 import '../../core/session.dart';
+
+/// Matches the 'wtx-<epoch>-<random hex>' id convention already used
+/// elsewhere in this codebase for text-primary-key tables with no
+/// server-side default (e.g. wallet_transactions inserts).
+String _generateId(String prefix) {
+  final rand = Random();
+  final hex = List.generate(6, (_) => rand.nextInt(16).toRadixString(16)).join();
+  return '$prefix-${DateTime.now().millisecondsSinceEpoch}-$hex';
+}
 
 sealed class LoginResult {}
 
@@ -181,16 +191,27 @@ class AuthRepository {
         );
         final hasApp = existingApp.statusCode == 200 && (jsonDecode(existingApp.body) as List).isNotEmpty;
         if (!hasApp) {
-          await http.post(
+          // driver_applications.id is `text primary key` with NO default —
+          // the web always generates one client-side (crypto.randomUUID())
+          // before inserting. Omitting it here made every native
+          // registration's preliminary-row insert fail its NOT NULL
+          // constraint silently (this POST's result was never checked),
+          // so uploadDriverPhoto()'s later PATCH matched zero rows and the
+          // web resume step never found a photo to skip re-uploading.
+          final insertRes = await http.post(
             Uri.parse('$supabaseUrl/rest/v1/driver_applications'),
             headers: {..._sbHeaders, 'Prefer': 'return=minimal'},
             body: jsonEncode({
+              'id': _generateId('da'),
               'phone': normalizedPhone,
               'full_name': name,
               'status': 'pending',
               'created_at': DateTime.now().toIso8601String(),
             }),
           );
+          if (insertRes.statusCode != 201 && insertRes.statusCode != 200) {
+            return DriverMerchantRegisterResult(error: true, phone: normalizedPhone);
+          }
         }
       }
 
