@@ -1332,6 +1332,7 @@ import PageHero from '../components/PageHero.astro';
       if (result && result.ok) return result.data;
       if (result && result.reason === 'vehicle_category_mismatch') return 'vehicle_category_mismatch';
       if (result && result.reason === 'quality_tier_mismatch') return 'quality_tier_mismatch';
+      if (result && result.reason === 'driver_not_approved') return 'driver_not_approved';
       return null;
     } catch { return null; }
   }
@@ -1581,6 +1582,10 @@ import PageHero from '../components/PageHero.astro';
     }
     if (accepted === 'quality_tier_mismatch') {
       showToast('سيارتك المسجّلة لا تطابق مستوى الخدمة المطلوب لرحلة المطار دي (مكيّفة/نظيفة/موديل حديث)');
+      return;
+    }
+    if (accepted === 'driver_not_approved') {
+      showToast('حسابك لسه قيد المراجعة من الإدارة — مينفعش تقبل رحلات لحد ما يتم اعتماد طلبك');
       return;
     }
     if (!accepted) { showToast('حدث خطأ، حاول مرة أخرى'); return; }

@@ -51,6 +51,24 @@ class DriverRepository {
     return true;
   }
 
+  /// Latest driver_applications.status for this phone, or null if no
+  /// application exists at all. Used to gate the driver home shell before
+  /// the driver ever sees the online toggle — accept_dispatch_offer()
+  /// enforces the same check server-side regardless (see
+  /// db/security-15-driver-approval-gate.sql), this is just so an
+  /// unapproved driver gets a clear explanation instead of every accept
+  /// silently failing.
+  Future<String?> fetchApprovalStatus(String phone) async {
+    final rows = await sb
+        .from('driver_applications')
+        .select('status')
+        .eq('phone', phone)
+        .order('created_at', ascending: false)
+        .limit(1);
+    if (rows.isEmpty) return null;
+    return rows.first['status'] as String?;
+  }
+
   Future<void> goOffline(String phone) async {
     await sb.from('driver_locations').upsert({
       'driver_phone': phone,
