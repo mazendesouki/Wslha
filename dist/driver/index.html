@@ -59,25 +59,24 @@ try { USER = JSON.parse(localStorage.getItem('wslha_user') || 'null'); } catch {
       كتابة حرة يكتبها السائق كما هي في رخصة سيارته. ── */
 
 /* ── Init ── */
-if (USER && USER.phone) {
-  showProgressBar();
-  setPanel(1);
-  prefillUser();
-} else {
+// Arriving from the driver app's native account-creation step
+// (features/auth/driver_merchant_register_screen.dart) always wins over
+// whatever's already in localStorage — a browser that's ever logged into
+// this site before (e.g. an admin testing on their own phone) already
+// has a stale wslha_user sitting there, which would otherwise resume
+// THAT session instead of the fresh registration this link is actually
+// for. The account and a preliminary driver_applications row already
+// exist at this point (personal photo included), so this skips straight
+// past panel 0 (account) to panel 1 (البيانات الشخصية — still needs the
+// national ID number/expiry, which the native step doesn't collect)
+// instead of making them re-enter everything and re-upload the photo.
+// Session storage isn't shared between the app and this page, so this
+// re-does the lookup rather than trusting the URL.
+var qsPhone = new URLSearchParams(window.location.search).get('phone');
+if (qsPhone) {
   setPanel(0);
-  // Arriving from the driver app's native account-creation step
-  // (features/auth/driver_merchant_register_screen.dart) — the account
-  // and a preliminary driver_applications row already exist at this
-  // point (personal photo included), so skip straight past panel 0
-  // (account) to panel 1 (البيانات الشخصية — still needs the national ID
-  // number/expiry, which the native step doesn't collect) instead of
-  // making them re-enter everything and re-upload the photo. Session
-  // storage isn't shared between the app and this page, so this re-does
-  // the lookup rather than trusting the URL.
-  var qsPhone = new URLSearchParams(window.location.search).get('phone');
-  if (qsPhone) {
-    var normalizedQsPhone = qsPhone.replace(/^\+20/, '0');
-    (async function resumeFromApp() {
+  var normalizedQsPhone = qsPhone.replace(/^\+20/, '0');
+  (async function resumeFromApp() {
       try {
         var lookupRes = await fetch(SB_URL + '/rest/v1/rpc/lookup_account', {
           method: 'POST', headers: Object.assign({}, SB_H, { 'Content-Type': 'application/json' }),
@@ -114,8 +113,13 @@ if (USER && USER.phone) {
       } catch (e) {
         var rPhoneFallback = $('r-phone'); if (rPhoneFallback) rPhoneFallback.value = normalizedQsPhone;
       }
-    })();
-  }
+  })();
+} else if (USER && USER.phone) {
+  showProgressBar();
+  setPanel(1);
+  prefillUser();
+} else {
+  setPanel(0);
 }
 
 /* ── Helpers ── */
