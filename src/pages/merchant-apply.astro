@@ -484,14 +484,19 @@ let currentStep = 0;
 
 if (!USER?.phone) {
   document.getElementById('step-0').classList.remove('hidden');
-  // Prefills the phone field when arriving from the merchant app's native
-  // account-creation step — the account already exists at this point,
-  // just re-enter the password to continue (session storage isn't shared
-  // between the app and this page).
+  // Prefills the phone/name fields when arriving from the merchant app's
+  // native account-creation step — the account already exists at this
+  // point, just re-enter the password to continue (session storage isn't
+  // shared between the app and this page).
   const qsPhone = new URLSearchParams(window.location.search).get('phone');
+  const qsName  = new URLSearchParams(window.location.search).get('name');
   if (qsPhone) {
     const regPhone = document.getElementById('reg-owner-phone');
     if (regPhone) (regPhone as HTMLInputElement).value = qsPhone.replace(/^\+20/, '0');
+  }
+  if (qsName) {
+    const regName = document.getElementById('reg-owner-name');
+    if (regName) (regName as HTMLInputElement).value = qsName;
   }
 } else {
   document.getElementById('steps-nav').style.display = 'flex';

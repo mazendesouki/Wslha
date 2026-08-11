@@ -113,7 +113,8 @@ class _DriverMerchantRegisterScreenState extends State<DriverMerchantRegisterScr
 
   Future<void> _continueOnWeb() async {
     final base = _isDriver ? 'https://wslha.vercel.app/driver' : 'https://wslha.vercel.app/merchant-apply';
-    var url = '$base?phone=${Uri.encodeComponent(_successPhone!)}';
+    var url = '$base?phone=${Uri.encodeComponent(_successPhone!)}'
+        '&name=${Uri.encodeComponent(_nameController.text.trim())}';
     // There's no driver_applications row to attach the photo to yet (see
     // AuthRepository.registerDriverOrMerchant — every column beyond
     // id/phone/full_name/status is NOT NULL with no default, so that
