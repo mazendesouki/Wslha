@@ -531,7 +531,7 @@ label .req { color: #DC2626; }
       <div class="card__body">
         <div class="grid-2">
           <div class="fg">
-            <label for="d-lic-num">رقم الرخصة <span class="req">*</span></label>
+            <label for="d-lic-num">رقم رخصة القيادة (بطاقتك الشخصية للقيادة) <span class="req">*</span></label>
             <input class="fi" id="d-lic-num" type="text" placeholder="رقم رخصة القيادة" dir="ltr"/>
             <span class="field-err" id="err-d-lic-num"></span>
           </div>
@@ -560,8 +560,8 @@ label .req { color: #DC2626; }
       <div class="card__body">
         <div class="grid-2">
           <div class="fg">
-            <label for="d-vreg-num">رقم رخصة السيارة <span class="req">*</span></label>
-            <input class="fi" id="d-vreg-num" type="text" placeholder="رقم الرخصة" dir="ltr"/>
+            <label for="d-vreg-num">رقم رخصة تسجيل السيارة (الرخصة الصفراء — مش رقم اللوحة) <span class="req">*</span></label>
+            <input class="fi" id="d-vreg-num" type="text" placeholder="رقم رخصة المركبة" dir="ltr"/>
             <span class="field-err" id="err-d-vreg-num"></span>
           </div>
           <div class="fg">
@@ -677,7 +677,7 @@ label .req { color: #DC2626; }
             ⚠️ اختر الخيارين دول بأمانة فقط لو سيارتك فعلاً مكيفة و/أو نظيفة — العميل بيختار ويدفع سعر أعلى بناءً على كلامك، ولو سيارتك مش مطابقة فعليًا هيحس إنه اتخدع، وده بيضر ثقة العملاء في المنصة وممكن يعرّض حسابك للمراجعة.
           </div>
           <div class="fg">
-            <label for="v-plate">رقم اللوحة <span class="req">*</span></label>
+            <label for="v-plate">رقم اللوحة (الأرقام والحروف المكتوبة على لوحة السيارة نفسها) <span class="req">*</span></label>
             <input class="fi" id="v-plate" type="text" placeholder="مثال: أ ب ج 1234" dir="ltr"/>
             <span class="field-err" id="err-v-plate"></span>
           </div>
@@ -1526,7 +1526,11 @@ window.submitApp = async function() {
     license_number:     $('d-lic-num').value.trim(),
     license_expiry:     $('d-lic-exp').value,
     license_photo_url:  uploads['license'] || null,
-    vehicle_reg_number: $('d-vreg-num').value.trim() || plateNum,
+    // Customers see this value on their ride-tracking screen to spot the
+    // car on the street — the actual plate (v-plate, e.g. "أ ب ج 1234")
+    // is what's useful there, not the vehicle registration document
+    // number (d-vreg-num), which used to take priority.
+    vehicle_reg_number: plateNum || $('d-vreg-num').value.trim(),
     vehicle_reg_expiry: $('d-vreg-exp').value,
     vehicle_reg_photo_url: uploads['vreg'] || null,
     insurance_expiry:   $('d-ins-exp').value || null,
