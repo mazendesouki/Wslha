@@ -1116,6 +1116,7 @@ import { VEHICLE_MODELS, FARE_ZONES, TRIP_RATES } from '../data/airports';
               <div class="driver-card__name" id="driver-card-name">—</div>
               <div class="driver-card__status" id="driver-card-status">السائق في الطريق إليك</div>
               <div id="driver-card-vehicle" style="font-size:.75rem;color:var(--color-text-faint);font-weight:700;margin-top:2px"></div>
+              <div id="driver-card-plate" style="font-size:.75rem;color:var(--color-text);font-weight:800;margin-top:2px"></div>
               <div id="driver-card-badges" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px"></div>
               <div id="driver-card-review"></div>
             </div>
@@ -1861,7 +1862,7 @@ import { VEHICLE_MODELS, FARE_ZONES, TRIP_RATES } from '../data/airports';
     try {
       const [ratingsRes, appRes] = await Promise.all([
         fetch(`${SB_URL}/rest/v1/ratings?driver_phone=eq.${encodeURIComponent(driverPhone)}&rated_by=eq.customer&select=rating,comment,created_at&order=created_at.desc&limit=20`, { headers: SB_H }),
-        fetch(`${SB_URL}/rest/v1/driver_applications?phone=eq.${encodeURIComponent(driverPhone)}&select=vehicle_category,vehicle_model,vehicle_year,vehicle_color,has_ac,is_clean&status=eq.approved&order=created_at.desc&limit=1`, { headers: SB_H }),
+        fetch(`${SB_URL}/rest/v1/driver_applications?phone=eq.${encodeURIComponent(driverPhone)}&select=vehicle_category,vehicle_model,vehicle_year,vehicle_color,vehicle_reg_number,has_ac,is_clean&status=eq.approved&order=created_at.desc&limit=1`, { headers: SB_H }),
       ]);
       const ratingRows = ratingsRes.ok ? await ratingsRes.json() : [];
       const appRows     = appRes.ok ? await appRes.json() : [];
@@ -1881,6 +1882,8 @@ import { VEHICLE_MODELS, FARE_ZONES, TRIP_RATES } from '../data/airports';
         const line = [catLabels[app.vehicle_category] || app.vehicle_category, app.vehicle_model, app.vehicle_color, app.vehicle_year]
           .filter(Boolean).join(' — ');
         vehicleEl.textContent = line;
+        const plateEl = document.getElementById('driver-card-plate');
+        if (plateEl) plateEl.textContent = app.vehicle_reg_number ? `🚘 ${app.vehicle_reg_number}` : '';
       }
       if (reviewEl) {
         const withComment = (ratingRows || []).find(r => r.comment && r.comment.trim());
