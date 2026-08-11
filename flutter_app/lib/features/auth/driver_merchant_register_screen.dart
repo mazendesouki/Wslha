@@ -142,7 +142,7 @@ class _DriverMerchantRegisterScreenState extends State<DriverMerchantRegisterScr
             const SizedBox(height: 8),
             Text(
               _isDriver
-                  ? 'باقي عليك رفع الوثائق الرسمية وبيانات السيارة عشان يتراجع طلبك ويتفعّل حسابك.'
+                  ? 'باقي عليك رقم البطاقة، صور الوثائق، وبيانات السيارة عشان يتراجع طلبك ويتفعّل حسابك.'
                   : 'باقي عليك بيانات النشاط التجاري والوثائق عشان يتراجع طلبك ويتفعّل حسابك.',
               textAlign: TextAlign.center,
               style: const TextStyle(color: AppColors.textFaint),

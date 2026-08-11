@@ -887,14 +887,56 @@ if (USER && USER.phone) {
   prefillUser();
 } else {
   setPanel(0);
-  // Prefills the phone field when arriving from the driver app's native
-  // account-creation step (features/auth/driver_merchant_register_screen.dart)
-  // — the account already exists at this point, just re-enter the password
-  // to continue (session storage isn't shared between the app and this page).
+  // Arriving from the driver app's native account-creation step
+  // (features/auth/driver_merchant_register_screen.dart) — the account
+  // and a preliminary driver_applications row already exist at this
+  // point (personal photo included), so skip straight past panel 0
+  // (account) to panel 1 (البيانات الشخصية — still needs the national ID
+  // number/expiry, which the native step doesn't collect) instead of
+  // making them re-enter everything and re-upload the photo. Session
+  // storage isn't shared between the app and this page, so this re-does
+  // the lookup rather than trusting the URL.
   var qsPhone = new URLSearchParams(window.location.search).get('phone');
   if (qsPhone) {
-    var rPhone = $('r-phone');
-    if (rPhone) rPhone.value = qsPhone.replace(/^\+20/, '0');
+    var normalizedQsPhone = qsPhone.replace(/^\+20/, '0');
+    (async function resumeFromApp() {
+      try {
+        var lookupRes = await fetch(SB_URL + '/rest/v1/rpc/lookup_account', {
+          method: 'POST', headers: Object.assign({}, SB_H, { 'Content-Type': 'application/json' }),
+          body: JSON.stringify({ p_phone: normalizedQsPhone }),
+        });
+        var rows = lookupRes.ok ? await lookupRes.json() : [];
+        if (!(Array.isArray(rows) && rows.length && rows[0].role === 'driver')) {
+          var rPhone = $('r-phone'); if (rPhone) rPhone.value = normalizedQsPhone;
+          return;
+        }
+        var acc = rows[0];
+        USER = { phone: acc.phone, name: acc.name || '', role: 'driver', status: acc.status || 'pending', city: acc.city || '' };
+        USER.avatar = dAvatar(USER.name);
+        localStorage.setItem('wslha_user', JSON.stringify(USER));
+
+        var appRes = await fetch(
+          SB_URL + '/rest/v1/driver_applications?' + orFilter(USER.phone) + '&select=driver_photo_url&order=created_at.desc&limit=1',
+          { headers: SB_H }
+        );
+        var appRows = appRes.ok ? await appRes.json() : [];
+        if (appRows[0] && appRows[0].driver_photo_url) {
+          uploads['driver-photo'] = appRows[0].driver_photo_url;
+          var prev = $('prev-driver-photo');
+          if (prev) { prev.src = appRows[0].driver_photo_url; prev.style.display = 'block'; }
+          var zone = $('zone-driver-photo');
+          if (zone) zone.classList.add('has-file');
+          var status = $('status-driver-photo');
+          if (status) { status.textContent = '✅ اتصورت من التطبيق بالفعل'; status.style.color = '#16A34A'; }
+        }
+
+        showProgressBar();
+        prefillUser();
+        setPanel(1);
+      } catch (e) {
+        var rPhoneFallback = $('r-phone'); if (rPhoneFallback) rPhoneFallback.value = normalizedQsPhone;
+      }
+    })();
   }
 }
 
