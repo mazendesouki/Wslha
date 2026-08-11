@@ -61,6 +61,7 @@ class RideRepository {
         )
         .eq('phone', driverPhone)
         .eq('status', 'approved')
+        .order('created_at', ascending: false)
         .limit(1);
     return rows.isEmpty ? null : rows.first;
   }
