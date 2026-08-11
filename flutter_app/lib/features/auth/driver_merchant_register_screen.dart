@@ -42,6 +42,7 @@ class _DriverMerchantRegisterScreenState extends State<DriverMerchantRegisterScr
   String _city = '';
 
   XFile? _photo;
+  String? _photoUrl;
   bool _loading = false;
   String? _error;
   String? _successPhone;
@@ -98,10 +99,10 @@ class _DriverMerchantRegisterScreenState extends State<DriverMerchantRegisterScr
       return;
     }
 
-    if (_isDriver && _photo != null && !result.photoUploadUnavailable) {
+    if (_isDriver && _photo != null) {
       final bytes = await File(_photo!.path).readAsBytes();
       final ext = _photo!.path.split('.').last.toLowerCase();
-      await _authRepo.uploadDriverPhoto(result.phone, bytes, ext.isEmpty ? 'jpg' : ext);
+      _photoUrl = await _authRepo.uploadDriverPhoto(result.phone, bytes, ext.isEmpty ? 'jpg' : ext);
     }
 
     setState(() {
@@ -112,7 +113,14 @@ class _DriverMerchantRegisterScreenState extends State<DriverMerchantRegisterScr
 
   Future<void> _continueOnWeb() async {
     final base = _isDriver ? 'https://wslha.vercel.app/driver' : 'https://wslha.vercel.app/merchant-apply';
-    await launchUrl(Uri.parse('$base?phone=${Uri.encodeComponent(_successPhone!)}'), mode: LaunchMode.externalApplication);
+    var url = '$base?phone=${Uri.encodeComponent(_successPhone!)}';
+    // There's no driver_applications row to attach the photo to yet (see
+    // AuthRepository.registerDriverOrMerchant — every column beyond
+    // id/phone/full_name/status is NOT NULL with no default, so that
+    // insert can never succeed with just what this screen collects). The
+    // web page picks the URL up straight from this query param instead.
+    if (_photoUrl != null) url += '&photo=${Uri.encodeComponent(_photoUrl!)}';
+    await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
   }
 
   @override

@@ -1,18 +1,8 @@
 import 'dart:convert';
-import 'dart:math';
 import 'package:http/http.dart' as http;
 import '../../core/phone_utils.dart';
 import '../../core/supabase_client.dart';
 import '../../core/session.dart';
-
-/// Matches the 'wtx-<epoch>-<random hex>' id convention already used
-/// elsewhere in this codebase for text-primary-key tables with no
-/// server-side default (e.g. wallet_transactions inserts).
-String _generateId(String prefix) {
-  final rand = Random();
-  final hex = List.generate(6, (_) => rand.nextInt(16).toRadixString(16)).join();
-  return '$prefix-${DateTime.now().millisecondsSinceEpoch}-$hex';
-}
 
 sealed class LoginResult {}
 
@@ -181,48 +171,20 @@ class AuthRepository {
         }
       }
 
-      if (role == 'driver') {
-        // Preliminary driver_applications row — same as driver.astro's
-        // panel-0 submit, so the web KYC steps have something to PATCH
-        // into rather than starting from nothing.
-        final existingApp = await http.get(
-          Uri.parse('$supabaseUrl/rest/v1/driver_applications?phone=eq.${Uri.encodeComponent(normalizedPhone)}&select=id&limit=1'),
-          headers: _sbHeaders,
-        );
-        final hasApp = existingApp.statusCode == 200 && (jsonDecode(existingApp.body) as List).isNotEmpty;
-        bool appReady = hasApp;
-        if (!hasApp) {
-          // driver_applications.id is `text primary key` with NO default —
-          // the web always generates one client-side (crypto.randomUUID())
-          // before inserting; omitting it here made this insert fail
-          // outright. This row is optional, though — driver.astro's own
-          // final-submit step (submitApp) creates it from scratch if no
-          // preliminary row exists, so a failure here must NOT block
-          // account creation (it very nearly did: this used to return
-          // error:true and made the whole registration look broken even
-          // though the account itself was created fine). Worst case if
-          // this insert still fails for some other reason (e.g. a NOT
-          // NULL column beyond id), the personal photo just can't be
-          // pre-attached and the web step re-asks for it — annoying, not
-          // broken.
-          final insertRes = await http.post(
-            Uri.parse('$supabaseUrl/rest/v1/driver_applications'),
-            headers: {..._sbHeaders, 'Prefer': 'return=minimal'},
-            body: jsonEncode({
-              'id': _generateId('da'),
-              'phone': normalizedPhone,
-              'full_name': name,
-              'status': 'pending',
-              'created_at': DateTime.now().toIso8601String(),
-            }),
-          );
-          appReady = insertRes.statusCode == 201 || insertRes.statusCode == 200;
-        }
-        if (!appReady) {
-          return DriverMerchantRegisterResult(phone: normalizedPhone, photoUploadUnavailable: true);
-        }
-      }
-
+      // NOT trying to pre-create a driver_applications row here anymore —
+      // national_id_number, national_id_expiry, license_number,
+      // license_expiry, vehicle_reg_number, vehicle_reg_expiry,
+      // vehicle_model, vehicle_color, vehicle_year, vehicle_purchase_date,
+      // and vehicle_ownership are ALL `not null` with no default (checked
+      // directly against the live schema), so ANY insert with just
+      // id/phone/full_name always fails — that was true for this code and
+      // is equally true for driver.astro's own panel-0 preliminary insert,
+      // which just never surfaces the failure (wrapped in .catch(()=>{})
+      // without checking .ok). driver.astro's final-submit step
+      // (submitApp) already creates the real row from scratch once it has
+      // every required field, so there's nothing missing by skipping this
+      // — the personal photo is carried over via the continuation link's
+      // query param instead (see uploadDriverPhoto below).
       return DriverMerchantRegisterResult(phone: normalizedPhone);
     } catch (_) {
       return DriverMerchantRegisterResult(error: true, phone: normalizeEgyptianPhone(phone));
@@ -231,9 +193,11 @@ class AuthRepository {
 
   /// Uploads the driver's personal photo (captured via camera on the
   /// native registration screen) to the same `documents` bucket/path
-  /// convention driver.astro's handleUpload() uses, then patches it onto
-  /// the preliminary driver_applications row.
-  Future<bool> uploadDriverPhoto(String phone, List<int> bytes, String fileExt) async {
+  /// convention driver.astro's handleUpload() uses, and returns the
+  /// public URL — carried to the web continuation link as a query param
+  /// (?photo=) rather than written to driver_applications directly, since
+  /// there's no row to attach it to yet (see registerDriverOrMerchant).
+  Future<String?> uploadDriverPhoto(String phone, List<int> bytes, String fileExt) async {
     final path = 'driver-apps/$phone/driver-photo-${DateTime.now().millisecondsSinceEpoch}.$fileExt';
     final uploadRes = await http.post(
       Uri.parse('$supabaseUrl/storage/v1/object/documents/$path'),
@@ -244,15 +208,8 @@ class AuthRepository {
       },
       body: bytes,
     );
-    if (uploadRes.statusCode != 200 && uploadRes.statusCode != 201) return false;
-
-    final url = '$supabaseUrl/storage/v1/object/public/documents/$path';
-    final patchRes = await http.patch(
-      Uri.parse('$supabaseUrl/rest/v1/driver_applications?phone=eq.${Uri.encodeComponent(phone)}'),
-      headers: {..._sbHeaders, 'Prefer': 'return=minimal'},
-      body: jsonEncode({'driver_photo_url': url}),
-    );
-    return patchRes.statusCode == 204 || patchRes.statusCode == 200;
+    if (uploadRes.statusCode != 200 && uploadRes.statusCode != 201) return null;
+    return '$supabaseUrl/storage/v1/object/public/documents/$path';
   }
 }
 
@@ -260,14 +217,9 @@ class DriverMerchantRegisterResult {
   final bool error;
   final bool alreadyRegistered;
   final String phone;
-  // The account was created fine, but the preliminary driver_applications
-  // row wasn't — the caller should skip uploadDriverPhoto() (there's
-  // nothing to PATCH yet) rather than silently no-op it.
-  final bool photoUploadUnavailable;
   DriverMerchantRegisterResult({
     this.error = false,
     this.alreadyRegistered = false,
-    this.photoUploadUnavailable = false,
     required this.phone,
   });
   bool get ok => !error && !alreadyRegistered;
