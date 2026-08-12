@@ -2400,6 +2400,15 @@ async function loadRides() {
   renderRides();
 }
 function renderRides() {
+  // The 1-second live-refresh interval below calls this repeatedly —
+  // replacing #rides-tbody's innerHTML while a per-row <select> is open
+  // destroys that <select> mid-interaction, so it looks like the dropdown
+  // "closes immediately" no matter what the admin picks. Skip the redraw
+  // for this cycle if the admin currently has a control in this table
+  // focused; the next cycle (once they've picked a value or clicked away)
+  // redraws normally.
+  const tbody = document.getElementById('rides-tbody');
+  if (tbody && tbody.contains(document.activeElement)) return;
   const search = document.getElementById('rides-search').value.trim().toLowerCase();
   const status = document.getElementById('rides-status-filter').value;
   let rows = allRides;
