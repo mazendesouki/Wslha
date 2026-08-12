@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="ar" dir="rtl" data-astro-cid-2zp6q64z> <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>لوحة التحكم — وصّلها</title><link rel="icon" href="/icon.svg" type="image/svg+xml"><link rel="stylesheet" href="/_astro/admin.DiwuNnDi.css"></head> <body data-astro-cid-2zp6q64z> <div class="sidebar-overlay" id="overlay" data-astro-cid-2zp6q64z></div> <!-- ── Sidebar ──────────────────────────────────────────────── --> <aside class="sidebar" id="sidebar" data-astro-cid-2zp6q64z> <div class="sidebar__logo" data-astro-cid-2zp6q64z> <div class="sidebar__logo-name" data-astro-cid-2zp6q64z>وصّلها</div> <div class="sidebar__logo-sub" data-astro-cid-2zp6q64z>لوحة التحكم الإدارية</div> </div> <div class="sidebar__admin" data-astro-cid-2zp6q64z> <div class="sidebar__avatar" id="admin-avatar" data-astro-cid-2zp6q64z>م</div> <div data-astro-cid-2zp6q64z> <div class="sidebar__admin-name" id="admin-name" data-astro-cid-2zp6q64z>المشرف</div> <div class="sidebar__admin-role" data-astro-cid-2zp6q64z>مشرف النظام</div> </div> </div> <nav data-astro-cid-2zp6q64z> <button class="nav-item active" data-section="dash" data-astro-cid-2zp6q64z> <span class="nav-item__icon" data-astro-cid-2zp6q64z>📊</span> لوحة التحكم
+<!DOCTYPE html><html lang="ar" dir="rtl" data-astro-cid-2zp6q64z> <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>لوحة التحكم — وصّلها</title><link rel="icon" href="/icon.svg" type="image/svg+xml"><link rel="stylesheet" href="/_astro/admin.DPhRn-me.css"></head> <body data-astro-cid-2zp6q64z> <div class="sidebar-overlay" id="overlay" data-astro-cid-2zp6q64z></div> <!-- ── Sidebar ──────────────────────────────────────────────── --> <aside class="sidebar" id="sidebar" data-astro-cid-2zp6q64z> <div class="sidebar__logo" data-astro-cid-2zp6q64z> <div class="sidebar__logo-name" data-astro-cid-2zp6q64z>وصّلها</div> <div class="sidebar__logo-sub" data-astro-cid-2zp6q64z>لوحة التحكم الإدارية</div> </div> <div class="sidebar__admin" data-astro-cid-2zp6q64z> <div class="sidebar__avatar" id="admin-avatar" data-astro-cid-2zp6q64z>م</div> <div data-astro-cid-2zp6q64z> <div class="sidebar__admin-name" id="admin-name" data-astro-cid-2zp6q64z>المشرف</div> <div class="sidebar__admin-role" data-astro-cid-2zp6q64z>مشرف النظام</div> </div> </div> <nav data-astro-cid-2zp6q64z> <button class="nav-item active" data-section="dash" data-astro-cid-2zp6q64z> <span class="nav-item__icon" data-astro-cid-2zp6q64z>📊</span> لوحة التحكم
 </button> <button class="nav-item" data-section="users" data-astro-cid-2zp6q64z> <span class="nav-item__icon" data-astro-cid-2zp6q64z>👥</span> المستخدمون
 </button> <div class="nav-divider" data-astro-cid-2zp6q64z></div> <button class="nav-item" data-section="drivers" data-astro-cid-2zp6q64z> <span class="nav-item__icon" data-astro-cid-2zp6q64z>🚗</span> السائقون
 <span class="nav-item__badge hidden" id="badge-drivers" data-astro-cid-2zp6q64z>0</span> </button> <button class="nav-item" data-section="merchants" data-astro-cid-2zp6q64z> <span class="nav-item__icon" data-astro-cid-2zp6q64z>🏪</span> التجار
@@ -531,53 +531,98 @@ async function openDriverModal(phone) {
   const a = rows?.[0];
   if (!a) { document.getElementById('driver-modal-body').innerHTML = '<p style="color:#DC2626">لم يتم العثور على الطلب</p>'; return; }
 
-  const docItem = (label, url) => `
-    <div class="doc-card">
+  const escLbl = (s) => (s || '').replace(/'/g, "\\'");
+  const rdoc = (label, url) => `
+    <div class="rev-doc">
       ${url
-        ? `<img class="doc-card__img" src="${url}" alt="${label}" onclick="document.getElementById('lightbox-img').src='${url}';document.getElementById('lightbox').classList.remove('hidden')" loading="lazy"/>`
-        : `<div class="doc-card__img no-img">📄</div>`}
-      <div class="doc-card__label">${label}</div>
+        ? `<img class="rev-doc__img" src="${url}" alt="${label}" onclick="document.getElementById('lightbox-img').src='${url}';document.getElementById('lightbox').classList.remove('hidden')" loading="lazy"/>`
+        : `<div class="rev-doc__img no-img">📄</div>`}
+      <div class="rev-doc__label">${label}</div>
     </div>`;
-  const infoF = (label, val) => val ? `<div class="info-field"><div class="info-field__label">${label}</div><div class="info-field__val">${val}</div></div>` : '';
+  const daysUntil = (dateStr) => dateStr ? Math.floor((new Date(dateStr) - new Date()) / 86400000) : null;
+  const rfield = (label, val, dateStr) => {
+    if (!val) return '';
+    let cls = '';
+    if (dateStr !== undefined) {
+      const d = daysUntil(dateStr);
+      if (d !== null) cls = d < 0 ? 'is-expired' : d <= 30 ? 'is-expiring' : '';
+    }
+    return `<div class="rev-field"><div class="rev-field__label">${label}</div><div class="rev-field__val ${cls}">${val}</div></div>`;
+  };
+  const rsection = (icon, title, fieldsHtml, docsHtml) => {
+    const fields = (fieldsHtml || []).filter(Boolean).join('');
+    const docs   = (docsHtml || []).filter(Boolean).join('');
+    if (!fields && !docs) return '';
+    return `<div class="rev-section">
+      <div class="rev-section__head">${icon} ${title}</div>
+      ${fields ? `<div class="rev-fields">${fields}</div>` : ''}
+      ${docs ? `<div class="rev-docs">${docs}</div>` : ''}
+    </div>`;
+  };
+  const ownershipAr = { owned: 'ملك', rented: 'إيجار', borrowed: 'مستعار' }[a.vehicle_ownership] || a.vehicle_ownership;
 
   document.getElementById('driver-modal-body').innerHTML = `
-    <h3 style="font-size:.85rem;font-weight:700;color:#64748B;text-transform:uppercase;letter-spacing:.05em;margin-bottom:.75rem">📋 المعلومات الشخصية</h3>
-    <div class="info-grid">
-      ${infoF('الاسم الكامل', a.full_name)}
-      ${infoF('رقم الجوال', a.phone)}
-      ${infoF('رقم الهوية', a.national_id_number)}
-      ${infoF('انتهاء الهوية', a.national_id_expiry)}
-      ${infoF('رقم الرخصة', a.license_number)}
-      ${infoF('انتهاء الرخصة', a.license_expiry)}
-      ${infoF('رقم التسجيل', a.vehicle_reg_number)}
-      ${infoF('انتهاء التسجيل', a.vehicle_reg_expiry)}
-      ${infoF('انتهاء التأمين', a.insurance_expiry)}
-      ${infoF('انتهاء الفحص', a.inspection_expiry)}
-      ${infoF('موديل السيارة', a.vehicle_model)}
-      ${infoF('لون السيارة', a.vehicle_color)}
-      ${infoF('سنة الصنع', a.vehicle_year)}
-      ${infoF('تاريخ الشراء', a.vehicle_purchase_date)}
-      ${infoF('ملكية السيارة', a.vehicle_ownership === 'owned' ? 'ملك' : a.vehicle_ownership === 'rented' ? 'إيجار' : a.vehicle_ownership === 'borrowed' ? 'مستعار' : a.vehicle_ownership)}
-      ${infoF('يتعاطى مخدرات؟', a.uses_drugs === 'no' ? '❌ لا' : '⚠️ نعم')}
-      ${a.handwritten_text ? infoF('النص المكتوب', a.handwritten_text) : ''}
+    <div class="rev-header">
+      ${a.driver_photo_url
+        ? `<img class="rev-avatar" src="${a.driver_photo_url}" alt="${escLbl(a.full_name)}" onclick="document.getElementById('lightbox-img').src='${a.driver_photo_url}';document.getElementById('lightbox').classList.remove('hidden')"/>`
+        : `<div class="rev-avatar no-img">🧑‍✈️</div>`}
+      <div>
+        <div class="rev-header__top">
+          <span class="rev-header__name">${a.full_name || '—'}</span>
+          ${badge(a.status)}
+        </div>
+        <div class="rev-header__phone">📞 ${a.phone || '—'}</div>
+      </div>
     </div>
-    <h3 style="font-size:.85rem;font-weight:700;color:#64748B;text-transform:uppercase;letter-spacing:.05em;margin-bottom:.75rem;margin-top:1rem">📸 المستندات والصور</h3>
-    <div class="doc-grid">
-      ${docItem('صورة السائق', a.driver_photo_url)}
-      ${docItem('الهوية الوطنية (أمام)', a.national_id_front_url)}
-      ${docItem('الهوية الوطنية (خلف)', a.national_id_back_url)}
-      ${docItem('رخصة القيادة', a.license_photo_url)}
-      ${docItem('رخصة السيارة', a.vehicle_reg_photo_url)}
-      ${docItem('التأمين', a.insurance_photo_url)}
-      ${docItem('شهادة الفحص', a.inspection_photo_url)}
-      ${docItem('السيارة (أمام)', a.vehicle_front_url)}
-      ${docItem('السيارة (خلف)', a.vehicle_back_url)}
-      ${docItem('السيارة (يمين)', a.vehicle_right_url)}
-      ${docItem('السيارة (يسار)', a.vehicle_left_url)}
-      ${docItem('لوحة الترقيم', a.plate_photo_url)}
-      ${docItem('النص المكتوب بخط اليد', a.handwritten_photo_url)}
-      ${a.good_conduct_url ? docItem('شهادة حسن السيرة', a.good_conduct_url) : ''}
-    </div>
+
+    ${rsection('🪪', 'الهوية الوطنية', [
+      rfield('رقم الهوية', a.national_id_number),
+      rfield('تاريخ الانتهاء', fmtDate(a.national_id_expiry), a.national_id_expiry),
+    ], [
+      rdoc('الوجه الأمامي', a.national_id_front_url),
+      rdoc('الوجه الخلفي', a.national_id_back_url),
+    ])}
+
+    ${rsection('🚦', 'رخصة القيادة', [
+      rfield('رقم الرخصة', a.license_number),
+      rfield('تاريخ الانتهاء', fmtDate(a.license_expiry), a.license_expiry),
+    ], [
+      rdoc('صورة الرخصة', a.license_photo_url),
+    ])}
+
+    ${rsection('🚘', 'بيانات السيارة', [
+      rfield('الموديل', a.vehicle_model),
+      rfield('اللون', a.vehicle_color),
+      rfield('سنة الصنع', a.vehicle_year),
+      rfield('تاريخ الشراء', a.vehicle_purchase_date ? fmtDate(a.vehicle_purchase_date) : null),
+      rfield('الملكية', ownershipAr),
+      rfield('رقم اللوحة', a.vehicle_reg_number),
+    ], [
+      rdoc('اللوحة', a.plate_photo_url),
+      rdoc('أمام', a.vehicle_front_url),
+      rdoc('خلف', a.vehicle_back_url),
+      rdoc('يمين', a.vehicle_right_url),
+      rdoc('يسار', a.vehicle_left_url),
+    ])}
+
+    ${rsection('📋', 'وثائق السيارة', [
+      rfield('انتهاء رخصة التسجيل', fmtDate(a.vehicle_reg_expiry), a.vehicle_reg_expiry),
+      rfield('انتهاء التأمين', a.insurance_expiry ? fmtDate(a.insurance_expiry) : null, a.insurance_expiry),
+      rfield('انتهاء الفحص', a.inspection_expiry ? fmtDate(a.inspection_expiry) : null, a.inspection_expiry),
+    ], [
+      rdoc('رخصة تسجيل السيارة', a.vehicle_reg_photo_url),
+      a.insurance_photo_url ? rdoc('التأمين', a.insurance_photo_url) : '',
+      a.inspection_photo_url ? rdoc('شهادة الفحص', a.inspection_photo_url) : '',
+    ])}
+
+    ${rsection('📝', 'إقرارات وملاحظات', [
+      rfield('يتعاطى مخدرات؟', a.uses_drugs === 'no' ? '❌ لا' : '⚠️ نعم'),
+      a.handwritten_text ? rfield('النص المكتوب', a.handwritten_text) : '',
+    ], [
+      a.handwritten_photo_url ? rdoc('إقرار بخط اليد', a.handwritten_photo_url) : '',
+      a.good_conduct_url ? rdoc('شهادة حسن السيرة', a.good_conduct_url) : '',
+    ])}
+
     ${a.rejection_reason ? `<div style="background:#FEE2E2;border:1px solid #FECACA;border-radius:8px;padding:.75rem 1rem;margin-top:1rem"><span style="font-size:.8rem;font-weight:700;color:#DC2626">سبب الرفض السابق:</span> <span style="font-size:.85rem;color:#DC2626">${a.rejection_reason}</span></div>` : ''}
     ${a.status !== 'pending' ? `<div style="background:#F8FAFC;border-radius:8px;padding:.75rem 1rem;margin-top:.75rem;font-size:.82rem;color:#64748B">تمت المراجعة بواسطة: ${a.reviewed_by||'—'} — ${fmtDate(a.reviewed_at)}</div>` : ''}
   `;
