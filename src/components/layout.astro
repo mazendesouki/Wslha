@@ -246,7 +246,17 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site ?? 'https://wslha.co
       }
     }
     .pwa-banner.pwa-hidden { display: none; }
+    /* The outer .pwa-banner box spans the full viewport width (left:0;
+       right:0) so it can center its card, but the visible card itself
+       is capped at max-width:500px — on any screen wider than that, the
+       empty side margins were still part of this fixed, z-index:40 box
+       and silently swallowed taps meant for whatever's underneath them
+       (e.g. a page's own bottom nav-buttons scrolled into that spot).
+       pointer-events:none here + auto back on the actual card fixes it:
+       only the visible banner intercepts clicks now. */
+    .pwa-banner { pointer-events: none; }
     .pwa-banner__inner {
+      pointer-events: auto;
       background: #fff;
       border-radius: 20px 20px 0 0;
       box-shadow: 0 -6px 40px rgba(0,0,0,0.18);
