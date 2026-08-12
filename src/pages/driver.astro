@@ -1129,12 +1129,18 @@ window.doRegister = async function() {
         window.location.href = '/driver-dashboard';
         return;
       }
-      // Upgrade to driver
+      // Upgrade to driver — a direct PATCH here 401s ("permission denied
+      // for table accounts"): anon has no SELECT grant on accounts
+      // (security06accountslockdown.sql), and PostgREST needs it
+      // internally to evaluate a PATCH's WHERE filter even though the
+      // operation itself is an UPDATE. upgrade_account_role() is a
+      // SECURITY DEFINER RPC that does this safely instead — see
+      // db/security-16-account-role-upgrade.sql.
       await Promise.race([
-        fetch(SB_URL + '/rest/v1/accounts?phone=eq.' + encodeURIComponent(acc.phone), {
-          method: 'PATCH',
-          headers: Object.assign({}, SB_H, { 'Content-Type': 'application/json', Prefer: 'return=minimal' }),
-          body: JSON.stringify({ role: 'driver', status: 'pending' }),
+        fetch(SB_URL + '/rest/v1/rpc/upgrade_account_role', {
+          method: 'POST',
+          headers: Object.assign({}, SB_H, { 'Content-Type': 'application/json' }),
+          body: JSON.stringify({ p_phone: acc.phone, p_role: 'driver' }),
         }),
         timeout(10000)
       ]);

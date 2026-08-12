@@ -144,13 +144,20 @@ class AuthRepository {
         if (acc['role'] == role) {
           return DriverMerchantRegisterResult(alreadyRegistered: true, phone: normalizedPhone);
         }
-        final patchRes = await http.patch(
-          Uri.parse('$supabaseUrl/rest/v1/accounts?phone=eq.${Uri.encodeComponent(acc['phone'] as String)}'),
-          headers: {..._sbHeaders, 'Prefer': 'return=minimal'},
-          body: jsonEncode({'role': role, 'status': 'pending'}),
+        // A direct PATCH here 401s ("permission denied for table
+        // accounts") — anon has no SELECT grant on accounts (security06-
+        // accountslockdown.sql), and PostgREST needs it internally to
+        // evaluate a PATCH's WHERE filter even though the operation
+        // itself is an UPDATE. upgrade_account_role() is a SECURITY
+        // DEFINER RPC that does this safely instead — see
+        // db/security-16-account-role-upgrade.sql.
+        final patchRes = await http.post(
+          Uri.parse('$supabaseUrl/rest/v1/rpc/upgrade_account_role'),
+          headers: _sbHeaders,
+          body: jsonEncode({'p_phone': acc['phone'], 'p_role': role}),
         );
-        if (patchRes.statusCode != 204 && patchRes.statusCode != 200) {
-          return DriverMerchantRegisterResult(error: true, phone: normalizedPhone, debugDetail: 'PATCH ${patchRes.statusCode}: ${patchRes.body}');
+        if (patchRes.statusCode != 200 || jsonDecode(patchRes.body) != true) {
+          return DriverMerchantRegisterResult(error: true, phone: normalizedPhone, debugDetail: 'RPC ${patchRes.statusCode}: ${patchRes.body}');
         }
       } else {
         final createRes = await http.post(
