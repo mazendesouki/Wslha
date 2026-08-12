@@ -74,16 +74,47 @@
     .card__title{font-size:.95rem;font-weight:900;color:#1E293B}
     .card__body{padding:1.25rem}
 
-    /* KPI grid */
+    /* KPI grid — 2026 refresh: accent top-rule, icon chip, trend pill */
     .kpi-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:1rem;margin-bottom:1.5rem}
-    .kpi{background:var(--card);border:1px solid var(--bdr);border-radius:var(--radius-lg);padding:1.25rem;box-shadow:var(--sh);display:flex;flex-direction:column;gap:.5rem}
-    .kpi__icon{font-size:1.6rem}
+    .kpi{position:relative;overflow:hidden;background:var(--card);border:1px solid var(--bdr);border-radius:var(--radius-lg);padding:1.25rem;box-shadow:var(--sh);display:flex;flex-direction:column;gap:.6rem;transition:transform .18s,box-shadow .18s}
+    .kpi:hover{transform:translateY(-3px);box-shadow:var(--sh-md)}
+    .kpi::before{content:'';position:absolute;top:0;right:0;left:0;height:3px}
+    .kpi--blue::before{background:var(--pr)}
+    .kpi--green::before{background:var(--green)}
+    .kpi--orange::before{background:var(--orange)}
+    .kpi--red::before{background:var(--red)}
+    .kpi__row{display:flex;align-items:center;justify-content:space-between}
+    .kpi__icon-wrap{width:40px;height:40px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:1.2rem;flex-shrink:0}
+    .kpi--blue .kpi__icon-wrap{background:var(--pr-l)}
+    .kpi--green .kpi__icon-wrap{background:var(--green-l)}
+    .kpi--orange .kpi__icon-wrap{background:var(--orange-l)}
+    .kpi--red .kpi__icon-wrap{background:var(--red-l)}
+    .kpi__trend{font-size:.68rem;font-weight:800;padding:2px 8px;border-radius:99px;white-space:nowrap}
+    .kpi__trend.up{background:var(--green-l);color:var(--green)}
+    .kpi__trend.down{background:var(--red-l);color:var(--red)}
+    .kpi__trend.flat{background:#F1F5F9;color:var(--tx3)}
     .kpi__val{font-size:1.8rem;font-weight:900;color:#1E293B;line-height:1}
     .kpi__label{font-size:.78rem;color:var(--tx3);font-weight:600}
     .kpi--blue .kpi__val{color:var(--pr)}
     .kpi--green .kpi__val{color:var(--green)}
     .kpi--orange .kpi__val{color:var(--orange)}
     .kpi--red .kpi__val{color:var(--red)}
+
+    /* ── Charts (hand-rolled SVG, no external lib) ───────────── */
+    .chart-grid{display:grid;grid-template-columns:1.6fr 1fr;gap:1.25rem;margin-bottom:1.25rem;align-items:start}
+    .chart-grid__col{display:flex;flex-direction:column;gap:1.25rem}
+    .chart-card__head{padding:1rem 1.25rem;border-bottom:1px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;gap:.75rem;flex-wrap:wrap}
+    .chart-card__title{font-size:.9rem;font-weight:900;color:#1E293B;display:block}
+    .chart-card__sub{font-size:.72rem;color:var(--tx3);font-weight:600;display:block;margin-top:1px}
+    .chart-card__body{padding:1rem 1.25rem 1.15rem;position:relative}
+    .chart-legend{display:flex;gap:1rem;flex-wrap:wrap}
+    .chart-legend__item{display:flex;align-items:center;gap:.4rem;font-size:.75rem;font-weight:700;color:var(--tx3)}
+    .chart-legend__dot{width:9px;height:9px;border-radius:3px;flex-shrink:0}
+    .chart-svg{width:100%;height:auto;display:block;overflow:visible}
+    .chart-tooltip{position:absolute;pointer-events:none;background:#1E293B;color:#fff;font-size:.72rem;font-weight:700;padding:.4rem .65rem;border-radius:8px;white-space:nowrap;transform:translate(-50%,-115%);z-index:5;box-shadow:var(--sh-md);transition:opacity .1s;text-align:center}
+    .chart-tooltip.hidden{opacity:0;pointer-events:none}
+    .chart-tooltip__sub{font-weight:600;color:#94A3B8;font-size:.66rem;margin-top:1px}
+    @media(max-width:900px){.chart-grid{grid-template-columns:1fr}}
 
     /* ── Tables ───────────────────────────────────────────── */
     .tbl-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
@@ -300,13 +331,68 @@
     <!-- ═══════════════════ DASHBOARD ══════════════════════ -->
     <div class="section active" id="sec-dash">
       <div class="kpi-grid" id="kpi-grid">
-        <div class="kpi kpi--blue"><div class="kpi__icon">👥</div><div class="kpi__val" id="kpi-users">—</div><div class="kpi__label">إجمالي المستخدمين</div></div>
-        <div class="kpi kpi--green"><div class="kpi__icon">🚗</div><div class="kpi__val" id="kpi-drivers">—</div><div class="kpi__label">السائقون المعتمدون</div></div>
-        <div class="kpi kpi--orange"><div class="kpi__icon">📦</div><div class="kpi__val" id="kpi-today-orders">—</div><div class="kpi__label">طلبات اليوم</div></div>
-        <div class="kpi kpi--green"><div class="kpi__icon">💰</div><div class="kpi__val" id="kpi-revenue">—</div><div class="kpi__label">إيرادات اليوم (ج.م)</div></div>
-        <div class="kpi kpi--blue"><div class="kpi__icon">🏬</div><div class="kpi__val" id="kpi-stores">—</div><div class="kpi__label">المتاجر النشطة</div></div>
-        <div class="kpi kpi--red"><div class="kpi__icon">⏳</div><div class="kpi__val" id="kpi-pending">—</div><div class="kpi__label">طلبات الاعتماد</div></div>
+        <div class="kpi kpi--blue">
+          <div class="kpi__row"><div class="kpi__icon-wrap">👥</div></div>
+          <div class="kpi__val" id="kpi-users">—</div><div class="kpi__label">إجمالي المستخدمين</div>
+        </div>
+        <div class="kpi kpi--green">
+          <div class="kpi__row"><div class="kpi__icon-wrap">🚗</div></div>
+          <div class="kpi__val" id="kpi-drivers">—</div><div class="kpi__label">السائقون المعتمدون</div>
+        </div>
+        <div class="kpi kpi--orange">
+          <div class="kpi__row"><div class="kpi__icon-wrap">📦</div><span class="kpi__trend hidden" id="kpi-orders-trend"></span></div>
+          <div class="kpi__val" id="kpi-today-orders">—</div><div class="kpi__label">طلبات اليوم</div>
+        </div>
+        <div class="kpi kpi--green">
+          <div class="kpi__row"><div class="kpi__icon-wrap">💰</div><span class="kpi__trend hidden" id="kpi-revenue-trend"></span></div>
+          <div class="kpi__val" id="kpi-revenue">—</div><div class="kpi__label">إيرادات اليوم (ج.م)</div>
+        </div>
+        <div class="kpi kpi--blue">
+          <div class="kpi__row"><div class="kpi__icon-wrap">🏬</div></div>
+          <div class="kpi__val" id="kpi-stores">—</div><div class="kpi__label">المتاجر النشطة</div>
+        </div>
+        <div class="kpi kpi--red">
+          <div class="kpi__row"><div class="kpi__icon-wrap">⏳</div></div>
+          <div class="kpi__val" id="kpi-pending">—</div><div class="kpi__label">طلبات الاعتماد</div>
+        </div>
       </div>
+
+      <div class="chart-grid">
+        <div class="card">
+          <div class="chart-card__head">
+            <div><span class="chart-card__title">💰 الإيرادات</span><span class="chart-card__sub">آخر 14 يوم — رحلات مكتملة + طلبات مُسلَّمة</span></div>
+          </div>
+          <div class="chart-card__body">
+            <svg id="revenue-chart" class="chart-svg" viewBox="0 0 640 200"></svg>
+            <div class="chart-tooltip hidden" id="revenue-tooltip"></div>
+          </div>
+        </div>
+        <div class="chart-grid__col">
+          <div class="card">
+            <div class="chart-card__head">
+              <span class="chart-card__title">📊 النشاط اليومي</span>
+              <div class="chart-legend">
+                <span class="chart-legend__item"><span class="chart-legend__dot" style="background:#2563EB"></span>رحلات</span>
+                <span class="chart-legend__item"><span class="chart-legend__dot" style="background:#D97706"></span>طلبات</span>
+              </div>
+            </div>
+            <div class="chart-card__body">
+              <svg id="activity-chart" class="chart-svg" viewBox="0 0 640 140"></svg>
+              <div class="chart-tooltip hidden" id="activity-tooltip"></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="chart-card__head">
+              <div><span class="chart-card__title">🚗 سائقون معتمدون جدد</span><span class="chart-card__sub">آخر 14 يوم</span></div>
+            </div>
+            <div class="chart-card__body">
+              <svg id="drivers-chart" class="chart-svg" viewBox="0 0 640 100"></svg>
+              <div class="chart-tooltip hidden" id="drivers-tooltip"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div class="dash-grid">
         <div class="card">
           <div class="card__head"><span class="card__title">📦 آخر الطلبات</span></div>
@@ -1492,6 +1578,220 @@ async function loadDash() {
       </div>`),
   ].join('') || '<p style="color:#94A3B8;font-size:.875rem">لا توجد طلبات معلقة</p>';
   document.getElementById('dash-pending-list').innerHTML = pendingHtml;
+  loadDashCharts();
+}
+
+/* ═══════════════════ DASHBOARD CHARTS (hand-rolled SVG) ═════ */
+function datesLast14() {
+  const days = [];
+  for (let i = 13; i >= 0; i--) {
+    const d = new Date(); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() - i);
+    days.push(d);
+  }
+  return days;
+}
+function renderTrend(elId, current, previous) {
+  const el = document.getElementById(elId);
+  if (!el) return;
+  if (!current && !previous) { el.classList.add('hidden'); return; }
+  el.classList.remove('hidden');
+  if (!previous) { el.className = 'kpi__trend up'; el.textContent = '▲ جديد'; return; }
+  const pct = Math.round(((current - previous) / previous) * 100);
+  if (pct > 0)      { el.className = 'kpi__trend up';   el.textContent = `▲ ${pct}%`; }
+  else if (pct < 0) { el.className = 'kpi__trend down'; el.textContent = `▼ ${Math.abs(pct)}%`; }
+  else              { el.className = 'kpi__trend flat'; el.textContent = '— 0%'; }
+}
+async function loadDashCharts() {
+  const since = new Date(); since.setHours(0, 0, 0, 0); since.setDate(since.getDate() - 13);
+  const [ordersR, ridesR, appsR] = await Promise.all([
+    sbGet(`orders?select=total,status,created_at&created_at=gte.${since.toISOString()}`),
+    sbGet(`rides?select=fare,base_fare,status,created_at&created_at=gte.${since.toISOString()}`),
+    sbGet(`driver_applications?select=created_at&status=eq.approved&created_at=gte.${since.toISOString()}`),
+  ]);
+  const days  = datesLast14();
+  const keys  = days.map(d => d.toISOString().slice(0, 10));
+  const revenueByDay  = keys.map(() => 0);
+  const ridesByDay    = keys.map(() => 0);
+  const ordersByDay   = keys.map(() => 0);
+  const driversByDay  = keys.map(() => 0);
+
+  (ordersR || []).forEach(o => {
+    const idx = keys.indexOf((o.created_at || '').slice(0, 10));
+    if (idx === -1) return;
+    ordersByDay[idx]++;
+    if (o.status === 'delivered') revenueByDay[idx] += Number(o.total) || 0;
+  });
+  (ridesR || []).forEach(r => {
+    const idx = keys.indexOf((r.created_at || '').slice(0, 10));
+    if (idx === -1) return;
+    ridesByDay[idx]++;
+    if (r.status === 'completed') revenueByDay[idx] += Number(r.fare ?? r.base_fare) || 0;
+  });
+  (appsR || []).forEach(a => {
+    const idx = keys.indexOf((a.created_at || '').slice(0, 10));
+    if (idx !== -1) driversByDay[idx]++;
+  });
+
+  const dayLabels = days.map(d => d.toLocaleDateString('ar-EG', { day: 'numeric', month: 'short' }));
+
+  renderTrend('kpi-revenue-trend', revenueByDay[13], revenueByDay[12]);
+  renderTrend('kpi-orders-trend',  ordersByDay[13],  ordersByDay[12]);
+
+  renderLineChart('revenue-chart', 'revenue-tooltip', revenueByDay, dayLabels, { color: '#0E4B49', suffix: ' ج.م' });
+  renderGroupedBarChart('activity-chart', 'activity-tooltip', ridesByDay, ordersByDay, dayLabels,
+    { colorA: '#2563EB', colorB: '#D97706', labelA: 'رحلات', labelB: 'طلبات' });
+  renderBarChart('drivers-chart', 'drivers-tooltip', driversByDay, dayLabels, { color: '#16A34A', unit: 'سائق' });
+}
+
+// Area + line chart with a hover crosshair that snaps to the nearest day.
+function renderLineChart(svgId, tooltipId, values, labels, opts) {
+  const svg = document.getElementById(svgId);
+  const tooltip = document.getElementById(tooltipId);
+  if (!svg || !tooltip) return;
+  const W = 640, H = 200, padL = 4, padR = 4, padT = 16, padB = 8;
+  const innerW = W - padL - padR, innerH = H - padT - padB;
+  const n = values.length;
+  const max = Math.max(1, ...values);
+  const stepX = n > 1 ? innerW / (n - 1) : 0;
+  const pts = values.map((v, i) => [padL + i * stepX, padT + innerH - (v / max) * innerH]);
+  const linePath = pts.map((p, i) => (i === 0 ? 'M' : 'L') + p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' ');
+  const baseY = (padT + innerH).toFixed(1);
+  const areaPath = `${linePath} L${pts[n - 1][0].toFixed(1)},${baseY} L${pts[0][0].toFixed(1)},${baseY} Z`;
+  const gridLines = [0, .5, 1].map(f => {
+    const y = (padT + innerH * (1 - f)).toFixed(1);
+    return `<line x1="${padL}" y1="${y}" x2="${(padL + innerW).toFixed(1)}" y2="${y}" stroke="#E2E8F0" stroke-width="1" stroke-dasharray="3,3"/>`;
+  }).join('');
+  const gradId = svgId + '-grad';
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  svg.innerHTML = `
+    <defs><linearGradient id="${gradId}" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="${opts.color}" stop-opacity=".25"/>
+      <stop offset="100%" stop-color="${opts.color}" stop-opacity="0"/>
+    </linearGradient></defs>
+    ${gridLines}
+    <path d="${areaPath}" fill="url(#${gradId})"/>
+    <path d="${linePath}" fill="none" stroke="${opts.color}" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
+    <g class="hover-layer" style="display:none">
+      <line class="hover-line" y1="${padT}" y2="${baseY}" stroke="#94A3B8" stroke-width="1" stroke-dasharray="2,2"/>
+      <circle class="hover-dot" r="4.5" fill="${opts.color}" stroke="#fff" stroke-width="2"/>
+    </g>
+    <rect class="hover-rect" x="${padL}" y="0" width="${innerW}" height="${H}" fill="transparent" style="cursor:crosshair"/>
+  `;
+  const hoverLayer = svg.querySelector('.hover-layer');
+  const hoverLine  = svg.querySelector('.hover-line');
+  const hoverDot   = svg.querySelector('.hover-dot');
+  const rect       = svg.querySelector('.hover-rect');
+  const wrap       = svg.closest('.chart-card__body');
+  rect.addEventListener('mousemove', (e) => {
+    const box = svg.getBoundingClientRect();
+    const xSvg = ((e.clientX - box.left) / box.width) * W;
+    const idx = Math.max(0, Math.min(n - 1, Math.round((xSvg - padL) / (stepX || 1))));
+    const [px, py] = pts[idx];
+    hoverLine.setAttribute('x1', px.toFixed(1)); hoverLine.setAttribute('x2', px.toFixed(1));
+    hoverDot.setAttribute('cx', px.toFixed(1)); hoverDot.setAttribute('cy', py.toFixed(1));
+    hoverLayer.style.display = '';
+    tooltip.innerHTML = `<div>${fmt(Math.round(values[idx]))}${opts.suffix || ''}</div><div class="chart-tooltip__sub">${labels[idx]}</div>`;
+    tooltip.classList.remove('hidden');
+    const wrapBox = wrap.getBoundingClientRect();
+    tooltip.style.left = ((px / W) * box.width + (box.left - wrapBox.left)) + 'px';
+    tooltip.style.top  = ((py / H) * box.height + (box.top - wrapBox.top)) + 'px';
+  });
+  rect.addEventListener('mouseleave', () => { hoverLayer.style.display = 'none'; tooltip.classList.add('hidden'); });
+}
+
+// Two-series grouped bar chart (fixed categorical colors — never reassigned by rank).
+function renderGroupedBarChart(svgId, tooltipId, valuesA, valuesB, labels, opts) {
+  const svg = document.getElementById(svgId);
+  const tooltip = document.getElementById(tooltipId);
+  if (!svg || !tooltip) return;
+  const W = 640, H = 140, padL = 4, padR = 4, padT = 10, padB = 22;
+  const innerW = W - padL - padR, innerH = H - padT - padB;
+  const n = valuesA.length;
+  const max = Math.max(1, ...valuesA, ...valuesB);
+  const groupW = innerW / n;
+  const barW = Math.max(3, groupW * 0.32);
+  const gap = 2;
+  const baseY = (padT + innerH).toFixed(1);
+  let bars = '';
+  for (let i = 0; i < n; i++) {
+    const gx = padL + i * groupW + groupW / 2;
+    const ha = (valuesA[i] / max) * innerH, hb = (valuesB[i] / max) * innerH;
+    const ya = (padT + innerH - ha).toFixed(1), yb = (padT + innerH - hb).toFixed(1);
+    bars += `<rect x="${(gx - barW - gap / 2).toFixed(1)}" y="${ya}" width="${barW.toFixed(1)}" height="${Math.max(1, ha).toFixed(1)}" rx="2" fill="${opts.colorA}"/>`;
+    bars += `<rect x="${(gx + gap / 2).toFixed(1)}" y="${yb}" width="${barW.toFixed(1)}" height="${Math.max(1, hb).toFixed(1)}" rx="2" fill="${opts.colorB}"/>`;
+  }
+  let axisLabels = '';
+  labels.forEach((lb, i) => {
+    if (i % 3 !== 0 && i !== n - 1) return;
+    const x = (padL + i * groupW + groupW / 2).toFixed(1);
+    axisLabels += `<text x="${x}" y="${H - 6}" text-anchor="middle" font-size="9" fill="#94A3B8">${lb.split(' ')[0]}</text>`;
+  });
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  svg.innerHTML = `
+    <line x1="${padL}" y1="${baseY}" x2="${(padL + innerW).toFixed(1)}" y2="${baseY}" stroke="#E2E8F0" stroke-width="1"/>
+    ${bars}${axisLabels}
+    <rect class="hover-rect" x="${padL}" y="0" width="${innerW}" height="${H}" fill="transparent" style="cursor:pointer"/>
+  `;
+  const rect = svg.querySelector('.hover-rect');
+  const wrap = svg.closest('.chart-card__body');
+  rect.addEventListener('mousemove', (e) => {
+    const box = svg.getBoundingClientRect();
+    const xSvg = ((e.clientX - box.left) / box.width) * W;
+    const idx = Math.max(0, Math.min(n - 1, Math.floor((xSvg - padL) / groupW)));
+    tooltip.innerHTML = `<div>${opts.labelA}: ${fmt(valuesA[idx])} · ${opts.labelB}: ${fmt(valuesB[idx])}</div><div class="chart-tooltip__sub">${labels[idx]}</div>`;
+    tooltip.classList.remove('hidden');
+    const wrapBox = wrap.getBoundingClientRect();
+    const gx = padL + idx * groupW + groupW / 2;
+    tooltip.style.left = ((gx / W) * box.width + (box.left - wrapBox.left)) + 'px';
+    tooltip.style.top  = ((box.top - wrapBox.top) + 10) + 'px';
+  });
+  rect.addEventListener('mouseleave', () => tooltip.classList.add('hidden'));
+}
+
+// Single-series bar chart (new approved drivers per day).
+function renderBarChart(svgId, tooltipId, values, labels, opts) {
+  const svg = document.getElementById(svgId);
+  const tooltip = document.getElementById(tooltipId);
+  if (!svg || !tooltip) return;
+  const W = 640, H = 100, padL = 4, padR = 4, padT = 10, padB = 22;
+  const innerW = W - padL - padR, innerH = H - padT - padB;
+  const n = values.length;
+  const max = Math.max(1, ...values);
+  const groupW = innerW / n;
+  const barW = Math.max(4, groupW * 0.55);
+  const baseY = (padT + innerH).toFixed(1);
+  let bars = '';
+  for (let i = 0; i < n; i++) {
+    const gx = padL + i * groupW + groupW / 2;
+    const h = (values[i] / max) * innerH;
+    bars += `<rect x="${(gx - barW / 2).toFixed(1)}" y="${(padT + innerH - h).toFixed(1)}" width="${barW.toFixed(1)}" height="${Math.max(1, h).toFixed(1)}" rx="2" fill="${opts.color}"/>`;
+  }
+  let axisLabels = '';
+  labels.forEach((lb, i) => {
+    if (i % 3 !== 0 && i !== n - 1) return;
+    const x = (padL + i * groupW + groupW / 2).toFixed(1);
+    axisLabels += `<text x="${x}" y="${H - 6}" text-anchor="middle" font-size="9" fill="#94A3B8">${lb.split(' ')[0]}</text>`;
+  });
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  svg.innerHTML = `
+    <line x1="${padL}" y1="${baseY}" x2="${(padL + innerW).toFixed(1)}" y2="${baseY}" stroke="#E2E8F0" stroke-width="1"/>
+    ${bars}${axisLabels}
+    <rect class="hover-rect" x="${padL}" y="0" width="${innerW}" height="${H}" fill="transparent" style="cursor:pointer"/>
+  `;
+  const rect = svg.querySelector('.hover-rect');
+  const wrap = svg.closest('.chart-card__body');
+  rect.addEventListener('mousemove', (e) => {
+    const box = svg.getBoundingClientRect();
+    const xSvg = ((e.clientX - box.left) / box.width) * W;
+    const idx = Math.max(0, Math.min(n - 1, Math.floor((xSvg - padL) / groupW)));
+    tooltip.innerHTML = `<div>${fmt(values[idx])} ${opts.unit || ''}</div><div class="chart-tooltip__sub">${labels[idx]}</div>`;
+    tooltip.classList.remove('hidden');
+    const wrapBox = wrap.getBoundingClientRect();
+    const gx = padL + idx * groupW + groupW / 2;
+    tooltip.style.left = ((gx / W) * box.width + (box.left - wrapBox.left)) + 'px';
+    tooltip.style.top  = ((box.top - wrapBox.top) + 10) + 'px';
+  });
+  rect.addEventListener('mouseleave', () => tooltip.classList.add('hidden'));
 }
 
 /* ═══════════════════ USERS ═════════════════════════════════ */
