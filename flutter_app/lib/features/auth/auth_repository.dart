@@ -150,7 +150,7 @@ class AuthRepository {
           body: jsonEncode({'role': role, 'status': 'pending'}),
         );
         if (patchRes.statusCode != 204 && patchRes.statusCode != 200) {
-          return DriverMerchantRegisterResult(error: true, phone: normalizedPhone);
+          return DriverMerchantRegisterResult(error: true, phone: normalizedPhone, debugDetail: 'PATCH ${patchRes.statusCode}: ${patchRes.body}');
         }
       } else {
         final createRes = await http.post(
@@ -167,7 +167,7 @@ class AuthRepository {
           }),
         );
         if (createRes.statusCode != 201 && createRes.statusCode != 200) {
-          return DriverMerchantRegisterResult(error: true, phone: normalizedPhone);
+          return DriverMerchantRegisterResult(error: true, phone: normalizedPhone, debugDetail: 'POST ${createRes.statusCode}: ${createRes.body}');
         }
       }
 
@@ -186,8 +186,8 @@ class AuthRepository {
       // — the personal photo is carried over via the continuation link's
       // query param instead (see uploadDriverPhoto below).
       return DriverMerchantRegisterResult(phone: normalizedPhone);
-    } catch (_) {
-      return DriverMerchantRegisterResult(error: true, phone: normalizeEgyptianPhone(phone));
+    } catch (e) {
+      return DriverMerchantRegisterResult(error: true, phone: normalizeEgyptianPhone(phone), debugDetail: e.toString());
     }
   }
 
@@ -217,10 +217,12 @@ class DriverMerchantRegisterResult {
   final bool error;
   final bool alreadyRegistered;
   final String phone;
+  final String? debugDetail;
   DriverMerchantRegisterResult({
     this.error = false,
     this.alreadyRegistered = false,
     required this.phone,
+    this.debugDetail,
   });
   bool get ok => !error && !alreadyRegistered;
 }

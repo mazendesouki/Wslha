@@ -94,7 +94,7 @@ class _DriverMerchantRegisterScreenState extends State<DriverMerchantRegisterScr
     if (result.error) {
       setState(() {
         _loading = false;
-        _error = 'تعذّر إنشاء الحساب، تحقق من الاتصال وحاول مجدداً.';
+        _error = 'تعذّر إنشاء الحساب.${result.debugDetail != null ? '\n${result.debugDetail}' : ''}';
       });
       return;
     }
