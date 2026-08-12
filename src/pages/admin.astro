@@ -5,7 +5,13 @@
   <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
   <title>لوحة التحكم — وصّلها</title>
   <link rel="icon" href="/icon.svg" type="image/svg+xml"/>
-  <style>
+  <style is:global>
+    /* is:global — this whole dashboard is JS-driven (innerHTML-rendered
+       tables, modals, cards); Astro's default scoped CSS only tags
+       elements written directly in this file's static template with the
+       data-astro-cid attribute its scoping relies on, so anything built
+       at runtime (which is most of this page) silently got NO styling
+       from a scoped <style> block. */
     @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap');
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
     :root{
