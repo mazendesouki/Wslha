@@ -492,11 +492,11 @@ if (!USER?.phone) {
   const qsName  = new URLSearchParams(window.location.search).get('name');
   if (qsPhone) {
     const regPhone = document.getElementById('reg-owner-phone');
-    if (regPhone) (regPhone as HTMLInputElement).value = qsPhone.replace(/^\+20/, '0');
+    if (regPhone) regPhone.value = qsPhone.replace(/^\+20/, '0');
   }
   if (qsName) {
     const regName = document.getElementById('reg-owner-name');
-    if (regName) (regName as HTMLInputElement).value = qsName;
+    if (regName) regName.value = qsName;
   }
 } else {
   document.getElementById('steps-nav').style.display = 'flex';
