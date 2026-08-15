@@ -1053,6 +1053,12 @@ const staticMenuJson = JSON.stringify(
         }
       } catch (e) { console.error('[checkout] orders insert error', e); }
 
+      if (!dbId) {
+        confirmBtn.disabled = false;
+        confirmBtn.textContent = 'تأكيد الطلب ←';
+        return fail('تعذّر إرسال الطلب إلى المتجر — تحقق من الاتصال بالإنترنت وحاول مرة أخرى.');
+      }
+
       const order = {
         id: dbId || code,
         code,
