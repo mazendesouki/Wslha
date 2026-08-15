@@ -1,0 +1,67 @@
+{
+  "project_info": {
+    "project_number": "175820927269",
+    "project_id": "wslha-app-67cfe",
+    "storage_bucket": "wslha-app-67cfe.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:175820927269:android:003f021060d836d8546acc",
+        "android_client_info": {
+          "package_name": "co.wslha.wslha_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB8XHr8lSwjJkRUugc7uilwd9Kgp3XOoTE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:175820927269:android:d1d5a274d0581301546acc",
+        "android_client_info": {
+          "package_name": "co.wslha.wslha_app.driver"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB8XHr8lSwjJkRUugc7uilwd9Kgp3XOoTE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:175820927269:android:6332f3ab35402ee7546acc",
+        "android_client_info": {
+          "package_name": "co.wslha.wslha_app.merchant"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB8XHr8lSwjJkRUugc7uilwd9Kgp3XOoTE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
