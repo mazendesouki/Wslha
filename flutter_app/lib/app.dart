@@ -5,6 +5,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'core/flavor.dart';
 import 'core/notifications.dart';
 import 'core/pricing_settings.dart';
+import 'core/push.dart';
 import 'core/session.dart';
 import 'core/supabase_client.dart';
 import 'core/theme.dart';
@@ -83,6 +84,11 @@ class _SessionGate extends StatelessWidget {
         if (session.role != config.allowedRole) {
           return _WrongRoleScreen(config: config);
         }
+
+        // Re-registers on every cold start with an existing session (not
+        // just right after login) — guarded per-phone inside PushRegistrar,
+        // so this is a cheap no-op once already registered this run.
+        unawaited(PushRegistrar.registerForSession(session));
 
         return switch (config.flavor) {
           AppFlavor.customer => HomeShell(session: session),

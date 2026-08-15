@@ -1,5 +1,8 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import '../../core/flavor.dart';
+import '../../core/push.dart';
 import '../../core/session.dart';
 import '../../core/theme.dart';
 import 'auth_repository.dart';
@@ -44,6 +47,7 @@ class _LoginScreenState extends State<LoginScreen> {
           return;
         }
         await SessionStore.save(session);
+        unawaited(PushRegistrar.registerForSession(session)); // fire-and-forget
         if (!mounted) return;
         Navigator.of(context).pushNamedAndRemoveUntil('/home', (route) => false);
       case LoginFailure(:final reason):

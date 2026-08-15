@@ -89,6 +89,15 @@ configurations.all {
     }
 }
 
+// Applied only once google-services.json is dropped in (Firebase Console →
+// Project Settings → your Android app → download) — until then the build
+// still succeeds, just without FCM push. See MOBILE_APP.md.
+if (file("google-services.json").exists()) {
+    apply(plugin = "com.google.gms.google-services")
+} else {
+    logger.warn("google-services.json not found in flutter_app/android/app — FCM push notifications won't work until it's added.")
+}
+
 flutter {
     source = "../.."
 }

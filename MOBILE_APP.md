@@ -122,3 +122,36 @@ dist/                   ناتج بناء الموقع — هو اللي بيت�
 التطبيق بيحمّل ملفات الموقع المبنية محليًا (أسرع + يفتح offline)،
 والطلبات/المواقع الحية بتيجي مباشرة من **Supabase** عبر الإنترنت —
 الـ Service Worker مظبوط إنه **ميخزّنش** بيانات Supabase أبدًا عشان تفضل لحظية.
+
+---
+
+## 🔔 إشعارات فورية حقيقية (FCM) لتطبيقات Flutter
+
+هذا القسم عن `flutter_app/` (تطبيقات العميل/السائق/التاجر المنفصلة) —
+مختلف عن تطبيق Capacitor فوق. الكود بالكامل جاهز
+(`flutter_app/lib/core/push.dart`, `supabase/functions/send-push`,
+`db/security-18-order-notify-merchant.sql`) وبيشتغل تلقائيًا بمجرد
+توفير 3 حاجات محتاجة حساب Google/Firebase حقيقي — مش حاجة أقدر أعملها
+بدالك:
+
+1. **افتح مشروع Firebase الموجود بالفعل** (`wslha-941c8` — نفس المشروع
+   المستخدم لتطبيق Capacitor) على https://console.firebase.google.com.
+2. **أضف تطبيق أندرويد** لكل باكدج بتستخدمه (Project Settings → Add app):
+   - `co.wslha.wslha_app.merchant` (الأهم — التاجر)
+   - `co.wslha.wslha_app.driver` (السائق)
+   - `co.wslha.wslha_app` (العميل)
+   نزّل ملف `google-services.json` الناتج (بيغطي كل الباكدجات المسجّلة
+   في نفس المشروع بملف واحد) وحطّه في `flutter_app/android/app/google-services.json`.
+3. **ولّد مفتاح حساب خدمة**: Project Settings → Service accounts →
+   Generate new private key → نزّل ملف الـ JSON.
+4. **ضيفه كـ Secret في Supabase**: Edge Functions → `send-push` →
+   Secrets → أضف `FCM_SERVICE_ACCOUNT_JSON` وحط فيه محتوى الملف كامل
+   (الـ JSON زي ما هو، سطر واحد).
+5. **شغّل** `db/security-18-order-notify-merchant.sql` مرة واحدة في
+   SQL Editor (بيربط: طلب جديد → استدعاء send-push برقم صاحب المتجر).
+6. **push** أي تعديل على `flutter_app/` (أو شغّل الـ workflow يدويًا من
+   تبويب Actions) — الـ CI هيبني الـ APKs بدعم FCM، ثبّتهم تاني.
+
+بمجرد كده: أي طلب جديد بيوصل فورًا كإشعار حقيقي (حتى والتطبيق مقفول)
+لموبايل التاجر، ونفس الآلية جاهزة تتوسّع للسائق والعميل لاحقًا بنفس
+الكود (send-push بترسل لأي رقم مسجّل توكن في `device_tokens`).
