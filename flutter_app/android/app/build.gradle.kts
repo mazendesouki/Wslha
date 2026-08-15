@@ -42,6 +42,15 @@ android {
     }
 
     signingConfigs {
+        create("release") {
+            val ksPath = System.getenv("WSLHA_KEYSTORE_PATH")
+            if (!ksPath.isNullOrBlank()) {
+                storeFile = file(ksPath)
+                storePassword = System.getenv("WSLHA_KEYSTORE_PASSWORD")
+                keyAlias = System.getenv("WSLHA_KEY_ALIAS")
+                keyPassword = System.getenv("WSLHA_KEY_PASSWORD")
+            }
+        }
         getByName("debug") {
             // Fixed, committed keystore (app/debug.keystore) instead of the
             // AGP-default ~/.android/debug.keystore — that one is generated
@@ -59,9 +68,18 @@ android {
 
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+            // Real, unique release key when WSLHA_KEYSTORE_PATH is set (CI —
+            // see .github/workflows/build-flutter-apps.yml); otherwise falls
+            // back to the debug key so local `flutter run --release` still
+            // works without needing the release keystore on every dev
+            // machine. A real per-app signature (not the well-known, widely
+            // shared "Android Debug" cert every debug-signed app uses)
+            // avoids some OEM security scanners (seen on MIUI) flagging
+            // installs as "conflicts with an existing package" purely from
+            // reputation-matching that shared debug certificate.
+            val ksPath = System.getenv("WSLHA_KEYSTORE_PATH")
+            signingConfig = if (!ksPath.isNullOrBlank()) signingConfigs.getByName("release")
+                             else signingConfigs.getByName("debug")
         }
     }
 

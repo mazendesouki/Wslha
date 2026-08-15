@@ -34,18 +34,50 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
+      # Real per-app signature instead of the shared "Android Debug" cert —
+      # some OEM installers (seen on MIUI) flag debug-signed APKs as
+      # "conflicts with an existing package" purely from reputation-matching
+      # that widely-shared certificate. Falls back to debug signing (see
+      # android/app/build.gradle.kts) if this secret isn't set yet, so the
+      # build never breaks — just produces a debug-signed APK instead.
+      - name: Decode release keystore
+        env:
+          WSLHA_KEYSTORE_BASE64: ${{ secrets.WSLHA_KEYSTORE_BASE64 }}
+        run: |
+          if [ -n "$WSLHA_KEYSTORE_BASE64" ]; then
+            echo "$WSLHA_KEYSTORE_BASE64" | base64 -d > android/app/release.keystore
+          else
+            echo "WSLHA_KEYSTORE_BASE64 not set — will fall back to debug signing."
+          fi
+
       - name: Build customer APK
+        env:
+          WSLHA_KEYSTORE_PATH: ${{ secrets.WSLHA_KEYSTORE_BASE64 != '' && 'release.keystore' || '' }}
+          WSLHA_KEYSTORE_PASSWORD: ${{ secrets.WSLHA_KEYSTORE_PASSWORD }}
+          WSLHA_KEY_ALIAS: ${{ secrets.WSLHA_KEY_ALIAS }}
+          WSLHA_KEY_PASSWORD: ${{ secrets.WSLHA_KEY_PASSWORD }}
         run: flutter build apk --release --flavor customer -t lib/main_customer.dart
 
       - name: Build driver APK
+        env:
+          WSLHA_KEYSTORE_PATH: ${{ secrets.WSLHA_KEYSTORE_BASE64 != '' && 'release.keystore' || '' }}
+          WSLHA_KEYSTORE_PASSWORD: ${{ secrets.WSLHA_KEYSTORE_PASSWORD }}
+          WSLHA_KEY_ALIAS: ${{ secrets.WSLHA_KEY_ALIAS }}
+          WSLHA_KEY_PASSWORD: ${{ secrets.WSLHA_KEY_PASSWORD }}
         run: flutter build apk --release --flavor driver -t lib/main_driver.dart
 
       - name: Build merchant APK
+        env:
+          WSLHA_KEYSTORE_PATH: ${{ secrets.WSLHA_KEYSTORE_BASE64 != '' && 'release.keystore' || '' }}
+          WSLHA_KEYSTORE_PASSWORD: ${{ secrets.WSLHA_KEYSTORE_PASSWORD }}
+          WSLHA_KEY_ALIAS: ${{ secrets.WSLHA_KEY_ALIAS }}
+          WSLHA_KEY_PASSWORD: ${{ secrets.WSLHA_KEY_PASSWORD }}
         run: flutter build apk --release --flavor merchant -t lib/main_merchant.dart
 
-      # Debug-signed for now (see android/app/build.gradle.kts) — fine for
-      # sideloading/testing, not for Play Store. Swap in a real signing
-      # config + keystore secret before a production release.
+      - name: Clean up keystore
+        if: always()
+        run: rm -f android/app/release.keystore
+
       - name: Upload customer APK
         uses: actions/upload-artifact@v4
         with:
