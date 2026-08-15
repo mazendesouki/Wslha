@@ -1,0 +1,68 @@
+name: Build Flutter Apps (customer / driver / merchant)
+
+on:
+  push:
+    branches:
+      - main
+      - master
+      - claude/dreamy-johnson-nuzHs
+    paths:
+      - 'flutter_app/**'
+      - '.github/workflows/build-flutter-apps.yml'
+  workflow_dispatch:
+
+jobs:
+  build-flutter:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: flutter_app
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Build customer APK
+        run: flutter build apk --release --flavor customer -t lib/main_customer.dart
+
+      - name: Build driver APK
+        run: flutter build apk --release --flavor driver -t lib/main_driver.dart
+
+      - name: Build merchant APK
+        run: flutter build apk --release --flavor merchant -t lib/main_merchant.dart
+
+      # Debug-signed for now (see android/app/build.gradle.kts) — fine for
+      # sideloading/testing, not for Play Store. Swap in a real signing
+      # config + keystore secret before a production release.
+      - name: Upload customer APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: wslha-customer-apk
+          path: flutter_app/build/app/outputs/flutter-apk/app-customer-release.apk
+          retention-days: 30
+
+      - name: Upload driver APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: wslha-driver-apk
+          path: flutter_app/build/app/outputs/flutter-apk/app-driver-release.apk
+          retention-days: 30
+
+      - name: Upload merchant APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: wslha-merchant-apk
+          path: flutter_app/build/app/outputs/flutter-apk/app-merchant-release.apk
+          retention-days: 30
