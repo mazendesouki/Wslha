@@ -50,6 +50,8 @@ export const CATEGORIES: Category[] = [
   { id: 'bakery',     label: 'مخابز وحلويات', emoji: '🥐' },
   { id: 'produce',    label: 'خضار وفاكهة',   emoji: '🥬' },
   { id: 'electronics',label: 'إلكترونيات',    emoji: '📱' },
+  { id: 'clothing',   label: 'ملابس',          emoji: '👕' },
+  { id: 'optics',     label: 'نظارات',         emoji: '👓' },
 ];
 
 export const STORES: Store[] = [

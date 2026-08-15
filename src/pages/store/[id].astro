@@ -156,19 +156,35 @@ const staticMenuJson = JSON.stringify(
     display: flex; align-items: center; gap: var(--sp-4);
     padding: var(--sp-4); border: 1.5px solid var(--color-border);
     border-radius: var(--radius-lg); margin-bottom: var(--sp-3);
-    transition: border-color var(--ease);
+    transition: border-color var(--ease), box-shadow var(--ease), transform var(--ease);
   }
-  .product:hover { border-color: var(--color-primary); }
+  .product:hover { border-color: var(--color-primary); box-shadow: 0 6px 18px rgba(0,0,0,.06); transform: translateY(-1px); }
+  .product--unavailable { opacity: .55; }
   .product__emoji {
     width: 52px; height: 52px; border-radius: var(--radius);
     background: var(--color-bg-soft);
     display: flex; align-items: center; justify-content: center;
     font-size: var(--text-2xl); flex-shrink: 0;
   }
+  .product__thumb {
+    width: 64px; height: 64px; border-radius: var(--radius);
+    object-fit: cover; flex-shrink: 0; background: var(--color-bg-soft);
+  }
   .product__info { flex: 1; min-width: 0; }
   .product__name { font-weight: var(--weight-bold); font-size: var(--text-sm); }
   .product__desc { font-size: var(--text-xs); color: var(--color-text-muted); margin-top: 2px; line-height: 1.5; }
+  .product__attrs { display: flex; flex-wrap: wrap; gap: 4px; margin-top: var(--sp-2); }
+  .product__attr {
+    font-size: 10px; padding: 2px 8px; border-radius: 99px;
+    background: var(--color-bg-soft); color: var(--color-text-muted);
+    border: 1px solid var(--color-border);
+  }
   .product__price { font-weight: var(--weight-black); color: var(--color-primary); font-size: var(--text-sm); white-space: nowrap; margin-inline-start: var(--sp-2); }
+  .product__price-old { font-weight: 400; color: var(--color-text-muted); text-decoration: line-through; font-size: var(--text-xs); margin-inline-end: 4px; }
+  .product__stock-out {
+    font-size: 10px; font-weight: var(--weight-bold); color: #b91c1c;
+    background: #fee2e2; padding: 2px 8px; border-radius: 99px; white-space: nowrap;
+  }
 
   .stepper { display: flex; align-items: center; gap: var(--sp-2); flex-shrink: 0; }
   .stepper__btn {
@@ -699,29 +715,51 @@ const staticMenuJson = JSON.stringify(
 
     // ── Menu rendering ──────────────────────────────────────────
 
+    const ATTR_LABELS: Record<string, string> = {
+      size: 'المقاس', color: 'اللون', lens_type: 'نوع العدسة', unit: 'الوحدة', warranty: 'الضمان',
+    };
+
     function buildMenuHTML(sections: any[], products: any[]): string {
       if (!sections.length) return '<p style="color:var(--color-text-muted);padding:var(--sp-8) 0;text-align:center;">لا توجد منتجات في القائمة بعد.</p>';
       return sections.map(sec => {
         const items = products.filter(p => p.section_id === sec.id && p.is_available !== false);
         if (!items.length) return '';
-        const rows = items.map(p => `
-          <div class="product">
-            <div class="product__emoji" aria-hidden="true">${p.emoji || '🍽️'}</div>
+        const rows = items.map(p => {
+          const outOfStock = p.stock_quantity === 0;
+          const thumb = p.image_url
+            ? `<img class="product__thumb" src="${escapeHtml(p.image_url)}" alt="${escapeHtml(p.name)}" loading="lazy" />`
+            : `<div class="product__emoji" aria-hidden="true">${p.emoji || '🍽️'}</div>`;
+          const hasDiscount = p.compare_at_price && p.compare_at_price > p.price;
+          const priceHtml = hasDiscount
+            ? `<span class="product__price"><span class="product__price-old">${p.compare_at_price} ج.م</span>${p.price} ج.م</span>`
+            : `<span class="product__price">${p.price} ج.م</span>`;
+          const attrs = p.attributes && typeof p.attributes === 'object' ? Object.entries(p.attributes) : [];
+          const attrsHtml = attrs.length
+            ? `<div class="product__attrs">${attrs.map(([k, v]) => `<span class="product__attr">${escapeHtml(ATTR_LABELS[k] || k)}: ${escapeHtml(String(v))}</span>`).join('')}</div>`
+            : '';
+          const actionHtml = outOfStock
+            ? `<span class="product__stock-out">نفذت الكمية</span>`
+            : `<button class="add-btn" data-add
+                data-id="${p.id}" data-name="${escapeHtml(p.name)}"
+                data-price="${p.price}" data-emoji="${p.emoji || '🍽️'}">+ أضف</button>
+              <div class="stepper" data-stepper="${p.id}" hidden>
+                <button class="stepper__btn" data-dec="${p.id}" aria-label="إنقاص">−</button>
+                <span class="stepper__qty" data-qty="${p.id}">0</span>
+                <button class="stepper__btn" data-inc="${p.id}" aria-label="زيادة">+</button>
+              </div>`;
+          return `
+          <div class="product${outOfStock ? ' product--unavailable' : ''}">
+            ${thumb}
             <div class="product__info">
-              <p class="product__name">${p.name}</p>
-              ${p.description ? `<p class="product__desc">${p.description}</p>` : ''}
+              <p class="product__name">${escapeHtml(p.name)}</p>
+              ${p.description ? `<p class="product__desc">${escapeHtml(p.description)}</p>` : ''}
+              ${attrsHtml}
             </div>
-            <span class="product__price">${p.price} ج.م</span>
-            <button class="add-btn" data-add
-              data-id="${p.id}" data-name="${p.name}"
-              data-price="${p.price}" data-emoji="${p.emoji || '🍽️'}">+ أضف</button>
-            <div class="stepper" data-stepper="${p.id}" hidden>
-              <button class="stepper__btn" data-dec="${p.id}" aria-label="إنقاص">−</button>
-              <span class="stepper__qty" data-qty="${p.id}">0</span>
-              <button class="stepper__btn" data-inc="${p.id}" aria-label="زيادة">+</button>
-            </div>
-          </div>`).join('');
-        return `<section class="menu-section"><h2 class="menu-section__title">${sec.name}</h2>${rows}</section>`;
+            ${priceHtml}
+            ${actionHtml}
+          </div>`;
+        }).join('');
+        return `<section class="menu-section"><h2 class="menu-section__title">${escapeHtml(sec.name)}</h2>${rows}</section>`;
       }).join('');
     }
 

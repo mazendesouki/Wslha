@@ -211,10 +211,14 @@ import Layout from '../components/layout.astro';
   .product-row:last-child { border-bottom: none; }
   .product-row:hover { background: #f9fafb; }
   .product-emoji { font-size: 1.6rem; flex-shrink: 0; }
+  .product-thumb { width: 44px; height: 44px; border-radius: var(--radius-md, 8px); object-fit: cover; flex-shrink: 0; background: var(--color-bg-soft); }
   .product-info  { flex: 1; min-width: 0; }
   .product-name  { font-weight: var(--weight-bold); font-size: var(--text-sm); }
   .product-desc  { font-size: 11px; color: var(--color-text-faint); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .product-price { font-weight: var(--weight-black); color: #16a34a; font-size: var(--text-base); white-space: nowrap; }
+  .product-price__old { color: var(--color-text-faint); font-weight: 400; font-size: 12px; margin-left: 4px; }
+  .stock-badge { display: inline-block; margin-top: 2px; font-size: 10px; padding: 1px 6px; border-radius: 99px; background: #eef2ff; color: #4338ca; }
+  .stock-badge.out { background: #fee2e2; color: #b91c1c; }
   .product-actions { display: flex; gap: var(--sp-2); align-items: center; flex-shrink: 0; }
 
   /* Availability toggle */
@@ -399,6 +403,8 @@ import Layout from '../components/layout.astro';
               <option value="bakery">🥐 مخبز وحلويات</option>
               <option value="produce">🥬 خضار وفاكهة</option>
               <option value="electronics">📱 إلكترونيات</option>
+              <option value="clothing">👕 ملابس</option>
+              <option value="optics">👓 نظارات</option>
             </select>
           </div>
           <div class="field"><label class="field__label">المنطقة</label>
@@ -656,7 +662,39 @@ import Layout from '../components/layout.astro';
   const CAT_LABELS: Record<string, string> = {
     restaurant:'مطعم', grocery:'سوبر ماركت', pharmacy:'صيدلية',
     bakery:'مخبز وحلويات', produce:'خضار وفاكهة', electronics:'إلكترونيات',
+    clothing:'ملابس', optics:'نظارات',
   };
+
+  // مواصفات إضافية مقترحة حسب نوع المتجر — بتتخزن في عمود products.attributes (JSON)
+  const ATTR_TEMPLATES: Record<string, { key: string; label: string; placeholder: string }[]> = {
+    clothing:    [{ key: 'size', label: 'المقاس', placeholder: 'M / L / 42' }, { key: 'color', label: 'اللون', placeholder: 'أحمر' }],
+    optics:      [{ key: 'lens_type', label: 'نوع العدسة', placeholder: 'شمس / طبي' }, { key: 'color', label: 'اللون', placeholder: 'أسود' }],
+    grocery:     [{ key: 'unit', label: 'الوحدة', placeholder: 'كجم / قطعة / علبة' }],
+    produce:     [{ key: 'unit', label: 'الوحدة', placeholder: 'كجم' }],
+    bakery:      [{ key: 'unit', label: 'الوحدة', placeholder: 'قطعة / كيلو' }],
+    pharmacy:    [{ key: 'unit', label: 'العبوة', placeholder: 'شريط / عبوة' }],
+    electronics: [{ key: 'warranty', label: 'الضمان', placeholder: 'سنة واحدة' }],
+    restaurant:  [{ key: 'size', label: 'الحجم', placeholder: 'وسط / كبير' }],
+  };
+  function attrFieldsFor(): { key: string; label: string; placeholder: string }[] {
+    return ATTR_TEMPLATES[currentStore?.category_id] || [];
+  }
+  function attrInputsHTML(prefix: string, suffix: string, existing: Record<string, string> = {}): string {
+    const fields = attrFieldsFor();
+    if (!fields.length) return '';
+    return `<div class="form-row" style="margin-bottom:var(--sp-3);flex-wrap:wrap;">` +
+      fields.map(f => `<input class="field__input" id="${prefix}-attr-${f.key}-${suffix}" value="${escapeHtml(existing[f.key] || '')}" placeholder="${f.label} (${f.placeholder})" />`).join('') +
+      `</div>`;
+  }
+  function readAttrInputs(prefix: string, suffix: string): Record<string, string> {
+    const out: Record<string, string> = {};
+    attrFieldsFor().forEach(f => {
+      const el = document.getElementById(`${prefix}-attr-${f.key}-${suffix}`) as HTMLInputElement | null;
+      const v = el?.value.trim();
+      if (v) out[f.key] = v;
+    });
+    return out;
+  }
 
   // ── Toast ──
   function toast(msg: string, ms = 2600) {
@@ -706,6 +744,19 @@ import Layout from '../components/layout.astro';
         body: JSON.stringify(body),
       });
       return r.ok ? await r.json() : null;
+    } catch { return null; }
+  }
+
+  async function uploadProductImage(file: File): Promise<string | null> {
+    try {
+      const path = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}-${file.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
+      const res = await fetch(`${SB_URL}/storage/v1/object/product-images/${path}`, {
+        method: 'POST',
+        headers: { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}`, 'Content-Type': file.type },
+        body: file,
+      });
+      if (!res.ok) return null;
+      return `${SB_URL}/storage/v1/object/public/product-images/${path}`;
     } catch { return null; }
   }
 
@@ -1040,14 +1091,26 @@ import Layout from '../components/layout.astro';
 
     container.innerHTML = sections.map(sec => {
       const secProducts = products.filter(p => p.section_id === sec.id);
-      const productRows = secProducts.map(p => `
+      const productRows = secProducts.map(p => {
+        const thumb = p.image_url
+          ? `<img src="${p.image_url}" alt="" class="product-thumb" />`
+          : `<span class="product-emoji">${p.emoji || '📦'}</span>`;
+        const hasDiscount = p.compare_at_price && p.compare_at_price > p.price;
+        const priceHtml = hasDiscount
+          ? `<span class="product-price"><s class="product-price__old">${p.compare_at_price} ج.م</s> ${p.price} ج.م</span>`
+          : `<span class="product-price">${p.price} ج.م</span>`;
+        const stockHtml = (p.stock_quantity !== null && p.stock_quantity !== undefined)
+          ? `<span class="stock-badge ${p.stock_quantity === 0 ? 'out' : ''}">${p.stock_quantity === 0 ? 'نفذت الكمية' : `متبقي ${p.stock_quantity}`}</span>`
+          : '';
+        return `
         <div class="product-row" data-pid="${p.id}">
-          <span class="product-emoji">${p.emoji || '📦'}</span>
+          ${thumb}
           <div class="product-info">
             <div class="product-name">${p.name}</div>
             <div class="product-desc">${p.description || ''}</div>
+            ${stockHtml}
           </div>
-          <span class="product-price">${p.price} ج.م</span>
+          ${priceHtml}
           <div class="product-actions">
             <button class="avail-toggle ${p.is_available ? 'on' : ''}" data-pid="${p.id}" title="${p.is_available ? 'متاح' : 'غير متاح'}"></button>
             <button class="btn-ghost edit-product-btn" data-pid="${p.id}">✏️</button>
@@ -1063,12 +1126,21 @@ import Layout from '../components/layout.astro';
             <input class="field__input" id="ep-price-${p.id}" type="number" value="${p.price}" placeholder="السعر" min="0" />
             <input class="field__input" id="ep-desc-${p.id}" value="${p.description || ''}" placeholder="وصف (اختياري)" />
           </div>
+          <div class="form-row">
+            <input class="field__input" id="ep-compare-${p.id}" type="number" value="${p.compare_at_price ?? ''}" placeholder="السعر قبل الخصم (اختياري)" min="0" />
+            <input class="field__input" id="ep-stock-${p.id}" type="number" value="${p.stock_quantity ?? ''}" placeholder="الكمية (فاضي = غير محدودة)" min="0" />
+          </div>
+          <div class="form-row">
+            <input class="field__input" id="ep-image-${p.id}" type="file" accept="image/*" />
+          </div>
+          ${attrInputsHTML('ep', p.id, p.attributes || {})}
           <div style="display:flex;gap:var(--sp-2);margin-top:var(--sp-2);">
             <button class="btn-primary save-product-edit-btn" data-pid="${p.id}">💾 حفظ</button>
             <button class="btn-ghost cancel-product-edit-btn" data-pid="${p.id}">إلغاء</button>
           </div>
         </div>
-      `).join('');
+      `;
+      }).join('');
 
       return `
         <div class="section-block" data-sid="${sec.id}">
@@ -1089,6 +1161,14 @@ import Layout from '../components/layout.astro';
               <input class="field__input" id="np-price-${sec.id}" type="number" placeholder="السعر (ج.م) *" min="0" />
               <input class="field__input" id="np-desc-${sec.id}" placeholder="وصف (اختياري)" />
             </div>
+            <div class="form-row" style="margin-bottom:var(--sp-3);">
+              <input class="field__input" id="np-compare-${sec.id}" type="number" placeholder="السعر قبل الخصم (اختياري)" min="0" />
+              <input class="field__input" id="np-stock-${sec.id}" type="number" placeholder="الكمية (فاضي = غير محدودة)" min="0" />
+            </div>
+            <div class="form-row" style="margin-bottom:var(--sp-3);">
+              <input class="field__input" id="np-image-${sec.id}" type="file" accept="image/*" />
+            </div>
+            ${attrInputsHTML('np', sec.id)}
             <div style="display:flex;gap:var(--sp-2);">
               <button class="btn-primary save-product-btn" data-sid="${sec.id}">✅ إضافة</button>
               <button class="btn-ghost cancel-product-btn" data-sid="${sec.id}">إلغاء</button>
@@ -1199,18 +1279,33 @@ import Layout from '../components/layout.astro';
   async function saveNewProduct(sid: string) {
     const btn = document.querySelector(`.save-product-btn[data-sid="${sid}"]`) as HTMLButtonElement | null;
     if (btn?.disabled) return; // already saving — prevents a double-click from inserting the product twice
-    const name  = (document.getElementById(`np-name-${sid}`) as HTMLInputElement).value.trim();
-    const emoji = (document.getElementById(`np-emoji-${sid}`) as HTMLInputElement).value.trim() || '📦';
-    const price = parseInt((document.getElementById(`np-price-${sid}`) as HTMLInputElement).value) || 0;
-    const desc  = (document.getElementById(`np-desc-${sid}`) as HTMLInputElement).value.trim();
+    const name    = (document.getElementById(`np-name-${sid}`) as HTMLInputElement).value.trim();
+    const emoji   = (document.getElementById(`np-emoji-${sid}`) as HTMLInputElement).value.trim() || '📦';
+    const price   = parseInt((document.getElementById(`np-price-${sid}`) as HTMLInputElement).value) || 0;
+    const desc    = (document.getElementById(`np-desc-${sid}`) as HTMLInputElement).value.trim();
+    const compareStr = (document.getElementById(`np-compare-${sid}`) as HTMLInputElement).value.trim();
+    const stockStr    = (document.getElementById(`np-stock-${sid}`) as HTMLInputElement).value.trim();
+    const imageInput  = document.getElementById(`np-image-${sid}`) as HTMLInputElement;
+    const attributes  = readAttrInputs('np', sid);
 
     if (!name || !price) { toast('❌ اسم المنتج والسعر مطلوبان'); return; }
 
-    if (btn) btn.disabled = true;
+    if (btn) { btn.disabled = true; btn.textContent = 'جاري الحفظ...'; }
+
+    let imageUrl: string | null = null;
+    const file = imageInput?.files?.[0];
+    if (file) {
+      imageUrl = await uploadProductImage(file);
+      if (!imageUrl) toast('⚠️ فشل رفع الصورة — تم حفظ المنتج بدونها');
+    }
+
     const secProds = products.filter(p => p.section_id === sid);
     const rows = await sbPost('products', {
       store_id: currentStore.id, section_id: sid,
       name, emoji, price, description: desc || null,
+      compare_at_price: compareStr ? parseFloat(compareStr) : null,
+      stock_quantity: stockStr ? parseInt(stockStr) : null,
+      image_url: imageUrl, attributes,
       is_available: true, sort_order: secProds.length,
     });
     if (rows?.[0]) {
@@ -1220,22 +1315,42 @@ import Layout from '../components/layout.astro';
       toast('✅ تم إضافة المنتج');
     } else {
       toast('❌ فشل إضافة المنتج');
-      if (btn) btn.disabled = false;
+      if (btn) { btn.disabled = false; btn.textContent = '✅ إضافة'; }
     }
   }
 
   async function saveProductEdit(pid: string) {
-    const name  = (document.getElementById(`ep-name-${pid}`) as HTMLInputElement).value.trim();
-    const emoji = (document.getElementById(`ep-emoji-${pid}`) as HTMLInputElement).value.trim() || '📦';
-    const price = parseInt((document.getElementById(`ep-price-${pid}`) as HTMLInputElement).value) || 0;
-    const desc  = (document.getElementById(`ep-desc-${pid}`) as HTMLInputElement).value.trim();
+    const name    = (document.getElementById(`ep-name-${pid}`) as HTMLInputElement).value.trim();
+    const emoji   = (document.getElementById(`ep-emoji-${pid}`) as HTMLInputElement).value.trim() || '📦';
+    const price   = parseInt((document.getElementById(`ep-price-${pid}`) as HTMLInputElement).value) || 0;
+    const desc    = (document.getElementById(`ep-desc-${pid}`) as HTMLInputElement).value.trim();
+    const compareStr = (document.getElementById(`ep-compare-${pid}`) as HTMLInputElement).value.trim();
+    const stockStr    = (document.getElementById(`ep-stock-${pid}`) as HTMLInputElement).value.trim();
+    const imageInput  = document.getElementById(`ep-image-${pid}`) as HTMLInputElement;
+    const attributes  = readAttrInputs('ep', pid);
 
     if (!name || !price) { toast('❌ الاسم والسعر مطلوبان'); return; }
 
-    const ok = await sbPatch(`products?id=eq.${pid}`, { name, emoji, price, description: desc || null });
+    let imageUrl: string | undefined;
+    const file = imageInput?.files?.[0];
+    if (file) {
+      const uploaded = await uploadProductImage(file);
+      if (uploaded) imageUrl = uploaded;
+      else toast('⚠️ فشل رفع الصورة الجديدة — لم يتم تغييرها');
+    }
+
+    const patch: Record<string, any> = {
+      name, emoji, price, description: desc || null,
+      compare_at_price: compareStr ? parseFloat(compareStr) : null,
+      stock_quantity: stockStr ? parseInt(stockStr) : null,
+      attributes,
+    };
+    if (imageUrl) patch.image_url = imageUrl;
+
+    const ok = await sbPatch(`products?id=eq.${pid}`, patch);
     if (ok) {
       const p = products.find(p => p.id === pid);
-      if (p) Object.assign(p, { name, emoji, price, description: desc });
+      if (p) Object.assign(p, patch);
       renderMenu();
       toast('✅ تم تحديث المنتج');
     } else toast('❌ فشل تحديث المنتج');
