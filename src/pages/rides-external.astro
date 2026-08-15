@@ -170,6 +170,22 @@ import { VEHICLE_TYPES } from '../data/airports';
       </div>
 
       <div class="field">
+        <label class="field__label" for="dest-governorate">محافظة الوجهة</label>
+        <select class="field__select" id="dest-governorate">
+          <option value="">اختر المحافظة...</option>
+          <option>القاهرة</option><option>الجيزة</option><option>الإسكندرية</option>
+          <option>الدقهلية</option><option>البحيرة</option><option>الفيوم</option>
+          <option>الغربية</option><option>الإسماعيلية</option><option>المنوفية</option>
+          <option>المنيا</option><option>القليوبية</option><option>الوادي الجديد</option>
+          <option>السويس</option><option>أسوان</option><option>أسيوط</option>
+          <option>بني سويف</option><option>بورسعيد</option><option>دمياط</option>
+          <option>الشرقية</option><option>جنوب سيناء</option><option>كفر الشيخ</option>
+          <option>مطروح</option><option>الأقصر</option><option>قنا</option>
+          <option>شمال سيناء</option><option>سوهاج</option><option>البحر الأحمر</option>
+        </select>
+      </div>
+
+      <div class="field">
         <label class="field__label" for="address">عنوان الاستلام بالتفصيل</label>
         <textarea class="field__textarea" id="address" placeholder="الحي، الشارع، رقم المبنى، علامة مميزة..."></textarea>
       </div>
@@ -191,6 +207,15 @@ import { VEHICLE_TYPES } from '../data/airports';
       <div class="field">
         <label class="field__label" for="passengers">عدد الركاب</label>
         <input class="field__input" id="passengers" type="number" min="1" max="3" value="1">
+      </div>
+
+      <div class="field">
+        <label class="field__label">طريقة الدفع</label>
+        <select class="field__select" id="ext-payment">
+          <option value="cash">💵 كاش عند الوصول</option>
+          <option value="wallet">📱 فودافون كاش / إنستاباي</option>
+          <option value="bank_transfer">🏦 تحويل بنكي</option>
+        </select>
       </div>
     </form>
 
@@ -465,6 +490,8 @@ import { VEHICLE_TYPES } from '../data/airports';
       const fail = (msg: string) => { errBox.textContent = msg; errBox.classList.add('is-visible'); errBox.scrollIntoView({ block: 'center', behavior: 'smooth' }); };
 
       if (!toPlace || !distanceKm) return fail('يرجى اختيار وجهة صحيحة خارج محافظة دمياط.');
+      const governorate = ($('dest-governorate') as HTMLSelectElement).value;
+      if (!governorate) return fail('يرجى اختيار محافظة الوجهة.');
       const name = ($('trav-name') as HTMLInputElement).value.trim();
       const phone = ($('trav-phone') as HTMLInputElement).value.trim();
       if (name.length < 2) return fail('يرجى إدخال الاسم.');
@@ -499,7 +526,8 @@ import { VEHICLE_TYPES } from '../data/airports';
             fare: total,
             eta_minutes: durationMin,
             passengers: pax,
-            payment: 'cash',
+            payment: ($('ext-payment') as HTMLSelectElement).value || 'cash',
+            governorate,
             vehicle_model: selVehModel.id,
             vehicle_year: selVehYear,
             notes: `رحلة خارجية — عنوان: ${fromArea} — ${(document.getElementById('address') as HTMLTextAreaElement).value.trim()} — سيارة: ${selectedVehicle.name} (${selVehModel.name} ${selVehYear})`,

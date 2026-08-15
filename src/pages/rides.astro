@@ -923,6 +923,7 @@ import { VEHICLE_MODELS, FARE_ZONES, TRIP_RATES } from '../data/airports';
                 <div class="payment-opts">
                   <label class="payment-opt"><input type="radio" name="l-payment" value="cash" checked /><span class="payment-opt__icon">💵</span><span><span class="payment-opt__name">كاش عند الوصول</span><br><span class="payment-opt__desc">ادفع للسائق مباشرة</span></span><span class="check-circle"></span></label>
                   <label class="payment-opt"><input type="radio" name="l-payment" value="wallet" /><span class="payment-opt__icon">📱</span><span><span class="payment-opt__name">فودافون كاش / إنستاباي</span><br><span class="payment-opt__desc">تحويل إلكتروني</span></span><span class="check-circle"></span></label>
+                  <label class="payment-opt"><input type="radio" name="l-payment" value="bank_transfer" /><span class="payment-opt__icon">🏦</span><span><span class="payment-opt__name">تحويل بنكي</span><br><span class="payment-opt__desc">تحويل لحساب بنكي</span></span><span class="check-circle"></span></label>
                 </div>
               </div>
               <button id="local-confirm-btn" class="submit-btn" type="button" disabled>🚗 تأكيد الطلب وتتبع الرحلة</button>
@@ -1014,6 +1015,7 @@ import { VEHICLE_MODELS, FARE_ZONES, TRIP_RATES } from '../data/airports';
                 <div class="payment-opts">
                   <label class="payment-opt"><input type="radio" name="i-payment" value="cash" checked /><span class="payment-opt__icon">💵</span><span><span class="payment-opt__name">كاش عند الوصول</span><br><span class="payment-opt__desc">ادفع للسائق مباشرة</span></span><span class="check-circle"></span></label>
                   <label class="payment-opt"><input type="radio" name="i-payment" value="wallet" /><span class="payment-opt__icon">📱</span><span><span class="payment-opt__name">فودافون كاش / إنستاباي</span><br><span class="payment-opt__desc">تحويل إلكتروني</span></span><span class="check-circle"></span></label>
+                  <label class="payment-opt"><input type="radio" name="i-payment" value="bank_transfer" /><span class="payment-opt__icon">🏦</span><span><span class="payment-opt__name">تحويل بنكي</span><br><span class="payment-opt__desc">تحويل لحساب بنكي</span></span><span class="check-circle"></span></label>
                 </div>
               </div>
               <button id="intl-confirm-btn" class="submit-btn" type="button" disabled>✈️ تأكيد حجز التوصيل للمطار</button>
@@ -2262,6 +2264,9 @@ import { VEHICLE_MODELS, FARE_ZONES, TRIP_RATES } from '../data/airports';
     if (ride.payment === 'wallet') {
       payEl.innerHTML = `💳 يرجى إرسال <strong>${ride.fare} ج.م</strong> للسائق عبر فودافون كاش / إنستاباي`;
       payEl.style.display = '';
+    } else if (ride.payment === 'bank_transfer') {
+      payEl.innerHTML = `🏦 يرجى تحويل <strong>${ride.fare} ج.م</strong> بنكياً للسائق`;
+      payEl.style.display = '';
     } else {
       payEl.innerHTML = `💵 يرجى دفع <strong>${ride.fare} ج.م</strong> نقداً للسائق`;
       payEl.style.display = '';
@@ -2280,7 +2285,7 @@ import { VEHICLE_MODELS, FARE_ZONES, TRIP_RATES } from '../data/airports';
       { label: 'مدة الرحلة', value: (ride.eta_minutes || '—') + ' دقيقة' },
       { label: 'المسافة', value: (ride.distance_km ? Number(ride.distance_km).toFixed(1) : '—') + ' كم' },
       { label: 'السائق', value: ride.driver_name || '—' },
-      { label: 'طريقة الدفع', value: ride.payment === 'wallet' ? '💳 محفظة' : '💵 نقدي' },
+      { label: 'طريقة الدفع', value: ride.payment === 'wallet' ? '💳 محفظة' : ride.payment === 'bank_transfer' ? '🏦 تحويل بنكي' : '💵 نقدي' },
     ];
     document.getElementById('receipt-details-grid').innerHTML = gridItems
       .map(i => `<div style="background:#f8fafc;border-radius:10px;padding:.75rem;text-align:center"><div style="font-size:.7rem;color:#9ca3af;margin-bottom:4px">${i.label}</div><div style="font-size:.875rem;font-weight:700">${i.value}</div></div>`)
@@ -2524,7 +2529,7 @@ import { VEHICLE_MODELS, FARE_ZONES, TRIP_RATES } from '../data/airports';
       from_area: from.name, from_lat: from.lat, from_lng: from.lng,
       to_area: to.name, to_lat: to.lat, to_lng: to.lng,
       distance_km: roadKm, fare, eta_minutes: eta,
-      passengers: parseInt(pax), payment: pay,
+      passengers: parseInt(pax), payment: pay, governorate: 'دمياط الجديدة',
       notes: (notes ? notes + ' — ' : '') + `🚘 ${selVehModel.name} ${selVehYear}`,
       vehicle_model: selVehModel.id, vehicle_year: selVehYear,
       status: 'pending', ride_type: 'local',
@@ -2698,12 +2703,17 @@ import { VEHICLE_MODELS, FARE_ZONES, TRIP_RATES } from '../data/airports';
     intlBtn.classList.remove('ready');
     intlBtn.textContent = 'جاري إرسال الحجز...';
 
+    const AIRPORT_GOVERNORATE = {
+      'port-said': 'بورسعيد', cairo: 'القاهرة', alex: 'الإسكندرية',
+      sharm: 'جنوب سيناء', hurghada: 'البحر الأحمر', luxor: 'الأقصر',
+    };
     const ride = await sbCreateRide({
       customer_phone: phone, customer_name: name,
       from_area: fromArea.name, from_lat: fromArea.lat, from_lng: fromArea.lng,
       to_area: airport.name, to_lat: airport.lat, to_lng: airport.lng,
       distance_km: 0, fare: airport.flatFare, eta_minutes: airport.driveMins,
       passengers: parseInt(pax), payment: pay,
+      airport_id: airport.id, governorate: AIRPORT_GOVERNORATE[airport.id] || null,
       notes: `✈️ ${airport.name} — استلام: ${address} — شنط: ${luggage} — إقلاع: ${flightDate.toLocaleString('ar-EG')} — مغادرة البيت: ${departDate.toLocaleString('ar-EG')}${notes ? ' — ' + notes : ''}`,
       status: 'pending', ride_type: 'airport',
     });

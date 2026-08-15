@@ -417,6 +417,24 @@ import PageHero from '../components/PageHero.astro';
   .acct-tx__amt.neg { color: #dc2626; }
   .acct-empty { text-align: center; color: var(--color-text-faint); font-size: var(--text-xs); padding: var(--sp-4); }
 
+  .stats-kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: var(--sp-3); }
+  .stats-kpi {
+    background: var(--color-bg); border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg); padding: var(--sp-3); text-align: center;
+  }
+  .stats-kpi__val { font-size: var(--text-xl); font-weight: var(--weight-black); color: var(--color-primary); }
+  .stats-kpi__key { font-size: 11px; color: var(--color-text-muted); margin-top: 2px; }
+  .stats-row {
+    display: flex; align-items: center; justify-content: space-between; gap: var(--sp-2);
+    font-size: var(--text-xs); padding: var(--sp-2) 0; border-bottom: 1px solid var(--color-border);
+  }
+  .stats-row:last-child { border-bottom: none; }
+  .stats-row--top { background: var(--color-primary-light); border-radius: var(--radius); padding: var(--sp-2) var(--sp-3); }
+  .stats-row__name { font-weight: var(--weight-bold); flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .stats-row__count { color: var(--color-text-faint); flex-shrink: 0; }
+  .stats-row__amt { font-weight: var(--weight-bold); color: var(--color-primary); flex-shrink: 0; }
+  .stats-badge { font-size: 10px; background: var(--color-primary); color: #fff; border-radius: var(--radius-full); padding: 1px 6px; margin-inline-start: 4px; }
+
   /* ── Ratings ── */
   .rating-summary {
     display: flex; align-items: center; gap: var(--sp-5);
@@ -517,6 +535,7 @@ import PageHero from '../components/PageHero.astro';
         <button class="dash-tab active" data-tab="rides"    onclick="switchTab('rides')">🚗 الرحلات</button>
         <button class="dash-tab"        data-tab="account"  onclick="switchTab('account')">💳 الحساب</button>
         <button class="dash-tab"        data-tab="activity" onclick="switchTab('activity')">📋 السجل</button>
+        <button class="dash-tab"        data-tab="stats"    onclick="switchTab('stats')">📊 الإحصائيات</button>
       </div>
 
       <!-- Tab: Rides (operational) -->
@@ -705,6 +724,37 @@ import PageHero from '../components/PageHero.astro';
       <div class="tab-pane" id="tab-activity">
         <div id="activity-list" style="display:flex;flex-direction:column;gap:var(--sp-3);">
           <div class="acct-empty">لا يوجد سجل نشاط بعد</div>
+        </div>
+      </div>
+
+      <!-- Tab: Stats (trip analytics) -->
+      <div class="tab-pane" id="tab-stats">
+        <div id="stats-loading" class="acct-empty">جاري تحميل الإحصائيات...</div>
+        <div id="stats-body" style="display:none;flex-direction:column;gap:var(--sp-4);">
+
+          <div class="stats-kpi-grid">
+            <div class="stats-kpi"><div class="stats-kpi__val" id="stats-trips-total">0</div><div class="stats-kpi__key">إجمالي الرحلات</div></div>
+            <div class="stats-kpi"><div class="stats-kpi__val" id="stats-earn-total">0</div><div class="stats-kpi__key">صافي الأرباح (ج.م)</div></div>
+            <div class="stats-kpi"><div class="stats-kpi__val" id="stats-trips-local">0</div><div class="stats-kpi__key">رحلات داخلية</div></div>
+            <div class="stats-kpi"><div class="stats-kpi__val" id="stats-trips-external">0</div><div class="stats-kpi__key">رحلات خارجية</div></div>
+            <div class="stats-kpi"><div class="stats-kpi__val" id="stats-trips-airport">0</div><div class="stats-kpi__key">رحلات مطار</div></div>
+          </div>
+
+          <div class="acct-card">
+            <div class="acct-card__header"><div class="acct-card__title">🗺️ توزيع الرحلات على المحافظات</div></div>
+            <div id="stats-gov-list" class="acct-tx-list"><div class="acct-empty">لا توجد رحلات خارجية بعد</div></div>
+          </div>
+
+          <div class="acct-card">
+            <div class="acct-card__header"><div class="acct-card__title">✈️ رحلات المطار</div></div>
+            <div id="stats-airport-list" class="acct-tx-list"><div class="acct-empty">لا توجد رحلات مطار بعد</div></div>
+          </div>
+
+          <div class="acct-card">
+            <div class="acct-card__header"><div class="acct-card__title">💳 طرق الدفع</div></div>
+            <div id="stats-payment-list" class="acct-tx-list"><div class="acct-empty">لا توجد بيانات بعد</div></div>
+          </div>
+
         </div>
       </div>
 
@@ -1856,6 +1906,90 @@ import PageHero from '../components/PageHero.astro';
     document.querySelectorAll('.tab-pane').forEach(p => p.classList.toggle('active', p.id === `tab-${name}`));
     if (name === 'account')  loadAccountData();
     if (name === 'activity') loadActivityLog();
+    if (name === 'stats')    loadTripStats();
+  }
+
+  /* ── Trip stats (governorate / airport / payment breakdown) ── */
+  let _statsLoaded = false;
+  async function loadTripStats() {
+    if (_statsLoaded) return;
+    const phone = driver?.phone;
+    if (!phone) return;
+    try {
+      const res = await fetch(`${SB_URL}/rest/v1/rpc/get_driver_trip_stats`, {
+        method: 'POST',
+        headers: { ...SB_H, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ p_driver_phone: phone }),
+      });
+      if (!res.ok) throw new Error('stats_failed');
+      const data = await res.json();
+      renderTripStats(data);
+      _statsLoaded = true;
+    } catch (e) {
+      console.error('loadTripStats error', e);
+      document.getElementById('stats-loading').textContent = '⚠️ تعذر تحميل الإحصائيات — حاول لاحقاً';
+    }
+  }
+
+  const PAYMENT_LABELS = { cash: '💵 كاش', wallet: '📱 محفظة إلكترونية', bank_transfer: '🏦 تحويل بنكي' };
+
+  function renderTripStats(data) {
+    const overall = data?.overall || { trips: 0, fare_total: 0, earnings_total: 0 };
+    const byType = {};
+    (data?.by_type || []).forEach(t => { byType[t.ride_type] = t; });
+
+    document.getElementById('stats-trips-total').textContent    = overall.trips || 0;
+    document.getElementById('stats-earn-total').textContent     = Math.round(overall.earnings_total || 0);
+    document.getElementById('stats-trips-local').textContent    = byType.local?.trips || 0;
+    document.getElementById('stats-trips-external').textContent = byType.external?.trips || 0;
+    document.getElementById('stats-trips-airport').textContent  = byType.airport?.trips || 0;
+
+    const byGov = data?.by_governorate || [];
+    const govList = document.getElementById('stats-gov-list');
+    if (!byGov.length) {
+      govList.innerHTML = '<div class="acct-empty">لا توجد رحلات خارجية بعد</div>';
+    } else {
+      const mostUsed = [...byGov].sort((a, b) => b.trips - a.trips)[0];
+      govList.innerHTML = byGov.map(g => `
+        <div class="stats-row${g.governorate === mostUsed.governorate ? ' stats-row--top' : ''}">
+          <span class="stats-row__name">${g.governorate}${g.governorate === mostUsed.governorate ? '<span class="stats-badge">الأكثر استخدامًا</span>' : ''}</span>
+          <span class="stats-row__count">${g.trips} رحلة</span>
+          <span class="stats-row__amt">${Math.round(g.earnings_total)} ج.م</span>
+        </div>
+      `).join('');
+    }
+
+    const byAirport = data?.by_airport || [];
+    const airportList = document.getElementById('stats-airport-list');
+    if (!byAirport.length) {
+      airportList.innerHTML = '<div class="acct-empty">لا توجد رحلات مطار بعد</div>';
+    } else {
+      const mostProfitable = [...byAirport].sort((a, b) => b.earnings_total - a.earnings_total)[0];
+      airportList.innerHTML = byAirport.map(a => `
+        <div class="stats-row${a.airport === mostProfitable.airport ? ' stats-row--top' : ''}">
+          <span class="stats-row__name">${a.airport}${a.airport === mostProfitable.airport ? '<span class="stats-badge">الأكثر ربحًا</span>' : ''}</span>
+          <span class="stats-row__count">${a.trips} رحلة</span>
+          <span class="stats-row__amt">${Math.round(a.earnings_total)} ج.م</span>
+        </div>
+      `).join('');
+    }
+
+    const byPayment = data?.by_payment || [];
+    const paymentList = document.getElementById('stats-payment-list');
+    if (!byPayment.length) {
+      paymentList.innerHTML = '<div class="acct-empty">لا توجد بيانات بعد</div>';
+    } else {
+      paymentList.innerHTML = byPayment.map(p => `
+        <div class="stats-row">
+          <span class="stats-row__name">${PAYMENT_LABELS[p.payment] || p.payment}</span>
+          <span class="stats-row__count">${p.trips} رحلة</span>
+          <span class="stats-row__amt">${Math.round(p.earnings_total)} ج.م</span>
+        </div>
+      `).join('');
+    }
+
+    document.getElementById('stats-loading').style.display = 'none';
+    document.getElementById('stats-body').style.display = 'flex';
   }
   // This <script> is compiled as an ES module (it has imports), so its top-level
   // functions aren't on `window` — but the buttons above call them via inline

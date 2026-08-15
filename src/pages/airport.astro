@@ -399,6 +399,31 @@ import { VEHICLE_TYPES } from '../data/airports';
       </div>
 
       <div class="field">
+        <label class="field__label" for="airport-governorate">محافظة المطار</label>
+        <select class="field__select" id="airport-governorate">
+          <option value="">اختر المحافظة...</option>
+          <option>القاهرة</option><option>الجيزة</option><option>الإسكندرية</option>
+          <option>الدقهلية</option><option>البحيرة</option><option>الفيوم</option>
+          <option>الغربية</option><option>الإسماعيلية</option><option>المنوفية</option>
+          <option>المنيا</option><option>القليوبية</option><option>الوادي الجديد</option>
+          <option>السويس</option><option>أسوان</option><option>أسيوط</option>
+          <option>بني سويف</option><option>بورسعيد</option><option>دمياط</option>
+          <option>الشرقية</option><option>جنوب سيناء</option><option>كفر الشيخ</option>
+          <option>مطروح</option><option>الأقصر</option><option>قنا</option>
+          <option>شمال سيناء</option><option>سوهاج</option><option>البحر الأحمر</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label class="field__label">طريقة الدفع</label>
+        <select class="field__select" id="air-payment">
+          <option value="cash">💵 كاش عند الوصول</option>
+          <option value="wallet">📱 فودافون كاش / إنستاباي</option>
+          <option value="bank_transfer">🏦 تحويل بنكي</option>
+        </select>
+      </div>
+
+      <div class="field">
         <label class="field__label" for="flight-time" id="flight-time-label">تاريخ ووقت إقلاع الطائرة</label>
         <input class="field__input" id="flight-time" type="datetime-local">
         <p class="field__hint" id="flight-time-hint">سنحسب لك وقت المغادرة من بيتك ووقت الوصول للمطار تلقائياً.</p>
@@ -1018,6 +1043,8 @@ import { VEHICLE_TYPES } from '../data/airports';
       const fail = (msg: string) => { errBox.textContent = msg; errBox.classList.add('is-visible'); errBox.scrollIntoView({ block: 'center', behavior: 'smooth' }); };
 
       if (!selectedAirport) return fail('يرجى اختيار المطار من نتائج البحث.');
+      const governorate = ($('airport-governorate') as HTMLSelectElement).value;
+      if (!governorate) return fail('يرجى اختيار محافظة المطار.');
       const flightVal = dep ? c.flight : c.land;
       if (!flightInput.value || !flightVal) return fail(dep ? 'يرجى إدخال تاريخ ووقت إقلاع الطائرة.' : 'يرجى إدخال تاريخ ووقت هبوط الطائرة.');
       if (dep && c.depart && c.depart.getTime() < Date.now()) return fail('وقت الإقلاع قريب جداً — يرجى الحجز قبل موعد كافٍ.');
@@ -1099,7 +1126,8 @@ import { VEHICLE_TYPES } from '../data/airports';
             fare: c.total,
             eta_minutes: selectedAirport!.driveMinutes,
             passengers: pax,
-            payment: (document.querySelector('input[name="payment"]:checked'))?.value || 'cash',
+            payment: ($('air-payment') as HTMLSelectElement).value || 'cash',
+            governorate,
             vehicle_model: selVehModel.id,
             vehicle_year: selVehYear,
             airport_vehicle_category: selVehModel.category,
