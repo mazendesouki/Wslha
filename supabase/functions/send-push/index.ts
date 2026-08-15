@@ -138,18 +138,29 @@ Deno.serve(async (req) => {
 
   if (dead.length) await admin.from('push_subscriptions').delete().in('id', dead);
 
-  // FCM (تطبيقات Flutter الأصلية) — بس لما فيه رقم محدد؛ device_tokens
-  // مفيهوش عمود "role" زي push_subscriptions عشان يدعم بث جماعي بالدور.
+  // FCM (تطبيقات Flutter الأصلية). device_tokens مفيهوش عمود "role" زي
+  // push_subscriptions، فبالنسبة لبث جماعي (target بلا phone) بنجيب
+  // أرقام أصحاب الدور ده من accounts الأول.
   let fcmSent = 0;
+  let fcmTokens: { id: string; token: string }[] = [];
   if (payload.phone) {
-    const { data: devices } = await admin.from('device_tokens').select('id, token').eq('phone', payload.phone);
-    await Promise.allSettled((devices || []).map(async (d) => {
-      if (await sendFcm(d.token, title, body, url, tag)) fcmSent++;
-      // ملاحظة: مش بنمسح التوكن الفاشل هنا — فشل FCM ممكن يكون مؤقت
-      // (شبكة/انتهاء صلاحية access token)، مش بالضرورة توكن ميت زي
-      // إشعارات المتصفح؛ تنظيف التوكنات المنتهية محتاج كود خطأ FCM محدد.
-    }));
+    const { data } = await admin.from('device_tokens').select('id, token').eq('phone', payload.phone);
+    fcmTokens = data || [];
+  } else {
+    const role = payload.target || 'driver';
+    const { data: roleAccounts } = await admin.from('accounts').select('phone').eq('role', role);
+    const phones = (roleAccounts || []).map((r) => r.phone).filter(Boolean);
+    if (phones.length) {
+      const { data } = await admin.from('device_tokens').select('id, token').in('phone', phones);
+      fcmTokens = data || [];
+    }
   }
+  await Promise.allSettled(fcmTokens.map(async (d) => {
+    if (await sendFcm(d.token, title, body, url, tag)) fcmSent++;
+    // ملاحظة: مش بنمسح التوكن الفاشل هنا — فشل FCM ممكن يكون مؤقت
+    // (شبكة/انتهاء صلاحية access token)، مش بالضرورة توكن ميت زي
+    // إشعارات المتصفح؛ تنظيف التوكنات المنتهية محتاج كود خطأ FCM محدد.
+  }));
 
   return Response.json({ sent, cleaned: dead.length, fcmSent });
 });
