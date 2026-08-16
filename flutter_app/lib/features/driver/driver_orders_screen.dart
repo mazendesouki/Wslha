@@ -18,14 +18,20 @@ const Map<String, Color> _statusColor = {
 };
 
 const _completedStatuses = {'delivered', 'completed'};
+const _cancelledStatuses = {'cancelled', 'rejected'};
 
 /// Same combined orders+rides feed as the customer's OrdersScreen, filtered
-/// by driver_phone instead of customer_phone (fetchDriverHistory). Adds a
-/// kind filter (رحلات/توصيل) and a period filter (اليوم/الأسبوع/الشهر) with
-/// a totals summary card on top — driver-dashboard.astro's إحصائيات tab
-/// (get_driver_trip_stats) covers rides-only lifetime breakdowns server-side;
-/// this is the lighter client-side equivalent that also includes delivery
-/// orders and short time windows, computed from the same already-fetched list.
+/// by driver_phone instead of customer_phone (fetchDriverHistory). Adds:
+/// - a kind filter (رحلات/توصيل) and a period filter (اليوم/الأسبوع/الشهر)
+/// - a totals summary card
+/// - a status breakdown (مكتملة/ملغاة/قيد التنفيذ) with count + total each
+/// - a type breakdown (توصيل/رحلات داخلية/خارجية/مطار) with counts
+/// all computed client-side from the already-fetched history (same data,
+/// no extra query) — driver-dashboard.astro's إحصائيات tab
+/// (get_driver_trip_stats) covers rides-only lifetime breakdowns
+/// server-side with real driver_earn from wallet_transactions; this is the
+/// lighter, faster equivalent scoped to short time windows and orders too,
+/// using each item's display total (not the post-commission driver cut).
 class DriverOrdersScreen extends StatefulWidget {
   const DriverOrdersScreen({super.key});
 
@@ -110,31 +116,52 @@ class _DriverOrdersScreenState extends State<DriverOrdersScreen> {
         : (_kindFilter == 'all' ? _items! : _items!.where((it) => it.kind == _kindFilter).toList());
     final filtered = byKind?.where((it) => _withinPeriod(it.createdAt)).toList();
 
+    // Overall + status breakdown
     num totalEarn = 0;
     int completedCount = 0;
+    int cancelledCount = 0;
+    num cancelledTotal = 0;
+    int activeCount = 0;
+    num activeTotal = 0;
+    // Type breakdown
+    int deliveryCount = 0;
+    int localCount = 0;
+    int externalCount = 0;
+    int airportCount = 0;
+
     if (filtered != null) {
       for (final it in filtered) {
         if (_completedStatuses.contains(it.status)) {
           totalEarn += it.total;
           completedCount++;
+        } else if (_cancelledStatuses.contains(it.status)) {
+          cancelledCount++;
+          cancelledTotal += it.total;
+        } else {
+          activeCount++;
+          activeTotal += it.total;
+        }
+
+        if (it.kind == 'order') {
+          deliveryCount++;
+        } else {
+          switch (it.rideType) {
+            case 'external':
+              externalCount++;
+            case 'airport':
+              airportCount++;
+            default:
+              localCount++;
+          }
         }
       }
     }
 
     return Scaffold(
+      backgroundColor: const Color(0xFFF7FAF9),
       appBar: AppBar(title: const Text('طلباتي ورحلاتي')),
       body: Column(
         children: [
-          Container(
-            width: double.infinity,
-            color: Colors.red,
-            padding: const EdgeInsets.all(16),
-            child: const Text(
-              'BUILD TEST — لو شايف السطر ده يبقى التحديث وصل',
-              style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 16),
-              textAlign: TextAlign.center,
-            ),
-          ),
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
             child: SingleChildScrollView(
@@ -162,14 +189,18 @@ class _DriverOrdersScreenState extends State<DriverOrdersScreen> {
               ),
             ),
           ),
-          if (filtered != null && filtered.isNotEmpty)
+          if (filtered != null && filtered.isNotEmpty) ...[
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                 decoration: BoxDecoration(
-                  color: AppColors.primary,
-                  borderRadius: BorderRadius.circular(14),
+                  gradient: const LinearGradient(
+                    colors: [AppColors.primary, Color(0xFF0E4D3D)],
+                    begin: Alignment.topRight,
+                    end: Alignment.bottomLeft,
+                  ),
+                  borderRadius: BorderRadius.circular(16),
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -181,6 +212,36 @@ class _DriverOrdersScreenState extends State<DriverOrdersScreen> {
                 ),
               ),
             ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 6),
+              child: Row(
+                children: [
+                  Expanded(child: _statusTile('✅', 'مكتملة', completedCount, totalEarn, AppColors.success)),
+                  const SizedBox(width: 8),
+                  Expanded(child: _statusTile('❌', 'ملغاة', cancelledCount, cancelledTotal, AppColors.error)),
+                  const SizedBox(width: 8),
+                  Expanded(child: _statusTile('⏳', 'قيد التنفيذ', activeCount, activeTotal, AppColors.accent)),
+                ],
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: [
+                    _typeTile('🛵', 'توصيل', deliveryCount),
+                    const SizedBox(width: 8),
+                    _typeTile('🚗', 'داخلي', localCount),
+                    const SizedBox(width: 8),
+                    _typeTile('🛣️', 'خارجي', externalCount),
+                    const SizedBox(width: 8),
+                    _typeTile('✈️', 'مطار', airportCount),
+                  ],
+                ),
+              ),
+            ),
+          ],
           Expanded(
             child: _loading
                 ? const Center(child: CircularProgressIndicator())
@@ -284,6 +345,44 @@ class _DriverOrdersScreenState extends State<DriverOrdersScreen> {
         const SizedBox(height: 2),
         Text(label, style: const TextStyle(color: Colors.white70, fontSize: 11, fontWeight: FontWeight.w700)),
       ],
+    );
+  }
+
+  Widget _statusTile(String emoji, String label, int count, num total, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color.withValues(alpha: 0.25)),
+      ),
+      child: Column(
+        children: [
+          Text('$emoji $count', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 15, color: color)),
+          const SizedBox(height: 2),
+          Text(label, style: const TextStyle(fontSize: 10, color: AppColors.textFaint, fontWeight: FontWeight.w700)),
+          Text('${total.toStringAsFixed(0)} ج.م', style: TextStyle(fontSize: 10, color: color, fontWeight: FontWeight.w700)),
+        ],
+      ),
+    );
+  }
+
+  Widget _typeTile(String emoji, String label, int count) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(99),
+        border: Border.all(color: const Color(0xFFE5E7EB)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(emoji, style: const TextStyle(fontSize: 14)),
+          const SizedBox(width: 6),
+          Text('$label ($count)', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: AppColors.textFaint)),
+        ],
+      ),
     );
   }
 }

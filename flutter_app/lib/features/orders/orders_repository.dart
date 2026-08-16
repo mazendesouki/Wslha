@@ -13,6 +13,9 @@ class HistoryItem {
   final String subtitle;
   final num total;
   final DateTime? createdAt;
+  /// rides only: 'local' | 'external' | 'airport' (null for orders, or a
+  /// ride row saved before ride_type existed — treated as 'local').
+  final String? rideType;
 
   HistoryItem({
     required this.kind,
@@ -22,6 +25,7 @@ class HistoryItem {
     required this.subtitle,
     required this.total,
     required this.createdAt,
+    this.rideType,
   });
 }
 
@@ -106,7 +110,7 @@ class OrdersRepository {
           .limit(50),
       sb
           .from('rides')
-          .select('id,status,from_area,to_area,fare,created_at')
+          .select('id,status,from_area,to_area,fare,ride_type,created_at')
           .eq('driver_phone', driverPhone)
           .order('created_at', ascending: false)
           .limit(50),
@@ -133,6 +137,7 @@ class OrdersRepository {
         subtitle: statusAr[r['status']] ?? '${r['status']}',
         total: (r['fare'] as num?) ?? 0,
         createdAt: DateTime.tryParse(r['created_at'] as String? ?? ''),
+        rideType: (r['ride_type'] as String?) ?? 'local',
       );
     });
 
