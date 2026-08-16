@@ -125,6 +125,16 @@ class _DriverOrdersScreenState extends State<DriverOrdersScreen> {
       appBar: AppBar(title: const Text('طلباتي ورحلاتي')),
       body: Column(
         children: [
+          Container(
+            width: double.infinity,
+            color: Colors.red,
+            padding: const EdgeInsets.all(16),
+            child: const Text(
+              'BUILD TEST — لو شايف السطر ده يبقى التحديث وصل',
+              style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 16),
+              textAlign: TextAlign.center,
+            ),
+          ),
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
             child: SingleChildScrollView(
