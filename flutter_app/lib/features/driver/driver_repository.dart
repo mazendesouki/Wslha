@@ -119,8 +119,18 @@ class DriverRepository {
 
   /// Confirms delivery via the same RPC (which also handles the
   /// merchant payout + platform commission + driver points server-side).
-  Future<void> confirmOrderDelivery(String orderId, String driverPhone) async {
-    await sb.rpc('confirm_order_delivery', params: {'p_order_id': orderId, 'p_driver_phone': driverPhone});
+  /// Requires the 4-digit code shown on the customer's tracking page —
+  /// proves the driver actually handed the order over, not just a
+  /// self-reported tap with zero verification (mirrors driver-dashboard.astro).
+  /// Returns false (not an exception) for a wrong code, so the driver can
+  /// just retry instead of losing their place in the delivery flow.
+  Future<bool> confirmOrderDelivery(String orderId, String driverPhone, String otp) async {
+    final result = await sb.rpc('confirm_order_delivery', params: {
+      'p_order_id': orderId,
+      'p_otp': otp,
+      'p_driver_phone': driverPhone,
+    });
+    return result == true;
   }
 
   /// Same status column driver-dashboard.astro's markArrived()/startTrip()

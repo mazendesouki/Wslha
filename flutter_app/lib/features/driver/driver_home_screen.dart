@@ -216,20 +216,36 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
   Future<void> _advanceOrder() async {
     final job = _activeJob;
     if (job == null) return;
-    setState(() => _busy = true);
     final orderId = job['id'].toString();
-    try {
-      if (!_pickedUp) {
+
+    if (!_pickedUp) {
+      setState(() => _busy = true);
+      try {
         await _repo.markOrderPickedUp(orderId);
         if (!mounted) return;
         setState(() {
           _pickedUp = true;
           _busy = false;
         });
+      } catch (e) {
+        _showError(e);
+        if (!mounted) return;
+        setState(() => _busy = false);
+      }
+      return;
+    }
+
+    final otp = await _askDeliveryOtp();
+    if (otp == null || otp.isEmpty) return; // driver cancelled
+    setState(() => _busy = true);
+    try {
+      final ok = await _repo.confirmOrderDelivery(orderId, widget.session.phone, otp);
+      if (!mounted) return;
+      if (!ok) {
+        setState(() => _busy = false);
+        _showError('كود التسليم غير صحيح');
         return;
       }
-      await _repo.confirmOrderDelivery(orderId, widget.session.phone);
-      if (!mounted) return;
       setState(() {
         _activeJob = null;
         _activeJobType = null;
@@ -240,6 +256,35 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
       if (!mounted) return;
       setState(() => _busy = false);
     }
+  }
+
+  Future<String?> _askDeliveryOtp() {
+    final controller = TextEditingController();
+    return showDialog<String>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('كود التسليم'),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          keyboardType: TextInputType.number,
+          maxLength: 4,
+          decoration: const InputDecoration(
+            hintText: 'اطلب من العميل الكود المعروض في صفحة تتبّع الطلب',
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('إلغاء'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(controller.text.trim()),
+            child: const Text('تأكيد'),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
