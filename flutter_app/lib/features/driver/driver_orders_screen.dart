@@ -31,6 +31,7 @@ class _DriverOrdersScreenState extends State<DriverOrdersScreen> {
   List<HistoryItem>? _items;
   bool _loading = true;
   String? _error;
+  String _filter = 'all'; // 'all' | 'ride' | 'order'
 
   @override
   void initState() {
@@ -64,47 +65,85 @@ class _DriverOrdersScreenState extends State<DriverOrdersScreen> {
     }
   }
 
+  Widget _filterChip(String value, String label) {
+    final selected = _filter == value;
+    return Padding(
+      padding: const EdgeInsets.only(left: 8),
+      child: ChoiceChip(
+        label: Text(label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: selected ? Colors.white : AppColors.textFaint)),
+        selected: selected,
+        selectedColor: AppColors.primary,
+        backgroundColor: Colors.white,
+        onSelected: (_) => setState(() => _filter = value),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final filtered = _items == null
+        ? null
+        : (_filter == 'all' ? _items! : _items!.where((it) => it.kind == _filter).toList());
+
     return Scaffold(
       appBar: AppBar(title: const Text('طلباتي ورحلاتي')),
-      body: _loading
-          ? const Center(child: CircularProgressIndicator())
-          : _error != null
-              ? Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(24),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Text('⚠️', style: TextStyle(fontSize: 40)),
-                        const SizedBox(height: 12),
-                        Text(_error!, style: const TextStyle(fontSize: 11, color: AppColors.error), textAlign: TextAlign.center),
-                        const SizedBox(height: 16),
-                        OutlinedButton(onPressed: _load, child: const Text('إعادة المحاولة')),
-                      ],
-                    ),
-                  ),
-                )
-              : (_items == null || _items!.isEmpty)
-                  ? const Center(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text('📦', style: TextStyle(fontSize: 48)),
-                          SizedBox(height: 12),
-                          Text('لسه مفيش طلبات أو رحلات مكتملة', style: TextStyle(color: AppColors.textFaint)),
-                        ],
-                      ),
-                    )
-                  : RefreshIndicator(
-                      onRefresh: _load,
-                      child: ListView.separated(
-                        padding: const EdgeInsets.all(16),
-                        itemCount: _items!.length,
-                        separatorBuilder: (_, _) => const SizedBox(height: 10),
-                        itemBuilder: (context, i) {
-                          final item = _items![i];
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+            child: Row(
+              children: [
+                _filterChip('all', '📋 الكل'),
+                _filterChip('ride', '🚗 رحلات'),
+                _filterChip('order', '🛵 توصيل'),
+              ],
+            ),
+          ),
+          Expanded(
+            child: _loading
+                ? const Center(child: CircularProgressIndicator())
+                : _error != null
+                    ? Center(
+                        child: Padding(
+                          padding: const EdgeInsets.all(24),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Text('⚠️', style: TextStyle(fontSize: 40)),
+                              const SizedBox(height: 12),
+                              Text(_error!, style: const TextStyle(fontSize: 11, color: AppColors.error), textAlign: TextAlign.center),
+                              const SizedBox(height: 16),
+                              OutlinedButton(onPressed: _load, child: const Text('إعادة المحاولة')),
+                            ],
+                          ),
+                        ),
+                      )
+                    : (filtered == null || filtered.isEmpty)
+                        ? Center(
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Text('📦', style: TextStyle(fontSize: 48)),
+                                const SizedBox(height: 12),
+                                Text(
+                                  _filter == 'all'
+                                      ? 'لسه مفيش طلبات أو رحلات مكتملة'
+                                      : _filter == 'ride'
+                                          ? 'لسه مفيش رحلات مكتملة'
+                                          : 'لسه مفيش توصيل مكتمل',
+                                  style: const TextStyle(color: AppColors.textFaint),
+                                ),
+                              ],
+                            ),
+                          )
+                        : RefreshIndicator(
+                            onRefresh: _load,
+                            child: ListView.separated(
+                              padding: const EdgeInsets.all(16),
+                              itemCount: filtered.length,
+                              separatorBuilder: (_, _) => const SizedBox(height: 10),
+                              itemBuilder: (context, i) {
+                                final item = filtered[i];
                           final color = _statusColor[item.status] ?? AppColors.textFaint;
                           final isRide = item.kind == 'ride';
                           return Material(
@@ -147,9 +186,12 @@ class _DriverOrdersScreenState extends State<DriverOrdersScreen> {
                               ),
                             ),
                           );
-                        },
-                      ),
-                    ),
+                              },
+                            ),
+                          ),
+          ),
+        ],
+      ),
     );
   }
 }
