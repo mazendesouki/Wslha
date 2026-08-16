@@ -374,6 +374,19 @@ import PageHero from '../components/PageHero.astro';
   .tab-pane { display: none; flex-direction: column; gap: var(--sp-4); }
   .tab-pane.active { display: flex; }
 
+  /* ── Activity log filter chips (رحلات / توصيل) ── */
+  .activity-filters { display: flex; gap: var(--sp-2); margin-bottom: var(--sp-1); }
+  .activity-filter-chip {
+    padding: var(--sp-2) var(--sp-4); border-radius: 99px;
+    border: 1.5px solid var(--color-border); background: var(--color-bg);
+    font-family: var(--font-body); font-weight: var(--weight-bold);
+    font-size: var(--text-xs); cursor: pointer; color: var(--color-text-faint);
+    transition: all 0.2s;
+  }
+  .activity-filter-chip.active {
+    background: var(--color-primary); border-color: var(--color-primary); color: #fff;
+  }
+
   /* ── Approval banner ── */
   .approval-banner {
     border-radius: var(--radius-xl); padding: var(--sp-4) var(--sp-5);
@@ -722,6 +735,11 @@ import PageHero from '../components/PageHero.astro';
 
       <!-- Tab: Activity log -->
       <div class="tab-pane" id="tab-activity">
+        <div class="activity-filters">
+          <button class="activity-filter-chip active" data-filter="all" onclick="setActivityFilter('all')">📋 الكل</button>
+          <button class="activity-filter-chip" data-filter="ride" onclick="setActivityFilter('ride')">🚗 رحلات</button>
+          <button class="activity-filter-chip" data-filter="delivery" onclick="setActivityFilter('delivery')">🛵 توصيل</button>
+        </div>
         <div id="activity-list" style="display:flex;flex-direction:column;gap:var(--sp-3);">
           <div class="acct-empty">لا يوجد سجل نشاط بعد</div>
         </div>
@@ -1997,6 +2015,7 @@ import PageHero from '../components/PageHero.astro';
   // that are invoked that way.
   window.switchTab = switchTab;
   window.sendReply = sendReply;
+  window.setActivityFilter = setActivityFilter;
 
   /* ── Load approval status ── */
   async function loadApprovalStatus() {
@@ -2241,6 +2260,9 @@ import PageHero from '../components/PageHero.astro';
   }
 
   /* ── Load activity log ── */
+  let activityItems = [];
+  let activityFilter = 'all'; // 'all' | 'ride' | 'delivery'
+
   async function loadActivityLog() {
     if (!driver) return;
     const phone = encodeURIComponent(driver.phone);
@@ -2266,8 +2288,25 @@ import PageHero from '../components/PageHero.astro';
     } catch {}
 
     items.sort((a, b) => new Date(b.date||0) - new Date(a.date||0));
+    activityItems = items;
+    renderActivityList();
+  }
+
+  function setActivityFilter(filter) {
+    activityFilter = filter;
+    document.querySelectorAll('.activity-filter-chip').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.filter === filter);
+    });
+    renderActivityList();
+  }
+
+  function renderActivityList() {
+    const items = activityFilter === 'all' ? activityItems : activityItems.filter(it => it.type === activityFilter);
     const container = document.getElementById('activity-list');
-    if (!items.length) { container.innerHTML = '<div class="acct-empty">لا يوجد سجل نشاط بعد</div>'; return; }
+    if (!items.length) {
+      container.innerHTML = `<div class="acct-empty">${activityFilter === 'all' ? 'لا يوجد سجل نشاط بعد' : activityFilter === 'ride' ? 'لا توجد رحلات بعد' : 'لا يوجد توصيل بعد'}</div>`;
+      return;
+    }
     container.innerHTML = items.map(it => {
       const d = it.date ? new Date(it.date).toLocaleDateString('ar-EG', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—';
       const statusLabel = { completed:'مكتملة', delivered:'مكتمل', cancelled:'ملغاة' }[it.status] || it.status;
