@@ -24,7 +24,12 @@ begin
       url     := 'https://vtikgyiopkjnrwlqnmfx.supabase.co/functions/v1/send-push',
       headers := jsonb_build_object(
         'Content-Type',  'application/json',
-        'x-push-secret', 'VlLLnM4NmT8Azxrjvp9ph0oziju4AXxr'
+        'x-push-secret', 'VlLLnM4NmT8Azxrjvp9ph0oziju4AXxr',
+        -- Supabase's gateway (Kong) requires an apikey on every Edge
+        -- Function call regardless of the function's own "Verify JWT"
+        -- setting — without it pg_net's request never reaches our code
+        -- at all and gets a bare 401 from the gateway itself.
+        'apikey',        'sb_publishable_PLSnpvCT-sAyUMtymNgTwA_QmL2suw4'
       ),
       body    := jsonb_build_object(
         'phone', new.customer_phone,
