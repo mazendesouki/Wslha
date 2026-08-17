@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../core/session.dart';
 import '../../core/theme.dart';
+import '../orders/order_invoice_screen.dart';
 import '../orders/orders_repository.dart';
 import '../rides/ride_tracking_screen.dart';
 
@@ -334,13 +335,13 @@ class _DriverOrdersScreenState extends State<DriverOrdersScreen> {
                                   borderRadius: BorderRadius.circular(14),
                                   child: InkWell(
                                     borderRadius: BorderRadius.circular(14),
-                                    onTap: isRide
-                                        ? () => Navigator.of(context).push(
-                                              MaterialPageRoute(
-                                                builder: (_) => RideTrackingScreen(rideId: item.id, isDriverView: true),
-                                              ),
-                                            )
-                                        : null,
+                                    onTap: () => Navigator.of(context).push(
+                                      MaterialPageRoute(
+                                        builder: (_) => isRide
+                                            ? RideTrackingScreen(rideId: item.id, isDriverView: true)
+                                            : OrderInvoiceScreen(orderId: item.id),
+                                      ),
+                                    ),
                                     child: Container(
                                       padding: const EdgeInsets.all(14),
                                       decoration: BoxDecoration(
@@ -360,10 +361,8 @@ class _DriverOrdersScreenState extends State<DriverOrdersScreen> {
                                             ),
                                           ),
                                           Text('${item.total} ج.م', style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 14, color: AppColors.primary)),
-                                          if (isRide) ...[
-                                            const SizedBox(width: 4),
-                                            const Icon(Icons.chevron_left, color: AppColors.textFaint, size: 18),
-                                          ],
+                                          const SizedBox(width: 4),
+                                          const Icon(Icons.chevron_left, color: AppColors.textFaint, size: 18),
                                         ],
                                       ),
                                     ),
