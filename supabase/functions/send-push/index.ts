@@ -79,7 +79,10 @@ async function getFcmAccessToken(): Promise<string | null> {
   }
 }
 
-async function sendFcm(token: string, title: string, body: string, url: string, tag: string): Promise<boolean> {
+async function sendFcm(
+  token: string, title: string, body: string, url: string, tag: string,
+  type: string, channel: string,
+): Promise<boolean> {
   const accessToken = await getFcmAccessToken();
   if (!accessToken || !FCM_SERVICE_ACCOUNT) return false;
   const projectId = JSON.parse(FCM_SERVICE_ACCOUNT).project_id;
@@ -90,8 +93,11 @@ async function sendFcm(token: string, title: string, body: string, url: string, 
       message: {
         token,
         notification: { title, body },
-        data: { url, tag },
-        android: { priority: 'high', notification: { tag, channel_id: 'wslha_orders' } },
+        // `type` lets the app react the instant a foreground message
+        // arrives (e.g. re-check for a driver's dispatch offer) instead of
+        // only showing a tray notification — see PushRegistrar.onMessage.
+        data: { url, tag, type },
+        android: { priority: 'high', notification: { tag, channel_id: channel } },
       },
     }),
   });
@@ -105,13 +111,15 @@ Deno.serve(async (req) => {
     return new Response('forbidden', { status: 403 });
   }
 
-  let payload: { target?: string; phone?: string; title?: string; body?: string; url?: string; tag?: string };
+  let payload: { target?: string; phone?: string; title?: string; body?: string; url?: string; tag?: string; type?: string; channel?: string };
   try { payload = await req.json(); } catch { return new Response('bad json', { status: 400 }); }
 
-  const title = payload.title || 'وصّلها';
-  const body  = payload.body  || '';
-  const url   = payload.url   || '/';
-  const tag   = payload.tag   || 'wslha';
+  const title   = payload.title   || 'وصّلها';
+  const body    = payload.body    || '';
+  const url     = payload.url     || '/';
+  const tag     = payload.tag     || 'wslha';
+  const type    = payload.type    || '';
+  const channel = payload.channel || 'wslha_orders';
 
   // target: 'drivers' → كل السائقين المشتركين • phone محدد → شخص واحد
   let query = admin.from('push_subscriptions').select('id, phone, subscription');
@@ -156,7 +164,7 @@ Deno.serve(async (req) => {
     }
   }
   await Promise.allSettled(fcmTokens.map(async (d) => {
-    if (await sendFcm(d.token, title, body, url, tag)) fcmSent++;
+    if (await sendFcm(d.token, title, body, url, tag, type, channel)) fcmSent++;
     // ملاحظة: مش بنمسح التوكن الفاشل هنا — فشل FCM ممكن يكون مؤقت
     // (شبكة/انتهاء صلاحية access token)، مش بالضرورة توكن ميت زي
     // إشعارات المتصفح؛ تنظيف التوكنات المنتهية محتاج كود خطأ FCM محدد.

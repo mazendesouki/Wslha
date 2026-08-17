@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 
@@ -16,6 +18,13 @@ class PushRegistrar {
   static final _registeredPhones = <String>{};
   static bool _firebaseReady = false;
 
+  // Broadcasts every foreground FCM message's data payload — lets a screen
+  // react the instant a push lands (e.g. the driver's dispatch-offer
+  // screen re-checking for a new offer via security-21's push) instead of
+  // only showing a tray notification.
+  static final _dataController = StreamController<Map<String, dynamic>>.broadcast();
+  static Stream<Map<String, dynamic>> get onMessageData => _dataController.stream;
+
   static Future<void> _ensureFirebase() async {
     if (_firebaseReady) return;
     await Firebase.initializeApp();
@@ -27,6 +36,7 @@ class PushRegistrar {
     FirebaseMessaging.onMessage.listen((msg) {
       final n = msg.notification;
       if (n != null) AppNotifications.instance.show(n.title ?? '', n.body ?? '');
+      if (msg.data.isNotEmpty) _dataController.add(msg.data);
     });
   }
 

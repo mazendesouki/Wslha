@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../core/contact_launcher.dart';
 import '../../core/maps_launcher.dart';
+import '../../core/push.dart';
 import '../../core/session.dart';
 import '../../core/theme.dart';
 import '../../shared/widgets/logout_button.dart';
@@ -29,6 +30,7 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
   final _repo = DriverRepository();
   Timer? _pollTimer;
   Timer? _countdownTimer;
+  StreamSubscription<Map<String, dynamic>>? _offersSub;
 
   bool _online = false;
   bool _busy = false;
@@ -53,16 +55,30 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
   void dispose() {
     _pollTimer?.cancel();
     _countdownTimer?.cancel();
+    _offersSub?.cancel();
     super.dispose();
+  }
+
+  // security-21's push trigger fires the instant a dispatch_offers row is
+  // inserted for this driver — react to it immediately instead of waiting
+  // for the next poll tick. The 5s poll below stays as a fallback for when
+  // push isn't set up (no google-services.json) or a message is dropped.
+  void _startPushWatch() {
+    _offersSub?.cancel();
+    _offersSub = PushRegistrar.onMessageData.listen((data) {
+      if (data['type'] == 'dispatch_offer') _checkForOffer();
+    });
+  }
+
+  Future<void> _checkForOffer() async {
+    if (!_online || _activeJob != null || _offer != null) return;
+    final offer = await _repo.getPendingOffer(widget.session.phone);
+    if (offer != null && mounted) _receiveOffer(offer);
   }
 
   void _startPolling() {
     _pollTimer?.cancel();
-    _pollTimer = Timer.periodic(const Duration(seconds: 5), (_) async {
-      if (!_online || _activeJob != null || _offer != null) return;
-      final offer = await _repo.getPendingOffer(widget.session.phone);
-      if (offer != null && mounted) _receiveOffer(offer);
-    });
+    _pollTimer = Timer.periodic(const Duration(seconds: 5), (_) => _checkForOffer());
   }
 
   void _receiveOffer(PendingOffer offer) {
@@ -93,10 +109,14 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
         _online = ok;
         _busy = false;
       });
-      if (ok) _startPolling();
+      if (ok) {
+        _startPolling();
+        _startPushWatch();
+      }
     } else {
       await _repo.goOffline(widget.session.phone);
       _pollTimer?.cancel();
+      _offersSub?.cancel();
       setState(() {
         _online = false;
         _busy = false;
