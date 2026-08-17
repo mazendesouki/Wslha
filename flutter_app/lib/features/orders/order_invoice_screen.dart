@@ -126,6 +126,32 @@ class _OrderInvoiceScreenState extends State<OrderInvoiceScreen> {
               ],
             ),
           ),
+          if (_showOtp(o)) ...[
+            const SizedBox(height: 12),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+              decoration: BoxDecoration(
+                color: const Color(0xFFDCFCE7),
+                border: Border.all(color: const Color(0xFF86EFAC), width: 1.5),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Column(
+                children: [
+                  const Text(
+                    '🔑 كود التسليم — اديه للمندوب لما يوصلّك الطلب',
+                    style: TextStyle(fontSize: 12, color: Color(0xFF166534), fontWeight: FontWeight.w800),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    '${o['delivery_otp']}',
+                    style: const TextStyle(fontSize: 26, color: Color(0xFF15803D), fontWeight: FontWeight.w900, letterSpacing: 4),
+                  ),
+                ],
+              ),
+            ),
+          ],
           const SizedBox(height: 16),
           if (_items.isNotEmpty) ...[
             _sectionTitle('🧾 الأصناف'),
@@ -219,6 +245,12 @@ class _OrderInvoiceScreenState extends State<OrderInvoiceScreen> {
           ],
         ),
       );
+
+  bool _showOtp(Map<String, dynamic> o) {
+    final otp = o['delivery_otp'];
+    final status = o['status'] as String? ?? '';
+    return otp != null && '$otp'.isNotEmpty && status != 'delivered' && status != 'rejected' && status != 'cancelled';
+  }
 
   String _orderCode(Map<String, dynamic> o) {
     final code = o['code'] as String?;
