@@ -59,7 +59,7 @@ class OrdersRepository {
           .limit(50),
       sb
           .from('rides')
-          .select('id,status,from_area,to_area,fare,driver_name,created_at')
+          .select('id,status,from_area,to_area,fare,driver_name,ride_type,created_at')
           .or(filter)
           .order('created_at', ascending: false)
           .limit(50),
@@ -89,6 +89,7 @@ class OrdersRepository {
             : statusAr[r['status']] ?? '${r['status']}',
         total: (r['fare'] as num?) ?? 0,
         createdAt: DateTime.tryParse(r['created_at'] as String? ?? ''),
+        rideType: (r['ride_type'] as String?) ?? 'local',
       );
     });
 

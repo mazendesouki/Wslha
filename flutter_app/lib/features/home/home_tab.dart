@@ -5,6 +5,7 @@ import '../../shared/widgets/logout_button.dart';
 import '../../shared/widgets/placeholder_screen.dart';
 import '../airport/airport_screen.dart';
 import '../rides/rides_screen.dart';
+import '../stores/stores_list_screen.dart';
 
 class HomeTab extends StatelessWidget {
   final UserSession session;
@@ -16,7 +17,7 @@ class HomeTab extends StatelessWidget {
       _ServiceCard('🚖', 'مشاوير', 'احجز مشوارك دلوقتي', (ctx) => const RidesScreen()),
       _ServiceCard('🛫', 'توصيل المطار', 'من دمياط إلى كل مطارات مصر', (ctx) => const AirportScreen()),
       _ServiceCard('📦', 'طرود ومستندات', 'مندوب مخصص لشحنتك', (ctx) => const PlaceholderScreen(title: 'توصيل طرود', emoji: '📦')),
-      _ServiceCard('🛍️', 'خدمة دليفري', 'اشترِ من أي مكان', (ctx) => const PlaceholderScreen(title: 'خدمة دليفري', emoji: '🛍️')),
+      _ServiceCard('🛍️', 'خدمة دليفري', 'اطلب من أي متجر قريب منك', (ctx) => const StoresListScreen()),
     ];
 
     return Scaffold(
