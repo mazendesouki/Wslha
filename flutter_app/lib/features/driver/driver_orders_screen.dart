@@ -46,6 +46,8 @@ class _DriverOrdersScreenState extends State<DriverOrdersScreen> {
   String? _error;
   String _kindFilter = 'all'; // 'all' | 'ride' | 'order'
   String _periodFilter = 'all'; // 'all' | 'today' | 'week' | 'month'
+  String _statusFilter = 'all'; // 'all' | 'completed' | 'cancelled' | 'active'
+  String _typeFilter = 'all'; // 'all' | 'order' | 'local' | 'external' | 'airport'
 
   @override
   void initState() {
@@ -95,6 +97,25 @@ class _DriverOrdersScreenState extends State<DriverOrdersScreen> {
     }
   }
 
+  String _itemStatusBucket(HistoryItem it) {
+    if (_completedStatuses.contains(it.status)) return 'completed';
+    if (_cancelledStatuses.contains(it.status)) return 'cancelled';
+    return 'active';
+  }
+
+  String _itemTypeBucket(HistoryItem it) {
+    if (it.kind == 'order') return 'order';
+    return it.rideType ?? 'local';
+  }
+
+  void _toggleStatusFilter(String value) {
+    setState(() => _statusFilter = _statusFilter == value ? 'all' : value);
+  }
+
+  void _toggleTypeFilter(String value) {
+    setState(() => _typeFilter = _typeFilter == value ? 'all' : value);
+  }
+
   Widget _chip(String value, String label, String groupValue, ValueChanged<String> onSelect) {
     final selected = value == groupValue;
     return Padding(
@@ -114,7 +135,14 @@ class _DriverOrdersScreenState extends State<DriverOrdersScreen> {
     final byKind = _items == null
         ? null
         : (_kindFilter == 'all' ? _items! : _items!.where((it) => it.kind == _kindFilter).toList());
-    final filtered = byKind?.where((it) => _withinPeriod(it.createdAt)).toList();
+    // Stats (status/type tiles) are computed on this — kind+period only, so
+    // the counts stay stable while a status/type tile is selected.
+    final statsBase = byKind?.where((it) => _withinPeriod(it.createdAt)).toList();
+    // The visible list additionally honors the status/type tile selection.
+    final filtered = statsBase
+        ?.where((it) => _statusFilter == 'all' || _itemStatusBucket(it) == _statusFilter)
+        .where((it) => _typeFilter == 'all' || _itemTypeBucket(it) == _typeFilter)
+        .toList();
 
     // Overall + status breakdown
     num totalEarn = 0;
@@ -129,8 +157,8 @@ class _DriverOrdersScreenState extends State<DriverOrdersScreen> {
     int externalCount = 0;
     int airportCount = 0;
 
-    if (filtered != null) {
-      for (final it in filtered) {
+    if (statsBase != null) {
+      for (final it in statsBase) {
         if (_completedStatuses.contains(it.status)) {
           totalEarn += it.total;
           completedCount++;
@@ -189,7 +217,7 @@ class _DriverOrdersScreenState extends State<DriverOrdersScreen> {
               ),
             ),
           ),
-          if (filtered != null && filtered.isNotEmpty) ...[
+          if (statsBase != null && statsBase.isNotEmpty) ...[
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
               child: Container(
@@ -216,11 +244,20 @@ class _DriverOrdersScreenState extends State<DriverOrdersScreen> {
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 6),
               child: Row(
                 children: [
-                  Expanded(child: _statusTile('✅', 'مكتملة', completedCount, totalEarn, AppColors.success)),
+                  Expanded(
+                    child: _statusTile('✅', 'مكتملة', completedCount, totalEarn, AppColors.success,
+                        selected: _statusFilter == 'completed', onTap: () => _toggleStatusFilter('completed')),
+                  ),
                   const SizedBox(width: 8),
-                  Expanded(child: _statusTile('❌', 'ملغاة', cancelledCount, cancelledTotal, AppColors.error)),
+                  Expanded(
+                    child: _statusTile('❌', 'ملغاة', cancelledCount, cancelledTotal, AppColors.error,
+                        selected: _statusFilter == 'cancelled', onTap: () => _toggleStatusFilter('cancelled')),
+                  ),
                   const SizedBox(width: 8),
-                  Expanded(child: _statusTile('⏳', 'قيد التنفيذ', activeCount, activeTotal, AppColors.accent)),
+                  Expanded(
+                    child: _statusTile('⏳', 'قيد التنفيذ', activeCount, activeTotal, AppColors.accent,
+                        selected: _statusFilter == 'active', onTap: () => _toggleStatusFilter('active')),
+                  ),
                 ],
               ),
             ),
@@ -230,13 +267,13 @@ class _DriverOrdersScreenState extends State<DriverOrdersScreen> {
                 scrollDirection: Axis.horizontal,
                 child: Row(
                   children: [
-                    _typeTile('🛵', 'توصيل', deliveryCount),
+                    _typeTile('🛵', 'توصيل', deliveryCount, selected: _typeFilter == 'order', onTap: () => _toggleTypeFilter('order')),
                     const SizedBox(width: 8),
-                    _typeTile('🚗', 'داخلي', localCount),
+                    _typeTile('🚗', 'داخلي', localCount, selected: _typeFilter == 'local', onTap: () => _toggleTypeFilter('local')),
                     const SizedBox(width: 8),
-                    _typeTile('🛣️', 'خارجي', externalCount),
+                    _typeTile('🛣️', 'خارجي', externalCount, selected: _typeFilter == 'external', onTap: () => _toggleTypeFilter('external')),
                     const SizedBox(width: 8),
-                    _typeTile('✈️', 'مطار', airportCount),
+                    _typeTile('✈️', 'مطار', airportCount, selected: _typeFilter == 'airport', onTap: () => _toggleTypeFilter('airport')),
                   ],
                 ),
               ),
@@ -269,12 +306,15 @@ class _DriverOrdersScreenState extends State<DriverOrdersScreen> {
                                 const Text('📦', style: TextStyle(fontSize: 48)),
                                 const SizedBox(height: 12),
                                 Text(
-                                  _kindFilter == 'all'
-                                      ? 'لسه مفيش طلبات أو رحلات في الفترة دي'
-                                      : _kindFilter == 'ride'
-                                          ? 'لسه مفيش رحلات في الفترة دي'
-                                          : 'لسه مفيش توصيل في الفترة دي',
+                                  _statusFilter != 'all' || _typeFilter != 'all'
+                                      ? 'مفيش نتائج للتصنيف المحدد — جرّب تشيل الفلتر'
+                                      : _kindFilter == 'all'
+                                          ? 'لسه مفيش طلبات أو رحلات في الفترة دي'
+                                          : _kindFilter == 'ride'
+                                              ? 'لسه مفيش رحلات في الفترة دي'
+                                              : 'لسه مفيش توصيل في الفترة دي',
                                   style: const TextStyle(color: AppColors.textFaint),
+                                  textAlign: TextAlign.center,
                                 ),
                               ],
                             ),
@@ -348,40 +388,62 @@ class _DriverOrdersScreenState extends State<DriverOrdersScreen> {
     );
   }
 
-  Widget _statusTile(String emoji, String label, int count, num total, Color color) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
-      decoration: BoxDecoration(
-        color: Colors.white,
+  Widget _statusTile(String emoji, String label, int count, num total, Color color,
+      {bool selected = false, VoidCallback? onTap}) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withValues(alpha: 0.25)),
-      ),
-      child: Column(
-        children: [
-          Text('$emoji $count', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 15, color: color)),
-          const SizedBox(height: 2),
-          Text(label, style: const TextStyle(fontSize: 10, color: AppColors.textFaint, fontWeight: FontWeight.w700)),
-          Text('${total.toStringAsFixed(0)} ج.م', style: TextStyle(fontSize: 10, color: color, fontWeight: FontWeight.w700)),
-        ],
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+          decoration: BoxDecoration(
+            color: selected ? color.withValues(alpha: 0.12) : Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: color.withValues(alpha: selected ? 0.9 : 0.25), width: selected ? 1.6 : 1),
+          ),
+          child: Column(
+            children: [
+              Text('$emoji $count', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 15, color: color)),
+              const SizedBox(height: 2),
+              Text(label, style: const TextStyle(fontSize: 10, color: AppColors.textFaint, fontWeight: FontWeight.w700)),
+              Text('${total.toStringAsFixed(0)} ج.م', style: TextStyle(fontSize: 10, color: color, fontWeight: FontWeight.w700)),
+            ],
+          ),
+        ),
       ),
     );
   }
 
-  Widget _typeTile(String emoji, String label, int count) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 14),
-      decoration: BoxDecoration(
-        color: Colors.white,
+  Widget _typeTile(String emoji, String label, int count, {bool selected = false, VoidCallback? onTap}) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
         borderRadius: BorderRadius.circular(99),
-        border: Border.all(color: const Color(0xFFE5E7EB)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(emoji, style: const TextStyle(fontSize: 14)),
-          const SizedBox(width: 6),
-          Text('$label ($count)', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: AppColors.textFaint)),
-        ],
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 14),
+          decoration: BoxDecoration(
+            color: selected ? AppColors.primary.withValues(alpha: 0.1) : Colors.white,
+            borderRadius: BorderRadius.circular(99),
+            border: Border.all(color: selected ? AppColors.primary : const Color(0xFFE5E7EB), width: selected ? 1.6 : 1),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(emoji, style: const TextStyle(fontSize: 14)),
+              const SizedBox(width: 6),
+              Text(
+                '$label ($count)',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w800,
+                  color: selected ? AppColors.primary : AppColors.textFaint,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
