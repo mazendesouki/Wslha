@@ -20,6 +20,16 @@ class CartStore extends ChangeNotifier {
   String? storeName;
   num deliveryFee = 0;
   num minOrder = 0;
+  // The separate dispatch-matching server (server/index.js) needs the
+  // order's origin coordinates to find nearby drivers — without them it
+  // silently falls back to a legacy broadcast path this app doesn't
+  // implement, so an order would never reach any driver. Defaults to New
+  // Damietta's centre, same fallback store/[id].astro's checkout uses when
+  // a store hasn't set its own lat/lng.
+  static const double _fallbackLat = 31.4441;
+  static const double _fallbackLng = 31.6533;
+  double storeLat = _fallbackLat;
+  double storeLng = _fallbackLng;
   final List<CartLine> _lines = [];
 
   List<CartLine> get lines => List.unmodifiable(_lines);
@@ -41,6 +51,8 @@ class CartStore extends ChangeNotifier {
       storeName = store.name;
       deliveryFee = store.deliveryFee;
       minOrder = store.minOrder;
+      storeLat = store.lat ?? _fallbackLat;
+      storeLng = store.lng ?? _fallbackLng;
     }
     final idx = _lines.indexWhere((l) => l.product.id == product.id);
     if (qty <= 0) {
@@ -59,6 +71,8 @@ class CartStore extends ChangeNotifier {
     storeName = null;
     deliveryFee = 0;
     minOrder = 0;
+    storeLat = _fallbackLat;
+    storeLng = _fallbackLng;
     notifyListeners();
   }
 }

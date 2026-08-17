@@ -83,6 +83,8 @@ class _CheckoutSheetState extends State<CheckoutSheet> {
         'code': code,
         'store_id': _cart.storeId,
         'store_name': _cart.storeName,
+        'store_lat': _cart.storeLat,
+        'store_lng': _cart.storeLng,
         'customer_name': name,
         'customer_phone': normPhone,
         'area': area,

@@ -14,6 +14,8 @@ class StoreRow {
   final num minOrder;
   final String tagline;
   final bool isOpen;
+  final double? lat;
+  final double? lng;
 
   StoreRow({
     required this.id,
@@ -28,6 +30,8 @@ class StoreRow {
     required this.minOrder,
     required this.tagline,
     required this.isOpen,
+    this.lat,
+    this.lng,
   });
 
   factory StoreRow.fromJson(Map<String, dynamic> j) => StoreRow(
@@ -43,6 +47,8 @@ class StoreRow {
         minOrder: (j['min_order'] as num?) ?? 0,
         tagline: j['tagline'] as String? ?? '',
         isOpen: j['is_open'] as bool? ?? true,
+        lat: (j['lat'] as num?)?.toDouble(),
+        lng: (j['lng'] as num?)?.toDouble(),
       );
 }
 
