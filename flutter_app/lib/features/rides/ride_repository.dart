@@ -45,6 +45,13 @@ class RideRepository {
     return sb.from('rides').stream(primaryKey: ['id']).eq('id', rideId);
   }
 
+  /// Same table track.astro's live map polls/subscribes to — the driver
+  /// app pings this every ~8s while online/on a job (see
+  /// DriverRepository.pingLocation) so this stream reflects real movement.
+  Stream<List<Map<String, dynamic>>> watchDriverLocation(String driverPhone) {
+    return sb.from('driver_locations').stream(primaryKey: ['driver_phone']).eq('driver_phone', driverPhone);
+  }
+
   Future<void> cancelRide(String rideId) async {
     await sb.from('rides').update({'status': 'cancelled'}).eq('id', rideId);
   }

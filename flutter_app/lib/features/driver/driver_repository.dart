@@ -13,7 +13,8 @@ class PendingOffer {
   final String offerId;
   final String targetType; // 'ride' | 'order'
   final Map<String, dynamic> data;
-  PendingOffer(this.offerId, this.targetType, this.data);
+  final DateTime? expiresAt;
+  PendingOffer(this.offerId, this.targetType, this.data, {this.expiresAt});
 }
 
 /// Same driver_locations table + dispatch RPCs driver-dashboard.astro uses
@@ -82,11 +83,38 @@ class DriverRepository {
     if (result == null) return null;
     final row = result is List ? (result.isNotEmpty ? result.first : null) : result;
     if (row == null || row['offer_id'] == null) return null;
-    return PendingOffer(
-      row['offer_id'].toString(),
-      row['target_type'] as String,
-      Map<String, dynamic>.from(row['data'] as Map),
-    );
+    return _offerFromRow(row as Map<String, dynamic>);
+  }
+
+  /// Every currently-pending offer for this driver (not just the latest) —
+  /// lets the app show a real list instead of one offer at a time when
+  /// several land close together (see security-22).
+  Future<List<PendingOffer>> getPendingOffers(String phone) async {
+    final result = await sb.rpc('get_my_pending_offers', params: {'p_driver_phone': phone});
+    if (result is! List) return [];
+    return result.map((row) => _offerFromRow(row as Map<String, dynamic>)).toList();
+  }
+
+  PendingOffer _offerFromRow(Map<String, dynamic> row) => PendingOffer(
+        row['offer_id'].toString(),
+        row['target_type'] as String,
+        Map<String, dynamic>.from(row['data'] as Map),
+        expiresAt: DateTime.tryParse(row['expires_at'] as String? ?? ''),
+      );
+
+  /// Periodic GPS ping while online/on a job — lets the customer's live
+  /// tracking map (see ride_repository.watchDriverLocation) show real
+  /// movement instead of a single point frozen at accept time.
+  Future<void> pingLocation(String phone) async {
+    final pos = await _currentPosition();
+    if (pos == null) return;
+    await sb.from('driver_locations').upsert({
+      'driver_phone': phone,
+      'lat': pos.latitude,
+      'lng': pos.longitude,
+      'heading': pos.heading,
+      'updated_at': DateTime.now().toIso8601String(),
+    });
   }
 
   /// Returns 'ok', or a failure reason string ('vehicle_category_mismatch',

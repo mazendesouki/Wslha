@@ -10,13 +10,12 @@ import '../../shared/widgets/logout_button.dart';
 import 'driver_repository.dart';
 
 /// Visual language ported from driver-dashboard.astro: teal online toggle,
-/// pulsing "radar" while idle, a 30s-countdown offer sheet, sequential
-/// trip-progress buttons (arrived → picked up → completed) instead of one
-/// generic "finish" button, and a route preview + "open in Google Maps"
-/// button for the current leg. Earnings/ratings tabs and the receipt/
+/// pulsing "radar" while idle, a list of 30s-countdown offer cards,
+/// sequential trip-progress buttons (arrived → picked up → completed)
+/// instead of one generic "finish" button, and a route preview + "open in
+/// Google Maps" button for the current leg. Earnings/ratings tabs and the
 /// rating modals are bigger Phase-2 scope — same call made for the
 /// customer tracking screen's live map earlier.
-const int _offerCountdownSeconds = 30;
 
 /// An accepted-but-not-yet-started job — the driver can accept a new offer
 /// while another job is already active; it lands here instead of being
@@ -40,12 +39,13 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
   final _repo = DriverRepository();
   Timer? _pollTimer;
   Timer? _countdownTimer;
+  Timer? _locationTimer;
   StreamSubscription<Map<String, dynamic>>? _offersSub;
 
   bool _online = false;
   bool _busy = false;
-  PendingOffer? _offer;
-  int _countdown = _offerCountdownSeconds;
+  List<PendingOffer> _offers = [];
+  String? _actingOnOfferId;
   Map<String, dynamic>? _activeJob;
   String? _activeJobType; // 'ride' | 'order'
   String _rideStep = 'accepted'; // accepted -> arrived -> in_progress -> completed
@@ -66,8 +66,19 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
   void dispose() {
     _pollTimer?.cancel();
     _countdownTimer?.cancel();
+    _locationTimer?.cancel();
     _offersSub?.cancel();
     super.dispose();
+  }
+
+  // Feeds the customer's live tracking map (features/rides/ride_tracking_
+  // screen.dart) — goOnline() only sets a starting point, this keeps it
+  // moving with the driver.
+  void _startLocationPings() {
+    _locationTimer?.cancel();
+    _locationTimer = Timer.periodic(const Duration(seconds: 8), (_) {
+      if (_online) _repo.pingLocation(widget.session.phone);
+    });
   }
 
   // security-21's push trigger fires the instant a dispatch_offers row is
@@ -77,36 +88,47 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
   void _startPushWatch() {
     _offersSub?.cancel();
     _offersSub = PushRegistrar.onMessageData.listen((data) {
-      if (data['type'] == 'dispatch_offer') _checkForOffer();
+      if (data['type'] == 'dispatch_offer') _refreshOffers();
     });
   }
 
-  // No longer bails out when _activeJob != null — a driver mid-job can
-  // still be offered (and accept) another one, which lands in
-  // _queuedJobs instead of replacing what they're currently doing.
-  Future<void> _checkForOffer() async {
-    if (!_online || _offer != null) return;
-    final offer = await _repo.getPendingOffer(widget.session.phone);
-    if (offer != null && mounted) _receiveOffer(offer);
+  // Pulls every currently-pending offer (not just one) — a driver mid-job
+  // can still be offered (and accept) another, which lands in _queuedJobs
+  // instead of replacing what they're currently doing. Shown as a list
+  // (see _OffersListPanel) so more than one can sit there at once.
+  Future<void> _refreshOffers() async {
+    if (!_online) return;
+    final offers = await _repo.getPendingOffers(widget.session.phone);
+    if (!mounted) return;
+    final hadIds = _offers.map((o) => o.offerId).toSet();
+    final isNew = offers.any((o) => !hadIds.contains(o.offerId));
+    if (isNew) HapticFeedback.heavyImpact();
+    setState(() => _offers = offers);
+    _ensureCountdownTicking();
   }
 
   void _startPolling() {
     _pollTimer?.cancel();
-    _pollTimer = Timer.periodic(const Duration(seconds: 5), (_) => _checkForOffer());
+    _pollTimer = Timer.periodic(const Duration(seconds: 5), (_) => _refreshOffers());
   }
 
-  void _receiveOffer(PendingOffer offer) {
-    HapticFeedback.heavyImpact();
-    _countdownTimer?.cancel();
-    _countdown = _offerCountdownSeconds;
-    setState(() => _offer = offer);
-    _countdownTimer = Timer.periodic(const Duration(seconds: 1), (t) {
+  // Just a UI heartbeat — each card computes its own remaining time from
+  // offer.expiresAt, this only forces a rebuild every second so that
+  // countdown actually ticks down on screen.
+  void _ensureCountdownTicking() {
+    if (_offers.isEmpty) {
+      _countdownTimer?.cancel();
+      _countdownTimer = null;
+      return;
+    }
+    _countdownTimer ??= Timer.periodic(const Duration(seconds: 1), (_) {
       if (!mounted) return;
-      setState(() => _countdown--);
-      if (_countdown <= 0) {
-        t.cancel();
-        _reject(auto: true);
+      if (_offers.isEmpty) {
+        _countdownTimer?.cancel();
+        _countdownTimer = null;
+        return;
       }
+      setState(() {});
     });
   }
 
@@ -126,14 +148,19 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
       if (ok) {
         _startPolling();
         _startPushWatch();
+        _startLocationPings();
       }
     } else {
       await _repo.goOffline(widget.session.phone);
       _pollTimer?.cancel();
       _offersSub?.cancel();
+      _locationTimer?.cancel();
+      _countdownTimer?.cancel();
+      _countdownTimer = null;
       setState(() {
         _online = false;
         _busy = false;
+        _offers = [];
       });
     }
   }
@@ -153,12 +180,11 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
     );
   }
 
-  Future<void> _accept() async {
-    if (_offer == null) return;
-    _countdownTimer?.cancel();
-    setState(() => _busy = true);
+  Future<void> _accept(PendingOffer offer) async {
+    if (_actingOnOfferId != null) return;
+    setState(() => _actingOnOfferId = offer.offerId);
     try {
-      final result = await _repo.acceptOffer(_offer!.offerId, widget.session.phone, widget.session.name);
+      final result = await _repo.acceptOffer(offer.offerId, widget.session.phone, widget.session.name);
       final ok = result == 'ok';
       if (!mounted) return;
       if (!ok) {
@@ -173,23 +199,24 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
         );
       }
       setState(() {
-        _busy = false;
+        _actingOnOfferId = null;
+        _offers = _offers.where((o) => o.offerId != offer.offerId).toList();
         if (ok) {
-          final job = QueuedJob(_offer!.targetType, _offer!.data);
+          final job = QueuedJob(offer.targetType, offer.data);
           if (_activeJob == null) {
             _activateJob(job);
           } else {
             _queuedJobs.add(job);
           }
         }
-        _offer = null;
       });
+      _ensureCountdownTicking();
     } catch (e) {
       _showError(e);
       if (!mounted) return;
       setState(() {
-        _busy = false;
-        _offer = null;
+        _actingOnOfferId = null;
+        _offers = _offers.where((o) => o.offerId != offer.offerId).toList();
       });
     }
   }
@@ -213,19 +240,20 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
     });
   }
 
-  Future<void> _reject({bool auto = false}) async {
-    if (_offer == null) return;
-    setState(() => _busy = true);
+  Future<void> _reject(PendingOffer offer) async {
+    if (_actingOnOfferId != null) return;
+    setState(() => _actingOnOfferId = offer.offerId);
     try {
-      await _repo.rejectOffer(_offer!.offerId, widget.session.phone);
+      await _repo.rejectOffer(offer.offerId, widget.session.phone);
     } catch (e) {
       _showError(e);
     }
     if (!mounted) return;
     setState(() {
-      _busy = false;
-      _offer = null;
+      _actingOnOfferId = null;
+      _offers = _offers.where((o) => o.offerId != offer.offerId).toList();
     });
+    _ensureCountdownTicking();
   }
 
   Future<void> _advanceRide() async {
@@ -365,16 +393,15 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
               ),
               const SizedBox(height: 20),
               Expanded(
-                // A fresh offer takes priority even mid-job — it's a 30s
+                // Fresh offers take priority even mid-job — each is a 30s
                 // decision, shown over (not instead of losing) the active
                 // job, which is still sitting in _activeJob underneath.
-                child: _offer != null
-                    ? _OfferSheet(
-                        offer: _offer!,
-                        countdown: _countdown,
-                        busy: _busy,
+                child: _offers.isNotEmpty
+                    ? _OffersListPanel(
+                        offers: _offers,
+                        actingOnOfferId: _actingOnOfferId,
                         onAccept: _accept,
-                        onReject: () => _reject(),
+                        onReject: _reject,
                       )
                     : _activeJob != null
                         ? _buildActiveJob()
@@ -704,19 +731,65 @@ class _QueueTile extends StatelessWidget {
   }
 }
 
-class _OfferSheet extends StatelessWidget {
-  final PendingOffer offer;
-  final int countdown;
-  final bool busy;
-  final VoidCallback onAccept;
-  final VoidCallback onReject;
-  const _OfferSheet({
-    required this.offer,
-    required this.countdown,
-    required this.busy,
+/// Every currently-pending offer shown as its own card (route thumbnail +
+/// price + accept/reject) instead of one modal blocking the whole screen —
+/// lets the driver compare and act on more than one at a time.
+class _OffersListPanel extends StatelessWidget {
+  final List<PendingOffer> offers;
+  final String? actingOnOfferId;
+  final void Function(PendingOffer) onAccept;
+  final void Function(PendingOffer) onReject;
+  const _OffersListPanel({
+    required this.offers,
+    required this.actingOnOfferId,
     required this.onAccept,
     required this.onReject,
   });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
+          children: [
+            const Text('🔔', style: TextStyle(fontSize: 22)),
+            const SizedBox(width: 8),
+            Text(
+              offers.length == 1 ? 'عندك عرض جديد' : 'عندك ${offers.length} عروض جديدة',
+              style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 15),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Expanded(
+          child: ListView.separated(
+            itemCount: offers.length,
+            separatorBuilder: (_, _) => const SizedBox(height: 12),
+            itemBuilder: (context, i) {
+              final offer = offers[i];
+              return _OfferCard(
+                offer: offer,
+                busy: actingOnOfferId == offer.offerId,
+                onAccept: () => onAccept(offer),
+                onReject: () => onReject(offer),
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _OfferCard extends StatelessWidget {
+  final PendingOffer offer;
+  final bool busy;
+  final VoidCallback onAccept;
+  final VoidCallback onReject;
+  const _OfferCard({required this.offer, required this.busy, required this.onAccept, required this.onReject});
+
+  double? _num(dynamic v) => v == null ? null : (v as num).toDouble();
 
   @override
   Widget build(BuildContext context) {
@@ -725,104 +798,119 @@ class _OfferSheet extends StatelessWidget {
     final from = isOrder ? (data['store_name'] as String? ?? '') : (data['from_area'] as String? ?? '');
     final to = isOrder ? (data['address'] as String? ?? data['area'] as String? ?? '') : (data['to_area'] as String? ?? '');
     final fare = data['fare'] ?? data['total'] ?? data['delivery_fee'] ?? '';
+    final fromLat = _num(isOrder ? data['store_lat'] : data['from_lat']);
+    final fromLng = _num(isOrder ? data['store_lng'] : data['from_lng']);
+    final toLat = _num(isOrder ? (data['customer_lat'] ?? data['store_lat']) : data['to_lat']);
+    final toLng = _num(isOrder ? (data['customer_lng'] ?? data['store_lng']) : data['to_lng']);
+    final hasMap = fromLat != null && fromLng != null && toLat != null && toLng != null;
+    final remaining = offer.expiresAt?.difference(DateTime.now()).inSeconds;
 
-    return Center(
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: const [BoxShadow(color: Color(0x22000000), blurRadius: 20, offset: Offset(0, 8))],
-        ),
-        clipBehavior: Clip.antiAlias,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(20),
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(colors: [AppColors.primaryDark, AppColors.primary]),
-              ),
-              child: Row(
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: const [BoxShadow(color: Color(0x22000000), blurRadius: 16, offset: Offset(0, 6))],
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (hasMap)
+            SizedBox(
+              height: 110,
+              child: Stack(
+                fit: StackFit.expand,
                 children: [
-                  const Text('🔔', style: TextStyle(fontSize: 26)),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Text(
-                      isOrder ? 'طلب دليفري جديد!' : 'راكب جديد!',
-                      style: const TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.w900),
+                  Image.network(
+                    staticRouteMapUrl(fromLat: fromLat, fromLng: fromLng, toLat: toLat, toLng: toLng, width: 640, height: 220),
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) => Container(color: AppColors.primaryLight),
+                  ),
+                  Positioned(
+                    top: 8,
+                    right: 8,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                      decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.55), borderRadius: BorderRadius.circular(999)),
+                      child: Text(
+                        isOrder ? '📦 دليفري' : '🚖 رحلة',
+                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 11),
+                      ),
                     ),
                   ),
-                  Container(
-                    width: 44,
-                    height: 44,
-                    decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: Colors.white70, width: 3)),
-                    alignment: Alignment.center,
-                    child: Text('$countdown', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 16)),
-                  ),
+                  if (remaining != null)
+                    Positioned(
+                      top: 8,
+                      left: 8,
+                      child: Container(
+                        width: 34,
+                        height: 34,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Colors.black.withValues(alpha: 0.55),
+                          border: Border.all(color: Colors.white70, width: 2),
+                        ),
+                        alignment: Alignment.center,
+                        child: Text('${remaining < 0 ? 0 : remaining}', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 12)),
+                      ),
+                    ),
                 ],
               ),
             ),
-            Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  _RouteRow(from: from, to: to),
-                  const SizedBox(height: 16),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceAround,
-                    children: [
-                      if (data['distance_km'] != null)
-                        _metaChip('${(data['distance_km'] as num).toStringAsFixed(1)} كم', 'المسافة'),
-                      if (data['eta_minutes'] != null) _metaChip('${data['eta_minutes']} د', 'الوقت'),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                        decoration: BoxDecoration(color: const Color(0xFFDCFCE7), borderRadius: BorderRadius.circular(10)),
-                        child: Column(
-                          children: [
-                            Text('$fare ج.م', style: const TextStyle(fontWeight: FontWeight.w900, color: AppColors.success)),
-                            const Text('الأجرة', style: TextStyle(fontSize: 9, color: AppColors.textFaint)),
-                          ],
-                        ),
+          Padding(
+            padding: const EdgeInsets.all(14),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _RouteRow(from: from, to: to),
+                const SizedBox(height: 12),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    if (data['distance_km'] != null) _metaChip('${(data['distance_km'] as num).toStringAsFixed(1)} كم'),
+                    if (data['eta_minutes'] != null) _metaChip('${data['eta_minutes']} د'),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(color: const Color(0xFFDCFCE7), borderRadius: BorderRadius.circular(10)),
+                      child: Text('$fare ج.م', style: const TextStyle(fontWeight: FontWeight.w900, color: AppColors.success)),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 14),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: busy ? null : onReject,
+                        style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 12)),
+                        child: const Text('رفض'),
                       ),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: OutlinedButton(
-                          onPressed: busy ? null : onReject,
-                          style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 14)),
-                          child: const Text('رفض'),
-                        ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: busy ? null : onAccept,
+                        style: ElevatedButton.styleFrom(backgroundColor: AppColors.success, padding: const EdgeInsets.symmetric(vertical: 12)),
+                        child: busy
+                            ? const SizedBox(height: 16, width: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                            : const Text('قبول'),
                       ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: ElevatedButton(
-                          onPressed: busy ? null : onAccept,
-                          style: ElevatedButton.styleFrom(backgroundColor: AppColors.success, padding: const EdgeInsets.symmetric(vertical: 14)),
-                          child: const Text('قبول'),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
+                    ),
+                  ],
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _metaChip(String value, String label) {
-    return Column(
-      children: [
-        Text(value, style: const TextStyle(fontWeight: FontWeight.w900)),
-        Text(label, style: const TextStyle(fontSize: 9, color: AppColors.textFaint)),
-      ],
+  Widget _metaChip(String value) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(color: AppColors.primaryLight, borderRadius: BorderRadius.circular(10)),
+      child: Text(value, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 11, color: AppColors.primary)),
     );
   }
 }

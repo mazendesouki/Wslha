@@ -34,7 +34,8 @@ const _cancelledStatuses = {'cancelled', 'rejected'};
 /// lighter, faster equivalent scoped to short time windows and orders too,
 /// using each item's display total (not the post-commission driver cut).
 class DriverOrdersScreen extends StatefulWidget {
-  const DriverOrdersScreen({super.key});
+  final ValueChanged<int>? onNavigateTab;
+  const DriverOrdersScreen({super.key, this.onNavigateTab});
 
   @override
   State<DriverOrdersScreen> createState() => _DriverOrdersScreenState();
@@ -338,7 +339,11 @@ class _DriverOrdersScreenState extends State<DriverOrdersScreen> {
                                     onTap: () => Navigator.of(context).push(
                                       MaterialPageRoute(
                                         builder: (_) => isRide
-                                            ? RideTrackingScreen(rideId: item.id, isDriverView: true)
+                                            ? RideTrackingScreen(
+                                                rideId: item.id,
+                                                isDriverView: true,
+                                                onFinished: widget.onNavigateTab == null ? null : () => widget.onNavigateTab!(0),
+                                              )
                                             : OrderInvoiceScreen(orderId: item.id),
                                       ),
                                     ),

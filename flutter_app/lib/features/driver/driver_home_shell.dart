@@ -47,7 +47,7 @@ class _DriverHomeShellState extends State<DriverHomeShell> {
     DriverHomeScreen(session: widget.session),
     const WalletScreen(),
     const AccountScreen(),
-    const DriverOrdersScreen(),
+    DriverOrdersScreen(onNavigateTab: _goToTab),
     SettingsScreen(onNavigateTab: _goToTab),
   ];
 

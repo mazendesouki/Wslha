@@ -1,10 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import '../../core/contact_launcher.dart';
+import '../../core/location_share.dart';
+import '../../core/maps_launcher.dart';
 import '../../core/notifications.dart';
 import '../../core/session.dart';
 import '../../core/theme.dart';
+import '../../shared/widgets/live_tracking_map.dart';
 import '../driver/driver_repository.dart';
 import 'ride_repository.dart';
+
+const Set<String> _liveTrackStatuses = {'accepted', 'arrived', 'in_progress'};
 
 // Passing isDriverView flips the driver-facing card off (a driver looking at
 // their own trip shouldn't see a "call the driver" card pointing at
@@ -42,7 +48,12 @@ class _Step {
 class RideTrackingScreen extends StatefulWidget {
   final String rideId;
   final bool isDriverView;
-  const RideTrackingScreen({super.key, required this.rideId, this.isDriverView = false});
+  /// Driver view only — called right before popping once the ride is
+  /// finished, so the caller (driver_orders_screen.dart) can jump back to
+  /// the home tab where a ready queue (if any) is waiting instead of
+  /// leaving the driver looking at the history list they came from.
+  final VoidCallback? onFinished;
+  const RideTrackingScreen({super.key, required this.rideId, this.isDriverView = false, this.onFinished});
 
   @override
   State<RideTrackingScreen> createState() => _RideTrackingScreenState();
@@ -105,6 +116,7 @@ class _RideTrackingScreenState extends State<RideTrackingScreen> {
               SnackBar(content: Text('✅ تم إنهاء الرحلة — أرباحك: ${settlement.driverEarn.toStringAsFixed(0)} ج.م'), duration: const Duration(seconds: 4)),
             );
           }
+          widget.onFinished?.call();
           Navigator.of(context).pop();
           return;
       }
@@ -185,6 +197,14 @@ class _RideTrackingScreenState extends State<RideTrackingScreen> {
                       ),
                       const SizedBox(height: 16),
                       if (!isCancelled) _EtaCard(status: status),
+                      if (!isCancelled &&
+                          !widget.isDriverView &&
+                          driverPhone != null &&
+                          driverPhone.isNotEmpty &&
+                          _liveTrackStatuses.contains(status)) ...[
+                        const SizedBox(height: 16),
+                        _LiveMapSection(rideRepo: _rideRepo, driverPhone: driverPhone, ride: ride),
+                      ],
                       if (!isCancelled && !widget.isDriverView && _driverProfileFuture != null) ...[
                         const SizedBox(height: 16),
                         FutureBuilder<Map<String, dynamic>?>(
@@ -300,6 +320,94 @@ class _DriverStepButton extends StatelessWidget {
       child: busy
           ? const SizedBox(height: 18, width: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
           : Text(label, style: const TextStyle(fontWeight: FontWeight.w900)),
+    );
+  }
+}
+
+/// Interactive live map + "open in Google Maps"/"share my location" actions
+/// for the customer, shown while a driver is assigned and the ride hasn't
+/// finished yet — lets them see for themselves whether the driver is on
+/// the right path, instead of trusting the status text alone.
+class _LiveMapSection extends StatelessWidget {
+  final RideRepository rideRepo;
+  final String driverPhone;
+  final Map<String, dynamic> ride;
+  const _LiveMapSection({required this.rideRepo, required this.driverPhone, required this.ride});
+
+  double? _num(dynamic v) => v == null ? null : (v as num).toDouble();
+
+  @override
+  Widget build(BuildContext context) {
+    final fromLat = _num(ride['from_lat']);
+    final fromLng = _num(ride['from_lng']);
+    final toLat = _num(ride['to_lat']);
+    final toLng = _num(ride['to_lng']);
+    if (fromLat == null || fromLng == null || toLat == null || toLng == null) return const SizedBox.shrink();
+    final origin = LatLng(fromLat, fromLng);
+    final destination = LatLng(toLat, toLng);
+
+    return StreamBuilder<List<Map<String, dynamic>>>(
+      stream: rideRepo.watchDriverLocation(driverPhone),
+      builder: (context, snap) {
+        final loc = (snap.data != null && snap.data!.isNotEmpty) ? snap.data!.first : null;
+        final driverLat = _num(loc?['lat']);
+        final driverLng = _num(loc?['lng']);
+        final driverHeading = _num(loc?['heading']);
+        final driverPos = (driverLat != null && driverLng != null) ? LatLng(driverLat, driverLng) : null;
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: const [BoxShadow(color: Color(0x14000000), blurRadius: 12, offset: Offset(0, 4))],
+              ),
+              clipBehavior: Clip.antiAlias,
+              child: Column(
+                children: [
+                  const Padding(
+                    padding: EdgeInsets.fromLTRB(14, 10, 14, 6),
+                    child: Row(
+                      children: [
+                        Text('🚖', style: TextStyle(fontSize: 14)),
+                        SizedBox(width: 6),
+                        Text('السائق على الخريطة الآن', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 12)),
+                      ],
+                    ),
+                  ),
+                  LiveTrackingMap(driverPosition: driverPos, driverHeading: driverHeading, origin: origin, destination: destination),
+                ],
+              ),
+            ),
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: () => openMapsNavigation(
+                      driverPos?.latitude ?? destination.latitude,
+                      driverPos?.longitude ?? destination.longitude,
+                    ),
+                    icon: const Icon(Icons.map_outlined),
+                    label: const Text('افتح في Google Maps'),
+                    style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () => shareLocationOnWhatsApp(driverPhone),
+                    icon: const Icon(Icons.share_location_outlined),
+                    label: const Text('شارك موقعك'),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        );
+      },
     );
   }
 }

@@ -23,6 +23,13 @@
         android:label="${appName}"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
+        <!-- google_maps_flutter (live tracking map) — same Android-app-
+             restricted key already used for Static Maps/Places (see
+             core/maps_launcher.dart); needs "Maps SDK for Android" enabled
+             on it in Google Cloud Console. -->
+        <meta-data
+            android:name="com.google.android.geo.API_KEY"
+            android:value="AIzaSyCSJQuStVvhhNhbAZF1tuwO_IacicXqyhM"/>
         <activity
             android:name=".MainActivity"
             android:exported="true"
