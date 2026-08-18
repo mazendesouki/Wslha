@@ -18,6 +18,16 @@ import 'driver_repository.dart';
 /// customer tracking screen's live map earlier.
 const int _offerCountdownSeconds = 30;
 
+/// An accepted-but-not-yet-started job — the driver can accept a new offer
+/// while another job is already active; it lands here instead of being
+/// dropped, so finishing the current job (or switching manually) shows a
+/// ready-to-go queue instead of an empty screen waiting for the next offer.
+class QueuedJob {
+  final String type; // 'ride' | 'order'
+  final Map<String, dynamic> data;
+  QueuedJob(this.type, this.data);
+}
+
 class DriverHomeScreen extends StatefulWidget {
   final UserSession session;
   const DriverHomeScreen({super.key, required this.session});
@@ -40,6 +50,7 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
   String? _activeJobType; // 'ride' | 'order'
   String _rideStep = 'accepted'; // accepted -> arrived -> in_progress -> completed
   bool _pickedUp = false; // orders only
+  final List<QueuedJob> _queuedJobs = [];
 
   @override
   void initState() {
@@ -70,8 +81,11 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
     });
   }
 
+  // No longer bails out when _activeJob != null — a driver mid-job can
+  // still be offered (and accept) another one, which lands in
+  // _queuedJobs instead of replacing what they're currently doing.
   Future<void> _checkForOffer() async {
-    if (!_online || _activeJob != null || _offer != null) return;
+    if (!_online || _offer != null) return;
     final offer = await _repo.getPendingOffer(widget.session.phone);
     if (offer != null && mounted) _receiveOffer(offer);
   }
@@ -161,10 +175,12 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
       setState(() {
         _busy = false;
         if (ok) {
-          _activeJob = _offer!.data;
-          _activeJobType = _offer!.targetType;
-          _rideStep = 'accepted';
-          _pickedUp = false;
+          final job = QueuedJob(_offer!.targetType, _offer!.data);
+          if (_activeJob == null) {
+            _activateJob(job);
+          } else {
+            _queuedJobs.add(job);
+          }
         }
         _offer = null;
       });
@@ -176,6 +192,25 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
         _offer = null;
       });
     }
+  }
+
+  void _activateJob(QueuedJob job) {
+    _activeJob = job.data;
+    _activeJobType = job.type;
+    _rideStep = 'accepted';
+    _pickedUp = false;
+  }
+
+  /// Switching mid-job puts the job being left back at the front of the
+  /// queue instead of dropping it — nothing accepted is ever lost.
+  void _switchToQueuedJob(int index) {
+    setState(() {
+      final next = _queuedJobs.removeAt(index);
+      if (_activeJob != null) {
+        _queuedJobs.insert(0, QueuedJob(_activeJobType!, _activeJob!));
+      }
+      _activateJob(next);
+    });
   }
 
   Future<void> _reject({bool auto = false}) async {
@@ -330,17 +365,22 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
               ),
               const SizedBox(height: 20),
               Expanded(
-                child: _activeJob != null
-                    ? _buildActiveJob()
-                    : _offer != null
-                        ? _OfferSheet(
-                            offer: _offer!,
-                            countdown: _countdown,
-                            busy: _busy,
-                            onAccept: _accept,
-                            onReject: () => _reject(),
-                          )
-                        : _IdleView(online: _online),
+                // A fresh offer takes priority even mid-job — it's a 30s
+                // decision, shown over (not instead of losing) the active
+                // job, which is still sitting in _activeJob underneath.
+                child: _offer != null
+                    ? _OfferSheet(
+                        offer: _offer!,
+                        countdown: _countdown,
+                        busy: _busy,
+                        onAccept: _accept,
+                        onReject: () => _reject(),
+                      )
+                    : _activeJob != null
+                        ? _buildActiveJob()
+                        : _queuedJobs.isNotEmpty
+                            ? _buildQueueOnly()
+                            : _IdleView(online: _online),
               ),
             ],
           ),
@@ -370,6 +410,25 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
     final lat = _num(headingToPickup ? job['from_lat'] : job['to_lat']);
     final lng = _num(headingToPickup ? job['from_lng'] : job['to_lng']);
     return (lat != null && lng != null) ? (lat, lng) : null;
+  }
+
+  /// Shown instead of the idle radar view once the driver has finished
+  /// their current job but still has accepted ones waiting — so they pick
+  /// the next one instantly instead of watching an empty screen.
+  Widget _buildQueueOnly() {
+    return SingleChildScrollView(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const Padding(
+            padding: EdgeInsets.only(bottom: 4),
+            child: Text('🗂️ عندك طلبات جاهزة — اختار واحد وابدأ فورًا', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 14)),
+          ),
+          const SizedBox(height: 10),
+          _QueueList(jobs: _queuedJobs, onTap: _switchToQueuedJob),
+        ],
+      ),
+    );
   }
 
   Widget _buildActiveJob() {
@@ -414,6 +473,15 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
           if (destination != null) ...[
             const SizedBox(height: 16),
             _RouteMapCard(origin: origin, destination: destination),
+          ],
+          if (_queuedJobs.isNotEmpty) ...[
+            const SizedBox(height: 16),
+            Align(
+              alignment: AlignmentDirectional.centerStart,
+              child: Text('🗂️ قدامك ${_queuedJobs.length} طلب جاهز — دوس عشان تبدأه دلوقتي', style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 12, color: AppColors.textFaint)),
+            ),
+            const SizedBox(height: 8),
+            _QueueList(jobs: _queuedJobs, onTap: _switchToQueuedJob),
           ],
           const SizedBox(height: 20),
           if (isOrder)
@@ -563,6 +631,74 @@ class _IdleViewState extends State<_IdleView> with SingleTickerProviderStateMixi
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         border: Border.all(color: AppColors.primary.withValues(alpha: opacity * 0.6), width: 2),
+      ),
+    );
+  }
+}
+
+/// Compact list of a driver's already-accepted-but-not-started jobs —
+/// tapping one makes it the active job (see _switchToQueuedJob).
+class _QueueList extends StatelessWidget {
+  final List<QueuedJob> jobs;
+  final ValueChanged<int> onTap;
+  const _QueueList({required this.jobs, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        for (int i = 0; i < jobs.length; i++) ...[
+          if (i > 0) const SizedBox(height: 8),
+          _QueueTile(job: jobs[i], onTap: () => onTap(i)),
+        ],
+      ],
+    );
+  }
+}
+
+class _QueueTile extends StatelessWidget {
+  final QueuedJob job;
+  final VoidCallback onTap;
+  const _QueueTile({required this.job, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final isOrder = job.type == 'order';
+    final data = job.data;
+    final from = isOrder ? (data['store_name'] as String? ?? '') : (data['from_area'] as String? ?? '');
+    final to = isOrder ? (data['address'] as String? ?? data['area'] as String? ?? '') : (data['to_area'] as String? ?? '');
+    final fare = data['fare'] ?? data['total'] ?? data['delivery_fee'] ?? 0;
+
+    return Material(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(14),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(14),
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: const Color(0xFFE5E7EB)),
+          ),
+          child: Row(
+            children: [
+              Text(isOrder ? '📦' : '🚖', style: const TextStyle(fontSize: 20)),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('$from ← $to', style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 12), maxLines: 1, overflow: TextOverflow.ellipsis),
+                    const SizedBox(height: 2),
+                    Text('$fare ج.م', style: const TextStyle(fontSize: 11, color: AppColors.success, fontWeight: FontWeight.w700)),
+                  ],
+                ),
+              ),
+              const Icon(Icons.play_circle_fill, color: AppColors.primary, size: 26),
+            ],
+          ),
+        ),
       ),
     );
   }
