@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import '../../core/contact_launcher.dart';
 import '../../core/notifications.dart';
+import '../../core/session.dart';
 import '../../core/theme.dart';
+import '../driver/driver_repository.dart';
 import 'ride_repository.dart';
 
 // Passing isDriverView flips the driver-facing card off (a driver looking at
@@ -48,6 +50,7 @@ class RideTrackingScreen extends StatefulWidget {
 
 class _RideTrackingScreenState extends State<RideTrackingScreen> {
   final _rideRepo = RideRepository();
+  final _driverRepo = DriverRepository();
 
   // Cached by driver phone so the lookup only fires once per assigned
   // driver, not on every Realtime tick of the ride row.
@@ -59,9 +62,57 @@ class _RideTrackingScreenState extends State<RideTrackingScreen> {
   // the same status) — mirrors track.astro's `lastStatus` check.
   String? _lastNotifiedStatus;
 
+  // Own phone, needed to settle commission on completion — only fetched
+  // for the driver view (see _advance()); a customer viewing their own
+  // ride never needs it.
+  String? _myPhone;
+  bool _advancing = false;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.isDriverView) {
+      SessionStore.load().then((s) {
+        if (mounted) setState(() => _myPhone = s?.phone);
+      });
+    }
+  }
+
   int _stepIndex(String status) {
     final i = _steps.indexWhere((s) => s.key == status);
     return i < 0 ? 0 : i;
+  }
+
+  /// Same step progression as driver_home_screen.dart's _advanceRide() —
+  /// lets the driver work an already-accepted ride from the history list
+  /// (طلباتي ورحلاتي), not just the one currently active on the home tab.
+  Future<void> _advance(String status) async {
+    if (_myPhone == null || _advancing) return;
+    setState(() => _advancing = true);
+    try {
+      switch (status) {
+        case 'accepted':
+          await _driverRepo.markRideArrived(widget.rideId);
+          break;
+        case 'arrived':
+          await _driverRepo.markRideInProgress(widget.rideId);
+          break;
+        default:
+          final settlement = await _driverRepo.completeRide(widget.rideId, _myPhone!);
+          if (!mounted) return;
+          if (settlement != null) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('✅ تم إنهاء الرحلة — أرباحك: ${settlement.driverEarn.toStringAsFixed(0)} ج.م'), duration: const Duration(seconds: 4)),
+            );
+          }
+          Navigator.of(context).pop();
+          return;
+      }
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('خطأ: $e'), backgroundColor: AppColors.error));
+    } finally {
+      if (mounted) setState(() => _advancing = false);
+    }
   }
 
   @override
@@ -191,6 +242,8 @@ class _RideTrackingScreenState extends State<RideTrackingScreen> {
                           },
                           child: const Text('إلغاء الرحلة'),
                         ),
+                      if (widget.isDriverView && !isCancelled && status != 'completed' && status != 'pending')
+                        _DriverStepButton(status: status, busy: _advancing, onTap: () => _advance(status)),
                     ],
                   ),
                 ),
@@ -216,6 +269,37 @@ class _RideTrackingScreenState extends State<RideTrackingScreen> {
           ),
         ),
       ],
+    );
+  }
+}
+
+/// Same label/color progression as driver_home_screen.dart's
+/// _RideStepButtons (private there, so re-declared here rather than
+/// shared — same visual language either way).
+class _DriverStepButton extends StatelessWidget {
+  final String status; // accepted | arrived | in_progress
+  final bool busy;
+  final VoidCallback onTap;
+  const _DriverStepButton({required this.status, required this.busy, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final (label, color) = switch (status) {
+      'accepted' => ('📍 وصلت لنقطة الانطلاق', AppColors.primaryLight),
+      'arrived' => ('✓ الراكب صعد، ابدأ الرحلة', AppColors.primary),
+      _ => ('✓ وصلنا للوجهة — إنهاء الرحلة', AppColors.success),
+    };
+    final isLight = status == 'accepted';
+    return ElevatedButton(
+      onPressed: busy ? null : onTap,
+      style: ElevatedButton.styleFrom(
+        backgroundColor: color,
+        foregroundColor: isLight ? AppColors.primary : Colors.white,
+        padding: const EdgeInsets.symmetric(vertical: 16),
+      ),
+      child: busy
+          ? const SizedBox(height: 18, width: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+          : Text(label, style: const TextStyle(fontWeight: FontWeight.w900)),
     );
   }
 }
