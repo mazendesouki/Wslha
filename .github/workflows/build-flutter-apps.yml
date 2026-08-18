@@ -56,14 +56,17 @@ jobs:
       # release cert's fingerprint alongside the debug one already there,
       # since the Google Maps key is Android-app-restricted per cert.
       - name: Print release keystore SHA-1 (for Google Maps API key restriction)
-        if: ${{ secrets.WSLHA_KEYSTORE_BASE64 != '' }}
         env:
           WSLHA_KEYSTORE_PASSWORD: ${{ secrets.WSLHA_KEYSTORE_PASSWORD }}
           WSLHA_KEY_ALIAS: ${{ secrets.WSLHA_KEY_ALIAS }}
         run: |
-          keytool -list -v -keystore android/app/release.keystore \
-            -storepass "$WSLHA_KEYSTORE_PASSWORD" -alias "$WSLHA_KEY_ALIAS" \
-            | grep -E "SHA1:|SHA256:"
+          if [ -f android/app/release.keystore ]; then
+            keytool -list -v -keystore android/app/release.keystore \
+              -storepass "$WSLHA_KEYSTORE_PASSWORD" -alias "$WSLHA_KEY_ALIAS" \
+              | grep -E "SHA1:|SHA256:"
+          else
+            echo "No release keystore present — skipping SHA-1 print."
+          fi
 
       - name: Build customer APK
         env:
