@@ -66,33 +66,60 @@ class _LoginScreenState extends State<LoginScreen> {
     final isCustomerApp = widget.config.flavor == AppFlavor.customer;
 
     return Scaffold(
+      backgroundColor: const Color(0xFFF7FAF9),
       body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  const SizedBox(height: 32),
-                  Text(
-                    widget.config.appTitle,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      fontSize: 34,
-                      fontWeight: FontWeight.w900,
-                      color: AppColors.primary,
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Brand header — same mark as the app icon/splash, so the
+              // login screen reads as a continuation of the same moment
+              // instead of a plain form bolted onto the app.
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.fromLTRB(24, 36, 24, 40),
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [AppColors.primaryDark, AppColors.primary],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.only(bottomLeft: Radius.circular(32), bottomRight: Radius.circular(32)),
+                ),
+                child: Column(
+                  children: [
+                    Container(
+                      width: 84,
+                      height: 84,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.25), blurRadius: 16, offset: const Offset(0, 6))],
+                      ),
+                      clipBehavior: Clip.antiAlias,
+                      child: Image.asset('assets/branding/logo.png', fit: BoxFit.cover),
                     ),
-                  ),
-                  const SizedBox(height: 8),
-                  const Text(
-                    'تسجيل الدخول',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 16, color: Colors.black54),
-                  ),
-                  const SizedBox(height: 32),
+                    const SizedBox(height: 16),
+                    Text(
+                      widget.config.appTitle,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w900, color: Colors.white),
+                    ),
+                    const SizedBox(height: 4),
+                    const Text(
+                      'تسجيل الدخول',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(fontSize: 14, color: Colors.white70, fontWeight: FontWeight.w700),
+                    ),
+                  ],
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(24, 28, 24, 24),
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
                   if (_error != null) ...[
                     Container(
                       padding: const EdgeInsets.all(12),
@@ -160,9 +187,11 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                       ),
                     ),
-                ],
+                    ],
+                  ),
+                ),
               ),
-            ),
+            ],
           ),
         ),
       ),

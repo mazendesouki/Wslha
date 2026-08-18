@@ -13,6 +13,7 @@ import 'features/auth/login_screen.dart';
 import 'features/driver/driver_home_shell.dart';
 import 'features/home/home_shell.dart';
 import 'features/merchant/merchant_home_screen.dart';
+import 'shared/widgets/animated_splash.dart';
 
 /// Shared entry point for all three build flavors — main_customer.dart,
 /// main_driver.dart, and main_merchant.dart each just call this with their
@@ -67,13 +68,25 @@ class _SessionGate extends StatelessWidget {
   final FlavorConfig config;
   const _SessionGate({required this.config});
 
+  /// The splash's own entrance animation is ~900ms — waiting on this
+  /// alongside the real session fetch keeps a fast load from cutting it
+  /// off mid-animation, without adding a fixed delay when the session
+  /// fetch is the slower of the two.
+  static Future<UserSession?> _loadWithMinimumSplash() async {
+    final results = await Future.wait([
+      SessionStore.load(),
+      Future.delayed(const Duration(milliseconds: 1100)),
+    ]);
+    return results[0] as UserSession?;
+  }
+
   @override
   Widget build(BuildContext context) {
     return FutureBuilder<UserSession?>(
-      future: SessionStore.load(),
+      future: _loadWithMinimumSplash(),
       builder: (context, snapshot) {
         if (snapshot.connectionState != ConnectionState.done) {
-          return const Scaffold(body: Center(child: CircularProgressIndicator()));
+          return AnimatedSplash(appTitle: config.appTitle);
         }
         final session = snapshot.data;
         if (session == null) return LoginScreen(config: config);
