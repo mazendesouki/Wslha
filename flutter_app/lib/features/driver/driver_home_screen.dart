@@ -7,6 +7,7 @@ import '../../core/push.dart';
 import '../../core/session.dart';
 import '../../core/theme.dart';
 import '../../shared/widgets/logout_button.dart';
+import 'active_job_store.dart';
 import 'driver_repository.dart';
 
 /// Visual language ported from driver-dashboard.astro: teal online toggle,
@@ -15,17 +16,9 @@ import 'driver_repository.dart';
 /// instead of one generic "finish" button, and a route preview + "open in
 /// Google Maps" button for the current leg. Earnings/ratings tabs and the
 /// rating modals are bigger Phase-2 scope — same call made for the
-/// customer tracking screen's live map earlier.
-
-/// An accepted-but-not-yet-started job — the driver can accept a new offer
-/// while another job is already active; it lands here instead of being
-/// dropped, so finishing the current job (or switching manually) shows a
-/// ready-to-go queue instead of an empty screen waiting for the next offer.
-class QueuedJob {
-  final String type; // 'ride' | 'order'
-  final Map<String, dynamic> data;
-  QueuedJob(this.type, this.data);
-}
+/// customer tracking screen's live map earlier. Active/queued-job state
+/// itself lives in ActiveJobStore (shared with driver_orders_screen.dart's
+/// history list) instead of local fields here.
 
 class DriverHomeScreen extends StatefulWidget {
   final UserSession session;
@@ -46,20 +39,21 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
   bool _busy = false;
   List<PendingOffer> _offers = [];
   String? _actingOnOfferId;
-  Map<String, dynamic>? _activeJob;
-  String? _activeJobType; // 'ride' | 'order'
-  String _rideStep = 'accepted'; // accepted -> arrived -> in_progress -> completed
-  bool _pickedUp = false; // orders only
-  final List<QueuedJob> _queuedJobs = [];
+  final _jobs = ActiveJobStore.instance;
 
   @override
   void initState() {
     super.initState();
+    _jobs.addListener(_onJobsChanged);
     // Go online automatically as soon as the driver opens the app, instead
     // of always starting offline and requiring a manual tap first — the
     // driver can still switch back off with the same toggle at any time
     // (e.g. after finishing their last trip for the day).
     _toggleOnline(true);
+  }
+
+  void _onJobsChanged() {
+    if (mounted) setState(() {});
   }
 
   @override
@@ -68,6 +62,7 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
     _countdownTimer?.cancel();
     _locationTimer?.cancel();
     _offersSub?.cancel();
+    _jobs.removeListener(_onJobsChanged);
     super.dispose();
   }
 
@@ -93,7 +88,7 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
   }
 
   // Pulls every currently-pending offer (not just one) — a driver mid-job
-  // can still be offered (and accept) another, which lands in _queuedJobs
+  // can still be offered (and accept) another, which lands in _jobs.queue
   // instead of replacing what they're currently doing. Shown as a list
   // (see _OffersListPanel) so more than one can sit there at once.
   Future<void> _refreshOffers() async {
@@ -211,10 +206,10 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
         _offers = _offers.where((o) => o.offerId != offer.offerId).toList();
         if (ok) {
           final job = QueuedJob(offer.targetType, offer.data);
-          if (_activeJob == null) {
-            _activateJob(job);
+          if (_jobs.job == null) {
+            _jobs.activate(job.type, job.data);
           } else {
-            _queuedJobs.add(job);
+            _jobs.enqueue(job);
           }
         }
       });
@@ -227,25 +222,6 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
         _offers = _offers.where((o) => o.offerId != offer.offerId).toList();
       });
     }
-  }
-
-  void _activateJob(QueuedJob job) {
-    _activeJob = job.data;
-    _activeJobType = job.type;
-    _rideStep = 'accepted';
-    _pickedUp = false;
-  }
-
-  /// Switching mid-job puts the job being left back at the front of the
-  /// queue instead of dropping it — nothing accepted is ever lost.
-  void _switchToQueuedJob(int index) {
-    setState(() {
-      final next = _queuedJobs.removeAt(index);
-      if (_activeJob != null) {
-        _queuedJobs.insert(0, QueuedJob(_activeJobType!, _activeJob!));
-      }
-      _activateJob(next);
-    });
   }
 
   Future<void> _reject(PendingOffer offer) async {
@@ -265,36 +241,29 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
   }
 
   Future<void> _advanceRide() async {
-    final job = _activeJob;
+    final job = _jobs.job;
     if (job == null) return;
     final rideId = job['id'].toString();
     setState(() => _busy = true);
     try {
-      switch (_rideStep) {
+      switch (_jobs.rideStep) {
         case 'accepted':
           await _repo.markRideArrived(rideId);
           if (!mounted) return;
-          setState(() {
-            _rideStep = 'arrived';
-            _busy = false;
-          });
+          _jobs.setRideStep('arrived');
+          setState(() => _busy = false);
           return;
         case 'arrived':
           await _repo.markRideInProgress(rideId);
           if (!mounted) return;
-          setState(() {
-            _rideStep = 'in_progress';
-            _busy = false;
-          });
+          _jobs.setRideStep('in_progress');
+          setState(() => _busy = false);
           return;
         default:
           final settlement = await _repo.completeRide(rideId, widget.session.phone);
           if (!mounted) return;
-          setState(() {
-            _activeJob = null;
-            _activeJobType = null;
-            _busy = false;
-          });
+          _jobs.clearActive();
+          setState(() => _busy = false);
           if (settlement != null) _showReceipt(settlement);
       }
     } catch (e) {
@@ -305,19 +274,17 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
   }
 
   Future<void> _advanceOrder() async {
-    final job = _activeJob;
+    final job = _jobs.job;
     if (job == null) return;
     final orderId = job['id'].toString();
 
-    if (!_pickedUp) {
+    if (!_jobs.pickedUp) {
       setState(() => _busy = true);
       try {
         await _repo.markOrderPickedUp(orderId);
         if (!mounted) return;
-        setState(() {
-          _pickedUp = true;
-          _busy = false;
-        });
+        _jobs.setPickedUp(true);
+        setState(() => _busy = false);
       } catch (e) {
         _showError(e);
         if (!mounted) return;
@@ -337,11 +304,8 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
         _showError('كود التسليم غير صحيح');
         return;
       }
-      setState(() {
-        _activeJob = null;
-        _activeJobType = null;
-        _busy = false;
-      });
+      _jobs.clearActive();
+      setState(() => _busy = false);
     } catch (e) {
       _showError(e);
       if (!mounted) return;
@@ -396,14 +360,14 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
                 driverName: widget.session.name,
                 driverPhone: widget.session.phone,
                 online: _online,
-                busy: _busy || _activeJob != null,
+                busy: _busy || _jobs.job != null,
                 onChanged: _toggleOnline,
               ),
               const SizedBox(height: 20),
               Expanded(
                 // Fresh offers take priority even mid-job — each is a 30s
                 // decision, shown over (not instead of losing) the active
-                // job, which is still sitting in _activeJob underneath.
+                // job, which is still sitting in _jobs.job underneath.
                 child: _offers.isNotEmpty
                     ? _OffersListPanel(
                         offers: _offers,
@@ -411,9 +375,9 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
                         onAccept: _accept,
                         onReject: _reject,
                       )
-                    : _activeJob != null
+                    : _jobs.job != null
                         ? _buildActiveJob()
-                        : _queuedJobs.isNotEmpty
+                        : _jobs.queue.isNotEmpty
                             ? _buildQueueOnly()
                             : _IdleView(online: _online),
               ),
@@ -441,7 +405,7 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
       return (lat != null && lng != null) ? (lat, lng) : null;
     }
     // Rides: heading to pick up the rider first, then to their destination.
-    final headingToPickup = _rideStep == 'accepted';
+    final headingToPickup = _jobs.rideStep == 'accepted';
     final lat = _num(headingToPickup ? job['from_lat'] : job['to_lat']);
     final lng = _num(headingToPickup ? job['from_lng'] : job['to_lng']);
     return (lat != null && lng != null) ? (lat, lng) : null;
@@ -460,15 +424,15 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
             child: Text('🗂️ عندك طلبات جاهزة — اختار واحد وابدأ فورًا', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 14)),
           ),
           const SizedBox(height: 10),
-          _QueueList(jobs: _queuedJobs, onTap: _switchToQueuedJob),
+          _QueueList(jobs: _jobs.queue, onTap: _jobs.switchToQueued),
         ],
       ),
     );
   }
 
   Widget _buildActiveJob() {
-    final job = _activeJob!;
-    final isOrder = _activeJobType == 'order';
+    final job = _jobs.job!;
+    final isOrder = _jobs.jobType == 'order';
     final from = isOrder ? (job['store_name'] as String? ?? '') : (job['from_area'] as String? ?? '');
     final to = isOrder ? (job['address'] as String? ?? job['area'] as String? ?? '') : (job['to_area'] as String? ?? '');
     final fare = job['fare'] ?? job['total'] ?? job['delivery_fee'] ?? 0;
@@ -509,27 +473,27 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
             const SizedBox(height: 16),
             _RouteMapCard(origin: origin, destination: destination),
           ],
-          if (_queuedJobs.isNotEmpty) ...[
+          if (_jobs.queue.isNotEmpty) ...[
             const SizedBox(height: 16),
             Align(
               alignment: AlignmentDirectional.centerStart,
-              child: Text('🗂️ قدامك ${_queuedJobs.length} طلب جاهز — دوس عشان تبدأه دلوقتي', style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 12, color: AppColors.textFaint)),
+              child: Text('🗂️ قدامك ${_jobs.queue.length} طلب جاهز — دوس عشان تبدأه دلوقتي', style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 12, color: AppColors.textFaint)),
             ),
             const SizedBox(height: 8),
-            _QueueList(jobs: _queuedJobs, onTap: _switchToQueuedJob),
+            _QueueList(jobs: _jobs.queue, onTap: _jobs.switchToQueued),
           ],
           const SizedBox(height: 20),
           if (isOrder)
             ElevatedButton(
               onPressed: _busy ? null : _advanceOrder,
               style: ElevatedButton.styleFrom(
-                backgroundColor: _pickedUp ? AppColors.success : AppColors.primary,
+                backgroundColor: _jobs.pickedUp ? AppColors.success : AppColors.primary,
                 padding: const EdgeInsets.symmetric(vertical: 16),
               ),
-              child: Text(_pickedUp ? '✓ تم التسليم' : '📦 التقطت الطلب من المتجر'),
+              child: Text(_jobs.pickedUp ? '✓ تم التسليم' : '📦 التقطت الطلب من المتجر'),
             )
           else
-            _RideStepButtons(step: _rideStep, busy: _busy, onTap: _advanceRide),
+            _RideStepButtons(step: _jobs.rideStep, busy: _busy, onTap: _advanceRide),
         ],
       ),
     );
@@ -672,7 +636,7 @@ class _IdleViewState extends State<_IdleView> with SingleTickerProviderStateMixi
 }
 
 /// Compact list of a driver's already-accepted-but-not-started jobs —
-/// tapping one makes it the active job (see _switchToQueuedJob).
+/// tapping one makes it the active job (see ActiveJobStore.switchToQueued).
 class _QueueList extends StatelessWidget {
   final List<QueuedJob> jobs;
   final ValueChanged<int> onTap;

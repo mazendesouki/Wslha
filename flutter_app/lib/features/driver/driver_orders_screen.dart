@@ -1,9 +1,17 @@
 import 'package:flutter/material.dart';
 import '../../core/session.dart';
+import '../../core/supabase_client.dart';
 import '../../core/theme.dart';
 import '../orders/order_invoice_screen.dart';
 import '../orders/orders_repository.dart';
 import '../rides/ride_tracking_screen.dart';
+import 'active_job_store.dart';
+
+// A ride still assigned to this driver and not yet finished — tapping one
+// of these activates it in ActiveJobStore and jumps to the home tab
+// (where the real progress buttons/queue live) instead of opening a
+// separate, disconnected tracking view.
+const _activeRideStatuses = {'accepted', 'arrived', 'in_progress'};
 
 const Map<String, Color> _statusColor = {
   'delivered': AppColors.success,
@@ -116,6 +124,30 @@ class _DriverOrdersScreenState extends State<DriverOrdersScreen> {
 
   void _toggleTypeFilter(String value) {
     setState(() => _typeFilter = _typeFilter == value ? 'all' : value);
+  }
+
+  Future<void> _openItem(HistoryItem item) async {
+    if (item.kind == 'ride' && _activeRideStatuses.contains(item.status)) {
+      try {
+        final row = await sb.from('rides').select().eq('id', item.id).single();
+        ActiveJobStore.instance.activate('ride', row, rideStep: row['status'] as String?);
+        widget.onNavigateTab?.call(0);
+      } catch (e) {
+        if (!mounted) return;
+        Navigator.of(context).push(
+          MaterialPageRoute(builder: (_) => RideTrackingScreen(rideId: item.id, isDriverView: true)),
+        );
+      }
+      return;
+    }
+    if (!mounted) return;
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => item.kind == 'ride'
+            ? RideTrackingScreen(rideId: item.id, isDriverView: true)
+            : OrderInvoiceScreen(orderId: item.id),
+      ),
+    );
   }
 
   Widget _chip(String value, String label, String groupValue, ValueChanged<String> onSelect) {
@@ -330,23 +362,12 @@ class _DriverOrdersScreenState extends State<DriverOrdersScreen> {
                               itemBuilder: (context, i) {
                                 final item = filtered[i];
                                 final color = _statusColor[item.status] ?? AppColors.textFaint;
-                                final isRide = item.kind == 'ride';
                                 return Material(
                                   color: Colors.white,
                                   borderRadius: BorderRadius.circular(14),
                                   child: InkWell(
                                     borderRadius: BorderRadius.circular(14),
-                                    onTap: () => Navigator.of(context).push(
-                                      MaterialPageRoute(
-                                        builder: (_) => isRide
-                                            ? RideTrackingScreen(
-                                                rideId: item.id,
-                                                isDriverView: true,
-                                                onFinished: widget.onNavigateTab == null ? null : () => widget.onNavigateTab!(0),
-                                              )
-                                            : OrderInvoiceScreen(orderId: item.id),
-                                      ),
-                                    ),
+                                    onTap: () => _openItem(item),
                                     child: Container(
                                       padding: const EdgeInsets.all(14),
                                       decoration: BoxDecoration(

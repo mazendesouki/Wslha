@@ -398,7 +398,7 @@ class _LiveMapSection extends StatelessWidget {
                 const SizedBox(width: 8),
                 Expanded(
                   child: OutlinedButton.icon(
-                    onPressed: () => shareLocationOnWhatsApp(driverPhone),
+                    onPressed: () => shareLocationOnWhatsApp(),
                     icon: const Icon(Icons.share_location_outlined),
                     label: const Text('شارك موقعك'),
                   ),
