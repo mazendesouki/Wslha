@@ -8,6 +8,9 @@ import '../../core/session.dart';
 import '../../core/theme.dart';
 import '../../shared/widgets/live_tracking_map.dart';
 import '../driver/driver_repository.dart';
+import '../ratings/rate_sheet.dart';
+import '../ratings/ratings_repository.dart';
+import '../ratings/trust_badge.dart';
 import 'ride_repository.dart';
 
 const Set<String> _liveTrackStatuses = {'accepted', 'arrived', 'in_progress'};
@@ -62,6 +65,8 @@ class RideTrackingScreen extends StatefulWidget {
 class _RideTrackingScreenState extends State<RideTrackingScreen> {
   final _rideRepo = RideRepository();
   final _driverRepo = DriverRepository();
+  final _ratingsRepo = RatingsRepository();
+  bool _ratingPrompted = false;
 
   // Cached by driver phone so the lookup only fires once per assigned
   // driver, not on every Realtime tick of the ride row.
@@ -86,6 +91,31 @@ class _RideTrackingScreenState extends State<RideTrackingScreen> {
       SessionStore.load().then((s) {
         if (mounted) setState(() => _myPhone = s?.phone);
       });
+    }
+  }
+
+  Future<void> _maybePromptRating(String driverPhone, String? customerPhone) async {
+    if (!mounted) return;
+    final already = await _ratingsRepo.hasRatedRide(widget.rideId);
+    if (already || !mounted) return;
+    final result = await RateSheet.show(
+      context,
+      title: 'قيّم رحلتك مع السائق',
+      subtitle: 'رأيك بيساعدنا نحسّن الخدمة',
+      positiveTags: positiveDriverTags,
+      negativeTags: negativeDriverTags,
+    );
+    if (result == null || !mounted) return;
+    await _ratingsRepo.rateDriver(
+      rideId: widget.rideId,
+      driverPhone: driverPhone,
+      customerPhone: customerPhone ?? '',
+      rating: result.rating,
+      tags: result.tags,
+      comment: result.comment,
+    );
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('✅ شكرًا على تقييمك')));
     }
   }
 
@@ -153,6 +183,11 @@ class _RideTrackingScreenState extends State<RideTrackingScreen> {
             AppNotifications.instance.show('وصّلها — تحديث رحلتك', _statusNotif[status]!);
           }
           _lastNotifiedStatus = status;
+
+          if (!widget.isDriverView && status == 'completed' && !_ratingPrompted && driverPhone != null && driverPhone.isNotEmpty) {
+            _ratingPrompted = true;
+            WidgetsBinding.instance.addPostFrameCallback((_) => _maybePromptRating(driverPhone, customerPhone));
+          }
 
           if (!widget.isDriverView) {
             if (driverPhone != null && driverPhone.isNotEmpty && driverPhone != _driverProfilePhone) {
@@ -537,6 +572,13 @@ class _DriverCard extends StatelessWidget {
                         color: (regNumber != null && regNumber.isNotEmpty) ? Colors.black87 : AppColors.textFaint,
                       ),
                     ),
+                    if (driverPhone != null && driverPhone!.isNotEmpty) ...[
+                      const SizedBox(height: 6),
+                      TrustBadge(
+                        future: RatingsRepository().driverTrustBadge(driverPhone!),
+                        trustedLabel: 'سائق موثوق',
+                      ),
+                    ],
                   ],
                 ),
               ),

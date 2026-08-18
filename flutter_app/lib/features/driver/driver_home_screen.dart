@@ -7,6 +7,9 @@ import '../../core/push.dart';
 import '../../core/session.dart';
 import '../../core/theme.dart';
 import '../../shared/widgets/logout_button.dart';
+import '../ratings/rate_sheet.dart';
+import '../ratings/ratings_repository.dart';
+import '../ratings/trust_badge.dart';
 import 'active_job_store.dart';
 import 'driver_repository.dart';
 
@@ -37,6 +40,7 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
 
   bool _online = false;
   bool _busy = false;
+  final _ratingsRepo = RatingsRepository();
   List<PendingOffer> _offers = [];
   String? _actingOnOfferId;
   final _jobs = ActiveJobStore.instance;
@@ -265,12 +269,38 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
           _jobs.clearActive();
           setState(() => _busy = false);
           if (settlement != null) _showReceipt(settlement);
+          _promptRateCustomer(job, serviceType: 'ride', referenceId: rideId);
       }
     } catch (e) {
       _showError(e);
       if (!mounted) return;
       setState(() => _busy = false);
     }
+  }
+
+  /// Driver→customer, mirroring driver-dashboard.astro's rate-customer
+  /// modal — same private "reliability" signal shown to other drivers
+  /// before they accept an offer (see _OfferCard).
+  Future<void> _promptRateCustomer(Map<String, dynamic> job, {required String serviceType, required String referenceId}) async {
+    final customerPhone = job['customer_phone'] as String?;
+    if (customerPhone == null || customerPhone.isEmpty || !mounted) return;
+    final result = await RateSheet.show(
+      context,
+      title: 'قيّم العميل',
+      subtitle: 'تقييمك يساعد السائقين التانيين',
+      positiveTags: positiveCustomerTags,
+      negativeTags: negativeCustomerTags,
+    );
+    if (result == null || !mounted) return;
+    await _ratingsRepo.rateCustomer(
+      driverPhone: widget.session.phone,
+      customerPhone: customerPhone,
+      rating: result.rating,
+      serviceType: serviceType,
+      referenceId: referenceId,
+      tags: result.tags,
+      comment: result.comment,
+    );
   }
 
   Future<void> _advanceOrder() async {
@@ -306,6 +336,7 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
       }
       _jobs.clearActive();
       setState(() => _busy = false);
+      _promptRateCustomer(job, serviceType: 'order', referenceId: orderId);
     } catch (e) {
       _showError(e);
       if (!mounted) return;
@@ -835,6 +866,16 @@ class _OfferCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 _RouteRow(from: from, to: to),
+                if (data['customer_phone'] != null && (data['customer_phone'] as String).isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  Align(
+                    alignment: AlignmentDirectional.centerStart,
+                    child: TrustBadge(
+                      future: RatingsRepository().customerReliability(data['customer_phone'] as String),
+                      trustedLabel: 'عميل موثوق',
+                    ),
+                  ),
+                ],
                 const SizedBox(height: 12),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,

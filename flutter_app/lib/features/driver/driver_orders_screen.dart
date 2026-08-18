@@ -145,7 +145,7 @@ class _DriverOrdersScreenState extends State<DriverOrdersScreen> {
       MaterialPageRoute(
         builder: (_) => item.kind == 'ride'
             ? RideTrackingScreen(rideId: item.id, isDriverView: true)
-            : OrderInvoiceScreen(orderId: item.id),
+            : OrderInvoiceScreen(orderId: item.id, isDriverView: true),
       ),
     );
   }

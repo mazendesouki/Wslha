@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../core/supabase_client.dart';
 import '../../core/theme.dart';
+import '../ratings/order_rating_sheet.dart';
+import '../ratings/ratings_repository.dart';
 import 'orders_repository.dart';
 
 /// Full invoice view for a single `orders` row — opened by tapping a
@@ -9,7 +11,8 @@ import 'orders_repository.dart';
 /// the only other place `items`/`items_summary` get rendered today).
 class OrderInvoiceScreen extends StatefulWidget {
   final String orderId;
-  const OrderInvoiceScreen({super.key, required this.orderId});
+  final bool isDriverView;
+  const OrderInvoiceScreen({super.key, required this.orderId, this.isDriverView = false});
 
   @override
   State<OrderInvoiceScreen> createState() => _OrderInvoiceScreenState();
@@ -19,11 +22,36 @@ class _OrderInvoiceScreenState extends State<OrderInvoiceScreen> {
   Map<String, dynamic>? _order;
   bool _loading = true;
   String? _error;
+  final _ratingsRepo = RatingsRepository();
+  bool _ratingPrompted = false;
 
   @override
   void initState() {
     super.initState();
     _load();
+  }
+
+  Future<void> _maybePromptRating(Map<String, dynamic> o) async {
+    if (widget.isDriverView || _ratingPrompted) return;
+    final code = o['code'] as String?;
+    if (code == null || code.isEmpty) return;
+    _ratingPrompted = true;
+    final already = await _ratingsRepo.hasRatedOrder(code);
+    if (already || !mounted) return;
+    final storeName = (o['store_name'] as String?) ?? 'المتجر';
+    final driverPhone = o['driver_phone'] as String?;
+    final result = await OrderRatingSheet.show(context, storeName: storeName, hasDriver: driverPhone != null && driverPhone.isNotEmpty);
+    if (result == null || !mounted) return;
+    await _ratingsRepo.rateOrder(
+      orderCode: code,
+      storeId: o['store_id'] as String? ?? '',
+      driverPhone: driverPhone,
+      storeRating: result.storeRating,
+      driverRating: result.driverRating,
+      tags: result.tags,
+      comment: result.comment,
+    );
+    if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('✅ شكرًا على تقييمك')));
   }
 
   Future<void> _load() async {
@@ -82,6 +110,9 @@ class _OrderInvoiceScreenState extends State<OrderInvoiceScreen> {
 
   Widget _buildInvoice(Map<String, dynamic> o) {
     final status = o['status'] as String? ?? 'pending';
+    if (status == 'delivered') {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _maybePromptRating(o));
+    }
     final total = (o['total'] as num?) ?? 0;
     final subtotal = (o['subtotal'] as num?) ?? total;
     final deliveryFee = (o['delivery_fee'] as num?) ?? (total - subtotal);

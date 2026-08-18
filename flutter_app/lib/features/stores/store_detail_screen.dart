@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/theme.dart';
+import '../ratings/ratings_repository.dart';
 import 'cart_store.dart';
 import 'checkout_sheet.dart';
 import 'stores_models.dart';
@@ -20,12 +21,17 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
   bool _loading = true;
   String? _error;
   final _cart = CartStore.instance;
+  final _ratingsRepo = RatingsRepository();
+  Set<String> _topItemNames = {};
 
   @override
   void initState() {
     super.initState();
     _cart.addListener(_onCartChanged);
     _load();
+    _ratingsRepo.storeTopItems(widget.store.id).then((top) {
+      if (mounted) setState(() => _topItemNames = top.map((e) => e.key).toSet());
+    });
   }
 
   @override
@@ -150,9 +156,24 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
             decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16)),
             child: Row(
               children: [
-                const Icon(Icons.star, color: AppColors.accent, size: 16),
-                const SizedBox(width: 4),
-                Text('${widget.store.rating} (${widget.store.reviews})', style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 12)),
+                FutureBuilder<RatingSummary>(
+                  future: _ratingsRepo.storeTrustBadge(widget.store.id),
+                  builder: (context, snap) {
+                    if (snap.hasData && !snap.data!.isNew) {
+                      final s = snap.data!;
+                      final emoji = s.avg >= 4.5 ? '😍' : s.avg >= 3.5 ? '🙂' : s.avg >= 2.5 ? '😐' : '🙁';
+                      return Text('$emoji ${s.avg.toStringAsFixed(1)} (${s.count})', style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 12));
+                    }
+                    return Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.star, color: AppColors.accent, size: 16),
+                        const SizedBox(width: 4),
+                        Text('${widget.store.rating} (${widget.store.reviews})', style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 12)),
+                      ],
+                    );
+                  },
+                ),
                 const SizedBox(width: 14),
                 const Icon(Icons.timer_outlined, color: AppColors.textFaint, size: 16),
                 const SizedBox(width: 4),
@@ -174,7 +195,12 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
           padding: const EdgeInsets.only(bottom: 8, top: 4),
           child: Text(title, style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 14)),
         ),
-        ...items.map((p) => _ProductTile(product: p, qty: _cart.qtyOf(p.id), onQtyChanged: (q) => _setQty(p, q))),
+        ...items.map((p) => _ProductTile(
+              product: p,
+              qty: _cart.qtyOf(p.id),
+              isTopRated: _topItemNames.contains(p.name),
+              onQtyChanged: (q) => _setQty(p, q),
+            )),
         const SizedBox(height: 12),
       ];
 
@@ -210,8 +236,9 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
 class _ProductTile extends StatelessWidget {
   final ProductRow product;
   final int qty;
+  final bool isTopRated;
   final ValueChanged<int> onQtyChanged;
-  const _ProductTile({required this.product, required this.qty, required this.onQtyChanged});
+  const _ProductTile({required this.product, required this.qty, this.isTopRated = false, required this.onQtyChanged});
 
   @override
   Widget build(BuildContext context) {
@@ -235,7 +262,19 @@ class _ProductTile extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(product.name, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13)),
+                Row(
+                  children: [
+                    Flexible(child: Text(product.name, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13))),
+                    if (isTopRated) ...[
+                      const SizedBox(width: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(color: const Color(0xFFFEF3C7), borderRadius: BorderRadius.circular(999)),
+                        child: const Text('🏆 الأكثر تفضيلاً', style: TextStyle(fontSize: 9, fontWeight: FontWeight.w900, color: Color(0xFF92400E))),
+                      ),
+                    ],
+                  ],
+                ),
                 if (product.description?.isNotEmpty == true) ...[
                   const SizedBox(height: 2),
                   Text(product.description!, style: const TextStyle(fontSize: 11, color: AppColors.textFaint), maxLines: 2, overflow: TextOverflow.ellipsis),
