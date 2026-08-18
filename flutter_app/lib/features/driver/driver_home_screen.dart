@@ -98,7 +98,15 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
   // (see _OffersListPanel) so more than one can sit there at once.
   Future<void> _refreshOffers() async {
     if (!_online) return;
-    final offers = await _repo.getPendingOffers(widget.session.phone);
+    List<PendingOffer> offers;
+    try {
+      offers = await _repo.getPendingOffers(widget.session.phone);
+    } catch (e) {
+      // A silently-swallowed failure here means offers stop arriving with
+      // no visible cause — surface it instead so a bad deploy is obvious.
+      if (mounted) _showError(e);
+      return;
+    }
     if (!mounted) return;
     final hadIds = _offers.map((o) => o.offerId).toSet();
     final isNew = offers.any((o) => !hadIds.contains(o.offerId));

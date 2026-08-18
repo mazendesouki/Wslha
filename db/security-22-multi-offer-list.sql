@@ -20,23 +20,28 @@ as $$
 declare
   v_result jsonb;
 begin
-  select coalesce(jsonb_agg(o), '[]'::jsonb) into v_result
-  from (
-    select
-      d.id as offer_id,
-      d.target_type,
-      d.expires_at,
-      case when d.target_type = 'ride'
-        then (select to_jsonb(r) from public.rides  r where r.id = d.target_id)
-        else (select to_jsonb(o) from public.orders o where o.id = d.target_id)
-      end as data
-    from public.dispatch_offers d
-    where d.driver_phone = p_driver_phone
-      and d.status = 'pending'
-      and d.expires_at > now()
-    order by d.offered_at desc
-  ) o
-  where o.data is not null;
+  -- Explicit LEFT JOINs + jsonb_build_object instead of a per-row
+  -- correlated subquery inside a CASE — functionally the same lookup as
+  -- get_my_pending_offer (singular), just aggregated instead of limit-1'd.
+  select coalesce(
+    jsonb_agg(
+      jsonb_build_object(
+        'offer_id', d.id,
+        'target_type', d.target_type,
+        'expires_at', d.expires_at,
+        'data', case when d.target_type = 'ride' then to_jsonb(r) else to_jsonb(ord) end
+      )
+      order by d.offered_at desc
+    ),
+    '[]'::jsonb
+  ) into v_result
+  from public.dispatch_offers d
+  left join public.rides  r   on d.target_type = 'ride'  and r.id = d.target_id
+  left join public.orders ord on d.target_type = 'order' and ord.id = d.target_id
+  where d.driver_phone = p_driver_phone
+    and d.status = 'pending'
+    and d.expires_at > now()
+    and ((d.target_type = 'ride' and r.id is not null) or (d.target_type = 'order' and ord.id is not null));
 
   return v_result;
 end;
