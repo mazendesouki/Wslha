@@ -28,7 +28,7 @@ begin
       url     := 'https://vtikgyiopkjnrwlqnmfx.supabase.co/functions/v1/send-push',
       headers := jsonb_build_object(
         'Content-Type',  'application/json',
-        'x-push-secret', 'VlLLnM4NmT8Azxrjvp9ph0oziju4AXxr',
+        'x-push-secret', 'T-reW-9ouyCJ8dYAE1v4G2fEGzJwRXMaWCf1XnwIVBg',
         'apikey',        'sb_publishable_PLSnpvCT-sAyUMtymNgTwA_QmL2suw4'
       ),
       body    := jsonb_build_object(
