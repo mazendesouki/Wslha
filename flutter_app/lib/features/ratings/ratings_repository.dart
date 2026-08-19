@@ -22,6 +22,41 @@ class RatingSummary {
   bool get isNew => count == 0;
 }
 
+/// Driver level tiers — purely a function of how many customer ratings
+/// they've accumulated, per the profile screen's "المستوى على حسب عدد
+/// التقييم" requirement (deliberately not tied to the average score, so a
+/// driver's level only ever grows, never drops from a single bad rating).
+class DriverLevel {
+  final String emoji;
+  final String label;
+  final int minCount;
+  const DriverLevel(this.emoji, this.label, this.minCount);
+}
+
+const List<DriverLevel> driverLevels = [
+  DriverLevel('🌱', 'سائق جديد', 0),
+  DriverLevel('🥉', 'سائق برونزي', 10),
+  DriverLevel('🥈', 'سائق فضي', 50),
+  DriverLevel('🥇', 'سائق ذهبي', 150),
+  DriverLevel('💎', 'سائق ماسي', 400),
+];
+
+DriverLevel levelForRatingCount(int count) {
+  var current = driverLevels.first;
+  for (final lvl in driverLevels) {
+    if (count >= lvl.minCount) current = lvl;
+  }
+  return current;
+}
+
+/// Ratings needed to reach the next tier, or null if already at the top.
+DriverLevel? nextLevelFor(int count) {
+  for (final lvl in driverLevels) {
+    if (count < lvl.minCount) return lvl;
+  }
+  return null;
+}
+
 /// Same `ratings` table + `update_store_rating` RPC the web app
 /// (rides.astro / driver-dashboard.astro / track.astro) already reads and
 /// writes directly via the anon key — this mirrors those exact REST calls
@@ -119,6 +154,22 @@ class RatingsRepository {
   Future<RatingSummary> driverTrustBadge(String driverPhone) async {
     final rows = await sb.from('ratings').select('rating').eq('driver_phone', driverPhone).eq('rated_by', 'customer');
     return _summarize(rows, 'rating');
+  }
+
+  /// Individual customer reviews for the driver's own profile screen (not
+  /// just the avg/count driverTrustBadge gives) — same columns
+  /// driver-dashboard.astro's ratings-list reads (driver-dashboard.astro:2136),
+  /// including driver_reply which exists on the live table but isn't tracked
+  /// in db/*.sql (see security-24-ratings-plus.sql's header comment).
+  Future<List<Map<String, dynamic>>> driverReviews(String driverPhone, {int limit = 20}) async {
+    final rows = await sb
+        .from('ratings')
+        .select('id,rating,comment,service_type,tags,created_at,driver_reply')
+        .eq('driver_phone', driverPhone)
+        .eq('rated_by', 'customer')
+        .order('created_at', ascending: false)
+        .limit(limit);
+    return List<Map<String, dynamic>>.from(rows);
   }
 
   /// The "customer reliability" card a driver sees before accepting — same

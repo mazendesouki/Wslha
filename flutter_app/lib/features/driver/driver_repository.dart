@@ -172,6 +172,32 @@ class DriverRepository {
     await sb.from('rides').update({'status': 'in_progress'}).eq('id', rideId);
   }
 
+  /// Server-side lifetime trip breakdown — same RPC driver-dashboard.astro's
+  /// إحصائيات tab calls (see db/security-17-driver-trip-stats.sql, extended
+  /// with a store_orders category by db/security-28-driver-profile.sql).
+  Future<Map<String, dynamic>> fetchTripStats(String phone) async {
+    final result = await sb.rpc('get_driver_trip_stats', params: {'p_driver_phone': phone});
+    if (result is Map) return Map<String, dynamic>.from(result);
+    return {};
+  }
+
+  /// The driver's own latest application row — vehicle photos/model/plate
+  /// live here (driver_applications), not on accounts. Same table the web
+  /// driver-dashboard reads for the vehicle-info card.
+  Future<Map<String, dynamic>?> fetchVehicleInfo(String phone) async {
+    final rows = await sb
+        .from('driver_applications')
+        .select(
+          'vehicle_model,vehicle_color,vehicle_year,vehicle_reg_number,'
+          'vehicle_front_url,vehicle_back_url,vehicle_right_url,vehicle_left_url,plate_photo_url',
+        )
+        .eq('phone', phone)
+        .order('created_at', ascending: false)
+        .limit(1);
+    if (rows.isEmpty) return null;
+    return Map<String, dynamic>.from(rows.first);
+  }
+
   Future<RideSettlement?> completeRide(String rideId, String driverPhone) async {
     final ride = await sb.from('rides').update({
       'status': 'completed',

@@ -1,3 +1,4 @@
+import 'package:http/http.dart' as http;
 import '../../core/supabase_client.dart';
 
 /// The `accounts` table is not directly SELECTable by the anon key — the
@@ -25,5 +26,26 @@ class AccountRepository {
     if (username != null) patch['username'] = username;
     if (patch.isEmpty) return;
     await sb.from('accounts').update(patch).eq('phone', phone);
+  }
+
+  /// Uploads to the same anon-writable `documents` storage bucket
+  /// AuthRepository.uploadDriverPhoto() already uses (see auth_repository.dart),
+  /// just under an `avatars/` path instead of `driver-apps/` since this is a
+  /// profile picture the user can change anytime, not a one-off KYC photo.
+  Future<String?> uploadAvatar(String phone, List<int> bytes, String fileExt) async {
+    final path = 'avatars/$phone/avatar-${DateTime.now().millisecondsSinceEpoch}.$fileExt';
+    final uploadRes = await http.post(
+      Uri.parse('$supabaseUrl/storage/v1/object/documents/$path'),
+      headers: {
+        'apikey': supabaseAnonKey,
+        'Authorization': 'Bearer $supabaseAnonKey',
+        'Content-Type': 'image/$fileExt',
+      },
+      body: bytes,
+    );
+    if (uploadRes.statusCode != 200 && uploadRes.statusCode != 201) return null;
+    final url = '$supabaseUrl/storage/v1/object/public/documents/$path';
+    await sb.from('accounts').update({'avatar_url': url}).eq('phone', phone);
+    return url;
   }
 }

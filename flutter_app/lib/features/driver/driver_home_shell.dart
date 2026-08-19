@@ -1,17 +1,18 @@
 import 'package:flutter/material.dart';
 import '../../core/session.dart';
 import '../../core/theme.dart';
-import '../account/account_screen.dart';
 import '../settings/settings_screen.dart';
 import '../wallet/wallet_screen.dart';
 import 'driver_home_screen.dart';
 import 'driver_orders_screen.dart';
+import 'driver_profile_screen.dart';
 import 'driver_repository.dart';
 
 /// Matches the customer HomeShell's pattern (IndexedStack + bottom nav) —
 /// driver-dashboard.astro's own tab bar (رحلات/حساب/سجل) inspired the tab
-/// set, reusing the already-built AccountScreen/WalletScreen/SettingsScreen
-/// since none of those are customer-specific.
+/// set. The حسابي tab uses DriverProfileScreen (driver-specific, with
+/// ratings/level/vehicle info) instead of the generic AccountScreen that
+/// customer/merchant still use; WalletScreen/SettingsScreen stay shared.
 class DriverHomeShell extends StatefulWidget {
   final UserSession session;
   const DriverHomeShell({super.key, required this.session});
@@ -46,7 +47,7 @@ class _DriverHomeShellState extends State<DriverHomeShell> {
   late final List<Widget> _tabs = [
     DriverHomeScreen(session: widget.session),
     const WalletScreen(),
-    const AccountScreen(),
+    DriverProfileScreen(session: widget.session),
     DriverOrdersScreen(onNavigateTab: _goToTab),
     SettingsScreen(onNavigateTab: _goToTab),
   ];
