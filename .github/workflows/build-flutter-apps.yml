@@ -68,6 +68,28 @@ jobs:
             echo "No release keystore present — skipping SHA-1 print."
           fi
 
+      # Driver first (and uploaded immediately after, before the other two
+      # flavors even start) — whichever flavor builds first tends to be the
+      # one that gets hit if a runner is having a slow day, and driver is
+      # the one most often needed urgently mid-testing. Each flavor now
+      # uploads right after its own build instead of all three uploading
+      # only after every build finishes, so a slow/stuck later flavor no
+      # longer blocks getting an already-finished one.
+      - name: Build driver APK
+        env:
+          WSLHA_KEYSTORE_PATH: ${{ secrets.WSLHA_KEYSTORE_BASE64 != '' && 'release.keystore' || '' }}
+          WSLHA_KEYSTORE_PASSWORD: ${{ secrets.WSLHA_KEYSTORE_PASSWORD }}
+          WSLHA_KEY_ALIAS: ${{ secrets.WSLHA_KEY_ALIAS }}
+          WSLHA_KEY_PASSWORD: ${{ secrets.WSLHA_KEY_PASSWORD }}
+        run: flutter build apk --release --flavor driver -t lib/main_driver.dart
+
+      - name: Upload driver APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: wslha-driver-apk
+          path: flutter_app/build/app/outputs/flutter-apk/app-driver-release.apk
+          retention-days: 30
+
       - name: Build customer APK
         env:
           WSLHA_KEYSTORE_PATH: ${{ secrets.WSLHA_KEYSTORE_BASE64 != '' && 'release.keystore' || '' }}
@@ -76,13 +98,12 @@ jobs:
           WSLHA_KEY_PASSWORD: ${{ secrets.WSLHA_KEY_PASSWORD }}
         run: flutter build apk --release --flavor customer -t lib/main_customer.dart
 
-      - name: Build driver APK
-        env:
-          WSLHA_KEYSTORE_PATH: ${{ secrets.WSLHA_KEYSTORE_BASE64 != '' && 'release.keystore' || '' }}
-          WSLHA_KEYSTORE_PASSWORD: ${{ secrets.WSLHA_KEYSTORE_PASSWORD }}
-          WSLHA_KEY_ALIAS: ${{ secrets.WSLHA_KEY_ALIAS }}
-          WSLHA_KEY_PASSWORD: ${{ secrets.WSLHA_KEY_PASSWORD }}
-        run: flutter build apk --release --flavor driver -t lib/main_driver.dart
+      - name: Upload customer APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: wslha-customer-apk
+          path: flutter_app/build/app/outputs/flutter-apk/app-customer-release.apk
+          retention-days: 30
 
       - name: Build merchant APK
         env:
@@ -92,27 +113,13 @@ jobs:
           WSLHA_KEY_PASSWORD: ${{ secrets.WSLHA_KEY_PASSWORD }}
         run: flutter build apk --release --flavor merchant -t lib/main_merchant.dart
 
-      - name: Clean up keystore
-        if: always()
-        run: rm -f android/app/release.keystore
-
-      - name: Upload customer APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: wslha-customer-apk
-          path: flutter_app/build/app/outputs/flutter-apk/app-customer-release.apk
-          retention-days: 30
-
-      - name: Upload driver APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: wslha-driver-apk
-          path: flutter_app/build/app/outputs/flutter-apk/app-driver-release.apk
-          retention-days: 30
-
       - name: Upload merchant APK
         uses: actions/upload-artifact@v4
         with:
           name: wslha-merchant-apk
           path: flutter_app/build/app/outputs/flutter-apk/app-merchant-release.apk
           retention-days: 30
+
+      - name: Clean up keystore
+        if: always()
+        run: rm -f android/app/release.keystore
