@@ -22,10 +22,11 @@ class MerchantRepository {
     return sb.from('orders').stream(primaryKey: ['id']).eq('store_id', storeId).order('created_at', ascending: false);
   }
 
-  Future<void> acceptOrder(String orderId) async {
+  Future<void> acceptOrder(String orderId, {int? prepMinutes}) async {
     await sb.from('orders').update({
       'status': 'preparing',
       'accepted_at': DateTime.now().toIso8601String(),
+      if (prepMinutes != null) 'prep_minutes': prepMinutes,
     }).eq('id', orderId);
   }
 

@@ -15,6 +15,10 @@
          flutter_local_notifications requestNotificationsPermission() call
          in core/notifications.dart prompts the user for it at runtime. -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+    <!-- Auto-granted, no runtime prompt — lets the notification channel's
+         vibrationPattern actually run (merchant new-order alert needs to be
+         felt, not just heard, over kitchen/counter noise). -->
+    <uses-permission android:name="android.permission.VIBRATE"/>
     <!-- Driver flavor: capturing the personal photo on the native
          registration screen (features/auth/driver_register_screen.dart)
          via image_picker's camera source. -->

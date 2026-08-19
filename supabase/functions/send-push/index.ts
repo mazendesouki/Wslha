@@ -96,7 +96,12 @@ async function sendFcm(
         // `type` lets the app react the instant a foreground message
         // arrives (e.g. re-check for a driver's dispatch offer) instead of
         // only showing a tray notification — see PushRegistrar.onMessage.
-        data: { url, tag, type },
+        // `channel` in data (not just android.notification.channel_id) lets
+        // the foreground handler (PushRegistrar.onMessage) show the exact
+        // same channel — otherwise a foregrounded merchant app would show
+        // new-order alerts on the default low-vibration channel while a
+        // backgrounded one correctly used 'wslha_orders'.
+        data: { url, tag, type, channel },
         android: { priority: 'high', notification: { tag, channel_id: channel } },
       },
     }),

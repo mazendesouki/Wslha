@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -28,12 +30,26 @@ class AppNotifications {
     await androidImpl?.requestNotificationsPermission();
     // Must exist before a background/terminated FCM message tagged with
     // this channel_id (see supabase/functions/send-push) arrives, or
-    // Android falls back to a default low-importance channel.
-    await androidImpl?.createNotificationChannel(const AndroidNotificationChannel(
+    // Android falls back to a default low-importance channel. A strong
+    // vibration pattern here matters most for the merchant app — a new
+    // order easily gets missed among counter/kitchen noise otherwise.
+    await androidImpl?.createNotificationChannel(AndroidNotificationChannel(
       'wslha_orders',
       'الطلبات الجديدة',
       description: 'إشعار فوري عند وصول طلب جديد',
+      importance: Importance.max,
+      enableVibration: true,
+      vibrationPattern: Int64List.fromList([0, 400, 200, 400, 200, 400]),
+    ));
+    // show() below was passing this channel id without ever creating it —
+    // Android silently downgraded every ride/order-status notification to
+    // a default low-importance channel as a result. Register it too.
+    await androidImpl?.createNotificationChannel(AndroidNotificationChannel(
+      'wslha_rides',
+      'تحديثات المشاوير والطلبات',
+      description: 'إشعارات تغيّر حالة المشاوير والطلبات',
       importance: Importance.high,
+      enableVibration: true,
     ));
   }
 
@@ -42,16 +58,18 @@ class AppNotifications {
     return prefs.getBool(_notifPrefKey) ?? true;
   }
 
-  Future<void> show(String title, String body) async {
+  Future<void> show(String title, String body, {String channelId = 'wslha_rides'}) async {
     if (!await _enabled()) return;
     await init();
-    const details = NotificationDetails(
+    final details = NotificationDetails(
       android: AndroidNotificationDetails(
-        'wslha_rides',
-        'تحديثات المشاوير والطلبات',
+        channelId,
+        channelId == 'wslha_orders' ? 'الطلبات الجديدة' : 'تحديثات المشاوير والطلبات',
         channelDescription: 'إشعارات تغيّر حالة المشاوير والطلبات',
-        importance: Importance.high,
+        importance: Importance.max,
         priority: Priority.high,
+        enableVibration: true,
+        vibrationPattern: channelId == 'wslha_orders' ? Int64List.fromList([0, 400, 200, 400, 200, 400]) : null,
       ),
     );
     await _plugin.show(_nextId++, title, body, details);

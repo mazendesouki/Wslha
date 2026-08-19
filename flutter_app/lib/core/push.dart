@@ -35,7 +35,13 @@ class PushRegistrar {
     // the app is backgrounded/terminated. Show it manually here.
     FirebaseMessaging.onMessage.listen((msg) {
       final n = msg.notification;
-      if (n != null) AppNotifications.instance.show(n.title ?? '', n.body ?? '');
+      if (n != null) {
+        AppNotifications.instance.show(
+          n.title ?? '',
+          n.body ?? '',
+          channelId: msg.data['channel'] as String? ?? 'wslha_rides',
+        );
+      }
       if (msg.data.isNotEmpty) _dataController.add(msg.data);
     });
   }
