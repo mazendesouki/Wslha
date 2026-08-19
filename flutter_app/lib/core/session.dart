@@ -39,16 +39,28 @@ class UserSession {
 
 class SessionStore {
   static const _key = 'wslha_user';
+  static const _rememberKey = 'wslha_remember_me';
 
-  static Future<void> save(UserSession session) async {
+  /// [remember] false means "stay logged in for this app run only" — the
+  /// session is still written (the app always re-reads via SessionStore on
+  /// every navigation to '/home', so it has to be there for the *current*
+  /// run to work at all) but load() below consumes/deletes it the moment
+  /// it's read, so the *next* cold start finds nothing and shows LoginScreen
+  /// again instead of auto-continuing.
+  static Future<void> save(UserSession session, {bool remember = true}) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_key, jsonEncode(session.toJson()));
+    await prefs.setBool(_rememberKey, remember);
   }
 
   static Future<UserSession?> load() async {
     final prefs = await SharedPreferences.getInstance();
     final raw = prefs.getString(_key);
     if (raw == null) return null;
+    if (prefs.getBool(_rememberKey) == false) {
+      await prefs.remove(_key);
+      await prefs.remove(_rememberKey);
+    }
     try {
       return UserSession.fromJson(jsonDecode(raw) as Map<String, dynamic>);
     } catch (_) {

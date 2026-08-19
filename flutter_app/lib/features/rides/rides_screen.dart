@@ -7,6 +7,8 @@ import 'places_service.dart';
 import 'ride_repository.dart';
 import 'ride_tracking_screen.dart';
 
+const int _maxStops = 3;
+
 class RidesScreen extends StatefulWidget {
   const RidesScreen({super.key});
 
@@ -18,20 +20,43 @@ class _RidesScreenState extends State<RidesScreen> {
   final _rideRepo = RideRepository();
 
   PlaceResult? _from;
-  PlaceResult? _to;
+  // Sequential stops — the last non-null one is the ride's real
+  // destination; any before it are intermediate waypoints (e.g. an errand
+  // stop) passed to createRide as `stops`.
+  final List<PlaceResult?> _stops = [null];
   int _passengers = 1;
   String _payment = 'cash';
   bool _submitting = false;
   UserSession? _session;
 
+  /// Every leg's PlaceResult in order, stopping at the first unfilled one —
+  /// so a driver can fill stop 1 and leave stop 2/3 empty without breaking
+  /// the fare preview.
+  List<PlaceResult> get _filledPoints {
+    if (_from == null) return [];
+    final points = [_from!];
+    for (final s in _stops) {
+      if (s == null) break;
+      points.add(s);
+    }
+    return points;
+  }
+
   double get _straightKm {
-    if (_from == null || _to == null) return 0;
-    return fare_calc.haversineKm(_from!.lat, _from!.lng, _to!.lat, _to!.lng);
+    final points = _filledPoints;
+    if (points.length < 2) return 0;
+    double total = 0;
+    for (var i = 0; i < points.length - 1; i++) {
+      total += fare_calc.haversineKm(points[i].lat, points[i].lng, points[i + 1].lat, points[i + 1].lng);
+    }
+    return total;
   }
 
   double get _roadKm => _straightKm * fare_calc.roadFactor;
-  int get _fare => _straightKm > 0 ? fare_calc.fareForDistance(_straightKm, toArea: _to?.name) : 0;
+  int get _fare => _straightKm > 0 ? fare_calc.fareForDistance(_straightKm, toArea: _filledPoints.last.name) : 0;
   int get _eta => _straightKm > 0 ? fare_calc.etaMinutes(_straightKm) : 0;
+
+  bool get _hasMultiStop => _filledPoints.length > 2;
 
   @override
   void initState() {
@@ -40,8 +65,12 @@ class _RidesScreenState extends State<RidesScreen> {
   }
 
   Future<void> _submit() async {
-    if (_from == null || _to == null || _session == null) return;
+    final points = _filledPoints;
+    if (points.length < 2 || _session == null) return;
     setState(() => _submitting = true);
+
+    final destination = points.last;
+    final waypoints = points.sublist(1, points.length - 1); // between origin and final destination
 
     final ride = await _rideRepo.createRide(
       customerPhone: _session!.phone,
@@ -49,14 +78,15 @@ class _RidesScreenState extends State<RidesScreen> {
       fromArea: _from!.name,
       fromLat: _from!.lat,
       fromLng: _from!.lng,
-      toArea: _to!.name,
-      toLat: _to!.lat,
-      toLng: _to!.lng,
+      toArea: destination.name,
+      toLat: destination.lat,
+      toLng: destination.lng,
       distanceKm: _roadKm,
       fare: _fare,
       etaMinutes: _eta,
       passengers: _passengers,
       payment: _payment,
+      stops: waypoints.map((p) => {'name': p.name, 'lat': p.lat, 'lng': p.lng}).toList(),
     );
 
     if (!mounted) return;
@@ -74,9 +104,25 @@ class _RidesScreenState extends State<RidesScreen> {
     );
   }
 
+  void _addStop() {
+    if (_stops.length >= _maxStops) return;
+    setState(() => _stops.add(null));
+  }
+
+  void _removeStop(int index) {
+    setState(() => _stops.removeAt(index));
+  }
+
+  String _stopLabel(int index) {
+    // Only the last stop field reads as "الوجهة" — earlier ones are
+    // waypoints the driver stops at along the way.
+    if (index == _stops.length - 1) return _stops.length > 1 ? 'الوجهة النهائية' : 'إلى';
+    return 'نقطة توقف ${index + 1}';
+  }
+
   @override
   Widget build(BuildContext context) {
-    final ready = _from != null && _to != null && _session != null && !_submitting;
+    final ready = _filledPoints.length >= 2 && _session != null && !_submitting;
 
     return Scaffold(
       appBar: AppBar(title: const Text('مشاوير دمياط')),
@@ -93,12 +139,38 @@ class _RidesScreenState extends State<RidesScreen> {
                 onSelected: (r) => setState(() => _from = r),
               ),
               const SizedBox(height: 16),
-              AddressField(
-                label: 'إلى',
-                hint: 'الوجهة',
-                onSelected: (r) => setState(() => _to = r),
-              ),
-              const SizedBox(height: 20),
+              for (var i = 0; i < _stops.length; i++) ...[
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: AddressField(
+                        key: ValueKey('stop-$i-${_stops.length}'),
+                        label: _stopLabel(i),
+                        hint: i == _stops.length - 1 ? 'الوجهة' : 'وين تحب تقف؟',
+                        onSelected: (r) => setState(() => _stops[i] = r),
+                      ),
+                    ),
+                    if (_stops.length > 1)
+                      IconButton(
+                        icon: const Icon(Icons.close, color: AppColors.textFaint),
+                        onPressed: () => _removeStop(i),
+                        tooltip: 'حذف نقطة التوقف',
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+              ],
+              if (_stops.length < _maxStops)
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton.icon(
+                    onPressed: _addStop,
+                    icon: const Icon(Icons.add_location_alt_outlined, size: 18),
+                    label: const Text('إضافة نقطة توقف (مشوار متعدد)'),
+                  ),
+                ),
+              const SizedBox(height: 8),
               Row(
                 children: [
                   const Text('عدد الركاب', style: TextStyle(fontWeight: FontWeight.w700)),
@@ -138,12 +210,25 @@ class _RidesScreenState extends State<RidesScreen> {
                     color: AppColors.primaryLight,
                     borderRadius: BorderRadius.circular(14),
                   ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  child: Column(
                     children: [
-                      _statColumn('${(_roadKm).toStringAsFixed(1)} كم', 'المسافة'),
-                      _statColumn('$_eta دقيقة', 'الوقت المتوقع'),
-                      _statColumn('$_fare ج.م', 'الأجرة'),
+                      if (_hasMultiStop)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 10),
+                          child: Text(
+                            '🛑 مشوار متعدد النقاط (${_filledPoints.length - 1} محطة) — الأجرة إجمالي كل المراحل',
+                            style: const TextStyle(fontSize: 11, color: AppColors.primaryDark, fontWeight: FontWeight.w700),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceAround,
+                        children: [
+                          _statColumn('${(_roadKm).toStringAsFixed(1)} كم', 'المسافة'),
+                          _statColumn('$_eta دقيقة', 'الوقت المتوقع'),
+                          _statColumn('$_fare ج.م', 'الأجرة'),
+                        ],
+                      ),
                     ],
                   ),
                 ),

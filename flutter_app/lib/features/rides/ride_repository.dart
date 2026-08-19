@@ -18,6 +18,14 @@ class RideRepository {
     required int etaMinutes,
     required int passengers,
     required String payment,
+    // Intermediate waypoints for a multi-stop ride (excludes the origin and
+    // the final destination, which stay in from_*/to_* as usual) — e.g. a
+    // customer running an errand between two legs. distanceKm/fare must
+    // already be the SUM across every leg (origin→stop1→...→destination);
+    // guard_ride_fare() doesn't need to know about stops itself, it just
+    // re-derives fare from the total distance_km + final to_area exactly
+    // like a normal single-leg ride (see db/security-29-late-arrival-and-multistop.sql).
+    List<Map<String, dynamic>>? stops,
   }) async {
     final row = await sb.from('rides').insert({
       'customer_phone': customerPhone,
@@ -35,6 +43,7 @@ class RideRepository {
       'payment': payment,
       'status': 'pending',
       'ride_type': 'local',
+      if (stops != null && stops.isNotEmpty) 'stops': stops,
     }).select().single();
     return row;
   }

@@ -48,12 +48,16 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
 
   Future<void> _load() async {
     final phone = widget.session.phone;
+    // Each call is independently defensive — the profile as a whole
+    // (photo, name, ratings) shouldn't go blank just because one section
+    // (e.g. vehicle info, if a driver_applications column is missing on
+    // an older row) throws.
     final results = await Future.wait([
-      _accountRepo.lookupAccount(phone),
-      _driverRepo.fetchVehicleInfo(phone),
-      _driverRepo.fetchTripStats(phone),
-      _ratingsRepo.driverTrustBadge(phone),
-      _ratingsRepo.driverReviews(phone),
+      _accountRepo.lookupAccount(phone).catchError((_) => null),
+      _driverRepo.fetchVehicleInfo(phone).catchError((_) => null),
+      _driverRepo.fetchTripStats(phone).catchError((_) => <String, dynamic>{}),
+      _ratingsRepo.driverTrustBadge(phone).catchError((_) => RatingSummary(0, 0)),
+      _ratingsRepo.driverReviews(phone).catchError((_) => <Map<String, dynamic>>[]),
     ]);
     if (!mounted) return;
     setState(() {

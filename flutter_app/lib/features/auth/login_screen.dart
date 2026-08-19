@@ -24,6 +24,8 @@ class _LoginScreenState extends State<LoginScreen> {
   final _authRepo = AuthRepository();
 
   bool _loading = false;
+  bool _obscurePassword = true;
+  bool _rememberMe = true;
   String? _error;
 
   Future<void> _submit() async {
@@ -46,7 +48,7 @@ class _LoginScreenState extends State<LoginScreen> {
           setState(() => _error = widget.config.wrongRoleMessage);
           return;
         }
-        await SessionStore.save(session);
+        await SessionStore.save(session, remember: _rememberMe);
         unawaited(PushRegistrar.registerForSession(session)); // fire-and-forget
         if (!mounted) return;
         Navigator.of(context).pushNamedAndRemoveUntil('/home', (route) => false);
@@ -142,11 +144,29 @@ class _LoginScreenState extends State<LoginScreen> {
                   const SizedBox(height: 16),
                   TextFormField(
                     controller: _passwordController,
-                    obscureText: true,
-                    decoration: const InputDecoration(labelText: 'كلمة المرور'),
+                    obscureText: _obscurePassword,
+                    decoration: InputDecoration(
+                      labelText: 'كلمة المرور',
+                      suffixIcon: IconButton(
+                        icon: Icon(_obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined),
+                        onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                      ),
+                    ),
                     validator: (v) => (v == null || v.isEmpty) ? 'أدخل كلمة المرور' : null,
                   ),
-                  const SizedBox(height: 24),
+                  Row(
+                    children: [
+                      Checkbox(
+                        value: _rememberMe,
+                        onChanged: (v) => setState(() => _rememberMe = v ?? true),
+                      ),
+                      GestureDetector(
+                        onTap: () => setState(() => _rememberMe = !_rememberMe),
+                        child: const Text('تذكرني', style: TextStyle(fontWeight: FontWeight.w700)),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
                   ElevatedButton(
                     onPressed: _loading ? null : _submit,
                     child: _loading

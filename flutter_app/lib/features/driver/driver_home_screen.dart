@@ -252,10 +252,19 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
     try {
       switch (_jobs.rideStep) {
         case 'accepted':
-          await _repo.markRideArrived(rideId);
+          final (lateMinutes, feeApplied) = await _repo.markRideArrived(rideId, widget.session.phone);
           if (!mounted) return;
           _jobs.setRideStep('arrived');
           setState(() => _busy = false);
+          if (feeApplied && mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('⚠️ اتأخرت $lateMinutes دقيقة عن العميل — اتخصم 20 ج.م تلقائيًا من محفظتك'),
+                backgroundColor: AppColors.error,
+                duration: const Duration(seconds: 6),
+              ),
+            );
+          }
           return;
         case 'arrived':
           await _repo.markRideInProgress(rideId);

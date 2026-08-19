@@ -133,7 +133,16 @@ class _RideTrackingScreenState extends State<RideTrackingScreen> {
     try {
       switch (status) {
         case 'accepted':
-          await _driverRepo.markRideArrived(widget.rideId);
+          final (lateMinutes, feeApplied) = await _driverRepo.markRideArrived(widget.rideId, _myPhone!);
+          if (feeApplied && mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('⚠️ اتأخرت $lateMinutes دقيقة عن العميل — اتخصم 20 ج.م تلقائيًا من محفظتك'),
+                backgroundColor: AppColors.error,
+                duration: const Duration(seconds: 6),
+              ),
+            );
+          }
           break;
         case 'arrived':
           await _driverRepo.markRideInProgress(widget.rideId);
@@ -274,6 +283,15 @@ class _RideTrackingScreenState extends State<RideTrackingScreen> {
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
                             _infoRow('من', '${ride['from_area'] ?? '—'}'),
+                            if ((ride['stops'] as List?)?.isNotEmpty == true) ...[
+                              const Divider(height: 20),
+                              _infoRow(
+                                '🛑 توقف عند',
+                                (ride['stops'] as List)
+                                    .map((s) => (s as Map?)?['name'] as String? ?? '—')
+                                    .join(' ← '),
+                              ),
+                            ],
                             const Divider(height: 20),
                             _infoRow('إلى', '${ride['to_area'] ?? '—'}'),
                             const Divider(height: 20),

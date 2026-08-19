@@ -164,8 +164,19 @@ class DriverRepository {
   /// Same status column driver-dashboard.astro's markArrived()/startTrip()
   /// PATCH — the customer-side tracking screen's icon timeline expects
   /// exactly these transitions (pending→accepted→arrived→in_progress→completed).
-  Future<void> markRideArrived(String rideId) async {
-    await sb.from('rides').update({'status': 'arrived'}).eq('id', rideId);
+  /// Routed through mark_ride_arrived() (security-29) instead of a raw PATCH
+  /// so lateness is measured server-side (against accepted_at) and the
+  /// automatic 20 ج.م late-arrival deduction can't be spoofed by the client.
+  /// Returns (lateMinutes, feeApplied) so the caller can tell the driver.
+  Future<(int, bool)> markRideArrived(String rideId, String driverPhone) async {
+    final result = await sb.rpc('mark_ride_arrived', params: {
+      'p_ride_id': rideId,
+      'p_driver_phone': driverPhone,
+    });
+    if (result is Map) {
+      return (((result['late_minutes'] as num?) ?? 0).toInt(), result['fee_applied'] == true);
+    }
+    return (0, false);
   }
 
   Future<void> markRideInProgress(String rideId) async {
