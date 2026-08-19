@@ -86,6 +86,7 @@ async function sendFcm(
   const accessToken = await getFcmAccessToken();
   if (!accessToken || !FCM_SERVICE_ACCOUNT) return { ok: false, dead: false };
   const projectId = JSON.parse(FCM_SERVICE_ACCOUNT).project_id;
+  console.log('[fcm] sending via project', projectId, 'token prefix', token.slice(0, 12));
   const res = await fetch(`https://fcm.googleapis.com/v1/projects/${projectId}/messages:send`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${accessToken}` },
