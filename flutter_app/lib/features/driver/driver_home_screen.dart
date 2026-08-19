@@ -49,11 +49,12 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
   void initState() {
     super.initState();
     _jobs.addListener(_onJobsChanged);
-    // Go online automatically as soon as the driver opens the app, instead
-    // of always starting offline and requiring a manual tap first — the
-    // driver can still switch back off with the same toggle at any time
-    // (e.g. after finishing their last trip for the day).
-    _toggleOnline(true);
+    // Deliberately NOT auto-going-online here — a driver reported the app
+    // reading as "locked" for a few seconds on every open, which turned out
+    // to be this auto-toggle silently trying (and sometimes failing, e.g.
+    // while location permission/GPS lock is still settling) before the
+    // driver had a chance to do anything. The switch now starts off and
+    // stays exactly where the driver last left it — fully manual.
   }
 
   void _onJobsChanged() {

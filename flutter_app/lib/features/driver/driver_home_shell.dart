@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/session.dart';
 import '../../core/theme.dart';
 import '../settings/settings_screen.dart';
@@ -33,13 +34,40 @@ class _DriverHomeShellState extends State<DriverHomeShell> {
     _loadStatus();
   }
 
+  static const _statusCacheKey = 'wslha_driver_status_cache';
+
   Future<void> _loadStatus() async {
-    final status = await _repo.fetchApprovalStatus(widget.session.phone);
-    if (!mounted) return;
-    setState(() {
-      _status = status;
-      _loadingStatus = false;
-    });
+    // An already-approved driver's status essentially never changes, so
+    // making them stare at a blank spinner on every single cold start —
+    // purely waiting on a network round-trip to re-confirm something
+    // already known — reads as the app "freezing" for a few seconds.
+    // Show the last-known status immediately, then quietly re-verify.
+    final prefs = await SharedPreferences.getInstance();
+    final cached = prefs.getString(_statusCacheKey);
+    if (cached != null && mounted) {
+      setState(() {
+        _status = cached;
+        _loadingStatus = false;
+      });
+    }
+    try {
+      final status = await _repo.fetchApprovalStatus(widget.session.phone);
+      if (!mounted) return;
+      if (status != null) {
+        await prefs.setString(_statusCacheKey, status);
+      } else {
+        await prefs.remove(_statusCacheKey);
+      }
+      setState(() {
+        _status = status;
+        _loadingStatus = false;
+      });
+    } catch (_) {
+      // A flaky connection on cold start used to leave this screen spinning
+      // forever (setState never ran) — fall back to whatever's already
+      // known (cached status, or null on a genuine first launch) instead.
+      if (mounted) setState(() => _loadingStatus = false);
+    }
   }
 
   void _goToTab(int i) => setState(() => _index = i);
