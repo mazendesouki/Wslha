@@ -43,7 +43,7 @@ begin
       url     := 'https://vtikgyiopkjnrwlqnmfx.supabase.co/functions/v1/send-push',
       headers := jsonb_build_object(
         'Content-Type',  'application/json',
-        'x-push-secret', 'T-reW-9ouyCJ8dYAE1v4G2fEGzJwRXMaWCf1XnwIVBg',
+        'x-push-secret', public._push_trigger_secret(),
         -- Supabase's gateway (Kong) requires an apikey on every Edge
         -- Function call regardless of the function's own "Verify JWT"
         -- setting — without it pg_net's request never reaches our code
