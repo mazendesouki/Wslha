@@ -2240,10 +2240,10 @@ import PageHero from '../components/PageHero.astro';
     btn.disabled = true;
     btn.textContent = 'جارٍ الإرسال...';
     try {
-      const res = await fetch(`${SB_URL}/rest/v1/ratings?id=eq.${ratingId}`, {
-        method: 'PATCH',
+      const res = await fetch(`${SB_URL}/rest/v1/rpc/submit_driver_reply`, {
+        method: 'POST',
         headers: { ...SB_H, Prefer: 'return=minimal' },
-        body: JSON.stringify({ driver_reply: text }),
+        body: JSON.stringify({ p_rating_id: ratingId, p_driver_phone: driver.phone, p_reply: text }),
       });
       if (res.ok) {
         form.outerHTML = `<div class="rating-item__reply"><div class="rating-item__reply-label">ردك:</div>${escapeHtml(text)}</div>`;
