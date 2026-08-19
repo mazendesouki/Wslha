@@ -82,9 +82,9 @@ async function getFcmAccessToken(): Promise<string | null> {
 async function sendFcm(
   token: string, title: string, body: string, url: string, tag: string,
   type: string, channel: string,
-): Promise<boolean> {
+): Promise<{ ok: boolean; dead: boolean }> {
   const accessToken = await getFcmAccessToken();
-  if (!accessToken || !FCM_SERVICE_ACCOUNT) return false;
+  if (!accessToken || !FCM_SERVICE_ACCOUNT) return { ok: false, dead: false };
   const projectId = JSON.parse(FCM_SERVICE_ACCOUNT).project_id;
   const res = await fetch(`https://fcm.googleapis.com/v1/projects/${projectId}/messages:send`, {
     method: 'POST',
@@ -101,8 +101,14 @@ async function sendFcm(
       },
     }),
   });
-  if (!res.ok) console.error('[fcm] send failed', res.status, await res.text().catch(() => ''));
-  return res.ok;
+  if (res.ok) return { ok: true, dead: false };
+  const errText = await res.text().catch(() => '');
+  console.error('[fcm] send failed', res.status, errText);
+  // UNREGISTERED/NOT_FOUND = the token no longer exists (app uninstalled,
+  // reinstalled with a fresh token, etc.) — safe to delete permanently,
+  // unlike a network/quota error which is worth retrying next time.
+  const dead = res.status === 404 || errText.includes('UNREGISTERED') || errText.includes('NOT_FOUND');
+  return { ok: false, dead };
 }
 
 Deno.serve(async (req) => {
@@ -163,12 +169,13 @@ Deno.serve(async (req) => {
       fcmTokens = data || [];
     }
   }
+  const deadTokens: string[] = [];
   await Promise.allSettled(fcmTokens.map(async (d) => {
-    if (await sendFcm(d.token, title, body, url, tag, type, channel)) fcmSent++;
-    // ملاحظة: مش بنمسح التوكن الفاشل هنا — فشل FCM ممكن يكون مؤقت
-    // (شبكة/انتهاء صلاحية access token)، مش بالضرورة توكن ميت زي
-    // إشعارات المتصفح؛ تنظيف التوكنات المنتهية محتاج كود خطأ FCM محدد.
+    const result = await sendFcm(d.token, title, body, url, tag, type, channel);
+    if (result.ok) fcmSent++;
+    else if (result.dead) deadTokens.push(d.id);
   }));
+  if (deadTokens.length) await admin.from('device_tokens').delete().in('id', deadTokens);
 
-  return Response.json({ sent, cleaned: dead.length, fcmSent });
+  return Response.json({ sent, cleaned: dead.length, fcmSent, fcmCleaned: deadTokens.length });
 });
