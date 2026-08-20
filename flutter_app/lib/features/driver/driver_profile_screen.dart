@@ -371,6 +371,16 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
   Widget _buildVehicleCard() {
     final v = _vehicle!;
     final photo = (v['vehicle_front_url'] as String?) ?? (v['plate_photo_url'] as String?);
+    // vehicle_year/vehicle_reg_number are numeric in some driver_applications
+    // rows and text in others (depending on when the row was created) — use
+    // toString() instead of an `as String?` cast, which threw
+    // "type 'int' is not a subtype of type 'String?'" and blanked this whole
+    // tab (an uncaught exception inside build() renders as an empty grey
+    // box in release mode, not a crash dialog).
+    final regNumber = v['vehicle_reg_number']?.toString();
+    final year = v['vehicle_year']?.toString();
+    final model = v['vehicle_model']?.toString();
+    final color = v['vehicle_color']?.toString();
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), boxShadow: const [
@@ -398,13 +408,13 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
                 const Text('السيارة', style: TextStyle(fontSize: 12, color: AppColors.textFaint, fontWeight: FontWeight.w700)),
                 const SizedBox(height: 4),
                 Text(
-                  [v['vehicle_model'], v['vehicle_color']].where((e) => e != null && (e as String).isNotEmpty).join(' — '),
+                  [model, color].where((e) => e != null && e.isNotEmpty).join(' — '),
                   style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w900),
                 ),
-                if ((v['vehicle_reg_number'] as String?)?.isNotEmpty == true)
-                  Text('لوحة: ${v['vehicle_reg_number']}', style: const TextStyle(fontSize: 12, color: AppColors.textFaint)),
-                if ((v['vehicle_year'] as String?)?.isNotEmpty == true)
-                  Text('موديل: ${v['vehicle_year']}', style: const TextStyle(fontSize: 12, color: AppColors.textFaint)),
+                if (regNumber != null && regNumber.isNotEmpty)
+                  Text('لوحة: $regNumber', style: const TextStyle(fontSize: 12, color: AppColors.textFaint)),
+                if (year != null && year.isNotEmpty)
+                  Text('موديل: $year', style: const TextStyle(fontSize: 12, color: AppColors.textFaint)),
               ],
             ),
           ),
