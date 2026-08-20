@@ -151,6 +151,22 @@ class RatingsRepository {
     return rows.isNotEmpty;
   }
 
+  /// Reviews the customer themselves wrote about drivers (rated_by='customer',
+  /// the same rows rateDriver() inserts) — for "سجل تقييماتي" on the
+  /// customer's own account screen. Order/store ratings aren't included:
+  /// rateOrder() doesn't store customer_phone on the row, so there's no way
+  /// to tie those back to a specific customer yet.
+  Future<List<Map<String, dynamic>>> customerGivenReviews(String customerPhone, {int limit = 30}) async {
+    final rows = await sb
+        .from('ratings')
+        .select('id,rating,comment,tags,created_at,driver_phone')
+        .eq('customer_phone', customerPhone)
+        .eq('rated_by', 'customer')
+        .order('created_at', ascending: false)
+        .limit(limit);
+    return List<Map<String, dynamic>>.from(rows);
+  }
+
   Future<RatingSummary> driverTrustBadge(String driverPhone) async {
     final rows = await sb.from('ratings').select('rating').eq('driver_phone', driverPhone).eq('rated_by', 'customer');
     return _summarize(rows, 'rating');
