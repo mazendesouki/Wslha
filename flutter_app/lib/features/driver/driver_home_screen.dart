@@ -102,9 +102,12 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
     try {
       offers = await _repo.getPendingOffers(widget.session.phone);
     } catch (e) {
-      // A silently-swallowed failure here means offers stop arriving with
-      // no visible cause — surface it instead so a bad deploy is obvious.
-      if (mounted) _showError(e);
+      // This runs every 5s — a red "خطأ" bar reappearing on every single
+      // transient network blip (a driver moving between cell towers, a
+      // momentary DNS hiccup) reads as the app being permanently broken,
+      // which is exactly what was reported. Just retry silently on the
+      // next tick instead of surfacing each failure; a real, sustained
+      // outage still shows up as offers never arriving, same as before.
       return;
     }
     if (!mounted) return;
