@@ -4,6 +4,7 @@ import '../../core/phone_utils.dart';
 import '../../core/session.dart';
 import '../../core/supabase_client.dart';
 import '../../core/theme.dart';
+import '../account/account_repository.dart';
 import 'cart_store.dart';
 
 /// Submits straight into the `orders` table with the same shape
@@ -18,6 +19,7 @@ class CheckoutSheet extends StatefulWidget {
 
 class _CheckoutSheetState extends State<CheckoutSheet> {
   final _cart = CartStore.instance;
+  final _accountRepo = AccountRepository();
   final _nameCtrl = TextEditingController();
   final _phoneCtrl = TextEditingController();
   final _areaCtrl = TextEditingController();
@@ -25,15 +27,60 @@ class _CheckoutSheetState extends State<CheckoutSheet> {
   String _payment = 'كاش';
   bool _submitting = false;
   String? _error;
+  List<Map<String, dynamic>> _savedAddresses = [];
 
   @override
   void initState() {
     super.initState();
-    SessionStore.load().then((s) {
+    SessionStore.load().then((s) async {
       if (s == null || !mounted) return;
       _nameCtrl.text = s.name;
       _phoneCtrl.text = s.phone;
       setState(() {});
+      // Saved addresses — see db/security-31-customer-account-plus.sql. A
+      // hiccup here shouldn't block checkout, just skip the prefill/picker.
+      final addresses = await _accountRepo.fetchSavedAddresses(s.phone).catchError((_) => <Map<String, dynamic>>[]);
+      if (!mounted) return;
+      final matches = addresses.where((a) => a['is_default'] == true).toList();
+      final defaultAddr = matches.isNotEmpty ? matches.first : (addresses.isNotEmpty ? addresses.first : null);
+      setState(() {
+        _savedAddresses = addresses;
+        if (defaultAddr != null) {
+          _areaCtrl.text = (defaultAddr['area'] as String?) ?? '';
+          _addressCtrl.text = (defaultAddr['address'] as String?) ?? '';
+        }
+      });
+    });
+  }
+
+  Future<void> _pickSavedAddress() async {
+    final picked = await showModalBottomSheet<Map<String, dynamic>>(
+      context: context,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (sheetContext) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Padding(
+              padding: EdgeInsets.fromLTRB(20, 20, 20, 8),
+              child: Text('عناويني المحفوظة', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900)),
+            ),
+            ..._savedAddresses.map((a) => ListTile(
+                  leading: const Icon(Icons.location_on_outlined, color: AppColors.primary),
+                  title: Text(a['label'] as String? ?? '', style: const TextStyle(fontWeight: FontWeight.w800)),
+                  subtitle: Text([a['area'], a['address']].where((e) => e != null && (e as String).isNotEmpty).join(' — ')),
+                  onTap: () => Navigator.of(sheetContext).pop(a),
+                )),
+            const SizedBox(height: 12),
+          ],
+        ),
+      ),
+    );
+    if (picked == null) return;
+    setState(() {
+      _areaCtrl.text = (picked['area'] as String?) ?? '';
+      _addressCtrl.text = (picked['address'] as String?) ?? '';
     });
   }
 
@@ -171,6 +218,16 @@ class _CheckoutSheetState extends State<CheckoutSheet> {
           const SizedBox(height: 10),
           TextField(controller: _phoneCtrl, keyboardType: TextInputType.phone, decoration: const InputDecoration(labelText: 'رقم الجوال')),
           const SizedBox(height: 10),
+          if (_savedAddresses.isNotEmpty) ...[
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton.icon(
+                onPressed: _pickSavedAddress,
+                icon: const Icon(Icons.location_on_outlined, size: 18),
+                label: const Text('اختر من عناويني المحفوظة'),
+              ),
+            ),
+          ],
           TextField(controller: _areaCtrl, decoration: const InputDecoration(labelText: 'المنطقة')),
           const SizedBox(height: 10),
           TextField(controller: _addressCtrl, maxLines: 2, decoration: const InputDecoration(labelText: 'العنوان بالتفصيل')),

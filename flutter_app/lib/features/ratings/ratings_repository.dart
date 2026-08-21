@@ -188,6 +188,22 @@ class RatingsRepository {
     return List<Map<String, dynamic>>.from(rows);
   }
 
+  /// Individual reviews (rating + text comment/tags) a driver left ABOUT
+  /// this customer after a ride — "التقييمات/الملاحظات اللي وصلتني من
+  /// السائق" on the customer's own account screen. Distinct from
+  /// customerGivenReviews() above, which is the reverse direction (reviews
+  /// the customer wrote about drivers).
+  Future<List<Map<String, dynamic>>> driverGivenReviews(String customerPhone, {int limit = 30}) async {
+    final rows = await sb
+        .from('ratings')
+        .select('id,rating,comment,tags,created_at,driver_phone,service_type')
+        .eq('customer_phone', customerPhone)
+        .eq('rated_by', 'driver')
+        .order('created_at', ascending: false)
+        .limit(limit);
+    return List<Map<String, dynamic>>.from(rows);
+  }
+
   /// The "customer reliability" card a driver sees before accepting — same
   /// data driver-dashboard.astro's loadCustomerReputation() already shows,
   /// just surfaced earlier (in the offer card) instead of after accepting.

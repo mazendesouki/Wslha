@@ -39,6 +39,7 @@ class AccountScreenState extends State<AccountScreen> {
   HistoryStats _stats = HistoryStats(totalOrders: 0, totalRides: 0, totalSpent: 0);
   List<Map<String, dynamic>> _addresses = [];
   List<Map<String, dynamic>> _reviews = [];
+  List<Map<String, dynamic>> _driverNotes = [];
   bool _loading = true;
   bool _uploadingAvatar = false;
 
@@ -66,6 +67,7 @@ class AccountScreenState extends State<AccountScreen> {
       _ordersRepo.fetchStats(phone).catchError((_) => HistoryStats(totalOrders: 0, totalRides: 0, totalSpent: 0)),
       _repo.fetchSavedAddresses(phone).catchError((_) => <Map<String, dynamic>>[]),
       _ratingsRepo.customerGivenReviews(phone).catchError((_) => <Map<String, dynamic>>[]),
+      _ratingsRepo.driverGivenReviews(phone).catchError((_) => <Map<String, dynamic>>[]),
     ]);
     if (!mounted) return;
     setState(() {
@@ -73,6 +75,7 @@ class AccountScreenState extends State<AccountScreen> {
       _account = results[0] as Map<String, dynamic>?;
       _stats = results[1] as HistoryStats;
       _addresses = results[2] as List<Map<String, dynamic>>;
+      _driverNotes = results[4] as List<Map<String, dynamic>>;
       _reviews = results[3] as List<Map<String, dynamic>>;
       _loading = false;
     });
@@ -340,6 +343,8 @@ class AccountScreenState extends State<AccountScreen> {
             const SizedBox(height: 24),
             _reviewsSection(),
             const SizedBox(height: 24),
+            _driverNotesSection(),
+            const SizedBox(height: 24),
             OutlinedButton.icon(
               onPressed: _logout,
               icon: const Icon(Icons.logout, color: AppColors.error),
@@ -478,7 +483,7 @@ class AccountScreenState extends State<AccountScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('⭐ سجل تقييماتي', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 15)),
+        const Text('⭐ تقييماتي للسائقين', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 15)),
         const SizedBox(height: 10),
         if (_reviews.isEmpty)
           Container(
@@ -535,6 +540,26 @@ class AccountScreenState extends State<AccountScreen> {
           ],
         ],
       ),
+    );
+  }
+
+  Widget _driverNotesSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('💬 ملاحظات وتقييمات السائقين عني', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 15)),
+        const SizedBox(height: 10),
+        if (_driverNotes.isEmpty)
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16)),
+            child: const Center(
+              child: Text('لسه مفيش تقييم أو ملاحظة من سائق — بتظهر هنا فور ما رحلتك تخلص ويقيّمك السائق', style: TextStyle(color: AppColors.textFaint, fontSize: 12), textAlign: TextAlign.center),
+            ),
+          )
+        else
+          ..._driverNotes.map(_reviewTile),
+      ],
     );
   }
 
