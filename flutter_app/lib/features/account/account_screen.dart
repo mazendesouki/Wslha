@@ -36,7 +36,7 @@ class AccountScreenState extends State<AccountScreen> {
 
   UserSession? _session;
   Map<String, dynamic>? _account;
-  List<HistoryItem> _history = [];
+  HistoryStats _stats = HistoryStats(totalOrders: 0, totalRides: 0, totalSpent: 0);
   List<Map<String, dynamic>> _addresses = [];
   List<Map<String, dynamic>> _reviews = [];
   bool _loading = true;
@@ -63,7 +63,7 @@ class AccountScreenState extends State<AccountScreen> {
     // as DriverProfileScreen after the vehicle-card crash bug).
     final results = await Future.wait([
       _repo.lookupAccount(phone).catchError((_) => null),
-      _ordersRepo.fetchHistory(phone).catchError((_) => <HistoryItem>[]),
+      _ordersRepo.fetchStats(phone).catchError((_) => HistoryStats(totalOrders: 0, totalRides: 0, totalSpent: 0)),
       _repo.fetchSavedAddresses(phone).catchError((_) => <Map<String, dynamic>>[]),
       _ratingsRepo.customerGivenReviews(phone).catchError((_) => <Map<String, dynamic>>[]),
     ]);
@@ -71,7 +71,7 @@ class AccountScreenState extends State<AccountScreen> {
     setState(() {
       _session = session;
       _account = results[0] as Map<String, dynamic>?;
-      _history = results[1] as List<HistoryItem>;
+      _stats = results[1] as HistoryStats;
       _addresses = results[2] as List<Map<String, dynamic>>;
       _reviews = results[3] as List<Map<String, dynamic>>;
       _loading = false;
@@ -356,18 +356,13 @@ class AccountScreenState extends State<AccountScreen> {
   }
 
   Widget _statsRow() {
-    final totalOrders = _history.where((h) => h.kind == 'order').length;
-    final totalRides = _history.where((h) => h.kind == 'ride').length;
-    final totalSpent = _history
-        .where((h) => h.status == 'delivered' || h.status == 'completed')
-        .fold<num>(0, (sum, h) => sum + h.total);
     return Row(
       children: [
-        Expanded(child: _statTile('📦', '${totalOrders + totalRides}', 'إجمالي الطلبات')),
+        Expanded(child: _statTile('📦', '${_stats.totalOrders + _stats.totalRides}', 'إجمالي الطلبات')),
         const SizedBox(width: 10),
-        Expanded(child: _statTile('💰', '${totalSpent.toStringAsFixed(0)}', 'إجمالي الإنفاق (ج.م)')),
+        Expanded(child: _statTile('💰', _stats.totalSpent.toStringAsFixed(0), 'إجمالي الإنفاق (ج.م)')),
         const SizedBox(width: 10),
-        Expanded(child: _statTile('🚖', '$totalRides', 'عدد الرحلات')),
+        Expanded(child: _statTile('🚖', '${_stats.totalRides}', 'عدد الرحلات')),
       ],
     );
   }

@@ -29,6 +29,21 @@ class HistoryItem {
   });
 }
 
+/// Real totals for the account screen's stats row — deliberately NOT
+/// derived from fetchHistory()'s result, since that query caps each of
+/// orders/rides at 50 rows for the scrollable list's sake. A customer past
+/// 50 real orders or rides would see fetchHistory-derived counts frozen at
+/// 50 forever (reported as "the update doesn't react" — the list itself
+/// kept working since new rows sort first, but a `.length` off a capped
+/// list can never exceed the cap). This queries counts/totals directly
+/// with no limit instead.
+class HistoryStats {
+  final int totalOrders;
+  final int totalRides;
+  final num totalSpent;
+  HistoryStats({required this.totalOrders, required this.totalRides, required this.totalSpent});
+}
+
 const Map<String, String> statusAr = {
   'pending': 'قيد الانتظار',
   'preparing': 'قيد التجهيز',
@@ -43,6 +58,30 @@ const Map<String, String> statusAr = {
 };
 
 class OrdersRepository {
+  Future<HistoryStats> fetchStats(String phone) async {
+    final local = normalizeEgyptianPhone(phone);
+    final intl = toIntlEgyptianPhone(phone);
+    final filter = 'customer_phone.eq.$local,customer_phone.eq.$intl';
+
+    final results = await Future.wait([
+      sb.from('orders').select('status,total').or(filter),
+      sb.from('rides').select('status,fare').or(filter),
+    ]);
+
+    final orders = results[0] as List;
+    final rides = results[1] as List;
+
+    num spent = 0;
+    for (final o in orders) {
+      if (o['status'] == 'delivered') spent += (o['total'] as num?) ?? 0;
+    }
+    for (final r in rides) {
+      if (r['status'] == 'completed') spent += (r['fare'] as num?) ?? 0;
+    }
+
+    return HistoryStats(totalOrders: orders.length, totalRides: rides.length, totalSpent: spent);
+  }
+
   Future<List<HistoryItem>> fetchHistory(String phone) async {
     final local = normalizeEgyptianPhone(phone);
     final intl = toIntlEgyptianPhone(phone);
