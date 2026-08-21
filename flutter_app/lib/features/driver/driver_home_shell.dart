@@ -25,6 +25,7 @@ class DriverHomeShell extends StatefulWidget {
 class _DriverHomeShellState extends State<DriverHomeShell> {
   int _index = 0;
   final _repo = DriverRepository();
+  final _profileKey = GlobalKey<DriverProfileScreenState>();
   bool _loadingStatus = true;
   String? _status;
 
@@ -70,12 +71,18 @@ class _DriverHomeShellState extends State<DriverHomeShell> {
     }
   }
 
-  void _goToTab(int i) => setState(() => _index = i);
+  void _goToTab(int i) {
+    setState(() => _index = i);
+    // DriverProfileScreen lives inside the IndexedStack below, so switching
+    // back to it doesn't re-run initState() — refresh its trip totals/
+    // ratings explicitly whenever the driver taps "حسابي".
+    if (i == 2) _profileKey.currentState?.refresh();
+  }
 
   late final List<Widget> _tabs = [
     DriverHomeScreen(session: widget.session),
     const WalletScreen(),
-    DriverProfileScreen(session: widget.session),
+    DriverProfileScreen(key: _profileKey, session: widget.session),
     DriverOrdersScreen(onNavigateTab: _goToTab),
     SettingsScreen(onNavigateTab: _goToTab),
   ];
@@ -99,7 +106,7 @@ class _DriverHomeShellState extends State<DriverHomeShell> {
       body: IndexedStack(index: _index, children: _tabs),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _index,
-        onTap: (i) => setState(() => _index = i),
+        onTap: _goToTab,
         type: BottomNavigationBarType.fixed,
         items: const [
           BottomNavigationBarItem(icon: Text('🚗', style: TextStyle(fontSize: 20)), label: 'الرئيسية'),

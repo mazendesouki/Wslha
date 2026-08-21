@@ -35,10 +35,10 @@ class DriverLevel {
 
 const List<DriverLevel> driverLevels = [
   DriverLevel('🌱', 'سائق جديد', 0),
-  DriverLevel('🥉', 'سائق برونزي', 10),
-  DriverLevel('🥈', 'سائق فضي', 50),
+  DriverLevel('🥉', 'سائق برونزي', 50),
+  DriverLevel('🥈', 'سائق فضي', 100),
   DriverLevel('🥇', 'سائق ذهبي', 150),
-  DriverLevel('💎', 'سائق ماسي', 400),
+  DriverLevel('💎', 'سائق ماسي', 200),
 ];
 
 DriverLevel levelForRatingCount(int count) {

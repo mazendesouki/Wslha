@@ -23,10 +23,16 @@ class DriverProfileScreen extends StatefulWidget {
   const DriverProfileScreen({super.key, required this.session});
 
   @override
-  State<DriverProfileScreen> createState() => _DriverProfileScreenState();
+  State<DriverProfileScreen> createState() => DriverProfileScreenState();
 }
 
-class _DriverProfileScreenState extends State<DriverProfileScreen> {
+/// Public (not `_`-prefixed) so DriverHomeShell can hold a
+/// GlobalKey<DriverProfileScreenState> and call refresh() when the "حسابي"
+/// tab is (re)selected — this screen sits inside an IndexedStack, so
+/// switching tabs back to it does NOT re-run initState()/_load(), which is
+/// why the trip totals/ratings looked frozen even right after finishing a
+/// ride (same bug/fix as the customer account screen).
+class DriverProfileScreenState extends State<DriverProfileScreen> {
   final _accountRepo = AccountRepository();
   final _driverRepo = DriverRepository();
   final _ratingsRepo = RatingsRepository();
@@ -45,6 +51,9 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
     super.initState();
     _load();
   }
+
+  /// Called by DriverHomeShell when the "حسابي" tab is selected again.
+  Future<void> refresh() => _load();
 
   Future<void> _load() async {
     final phone = widget.session.phone;
