@@ -2,6 +2,8 @@ import 'dart:typed_data';
 
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:timezone/data/latest.dart' as tz_data;
+import 'package:timezone/timezone.dart' as tz;
 
 /// System-tray notifications while the app is running — the "إشعارات"
 /// toggle in SettingsScreen (shared_preferences key below) gates these.
@@ -23,6 +25,12 @@ class AppNotifications {
   Future<void> init() async {
     if (_initialized) return;
     _initialized = true;
+    // The whole app is Egyptian-mobile-only (see phone_utils.dart's
+    // isEgyptianMobile validation) — hardcoding one timezone instead of
+    // pulling in a device-timezone-lookup package (Egypt uses a single
+    // zone, no DST since 2016) is a deliberate simplification.
+    tz_data.initializeTimeZones();
+    tz.setLocalLocation(tz.getLocation('Africa/Cairo'));
     const androidInit = AndroidInitializationSettings('@mipmap/ic_launcher');
     await _plugin.initialize(const InitializationSettings(android: androidInit));
     final androidImpl = _plugin
@@ -74,4 +82,36 @@ class AppNotifications {
     );
     await _plugin.show(_nextId++, title, body, details);
   }
+
+  /// Schedules a one-off local reminder for `whenLocal` (Cairo time) — used
+  /// for airport-service pickup/flight reminders (see airport_screen.dart /
+  /// driver_home_screen.dart), fired on-device even if the app is
+  /// backgrounded. `id` should be stable per-ride (e.g. derived from the
+  /// ride id) so re-booking/re-scheduling replaces rather than stacks.
+  /// `inexactAllowWhileIdle` deliberately trades a few minutes of precision
+  /// for not requiring Android 12+'s "exact alarm" permission.
+  Future<void> scheduleAt(int id, String title, String body, DateTime whenLocal, {String channelId = 'wslha_rides'}) async {
+    if (!await _enabled()) return;
+    await init();
+    if (whenLocal.isBefore(DateTime.now())) return;
+    final scheduled = tz.TZDateTime.from(whenLocal, tz.local);
+    await _plugin.zonedSchedule(
+      id,
+      title,
+      body,
+      scheduled,
+      NotificationDetails(
+        android: AndroidNotificationDetails(
+          channelId,
+          channelId == 'wslha_orders' ? 'الطلبات الجديدة' : 'تحديثات المشاوير والطلبات',
+          channelDescription: 'إشعارات تغيّر حالة المشاوير والطلبات',
+          importance: Importance.max,
+          priority: Priority.high,
+        ),
+      ),
+      androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+    );
+  }
+
+  Future<void> cancelScheduled(int id) => _plugin.cancel(id);
 }

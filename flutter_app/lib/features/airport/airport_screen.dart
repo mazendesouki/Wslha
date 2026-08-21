@@ -5,6 +5,7 @@ import '../../core/theme.dart';
 import '../rides/address_field.dart';
 import '../rides/fare_calculator.dart' as fare_calc;
 import '../rides/places_service.dart';
+import 'airport_booking_confirmation_screen.dart';
 import 'airport_fare.dart' as fare;
 import 'airport_repository.dart';
 
@@ -217,6 +218,9 @@ class _AirportScreenState extends State<AirportScreen> {
         vehicleCategory: _selectedVehicle!.category,
         qualityTier: _quality,
         notes: notes,
+        flightTime: _flightTime!,
+        direction: _direction,
+        tripType: _tripType,
       );
 
       if (!mounted) return;
@@ -227,10 +231,33 @@ class _AirportScreenState extends State<AirportScreen> {
         });
         return;
       }
-      Navigator.of(context).pop();
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('✅ تم تأكيد حجز توصيل المطار — تقدر تتابعه من "الطلبات"')),
-      );
+      Navigator.of(context).pushReplacement(MaterialPageRoute(
+        builder: (_) => AirportBookingConfirmationScreen(
+          rideId: ride['id'].toString(),
+          direction: _direction,
+          tripType: _tripType,
+          flightTime: _flightTime!,
+          driveMinutes: _driveMinutes,
+          fromName: _from!.name,
+          airportName: _airport!.name,
+          address: _addressCtrl.text.trim(),
+          vehicleLabel: '${_selectedVehicle!.name} $_selectedYear',
+          qualityLabel: _quality == 'regular' ? '' : (fare.qualityLabels[_quality] ?? ''),
+          passengers: _passengers,
+          companions: _companions,
+          bags: _bags,
+          airline: _airlineCtrl.text.trim(),
+          flightNo: _flightNoCtrl.text.trim(),
+          terminal: _terminalCtrl.text.trim(),
+          flightCountry: _flightCountryCtrl.text.trim(),
+          baseFare: _baseFare,
+          extraBagsFee: _extraBagsFee,
+          companionsFee: _companionsFee,
+          waitPickupFee: _waitPickupFee,
+          waitAirportFee: _waitAirportFee,
+          total: _total,
+        ),
+      ));
     } catch (e) {
       if (!mounted) return;
       setState(() {

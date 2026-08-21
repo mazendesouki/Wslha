@@ -164,7 +164,6 @@ List<TimelineStep> buildTimeline({
   required int driveMinutes,
 }) {
   final buffer = checkinBufferMinutes[tripType] ?? checkinBufferMinutes['international']!;
-  final arrivalBuf = arrivalBufferMinutes[tripType] ?? arrivalBufferMinutes['international']!;
 
   if (direction == 'departure') {
     final airportArrival = flightTime.subtract(Duration(minutes: buffer));
@@ -179,6 +178,15 @@ List<TimelineStep> buildTimeline({
     ];
   }
 
+  return buildArrivalTimeline(flightTime: flightTime, tripType: tripType, driveMinutes: driveMinutes);
+}
+
+List<TimelineStep> buildArrivalTimeline({
+  required DateTime flightTime,
+  required String tripType,
+  required int driveMinutes,
+}) {
+  final arrivalBuf = arrivalBufferMinutes[tripType] ?? arrivalBufferMinutes['international']!;
   final driverAtAirport = flightTime.subtract(Duration(minutes: driverArrivalBeforeLandingMinutes));
   final passengerReady = flightTime.add(Duration(minutes: arrivalBuf));
   final homeArrival = passengerReady.add(Duration(minutes: driveMinutes + safetyMarginMinutes));
@@ -189,4 +197,22 @@ List<TimelineStep> buildTimeline({
     TimelineStep(icon: '📍', label: 'المغادرة من المطار', sub: 'زمن الطريق ~$driveMinutes دقيقة + هامش أمان', time: passengerReady),
     TimelineStep(icon: '🏠', label: 'الوصول للوجهة', sub: '', time: homeArrival),
   ];
+}
+
+/// The single most actionable moment for a driver looking at an airport
+/// job — when they need to be at the pickup point (departure) or at the
+/// airport (arrival) — read straight from a `rides` row's persisted
+/// flight_time/airport_direction/airport_trip_type (see
+/// db/security-32-airport-flight-time.sql). Returns null if the ride
+/// isn't an airport booking or predates those columns.
+DateTime? primaryPickupTime(Map<String, dynamic> ride) {
+  final rawFlightTime = ride['flight_time'];
+  if (rawFlightTime == null) return null;
+  final flightTime = DateTime.tryParse(rawFlightTime.toString())?.toLocal();
+  if (flightTime == null) return null;
+  final direction = ride['airport_direction'] as String? ?? 'departure';
+  final tripType = ride['airport_trip_type'] as String? ?? 'international';
+  final driveMinutes = (ride['eta_minutes'] as num?)?.toInt() ?? 30;
+  final steps = buildTimeline(direction: direction, tripType: tripType, flightTime: flightTime, driveMinutes: driveMinutes);
+  return steps.first.time;
 }

@@ -34,6 +34,10 @@ class AirportRepository {
   }
 
   /// Same `rides` table + ride_type='airport' airport.astro writes to.
+  /// flightTime/direction/tripType are also persisted as real columns (see
+  /// db/security-32-airport-flight-time.sql) — previously only embedded as
+  /// text inside `notes`, which made a countdown/reminder impossible to
+  /// rebuild once the booking screen closed.
   Future<Map<String, dynamic>?> createAirportRide({
     required String customerPhone,
     required String customerName,
@@ -51,6 +55,9 @@ class AirportRepository {
     required String vehicleCategory,
     required String qualityTier,
     required String notes,
+    required DateTime flightTime,
+    required String direction,
+    required String tripType,
   }) async {
     final row = await sb.from('rides').insert({
       'customer_phone': customerPhone,
@@ -72,6 +79,9 @@ class AirportRepository {
       'notes': notes,
       'status': 'pending',
       'ride_type': 'airport',
+      'flight_time': flightTime.toUtc().toIso8601String(),
+      'airport_direction': direction,
+      'airport_trip_type': tripType,
     }).select().single();
     return row;
   }

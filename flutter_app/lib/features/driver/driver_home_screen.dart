@@ -3,10 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../core/contact_launcher.dart';
 import '../../core/maps_launcher.dart';
+import '../../core/notifications.dart';
 import '../../core/push.dart';
 import '../../core/session.dart';
 import '../../core/theme.dart';
 import '../../shared/widgets/logout_button.dart';
+import '../airport/airport_fare.dart' as airport_fare;
 import '../ratings/rate_sheet.dart';
 import '../ratings/ratings_repository.dart';
 import '../ratings/trust_badge.dart';
@@ -221,6 +223,7 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
           }
         }
       });
+      if (ok) _scheduleAirportReminderIfNeeded(offer.data);
       _ensureCountdownTicking();
     } catch (e) {
       _showError(e);
@@ -230,6 +233,23 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
         _offers = _offers.where((o) => o.offerId != offer.offerId).toList();
       });
     }
+  }
+
+  /// Airport jobs have a real deadline (be at the pickup point/airport by a
+  /// specific moment, not just "whenever") — a local reminder 15 min before
+  /// that moment so it doesn't get lost among regular ride offers.
+  void _scheduleAirportReminderIfNeeded(Map<String, dynamic> data) {
+    if (data['ride_type'] != 'airport') return;
+    final pickupTime = airport_fare.primaryPickupTime(data);
+    if (pickupTime == null) return;
+    final rideId = data['id'];
+    if (rideId == null) return;
+    AppNotifications.instance.scheduleAt(
+      rideId.hashCode,
+      '✈️ تذكير رحلة مطار',
+      'موعدك مع العميل قرّب — راجع تفاصيل الرحلة',
+      pickupTime.subtract(const Duration(minutes: 15)),
+    );
   }
 
   Future<void> _reject(PendingOffer offer) async {
@@ -504,6 +524,10 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
                 ],
                 const SizedBox(height: 14),
                 _RouteRow(from: from, to: to),
+                if (job['ride_type'] == 'airport') ...[
+                  const SizedBox(height: 8),
+                  _AirportFlightChip(data: job),
+                ],
                 const SizedBox(height: 12),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
@@ -879,6 +903,7 @@ class _OfferCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 _RouteRow(from: from, to: to),
+                if (data['ride_type'] == 'airport') _AirportFlightChip(data: data),
                 if (data['customer_phone'] != null && (data['customer_phone'] as String).isNotEmpty) ...[
                   const SizedBox(height: 8),
                   Align(
@@ -1071,6 +1096,31 @@ class _RouteRow extends StatelessWidget {
           ],
         ),
       ],
+    );
+  }
+}
+
+/// Compact flight-time badge for airport jobs — offer cards and the
+/// active-job card otherwise look identical to a normal ride, even though
+/// airport bookings have a real deadline (see security-32's flight_time
+/// column) the driver needs to see at a glance.
+class _AirportFlightChip extends StatelessWidget {
+  final Map<String, dynamic> data;
+  const _AirportFlightChip({required this.data});
+
+  @override
+  Widget build(BuildContext context) {
+    final raw = data['flight_time'];
+    final flightTime = raw == null ? null : DateTime.tryParse(raw.toString())?.toLocal();
+    if (flightTime == null) return const SizedBox.shrink();
+    final direction = data['airport_direction'] as String? ?? 'departure';
+    final label = direction == 'departure' ? 'إقلاع' : 'هبوط';
+    final timeStr = TimeOfDay.fromDateTime(flightTime).format(context);
+    final dateStr = '${flightTime.day}/${flightTime.month}';
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(color: const Color(0xFFEFF6FF), borderRadius: BorderRadius.circular(999)),
+      child: Text('✈️ $label الساعة $timeStr — $dateStr', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: Color(0xFF1D4ED8))),
     );
   }
 }
