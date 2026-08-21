@@ -20,10 +20,15 @@ class AccountScreen extends StatefulWidget {
   const AccountScreen({super.key});
 
   @override
-  State<AccountScreen> createState() => _AccountScreenState();
+  State<AccountScreen> createState() => AccountScreenState();
 }
 
-class _AccountScreenState extends State<AccountScreen> {
+/// Public (not `_`-prefixed) so HomeShell can hold a GlobalKey<AccountScreenState>
+/// and call refresh() when the "حسابي" tab is (re)selected — this screen sits
+/// inside an IndexedStack, so switching tabs back to it does NOT re-run
+/// initState()/_load(), which is why the stats/addresses/reviews used to look
+/// "frozen" even right after finishing a ride or order.
+class AccountScreenState extends State<AccountScreen> {
   final _repo = AccountRepository();
   final _ordersRepo = OrdersRepository();
   final _ratingsRepo = RatingsRepository();
@@ -42,6 +47,9 @@ class _AccountScreenState extends State<AccountScreen> {
     super.initState();
     _load();
   }
+
+  /// Called by HomeShell when the "حسابي" tab is selected again.
+  Future<void> refresh() => _load();
 
   Future<void> _load() async {
     final session = await SessionStore.load();

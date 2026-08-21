@@ -19,13 +19,21 @@ class HomeShell extends StatefulWidget {
 
 class _HomeShellState extends State<HomeShell> {
   int _index = 0;
+  final _accountKey = GlobalKey<AccountScreenState>();
 
-  void _goToTab(int i) => setState(() => _index = i);
+  void _goToTab(int i) {
+    setState(() => _index = i);
+    // AccountScreen lives inside the IndexedStack below, so switching back to
+    // it doesn't re-run initState() — refresh its stats/addresses/reviews
+    // explicitly whenever the customer taps "حسابي", e.g. right after a ride
+    // or order just finished elsewhere in the app.
+    if (i == 2) _accountKey.currentState?.refresh();
+  }
 
   late final List<Widget> _tabs = [
     HomeTab(session: widget.session),
     const WalletScreen(),
-    const AccountScreen(),
+    AccountScreen(key: _accountKey),
     const OrdersScreen(),
     const RidesScreen(),
     SettingsScreen(onNavigateTab: _goToTab),
@@ -37,7 +45,7 @@ class _HomeShellState extends State<HomeShell> {
       body: IndexedStack(index: _index, children: _tabs),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _index,
-        onTap: (i) => setState(() => _index = i),
+        onTap: _goToTab,
         items: const [
           BottomNavigationBarItem(icon: Text('🏠', style: TextStyle(fontSize: 20)), label: 'الرئيسية'),
           BottomNavigationBarItem(icon: Text('💳', style: TextStyle(fontSize: 20)), label: 'المحفظة'),
