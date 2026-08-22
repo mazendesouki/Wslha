@@ -145,25 +145,28 @@ class _RegisterScreenState extends State<RegisterScreen> {
     });
   }
 
+  // Availability checks below only re-validate FORMAT synchronously (no
+  // staleness risk) — they deliberately don't gate on _xAvail == taken,
+  // since that's set by a 600ms-debounced async check and can still read
+  // stale from a moment ago (e.g. an incomplete national ID) even after the
+  // field is now valid and unused. _Avail stays purely a live UI hint
+  // (spinner/check/✗ icon); the real, fresh, authoritative duplicate check
+  // happens in _submit()'s pre-insert fieldExists() calls.
   bool _validateStep1() {
     final nm = validateFullName(_nameCtrl.text);
     if (!nm.valid) return _fail(nm.message);
     if (!validateUsername(_usernameCtrl.text).valid) {
       return _fail('اسم المستخدم: أحرف إنجليزية وأرقام و _ . فقط (3-20 حرف).');
     }
-    if (_usernameAvail == _Avail.taken) return _fail('اسم المستخدم محجوز، اختر اسماً آخر.');
     if (!isEgyptianMobile(_phoneCtrl.text.trim())) return _fail(egPhoneError);
-    if (_phoneAvail == _Avail.taken) return _fail('هذا الرقم مسجّل بالفعل — سجّل الدخول بدلاً من ذلك.');
     final natId = _nationalIdCtrl.text.trim();
     if (!isValidEgyptianNationalId(natId)) return _fail('رقم قومي غير صحيح — لازم يكون 14 رقم ويبدأ بـ 2 أو 3.');
-    if (_nationalIdAvail == _Avail.taken) return _fail('هذا الرقم القومي مسجّل بالفعل.');
     if (!isFutureDateValue(_nationalIdExpiry)) return _fail('البطاقة منتهية — أدخل تاريخاً سارياً لانتهاء البطاقة.');
     return true;
   }
 
   bool _validateStep2() {
     if (!validateEmail(_emailCtrl.text).valid) return _fail('يرجى إدخال بريد إلكتروني صحيح.');
-    if (_emailAvail == _Avail.taken) return _fail('هذا البريد الإلكتروني مسجّل بالفعل.');
     if (_city == null) return _fail('يرجى اختيار المدينة.');
     return true;
   }
@@ -349,6 +352,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
             suffixIcon: _availIcon(_nationalIdAvail),
           ),
         ),
+        const SizedBox(height: 16),
         InkWell(
           onTap: _pickNationalIdExpiry,
           child: InputDecorator(
