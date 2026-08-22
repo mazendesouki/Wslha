@@ -537,6 +537,10 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
               ],
             ),
           ),
+          if (job['ride_type'] == 'airport') ...[
+            const SizedBox(height: 16),
+            _AirportDetailsCard(data: job, fare: fare),
+          ],
           if (destination != null) ...[
             const SizedBox(height: 16),
             _RouteMapCard(origin: origin, destination: destination),
@@ -1121,6 +1125,54 @@ class _AirportFlightChip extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(color: const Color(0xFFEFF6FF), borderRadius: BorderRadius.circular(999)),
       child: Text('✈️ $label الساعة $timeStr — $dateStr', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: Color(0xFF1D4ED8))),
+    );
+  }
+}
+
+/// Full airport-trip details for the driver's active-job screen — shown
+/// right after accepting an airport ride, per the request that the driver
+/// see the same direction/details/total the customer sees on their own
+/// confirmation screen. `notes` already carries every entered detail
+/// (vehicle, quality, companions, bags, flight info, pickup address) as one
+/// formatted string (see airport_screen.dart's _submit()) — no separate
+/// per-line cost breakdown is persisted server-side, only the final fare
+/// total, which is what's shown here.
+class _AirportDetailsCard extends StatelessWidget {
+  final Map<String, dynamic> data;
+  final dynamic fare;
+  const _AirportDetailsCard({required this.data, required this.fare});
+
+  @override
+  Widget build(BuildContext context) {
+    final direction = data['airport_direction'] as String? ?? 'departure';
+    final directionLabel = direction == 'departure' ? '🛫 توصيل من العميل إلى المطار (مغادرة)' : '🛬 توصيل من المطار إلى العميل (وصول)';
+    final notes = (data['notes'] as String?) ?? '';
+    final lines = notes.split(' — ').where((l) => l.trim().isNotEmpty).toList();
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), boxShadow: const [
+        BoxShadow(color: Color(0x14000000), blurRadius: 12, offset: Offset(0, 4)),
+      ]),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(directionLabel, style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 13)),
+          const SizedBox(height: 10),
+          ...lines.map((l) => Padding(
+                padding: const EdgeInsets.only(bottom: 4),
+                child: Text(l, style: const TextStyle(fontSize: 12, color: AppColors.textFaint)),
+              )),
+          const Divider(height: 20),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text('إجمالي الرحلة', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 13)),
+              Text('$fare ج.م', style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 15, color: AppColors.success)),
+            ],
+          ),
+        ],
+      ),
     );
   }
 }
