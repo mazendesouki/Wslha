@@ -1,0 +1,68 @@
+---
+import Layout from '../components/layout.astro';
+import PageHero from '../components/PageHero.astro';
+
+const apps = [
+  { flavor: 'customer', label: '📱 تطبيق العميل', desc: 'احجز رحلاتك وطلباتك وتابعها لحظة بلحظة.', file: '/downloads/wslha-customer.apk' },
+  { flavor: 'driver', label: '🚗 تطبيق السائق', desc: 'استقبل عروض الرحلات والطلبات واشتغل براحتك.', file: '/downloads/wslha-driver.apk' },
+  { flavor: 'merchant', label: '🏪 تطبيق التاجر', desc: 'استقبل طلبات متجرك وتابعها من مكان واحد.', file: '/downloads/wslha-merchant.apk' },
+];
+---
+
+<Layout title="تحميل التطبيق | وصّلها" description="حمّل تطبيق وصّلها للعميل أو السائق أو التاجر، وطريقة تثبيته خطوة بخطوة." page="download">
+  <PageHero badge="📲 تحميل التطبيق" title="حمّل تطبيق وصّلها" subtitle="اختار التطبيق المناسب لك وثبّته في دقيقة واحدة." />
+
+  <section class="dl">
+    <div class="dl__grid">
+      {apps.map((a) => (
+        <div class="dl-card">
+          <h2 class="dl-card__title">{a.label}</h2>
+          <p class="dl-card__desc">{a.desc}</p>
+          <a href={a.file} download class="dl-card__btn">⬇️ تحميل APK</a>
+        </div>
+      ))}
+    </div>
+
+    <div class="dl-steps">
+      <h2 class="dl-steps__title">طريقة التثبيت</h2>
+      <ol class="dl-steps__list">
+        <li>دوس على "تحميل APK" وسيبه ينزل كامل.</li>
+        <li>افتح الملف من إشعارات التنزيلات أو من مجلد "Downloads".</li>
+        <li>
+          لو ظهرلك تحذير "تثبيت من مصادر غير معروفة"، دوس "إعدادات" ووافق على السماح
+          — ده إجراء أمان عادي من أندرويد لأي تطبيق مش من متجر Google Play.
+        </li>
+        <li>دوس "تثبيت" واستنى لحد ما يخلص.</li>
+        <li>افتح التطبيق وسجّل حساب جديد أو ادخل بحسابك الموجود.</li>
+      </ol>
+      <p class="dl-steps__note">
+        ⚠️ التطبيقات دي بتوصّلها لتطبيقك مباشرة من موقعنا، بدون أي وسيط — آمنة ومطابقة تمامًا للنسخة الرسمية.
+      </p>
+    </div>
+  </section>
+</Layout>
+
+<style>
+  .dl { max-width: 900px; margin: 0 auto; padding: var(--sp-10) var(--sp-6) var(--sp-20); }
+  .dl__grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: var(--sp-5); margin-bottom: var(--sp-12); }
+  .dl-card {
+    background: var(--color-bg); border: 1px solid var(--color-border);
+    border-radius: var(--radius-xl); padding: var(--sp-6); text-align: center;
+    box-shadow: var(--shadow-sm); display: flex; flex-direction: column; gap: var(--sp-3);
+  }
+  .dl-card__title { font-weight: var(--weight-black); font-size: var(--text-lg); }
+  .dl-card__desc { font-size: var(--text-sm); color: var(--color-text-faint); flex-grow: 1; }
+  .dl-card__btn {
+    display: inline-block; padding: 12px 20px; border-radius: var(--radius-lg);
+    background: var(--color-primary); color: #fff; font-weight: var(--weight-black);
+    text-decoration: none; font-size: var(--text-sm);
+  }
+  .dl-card__btn:hover { background: var(--color-primary-dark); }
+
+  .dl-steps {
+    background: var(--color-bg-soft); border-radius: var(--radius-xl); padding: var(--sp-8);
+  }
+  .dl-steps__title { font-family: var(--font-display); font-size: var(--text-xl); font-weight: 800; margin-bottom: var(--sp-4); }
+  .dl-steps__list { padding-inline-start: var(--sp-6); display: flex; flex-direction: column; gap: var(--sp-3); font-size: var(--text-sm); line-height: 1.8; }
+  .dl-steps__note { margin-top: var(--sp-5); font-size: var(--text-xs); color: var(--color-text-faint); }
+</style>

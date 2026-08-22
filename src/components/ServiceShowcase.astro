@@ -1,0 +1,128 @@
+---
+import Layout from './layout.astro';
+import PageHero from './PageHero.astro';
+import AppDownloadCTA from './AppDownloadCTA.astro';
+
+interface Feature { icon: string; title: string; desc: string; }
+interface Step { title: string; desc: string; }
+
+interface Props {
+  pageId: string;
+  metaTitle: string;
+  metaDescription: string;
+  badge: string;
+  title: string;
+  subtitle: string;
+  intro: string;
+  features: Feature[];
+  steps: Step[];
+  pricingNote?: string;
+  offers?: string[];
+}
+
+const { pageId, metaTitle, metaDescription, badge, title, subtitle, intro, features, steps, pricingNote, offers } = Astro.props;
+---
+
+<Layout title={metaTitle} description={metaDescription} page={pageId}>
+  <PageHero badge={badge} title={title} subtitle={subtitle} />
+
+  <section class="showcase">
+    <p class="showcase__intro">{intro}</p>
+
+    <div class="showcase__features">
+      {features.map((f) => (
+        <div class="feature-card">
+          <span class="feature-card__icon">{f.icon}</span>
+          <h3 class="feature-card__title">{f.title}</h3>
+          <p class="feature-card__desc">{f.desc}</p>
+        </div>
+      ))}
+    </div>
+
+    <h2 class="showcase__section-title">كيف تستخدم الخدمة؟</h2>
+    <div class="showcase__steps">
+      {steps.map((s, i) => (
+        <div class="step-card">
+          <div class="step-card__num">{i + 1}</div>
+          <div>
+            <h3 class="step-card__title">{s.title}</h3>
+            <p class="step-card__desc">{s.desc}</p>
+          </div>
+        </div>
+      ))}
+    </div>
+
+    {offers && offers.length > 0 && (
+      <div class="showcase__offers">
+        <h2 class="showcase__section-title">مميزات وعروض الخدمة</h2>
+        <ul class="offers-list">
+          {offers.map((o) => <li>✓ {o}</li>)}
+        </ul>
+      </div>
+    )}
+
+    {pricingNote && <p class="showcase__pricing-note">💳 {pricingNote}</p>}
+
+    <AppDownloadCTA />
+
+    <p class="showcase__stores-note">
+      عايز تتسوق من متجر؟ <a href="/stores">تصفح المتاجر مباشرة من الموقع</a> — مفيش داعي تحمّل التطبيق لده.
+    </p>
+  </section>
+</Layout>
+
+<style>
+  .showcase { max-width: 900px; margin: 0 auto; padding: var(--sp-10) var(--sp-6) var(--sp-20); }
+  .showcase__intro {
+    font-size: var(--text-lg); color: var(--color-text-muted); line-height: 1.9;
+    text-align: center; max-width: 640px; margin: 0 auto var(--sp-10);
+  }
+  .showcase__section-title {
+    font-family: var(--font-display); font-size: var(--text-2xl); font-weight: 800;
+    text-align: center; margin: var(--sp-12) 0 var(--sp-6);
+  }
+  .showcase__features {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: var(--sp-5);
+  }
+  .feature-card {
+    background: var(--color-bg); border: 1px solid var(--color-border);
+    border-radius: var(--radius-xl); padding: var(--sp-6); text-align: center;
+    box-shadow: var(--shadow-sm);
+  }
+  .feature-card__icon { font-size: 2.2rem; display: block; margin-bottom: var(--sp-3); }
+  .feature-card__title { font-weight: var(--weight-black); font-size: var(--text-base); margin-bottom: var(--sp-2); }
+  .feature-card__desc { font-size: var(--text-sm); color: var(--color-text-faint); line-height: 1.7; }
+
+  .showcase__steps { display: flex; flex-direction: column; gap: var(--sp-4); }
+  .step-card {
+    display: flex; align-items: flex-start; gap: var(--sp-4);
+    background: var(--color-bg); border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg); padding: var(--sp-5);
+  }
+  .step-card__num {
+    flex-shrink: 0; width: 34px; height: 34px; border-radius: 50%;
+    background: var(--color-primary); color: #fff; font-weight: 900;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .step-card__title { font-weight: var(--weight-black); font-size: var(--text-base); margin-bottom: 2px; }
+  .step-card__desc { font-size: var(--text-sm); color: var(--color-text-faint); line-height: 1.7; }
+
+  .offers-list { list-style: none; padding: 0; display: grid; gap: var(--sp-3); }
+  .offers-list li {
+    background: var(--color-bg-soft); border-radius: var(--radius-lg);
+    padding: var(--sp-4) var(--sp-5); font-weight: var(--weight-bold); font-size: var(--text-sm);
+    color: var(--color-primary);
+  }
+
+  .showcase__pricing-note {
+    text-align: center; font-size: var(--text-sm); color: var(--color-text-muted);
+    background: var(--color-bg-soft); border-radius: var(--radius-lg);
+    padding: var(--sp-4); margin-top: var(--sp-8);
+  }
+
+  .showcase__stores-note {
+    text-align: center; font-size: var(--text-sm); color: var(--color-text-faint); margin-top: var(--sp-4);
+  }
+  .showcase__stores-note a { color: var(--color-primary); font-weight: var(--weight-bold); }
+</style>
