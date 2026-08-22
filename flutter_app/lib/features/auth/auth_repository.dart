@@ -93,6 +93,8 @@ class AuthRepository {
     String? username,
     String? email,
     String? city,
+    String? nationalId,
+    String? nationalIdExpiry,
   }) async {
     final normalizedPhone = normalizeEgyptianPhone(phone);
     final payload = {
@@ -103,6 +105,8 @@ class AuthRepository {
       'email': email?.toLowerCase(),
       'role': 'customer',
       'city': city,
+      'national_id': nationalId,
+      'national_id_expiry': nationalIdExpiry,
       'created_at': DateTime.now().toIso8601String(),
     };
     final res = await http.post(
