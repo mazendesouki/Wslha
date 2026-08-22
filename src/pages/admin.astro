@@ -143,6 +143,8 @@
     .btn--ghost{background:transparent;color:var(--tx3);border:1.5px solid var(--bdr)}.btn--ghost:hover{border-color:var(--pr);color:var(--pr)}
     .btn--sm{padding:.3rem .7rem;font-size:.75rem}
     .btn-row{display:flex;gap:.4rem;flex-wrap:wrap}
+    .link-btn{background:none;border:none;padding:0;margin:0;font:inherit;font-weight:700;color:var(--pr);cursor:pointer;text-decoration:none;text-align:right}
+    .link-btn:hover{text-decoration:underline}
 
     /* ── Filters / Search ─────────────────────────────────── */
     .filters-bar{display:flex;gap:.75rem;margin-bottom:1.25rem;flex-wrap:wrap;align-items:center}
@@ -436,6 +438,62 @@
             <thead><tr><th>#</th><th>الاسم</th><th>الجوال</th><th>الدور</th><th>الحالة</th><th>المدينة</th><th>تاريخ الانضمام</th><th>إجراءات</th></tr></thead>
             <tbody id="users-tbody"><tr><td colspan="8" style="text-align:center;color:#94A3B8;padding:2rem">جاري التحميل…</td></tr></tbody>
           </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════ USER PROFILE ════════════════════ -->
+    <div class="section" id="sec-user-profile">
+      <button class="btn btn--ghost" onclick="closeUserProfile()">→ رجوع</button>
+
+      <div class="card" style="margin-top:1rem">
+        <div class="card__body">
+          <div class="rev-header" style="border-bottom:none;margin-bottom:0;padding-bottom:0">
+            <div id="up-avatar" class="rev-avatar no-img">👤</div>
+            <div>
+              <div class="rev-header__top">
+                <span class="rev-header__name" id="up-name">—</span>
+                <span id="up-role-badge"></span>
+                <span id="up-status-badge"></span>
+              </div>
+              <div class="rev-header__phone" id="up-phone">—</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="kpi-grid" id="up-kpi-grid" style="margin-top:1.25rem"></div>
+
+      <div class="dash-grid" style="margin-top:1.25rem;align-items:start">
+        <div class="card">
+          <div class="card__head"><span class="card__title">🪪 بيانات الحساب</span></div>
+          <div class="card__body">
+            <div class="rev-fields" id="up-account-fields"></div>
+          </div>
+        </div>
+        <div class="card" id="up-side-card" style="display:none">
+          <div class="card__head">
+            <span class="card__title" id="up-side-title">—</span>
+            <button class="btn btn--outline btn--sm" id="up-side-docs-btn">📄 عرض المستندات كاملة</button>
+          </div>
+          <div class="card__body">
+            <div class="rev-fields" id="up-side-fields"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:1.25rem">
+        <div class="card__head"><span class="card__title">⭐ التقييمات</span></div>
+        <div class="card__body" id="up-ratings">
+          <p style="color:#94A3B8;font-size:.875rem">جاري التحميل…</p>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:1.25rem">
+        <div class="card__head"><span class="card__title">🕓 آخر النشاط</span></div>
+        <div class="tbl-wrap">
+          <table><thead><tr><th>النوع</th><th>التفاصيل</th><th>المبلغ</th><th>الحالة</th><th>التاريخ</th></tr></thead>
+          <tbody id="up-activity-tbody"><tr><td colspan="5" style="text-align:center;color:#94A3B8;padding:2rem">جاري التحميل…</td></tr></tbody></table>
         </div>
       </div>
     </div>
@@ -1354,8 +1412,8 @@ function badge(status) {
   return `<span class="badge ${STATUS_CLS[s]||'badge--gray'}">${STATUS_AR[s]||status||'—'}</span>`;
 }
 function roleBadge(role) {
-  const map = { customer:'badge--blue', driver:'badge--green', admin:'badge--purple' };
-  const ar  = { customer:'عميل', driver:'سائق', admin:'مشرف' };
+  const map = { customer:'badge--blue', driver:'badge--green', admin:'badge--purple', merchant:'badge--orange', platform:'badge--gray' };
+  const ar  = { customer:'عميل', driver:'سائق', admin:'مشرف', merchant:'تاجر', platform:'المنصة' };
   return `<span class="badge ${map[role]||'badge--gray'}">${ar[role]||role||'—'}</span>`;
 }
 function showToast(msg, color='#1E293B') {
@@ -1816,7 +1874,7 @@ function renderUsers() {
     return `
     <tr>
       <td style="color:#94A3B8;font-size:.78rem">${i+1}</td>
-      <td style="font-weight:700">${u.name||'—'}</td>
+      <td style="font-weight:700"><button class="link-btn" onclick="openUserProfile('${u.phone}')" title="عرض الملف الشخصي الكامل">${u.name||'—'}</button></td>
       <td style="direction:ltr;text-align:right;font-size:.85rem">${u.phone||'—'}</td>
       <td>${roleBadge(u.role)}</td>
       <td>${badge(u.status||'active')}</td>
@@ -1904,6 +1962,233 @@ async function changeUserRole(phone, role) {
   else showToast('❌ حدث خطأ', '#DC2626');
 }
 
+/* ═══════════════════ USER PROFILE ══════════════════════════ */
+// Full-detail profile view for any row in the users/drivers/merchants
+// tables — opened by clicking a name. accounts is the only PII-locked
+// table (admin_get_account_detail, password-verified like
+// admin_list_accounts); everything else (orders/rides/ratings/stores/
+// wallets/driver_applications/merchant_applications) is anon-readable and
+// fetched client-side filtered by phone, same pattern as the existing
+// viewUserStats/viewMerchantStats/openDriverModal/openMerchantModal.
+let currentProfilePhone = null;
+function kpiTile(cls, icon, val, label) {
+  return `<div class="kpi kpi--${cls}"><div class="kpi__row"><div class="kpi__icon-wrap">${icon}</div></div><div class="kpi__val">${val}</div><div class="kpi__label">${label}</div></div>`;
+}
+function revField(label, val) {
+  if (val === null || val === undefined || val === '') return '';
+  return `<div class="rev-field"><div class="rev-field__label">${label}</div><div class="rev-field__val">${val}</div></div>`;
+}
+function closeUserProfile() {
+  document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+  document.querySelector('.nav-item[data-section="users"]')?.classList.add('active');
+  document.querySelectorAll('.section').forEach(el => el.classList.remove('active'));
+  document.getElementById('sec-users').classList.add('active');
+  document.getElementById('topbar-title').textContent = sectionTitles.users;
+  currentSection = 'users';
+}
+async function openUserProfile(phone) {
+  if (!phone) return;
+  currentProfilePhone = phone;
+  document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.section').forEach(el => el.classList.remove('active'));
+  document.getElementById('sec-user-profile').classList.add('active');
+  document.getElementById('topbar-title').textContent = 'الملف الشخصي';
+  currentSection = 'user-profile';
+  closeSidebar();
+
+  document.getElementById('up-name').textContent = 'جاري التحميل…';
+  document.getElementById('up-phone').textContent = phone;
+  document.getElementById('up-role-badge').innerHTML = '';
+  document.getElementById('up-status-badge').innerHTML = '';
+  document.getElementById('up-avatar').outerHTML = '<div id="up-avatar" class="rev-avatar no-img">👤</div>';
+  document.getElementById('up-kpi-grid').innerHTML = '';
+  document.getElementById('up-account-fields').innerHTML = '';
+  document.getElementById('up-side-card').style.display = 'none';
+  document.getElementById('up-ratings').innerHTML = '<p style="color:#94A3B8;font-size:.875rem">جاري التحميل…</p>';
+  document.getElementById('up-activity-tbody').innerHTML = '<tr><td colspan="5" style="text-align:center;color:#94A3B8;padding:2rem">جاري التحميل…</td></tr>';
+
+  const pass = getAdminPass();
+  if (!pass) { closeUserProfile(); return; }
+  const rows = await sbRpcRows('admin_get_account_detail', { p_admin_phone: ADMIN.phone, p_admin_password: pass, p_target_phone: phone });
+  if (rows === null) { clearAdminPass(); showToast('❌ فشل التحقق — أعد المحاولة', '#DC2626'); closeUserProfile(); return; }
+  const acc = rows[0];
+  if (!acc) { showToast('❌ لم يتم العثور على المستخدم', '#DC2626'); closeUserProfile(); return; }
+
+  document.getElementById('up-name').textContent = acc.name || '—';
+  document.getElementById('up-phone').textContent = '📞 ' + (acc.phone || phone);
+  document.getElementById('up-role-badge').innerHTML = roleBadge(acc.role);
+  document.getElementById('up-status-badge').innerHTML = badge(acc.status || 'active');
+  if (acc.avatar_url) {
+    document.getElementById('up-avatar').outerHTML = `<img id="up-avatar" class="rev-avatar" src="${acc.avatar_url}" alt="${(acc.name||'').replace(/"/g,'')}" onclick="document.getElementById('lightbox-img').src='${acc.avatar_url}';document.getElementById('lightbox').classList.remove('hidden')"/>`;
+  }
+  document.getElementById('up-account-fields').innerHTML = [
+    revField('اسم المستخدم', acc.username),
+    revField('البريد الإلكتروني', acc.email),
+    revField('المدينة', acc.city),
+    revField('الرقم القومي', acc.national_id),
+    revField('تاريخ انتهاء البطاقة', acc.national_id_expiry ? fmtDate(acc.national_id_expiry) : null),
+    revField('تاريخ الانضمام', fmtDate(acc.created_at)),
+  ].join('') || '<p style="color:#94A3B8;font-size:.85rem">لا توجد بيانات إضافية</p>';
+
+  const wallet = await sbGet(`wallets?${phoneOrFilter(acc.phone)}&select=balance&limit=1`);
+  const balance = Math.round((wallet && wallet[0] && wallet[0].balance) || 0);
+  const kpis = [];
+  const activityRows = [];
+  const ratingsBox = document.getElementById('up-ratings');
+  const sideCard = document.getElementById('up-side-card');
+
+  if (acc.role === 'driver') {
+    const [trip, app, ratings] = await Promise.all([
+      sbRpcJson('get_driver_trip_stats', { p_driver_phone: acc.phone }).catch(() => null),
+      sbGet(`driver_applications?${phoneOrFilter(acc.phone)}&select=vehicle_model,vehicle_color,vehicle_year,license_number,vehicle_reg_number,status&order=created_at.desc&limit=1`),
+      sbGet(`ratings?${phoneOrFilter(acc.phone,'driver_phone')}&rated_by=eq.customer&rating=not.is.null&select=rating,tags,comment,created_at&order=created_at.desc&limit=30`),
+    ]);
+    const overall = trip?.overall || {};
+    kpis.push(
+      kpiTile('green', '🚕', fmt(overall.trips || 0), 'رحلات مكتملة'),
+      kpiTile('blue', '💰', fmt(Math.round(overall.earnings_total || 0)) + ' ج.م', 'أرباح الرحلات'),
+      kpiTile('orange', '📦', fmt(trip?.store_orders?.trips || 0), 'طلبات توصيل'),
+      kpiTile('blue', '💳', fmt(balance) + ' ج.م', 'رصيد المحفظة'),
+    );
+    const a = app && app[0];
+    if (a) {
+      sideCard.style.display = '';
+      document.getElementById('up-side-title').textContent = '🚗 بيانات السائق والمركبة';
+      document.getElementById('up-side-fields').innerHTML = [
+        revField('حالة طلب الاعتماد', badge(a.status)),
+        revField('موديل السيارة', a.vehicle_model),
+        revField('اللون', a.vehicle_color),
+        revField('سنة الصنع', a.vehicle_year),
+        revField('رقم الرخصة', a.license_number),
+        revField('رقم لوحة السيارة', a.vehicle_reg_number),
+      ].join('');
+      document.getElementById('up-side-docs-btn').onclick = () => openDriverModal(acc.phone);
+    }
+    const rs = ratings || [];
+    const avg = rs.length ? (rs.reduce((s,r) => s + Number(r.rating), 0) / rs.length) : 0;
+    ratingsBox.innerHTML = rs.length ? `
+      <div style="display:flex;align-items:center;gap:.6rem;margin-bottom:1rem">
+        <span style="font-size:1.6rem;font-weight:900;color:#D97706">⭐ ${avg.toFixed(1)}</span>
+        <span style="color:#64748B;font-size:.85rem">من ${rs.length} تقييم من العملاء</span>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:.6rem">
+        ${rs.slice(0,10).map(r => `
+          <div style="background:#F8FAFC;border:1px solid var(--bdr);border-radius:var(--radius);padding:.65rem .85rem">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <span style="font-weight:800;color:#D97706">${'⭐'.repeat(Math.round(Number(r.rating)))}</span>
+              <span style="font-size:.72rem;color:#94A3B8">${fmtTime(r.created_at)}</span>
+            </div>
+            ${r.comment ? `<div style="font-size:.82rem;color:#334155;margin-top:.3rem">${escapeHtml(r.comment)}</div>` : ''}
+            ${r.tags && r.tags.length ? `<div style="margin-top:.3rem;display:flex;gap:.3rem;flex-wrap:wrap">${r.tags.map(t=>`<span class="badge badge--gray" style="font-size:.68rem">${escapeHtml(t)}</span>`).join('')}</div>` : ''}
+          </div>`).join('')}
+      </div>` : '<p style="color:#94A3B8;font-size:.875rem">لا توجد تقييمات بعد</p>';
+
+    const rides = await sbGet(`rides?${phoneOrFilter(acc.phone,'driver_phone')}&select=from_area,to_area,fare,status,created_at&order=created_at.desc&limit=15`);
+    (rides || []).forEach(r => activityRows.push({ type:'🚕 رحلة', detail:`${r.from_area||'—'} ← ${r.to_area||'—'}`, amount:r.fare, status:r.status, date:r.created_at }));
+
+  } else if (acc.role === 'merchant') {
+    const store = await sbGet(`stores?owner_phone=eq.${encodeURIComponent(acc.phone)}&select=*&order=created_at.desc&limit=1`);
+    const s = store && store[0];
+    let orders = [], ratings = [];
+    if (s) {
+      [orders, ratings] = await Promise.all([
+        sbGet(`orders?store_id=eq.${encodeURIComponent(s.id)}&select=code,total,status,created_at&order=created_at.desc&limit=200`),
+        sbGet(`ratings?store_id=eq.${encodeURIComponent(s.id)}&store_rating=not.is.null&select=store_rating,comment,created_at&order=created_at.desc&limit=30`),
+      ]);
+    }
+    const ordersArr = orders || [];
+    const completed = ordersArr.filter(o => o.status === 'delivered' || o.status === 'completed');
+    const sales = completed.reduce((sum,o) => sum + (Number(o.total)||0), 0);
+    const ratingsArr = ratings || [];
+    const avgStore = ratingsArr.length ? ratingsArr.reduce((sum,r) => sum + Number(r.store_rating),0) / ratingsArr.length : 0;
+    kpis.push(
+      kpiTile('green', '🛍️', fmt(completed.length), 'طلبات مكتملة'),
+      kpiTile('blue', '💰', fmt(Math.round(sales)) + ' ج.م', 'إجمالي المبيعات'),
+      kpiTile('orange', '⭐', ratingsArr.length ? avgStore.toFixed(1) : '—', 'تقييم المتجر'),
+      kpiTile('blue', '💳', fmt(balance) + ' ج.م', 'رصيد المحفظة'),
+    );
+    if (s) {
+      sideCard.style.display = '';
+      document.getElementById('up-side-title').textContent = '🏪 بيانات المتجر';
+      document.getElementById('up-side-fields').innerHTML = [
+        revField('اسم المتجر', `${s.emoji||''} ${s.name||''}`.trim()),
+        revField('الفئة', s.category),
+        revField('المنطقة', s.area),
+        revField('العنوان', s.address),
+        revField('رسوم التوصيل', s.delivery_fee != null ? `${s.delivery_fee} ج.م` : null),
+        revField('حالة المتجر', s.is_open === false ? 'مغلق حالياً' : 'مفتوح'),
+      ].join('');
+      document.getElementById('up-side-docs-btn').onclick = () => openMerchantModal(acc.phone);
+    }
+    ratingsBox.innerHTML = ratingsArr.length ? `
+      <div style="display:flex;align-items:center;gap:.6rem;margin-bottom:1rem">
+        <span style="font-size:1.6rem;font-weight:900;color:#D97706">⭐ ${avgStore.toFixed(1)}</span>
+        <span style="color:#64748B;font-size:.85rem">من ${ratingsArr.length} تقييم من العملاء</span>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:.6rem">
+        ${ratingsArr.slice(0,10).map(r => `
+          <div style="background:#F8FAFC;border:1px solid var(--bdr);border-radius:var(--radius);padding:.65rem .85rem">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <span style="font-weight:800;color:#D97706">${'⭐'.repeat(Math.round(Number(r.store_rating)))}</span>
+              <span style="font-size:.72rem;color:#94A3B8">${fmtTime(r.created_at)}</span>
+            </div>
+            ${r.comment ? `<div style="font-size:.82rem;color:#334155;margin-top:.3rem">${escapeHtml(r.comment)}</div>` : ''}
+          </div>`).join('')}
+      </div>` : '<p style="color:#94A3B8;font-size:.875rem">لا توجد تقييمات بعد</p>';
+
+    ordersArr.slice(0,15).forEach(o => activityRows.push({ type:'🛍️ طلب', detail:`#${o.code||'—'}`, amount:o.total, status:o.status, date:o.created_at }));
+
+  } else if (acc.role === 'customer') {
+    const [orders, rides, ratings] = await Promise.all([
+      sbGet(`orders?customer_phone=eq.${encodeURIComponent(acc.phone)}&select=code,total,status,created_at&order=created_at.desc&limit=200`),
+      sbGet(`rides?customer_phone=eq.${encodeURIComponent(acc.phone)}&select=from_area,to_area,fare,status,created_at&order=created_at.desc&limit=200`),
+      sbGet(`ratings?${phoneOrFilter(acc.phone,'customer_phone')}&rated_by=eq.customer&rating=not.is.null&select=rating,comment,created_at&order=created_at.desc&limit=30`),
+    ]);
+    const ordersArr = orders || [], ridesArr = rides || [];
+    const spend =
+      ordersArr.filter(o => o.status === 'delivered' || o.status === 'completed').reduce((s,o) => s + (Number(o.total)||0), 0) +
+      ridesArr.filter(r => r.status === 'completed').reduce((s,r) => s + (Number(r.fare)||0), 0);
+    kpis.push(
+      kpiTile('blue', '🛍️', fmt(ordersArr.length), 'إجمالي الطلبات'),
+      kpiTile('green', '🚕', fmt(ridesArr.length), 'إجمالي الرحلات'),
+      kpiTile('orange', '💸', fmt(Math.round(spend)) + ' ج.م', 'إجمالي الإنفاق'),
+      kpiTile('blue', '💳', fmt(balance) + ' ج.م', 'رصيد المحفظة'),
+    );
+    const rs = ratings || [];
+    ratingsBox.innerHTML = rs.length ? `
+      <div style="color:#64748B;font-size:.85rem;margin-bottom:1rem">قيّم ${rs.length} سائقاً حتى الآن</div>
+      <div style="display:flex;flex-direction:column;gap:.6rem">
+        ${rs.slice(0,10).map(r => `
+          <div style="background:#F8FAFC;border:1px solid var(--bdr);border-radius:var(--radius);padding:.65rem .85rem">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <span style="font-weight:800;color:#D97706">${'⭐'.repeat(Math.round(Number(r.rating)))}</span>
+              <span style="font-size:.72rem;color:#94A3B8">${fmtTime(r.created_at)}</span>
+            </div>
+            ${r.comment ? `<div style="font-size:.82rem;color:#334155;margin-top:.3rem">${escapeHtml(r.comment)}</div>` : ''}
+          </div>`).join('')}
+      </div>` : '<p style="color:#94A3B8;font-size:.875rem">لم يقيّم أي سائق بعد</p>';
+
+    ordersArr.slice(0,10).forEach(o => activityRows.push({ type:'🛍️ طلب', detail:`#${o.code||'—'}`, amount:o.total, status:o.status, date:o.created_at }));
+    ridesArr.slice(0,10).forEach(r => activityRows.push({ type:'🚕 رحلة', detail:`${r.from_area||'—'} ← ${r.to_area||'—'}`, amount:r.fare, status:r.status, date:r.created_at }));
+
+  } else {
+    kpis.push(kpiTile('blue', '💳', fmt(balance) + ' ج.م', 'رصيد المحفظة'));
+    ratingsBox.innerHTML = '<p style="color:#94A3B8;font-size:.875rem">لا ينطبق على هذا نوع الحساب</p>';
+  }
+
+  document.getElementById('up-kpi-grid').innerHTML = kpis.join('');
+  activityRows.sort((a,b) => new Date(b.date||0) - new Date(a.date||0));
+  document.getElementById('up-activity-tbody').innerHTML = activityRows.length
+    ? activityRows.map(r => `<tr>
+        <td style="font-size:.78rem">${r.type}</td>
+        <td style="font-size:.78rem">${r.detail}</td>
+        <td style="font-weight:800">${r.amount != null ? fmt(Math.round(Number(r.amount)||0)) + ' ج.م' : '—'}</td>
+        <td>${badge(r.status)}</td>
+        <td style="font-size:.78rem">${fmtTime(r.date)}</td>
+      </tr>`).join('')
+    : '<tr><td colspan="5" style="text-align:center;color:#94A3B8;padding:2rem">لا يوجد نشاط بعد</td></tr>';
+}
+
 /* ═══════════════════ DRIVERS ═══════════════════════════════ */
 let allDriverApps = [], currentDriverPhone = '';
 let currentDriverTab = 'pending';
@@ -1936,7 +2221,7 @@ function renderDriverAccounts() {
   const html = rows.map((u,i) => `
     <tr>
       <td style="color:#94A3B8;font-size:.78rem">${i+1}</td>
-      <td style="font-weight:700">${u.name||'—'}</td>
+      <td style="font-weight:700"><button class="link-btn" onclick="openUserProfile('${u.phone}')" title="عرض الملف الشخصي الكامل">${u.name||'—'}</button></td>
       <td style="direction:ltr;font-size:.85rem">${u.phone||'—'}</td>
       <td style="font-size:.82rem">${u.city||'—'}</td>
       <td>${badge(u.status||'active')}</td>
@@ -1995,10 +2280,10 @@ document.getElementById('drivers-tabs').querySelectorAll('.tab-btn').forEach(btn
 
 // نفس رقم الهاتف ممكن يتسجل بصيغة محلية (01...) أو دولية (+201...) —
 // نطابق الاتنين بدل مطابقة نصية حرفية قد تفوّت الصف.
-function phoneOrFilter(p) {
+function phoneOrFilter(p, col = 'phone') {
   const intl  = p.startsWith('01') ? '+2' + p : p;
   const local = p.startsWith('+20') ? '0' + p.slice(3) : p;
-  return `or=(phone.eq.${encodeURIComponent(intl)},phone.eq.${encodeURIComponent(local)})`;
+  return `or=(${col}.eq.${encodeURIComponent(intl)},${col}.eq.${encodeURIComponent(local)})`;
 }
 async function openDriverModal(phone) {
   currentDriverPhone = phone;
@@ -2144,7 +2429,7 @@ function renderMerchantAccounts() {
   const html = rows.map((u,i) => `
     <tr>
       <td style="color:#94A3B8;font-size:.78rem">${i+1}</td>
-      <td style="font-weight:700">${u.name||'—'}</td>
+      <td style="font-weight:700"><button class="link-btn" onclick="openUserProfile('${u.phone}')" title="عرض الملف الشخصي الكامل">${u.name||'—'}</button></td>
       <td style="direction:ltr;font-size:.85rem">${u.phone||'—'}</td>
       <td style="font-size:.82rem">${u.city||'—'}</td>
       <td>${badge(u.status||'active')}</td>
