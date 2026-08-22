@@ -31,9 +31,14 @@ set search_path = public, extensions
 as $$
 declare v_admin record;
 begin
-  select * into v_admin from public.accounts
-   where role = 'admin'
-     and phone in (p_admin_phone,
+  -- Table alias + fully-qualified columns here: this function's own
+  -- RETURNS TABLE declares a "role" output column, which PL/pgSQL also
+  -- exposes as a same-named variable in scope — an unqualified "role" in
+  -- the WHERE clause below is ambiguous between the two (Postgres error
+  -- 42702) and fails at call time, not at CREATE FUNCTION time.
+  select a.* into v_admin from public.accounts a
+   where a.role = 'admin'
+     and a.phone in (p_admin_phone,
                    case when p_admin_phone like '+20%' then '0'||substr(p_admin_phone,4) else p_admin_phone end,
                    case when p_admin_phone like '0%'   then '+2'||p_admin_phone           else p_admin_phone end)
    limit 1;
