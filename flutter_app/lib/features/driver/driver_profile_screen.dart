@@ -55,21 +55,46 @@ class DriverProfileScreenState extends State<DriverProfileScreen> {
   /// Called by DriverHomeShell when the "حسابي" tab is selected again.
   Future<void> refresh() => _load();
 
+  /// Diagnostic only — every section below still falls back to an empty/
+  /// zero state on its own failure (so the screen never blanks entirely),
+  /// but that fallback used to hide the actual error completely. A driver
+  /// reported trip totals and ratings reading permanently empty despite the
+  /// data being confirmed present in the database — this surfaces whatever
+  /// is actually being swallowed so it's visible instead of silently eaten.
+  String? _debugError;
+
   Future<void> _load() async {
     final phone = widget.session.phone;
+    final errors = <String>[];
     // Each call is independently defensive — the profile as a whole
     // (photo, name, ratings) shouldn't go blank just because one section
     // (e.g. vehicle info, if a driver_applications column is missing on
     // an older row) throws.
     final results = await Future.wait([
-      _accountRepo.lookupAccount(phone).catchError((_) => null),
-      _driverRepo.fetchVehicleInfo(phone).catchError((_) => null),
-      _driverRepo.fetchTripStats(phone).catchError((_) => <String, dynamic>{}),
-      _ratingsRepo.driverTrustBadge(phone).catchError((_) => RatingSummary(0, 0)),
-      _ratingsRepo.driverReviews(phone).catchError((_) => <Map<String, dynamic>>[]),
+      _accountRepo.lookupAccount(phone).catchError((e) {
+        errors.add('lookupAccount: $e');
+        return null;
+      }),
+      _driverRepo.fetchVehicleInfo(phone).catchError((e) {
+        errors.add('fetchVehicleInfo: $e');
+        return null;
+      }),
+      _driverRepo.fetchTripStats(phone).catchError((e) {
+        errors.add('fetchTripStats: $e');
+        return <String, dynamic>{};
+      }),
+      _ratingsRepo.driverTrustBadge(phone).catchError((e) {
+        errors.add('driverTrustBadge: $e');
+        return RatingSummary(0, 0);
+      }),
+      _ratingsRepo.driverReviews(phone).catchError((e) {
+        errors.add('driverReviews: $e');
+        return <Map<String, dynamic>>[];
+      }),
     ]);
     if (!mounted) return;
     setState(() {
+      _debugError = errors.isEmpty ? null : errors.join('\n');
       _account = results[0] as Map<String, dynamic>?;
       _vehicle = results[1] as Map<String, dynamic>?;
       _stats = results[2] as Map<String, dynamic>;
@@ -179,6 +204,14 @@ class DriverProfileScreenState extends State<DriverProfileScreen> {
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
+            if (_debugError != null) ...[
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(color: const Color(0xFFFEF2F2), borderRadius: BorderRadius.circular(10), border: Border.all(color: const Color(0xFFFCA5A5))),
+                child: Text('تشخيص مؤقت:\n$_debugError', style: const TextStyle(color: AppColors.error, fontSize: 11)),
+              ),
+              const SizedBox(height: 16),
+            ],
             _buildHeader(name, avatarUrl, level, next),
             const SizedBox(height: 16),
             _buildRatingCard(),
