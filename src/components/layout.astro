@@ -1,6 +1,5 @@
 ---
 import Nav from './Nav.astro';
-import BottomNav from './BottomNav.astro';
 import Footer from './Footer.astro';
 import SpeedInsights from '@vercel/speed-insights/astro';
 
@@ -10,7 +9,7 @@ interface Props {
   page?: string;
 }
 
-const { title, description, page = '', currentPage = page, hideBottomNav = false } = Astro.props;
+const { title, description, page = '', currentPage = page } = Astro.props;
 const canonicalURL = new URL(Astro.url.pathname, Astro.site ?? 'https://wslha.co');
 ---
 
@@ -162,13 +161,6 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site ?? 'https://wslha.co
       outline-offset: 3px;
     }
 
-    /* On mobile, lift the WhatsApp button above the bottom navigation
-       so the two don't overlap (bottom nav ≈ 70px + safe-area inset). */
-    @media (max-width: 767px) {
-      .whatsapp-float {
-        bottom: calc(70px + env(safe-area-inset-bottom, 0px) + var(--sp-3));
-      }
-    }
   </style>
 </head>
 
@@ -188,8 +180,6 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site ?? 'https://wslha.co
   >
     💬
   </a>
-
-  {!hideBottomNav && <BottomNav currentPage={currentPage} />}
 
   <Footer />
 
@@ -236,22 +226,12 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site ?? 'https://wslha.co
       animation: pwa-slide-up .4s ease-out 1.5s both;
       padding-bottom: env(safe-area-inset-bottom, 0);
     }
-    /* On mobile the bottom navigation occupies the bottom of the screen.
-       Lift the install banner above it AND keep it below the nav's z-index
-       so it can never intercept the navigation's taps. */
-    @media (max-width: 767px) {
-      .pwa-banner {
-        bottom: calc(70px + env(safe-area-inset-bottom, 0px));
-        padding-bottom: 0;
-      }
-    }
     .pwa-banner.pwa-hidden { display: none; }
     /* The outer .pwa-banner box spans the full viewport width (left:0;
        right:0) so it can center its card, but the visible card itself
        is capped at max-width:500px — on any screen wider than that, the
        empty side margins were still part of this fixed, z-index:40 box
-       and silently swallowed taps meant for whatever's underneath them
-       (e.g. a page's own bottom nav-buttons scrolled into that spot).
+       and silently swallowed taps meant for whatever's underneath them.
        pointer-events:none here + auto back on the actual card fixes it:
        only the visible banner intercepts clicks now. */
     .pwa-banner { pointer-events: none; }
