@@ -18,6 +18,10 @@ class RideRepository {
     required int etaMinutes,
     required int passengers,
     required String payment,
+    // 'local' | 'external' — rides_screen.dart infers this from road
+    // distance (fare_calc.isExternalTrip) since it has no explicit
+    // destination-governorate picker, unlike the web's rides-external.astro.
+    String rideType = 'local',
     // Intermediate waypoints for a multi-stop ride (excludes the origin and
     // the final destination, which stay in from_*/to_* as usual) — e.g. a
     // customer running an errand between two legs. distanceKm/fare must
@@ -42,7 +46,7 @@ class RideRepository {
       'passengers': passengers,
       'payment': payment,
       'status': 'pending',
-      'ride_type': 'local',
+      'ride_type': rideType,
       if (stops != null && stops.isNotEmpty) 'stops': stops,
     }).select().single();
     return row;

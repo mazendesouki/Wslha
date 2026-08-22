@@ -71,3 +71,31 @@ int fareForDistance(double straightKm, {String? toArea}) {
 int etaMinutes(double straightKm) {
   return ((straightKm * roadFactor) / 40 * 60).ceil(); // 40 km/h avg
 }
+
+// ─── رحلة خارجية (خارج محافظة دمياط) ────────────────────────────────────
+// This screen has no destination-governorate picker (unlike rides-external.
+// astro), so ride_type is inferred from road distance instead of an
+// explicit choice — a trip that's ever plausibly local (anywhere realistic
+// within Damietta governorate) stays well under this, and anything genuinely
+// headed to another governorate (Cairo, Alexandria, ...) clears it easily.
+// Ported from src/data/airports.ts's externalFare()/EXTERNAL_BASE_FARE/
+// EXTERNAL_MIN_FARE — a flatter formula than the local meter (no distance
+// tiers or destination zones, since "outside the governorate" is all one
+// rate band).
+const double externalThresholdKm = 40;
+
+double get _externalRatePerKm => PricingSettings.externalRateSedan;
+const double _yearMultBaseline = 2021;
+
+double _yearMultiplier(int year) {
+  final raw = 1 + (year - _yearMultBaseline) * 0.035;
+  return raw.clamp(0.8, 1.35);
+}
+
+bool isExternalTrip(double roadKm) => roadKm > externalThresholdKm;
+
+int externalFareForDistance(double roadKm) {
+  final rate = _externalRatePerKm * _yearMultiplier(2022); // same sedan/2022 default as fareForDistance()
+  final raw = PricingSettings.externalBaseFee + roadKm * rate;
+  return (math.max(raw, PricingSettings.externalMinFare) / 5).ceil() * 5;
+}

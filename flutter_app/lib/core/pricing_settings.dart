@@ -23,6 +23,10 @@ class PricingSettings {
   static double airportRateSuv = 15.6;
   static double airportRateVan = 16.8;
 
+  static double externalBaseFee = 50;
+  static double externalMinFare = 150;
+  static double externalRateSedan = 7;
+
   static bool _loaded = false;
 
   /// Fire-and-forget is fine to call repeatedly (e.g. from each screen's
@@ -33,6 +37,7 @@ class PricingSettings {
       final rows = await sb.from('app_settings').select('key,value').inFilter('key', [
         'local_base_fee', 'local_min_fare', 'local_rate_sedan',
         'airport_base_fee', 'airport_min_fare', 'airport_rate_sedan', 'airport_rate_suv', 'airport_rate_van',
+        'external_base_fee', 'external_min_fare', 'external_rate_sedan',
       ]);
       double? num(String key) {
         final row = (rows as List).cast<Map<String, dynamic>>().where((r) => r['key'] == key).toList();
@@ -48,6 +53,9 @@ class PricingSettings {
       airportRateSedan = num('airport_rate_sedan') ?? airportRateSedan;
       airportRateSuv   = num('airport_rate_suv') ?? airportRateSuv;
       airportRateVan   = num('airport_rate_van') ?? airportRateVan;
+      externalBaseFee   = num('external_base_fee') ?? externalBaseFee;
+      externalMinFare   = num('external_min_fare') ?? externalMinFare;
+      externalRateSedan = num('external_rate_sedan') ?? externalRateSedan;
       _loaded = true;
     } catch (_) {
       // Network hiccup — keep the hardcoded defaults.

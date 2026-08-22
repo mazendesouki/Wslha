@@ -53,7 +53,12 @@ class _RidesScreenState extends State<RidesScreen> {
   }
 
   double get _roadKm => _straightKm * fare_calc.roadFactor;
-  int get _fare => _straightKm > 0 ? fare_calc.fareForDistance(_straightKm, toArea: _filledPoints.last.name) : 0;
+  bool get _isExternal => _roadKm > 0 && fare_calc.isExternalTrip(_roadKm);
+  int get _fare {
+    if (_straightKm <= 0) return 0;
+    return _isExternal ? fare_calc.externalFareForDistance(_roadKm) : fare_calc.fareForDistance(_straightKm, toArea: _filledPoints.last.name);
+  }
+
   int get _eta => _straightKm > 0 ? fare_calc.etaMinutes(_straightKm) : 0;
 
   bool get _hasMultiStop => _filledPoints.length > 2;
@@ -86,6 +91,7 @@ class _RidesScreenState extends State<RidesScreen> {
       etaMinutes: _eta,
       passengers: _passengers,
       payment: _payment,
+      rideType: _isExternal ? 'external' : 'local',
       stops: waypoints.map((p) => {'name': p.name, 'lat': p.lat, 'lng': p.lng}).toList(),
     );
 
@@ -212,6 +218,15 @@ class _RidesScreenState extends State<RidesScreen> {
                   ),
                   child: Column(
                     children: [
+                      if (_isExternal)
+                        const Padding(
+                          padding: EdgeInsets.only(bottom: 10),
+                          child: Text(
+                            '🛣️ رحلة خارج محافظة دمياط — سعر مختلف عن المشاوير الداخلية',
+                            style: TextStyle(fontSize: 11, color: AppColors.primaryDark, fontWeight: FontWeight.w700),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
                       if (_hasMultiStop)
                         Padding(
                           padding: const EdgeInsets.only(bottom: 10),
