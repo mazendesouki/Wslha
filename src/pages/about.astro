@@ -356,41 +356,62 @@ const STATS = [
         <h2 class="story__title" id="story-title">قصتنا</h2>
         <p class="story__text">
           بدأت <strong>وصّلها</strong> من فكرة بسيطة: أن يحصل كل شخص في دمياط الجديدة
-          على ما يريد، من أي متجر، دون أن يغادر منزله. لاحظنا التحدي اليومي في
-          إيصال الطلبات بسرعة وأمان، فقررنا أن نبني حلاً يجمع بين التقنية والخدمة.
+          على ما يحتاجه — مشوار، طلب من متجره المفضّل، أو حتى منتج مستعمل — في مكان
+          واحد وبثقة، دون أن يغادر منزله. لاحظنا التحدي اليومي في التنقل والتوصيل
+          بسرعة وأمان، فقررنا أن نبني منصة واحدة تجمعهم كلهم.
         </p>
         <p class="story__text">
-          اليوم، نربط بين عملاء دمياط والمتاجر والمطار عبر شبكة مندوبين محترفين
-          ونظام تتبع لحظي، لنوصّل أكثر من مجرد طرود — نوصّل الثقة والراحة.
+          اليوم، نربط بين عملاء دمياط والسائقين والمتاجر عبر شبكة مندوبين محترفين
+          ونظام تتبع لحظي — من المشوار، للتوصيل من المتجر، للسوق الإلكتروني —
+          كل محطة في رحلتك اليومية معنا.
         </p>
       </div>
-      <div class="story__visual" role="img" aria-label="صندوق توصيل">
+      <div class="story__visual" role="img" aria-label="خريطة توضح خدمات وصّلها الثلاث: المشاوير، والتوصيل من المتاجر، والسوق الإلكتروني">
         <svg viewBox="0 0 240 240" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-          <path d="M40 90 L120 60 L200 90 L200 180 L120 210 L40 180 Z" fill="#F2F7F6" stroke="#0E4B49" stroke-width="2.5" stroke-linejoin="round"/>
-          <path d="M40 90 L120 120 L120 210 L40 180 Z" fill="#C9DEDC" stroke="#0E4B49" stroke-width="2.5" stroke-linejoin="round"/>
-          <path d="M200 90 L120 120 L120 210 L200 180 Z" fill="#E3EDEC" stroke="#0E4B49" stroke-width="2.5" stroke-linejoin="round"/>
-          <path d="M40 90 L120 60 L200 90 L120 120 Z" fill="#F8FBFA" stroke="#0E4B49" stroke-width="2.5" stroke-linejoin="round"/>
-          <path d="M90 75 L150 105" stroke="#B8863B" stroke-width="5" stroke-linecap="round"/>
-          <g transform="translate(62, 120)">
-            <line x1="0" y1="30" x2="0" y2="5" stroke="#B8863B" stroke-width="3" stroke-linecap="round"/>
-            <polyline points="-8,14 0,4 8,14" fill="none" stroke="#B8863B" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M55 55 C 75 100, 165 95, 185 185" stroke="#C9DEDC" stroke-width="4" stroke-linecap="round" stroke-dasharray="2 11"/>
+
+          <!-- origin pin -->
+          <g transform="translate(55,55)">
+            <circle r="11" fill="#0E4B49"/>
+            <circle r="4.5" fill="#fff"/>
           </g>
-          <g transform="translate(82, 128)">
-            <line x1="0" y1="30" x2="0" y2="5" stroke="#B8863B" stroke-width="3" stroke-linecap="round"/>
-            <polyline points="-8,14 0,4 8,14" fill="none" stroke="#B8863B" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+
+          <!-- ride stop -->
+          <g transform="translate(100,85)">
+            <circle r="26" fill="#F2F7F6" stroke="#0E4B49" stroke-width="2.5"/>
+            <g transform="translate(-13,-9)" stroke="#0E4B49" stroke-width="1.9" fill="none" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 16V11l2-5h12l2 5v5"/>
+              <path d="M4 16h16"/>
+              <path d="M6 11h12"/>
+              <circle cx="7.5" cy="16.5" r="1.6" fill="#0E4B49" stroke="none"/>
+              <circle cx="16.5" cy="16.5" r="1.6" fill="#0E4B49" stroke="none"/>
+            </g>
           </g>
-          <g transform="translate(155, 120)">
-            <line x1="0" y1="30" x2="0" y2="5" stroke="#B8863B" stroke-width="3" stroke-linecap="round"/>
-            <polyline points="-8,14 0,4 8,14" fill="none" stroke="#B8863B" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+
+          <!-- delivery-box stop -->
+          <g transform="translate(155,120)">
+            <circle r="26" fill="#E3EDEC" stroke="#0E4B49" stroke-width="2.5"/>
+            <g transform="translate(-13,-13)" stroke="#0E4B49" stroke-width="1.9" fill="none" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 8 12 3l9 5-9 5-9-5z"/>
+              <path d="M3 8v9l9 5 9-5V8"/>
+              <path d="M12 13v9"/>
+            </g>
           </g>
-          <g transform="translate(175, 128)">
-            <line x1="0" y1="30" x2="0" y2="5" stroke="#B8863B" stroke-width="3" stroke-linecap="round"/>
-            <polyline points="-8,14 0,4 8,14" fill="none" stroke="#B8863B" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+
+          <!-- marketplace-bag stop -->
+          <g transform="translate(175,168)">
+            <circle r="26" fill="#F8FBFA" stroke="#0E4B49" stroke-width="2.5"/>
+            <g transform="translate(-11,-13)" stroke="#0E4B49" stroke-width="1.9" fill="none" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M6 8h12l1 12H5L6 8z"/>
+              <path d="M9 8V6a3 3 0 0 1 6 0v2"/>
+            </g>
           </g>
-          <rect x="133" y="138" width="44" height="28" rx="3" fill="white" stroke="#C9DEDC" stroke-width="1.5"/>
-          <line x1="139" y1="147" x2="171" y2="147" stroke="#C9DEDC" stroke-width="1.5"/>
-          <line x1="139" y1="153" x2="165" y2="153" stroke="#C9DEDC" stroke-width="1.5"/>
-          <line x1="139" y1="159" x2="168" y2="159" stroke="#C9DEDC" stroke-width="1.5"/>
+
+          <!-- destination pin -->
+          <g transform="translate(185,185)">
+            <path d="M0 -17 C10 -17 17 -10 17 0 C17 12 0 26 0 26 C0 26 -17 12 -17 0 C-17 -10 -10 -17 0 -17Z" fill="#B8863B"/>
+            <circle r="5.5" fill="#fff"/>
+          </g>
         </svg>
       </div>
     </div>
