@@ -239,7 +239,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     if (results[2]) return _stopWith('هذا البريد الإلكتروني مسجّل بالفعل.', step: 2);
     if (results[3]) return _stopWith('اسم المستخدم محجوز، جرّب اسماً آخر.', step: 1);
 
-    final ok = await _authRepo.register(
+    final failReason = await _authRepo.register(
       name: _nameCtrl.text.trim(),
       phone: phone,
       password: _passwordCtrl.text,
@@ -253,8 +253,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
     if (!mounted) return;
     setState(() => _loading = false);
 
-    if (!ok) {
-      setState(() => _error = 'حدث تعارض أثناء الإنشاء — قد يكون أحد البيانات مسجّلاً بالفعل.');
+    if (failReason != null) {
+      setState(() => _error = failReason);
       return;
     }
 

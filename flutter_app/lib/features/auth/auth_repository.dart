@@ -86,7 +86,16 @@ class AuthRepository {
   /// Ported from accounts.ts's sbInsert() — direct POST /accounts insert,
   /// same payload shape (password sent plaintext, hashed by a DB trigger
   /// server-side, exactly like the web app already does).
-  Future<bool> register({
+  /// Returns null on success, or a specific Arabic message identifying
+  /// *which* field conflicted on failure — this is the final, authoritative
+  /// insert (after register_screen.dart's own pre-check), so a failure here
+  /// almost always means someone else grabbed the same phone/username/
+  /// national ID/email in the few seconds between that check and this
+  /// submit. PostgREST's unique_violation body names the actual column in
+  /// `details`/`message` (e.g. "Key (national_id)=(...) already exists."),
+  /// so map that back to a field-specific message instead of the old flat
+  /// "قد يكون أحد البيانات مسجّلاً بالفعل" that never said which one.
+  Future<String?> register({
     required String name,
     required String phone,
     required String password,
@@ -114,7 +123,20 @@ class AuthRepository {
       headers: {..._sbHeaders, 'Prefer': 'return=minimal'},
       body: jsonEncode(payload),
     );
-    return res.statusCode == 201 || res.statusCode == 200;
+    if (res.statusCode == 201 || res.statusCode == 200) return null;
+
+    String body = '';
+    try {
+      final decoded = jsonDecode(res.body);
+      body = '${decoded['message'] ?? ''} ${decoded['details'] ?? ''}'.toLowerCase();
+    } catch (_) {
+      body = res.body.toLowerCase();
+    }
+    if (body.contains('national_id')) return 'هذا الرقم القومي مسجّل بالفعل.';
+    if (body.contains('phone')) return 'هذا الرقم مسجّل بالفعل — سجّل الدخول بدلاً من ذلك.';
+    if (body.contains('username')) return 'اسم المستخدم محجوز، اختر اسماً آخر.';
+    if (body.contains('email')) return 'هذا البريد الإلكتروني مسجّل بالفعل.';
+    return 'حدث تعارض أثناء الإنشاء — قد يكون أحد البيانات مسجّلاً بالفعل.';
   }
 
   /// Ported from driver.astro's doRegister()/merchant-apply.astro's
