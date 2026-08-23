@@ -437,6 +437,21 @@ try {
     searchInp.focus();
   });
 
+  // ── Arriving from the nav / homepage search (?q=…) ──
+  // The visitor already typed their query somewhere else, so run it here
+  // instead of making them type it again.
+  const initialQuery = new URLSearchParams(location.search).get('q');
+  if (initialQuery && initialQuery.trim()) {
+    searchInp.value = initialQuery.trim();
+    doSearch(searchInp.value);
+    const lower = searchInp.value.toLowerCase();
+    cards.forEach(card => {
+      const name = (card.querySelector('.store-card__name')?.textContent || '').toLowerCase();
+      const cat  = (card.dataset.cat || '').toLowerCase();
+      card.style.display = name.includes(lower) || cat.includes(lower) ? '' : 'none';
+    });
+  }
+
   // Close search results when clicking outside
   document.addEventListener('click', e => {
     if (!document.getElementById('search-bar').contains(e.target) &&

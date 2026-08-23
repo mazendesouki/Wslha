@@ -29,6 +29,16 @@ const { currentPage } = Astro.props;
         </div>
       </a>
 
+      <!-- Universal search — stores.astro searches shop names and their
+           products, so one box covers both. -->
+      <form class="nav__search" role="search" action="/stores">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+          <circle cx="11" cy="11" r="7"/><path d="m20 20-3.2-3.2"/>
+        </svg>
+        <label class="sr-only" for="nav-search">ابحث عن متجر أو منتج</label>
+        <input id="nav-search" type="search" name="q" placeholder="ابحث عن متجر أو منتج…" autocomplete="off">
+      </form>
+
       <!-- Desktop links -->
       <ul class="nav__links" role="list">
         {NAV_LINKS.map(link => (
@@ -154,6 +164,14 @@ const { currentPage } = Astro.props;
   <!-- Mobile menu -->
   <div class="nav__mobile" id="nav-mobile" aria-hidden="true">
     <div class="nav__mobile-inner">
+      <form class="nav__search nav__search--mobile" role="search" action="/stores">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+          <circle cx="11" cy="11" r="7"/><path d="m20 20-3.2-3.2"/>
+        </svg>
+        <label class="sr-only" for="nav-search-mobile">ابحث عن متجر أو منتج</label>
+        <input id="nav-search-mobile" type="search" name="q" placeholder="ابحث عن متجر أو منتج…" autocomplete="off">
+      </form>
+
       <ul class="nav__mobile-links" role="list">
         {NAV_LINKS.map(link => (
           <li>
@@ -360,13 +378,75 @@ const { currentPage } = Astro.props;
   .skip-nav:focus { top: var(--sp-2); }
 
   /* ── Sticky nav ─────────────────────────────────────── */
-  .nav {
+  /* Stickiness lives on the header, not on .nav: a sticky element can't
+     travel outside its parent's box, and the header is only one bar tall —
+     so with position:sticky on .nav the bar scrolled away with it.
+     The header also paints white here, because the bar itself is
+     translucent and the site's page canvas behind it is dark. Backdrop
+     blur stays on .nav — putting it here would make .nav__mobile (fixed)
+     resolve against the header instead of the viewport. */
+  header[role='banner'] {
     position: sticky;
     top: 0;
     z-index: 200;
     background: var(--color-bg);
+  }
+
+  .nav {
+    /* Translucent so the hero's colour wash reads through the bar as the
+       page scrolls; --color-bg is the fallback where blur is unsupported. */
+    background: var(--color-bg);
+    background: var(--glass);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+            backdrop-filter: blur(20px) saturate(180%);
     border-bottom: 1px solid var(--color-border);
-    box-shadow: 0 1px 12px rgba(0,0,0,0.07);
+  }
+
+  /* ── Universal search ───────────────────────────────── */
+  .nav__search {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-2);
+    /* Absorbs whatever the links and the CTA cluster leave over, capped so
+       it never crowds them out; below its breakpoint it hides outright
+       rather than shrinking down to its icon. */
+    flex: 1 1 0;
+    max-width: 320px;
+    min-width: 0;
+    background: var(--color-bg-soft);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-full);
+    padding: 7px var(--sp-4);
+    transition: border-color var(--ease), background var(--ease), box-shadow var(--ease);
+  }
+  .nav__search:focus-within {
+    background: var(--color-bg);
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 4px var(--color-primary-light);
+  }
+  .nav__search svg { width: 16px; height: 16px; color: var(--color-text-faint); flex-shrink: 0; }
+  .nav__search input {
+    width: 100%;
+    min-width: 0;
+    border: none;
+    background: none;
+    outline: none;
+    font-family: inherit;
+    font-size: var(--text-sm);
+    color: var(--color-text);
+  }
+  .nav__search input::placeholder { color: var(--color-text-faint); }
+
+  .nav__search--mobile { flex: 1 1 auto; margin-bottom: var(--sp-4); }
+
+  /* Under this width the bar can't hold the links and a usable search box
+     at once — the search moves into the mobile menu instead. With it gone,
+     the links may shrink again: they scroll inside their own track rather
+     than widening the page (they stay this way until the burger takes over
+     at 900px). */
+  @media (max-width: 1400px) {
+    .nav__inner .nav__search { display: none; }
+    .nav__inner .nav__links { flex: 0 1 auto; }
   }
 
   .nav__inner {
@@ -375,7 +455,9 @@ const { currentPage } = Astro.props;
     justify-content: space-between;
     gap: var(--sp-4);
     padding: 0 var(--sp-6);
-    max-width: var(--container);
+    /* Wider than the page container: the bar carries the search box, nine
+       links and the CTA cluster, and needs more room than the content. */
+    max-width: min(1440px, 100%);
     margin: 0 auto;
     height: var(--nav-height);
   }
@@ -426,21 +508,31 @@ const { currentPage } = Astro.props;
     display: flex;
     align-items: stretch;
     list-style: none;
-    flex: 1;
+    /* Never shrinks: the links keep their natural width and the search box
+       gives up space instead, so no label is ever cut in half. */
+    flex: 0 0 auto;
     justify-content: center;
     flex-wrap: nowrap;
     gap: 0;
     margin: 0;
     padding: 0;
     height: 100%;
+    /* With the search box in the bar there isn't room for nine links at
+       every width — they scroll inside their own track instead of pushing
+       the profile/CTA cluster off the edge of the page. */
+    min-width: 0;
+    overflow-x: auto;
+    scrollbar-width: none;
   }
+
+  .nav__links::-webkit-scrollbar { display: none; }
 
   .nav__links li { display: flex; align-items: stretch; }
 
   .nav__link {
     display: flex;
     align-items: center;
-    padding: 0 0.75rem;
+    padding: 0 0.55rem;
     font-size: var(--text-sm);
     font-weight: var(--weight-semi);
     color: var(--color-text-muted);

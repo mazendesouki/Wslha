@@ -164,7 +164,7 @@ import PageHero from '../components/PageHero.astro';
   .trip-route { display: flex; flex-direction: column; gap: var(--sp-2); margin-bottom: var(--sp-4); }
   .trip-route-row { display: flex; align-items: center; gap: var(--sp-3); font-size: var(--text-sm); }
   .trip-route-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
-  .trip-route-dot.from { background: #0E4B49; }
+  .trip-route-dot.from { background: #4F46E5; }
   .trip-route-dot.to   { background: #ef4444; }
   .fare-badge {
     display: inline-flex; align-items: center; gap: var(--sp-2);
@@ -219,10 +219,10 @@ import PageHero from '../components/PageHero.astro';
     display: flex; align-items: center; justify-content: center; gap: var(--sp-2);
   }
   .action-btn:last-child { margin-bottom: 0; }
-  .action-btn.arrive  { background: #E3EDEC; color: #082F2E; border: 1.5px solid #C9DEDC; }
+  .action-btn.arrive  { background: #EEECFE; color: #3B31C9; border: 1.5px solid #C9DEDC; }
   .action-btn.arrive:hover  { background: #bfdbfe; transform: translateY(-1px); }
   .action-btn.pickup  { background: var(--color-primary); color: #fff; }
-  .action-btn.pickup:hover  { background: #082F2E; transform: translateY(-1px); }
+  .action-btn.pickup:hover  { background: #3B31C9; transform: translateY(-1px); }
   .action-btn.complete { background: #16a34a; color: #fff; }
   .action-btn.complete:hover { background: #15803d; transform: translateY(-1px); }
   .action-btn:disabled { background: #f3f4f6; color: #9ca3af; cursor: not-allowed; transform: none !important; }
@@ -239,7 +239,7 @@ import PageHero from '../components/PageHero.astro';
     overflow: hidden; max-width: 480px; margin: 0 auto;
   }
   .ride-req-header {
-    background: linear-gradient(135deg, #082F2E, #0E4B49);
+    background: linear-gradient(135deg, #3B31C9, #4F46E5);
     padding: var(--sp-4) var(--sp-5);
     display: flex; align-items: center; gap: var(--sp-3); color: #fff;
   }
@@ -264,7 +264,7 @@ import PageHero from '../components/PageHero.astro';
   }
   .route-point { display: flex; align-items: center; gap: var(--sp-3); font-size: var(--text-sm); }
   .route-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
-  .route-dot.from { background: #0E4B49; }
+  .route-dot.from { background: #4F46E5; }
   .route-dot.to   { background: #ef4444; }
   .ride-meta { display: flex; gap: var(--sp-3); margin-bottom: var(--sp-5); }
   .ride-meta__item {
@@ -323,18 +323,18 @@ import PageHero from '../components/PageHero.astro';
   .receipt-header__sub { font-size: var(--text-xs); opacity: .85; margin-top: 4px; }
   .receipt-body { padding: var(--sp-5); }
   .receipt-customer { display: flex; align-items: center; gap: var(--sp-3); background: #f8fafc; border-radius: var(--radius-lg); padding: var(--sp-4); margin-bottom: var(--sp-4); }
-  .receipt-avatar { width: 42px; height: 42px; border-radius: 50%; background: linear-gradient(135deg,#0E4B49,#082F2E); color:#fff; font-size:1.1rem; font-weight:900; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .receipt-avatar { width: 42px; height: 42px; border-radius: 50%; background: linear-gradient(135deg,#4F46E5,#3B31C9); color:#fff; font-size:1.1rem; font-weight:900; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
   .receipt-customer__name { font-weight: var(--weight-black); font-size: var(--text-base); }
   .receipt-route { display: flex; flex-direction: column; gap: var(--sp-2); background: #f8fafc; border-radius: var(--radius-lg); padding: var(--sp-4); margin-bottom: var(--sp-4); }
   .receipt-route-row { display: flex; align-items: center; gap: var(--sp-3); font-size: var(--text-sm); }
   .receipt-route-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
-  .receipt-route-dot.from { background: #0E4B49; }
+  .receipt-route-dot.from { background: #4F46E5; }
   .receipt-route-dot.to   { background: #ef4444; }
   .receipt-fare-box { background: #f0fdf4; border: 1.5px solid #86efac; border-radius: var(--radius-lg); padding: var(--sp-4); margin-bottom: var(--sp-4); }
   .receipt-fare-row { display: flex; justify-content: space-between; align-items: center; font-size: var(--text-sm); color: var(--color-text-muted); padding: var(--sp-1) 0; }
   .receipt-fare-row.total { border-top: 1.5px solid #86efac; margin-top: var(--sp-2); padding-top: var(--sp-3); font-size: var(--text-base); font-weight: 900; color: #15803d; }
-  .receipt-collect-btn { width: 100%; padding: var(--sp-4); background: #082F2E; color: #fff; border: none; border-radius: var(--radius-lg); font-family: var(--font-body); font-size: var(--text-base); font-weight: 900; cursor: pointer; transition: background .2s; }
-  .receipt-collect-btn:hover { background: #0E4B49; }
+  .receipt-collect-btn { width: 100%; padding: var(--sp-4); background: #3B31C9; color: #fff; border: none; border-radius: var(--radius-lg); font-family: var(--font-body); font-size: var(--text-base); font-weight: 900; cursor: pointer; transition: background .2s; }
+  .receipt-collect-btn:hover { background: #4F46E5; }
 
   /* Toast */
   .toast {
@@ -466,7 +466,7 @@ import PageHero from '../components/PageHero.astro';
   .rating-item__stars { font-size: var(--text-sm); }
   .rating-item__date  { font-size: 10px; color: var(--color-text-faint); }
   .rating-item__comment { font-size: var(--text-xs); color: var(--color-text-muted); margin-top: 2px; }
-  .rating-item__reply { margin-top:6px; padding:6px 10px; background:#E3EDEC; border-radius:8px; font-size:var(--text-xs); color:#0E4B49; border-right:3px solid #0E4B49; }
+  .rating-item__reply { margin-top:6px; padding:6px 10px; background:#EEECFE; border-radius:8px; font-size:var(--text-xs); color:#4F46E5; border-right:3px solid #4F46E5; }
   .rating-item__reply-label { font-size:10px; color:#64748b; margin-bottom:2px; }
   .rating-reply-form { margin-top:6px; display:flex; gap:6px; }
   .rating-reply-input { flex:1; padding:6px 10px; border:1.5px solid var(--color-border); border-radius:8px; font-size:var(--text-xs); resize:none; direction:rtl; font-family:var(--font-body); background:var(--color-bg); color:var(--color-text); }
@@ -1165,7 +1165,7 @@ import PageHero from '../components/PageHero.astro';
       if (fromMarkerRef) fromMarkerRef.setMap(null);
       if (toMarkerRef)   toMarkerRef.setMap(null);
       fromMarkerRef = new G.Marker({ position: { lat: fromLat, lng: fromLng }, map, title: 'نقطة الاستلام',
-        icon: { path: G.SymbolPath.CIRCLE, fillColor: '#0E4B49', fillOpacity: 1, strokeColor: '#fff', strokeWeight: 3, scale: 10 } });
+        icon: { path: G.SymbolPath.CIRCLE, fillColor: '#4F46E5', fillOpacity: 1, strokeColor: '#fff', strokeWeight: 3, scale: 10 } });
       toMarkerRef = new G.Marker({ position: { lat: toLat, lng: toLng }, map, title: 'الوجهة',
         icon: { path: G.SymbolPath.CIRCLE, fillColor: '#ef4444', fillOpacity: 1, strokeColor: '#fff', strokeWeight: 3, scale: 10 } });
       await drawDriverRoute();
@@ -1178,7 +1178,7 @@ import PageHero from '../components/PageHero.astro';
     });
 
     fromMarkerRef = new G.Marker({ position: { lat: fromLat, lng: fromLng }, map, title: 'نقطة الاستلام',
-      icon: { path: G.SymbolPath.CIRCLE, fillColor: '#0E4B49', fillOpacity: 1, strokeColor: '#fff', strokeWeight: 3, scale: 10 } });
+      icon: { path: G.SymbolPath.CIRCLE, fillColor: '#4F46E5', fillOpacity: 1, strokeColor: '#fff', strokeWeight: 3, scale: 10 } });
     toMarkerRef = new G.Marker({ position: { lat: toLat, lng: toLng }, map, title: 'الوجهة',
       icon: { path: G.SymbolPath.CIRCLE, fillColor: '#ef4444', fillOpacity: 1, strokeColor: '#fff', strokeWeight: 3, scale: 10 } });
 

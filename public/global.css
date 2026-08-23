@@ -1,35 +1,54 @@
 /* ── Design Tokens ──────────────────────────────────────────── */
 :root {
-  /* Colors */
-  --color-primary:       #0E4B49;
-  --color-primary-dark:  #082F2E;
-  --color-primary-light: #E3EDEC;
-  --color-primary-bg:    #F2F7F6;
+  /* Colors — one hue per pillar, so a surface's colour says which of the
+     three services it belongs to: indigo = delivery/rides (the platform
+     itself), mint = stores, amber = سوق المستعمل. */
+  --color-primary:       #4F46E5;
+  --color-primary-dark:  #3B31C9;
+  --color-primary-light: #EEECFE;
+  --color-primary-bg:    #F5F5FF;
+  --color-violet:        #7C3AED;   /* gradient partner for --color-primary */
 
-  --color-accent:        #B8863B;
-  --color-accent-dark:   #96692A;
+  /* Stores / trust */
+  --color-mint:          #0EA672;
+  --color-mint-dark:     #0B8A5E;
+  --color-mint-light:    #E6F8F1;
 
-  --color-text:          #16262A;
-  --color-text-muted:    #5B6B6A;
-  --color-text-faint:    #8A9998;
+  /* سوق المستعمل — also the site's general "accent" (CTA) colour */
+  --color-accent:        #D97706;
+  --color-accent-dark:   #B45309;
+  --color-accent-light:  #FDF2E2;
+
+  --color-text:          #0B1020;
+  --color-text-muted:    #4B5567;
+  --color-text-faint:    #7D879B;
 
   --color-bg:            #FFFFFF;
-  --color-bg-soft:       #F8FAFC;
-  --color-border:        #E2E8F0;
-  --color-success:       #22C55E;
-  /* Site-wide page canvas (html/body) — the brand teal, distinct from
-     --color-dark-bg below which is the footer's own darker grey. */
-  --color-page-bg:       #0E4B49;
+  --color-bg-soft:       #F6F7FB;
+  --color-border:        #E6E8F2;
+  --color-border-soft:   #EFF1F8;
+  --color-success:       #0EA672;
+  /* Site-wide page canvas (html/body) — the deep end of the brand indigo,
+     distinct from --color-dark-bg below which is the footer's own band. */
+  --color-page-bg:       #1E1B4B;
   /* Footer's own background — kept separate from --color-page-bg so the
      footer still reads as a distinct darker band, not the same flat
-     teal as the page canvas above it (its icon buttons/badges were
+     indigo as the page canvas above it (its icon buttons/badges were
      tuned for contrast against a near-black bg). */
-  --color-dark-bg:       #1E293B;
-  --color-dark-border:   #334155;
+  --color-dark-bg:       #171334;
+  --color-dark-border:   #2E2A5E;
+
+  /* Glass — translucent surfaces that let the aurora/canvas through.
+     Always pair with backdrop-filter; they are not opaque on their own. */
+  --glass:               rgba(255, 255, 255, 0.72);
+  --glass-strong:        rgba(255, 255, 255, 0.86);
 
   /* Typography */
-  --font-body:    'Cairo', 'Segoe UI', sans-serif;
-  --font-display: 'El Messiri', 'Cairo', 'Segoe UI', sans-serif;
+  --font-body:    'IBM Plex Sans Arabic', 'Cairo', 'Segoe UI', sans-serif;
+  --font-display: 'Tajawal', 'Cairo', 'Segoe UI', sans-serif;
+  /* Numerals — prices, distances, ratings, ETAs. Tabular figures keep
+     columns of numbers from shifting as they update. */
+  --font-mono:    'IBM Plex Mono', ui-monospace, 'Courier New', monospace;
 
   --text-xs:   0.75rem;
   --text-sm:   0.875rem;
@@ -75,8 +94,13 @@
   --shadow:         0 4px 16px rgba(0, 0, 0, 0.08);
   --shadow-md:      0 8px 32px rgba(0, 0, 0, 0.10);
   --shadow-lg:      0 16px 48px rgba(0, 0, 0, 0.12);
-  --shadow-primary: 0 4px 20px rgba(14, 75, 73, 0.25);
-  --shadow-accent:  0 4px 16px rgba(184, 134, 59, 0.35);
+  --shadow-primary: 0 4px 20px rgba(79, 70, 229, 0.28);
+  --shadow-accent:  0 4px 16px rgba(217, 119, 6, 0.32);
+  --shadow-mint:    0 4px 16px rgba(14, 166, 114, 0.30);
+  /* Two-part card shadows: a hairline contact shadow plus a wide, soft
+     ambient one — the "lifted card" look, with --shadow-lift for hover. */
+  --shadow-soft:    0 1px 2px rgba(11, 16, 32, 0.04), 0 8px 24px -12px rgba(11, 16, 32, 0.14);
+  --shadow-lift:    0 2px 4px rgba(11, 16, 32, 0.05), 0 24px 48px -20px rgba(11, 16, 32, 0.28);
 
   /* Layout */
   --container: 1280px;
@@ -119,4 +143,21 @@ body {
 a  { color: inherit; text-decoration: none; }
 img { max-width: 100%; display: block; }
 button { cursor: pointer; font-family: inherit; }
-h1, h2, h3 { font-family: var(--font-display); }
+h1, h2, h3 { font-family: var(--font-display); letter-spacing: -0.01em; }
+
+/* Figures — prices, distances, ratings, counts. Tabular numerals so a
+   value that updates live (a fare, an ETA) doesn't jiggle its neighbours. */
+.num {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}

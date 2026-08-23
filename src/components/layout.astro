@@ -36,7 +36,7 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site ?? 'https://wslha.co
   <link rel="icon" href="/icon.svg"    type="image/svg+xml">
   <link rel="apple-touch-icon"    href="/apple-touch-icon.png">
   <link rel="manifest"            href="/site.webmanifest">
-  <meta name="theme-color"        content="#0E4B49">
+  <meta name="theme-color"        content="#1E1B4B">
 
   <!-- iOS standalone web-app -->
   <meta name="mobile-web-app-capable"             content="yes">
@@ -50,7 +50,7 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site ?? 'https://wslha.co
   <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&family=El+Messiri:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=Tajawal:wght@500;700;800;900&display=swap" rel="stylesheet">
 
   <!-- Base styles -->
   <link rel="stylesheet" href="/global.css">
@@ -193,7 +193,7 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site ?? 'https://wslha.co
       // Status bar to brand colour.
       if (P.StatusBar) {
         try {
-          P.StatusBar.setBackgroundColor({ color: '#082F2E' });
+          P.StatusBar.setBackgroundColor({ color: '#1E1B4B' });
           P.StatusBar.setStyle({ style: 'LIGHT' });
         } catch (e) {}
       }

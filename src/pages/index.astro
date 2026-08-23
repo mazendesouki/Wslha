@@ -1,481 +1,1129 @@
 ---
 import Layout from '../components/layout.astro';
+import BottomNav from '../components/BottomNav.astro';
+import {
+  TRIP_RATES, RIDE_BASE_FARE, RIDE_MIN_FARE, RIDE_TIERS,
+  FARE_ZONES, STANDARD_ZONE, loadPricingSettings,
+} from '../data/airports';
 
-const STATS = [
-  { value: '30د',  label: 'متوسط التوصيل' },
-  { value: '24/7', label: 'خدمة متاحة'    },
-  { value: '4.9',  label: 'تقييم العملاء' },
-  { value: '100%', label: 'ضمان التوصيل'  },
-];
+// Top-rated real stores, fetched at build time from the same `stores` table
+// stores.astro reads — the homepage must never show a demo shop that isn't
+// actually registered through merchant-dashboard.astro.
+const SB_URL = 'https://vtikgyiopkjnrwlqnmfx.supabase.co';
+const SB_KEY = 'sb_publishable_PLSnpvCT-sAyUMtymNgTwA_QmL2suw4';
+const SB_HEADERS = { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}` };
 
-const ICONS = {
-  route: `<path d="M4 19c3-7 6 4 9-3s5-3 7-6"/><circle cx="4" cy="19" r="1.6" fill="currentColor" stroke="none"/><circle cx="20" cy="10" r="1.6" fill="currentColor" stroke="none"/>`,
-  plane: `<path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4 20-7z"/>`,
-  pin:   `<path d="M12 21s7-6.1 7-11.5A7 7 0 0 0 5 9.5C5 14.9 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/>`,
-  store: `<path d="M4 8.5 5.5 4h13L20 8.5"/><path d="M4 8.5v11a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-11"/><path d="M9 20.5v-6a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v6"/>`,
-  shield:`<path d="M12 3 5 6v6c0 4.6 3 8 7 9 4-1 7-4.4 7-9V6l-7-3z"/><path d="m9 12 2 2 4-4"/>`,
-  chat:  `<path d="M4 5h16v11H8l-4 4V5z"/><path d="M8 9h8M8 12.5h5"/>`,
-  tag:   `<path d="M12 3h6a1 1 0 0 1 1 1v6L11 18 3 10 12 3z" transform="translate(-0.5 1)"/><circle cx="15.5" cy="8.5" r="1.3" fill="currentColor" stroke="none"/>`,
+interface HomeStore {
+  id: string; name: string; category: string; emoji: string; area: string;
+  rating: number; reviews: number; deliveryTime: string; deliveryFee: number;
+  minOrder: number; isOpen: boolean;
+}
+
+let ALL_STORES: HomeStore[] = [];
+try {
+  const res = await fetch(`${SB_URL}/rest/v1/stores?select=*&order=rating.desc`, { headers: SB_HEADERS });
+  const rows = res.ok ? await res.json() : [];
+  ALL_STORES = (Array.isArray(rows) ? rows : [])
+    .filter((r: any) => r.is_active !== false)
+    .map((r: any) => ({
+      id: r.id,
+      name: r.name,
+      category: r.category || '',
+      emoji: r.emoji || '🏪',
+      area: r.area || '',
+      rating: Number(r.rating) || 0,
+      reviews: Number(r.reviews) || 0,
+      deliveryTime: r.delivery_time || '30–45 دقيقة',
+      deliveryFee: Number(r.delivery_fee) || 0,
+      minOrder: Number(r.min_order) || 0,
+      isOpen: r.is_open !== false,
+    }));
+} catch { /* build proceeds with an empty list if Supabase is unreachable */ }
+
+const FEATURED_STORES = ALL_STORES.slice(0, 6);
+
+// The fare estimator runs the platform's real local-ride meter. Its numbers
+// are read here, at build time, and baked into the page: importing
+// data/airports.ts from the client script instead would pull the whole
+// supabase-js bundle (~210 KB) onto the landing page for nothing. That also
+// picks up the admin-configured rates, which loadPricingSettings() layers
+// over the defaults — as of the last deploy, which is accurate enough for an
+// estimate the app re-quotes before the customer confirms.
+await loadPricingSettings();
+
+const FARE = {
+  base:  RIDE_BASE_FARE,
+  min:   RIDE_MIN_FARE,
+  tiers: RIDE_TIERS,
+  rates: TRIP_RATES.local,
+  zones: [STANDARD_ZONE, ...FARE_ZONES].map(z => ({ label: z.label, factor: z.factor, surcharge: z.surcharge })),
 };
 
-const SERVICES = [
-  { n: '01', icon: ICONS.route, title: 'مشاوير سريعة',   desc: 'مشاوير داخل دمياط الجديدة بأسعار ثابتة وشفافة، لا مفاجآت في الفاتورة.',            href: '/rides' },
-  { n: '02', icon: ICONS.plane, title: 'توصيل المطار',   desc: 'توصيل احترافي من وإلى مطار دمياط في الوقت المحدد بدون تأخير.',                    href: '/airport' },
-  { n: '03', icon: ICONS.pin,   title: 'تتبع لحظي',      desc: 'تابع موقع مندوبك على الخريطة لحظة بلحظة حتى وصول طلبك.',                          href: '/track' },
-  { n: '04', icon: ICONS.store, title: 'لوحة التاجر',    desc: 'لوحة تحكم متكاملة للتجار لإدارة الطلبات والتوصيل بكل سهولة.',                       href: '/merchant-apply' },
-  { n: '05', icon: ICONS.shield,title: 'أمان وضمان',     desc: 'شحناتك مؤمنة بالكامل مع ضمان الاسترداد الفوري عند أي مشكلة.',                      href: '/services' },
-  { n: '06', icon: ICONS.chat,  title: 'دعم 24/7',       desc: 'فريق دعم متاح على مدار الساعة لمساعدتك في أي وقت تحتاجه.',                          href: '/contact' },
-  { n: '07', icon: ICONS.tag,   title: 'سوق المستعمل',   desc: 'بيع واشترِ مستعمل من الجيران في دمياط الجديدة — نشر مجاني وفوري.',                  href: '/marketplace' },
-];
+// Distinct categories across the real stores — the filter chips only ever
+// offer sections that actually have a shop behind them.
+const STORE_CATEGORIES = [...new Set(ALL_STORES.map(s => s.category).filter(Boolean))].slice(0, 6);
 
-const JOURNEY = [
-  { icon: ICONS.pin,    title: 'حدد نقطتك',   desc: 'أدخل موقعك ووجهتك بسهولة'               },
-  { icon: ICONS.route,  title: 'اختر الخدمة', desc: 'مشوار، توصيل مطار، أو توصيل طلبات'      },
-  { icon: ICONS.shield, title: 'تأكيد فوري',  desc: 'سائق يُرسَل إليك خلال دقائق'             },
-  { icon: ICONS.store,  title: 'استلم بأمان', desc: 'تتبع لحظي حتى وصولك'                    },
-];
+const RATED = ALL_STORES.filter(s => s.rating > 0);
+const AVG_RATING = RATED.length
+  ? (RATED.reduce((sum, s) => sum + s.rating, 0) / RATED.length).toFixed(1)
+  : null;
 
-const REVIEWS = [
-  { text: 'من أول ما نزّلت التطبيق وأنا مستخدمه كل يوم تقريبًا — السائق بيوصل فعلاً في الوقت المتفق عليه.', name: 'محمود عادل',  meta: 'عميل منذ 2026' },
-  { text: 'كتاجر، لوحة التحكم سهّلت عليّ متابعة الطلبات جدًا. مفيش لخبطة زي قبل كده.',                        name: 'سارة الشريف',  meta: 'صاحبة متجر شريك' },
-  { text: 'حجزت توصيل مطار في آخر لحظة والسائق كان في الموعد بالظبط. تجربة محترفة فعلاً.',                    name: 'يوسف كامل',   meta: 'عميل منذ 2026' },
+const PILLARS = [
+  {
+    id: 'delivery',
+    tone: 'brand',
+    href: '#delivery',
+    title: 'توصيل ذكي',
+    desc: 'مشاوير وتوصيل داخل المدينة — العدّاد معروف قبل ما تطلب.',
+    cta: 'احسب السعر',
+    icon: `<path d="M9 8h7.6l2.6 3.4H21v4.2h-2"/><path d="M3 15.5h2.2M4 11h4M6.6 18.6h9.4"/><circle cx="17.4" cy="18.4" r="2.1"/><circle cx="9" cy="18.4" r="2.1"/>`,
+  },
+  {
+    id: 'stores',
+    tone: 'mint',
+    href: '/stores',
+    title: 'متاجر المدينة',
+    desc: 'اطلب من متاجر دمياط الجديدة المسجّلة، بأسعارها الحقيقية.',
+    cta: 'تسوّق الآن',
+    icon: `<path d="M4 8.5 5.5 4h13L20 8.5"/><path d="M4 8.5v11a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-11"/><path d="M9 20.5v-6a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v6"/>`,
+  },
+  {
+    id: 'suq',
+    tone: 'suq',
+    href: '/marketplace',
+    title: 'سوق المستعمل',
+    desc: 'بيع واشترِ من جيرانك — النشر مجاني وبدون عمولة.',
+    cta: 'ادخل السوق',
+    icon: `<path d="M11.5 3.5h6a1 1 0 0 1 1 1v6l-8 8-7-7 8-8z"/><circle cx="15" cy="8" r="1.2" fill="currentColor" stroke="none"/>`,
+  },
 ];
 ---
 
 <style>
-  /* ── Hero: split manifest layout ─────────────────────────── */
-  .hero {
-    background: var(--color-bg);
-    padding: var(--sp-16) var(--sp-6) 0;
-  }
+  /* ═══ Shared surface language ══════════════════════════════
+     Three inks, one per pillar: indigo = التوصيل, mint = المتاجر,
+     amber = السوق. A card's accent tells you which service it is. */
+  .home { background: var(--color-bg); }
+  .home :global(h2), .home :global(h3) { color: var(--color-text); }
 
-  .hero__inner {
+  .wrap {
     max-width: var(--container);
     margin: 0 auto;
-    display: grid;
-    grid-template-columns: 1.15fr 0.85fr;
-    gap: var(--sp-14);
-    align-items: end;
+    padding-inline: var(--sp-6);
   }
 
-  .hero__eyebrow {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--sp-2);
-    font-size: var(--text-sm);
-    font-weight: var(--weight-bold);
-    color: var(--color-primary);
-    margin-bottom: var(--sp-5);
+  .band { padding-block: var(--sp-20); border-top: 1px solid var(--color-border-soft); }
+  .band--soft { background: var(--color-bg-soft); }
+  .band--plain { background: var(--color-bg); }
+
+  /* Decorative colour wash behind the hero and the footer band. */
+  .aurora {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background:
+      radial-gradient(52rem 30rem at 82% -8%, rgba(124, 58, 237, 0.16), transparent 62%),
+      radial-gradient(44rem 26rem at 8% 2%,  rgba(79, 70, 229, 0.14), transparent 60%),
+      radial-gradient(34rem 22rem at 60% 88%, rgba(14, 166, 114, 0.12), transparent 65%);
   }
-  .hero__eyebrow::before {
-    content: '';
-    width: 8px; height: 8px;
-    border-radius: 50%;
-    background: var(--color-success);
-    box-shadow: 0 0 0 3px rgba(34,197,94,0.18);
+
+  .grid-field {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background-image:
+      linear-gradient(to left, rgba(11, 16, 32, 0.05) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(11, 16, 32, 0.05) 1px, transparent 1px);
+    background-size: 34px 34px;
+    -webkit-mask-image: radial-gradient(60rem 32rem at 50% 0%, #000, transparent 75%);
+            mask-image: radial-gradient(60rem 32rem at 50% 0%, #000, transparent 75%);
   }
+
+  .glass {
+    background: var(--glass-strong);
+    -webkit-backdrop-filter: blur(28px) saturate(180%);
+            backdrop-filter: blur(28px) saturate(180%);
+  }
+
+  .card {
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-2xl);
+    box-shadow: var(--shadow-soft);
+  }
+
+  .lift { transition: transform .22s cubic-bezier(.2,.7,.3,1), box-shadow .22s ease, border-color .22s ease; }
+  .lift:hover { transform: translateY(-4px); box-shadow: var(--shadow-lift); }
+
+  /* Scroll reveal — the script adds .is-in; without JS or with reduced
+     motion every .reveal is painted immediately (see the media query). */
+  .reveal { opacity: 0; transform: translateY(18px); transition: opacity .7s ease, transform .7s cubic-bezier(.2,.7,.3,1); }
+  .reveal.is-in { opacity: 1; transform: none; }
+
+  /* ═══ Hero ═════════════════════════════════════════════════ */
+  .hero { position: relative; overflow: hidden; padding-block: var(--sp-16); }
+
+  .hero__head { max-width: 780px; margin-inline: auto; text-align: center; }
+
+  .hero__badge {
+    display: inline-flex; align-items: center; gap: var(--sp-2);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-full);
+    padding: 6px var(--sp-4);
+    font-size: var(--text-sm); font-weight: var(--weight-medium);
+    color: var(--color-text);
+  }
+  .hero__pulse { position: relative; display: flex; width: 8px; height: 8px; }
+  .hero__pulse::before {
+    content: ''; position: absolute; inset: 0;
+    border-radius: 50%; background: var(--color-mint);
+    opacity: .7; animation: ping 1.9s cubic-bezier(0,0,.2,1) infinite;
+  }
+  .hero__pulse::after { content: ''; position: relative; width: 8px; height: 8px; border-radius: 50%; background: var(--color-mint); }
+  @keyframes ping { 75%, 100% { transform: scale(2.4); opacity: 0; } }
 
   .hero__title {
-    font-family: var(--font-display);
-    font-size: clamp(2.6rem, 5vw, 4.4rem);
+    margin-top: var(--sp-6);
+    font-size: clamp(2.15rem, 5.4vw, 3.9rem);
     font-weight: 800;
-    line-height: 1.05;
+    line-height: 1.1;
     color: var(--color-text);
-    letter-spacing: -1px;
-    margin-bottom: var(--sp-5);
-  }
-  .hero__title em { color: var(--color-primary); font-style: normal; }
-
-  .hero__desc {
-    font-size: var(--text-lg);
-    color: var(--color-text-muted);
-    line-height: 1.8;
-    max-width: 460px;
-    margin-bottom: var(--sp-8);
-  }
-
-  .hero__actions { display: flex; gap: var(--sp-3); flex-wrap: wrap; margin-bottom: var(--sp-10); }
-
-  .hero__strip {
-    display: flex;
-    border-top: 1px solid var(--color-border);
-    padding-top: var(--sp-5);
-  }
-  .hero__strip-item {
-    flex: 1;
-    padding-inline-end: var(--sp-4);
-    border-inline-end: 1px solid var(--color-border);
-  }
-  .hero__strip-item:last-child { border-inline-end: none; padding-inline-end: 0; }
-  .hero__strip-value { font-family: var(--font-display); font-size: var(--text-2xl); font-weight: 700; color: var(--color-text); display: block; }
-  .hero__strip-label { font-size: 12px; color: var(--color-text-faint); font-weight: 600; }
-
-  /* ── Hero visual: torn ticket card ───────────────────────── */
-  .ticket {
-    background: var(--color-primary);
-    color: #fff;
-    border-radius: var(--radius-2xl);
-    padding: var(--sp-7) var(--sp-6) 0;
-    position: relative;
-    box-shadow: var(--shadow-lg);
-  }
-
-  .ticket__top { display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--sp-6); }
-  .ticket__brand { display: flex; align-items: center; gap: var(--sp-2); font-family: var(--font-display); font-weight: 700; font-size: var(--text-lg); }
-  .ticket__brand svg { width: 26px; height: 26px; }
-  .ticket__badge { font-size: 11px; font-weight: 700; background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.25); border-radius: var(--radius-full); padding: 4px 10px; }
-
-  .ticket__route { display: flex; align-items: center; gap: var(--sp-3); margin-bottom: var(--sp-6); }
-  .ticket__point { display: flex; flex-direction: column; gap: 2px; }
-  .ticket__point-city { font-family: var(--font-display); font-weight: 700; font-size: var(--text-xl); }
-  .ticket__point-tag { font-size: 11px; opacity: 0.7; }
-  .ticket__line { flex: 1; height: 0; border-top: 2px dashed rgba(255,255,255,0.35); position: relative; top: -10px; }
-  .ticket__plane { opacity: 0.85; flex-shrink: 0; }
-
-  .ticket__meta { display: flex; justify-content: space-between; padding-bottom: var(--sp-6); }
-  .ticket__meta-item span { display: block; }
-  .ticket__meta-label { font-size: 10px; opacity: 0.65; margin-bottom: 3px; }
-  .ticket__meta-value { font-weight: 700; font-size: var(--text-sm); }
-
-  .ticket__stub {
-    background: var(--color-primary-dark);
-    margin: 0 calc(-1 * 0px);
-    border-radius: 0 0 var(--radius-2xl) var(--radius-2xl);
-    padding: var(--sp-4) var(--sp-6);
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    position: relative;
-  }
-  .ticket__stub::before {
-    content: '';
-    position: absolute;
-    top: -10px; right: -10px;
-    width: 20px; height: 20px;
-    background: var(--color-bg);
-    border-radius: 50%;
-  }
-  .ticket__stub::after {
-    content: '';
-    position: absolute;
-    top: -10px; left: -10px;
-    width: 20px; height: 20px;
-    background: var(--color-bg);
-    border-radius: 50%;
-  }
-  .ticket__stub-status { display: flex; align-items: center; gap: 8px; font-size: var(--text-sm); font-weight: 700; }
-  .ticket__stub-dot { width: 8px; height: 8px; border-radius: 50%; background: #4ade80; box-shadow: 0 0 0 3px rgba(74,222,128,0.25); }
-  .ticket__stub-time { font-size: var(--text-xs); opacity: 0.7; }
-
-  /* ── Services: alternating manifest list ─────────────────── */
-  .services { background: var(--color-bg); }
-
-  .services__list { max-width: 880px; margin: 0 auto; border-top: 1px solid var(--color-border); }
-
-  .service-row {
-    display: grid;
-    grid-template-columns: 64px 56px 1fr auto;
-    align-items: center;
-    gap: var(--sp-5);
-    padding: var(--sp-6) var(--sp-2);
-    border-bottom: 1px solid var(--color-border);
-    text-decoration: none;
-    color: inherit;
-    transition: background var(--ease);
-  }
-  .service-row:hover { background: var(--color-bg-soft); }
-
-  .service-row__num { font-family: var(--font-display); font-size: var(--text-2xl); font-weight: 700; color: var(--color-border); }
-  .service-row:hover .service-row__num { color: var(--color-accent); }
-
-  .service-row__icon {
-    width: 48px; height: 48px;
-    border-radius: var(--radius-lg);
-    background: var(--color-primary-light);
-    color: var(--color-primary);
-    display: flex; align-items: center; justify-content: center;
-    flex-shrink: 0;
-  }
-  .service-row__icon svg { width: 24px; height: 24px; }
-
-  .service-row__title { font-size: var(--text-lg); font-weight: 700; margin-bottom: 4px; }
-  .service-row__desc { font-size: var(--text-sm); color: var(--color-text-muted); line-height: 1.6; max-width: 52ch; }
-
-  .service-row__arrow { color: var(--color-text-faint); font-size: var(--text-xl); transition: transform var(--ease), color var(--ease); }
-  .service-row:hover .service-row__arrow { color: var(--color-primary); transform: translateX(-4px); }
-
-  @media (max-width: 640px) {
-    .service-row { grid-template-columns: 40px 48px 1fr; }
-    .service-row__arrow { display: none; }
-  }
-
-  /* ── Journey: connected timeline ─────────────────────────── */
-  .journey { background: var(--color-bg-soft); }
-
-  .journey__rail {
-    max-width: 980px;
-    margin: 0 auto;
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: var(--sp-6);
-    position: relative;
-  }
-  .journey__rail::before {
-    content: '';
-    position: absolute;
-    top: 28px; right: 10%; left: 10%;
-    height: 1px;
-    background: var(--color-border);
-  }
-
-  .journey-step { text-align: center; position: relative; }
-  .journey-step__icon {
-    width: 56px; height: 56px;
-    border-radius: 50%;
-    background: var(--color-bg);
-    border: 1.5px solid var(--color-border);
-    color: var(--color-primary);
-    display: flex; align-items: center; justify-content: center;
-    margin: 0 auto var(--sp-4);
-    position: relative;
-    z-index: 1;
-  }
-  .journey-step__icon svg { width: 24px; height: 24px; }
-  .journey-step__title { font-weight: 700; font-size: var(--text-base); margin-bottom: 4px; }
-  .journey-step__desc { font-size: var(--text-sm); color: var(--color-text-muted); }
-
-  @media (max-width: 640px) {
-    .journey__rail { grid-template-columns: 1fr 1fr; }
-    .journey__rail::before { display: none; }
-  }
-
-  /* ── Reviews: featured quote ──────────────────────────────── */
-  .reviews { background: var(--color-bg); }
-  .reviews__inner { max-width: 900px; margin: 0 auto; }
-
-  .review-feature {
-    text-align: center;
-    padding-bottom: var(--sp-10);
-    margin-bottom: var(--sp-10);
-    border-bottom: 1px solid var(--color-border);
-  }
-  .review-feature__stars { color: var(--color-accent); letter-spacing: 3px; margin-bottom: var(--sp-5); }
-  .review-feature__quote {
-    font-family: var(--font-display);
-    font-size: clamp(1.3rem, 2.6vw, 1.8rem);
-    font-weight: 600;
-    line-height: 1.6;
-    color: var(--color-text);
-    max-width: 46ch;
-    margin: 0 auto var(--sp-5);
     text-wrap: balance;
   }
-  .review-feature__author { font-weight: 700; font-size: var(--text-sm); }
-  .review-feature__meta { font-size: var(--text-xs); color: var(--color-text-faint); }
-
-  .reviews__minor { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--sp-6); }
-  .review-minor__text { font-size: var(--text-sm); color: var(--color-text-muted); line-height: 1.7; margin-bottom: var(--sp-3); }
-  .review-minor__author { font-weight: 700; font-size: var(--text-sm); }
-  .review-minor__meta { font-size: var(--text-xs); color: var(--color-text-faint); }
-
-  @media (max-width: 640px) {
-    .reviews__minor { grid-template-columns: 1fr; }
+  .hero__title span {
+    display: block;
+    background: linear-gradient(to left, var(--color-violet), var(--color-primary) 55%, var(--color-mint));
+    -webkit-background-clip: text; background-clip: text;
+    -webkit-text-fill-color: transparent; color: transparent;
   }
 
-  /* ── CTA ─────────────────────────────────────────────────── */
-  .cta {
-    background: var(--color-primary-dark);
-    padding: var(--sp-20) var(--sp-6);
-    text-align: center;
-    position: relative;
-    overflow: hidden;
-  }
-  .cta__mark { position: absolute; opacity: 0.06; width: 380px; height: 380px; left: -80px; top: 50%; transform: translateY(-50%); }
-  .cta__inner { position: relative; z-index: 1; }
-  .cta__title { font-family: var(--font-display); font-size: var(--text-4xl); font-weight: 800; color: #fff; margin-bottom: var(--sp-4); line-height: 1.2; }
-  .cta__desc  { color: rgba(255,255,255,0.75); font-size: var(--text-base); margin-bottom: var(--sp-10); max-width: 480px; margin-inline: auto; line-height: 1.7; }
-  .cta__actions { display: flex; gap: var(--sp-4); justify-content: center; flex-wrap: wrap; }
-
-  /* ── Section shell ───────────────────────────────────────── */
-  .section-shell { padding: var(--sp-20) var(--sp-6); }
-  .section-eyebrow {
-    display: block; text-align: center;
-    font-size: var(--text-sm); font-weight: 700; color: var(--color-accent-dark);
-    margin-bottom: var(--sp-2);
-  }
-  .section-title {
-    font-family: var(--font-display);
-    text-align: center;
-    font-size: var(--text-4xl); font-weight: 800; color: var(--color-text);
-    margin-bottom: var(--sp-12);
+  .hero__lede {
+    margin: var(--sp-5) auto 0;
+    max-width: 52ch;
+    font-size: var(--text-lg);
+    line-height: 1.85;
+    color: var(--color-text-muted);
   }
 
-  /* ── Responsive ──────────────────────────────────────────── */
-  @media (max-width: 900px) {
-    .hero__inner { grid-template-columns: 1fr; }
-    .ticket { max-width: 420px; margin: 0 auto; }
+  /* ── Unified search block ── */
+  .finder {
+    max-width: 900px;
+    margin: var(--sp-10) auto 0;
+    padding: 10px;
+    border: 1px solid var(--color-border);
+    border-radius: 28px;
+    box-shadow: var(--shadow-lift);
   }
-  @media (max-width: 640px) {
-    .hero__strip { flex-wrap: wrap; gap: var(--sp-4); }
-    .hero__strip-item { flex: 1 1 40%; border-inline-end: none; }
-    .cta__title { font-size: var(--text-3xl); }
+
+  .finder__tabs {
+    display: flex; gap: 4px;
+    background: var(--color-bg-soft);
+    border-radius: var(--radius-xl);
+    padding: 4px;
+  }
+  .finder__tab {
+    flex: 1;
+    display: inline-flex; align-items: center; justify-content: center; gap: var(--sp-2);
+    padding: 10px var(--sp-3);
+    border: none; background: none;
+    border-radius: var(--radius-lg);
+    font-size: var(--text-sm); font-weight: var(--weight-semi);
+    color: var(--color-text-muted);
+    transition: background var(--ease), color var(--ease), box-shadow var(--ease);
+  }
+  .finder__tab svg { width: 16px; height: 16px; }
+  .finder__tab:hover { color: var(--color-text); }
+  .finder__tab[aria-selected='true'] { background: var(--color-bg); box-shadow: var(--shadow-sm); }
+  .finder__tab[data-tab='delivery'][aria-selected='true'] { color: var(--color-primary); }
+  .finder__tab[data-tab='stores'][aria-selected='true']   { color: var(--color-mint-dark); }
+  .finder__tab[data-tab='suq'][aria-selected='true']      { color: var(--color-accent-dark); }
+
+  .finder__panel { display: grid; gap: var(--sp-2); margin-top: 10px; padding: 4px; }
+  .finder__panel[hidden] { display: none; }
+  @media (min-width: 640px) {
+    .finder__panel { grid-template-columns: 1fr auto auto; }
+    .finder__panel--split { grid-template-columns: 1fr 1fr auto; }
+  }
+
+  .field {
+    display: flex; align-items: center; gap: var(--sp-3);
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-xl);
+    padding: 10px var(--sp-4);
+    transition: border-color var(--ease), box-shadow var(--ease);
+  }
+  .field:focus-within { border-color: var(--color-primary); box-shadow: 0 0 0 4px var(--color-primary-light); }
+  .field svg { width: 18px; height: 18px; color: var(--color-text-faint); flex-shrink: 0; }
+  .field input, .field select {
+    width: 100%; min-width: 0;
+    border: none; background: none; outline: none;
+    font-family: inherit; font-size: 15px; font-weight: var(--weight-medium);
+    color: var(--color-text);
+  }
+  .field input::placeholder { font-weight: var(--weight-regular); color: var(--color-text-faint); }
+  .field__stack { min-width: 0; flex: 1; }
+  .field__label { display: block; font-size: 11px; font-weight: var(--weight-medium); color: var(--color-text-faint); }
+  .field__dot { width: 32px; height: 32px; border-radius: var(--radius); display: grid; place-items: center; flex-shrink: 0; }
+  .field__dot--from { background: var(--color-primary-light); }
+  .field__dot--from i { width: 8px; height: 8px; border-radius: 50%; background: var(--color-primary); display: block; }
+  .field__dot--to { background: var(--color-mint-light); color: var(--color-mint-dark); }
+  .field__dot--to svg { width: 16px; height: 16px; color: inherit; }
+
+  .go {
+    border: none; border-radius: var(--radius-xl);
+    padding: var(--sp-3) var(--sp-8);
+    font-family: inherit; font-size: 15px; font-weight: var(--weight-bold);
+    color: #fff;
+    transition: filter var(--ease), transform var(--ease);
+  }
+  .go:hover { filter: brightness(1.1); }
+  .go:active { transform: scale(.98); }
+  .go--brand { background: linear-gradient(to top left, var(--color-primary-dark), var(--color-violet)); box-shadow: var(--shadow-primary); }
+  .go--mint  { background: var(--color-mint); box-shadow: var(--shadow-mint); }
+  .go--suq   { background: var(--color-accent); box-shadow: var(--shadow-accent); }
+
+  /* ── Pillar cards ── */
+  .pillars { display: grid; gap: var(--sp-4); margin-top: var(--sp-6); }
+  @media (min-width: 768px) { .pillars { grid-template-columns: repeat(3, 1fr); } }
+
+  .pillar { display: block; padding: var(--sp-5); }
+  .pillar--brand { --ink: var(--color-primary);      --wash: var(--color-primary-light); }
+  .pillar--mint  { --ink: var(--color-mint-dark);    --wash: var(--color-mint-light); }
+  .pillar--suq   { --ink: var(--color-accent-dark);  --wash: var(--color-accent-light); }
+  .pillar:hover { border-color: var(--ink); }
+
+  .pillar__icon { width: 44px; height: 44px; border-radius: var(--radius-xl); display: grid; place-items: center; background: var(--wash); color: var(--ink); }
+  .pillar__icon svg { width: 22px; height: 22px; }
+  .pillar__title { margin-top: var(--sp-4); font-size: var(--text-lg); font-weight: var(--weight-bold); }
+  .pillar__desc { margin-top: 6px; font-size: var(--text-sm); line-height: 1.7; color: var(--color-text-muted); }
+  .pillar__cta { display: inline-flex; align-items: center; gap: 6px; margin-top: var(--sp-4); font-size: 13px; font-weight: var(--weight-bold); color: var(--ink); }
+  .pillar__cta i { font-style: normal; transition: transform var(--ease); }
+  .pillar:hover .pillar__cta i { transform: translateX(-4px); }
+
+  /* ═══ Section headers ══════════════════════════════════════ */
+  .head { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: var(--sp-4); }
+  .head__eyebrow { font-size: 13px; font-weight: var(--weight-bold); letter-spacing: .14em; }
+  .head__eyebrow--brand { color: var(--color-primary); }
+  .head__eyebrow--mint  { color: var(--color-mint-dark); }
+  .head__eyebrow--suq   { color: var(--color-accent-dark); }
+  .head__title { margin-top: var(--sp-2); font-size: clamp(1.7rem, 3.4vw, 2.25rem); font-weight: 800; }
+  .head__desc { margin-top: var(--sp-3); max-width: 54ch; font-size: 15px; line-height: 1.8; color: var(--color-text-muted); }
+
+  .ghost-btn {
+    border: 1px solid var(--color-border);
+    background: var(--color-bg);
+    border-radius: var(--radius-xl);
+    padding: var(--sp-3) var(--sp-5);
+    font-family: inherit; font-size: var(--text-sm); font-weight: var(--weight-bold);
+    color: var(--color-text);
+    transition: border-color var(--ease), color var(--ease);
+  }
+  .ghost-btn:hover { border-color: var(--color-primary); color: var(--color-primary); }
+
+  /* ═══ Delivery ═════════════════════════════════════════════ */
+  .delivery__grid { display: grid; gap: var(--sp-4); margin-top: var(--sp-9); }
+  @media (min-width: 1024px) { .delivery__grid { grid-template-columns: 1.35fr 1fr; } }
+
+  .track { position: relative; overflow: hidden; min-height: 380px; display: flex; flex-direction: column; justify-content: space-between; padding: var(--sp-5); }
+  .track__map { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .track__chips { position: relative; display: flex; flex-wrap: wrap; gap: var(--sp-2); }
+  .chip-glass {
+    display: inline-flex; align-items: center; gap: var(--sp-2);
+    border: 1px solid var(--color-border); border-radius: var(--radius-full);
+    padding: 6px var(--sp-3); font-size: 13px; font-weight: var(--weight-semi);
+    color: var(--color-text);
+  }
+  .chip-glass i { width: 8px; height: 8px; border-radius: 50%; background: var(--color-mint); display: block; }
+
+  .track__card { position: relative; border: 1px solid var(--color-border); border-radius: var(--radius-xl); padding: var(--sp-4); box-shadow: var(--shadow-soft); }
+  .track__courier { display: flex; align-items: center; gap: var(--sp-3); }
+  .track__avatar { width: 44px; height: 44px; border-radius: var(--radius-xl); display: grid; place-items: center; flex-shrink: 0; background: var(--color-primary-light); color: var(--color-primary); font-family: var(--font-display); font-weight: var(--weight-bold); }
+  .track__who { min-width: 0; flex: 1; }
+  .track__name { font-size: var(--text-sm); font-weight: var(--weight-bold); color: var(--color-text); }
+  .track__meta { font-size: 12px; color: var(--color-text-faint); }
+  .track__steps { display: flex; align-items: center; gap: 6px; margin-top: var(--sp-4); list-style: none; }
+  .track__steps li { height: 6px; flex: 1; border-radius: var(--radius-full); background: var(--color-border); }
+  .track__steps li[data-done] { background: var(--color-mint); }
+  .track__steps li[data-now] { background: linear-gradient(to left, var(--color-primary), var(--color-border)); }
+  .track__labels { display: flex; justify-content: space-between; margin-top: var(--sp-2); font-size: 11px; color: var(--color-text-faint); }
+  .track__labels b { color: var(--color-primary); }
+
+  /* ── Fare estimator ── */
+  .fare { padding: var(--sp-6); }
+  .fare__vehicles { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--sp-2); margin-top: var(--sp-5); }
+  .veh {
+    display: flex; flex-direction: column; align-items: center; gap: 6px;
+    padding: var(--sp-4) var(--sp-2);
+    border: 2px solid var(--color-border); border-radius: var(--radius-xl);
+    background: var(--color-bg); color: var(--color-text-muted);
+    font-family: inherit;
+    transition: border-color var(--ease), background var(--ease), color var(--ease);
+  }
+  .veh svg { width: 24px; height: 24px; }
+  .veh:hover { border-color: var(--color-primary); color: var(--color-text); }
+  .veh[aria-checked='true'] { border-color: var(--color-primary); background: var(--color-primary-light); color: var(--color-primary); }
+  .veh__name { font-size: 13px; font-weight: var(--weight-bold); }
+  .veh__hint { font-size: 11px; opacity: .75; }
+
+  .fare__row { display: flex; align-items: baseline; justify-content: space-between; }
+  .fare__label { font-size: 13px; font-weight: var(--weight-semi); color: var(--color-text); }
+  .fare__range { width: 100%; margin-top: 10px; accent-color: var(--color-primary); }
+  .fare__scale { display: flex; justify-content: space-between; margin-top: 4px; font-size: 11px; color: var(--color-text-faint); }
+
+  .fare__zone { margin-top: var(--sp-5); }
+  .fare__zone select {
+    width: 100%; margin-top: var(--sp-2);
+    border: 1px solid var(--color-border); border-radius: var(--radius-xl);
+    padding: var(--sp-3) var(--sp-4);
+    font-family: inherit; font-size: 15px; font-weight: var(--weight-medium);
+    color: var(--color-text); background: var(--color-bg);
+  }
+
+  .fare__breakdown { margin-top: var(--sp-5); border: 1px solid var(--color-border); border-radius: var(--radius-xl); background: var(--color-bg-soft); padding: var(--sp-4); }
+  .fare__line { display: flex; justify-content: space-between; font-size: 13px; }
+  /* An author `display` beats the UA's [hidden] rule — restore it, or the
+     zone row shows even when the standard zone adds nothing. */
+  .fare__line[hidden] { display: none; }
+  .fare__line + .fare__line { margin-top: var(--sp-2); }
+  .fare__line dt { color: var(--color-text-muted); }
+  .fare__line dd { color: var(--color-text); font-weight: var(--weight-semi); }
+  .fare__total { display: flex; align-items: end; justify-content: space-between; margin-top: var(--sp-3); padding-top: var(--sp-3); border-top: 1px solid var(--color-border); }
+  .fare__total-value { display: flex; align-items: baseline; gap: 6px; }
+  .fare__total-value b { font-family: var(--font-mono); font-variant-numeric: tabular-nums; font-size: var(--text-3xl); font-weight: 600; color: var(--color-text); }
+  .fare__pill { border-radius: var(--radius-full); background: var(--color-mint-light); color: var(--color-mint-dark); padding: 6px var(--sp-3); font-size: 12px; font-weight: var(--weight-semi); }
+  .fare__note { margin-top: 10px; font-size: 12px; line-height: 1.7; color: var(--color-text-faint); text-align: center; }
+
+  /* ═══ Stores ═══════════════════════════════════════════════ */
+  .chips { display: flex; gap: var(--sp-2); overflow-x: auto; margin-top: var(--sp-7); padding-bottom: var(--sp-2); scrollbar-width: none; }
+  .chips::-webkit-scrollbar { display: none; }
+  .chip {
+    flex-shrink: 0;
+    border: 1px solid var(--color-border); border-radius: var(--radius-full);
+    background: var(--color-bg); color: var(--color-text-muted);
+    padding: 8px var(--sp-4);
+    font-family: inherit; font-size: 13px; font-weight: var(--weight-semi);
+    transition: border-color var(--ease), background var(--ease), color var(--ease);
+  }
+  .chip:hover { border-color: var(--color-mint); color: var(--color-text); }
+  .chip[aria-pressed='true'] { border-color: var(--color-mint); background: var(--color-mint-light); color: var(--color-mint-dark); }
+
+  .grid { display: grid; gap: var(--sp-4); margin-top: var(--sp-5); }
+  @media (min-width: 640px)  { .grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (min-width: 1024px) { .grid { grid-template-columns: repeat(3, 1fr); } }
+
+  .store { display: block; padding: var(--sp-4); }
+  .store:hover { border-color: var(--color-mint); }
+  .store__top { display: flex; align-items: start; gap: var(--sp-3); }
+  .store__emoji { width: 56px; height: 56px; border-radius: var(--radius-xl); display: grid; place-items: center; background: var(--color-mint-light); font-size: 1.5rem; flex-shrink: 0; }
+  .store__id { min-width: 0; flex: 1; }
+  .store__name { font-size: 17px; font-weight: var(--weight-bold); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .store__where { font-size: 13px; color: var(--color-text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .store__rating { flex-shrink: 0; border-radius: var(--radius); background: var(--color-mint-light); color: var(--color-mint-dark); padding: 4px var(--sp-2); font-size: 12px; font-weight: var(--weight-semi); }
+  .store__tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: var(--sp-4); }
+  .tag { border-radius: var(--radius-full); padding: 4px 10px; font-size: 11px; font-weight: var(--weight-bold); }
+  .tag--mint { background: var(--color-mint-light); color: var(--color-mint-dark); }
+  .tag--brand { background: var(--color-primary-light); color: var(--color-primary); }
+  .tag--suq { background: var(--color-accent-light); color: var(--color-accent-dark); }
+  .tag--plain { border: 1px solid var(--color-border); color: var(--color-text-muted); font-weight: var(--weight-semi); }
+  .store__foot { display: flex; justify-content: space-between; margin-top: var(--sp-4); padding-top: var(--sp-3); border-top: 1px solid var(--color-border-soft); font-size: 12px; color: var(--color-text-faint); }
+
+  .empty { grid-column: 1 / -1; text-align: center; padding: var(--sp-12) var(--sp-6); border: 1px dashed var(--color-border); border-radius: var(--radius-2xl); }
+  .empty__icon { font-size: 2rem; }
+  .empty__text { margin-top: var(--sp-3); font-size: 15px; color: var(--color-text-muted); }
+
+  /* ═══ Sūq ══════════════════════════════════════════════════ */
+  .masonry { margin-top: var(--sp-8); column-gap: var(--sp-5); columns: 1; }
+  @media (min-width: 640px)  { .masonry { columns: 2; } }
+  @media (min-width: 1024px) { .masonry { columns: 3; } }
+  .masonry > * { break-inside: avoid; margin-bottom: var(--sp-5); }
+
+  .skeleton { height: 260px; border-radius: var(--radius-2xl); background: var(--color-bg-soft); border: 1px solid var(--color-border-soft); }
+
+  /* ═══ Trust strip ══════════════════════════════════════════ */
+  .trust { display: grid; gap: var(--sp-8); }
+  @media (min-width: 640px)  { .trust { grid-template-columns: repeat(2, 1fr); } }
+  @media (min-width: 1024px) { .trust { grid-template-columns: repeat(4, 1fr); } }
+  .trust__value { font-size: var(--text-4xl); font-weight: 600; color: var(--color-text); }
+  .trust__label { margin-top: 6px; font-size: var(--text-sm); line-height: 1.7; color: var(--color-text-muted); }
+
+  /* The bottom nav owns the bottom of the screen on mobile — lift the
+     WhatsApp bubble clear of it instead of letting the two overlap. */
+  @media (max-width: 767px) {
+    :global(.whatsapp-float) { bottom: calc(76px + env(safe-area-inset-bottom)); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .reveal { opacity: 1; transform: none; }
   }
 </style>
 
+<!-- Sūq cards are injected by the script below, after the build, so Astro's
+     scoped styles never reach them. They live in a global block instead,
+     namespaced under #suq-grid so nothing else on the site can collide. -->
+<style is:global>
+  #suq-grid .item {
+    display: block;
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-2xl);
+    box-shadow: var(--shadow-soft);
+    padding: var(--sp-4);
+    transition: transform .22s cubic-bezier(.2,.7,.3,1), box-shadow .22s ease, border-color .22s ease;
+  }
+  #suq-grid .item:hover {
+    transform: translateY(-4px);
+    border-color: var(--color-accent);
+    box-shadow: var(--shadow-lift);
+  }
+  #suq-grid .item__cover {
+    height: 160px;
+    border-radius: var(--radius-xl);
+    display: grid;
+    place-items: center;
+    font-size: 3rem;
+    overflow: hidden;
+    background: linear-gradient(215deg, var(--color-primary-light), var(--color-mint-light));
+  }
+  #suq-grid .item:nth-child(even) .item__cover {
+    background: linear-gradient(215deg, var(--color-accent-light), var(--color-primary-light));
+  }
+  #suq-grid .item__cover img { width: 100%; height: 100%; object-fit: cover; }
+  #suq-grid .item__head { display: flex; align-items: start; justify-content: space-between; gap: var(--sp-3); margin-top: var(--sp-3); }
+  #suq-grid .item__title { font-size: 16px; font-weight: var(--weight-bold); line-height: 1.5; color: var(--color-text); }
+  #suq-grid .item__cond { flex-shrink: 0; border-radius: var(--radius-full); padding: 4px 10px; font-size: 11px; font-weight: var(--weight-bold); white-space: nowrap; }
+  #suq-grid .item__cond--mint  { background: var(--color-mint-light);    color: var(--color-mint-dark); }
+  #suq-grid .item__cond--brand { background: var(--color-primary-light); color: var(--color-primary); }
+  #suq-grid .item__cond--suq   { background: var(--color-accent-light);  color: var(--color-accent-dark); }
+  #suq-grid .item__desc { margin-top: 6px; font-size: 13px; line-height: 1.7; color: var(--color-text-muted); }
+  #suq-grid .item__price { display: flex; align-items: baseline; gap: 6px; margin-top: var(--sp-3); }
+  #suq-grid .item__price b { font-family: var(--font-mono); font-variant-numeric: tabular-nums; font-size: var(--text-2xl); font-weight: 600; color: var(--color-text); }
+  #suq-grid .item__price span { font-size: 13px; color: var(--color-text-faint); }
+  #suq-grid .item__where { margin-top: 4px; font-size: 12px; color: var(--color-text-faint); }
+  #suq-grid .item__actions { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-2); margin-top: var(--sp-4); }
+  #suq-grid .item__btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    border-radius: var(--radius-lg); padding: 10px var(--sp-3);
+    font-size: 13px; font-weight: var(--weight-bold);
+    border: 1px solid transparent;
+    transition: filter var(--ease), border-color var(--ease), color var(--ease);
+  }
+  #suq-grid .item__btn--buy { background: var(--color-accent); color: #fff; }
+  #suq-grid .item__btn--buy:hover { filter: brightness(1.1); }
+  #suq-grid .item__btn--chat { border-color: var(--color-border); color: var(--color-text); }
+  #suq-grid .item__btn--chat:hover { border-color: var(--color-accent); color: var(--color-accent-dark); }
+
+  #suq-grid .empty {
+    text-align: center;
+    padding: var(--sp-12) var(--sp-6);
+    border: 1px dashed var(--color-border);
+    border-radius: var(--radius-2xl);
+  }
+  #suq-grid .empty__icon { font-size: 2rem; }
+  #suq-grid .empty__text { margin-top: var(--sp-3); font-size: 15px; color: var(--color-text-muted); }
+</style>
+
+<!-- The reveal animation is a progressive enhancement: with no JS to add
+     .is-in, every revealable section must still paint. -->
+<noscript>
+  <style>.reveal { opacity: 1 !important; transform: none !important; }</style>
+</noscript>
+
 <Layout
   title="الرئيسية"
-  description="وصّلها — خدمة توصيل سريعة وموثوقة في دمياط الجديدة. مشاوير، توصيل مطار، وتتبع لحظي."
+  description="وصّلها — منصة واحدة في دمياط الجديدة تجمع التوصيل الذكي، متاجر المدينة، وسوق المستعمل."
   page="home"
 >
-  <!-- ── Hero ── -->
-  <section class="hero" aria-labelledby="hero-title">
-    <div class="hero__inner">
+  <div class="home">
 
-      <div class="hero__text">
-        <span class="hero__eyebrow">متاح الآن في دمياط الجديدة</span>
-        <h1 class="hero__title" id="hero-title">نوصّلك لأي مكان <em>في دمياط</em></h1>
-        <p class="hero__desc">
-          خدمة توصيل سريعة وموثوقة — مشاوير داخل المدينة،
-          توصيل احترافي من وإلى المطار، وسوق مستعمل محلي.
-        </p>
-        <div class="hero__actions">
-          <a href="/rides"   class="btn btn--primary">اطلب مشوار</a>
-          <a href="/airport" class="btn btn--outline">توصيل مطار</a>
+    <!-- ═══ Hero ═══════════════════════════════════════════ -->
+    <section class="hero" aria-labelledby="hero-title">
+      <div class="aurora" aria-hidden="true"></div>
+      <div class="grid-field" aria-hidden="true"></div>
+
+      <div class="wrap">
+        <div class="hero__head">
+          <span class="hero__badge glass">
+            <span class="hero__pulse" aria-hidden="true"></span>
+            متاح الآن في دمياط الجديدة
+          </span>
+
+          <h1 class="hero__title" id="hero-title">
+            وصّل، تسوّق، وبيع
+            <span>من مكان واحد</span>
+          </h1>
+
+          <p class="hero__lede">
+            منصة واحدة تجمع التوصيل الذكي، متاجر مدينتك، وسوق المستعمل —
+            بسعر معروف قبل الطلب وتتبّع لحظي حتى الباب.
+          </p>
         </div>
-        <dl class="hero__strip">
-          {STATS.map(s => (
-            <div class="hero__strip-item">
-              <dd class="hero__strip-value">{s.value}</dd>
-              <dt class="hero__strip-label">{s.label}</dt>
-            </div>
+
+        <!-- Unified search: one block, three services -->
+        <div class="finder glass">
+          <div class="finder__tabs" role="tablist" aria-label="اختر الخدمة">
+            <button
+              class="finder__tab" role="tab" type="button"
+              id="tab-delivery" aria-controls="panel-delivery" aria-selected="true" data-tab="delivery"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 8h7.6l2.6 3.4H21v4.2h-2"/><path d="M3 15.5h2.2M4 11h4M6.6 18.6h9.4"/><circle cx="17.4" cy="18.4" r="2.1"/><circle cx="9" cy="18.4" r="2.1"/></svg>
+              توصيل
+            </button>
+            <button
+              class="finder__tab" role="tab" type="button"
+              id="tab-stores" aria-controls="panel-stores" aria-selected="false" data-tab="stores"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8.5 5.5 4h13L20 8.5"/><path d="M4 8.5v11a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-11"/><path d="M9 20.5v-6a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v6"/></svg>
+              المتاجر
+            </button>
+            <button
+              class="finder__tab" role="tab" type="button"
+              id="tab-suq" aria-controls="panel-suq" aria-selected="false" data-tab="suq"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11.5 3.5h6a1 1 0 0 1 1 1v6l-8 8-7-7 8-8z"/><circle cx="15" cy="8" r="1.2" fill="currentColor" stroke="none"/></svg>
+              السوق
+            </button>
+          </div>
+
+          <!-- Booking itself is app-only, so this panel routes to the
+               live estimator below rather than pretending to dispatch. -->
+          <form class="finder__panel finder__panel--split" id="panel-delivery" role="tabpanel" aria-labelledby="tab-delivery" action="#delivery">
+            <label class="field">
+              <span class="field__dot field__dot--from" aria-hidden="true"><i></i></span>
+              <span class="field__stack">
+                <span class="field__label">من</span>
+                <input type="text" name="from" placeholder="مكان الاستلام" autocomplete="off">
+              </span>
+            </label>
+            <label class="field">
+              <span class="field__dot field__dot--to" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s7-6.1 7-11.5A7 7 0 0 0 5 9.5C5 14.9 12 21 12 21z"/></svg>
+              </span>
+              <span class="field__stack">
+                <span class="field__label">إلى</span>
+                <input type="text" name="to" placeholder="مكان التسليم" autocomplete="off">
+              </span>
+            </label>
+            <button type="submit" class="go go--brand">احسب السعر</button>
+          </form>
+
+          <form class="finder__panel" id="panel-stores" role="tabpanel" aria-labelledby="tab-stores" action="/stores" hidden>
+            <label class="field">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.2-3.2"/></svg>
+              <span class="sr-only">ابحث في المتاجر والمنتجات</span>
+              <input type="search" name="q" placeholder="ابحث عن مطعم، صيدلية، أو منتج…">
+            </label>
+            <button type="submit" class="go go--mint">تصفّح</button>
+          </form>
+
+          <form class="finder__panel" id="panel-suq" role="tabpanel" aria-labelledby="tab-suq" action="/marketplace" hidden>
+            <label class="field">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.2-3.2"/></svg>
+              <span class="sr-only">ابحث في سوق المستعمل</span>
+              <input type="search" name="q" placeholder="موبايل، أثاث، عجلة أطفال…">
+            </label>
+            <button type="submit" class="go go--suq">ابحث</button>
+          </form>
+        </div>
+
+        <!-- Three pillars -->
+        <div class="pillars">
+          {PILLARS.map(p => (
+            <a href={p.href} class={`pillar pillar--${p.tone} card lift`}>
+              <span class="pillar__icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" set:html={p.icon} />
+              </span>
+              <h2 class="pillar__title">{p.title}</h2>
+              <p class="pillar__desc">{p.desc}</p>
+              <span class="pillar__cta">{p.cta} <i aria-hidden="true">←</i></span>
+            </a>
           ))}
-        </dl>
+        </div>
       </div>
+    </section>
 
-      <div class="hero__visual" aria-hidden="true">
-        <div class="ticket">
-          <div class="ticket__top">
-            <div class="ticket__brand">
-              <svg viewBox="0 0 100 100" fill="#fff"><circle cx="50" cy="37" r="16"/><path d="M50 51 L50 60" stroke="#fff" stroke-width="7" stroke-linecap="round"/><path d="M50 60 L37 88 M50 60 L50 92 M50 60 L63 88" fill="none" stroke="#fff" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/></svg>
-              وصّلها
+    <!-- ═══ Smart delivery ═══════════════════════════════════ -->
+    <section class="band band--soft" id="delivery" aria-labelledby="delivery-title">
+      <div class="wrap">
+        <div class="head reveal">
+          <div>
+            <span class="head__eyebrow head__eyebrow--brand">التوصيل الذكي</span>
+            <h2 class="head__title" id="delivery-title">اعرف السعر قبل ما تطلب</h2>
+            <p class="head__desc">
+              العدّاد بيتحسب من المسافة وفئة السيارة والوجهة — بدون زيادات وقت الذروة،
+              وتتابع المندوب على الخريطة لحظة بلحظة.
+            </p>
+          </div>
+          <a href="/track" class="ghost-btn">تتبّع طلب حالي</a>
+        </div>
+
+        <div class="delivery__grid">
+
+          <!-- Tracking preview — an illustration of the live map in the app -->
+          <div class="track card reveal">
+            <svg class="track__map" viewBox="0 0 640 400" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+              <path d="M-20 270 H170 L240 190 H370 L430 110 H660" fill="none" stroke="var(--color-border)" stroke-width="26" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M205 420 V270 L275 190 V30" fill="none" stroke="var(--color-border)" stroke-width="18" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M395 420 V120" fill="none" stroke="var(--color-border)" stroke-width="18" stroke-linecap="round"/>
+              <path id="route" d="M205 300 L205 215 L350 215 L350 130 L430 130" fill="none" stroke="url(#routeGrad)" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="7 9"/>
+              <defs>
+                <linearGradient id="routeGrad" x1="1" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#7C3AED"/><stop offset="100%" stop-color="#0EA672"/>
+                </linearGradient>
+              </defs>
+              <circle cx="205" cy="300" r="9" fill="#7C3AED"/><circle cx="205" cy="300" r="16" fill="#7C3AED" opacity=".18"/>
+              <circle cx="430" cy="130" r="9" fill="#0EA672"/><circle cx="430" cy="130" r="16" fill="#0EA672" opacity=".18"/>
+              <g>
+                <circle r="13" fill="#4F46E5"/><circle r="21" fill="#4F46E5" opacity=".16"/>
+                <animateMotion dur="9s" repeatCount="indefinite" calcMode="linear">
+                  <mpath href="#route"/>
+                </animateMotion>
+              </g>
+            </svg>
+
+            <div class="track__chips">
+              <span class="chip-glass glass"><i aria-hidden="true"></i> المندوب في الطريق</span>
+              <span class="chip-glass glass">مثال توضيحي للتتبّع</span>
             </div>
-            <span class="ticket__badge">تتبع حي</span>
+
+            <div class="track__card glass">
+              <div class="track__courier">
+                <span class="track__avatar" aria-hidden="true">و</span>
+                <div class="track__who">
+                  <p class="track__name">مندوب وصّلها</p>
+                  <p class="track__meta">تتبّع لحظي · اتصال ومراسلة من داخل التطبيق</p>
+                </div>
+              </div>
+
+              <ol class="track__steps" aria-label="حالة الطلب">
+                <li data-done></li>
+                <li data-done></li>
+                <li data-now></li>
+                <li></li>
+              </ol>
+              <div class="track__labels">
+                <span>تم القبول</span><span>تم الاستلام</span><b>في الطريق</b><span>التسليم</span>
+              </div>
+            </div>
           </div>
 
-          <div class="ticket__route">
-            <div class="ticket__point">
-              <span class="ticket__point-city">نقطة الانطلاق</span>
-              <span class="ticket__point-tag">دمياط الجديدة</span>
-            </div>
-            <svg class="ticket__plane" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4 20-7z"/></svg>
-            <div class="ticket__line"></div>
-            <div class="ticket__point" style="text-align:left">
-              <span class="ticket__point-city">الوجهة</span>
-              <span class="ticket__point-tag">باب المستخدم</span>
-            </div>
-          </div>
+          <!-- Fare estimator — runs the platform's real local-ride meter -->
+          <div class="fare card reveal">
+            <h3 style="font-size: var(--text-lg); font-weight: var(--weight-bold);">حاسبة التسعيرة</h3>
+            <p style="margin-top: 4px; font-size: var(--text-sm); color: var(--color-text-muted);">
+              اختر فئة السيارة وحدّد المسافة — السعر يتحدّث فورًا.
+            </p>
 
-          <div class="ticket__meta">
-            <div class="ticket__meta-item">
-              <span class="ticket__meta-label">مدة التوصيل</span>
-              <span class="ticket__meta-value">٣٠ دقيقة</span>
+            <div class="fare__vehicles" role="radiogroup" aria-label="فئة السيارة">
+              <button type="button" role="radio" class="veh" data-cat="sedan" aria-checked="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 16v-3.2l2-4A2 2 0 0 1 6.8 7.5h10.4a2 2 0 0 1 1.8 1.3l2 4V16"/><path d="M3 16h18"/><circle cx="7.5" cy="16.5" r="1.8"/><circle cx="16.5" cy="16.5" r="1.8"/></svg>
+                <span class="veh__name">سيدان</span>
+                <span class="veh__hint" data-rate="sedan"></span>
+              </button>
+              <button type="button" role="radio" class="veh" data-cat="suv" aria-checked="false">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 16v-4l2.4-4.2A2 2 0 0 1 7.2 6.8h9.6a2 2 0 0 1 1.7 1l2.5 4.2V16"/><path d="M3 16h18M8.5 6.8V12M3.4 12h17.2"/><circle cx="7.5" cy="16.5" r="1.8"/><circle cx="16.5" cy="16.5" r="1.8"/></svg>
+                <span class="veh__name">SUV</span>
+                <span class="veh__hint" data-rate="suv"></span>
+              </button>
+              <button type="button" role="radio" class="veh" data-cat="van" aria-checked="false">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 16V6.5h11V16"/><path d="M13 9.5h4l4 3.5V16"/><path d="M2 16h20"/><circle cx="7" cy="16.5" r="1.8"/><circle cx="17" cy="16.5" r="1.8"/></svg>
+                <span class="veh__name">فان</span>
+                <span class="veh__hint" data-rate="van"></span>
+              </button>
             </div>
-            <div class="ticket__meta-item">
-              <span class="ticket__meta-label">التقييم</span>
-              <span class="ticket__meta-value">★ 4.9</span>
-            </div>
-            <div class="ticket__meta-item">
-              <span class="ticket__meta-label">الدفع</span>
-              <span class="ticket__meta-value">آمن 🔒</span>
-            </div>
-          </div>
 
-          <div class="ticket__stub">
-            <div class="ticket__stub-status">
-              <span class="ticket__stub-dot"></span>
-              تم التوصيل بنجاح
+            <div style="margin-top: var(--sp-6);">
+              <div class="fare__row">
+                <label class="fare__label" for="fare-dist">المسافة</label>
+                <span class="fare__label"><span class="num" id="fare-dist-out">8</span> كم</span>
+              </div>
+              <input class="fare__range" id="fare-dist" type="range" min="1" max="30" value="8" step="1">
+              <div class="fare__scale"><span><span class="num">1</span> كم</span><span><span class="num">30</span> كم</span></div>
             </div>
-            <span class="ticket__stub-time">منذ 5 دقائق</span>
+
+            <div class="fare__zone">
+              <label class="fare__label" for="fare-zone">الوجهة</label>
+              <select id="fare-zone"></select>
+            </div>
+
+            <div class="fare__breakdown">
+              <dl>
+                <div class="fare__line"><dt>فتح العدّاد</dt><dd class="num" id="fare-base">—</dd></div>
+                <div class="fare__line"><dt>المسافة (<span class="num" id="fare-rate">—</span> ج.م/كم)</dt><dd class="num" id="fare-legs">—</dd></div>
+                <div class="fare__line" id="fare-zone-line" hidden><dt id="fare-zone-label">رسوم المنطقة</dt><dd class="num" id="fare-zone-extra">—</dd></div>
+              </dl>
+              <div class="fare__total">
+                <div>
+                  <span style="font-size: 12px; font-weight: var(--weight-medium); color: var(--color-text-faint);">الإجمالي التقديري</span>
+                  <p class="fare__total-value"><b id="fare-total">—</b><span>ج.م</span></p>
+                </div>
+                <span class="fare__pill">الحد الأدنى <span class="num" id="fare-min">—</span> ج.م</span>
+              </div>
+            </div>
+
+            <p class="fare__note">
+              تقدير مبدئي بأسعار الرحلات داخل المدينة لسيارة موديل ٢٠٢١ —
+              الموديلات الأحدث أعلى قليلًا، والسعر النهائي يظهر في التطبيق قبل التأكيد.
+            </p>
           </div>
         </div>
       </div>
+    </section>
 
-    </div>
-  </section>
-
-  <!-- ── Services: manifest list ── -->
-  <section class="section-shell services" aria-labelledby="services-title">
-    <span class="section-eyebrow">خدماتنا</span>
-    <h2 class="section-title" id="services-title">كل ما تحتاجه في مكان واحد</h2>
-    <ul class="services__list" role="list">
-      {SERVICES.map(s => (
-        <li>
-          <a href={s.href} class="service-row">
-            <span class="service-row__num" aria-hidden="true">{s.n}</span>
-            <span class="service-row__icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" set:html={s.icon} />
-            </span>
-            <span>
-              <span class="service-row__title">{s.title}</span>
-              <p class="service-row__desc">{s.desc}</p>
-            </span>
-            <span class="service-row__arrow" aria-hidden="true">←</span>
-          </a>
-        </li>
-      ))}
-    </ul>
-  </section>
-
-  <!-- ── Journey ── -->
-  <section class="section-shell journey" aria-labelledby="journey-title">
-    <span class="section-eyebrow">كيف تعمل؟</span>
-    <h2 class="section-title" id="journey-title">أربع خطوات بسيطة</h2>
-    <ol class="journey__rail">
-      {JOURNEY.map(s => (
-        <li class="journey-step">
-          <div class="journey-step__icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" set:html={s.icon} />
-          </div>
-          <h3 class="journey-step__title">{s.title}</h3>
-          <p class="journey-step__desc">{s.desc}</p>
-        </li>
-      ))}
-    </ol>
-  </section>
-
-  <!-- ── Reviews: featured quote ── -->
-  <section class="section-shell reviews" aria-labelledby="reviews-title">
-    <span class="section-eyebrow">ماذا يقول عملاؤنا</span>
-    <h2 class="section-title sr-only" id="reviews-title">آراء العملاء</h2>
-    <div class="reviews__inner">
-      <div class="review-feature">
-        <div class="review-feature__stars">★★★★★</div>
-        <p class="review-feature__quote">"{REVIEWS[0].text}"</p>
-        <div class="review-feature__author">{REVIEWS[0].name}</div>
-        <div class="review-feature__meta">{REVIEWS[0].meta}</div>
-      </div>
-      <div class="reviews__minor">
-        {REVIEWS.slice(1).map(r => (
+    <!-- ═══ Stores ═══════════════════════════════════════════ -->
+    <section class="band band--plain" id="stores" aria-labelledby="stores-title">
+      <div class="wrap">
+        <div class="head reveal">
           <div>
-            <p class="review-minor__text">"{r.text}"</p>
-            <div class="review-minor__author">{r.name}</div>
-            <div class="review-minor__meta">{r.meta}</div>
+            <span class="head__eyebrow head__eyebrow--mint">المتاجر</span>
+            <h2 class="head__title" id="stores-title">متاجر مدينتك، بأسعارها الحقيقية</h2>
           </div>
-        ))}
-      </div>
-    </div>
-  </section>
+          <a href="/stores" style="font-size: var(--text-sm); font-weight: var(--weight-bold); color: var(--color-mint-dark);">
+            {ALL_STORES.length ? `كل المتاجر (${ALL_STORES.length})` : 'كل المتاجر'} ←
+          </a>
+        </div>
 
-  <!-- ── CTA ── -->
-  <section class="cta" aria-labelledby="cta-title">
-    <svg class="cta__mark" viewBox="0 0 100 100" fill="#fff" aria-hidden="true"><circle cx="50" cy="37" r="16"/><path d="M50 51 L50 60" stroke="#fff" stroke-width="7" stroke-linecap="round"/><path d="M50 60 L37 88 M50 60 L50 92 M50 60 L63 88" fill="none" stroke="#fff" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/></svg>
-    <div class="cta__inner">
-      <h2 class="cta__title" id="cta-title">جاهز للتوصيل؟</h2>
-      <p class="cta__desc">انضم لآلاف العملاء الذين يثقون في وصّلها يوميًا — سريع، موثوق، وبأسعار شفافة</p>
-      <div class="cta__actions">
-        <a href="/rides"   class="btn btn--accent">اطلب مشوار الآن</a>
-        <a href="/airport" class="btn btn--white">حجز توصيل مطار</a>
+        {STORE_CATEGORIES.length > 0 && (
+          <div class="chips reveal" role="group" aria-label="تصفية حسب القسم">
+            <button type="button" class="chip" data-cat="" aria-pressed="true">الكل</button>
+            {STORE_CATEGORIES.map(c => (
+              <button type="button" class="chip" data-cat={c} aria-pressed="false">{c}</button>
+            ))}
+          </div>
+        )}
+
+        <div class="grid" id="stores-grid">
+          {FEATURED_STORES.map(s => (
+            <a href={`/store/${s.id}`} class="store card lift reveal" data-cat={s.category}>
+              <div class="store__top">
+                <span class="store__emoji" aria-hidden="true">{s.emoji}</span>
+                <div class="store__id">
+                  <h3 class="store__name">{s.name}</h3>
+                  <p class="store__where">{[s.category, s.area].filter(Boolean).join(' · ')}</p>
+                </div>
+                {s.rating > 0 && (
+                  <span class="store__rating">★ <span class="num">{s.rating.toFixed(1)}</span></span>
+                )}
+              </div>
+
+              <div class="store__tags">
+                {s.rating >= 4.7 && <span class="tag tag--mint">الأعلى تقييمًا</span>}
+                {s.deliveryFee === 0 && <span class="tag tag--brand">توصيل مجاني</span>}
+                <span class={`tag ${s.isOpen ? 'tag--mint' : 'tag--plain'}`}>{s.isOpen ? 'مفتوح الآن' : 'مغلق حاليًا'}</span>
+                {s.reviews > 0 && <span class="tag tag--plain"><span class="num">{s.reviews}</span> تقييم</span>}
+              </div>
+
+              <div class="store__foot">
+                <span>{s.deliveryTime}</span>
+                <span>أقل طلب <span class="num">{s.minOrder}</span> ج.م</span>
+              </div>
+            </a>
+          ))}
+
+          {FEATURED_STORES.length === 0 && (
+            <div class="empty">
+              <div class="empty__icon" aria-hidden="true">🏪</div>
+              <p class="empty__text">لا توجد متاجر مسجَّلة بعد — كن أول تاجر في وصّلها!</p>
+              <a href="/merchant-apply" class="btn btn--primary" style="margin-top: var(--sp-5);">سجّل متجرك مجانًا</a>
+            </div>
+          )}
+        </div>
       </div>
-    </div>
-  </section>
+    </section>
+
+    <!-- ═══ Sūq — second-hand marketplace ════════════════════ -->
+    <section class="band band--soft" id="suq" aria-labelledby="suq-title">
+      <div class="wrap">
+        <div class="head reveal">
+          <div>
+            <span class="head__eyebrow head__eyebrow--suq">السوق</span>
+            <h2 class="head__title" id="suq-title">سوق المستعمل في دمياط</h2>
+            <p class="head__desc">
+              إعلانات من جيرانك في المدينة. كلّم البائع مباشرة، أو اطلب مندوب وصّلها
+              يستلم ويوصّل — والنشر مجاني بدون عمولة.
+            </p>
+          </div>
+          <a href="/marketplace/post" class="go go--suq" style="text-decoration: none;">أضف إعلانك مجانًا</a>
+        </div>
+
+        <div class="masonry" id="suq-grid">
+          <div class="skeleton" aria-hidden="true"></div>
+          <div class="skeleton" style="height: 320px;" aria-hidden="true"></div>
+          <div class="skeleton" style="height: 220px;" aria-hidden="true"></div>
+        </div>
+        <p class="sr-only" id="suq-status" role="status">جارٍ تحميل أحدث الإعلانات…</p>
+      </div>
+    </section>
+
+    <!-- ═══ Trust strip ══════════════════════════════════════ -->
+    <section class="band band--plain" aria-label="أرقام المنصة">
+      <div class="wrap trust">
+        <div class="reveal">
+          <p class="trust__value num">{ALL_STORES.length}</p>
+          <p class="trust__label">متجرًا مسجَّلًا في دمياط الجديدة</p>
+        </div>
+        <div class="reveal">
+          <p class="trust__value num">{AVG_RATING ?? '—'}</p>
+          <p class="trust__label">متوسط تقييم المتاجر على المنصة</p>
+        </div>
+        <div class="reveal">
+          <p class="trust__value"><span class="num" id="trust-listings">—</span></p>
+          <p class="trust__label">إعلانًا متاحًا الآن في سوق المستعمل</p>
+        </div>
+        <div class="reveal">
+          <p class="trust__value"><span class="num">0</span> ج.م</p>
+          <p class="trust__label">عمولة على إعلانات سوق المستعمل</p>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <BottomNav currentPage="home" />
+
+  <!-- Live meter values for the estimator, read from data/airports.ts (and
+       the admin's app_settings) at build time — see FARE above. -->
+  <script id="fare-config" type="application/json" set:html={JSON.stringify(FARE)}></script>
 </Layout>
+
+<script>
+  import { fetchItems, CONDITIONS, type MarketItem } from '../utils/marketplaceApi';
+
+  interface FareConfig {
+    base: number;
+    min: number;
+    tiers: { t1Km: number; t1Mult: number; t2Km: number; t2Mult: number; t3Mult: number };
+    rates: { sedan: number; suv: number; van: number };
+    zones: { label: string; factor: number; surcharge: number }[];
+  }
+  const FARE: FareConfig = JSON.parse(document.getElementById('fare-config')!.textContent!);
+
+  // Latin digits inside Arabic copy — the app, the invoices and the driver
+  // screens all show figures this way, so prices stay comparable at a glance.
+  const LOCALE = 'ar-EG-u-nu-latn';
+  const int = (n: number) => n.toLocaleString(LOCALE, { maximumFractionDigits: 0 });
+  const money = (n: number) => n.toLocaleString(LOCALE, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+  // ── Hero: service tabs ───────────────────────────────────
+  const tabs = [...document.querySelectorAll<HTMLButtonElement>('.finder__tab')];
+  const panels = [...document.querySelectorAll<HTMLElement>('.finder__panel')];
+
+  function selectTab(name: string) {
+    tabs.forEach(t => t.setAttribute('aria-selected', String(t.dataset.tab === name)));
+    panels.forEach(p => { p.hidden = p.id !== `panel-${name}`; });
+  }
+  tabs.forEach(t => {
+    t.addEventListener('click', () => selectTab(t.dataset.tab!));
+    t.addEventListener('keydown', (e: KeyboardEvent) => {
+      const step = e.key === 'ArrowLeft' ? 1 : e.key === 'ArrowRight' ? -1 : 0; // RTL
+      if (!step) return;
+      e.preventDefault();
+      const next = tabs[(tabs.indexOf(t) + step + tabs.length) % tabs.length];
+      next.focus();
+      selectTab(next.dataset.tab!);
+    });
+  });
+
+  // The delivery panel has nothing to submit to — booking lives in the app —
+  // so it hands the visitor to the live estimator further down the page.
+  document.getElementById('panel-delivery')?.addEventListener('submit', e => {
+    e.preventDefault();
+    document.getElementById('delivery')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    document.getElementById('fare-dist')?.focus({ preventScroll: true });
+  });
+
+  // ── Fare estimator ───────────────────────────────────────
+  // Same meter the booking flow runs: base + tiered distance × the category
+  // rate, then the destination zone's factor/surcharge, floored at the
+  // minimum fare and rounded up to the nearest 5 ج.م.
+  const distEl  = document.getElementById('fare-dist') as HTMLInputElement | null;
+  const zoneEl  = document.getElementById('fare-zone') as HTMLSelectElement | null;
+  const vehEls  = [...document.querySelectorAll<HTMLButtonElement>('.veh')];
+
+  if (distEl && zoneEl) {
+    const zones = FARE.zones;
+    zoneEl.innerHTML = zones.map((z, i) => `<option value="${i}">${z.label}</option>`).join('');
+
+    let category: 'sedan' | 'suv' | 'van' = 'sedan';
+
+    const set = (id: string, text: string) => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = text;
+    };
+
+    // Distance tiers, like a real meter: the first kilometres cost more than
+    // the last. Mirrors tieredKm() in data/airports.ts — the tier numbers
+    // themselves come from there, baked into FARE above.
+    function tieredKm(km: number) {
+      const { t1Km, t1Mult, t2Km, t2Mult, t3Mult } = FARE.tiers;
+      return Math.min(km, t1Km) * t1Mult
+           + Math.min(Math.max(km - t1Km, 0), t2Km - t1Km) * t2Mult
+           + Math.max(km - t2Km, 0) * t3Mult;
+    }
+
+    function render() {
+      const km   = Number(distEl!.value);
+      const zone = zones[Number(zoneEl!.value)] ?? zones[0];
+      const rate = FARE.rates[category];
+      const legs = tieredKm(km) * rate;
+      const raw  = (FARE.base + legs) * zone.factor + zone.surcharge;
+      const total = Math.ceil(Math.max(raw, FARE.min) / 5) * 5;
+
+      set('fare-dist-out', int(km));
+      set('fare-base', `${money(FARE.base)} ج.م`);
+      set('fare-rate', money(rate));
+      set('fare-legs', `${money(legs)} ج.م`);
+      set('fare-total', money(total));
+      set('fare-min', int(FARE.min));
+
+      const zoneLine = document.getElementById('fare-zone-line');
+      if (zoneLine) {
+        const extra = raw - (FARE.base + legs);
+        zoneLine.hidden = extra <= 0.005;
+        set('fare-zone-label', `${zone.label} (×${zone.factor})`);
+        set('fare-zone-extra', `${money(extra)} ج.م`);
+      }
+
+      vehEls.forEach(v => {
+        const hint = v.querySelector<HTMLElement>('.veh__hint');
+        const cat = v.dataset.cat as 'sedan' | 'suv' | 'van';
+        if (hint) hint.textContent = `${money(FARE.rates[cat])} ج.م/كم`;
+      });
+    }
+
+    vehEls.forEach(v => v.addEventListener('click', () => {
+      vehEls.forEach(o => o.setAttribute('aria-checked', String(o === v)));
+      category = v.dataset.cat as 'sedan' | 'suv' | 'van';
+      render();
+    }));
+    distEl.addEventListener('input', render);
+    zoneEl.addEventListener('change', render);
+    render();
+  }
+
+  // ── Stores: category chips ───────────────────────────────
+  const chips = [...document.querySelectorAll<HTMLButtonElement>('.chip')];
+  const storeCards = [...document.querySelectorAll<HTMLElement>('#stores-grid .store')];
+  chips.forEach(c => c.addEventListener('click', () => {
+    chips.forEach(o => o.setAttribute('aria-pressed', String(o === c)));
+    const cat = c.dataset.cat || '';
+    storeCards.forEach(card => {
+      card.style.display = !cat || card.dataset.cat === cat ? '' : 'none';
+    });
+  }));
+
+  // ── Sūq: newest live listings ────────────────────────────
+  const suqGrid = document.getElementById('suq-grid');
+
+  function itemCard(i: MarketItem) {
+    const price = Number(i.price || 0).toLocaleString(LOCALE, { maximumFractionDigits: 0 });
+    const cover = i.images?.[0]
+      ? `<img src="${i.images[0]}" alt="" loading="lazy">`
+      : '📦';
+    // Short forms of CONDITIONS — the marketplace's own wording is a full
+    // sentence ("مستعمل - يحتاج صيانة") and doesn't fit a card badge.
+    const condition = ({
+      new: 'جديد', like_new: 'كالجديد', used: 'بحالة جيدة', fair: 'يحتاج صيانة',
+    } as Record<string, string>)[i.condition] || CONDITIONS[i.condition] || 'مستعمل';
+    const tone = i.condition === 'new' || i.condition === 'like_new' ? 'mint'
+               : i.condition === 'used' ? 'brand' : 'suq';
+    const where = [i.area, i.city].filter(Boolean)[0] || 'دمياط الجديدة';
+    const href = `/marketplace/item?id=${encodeURIComponent(i.id)}`;
+
+    return `
+      <article class="item">
+        <a href="${href}" aria-label="${esc(i.title)}">
+          <div class="item__cover">${cover}</div>
+          <div class="item__head">
+            <h3 class="item__title">${esc(i.title)}</h3>
+            <span class="item__cond item__cond--${tone}">${esc(condition)}</span>
+          </div>
+          ${i.description ? `<p class="item__desc">${esc(i.description.slice(0, 110))}</p>` : ''}
+          <div class="item__price"><b>${price}</b><span>ج.م</span></div>
+          <p class="item__where">${esc(where)}</p>
+        </a>
+        <div class="item__actions">
+          <a class="item__btn item__btn--buy" href="${href}">اشترِ الآن</a>
+          <a class="item__btn item__btn--chat" href="${href}#contact">كلّم البائع</a>
+        </div>
+      </article>`;
+  }
+
+  function esc(s: string) {
+    return s.replace(/[&<>"']/g, c => (
+      { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!
+    ));
+  }
+
+  if (suqGrid) {
+    fetchItems().then(items => {
+      const listings = document.getElementById('trust-listings');
+      if (listings) listings.textContent = int(items.length);
+
+      const status = document.getElementById('suq-status');
+      if (!items.length) {
+        suqGrid.style.columns = '1';   // the empty card spans the grid, not one column
+        suqGrid.innerHTML = `
+          <div class="empty">
+            <div class="empty__icon" aria-hidden="true">📦</div>
+            <p class="empty__text">لا توجد إعلانات بعد — كن أول من ينشر في السوق.</p>
+          </div>`;
+        if (status) status.textContent = 'لا توجد إعلانات في السوق حاليًا.';
+        return;
+      }
+      suqGrid.innerHTML = items.slice(0, 6).map(itemCard).join('');
+      if (status) status.textContent = `تم تحميل ${int(Math.min(items.length, 6))} إعلان.`;
+    }).catch(() => {
+      suqGrid.style.columns = '1';
+      suqGrid.innerHTML = `
+        <div class="empty">
+          <div class="empty__icon" aria-hidden="true">📡</div>
+          <p class="empty__text">تعذّر تحميل الإعلانات الآن — <a href="/marketplace" style="color: var(--color-accent-dark); font-weight: 700;">افتح السوق</a>.</p>
+        </div>`;
+    });
+  }
+
+  // ── Scroll reveal ────────────────────────────────────────
+  const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const revealables = [...document.querySelectorAll<HTMLElement>('.reveal')];
+
+  function revealAll(nodes: ArrayLike<Element>) {
+    [...nodes].forEach(n => n.classList.add('is-in'));
+  }
+
+  if (reduced || !('IntersectionObserver' in window)) {
+    revealAll(revealables);
+  } else {
+    const io = new IntersectionObserver(entries => {
+      entries.forEach((entry, i) => {
+        if (!entry.isIntersecting) return;
+        setTimeout(() => entry.target.classList.add('is-in'), Math.min(i * 70, 280));
+        io.unobserve(entry.target);
+      });
+    }, { rootMargin: '0px 0px -12% 0px' });
+    revealables.forEach(el => io.observe(el));
+
+    // Safety sweep: a fast scroll (or an anchor jump) can carry a section
+    // past the viewport without the observer ever reporting it intersecting.
+    // Anything already scrolled to is revealed here, so nothing can end up
+    // stranded at opacity 0.
+    let queued = false;
+    const sweep = () => {
+      queued = false;
+      let left = 0;
+      revealables.forEach(el => {
+        if (el.classList.contains('is-in')) return;
+        if (el.getBoundingClientRect().top < innerHeight) {
+          el.classList.add('is-in');
+          io.unobserve(el);
+        } else left++;
+      });
+      if (!left) removeEventListener('scroll', onScroll);
+    };
+    const onScroll = () => {
+      if (queued) return;
+      queued = true;
+      requestAnimationFrame(sweep);
+    };
+    addEventListener('scroll', onScroll, { passive: true });
+  }
+</script>

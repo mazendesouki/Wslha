@@ -3,25 +3,30 @@ import Layout from '../components/layout.astro';
 
 const colors = {
   brand: [
-    { name: 'Primary',       var: '--color-primary',       hex: '#0E4B49', text: '#fff' },
-    { name: 'Primary Dark',  var: '--color-primary-dark',  hex: '#082F2E', text: '#fff' },
-    { name: 'Primary Light', var: '--color-primary-light', hex: '#E3EDEC', text: '#16262A' },
-    { name: 'Accent',        var: '--color-accent',        hex: '#B8863B', text: '#fff' },
-    { name: 'Accent Dark',   var: '--color-accent-dark',   hex: '#96692A', text: '#fff' },
+    { name: 'Primary',       var: '--color-primary',       hex: '#4F46E5', text: '#fff' },
+    { name: 'Primary Dark',  var: '--color-primary-dark',  hex: '#3B31C9', text: '#fff' },
+    { name: 'Primary Light', var: '--color-primary-light', hex: '#EEECFE', text: '#0B1020' },
+    { name: 'Mint',          var: '--color-mint',          hex: '#0EA672', text: '#fff' },
+    { name: 'Mint Dark',     var: '--color-mint-dark',     hex: '#0B8A5E', text: '#fff' },
+    { name: 'Mint Light',    var: '--color-mint-light',    hex: '#E6F8F1', text: '#0B1020' },
+    { name: 'Accent',        var: '--color-accent',        hex: '#D97706', text: '#fff' },
+    { name: 'Accent Dark',   var: '--color-accent-dark',   hex: '#B45309', text: '#fff' },
+    { name: 'Accent Light',  var: '--color-accent-light',  hex: '#FDF2E2', text: '#0B1020' },
   ],
   semantic: [
-    { name: 'Success', hex: '#22C55E', text: '#fff' },
+    { name: 'Success', hex: '#0EA672', text: '#fff' },
     { name: 'Warning', hex: '#D97706', text: '#fff' },
     { name: 'Danger',  hex: '#DC2626', text: '#fff' },
-    { name: 'Info',    hex: '#2563EB', text: '#fff' },
+    { name: 'Info',    hex: '#4F46E5', text: '#fff' },
   ],
   neutral: [
-    { name: 'Text',       hex: '#16262A', text: '#fff' },
-    { name: 'Text Muted', hex: '#5B6B6A', text: '#fff' },
-    { name: 'Text Faint', hex: '#8A9998', text: '#fff' },
-    { name: 'Border',     hex: '#E2E8F0', text: '#16262A' },
-    { name: 'BG Soft',    hex: '#F8FAFC', text: '#16262A' },
-    { name: 'Dark BG',    hex: '#0B1514', text: '#fff' },
+    { name: 'Text',       hex: '#0B1020', text: '#fff' },
+    { name: 'Text Muted', hex: '#4B5567', text: '#fff' },
+    { name: 'Text Faint', hex: '#7D879B', text: '#fff' },
+    { name: 'Border',     hex: '#E6E8F2', text: '#0B1020' },
+    { name: 'BG Soft',    hex: '#F6F7FB', text: '#0B1020' },
+    { name: 'Page BG',    hex: '#1E1B4B', text: '#fff' },
+    { name: 'Dark BG',    hex: '#171334', text: '#fff' },
   ],
 };
 
@@ -53,7 +58,7 @@ const shadows = [
 
   /* Hero */
   .brand-hero {
-    background: linear-gradient(135deg, #0F172A 0%, #082F2E 50%, #6D5DF6 100%);
+    background: linear-gradient(135deg, #0F172A 0%, #3B31C9 50%, #6D5DF6 100%);
     color: #fff; padding: var(--sp-16) var(--sp-6) var(--sp-12); text-align: center; position: relative; overflow: hidden;
   }
   .brand-hero::after {
@@ -225,7 +230,7 @@ const shadows = [
       <section class="b-sec">
         <div class="b-sec__head">
           <span class="b-sec__num">3</span>
-          <div><div class="b-sec__title">الخطوط</div><div class="b-sec__desc">خط Cairo — العائلة الرسمية للعلامة</div></div>
+          <div><div class="b-sec__title">الخطوط</div><div class="b-sec__desc">Tajawal للعناوين · IBM Plex Sans Arabic للنصوص · IBM Plex Mono للأرقام</div></div>
         </div>
         <div class="b-card">
           {typeScale.map(t => (
@@ -247,7 +252,7 @@ const shadows = [
           <div class="sub-label">الأزرار</div>
           <div class="demo-row">
             <button class="d-btn d-btn--primary">زر أساسي</button>
-            <button class="d-btn d-btn--accent">زر ذهبي</button>
+            <button class="d-btn d-btn--accent">زر مميّز</button>
             <button class="d-btn d-btn--outline">زر محدّد</button>
             <button class="d-btn d-btn--dark">زر داكن</button>
           </div>

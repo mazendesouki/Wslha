@@ -513,8 +513,8 @@ import Layout from '../components/layout.astro';
           <h2 style="font-weight:var(--weight-black);font-size:var(--text-lg);">الطلبات المباشرة 📡</h2>
           <div style="display:flex;gap:var(--sp-3);align-items:center;flex-wrap:wrap;">
             <a href="/merchant-delivery" target="_blank"
-               style="display:inline-flex;align-items:center;gap:6px;background:#0E4B49;color:#fff;border:none;border-radius:var(--radius-lg);padding:var(--sp-2) var(--sp-4);font-weight:var(--weight-black);font-size:var(--text-sm);text-decoration:none;transition:background .2s;"
-               onmouseover="this.style.background='#082F2E'" onmouseout="this.style.background='#0E4B49'">
+               style="display:inline-flex;align-items:center;gap:6px;background:#4F46E5;color:#fff;border:none;border-radius:var(--radius-lg);padding:var(--sp-2) var(--sp-4);font-weight:var(--weight-black);font-size:var(--text-sm);text-decoration:none;transition:background .2s;"
+               onmouseover="this.style.background='#3B31C9'" onmouseout="this.style.background='#4F46E5'">
               🛵 طلب توصيل جديد
             </a>
             <a href="/restaurant-orders" target="_blank"
@@ -607,7 +607,7 @@ import Layout from '../components/layout.astro';
           <div style="overflow-x:auto">
             <table style="width:100%;border-collapse:collapse;font-size:var(--text-sm)">
               <thead>
-                <tr style="text-align:right;font-size:var(--text-xs);color:#3FA79A;background:#F2F7F6">
+                <tr style="text-align:right;font-size:var(--text-xs);color:#3FA79A;background:#F5F5FF">
                   <th style="padding:.5rem .75rem">الشهر</th>
                   <th style="padding:.5rem .75rem">عدد الطلبات</th>
                   <th style="padding:.5rem .75rem">إجمالي المبيعات</th>
@@ -1703,7 +1703,7 @@ import Layout from '../components/layout.astro';
         const wavg = w.count ? Math.round(w.spent / w.count) : 0;
         return `<tr class="m-sales-week-row" data-month="${i}" style="display:none"><td style="padding-right:2rem;color:var(--color-text-faint)">↳ ${w.label}</td><td>${w.count}</td><td>${Math.round(w.spent).toLocaleString('ar-EG')} ج.م</td><td>${wavg.toLocaleString('ar-EG')} ج.م</td></tr>`;
       }).join('');
-      return `<tr class="m-sales-row" data-month="${i}" style="cursor:pointer;border-bottom:1px solid #E3EDEC" onclick="toggleMerchantSalesWeeks(${i})">
+      return `<tr class="m-sales-row" data-month="${i}" style="cursor:pointer;border-bottom:1px solid #EEECFE" onclick="toggleMerchantSalesWeeks(${i})">
           <td style="padding:.5rem .75rem">▸ ${m.label}</td><td style="padding:.5rem .75rem">${m.count}</td><td style="padding:.5rem .75rem">${Math.round(m.spent).toLocaleString('ar-EG')} ج.م</td><td style="padding:.5rem .75rem">${avg.toLocaleString('ar-EG')} ج.م</td>
         </tr>${weekRows}`;
     }).join('');

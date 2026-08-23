@@ -19,7 +19,7 @@
       --sb:#081716;--sb2:#0F2624;--sb3:#1D3B38;
       --tx:#EFF6F5;--tx2:#9DB3AF;--tx3:#5C716D;
       /* brand teal stays the accent everywhere; semantic colors are separate */
-      --pr:#0E4B49;--pr2:#082F2E;--pr3:#3FA79A;--pr-l:#E1EEEC;
+      --pr:#4F46E5;--pr2:#3B31C9;--pr3:#3FA79A;--pr-l:#E1EEEC;
       --green:#1C8A57;--green-l:#DFF3E7;
       --red:#C2362A;--red-l:#FBE2DF;
       --orange:#B0741C;--orange-l:#FBEED9;
@@ -1328,19 +1328,19 @@
     <div class="modal__body">
       <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:.75rem;margin-bottom:1rem">
         <div style="background:#F1F5F9;border-radius:10px;padding:.75rem;text-align:center">
-          <div style="font-size:1.3rem;font-weight:900;color:#0E4B49" id="us-orders">—</div>
+          <div style="font-size:1.3rem;font-weight:900;color:#4F46E5" id="us-orders">—</div>
           <div style="font-size:.72rem;color:#64748B" id="us-orders-lbl">🛵 طلبات</div>
         </div>
         <div style="background:#F1F5F9;border-radius:10px;padding:.75rem;text-align:center">
-          <div style="font-size:1.3rem;font-weight:900;color:#0E4B49" id="us-rides">—</div>
+          <div style="font-size:1.3rem;font-weight:900;color:#4F46E5" id="us-rides">—</div>
           <div style="font-size:.72rem;color:#64748B" id="us-rides-lbl">🚗 رحلات</div>
         </div>
         <div style="background:#F1F5F9;border-radius:10px;padding:.75rem;text-align:center">
-          <div style="font-size:1.3rem;font-weight:900;color:#0E4B49" id="us-amount">—</div>
+          <div style="font-size:1.3rem;font-weight:900;color:#4F46E5" id="us-amount">—</div>
           <div style="font-size:.72rem;color:#64748B" id="us-amount-lbl">💰 إنفاق</div>
         </div>
         <div style="background:#F1F5F9;border-radius:10px;padding:.75rem;text-align:center">
-          <div style="font-size:1.3rem;font-weight:900;color:#0E4B49" id="us-balance">—</div>
+          <div style="font-size:1.3rem;font-weight:900;color:#4F46E5" id="us-balance">—</div>
           <div style="font-size:.72rem;color:#64748B">👛 رصيد المحفظة</div>
         </div>
       </div>
@@ -1720,7 +1720,7 @@ async function loadDashCharts() {
   renderTrend('kpi-revenue-trend', revenueByDay[13], revenueByDay[12]);
   renderTrend('kpi-orders-trend',  ordersByDay[13],  ordersByDay[12]);
 
-  renderLineChart('revenue-chart', 'revenue-tooltip', revenueByDay, dayLabels, { color: '#0E4B49', suffix: ' ج.م' });
+  renderLineChart('revenue-chart', 'revenue-tooltip', revenueByDay, dayLabels, { color: '#4F46E5', suffix: ' ج.م' });
   renderGroupedBarChart('activity-chart', 'activity-tooltip', ridesByDay, ordersByDay, dayLabels,
     { colorA: '#2563EB', colorB: '#D97706', labelA: 'رحلات', labelB: 'طلبات' });
   renderBarChart('drivers-chart', 'drivers-tooltip', driversByDay, dayLabels, { color: '#16A34A', unit: 'سائق' });
@@ -2622,7 +2622,7 @@ function renderOrders() {
   if (status) rows = rows.filter(o => o.status === status);
   const html = rows.map(o => `
     <tr>
-      <td style="direction:ltr;font-size:.75rem;font-weight:700;color:#0E4B49">${o.code||o.id?.slice(0,10)||'—'}</td>
+      <td style="direction:ltr;font-size:.75rem;font-weight:700;color:#4F46E5">${o.code||o.id?.slice(0,10)||'—'}</td>
       <td style="font-weight:600">${escapeHtml(o.customer_name)||'—'}</td>
       <td style="direction:ltr;font-size:.82rem">${escapeHtml(o.customer_phone)||'—'}</td>
       <td>${escapeHtml(o.store_name)||'—'}</td>
@@ -2655,7 +2655,7 @@ function renderCourierOrders() {
   if (status) rows = rows.filter(o => o.status === status);
   const html = rows.map(o => `
     <tr>
-      <td style="direction:ltr;font-size:.75rem;font-weight:700;color:#0E4B49">${o.code||o.id?.slice(0,10)||'—'}</td>
+      <td style="direction:ltr;font-size:.75rem;font-weight:700;color:#4F46E5">${o.code||o.id?.slice(0,10)||'—'}</td>
       <td style="font-weight:600">${escapeHtml(o.customer_name)||'—'}</td>
       <td style="direction:ltr;font-size:.82rem">${escapeHtml(o.customer_phone)||'—'}</td>
       <td style="font-size:.8rem">${escapeHtml(o.items_summary)||'—'}</td>
@@ -2710,7 +2710,7 @@ function renderMerchantDeliveries() {
   if (status) rows = rows.filter(o => o.status === status);
   const html = rows.map(o => `
     <tr>
-      <td style="direction:ltr;font-size:.75rem;font-weight:700;color:#0E4B49">${o.code||o.id?.slice(0,10)||'—'}</td>
+      <td style="direction:ltr;font-size:.75rem;font-weight:700;color:#4F46E5">${o.code||o.id?.slice(0,10)||'—'}</td>
       <td style="font-weight:600">${escapeHtml(o.store_name)||'—'}</td>
       <td style="font-weight:600">${escapeHtml(o.customer_name)||'—'}</td>
       <td style="direction:ltr;font-size:.82rem">${escapeHtml(o.customer_phone)||'—'}</td>
@@ -2790,7 +2790,7 @@ function renderGeneralDeliveries() {
   if (status) rows = rows.filter(o => o.status === status);
   const html = rows.map(o => `
     <tr>
-      <td style="direction:ltr;font-size:.75rem;font-weight:700;color:#0E4B49">${o.code||o.id?.slice(0,10)||'—'}</td>
+      <td style="direction:ltr;font-size:.75rem;font-weight:700;color:#4F46E5">${o.code||o.id?.slice(0,10)||'—'}</td>
       <td style="font-weight:600">${escapeHtml(o.store_name)||'—'}</td>
       <td style="font-weight:600">${escapeHtml(o.customer_name)||'—'}</td>
       <td style="direction:ltr;font-size:.82rem">${escapeHtml(o.customer_phone)||'—'}</td>
@@ -3183,7 +3183,7 @@ async function loadMessages() {
       <td>${escapeHtml(m.subject)}</td>
       <td><span style="padding:2px 8px;border-radius:99px;font-size:.75rem;font-weight:700;background:${(statusColor[m.status]||'#94A3B8')}22;color:${statusColor[m.status]||'#94A3B8'}">${statusLabel[m.status] || m.status}</span></td>
       <td style="font-size:.78rem;color:#64748B">${new Date(m.created_at).toLocaleDateString('ar-EG')}</td>
-      <td><button onclick="openMsg('${m.id}')" style="padding:.3rem .7rem;background:#0E4B49;color:#fff;border:none;border-radius:5px;font-size:.78rem;cursor:pointer">عرض</button></td>
+      <td><button onclick="openMsg('${m.id}')" style="padding:.3rem .7rem;background:#4F46E5;color:#fff;border:none;border-radius:5px;font-size:.78rem;cursor:pointer">عرض</button></td>
     </tr>`).join('');
 }
 
@@ -3597,7 +3597,7 @@ function renderWalletsList() {
   const roleFilter = document.getElementById('wallet-role-filter')?.value || '';
   const search     = (document.getElementById('wallet-search')?.value || '').trim().toLowerCase();
   const ROLE_AR    = { driver:'سائق', merchant:'تاجر', customer:'عميل', admin:'مشرف' };
-  const ROLE_CLR   = { driver:'#1D4ED8', merchant:'#0E4B49', customer:'#064E3B', admin:'#DC2626' };
+  const ROLE_CLR   = { driver:'#1D4ED8', merchant:'#4F46E5', customer:'#064E3B', admin:'#DC2626' };
 
   let rows = allWallets;
   if (roleFilter) rows = rows.filter(w => w.role === roleFilter);
@@ -3635,7 +3635,7 @@ const TX_TYPES_AR = {
 };
 const TX_CLR = {
   earning:'#16A34A', commission:'#1D4ED8', topup:'#0891B2', withdrawal:'#DC2626',
-  transfer_out:'#D97706', transfer_in:'#0E4B49', admin_credit:'#16A34A', admin_debit:'#DC2626'
+  transfer_out:'#D97706', transfer_in:'#4F46E5', admin_credit:'#16A34A', admin_debit:'#DC2626'
 };
 
 function renderTxLog() {
@@ -4053,7 +4053,7 @@ async function autoRefreshDash() {
 
     // Alert if new pending apps appeared
     if (pendingTotal > prevPendingCount && prevPendingCount !== 0) {
-      showToast(`🔔 طلب اعتماد جديد! (${pendingTotal} معلق)`, '#0E4B49');
+      showToast(`🔔 طلب اعتماد جديد! (${pendingTotal} معلق)`, '#4F46E5');
     }
     prevPendingCount = pendingTotal;
 
