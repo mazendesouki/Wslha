@@ -8,6 +8,7 @@
     "build": "astro build",
     "preview": "astro preview",
     "deploy": "astro build && vercel --prod",
+    "design:css": "tailwindcss -i design/tailwind.src.css -o design/tailwind.css --optimize",
     "icons": "node scripts/gen-brand-icons.mjs",
     "assets": "npx @capacitor/assets generate --iconBackgroundColor #3B6EF8 --iconBackgroundColorDark #2952D9 --splashBackgroundColor #3B6EF8 --splashBackgroundColorDark #2952D9",
     "app:sync": "astro build && npx cap sync",
@@ -20,8 +21,10 @@
     "@capacitor/cli": "^5.7.8",
     "@netlify/netlify-marketing-tokens": "^1.1.0",
     "@resvg/resvg-js": "^2.6.2",
+    "@tailwindcss/cli": "^4.3.3",
     "astro": "^4.16.19",
-    "playwright": "^1.60.0"
+    "playwright": "^1.60.0",
+    "tailwindcss": "^4.3.3"
   },
   "dependencies": {
     "@capacitor/android": "^5.7.8",

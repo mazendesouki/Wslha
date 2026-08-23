@@ -8,7 +8,7 @@ import Layout from '../components/layout.astro';
   /* ── Page ───────────────────────────────────────────────────── */
   .profile-wrap {
     min-height: calc(100vh - var(--nav-height));
-    background: #E3EDEC;
+    background: #EEECFE;
     padding-bottom: var(--sp-16);
   }
 
@@ -51,7 +51,7 @@ import Layout from '../components/layout.astro';
     position: absolute;
     top: 0; left: 0; right: 0;
     height: 4px;
-    background: linear-gradient(90deg, #0E4B49, #B8863B);
+    background: linear-gradient(90deg, #4F46E5, #D97706);
   }
 
   /* Avatar */
@@ -65,7 +65,7 @@ import Layout from '../components/layout.astro';
   .pf-avatar {
     width: 76px; height: 76px;
     border-radius: 50%;
-    background: #0E4B49;
+    background: #4F46E5;
     color: #fff;
     font-size: 1.7rem;
     font-weight: var(--weight-black);
@@ -78,8 +78,8 @@ import Layout from '../components/layout.astro';
   .role-badge {
     font-size: 10px;
     font-weight: var(--weight-black);
-    color: #0E4B49;
-    background: #E3EDEC;
+    color: #4F46E5;
+    background: #EEECFE;
     padding: 3px 10px;
     border-radius: 20px;
     border: 1px solid #C9DEDC;
@@ -122,7 +122,7 @@ import Layout from '../components/layout.astro';
   }
   .status-chip--active   { background: #ECFDF5; border-color: #A7F3D0; color: #059669; }
   .status-chip--pending  { background: #FFFBEB; border-color: #FDE68A; color: #D97706; }
-  .status-chip--approved { background: #E3EDEC; border-color: #C9DEDC; color: #0E4B49; }
+  .status-chip--approved { background: #EEECFE; border-color: #C9DEDC; color: #4F46E5; }
   .status-chip--rejected { background: #FEF2F2; border-color: #FECACA; color: #DC2626; }
   .status-chip--banned   { background: #F8FAFC; border-color: #CBD5E1; color: #64748B; }
   .pf-meta { display: flex; flex-direction: column; gap: 2px; }
@@ -141,9 +141,9 @@ import Layout from '../components/layout.astro';
     left: var(--sp-4);
     width: 36px; height: 36px;
     border-radius: 50%;
-    background: #E3EDEC;
+    background: #EEECFE;
     border: 1.5px solid #C9DEDC;
-    color: #0E4B49;
+    color: #4F46E5;
     font-size: 0.95rem;
     cursor: pointer;
     display: flex;
@@ -152,7 +152,7 @@ import Layout from '../components/layout.astro';
     transition: all 0.2s;
     flex-shrink: 0;
   }
-  .pf-edit-fab:hover { background: #0E4B49; color: #fff; }
+  .pf-edit-fab:hover { background: #4F46E5; color: #fff; }
 
   /* ── Stats strip ─────────────────────────────────────────────── */
   .pf-stats {
@@ -184,9 +184,9 @@ import Layout from '../components/layout.astro';
     line-height: 1;
   }
   .pf-stat__lbl { font-size: 10px; color: var(--color-text-muted); font-weight: var(--weight-semi); }
-  .pf-stat--blue .pf-stat__num   { color: #0E4B49; }
+  .pf-stat--blue .pf-stat__num   { color: #4F46E5; }
   .pf-stat--green .pf-stat__num  { color: #059669; }
-  .pf-stat--purple .pf-stat__num { color: #0E4B49; }
+  .pf-stat--purple .pf-stat__num { color: #4F46E5; }
   .pf-stat--amber .pf-stat__num  { color: #D97706; }
 
   /* ── Tab nav ─────────────────────────────────────────────────── */
@@ -200,7 +200,7 @@ import Layout from '../components/layout.astro';
     gap: 0;
     background: #fff;
     border-radius: 16px 16px 0 0;
-    border-bottom: 2px solid #E3EDEC;
+    border-bottom: 2px solid #EEECFE;
     overflow-x: auto;
     scrollbar-width: none;
     padding: 0 var(--sp-2);
@@ -225,8 +225,8 @@ import Layout from '../components/layout.astro';
     white-space: nowrap;
     flex-shrink: 0;
   }
-  .profile-tab.is-active { color: #0E4B49; border-bottom-color: #0E4B49; }
-  .profile-tab:not(.is-active):hover { color: var(--color-text); background: #F2F7F6; }
+  .profile-tab.is-active { color: #4F46E5; border-bottom-color: #4F46E5; }
+  .profile-tab:not(.is-active):hover { color: var(--color-text); background: #F5F5FF; }
   .tab-panel { display: none; }
   .tab-panel.is-active { display: block; }
 
@@ -317,11 +317,11 @@ import Layout from '../components/layout.astro';
     transition: border-color 0.2s;
     width: 100%;
   }
-  .form-input:focus { outline: none; border-color: #0E4B49; box-shadow: 0 0 0 3px rgba(14,75,73,0.1); }
+  .form-input:focus { outline: none; border-color: #4F46E5; box-shadow: 0 0 0 3px rgba(14,75,73,0.1); }
   .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-4); }
   .btn-save {
     padding: var(--sp-3) var(--sp-6);
-    background: #0E4B49;
+    background: #4F46E5;
     color: #fff;
     border: none;
     border-radius: 10px;
@@ -336,7 +336,7 @@ import Layout from '../components/layout.astro';
     align-items: center;
     gap: var(--sp-2);
   }
-  .btn-save:hover { background: #082F2E; transform: translateY(-1px); }
+  .btn-save:hover { background: #3B31C9; transform: translateY(-1px); }
   .save-success {
     display: none;
     color: #059669;
@@ -354,8 +354,8 @@ import Layout from '../components/layout.astro';
     align-items: center;
     justify-content: space-between;
     padding: var(--sp-3) var(--sp-4);
-    background: #F2F7F6;
-    border: 1px solid #E3EDEC;
+    background: #F5F5FF;
+    border: 1px solid #EEECFE;
     border-radius: 12px;
     margin-bottom: var(--sp-3);
   }
@@ -382,7 +382,7 @@ import Layout from '../components/layout.astro';
     align-items: center;
     justify-content: space-between;
     padding: var(--sp-4) 0;
-    border-bottom: 1px solid #E3EDEC;
+    border-bottom: 1px solid #EEECFE;
   }
   .security-row:last-child { border-bottom: none; }
   .security-row__label {
@@ -398,8 +398,8 @@ import Layout from '../components/layout.astro';
   }
   .btn-outline {
     padding: var(--sp-2) var(--sp-4);
-    background: #E3EDEC;
-    color: #0E4B49;
+    background: #EEECFE;
+    color: #4F46E5;
     border: 1.5px solid #C9DEDC;
     border-radius: var(--radius);
     font-family: var(--font-body);
@@ -410,7 +410,7 @@ import Layout from '../components/layout.astro';
     text-decoration: none;
     display: inline-block;
   }
-  .btn-outline:hover { background: #0E4B49; color: #fff; }
+  .btn-outline:hover { background: #4F46E5; color: #fff; }
   .btn-danger {
     padding: var(--sp-2) var(--sp-4);
     background: #FEF2F2;
@@ -430,8 +430,8 @@ import Layout from '../components/layout.astro';
   .phone-change-panel {
     display: none;
     padding: var(--sp-4) var(--sp-5);
-    background: #F2F7F6;
-    border-top: 1px solid #E3EDEC;
+    background: #F5F5FF;
+    border-top: 1px solid #EEECFE;
   }
   .phone-change-panel.is-open { display: block; }
   .pc-step { display: none; }
@@ -452,8 +452,8 @@ import Layout from '../components/layout.astro';
     outline: none; transition: border-color 0.2s;
     caret-color: transparent;
   }
-  .pc-otp-box:focus { border-color: #0E4B49; background: #E3EDEC; }
-  .pc-otp-box.filled { border-color: #0E4B49; }
+  .pc-otp-box:focus { border-color: #4F46E5; background: #EEECFE; }
+  .pc-otp-box.filled { border-color: #4F46E5; }
   .pc-otp-box.shake { animation: shake .35s ease; border-color: #ef4444; }
   @keyframes shake { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-6px)} 60%{transform:translateX(6px)} 80%{transform:translateX(-3px)} }
   .pc-err { color: #DC2626; font-size: var(--text-xs); font-weight: var(--weight-bold); margin: var(--sp-2) 0; display: none; }
@@ -461,7 +461,7 @@ import Layout from '../components/layout.astro';
   .pc-btns { display: flex; gap: var(--sp-3); align-items: center; margin-top: var(--sp-3); flex-wrap: wrap; }
   .pc-new-phone-badge {
     display: inline-block;
-    background: #E3EDEC; color: #0E4B49;
+    background: #EEECFE; color: #4F46E5;
     padding: 2px var(--sp-2); border-radius: var(--radius);
     font-weight: var(--weight-bold); direction: ltr;
   }
@@ -481,16 +481,16 @@ import Layout from '../components/layout.astro';
     font-family: var(--font-body);
     font-size: var(--text-sm);
     font-weight: var(--weight-bold);
-    color: #0E4B49;
+    color: #4F46E5;
     cursor: pointer;
     transition: all 0.2s;
   }
-  .orders-filter.is-active { background: #0E4B49; border-color: #0E4B49; color: #fff; }
-  .orders-filter:hover:not(.is-active) { background: #E3EDEC; }
+  .orders-filter.is-active { background: #4F46E5; border-color: #4F46E5; color: #fff; }
+  .orders-filter:hover:not(.is-active) { background: #EEECFE; }
 
   .order-card {
-    background: #F2F7F6;
-    border: 1px solid #E3EDEC;
+    background: #F5F5FF;
+    border: 1px solid #EEECFE;
     border-radius: 14px;
     padding: var(--sp-4);
     display: flex;
@@ -503,7 +503,7 @@ import Layout from '../components/layout.astro';
   .order-icon {
     width: 44px; height: 44px;
     border-radius: 12px;
-    background: #E3EDEC;
+    background: #EEECFE;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -524,7 +524,7 @@ import Layout from '../components/layout.astro';
   .status--active,
   .status--on_the_way,
   .status--accepted,
-  .status--in_progress { background: #E3EDEC; color: #0E4B49; }
+  .status--in_progress { background: #EEECFE; color: #4F46E5; }
   .status--cancelled,
   .status--rejected   { background: #FEF2F2; color: #DC2626; }
   .status--preparing  { background: #FFFBEB; color: #D97706; }
@@ -533,12 +533,12 @@ import Layout from '../components/layout.astro';
   .order-items { font-size: var(--text-xs); color: var(--color-text-muted); margin-bottom: var(--sp-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .order-footer { display: flex; align-items: center; justify-content: space-between; }
   .order-date { font-size: var(--text-xs); color: var(--color-text-faint); }
-  .order-total { font-size: var(--text-base); font-weight: var(--weight-black); color: #0E4B49; }
+  .order-total { font-size: var(--text-base); font-weight: var(--weight-black); color: #4F46E5; }
 
   /* ── Rides tab ───────────────────────────────────────────────── */
   .ride-card {
-    background: #F2F7F6;
-    border: 1px solid #E3EDEC;
+    background: #F5F5FF;
+    border: 1px solid #EEECFE;
     border-radius: 14px;
     padding: var(--sp-4);
     margin-bottom: var(--sp-3);
@@ -549,10 +549,10 @@ import Layout from '../components/layout.astro';
   .ride-route { display: flex; align-items: center; gap: var(--sp-2); flex: 1; }
   .ride-route__icon { font-size: 1.1rem; }
   .ride-route__text { font-size: var(--text-sm); font-weight: var(--weight-bold); color: var(--color-text); }
-  .ride-route__arrow { color: #0E4B49; font-weight: var(--weight-black); margin: 0 var(--sp-1); }
+  .ride-route__arrow { color: #4F46E5; font-weight: var(--weight-black); margin: 0 var(--sp-1); }
   .ride-meta { display: flex; align-items: center; gap: var(--sp-3); flex-wrap: wrap; }
   .ride-meta__item { display: flex; align-items: center; gap: 4px; font-size: var(--text-xs); color: var(--color-text-muted); }
-  .ride-fare { font-size: var(--text-base); font-weight: var(--weight-black); color: #0E4B49; margin-right: auto; }
+  .ride-fare { font-size: var(--text-base); font-weight: var(--weight-black); color: #4F46E5; margin-right: auto; }
 
   /* ── Stats tab ───────────────────────────────────────────────── */
   .stats-grid {
@@ -562,13 +562,13 @@ import Layout from '../components/layout.astro';
     margin-bottom: var(--sp-5);
   }
   .stats-card {
-    background: #F2F7F6;
-    border: 1px solid #E3EDEC;
+    background: #F5F5FF;
+    border: 1px solid #EEECFE;
     border-radius: 14px;
     padding: var(--sp-4);
     text-align: center;
   }
-  .stats-card__num { font-size: var(--text-2xl); font-weight: var(--weight-black); color: #0E4B49; margin-bottom: 4px; }
+  .stats-card__num { font-size: var(--text-2xl); font-weight: var(--weight-black); color: #4F46E5; margin-bottom: 4px; }
   .stats-card__label { font-size: var(--text-xs); color: var(--color-text-muted); font-weight: var(--weight-semi); }
   .stats-card--green .stats-card__num { color: #059669; }
   .stats-card--orange .stats-card__num { color: #D97706; }
@@ -576,18 +576,18 @@ import Layout from '../components/layout.astro';
   .category-list { display: flex; flex-direction: column; gap: var(--sp-3); }
   .category-row { display: flex; align-items: center; gap: var(--sp-3); }
   .category-row__label { width: 90px; font-size: var(--text-sm); font-weight: var(--weight-semi); color: var(--color-text); flex-shrink: 0; text-align: right; }
-  .category-bar-wrap { flex: 1; height: 8px; background: #E3EDEC; border-radius: 99px; overflow: hidden; }
-  .category-bar { height: 100%; border-radius: 99px; background: #0E4B49; transition: width 0.8s cubic-bezier(.4,0,.2,1); }
+  .category-bar-wrap { flex: 1; height: 8px; background: #EEECFE; border-radius: 99px; overflow: hidden; }
+  .category-bar { height: 100%; border-radius: 99px; background: #4F46E5; transition: width 0.8s cubic-bezier(.4,0,.2,1); }
   .category-bar--green  { background: #059669; }
   .category-bar--orange { background: #D97706; }
-  .category-bar--purple { background: #0E4B49; }
+  .category-bar--purple { background: #4F46E5; }
   .category-row__count { font-size: var(--text-xs); font-weight: var(--weight-bold); color: var(--color-text-muted); width: 50px; text-align: left; }
 
   .monthly-table { width: 100%; border-collapse: collapse; }
-  .monthly-table th { padding: var(--sp-2) var(--sp-3); text-align: right; font-size: var(--text-xs); font-weight: var(--weight-bold); color: #3FA79A; background: #F2F7F6; border-bottom: 1px solid #E3EDEC; }
-  .monthly-table td { padding: var(--sp-3); text-align: right; font-size: var(--text-sm); color: var(--color-text); border-bottom: 1px solid #E3EDEC; }
+  .monthly-table th { padding: var(--sp-2) var(--sp-3); text-align: right; font-size: var(--text-xs); font-weight: var(--weight-bold); color: #3FA79A; background: #F5F5FF; border-bottom: 1px solid #EEECFE; }
+  .monthly-table td { padding: var(--sp-3); text-align: right; font-size: var(--text-sm); color: var(--color-text); border-bottom: 1px solid #EEECFE; }
   .monthly-table tr:last-child td { border-bottom: none; }
-  .monthly-table tr:hover td { background: #F2F7F6; }
+  .monthly-table tr:hover td { background: #F5F5FF; }
 
   /* ── Empty state ─────────────────────────────────────────────── */
   .empty-state { text-align: center; padding: var(--sp-12) var(--sp-6); color: var(--color-text-muted); }
@@ -601,7 +601,7 @@ import Layout from '../components/layout.astro';
     bottom: var(--sp-8);
     left: 50%;
     transform: translateX(-50%) translateY(60px);
-    background: #082F2E;
+    background: #3B31C9;
     color: #fff;
     padding: var(--sp-3) var(--sp-5);
     border-radius: 99px;
@@ -638,7 +638,7 @@ import Layout from '../components/layout.astro';
   .rating-item__stars { font-size: var(--text-sm); }
   .rating-item__date  { font-size: 10px; color: var(--color-text-faint); }
   .rating-item__comment { font-size: var(--text-xs); color: var(--color-text-muted); margin-top: 2px; }
-  .rating-item__reply { margin-top:6px; padding:6px 10px; background:#E3EDEC; border-radius:8px; font-size:var(--text-xs); color:#0E4B49; border-right:3px solid #0E4B49; }
+  .rating-item__reply { margin-top:6px; padding:6px 10px; background:#EEECFE; border-radius:8px; font-size:var(--text-xs); color:#4F46E5; border-right:3px solid #4F46E5; }
   .rating-item__reply-label { font-size:10px; color:#64748b; margin-bottom:2px; }
 </style>
 
@@ -742,7 +742,7 @@ import Layout from '../components/layout.astro';
               </div>
               <div style="display:flex;gap:var(--sp-3);align-items:center;flex-wrap:wrap">
                 <button class="btn-save" type="submit">💾 حفظ التغييرات</button>
-                <button class="btn-save" type="button" id="edit-cancel-btn" style="background:#F2F7F6;color:var(--color-text);border:1.5px solid #C9DEDC">إلغاء</button>
+                <button class="btn-save" type="button" id="edit-cancel-btn" style="background:#F5F5FF;color:var(--color-text);border:1.5px solid #C9DEDC">إلغاء</button>
                 <span class="save-success" id="save-success-msg">✅ تم الحفظ!</span>
               </div>
             </form>
@@ -857,7 +857,7 @@ import Layout from '../components/layout.astro';
                 <div class="pc-err" id="pc-err1"></div>
                 <div class="pc-btns">
                   <button class="btn-save" id="pc-send-btn" type="button">إرسال كود التحقق</button>
-                  <button class="btn-save" id="pc-cancel-btn" type="button" style="background:#F2F7F6;color:var(--color-text);border:1.5px solid #C9DEDC">إلغاء</button>
+                  <button class="btn-save" id="pc-cancel-btn" type="button" style="background:#F5F5FF;color:var(--color-text);border:1.5px solid #C9DEDC">إلغاء</button>
                 </div>
               </div>
               <div class="pc-step" id="pc-step2">
@@ -874,7 +874,7 @@ import Layout from '../components/layout.astro';
                 <div class="pc-err" id="pc-err2"></div>
                 <div class="pc-btns">
                   <button class="btn-save" id="pc-verify-btn" type="button">تأكيد التغيير</button>
-                  <button class="btn-save" id="pc-back-btn" type="button" style="background:#F2F7F6;color:var(--color-text);border:1.5px solid #C9DEDC">رجوع</button>
+                  <button class="btn-save" id="pc-back-btn" type="button" style="background:#F5F5FF;color:var(--color-text);border:1.5px solid #C9DEDC">رجوع</button>
                 </div>
               </div>
             </div>
@@ -1189,7 +1189,7 @@ import Layout from '../components/layout.astro';
     var appLabel  = $('driver-app-status-label');
     var eligDiv   = $('driver-order-eligibility');
 
-    var acctColor = { active:'#059669', pending:'#D97706', approved:'#0E4B49', rejected:'#DC2626', banned:'#64748B' };
+    var acctColor = { active:'#059669', pending:'#D97706', approved:'#4F46E5', rejected:'#DC2626', banned:'#64748B' };
     acctLabel.textContent = ACCT_STATUS_AR[acctStatus] || acctStatus || '—';
     acctLabel.style.color = acctColor[acctStatus] || 'var(--color-text)';
 
@@ -1200,9 +1200,9 @@ import Layout from '../components/layout.astro';
 
     if (!appStatus && acctStatus === 'approved') {
       appLabel.textContent = '✓ معتمد (تلقائي)';
-      appLabel.style.color = '#0E4B49';
+      appLabel.style.color = '#4F46E5';
     } else {
-      var appColor = { pending:'#D97706', approved:'#0E4B49', rejected:'#DC2626' };
+      var appColor = { pending:'#D97706', approved:'#4F46E5', rejected:'#DC2626' };
       appLabel.textContent = APP_STATUS_AR[appStatus] || (appData ? appStatus : 'لم يُرفع طلب');
       appLabel.style.color = appColor[appStatus] || 'var(--color-text-muted)';
     }

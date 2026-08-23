@@ -221,6 +221,14 @@ import PageHero from '../components/PageHero.astro';
 
   document.getElementById('mkt-search')!.addEventListener('input', render);
 
+  // Arriving from the homepage's سوق search box (?q=…) — carry the query
+  // over so the visitor doesn't have to type it twice. render() reads the
+  // input directly, so seeding it before load() is enough.
+  const initialQuery = new URLSearchParams(location.search).get('q');
+  if (initialQuery && initialQuery.trim()) {
+    (document.getElementById('mkt-search') as HTMLInputElement).value = initialQuery.trim();
+  }
+
   const catsEl = document.getElementById('mkt-cats')!;
   catsEl.innerHTML = `<button class="cat-chip is-active" data-cat=""><span class="cat-chip__icon">🗂️</span>الكل</button>` +
     CATEGORIES.map(c => `<button class="cat-chip" data-cat="${c.id}"><span class="cat-chip__icon">${c.emoji}</span>${c.label}</button>`).join('');
