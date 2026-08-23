@@ -8,7 +8,29 @@ const ICONS = {
   shake:  `<path d="M8 12 3 7l2-2 5 5"/><path d="M16 12l5-5-2-2-5 5"/><path d="M8 12l3 3a2 2 0 0 0 3 0l3-3"/><path d="m11 15-2 2a1.5 1.5 0 0 1-2-2l4-4"/>`,
   shield: `<path d="M12 3 5 6v6c0 4.6 3 8 7 9 4-1 7-4.4 7-9V6l-7-3z"/><path d="m9 12 2 2 4-4"/>`,
   chat:   `<path d="M4 5h16v11H8l-4 4V5z"/><path d="M8 9h8M8 12.5h5"/>`,
+  // ── How-it-works step icons ──
+  tap:    `<rect x="6" y="2" width="12" height="20" rx="2.5"/><path d="M10 18h4"/><path d="M12 6v4l2.5 1.5" stroke-width="1.5"/>`,
+  route:  `<circle cx="6" cy="6" r="2.5"/><circle cx="18" cy="18" r="2.5"/><path d="M8 7c3 0 3 4 6 4s3-4 6-4" stroke-dasharray="2 2.4"/>`,
+  box:    `<path d="M3 8 12 3l9 5-9 5-9-5z"/><path d="M3 8v9l9 5 9-5V8"/><path d="M12 13v9"/>`,
+  // ── Service icons ──
+  car:    `<path d="M4 16V11l2-5h12l2 5v5"/><path d="M4 16h16"/><circle cx="7.5" cy="16.5" r="1.5"/><circle cx="16.5" cy="16.5" r="1.5"/><path d="M6 11h12"/>`,
+  bag:    `<path d="M6 8h12l1 12H5L6 8z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/>`,
+  cart:   `<circle cx="9" cy="20" r="1.4"/><circle cx="17" cy="20" r="1.4"/><path d="M3 4h2l2.2 11.2a2 2 0 0 0 2 1.6h7.6a2 2 0 0 0 2-1.6L21 8H6"/>`,
 };
+
+interface Step { icon: string; title: string; desc: string; }
+const STEPS: Step[] = [
+  { icon: ICONS.tap,   title: 'اطلب من التطبيق',        desc: 'اختر مشوارك أو منتجك من التطبيق أو الموقع في ثوانٍ، وأكّد الطلب.'      },
+  { icon: ICONS.route, title: 'السائق أو المندوب في الطريق', desc: 'تابع موقعه لحظياً على الخريطة من لحظة القبول حتى الوصول إليك.' },
+  { icon: ICONS.box,   title: 'استلم طلبك',              desc: 'استلم طلبك أو اوصل لوجهتك، وقيّم تجربتك لمساعدتنا على التحسين.'        },
+];
+
+interface Service { icon: string; title: string; desc: string; href: string; }
+const SERVICES: Service[] = [
+  { icon: ICONS.car,  title: 'المشاوير',              desc: 'مشاوير داخل دمياط الجديدة وخارج المحافظة، وتوصيل من وإلى المطار.', href: '/services' },
+  { icon: ICONS.bag,  title: 'توصيل من المتاجر',       desc: 'اطلب من مطاعمك وصيدلياتك ومتاجرك المفضّلة، ويوصلها المندوب لباب بيتك.', href: '/stores'   },
+  { icon: ICONS.cart, title: 'السوق الإلكتروني',        desc: 'بيع واشترِ منتجات مستعملة من داخل دمياط بسهولة وأمان.',              href: '/marketplace' },
+];
 
 interface Value { icon: string; title: string; desc: string; }
 const VALUES: Value[] = [
@@ -99,6 +121,98 @@ const STATS = [
 
   .stats-band__value { font-family: var(--font-display); font-size: var(--text-4xl); font-weight: 800; color: #fff; line-height: 1; margin-bottom: var(--sp-2); }
   .stats-band__label { color: rgba(255,255,255,0.75); font-size: var(--text-sm); font-weight: var(--weight-semi); }
+
+  /* ── How it works (illustrated steps) ───────────────────────── */
+  .how { background: var(--color-bg-soft); }
+
+  .how__grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--sp-8);
+    max-width: var(--container);
+    margin: 0 auto;
+    counter-reset: how-step;
+  }
+
+  .how-step {
+    position: relative;
+    background: var(--color-bg);
+    border: 1.5px solid var(--color-border);
+    border-radius: var(--radius-xl);
+    padding: var(--sp-8) var(--sp-6);
+    text-align: center;
+  }
+
+  .how-step::before {
+    counter-increment: how-step;
+    content: counter(how-step);
+    position: absolute;
+    top: var(--sp-4);
+    inset-inline-start: var(--sp-5);
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: var(--text-sm);
+    color: var(--color-primary);
+    opacity: .5;
+  }
+
+  .how-step__icon {
+    width: 64px;
+    height: 64px;
+    border-radius: var(--radius-full);
+    background: var(--color-primary-light);
+    color: var(--color-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto var(--sp-5);
+  }
+  .how-step__icon svg { width: 30px; height: 30px; }
+
+  .how-step__title { font-size: var(--text-lg); font-weight: var(--weight-black); margin-bottom: var(--sp-2); }
+  .how-step__desc  { font-size: var(--text-sm); color: var(--color-text-muted); line-height: 1.7; }
+
+  /* ── Services showcase ───────────────────────────────────────── */
+  .services-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--sp-6);
+    max-width: var(--container);
+    margin: 0 auto;
+  }
+
+  .service-card {
+    display: block;
+    background: var(--color-bg);
+    border: 1.5px solid var(--color-border);
+    border-radius: var(--radius-xl);
+    padding: var(--sp-8);
+    text-decoration: none;
+    transition: border-color var(--ease), box-shadow var(--ease), transform var(--ease);
+  }
+
+  .service-card:hover {
+    border-color: var(--color-primary);
+    box-shadow: var(--shadow-primary);
+    transform: translateY(-3px);
+  }
+
+  .service-card__icon {
+    width: 56px;
+    height: 56px;
+    border-radius: var(--radius-lg);
+    background: var(--color-primary-light);
+    color: var(--color-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: var(--sp-5);
+  }
+  .service-card__icon svg { width: 26px; height: 26px; }
+
+  .service-card__title { font-size: var(--text-lg); font-weight: var(--weight-black); color: var(--color-text); margin-bottom: var(--sp-2); }
+  .service-card__desc  { font-size: var(--text-sm); color: var(--color-text-muted); line-height: 1.7; margin-bottom: var(--sp-4); }
+  .service-card__link  { font-size: var(--text-sm); font-weight: var(--weight-bold); color: var(--color-primary); }
 
   /* ── Values ──────────────────────────────────────────────── */
   .values { background: var(--color-bg-soft); }
@@ -210,6 +324,8 @@ const STATS = [
   @media (max-width: 900px) {
     .story__inner      { grid-template-columns: 1fr; gap: var(--sp-10); }
     .story__visual     { order: -1; }
+    .how__grid         { grid-template-columns: 1fr; }
+    .services-grid     { grid-template-columns: 1fr; }
     .values__grid      { grid-template-columns: 1fr 1fr; }
     .stats-band__grid  { grid-template-columns: repeat(2, 1fr); gap: var(--sp-8); }
     .stats-band__grid > div:nth-child(3) { border-inline-start: none; }
@@ -274,6 +390,43 @@ const STATS = [
           <line x1="139" y1="153" x2="165" y2="153" stroke="#C9DEDC" stroke-width="1.5"/>
           <line x1="139" y1="159" x2="168" y2="159" stroke="#C9DEDC" stroke-width="1.5"/>
         </svg>
+      </div>
+    </div>
+  </section>
+
+  <!-- How it works -->
+  <section class="section how" aria-labelledby="how-title">
+    <div class="container">
+      <SectionHeader badge="كيف تعمل" title="من الطلب إلى الاستلام" subtitle="ثلاث خطوات بسيطة لأي خدمة على وصّلها" id="how-title" />
+      <ol class="how__grid" role="list">
+        {STEPS.map(s => (
+          <li class="how-step">
+            <div class="how-step__icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" set:html={s.icon} />
+            </div>
+            <h3 class="how-step__title">{s.title}</h3>
+            <p class="how-step__desc">{s.desc}</p>
+          </li>
+        ))}
+      </ol>
+    </div>
+  </section>
+
+  <!-- Services -->
+  <section class="section" aria-labelledby="services-title">
+    <div class="container">
+      <SectionHeader badge="خدماتنا" title="كل احتياجاتك في مكان واحد" subtitle="من المشاوير للتوصيل للسوق الإلكتروني — كله جوّه وصّلها" id="services-title" />
+      <div class="services-grid">
+        {SERVICES.map(s => (
+          <a class="service-card" href={s.href}>
+            <div class="service-card__icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" set:html={s.icon} />
+            </div>
+            <h3 class="service-card__title">{s.title}</h3>
+            <p class="service-card__desc">{s.desc}</p>
+            <span class="service-card__link">تصفّح الخدمة ←</span>
+          </a>
+        ))}
       </div>
     </div>
   </section>
