@@ -93,6 +93,27 @@ jobs:
           path: flutter_app/build/app/outputs/flutter-apk/app-driver-release.apk
           retention-days: 30
 
+      # .aab (Android App Bundle) is the format Google Play requires for
+      # upload — the .apk above is only for direct/sideload installs (the
+      # website download + adb testing). Same flavor/signing config, just a
+      # different `flutter build` target; kept as a downloadable artifact
+      # only (never auto-published anywhere) since submitting it to Play
+      # Console is a manual, one-time-per-release human action.
+      - name: Build driver App Bundle (.aab)
+        env:
+          WSLHA_KEYSTORE_PATH: ${{ secrets.WSLHA_KEYSTORE_BASE64 != '' && 'release.keystore' || '' }}
+          WSLHA_KEYSTORE_PASSWORD: ${{ secrets.WSLHA_KEYSTORE_PASSWORD }}
+          WSLHA_KEY_ALIAS: ${{ secrets.WSLHA_KEY_ALIAS }}
+          WSLHA_KEY_PASSWORD: ${{ secrets.WSLHA_KEY_PASSWORD }}
+        run: flutter build appbundle --release --flavor driver -t lib/main_driver.dart
+
+      - name: Upload driver AAB
+        uses: actions/upload-artifact@v4
+        with:
+          name: wslha-driver-aab
+          path: flutter_app/build/app/outputs/bundle/driverRelease/app-driver-release.aab
+          retention-days: 90
+
       - name: Build customer APK
         env:
           WSLHA_KEYSTORE_PATH: ${{ secrets.WSLHA_KEYSTORE_BASE64 != '' && 'release.keystore' || '' }}
@@ -108,6 +129,21 @@ jobs:
           path: flutter_app/build/app/outputs/flutter-apk/app-customer-release.apk
           retention-days: 30
 
+      - name: Build customer App Bundle (.aab)
+        env:
+          WSLHA_KEYSTORE_PATH: ${{ secrets.WSLHA_KEYSTORE_BASE64 != '' && 'release.keystore' || '' }}
+          WSLHA_KEYSTORE_PASSWORD: ${{ secrets.WSLHA_KEYSTORE_PASSWORD }}
+          WSLHA_KEY_ALIAS: ${{ secrets.WSLHA_KEY_ALIAS }}
+          WSLHA_KEY_PASSWORD: ${{ secrets.WSLHA_KEY_PASSWORD }}
+        run: flutter build appbundle --release --flavor customer -t lib/main_customer.dart
+
+      - name: Upload customer AAB
+        uses: actions/upload-artifact@v4
+        with:
+          name: wslha-customer-aab
+          path: flutter_app/build/app/outputs/bundle/customerRelease/app-customer-release.aab
+          retention-days: 90
+
       - name: Build merchant APK
         env:
           WSLHA_KEYSTORE_PATH: ${{ secrets.WSLHA_KEYSTORE_BASE64 != '' && 'release.keystore' || '' }}
@@ -122,6 +158,21 @@ jobs:
           name: wslha-merchant-apk
           path: flutter_app/build/app/outputs/flutter-apk/app-merchant-release.apk
           retention-days: 30
+
+      - name: Build merchant App Bundle (.aab)
+        env:
+          WSLHA_KEYSTORE_PATH: ${{ secrets.WSLHA_KEYSTORE_BASE64 != '' && 'release.keystore' || '' }}
+          WSLHA_KEYSTORE_PASSWORD: ${{ secrets.WSLHA_KEYSTORE_PASSWORD }}
+          WSLHA_KEY_ALIAS: ${{ secrets.WSLHA_KEY_ALIAS }}
+          WSLHA_KEY_PASSWORD: ${{ secrets.WSLHA_KEY_PASSWORD }}
+        run: flutter build appbundle --release --flavor merchant -t lib/main_merchant.dart
+
+      - name: Upload merchant AAB
+        uses: actions/upload-artifact@v4
+        with:
+          name: wslha-merchant-aab
+          path: flutter_app/build/app/outputs/bundle/merchantRelease/app-merchant-release.aab
+          retention-days: 90
 
       - name: Clean up keystore
         if: always()
