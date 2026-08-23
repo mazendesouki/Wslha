@@ -11,16 +11,19 @@ import Layout from '../../components/layout.astro';
      styling at all in production (raw stacked <img> tags, unstyled
      badges) — same root cause already fixed the same way on admin.astro. */
   .item-page { max-width: 900px; margin: 0 auto; padding: var(--sp-8) var(--sp-6) var(--sp-20); }
-  .item-grid { display: grid; grid-template-columns: 1.1fr 1fr; gap: var(--sp-8); }
+  .item-grid { display: grid; grid-template-columns: 1.1fr 1fr; gap: var(--sp-8); align-items: start; }
   @media (max-width: 780px) { .item-grid { grid-template-columns: 1fr; } }
 
-  .gallery { position: relative; border-radius: var(--radius-xl); overflow: hidden; background: var(--color-primary-light); }
+  /* object-fit:contain (not cover) — shows each photo at its real
+     proportions in full, never cropping it, at the cost of letterbox
+     bars on photos whose aspect ratio differs from the slide box. */
+  .gallery { position: relative; border-radius: var(--radius-xl); overflow: hidden; background: var(--color-bg-soft); }
   .gallery__track {
     display: flex; overflow-x: auto; scroll-snap-type: x mandatory;
     scrollbar-width: none; -webkit-overflow-scrolling: touch;
   }
   .gallery__track::-webkit-scrollbar { display: none; }
-  .gallery__slide { flex: 0 0 100%; width: 100%; aspect-ratio: 4/3; object-fit: cover; scroll-snap-align: center; display: block; }
+  .gallery__slide { flex: 0 0 100%; width: 100%; aspect-ratio: 4/3; object-fit: contain; scroll-snap-align: center; display: block; background: var(--color-bg-soft); }
   .gallery__nav {
     position: absolute; top: 50%; transform: translateY(-50%);
     width: 38px; height: 38px; border-radius: 50%; z-index: 2;
