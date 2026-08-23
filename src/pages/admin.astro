@@ -87,11 +87,15 @@
     .kpi{position:relative;overflow:hidden;background:var(--card);border:1px solid var(--bdr);border-radius:var(--radius-lg);padding:1.2rem 1.3rem;box-shadow:var(--sh);display:flex;flex-direction:column;gap:.7rem;transition:transform .18s,box-shadow .18s}
     .kpi:hover{transform:translateY(-3px);box-shadow:var(--sh-md)}
     .kpi__row{display:flex;align-items:center;justify-content:space-between}
-    .kpi__icon-wrap{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0}
-    .kpi--blue .kpi__icon-wrap{background:var(--pr-l);color:var(--pr)}
-    .kpi--green .kpi__icon-wrap{background:var(--green-l);color:var(--green)}
-    .kpi--orange .kpi__icon-wrap{background:var(--orange-l);color:var(--orange)}
-    .kpi--red .kpi__icon-wrap{background:var(--red-l);color:var(--red)}
+    /* Solid color chip (not a pale tint) — emoji glyphs render with their
+       own fixed multicolor look regardless of CSS `color`, so the only way
+       to make each KPI's category actually read as color-coded at a glance
+       is a bold chip behind it, not a wash that blends into the card. */
+    .kpi__icon-wrap{width:42px;height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.2rem;flex-shrink:0;box-shadow:0 6px 14px -6px rgba(9,30,27,.35)}
+    .kpi--blue .kpi__icon-wrap{background:linear-gradient(150deg,var(--pr3),var(--pr))}
+    .kpi--green .kpi__icon-wrap{background:linear-gradient(150deg,#38B378,var(--green))}
+    .kpi--orange .kpi__icon-wrap{background:linear-gradient(150deg,#D89A3E,var(--orange))}
+    .kpi--red .kpi__icon-wrap{background:linear-gradient(150deg,#DA6156,var(--red))}
     .kpi__trend{font-size:.66rem;font-weight:800;padding:2px 8px;border-radius:99px;white-space:nowrap;font-family:var(--font-num)}
     .kpi__trend.up{background:var(--green-l);color:var(--green)}
     .kpi__trend.down{background:var(--red-l);color:var(--red)}
