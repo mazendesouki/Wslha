@@ -15,7 +15,15 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          # Astro's SSG build executes page frontmatter server-side, and
+          # driver-apply.astro's import chain (src/data/airports.ts →
+          # src/utils/supabaseClient.ts) creates a full Supabase client
+          # (with Realtime) at module load time. @supabase/realtime-js
+          # needs a native `WebSocket` global to construct its client —
+          # Node 20 doesn't have one and throws synchronously, crashing
+          # `astro build` outright (every deploy on Node 20 has been
+          # failing at this exact spot). Node 22+ has WebSocket built in.
+          node-version: '22'
           cache: 'npm'
 
       - name: Install dependencies
