@@ -85,7 +85,13 @@
 html {
   font-family: var(--font-body);
   color: var(--color-text);
-  background: var(--color-bg);
+  /* Dark canvas behind the site's white section/card surfaces (which
+     keep using --color-bg unchanged) — same "dark page, light content"
+     treatment already applied to the admin dashboard. Every page was
+     audited and given an explicit background on whatever previously
+     had none, so this only shows through the margins/gaps around
+     already-opaque sections and cards, never behind bare text. */
+  background: var(--color-dark-bg);
   font-size: 16px;
   line-height: 1.6;
   scroll-behavior: smooth;
@@ -95,6 +101,7 @@ body {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
+  background: var(--color-dark-bg);
   -webkit-font-smoothing: antialiased;
   /* Safety net: never allow stray decorative/floating elements to
      create a horizontal scrollbar on small screens. */

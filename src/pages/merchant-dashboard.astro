@@ -27,6 +27,7 @@ import Layout from '../components/layout.astro';
   .gate {
     min-height: 60vh; display: flex; align-items: center; justify-content: center;
     flex-direction: column; gap: var(--sp-5); text-align: center;
+    background: var(--color-bg); border-radius: var(--radius-xl);
   }
   .gate__icon  { font-size: 4rem; }
   .gate__title { font-size: var(--text-2xl); font-weight: var(--weight-black); }
@@ -50,6 +51,8 @@ import Layout from '../components/layout.astro';
   .dash-header {
     display: flex; align-items: center; justify-content: space-between;
     margin-bottom: var(--sp-6); flex-wrap: wrap; gap: var(--sp-4);
+    background: var(--color-bg); border-radius: var(--radius-xl);
+    padding: var(--sp-5); box-shadow: var(--shadow-sm);
   }
   .dash-header__store { display: flex; align-items: center; gap: var(--sp-4); }
   .dash-header__emoji { font-size: 3rem; }
