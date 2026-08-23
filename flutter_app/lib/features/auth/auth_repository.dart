@@ -132,11 +132,19 @@ class AuthRepository {
     } catch (_) {
       body = res.body.toLowerCase();
     }
-    if (body.contains('national_id')) return 'هذا الرقم القومي مسجّل بالفعل.';
+    // National ID collisions don't reach the plain unique-index message at
+    // all — guard_national_id_unique() (NATIONALIDUNIQUEMIGRATION.sql)
+    // intercepts the insert first and raises this exact Arabic text instead
+    // (so the same guard's error reads consistently across accounts/
+    // driver_applications/merchant_applications), which the old English-
+    // only substring check below never matched.
+    if (body.contains('الرقم القومي') || body.contains('national_id')) {
+      return 'هذا الرقم القومي مسجّل بالفعل.';
+    }
     if (body.contains('phone')) return 'هذا الرقم مسجّل بالفعل — سجّل الدخول بدلاً من ذلك.';
     if (body.contains('username')) return 'اسم المستخدم محجوز، اختر اسماً آخر.';
     if (body.contains('email')) return 'هذا البريد الإلكتروني مسجّل بالفعل.';
-    return 'حدث تعارض أثناء الإنشاء — قد يكون أحد البيانات مسجّلاً بالفعل.';
+    return 'حدث تعارض أثناء الإنشاء — قد يكون أحد البيانات مسجّلاً بالفعل. (${res.statusCode}: ${res.body.length > 200 ? res.body.substring(0, 200) : res.body})';
   }
 
   /// Ported from driver.astro's doRegister()/merchant-apply.astro's
