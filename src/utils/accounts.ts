@@ -46,7 +46,11 @@ export async function fieldExists(
   } catch { return 'error'; }
 }
 
-async function sbInsert(acc: Account): Promise<true | false | 'error'> {
+// Returns true on success, a specific Arabic message naming the actual
+// conflicting field on a unique-constraint failure, or 'error' when
+// Supabase itself couldn't be reached (the only case addAccount() below
+// falls back to localStorage for).
+async function sbInsert(acc: Account): Promise<true | string> {
   try {
     const { createdAt, ...rest } = acc;
     const payload = {
@@ -60,13 +64,29 @@ async function sbInsert(acc: Account): Promise<true | false | 'error'> {
       headers: { ...SB_H, Prefer: 'return=minimal' },
       body:    JSON.stringify(payload),
     });
-    if (res.status === 409) return false; // unique constraint violation
-    if (!res.ok) {
-      // Log for debugging without crashing
-      res.text().then(t => console.warn('[accounts] sbInsert failed', res.status, t)).catch(() => {});
-      return 'error';
+    if (res.ok) return true;
+
+    let bodyText = '';
+    try {
+      const j = await res.json();
+      bodyText = `${j.message ?? ''} ${j.details ?? ''}`;
+    } catch {
+      try { bodyText = await res.text(); } catch {}
     }
-    return true;
+    const lower = bodyText.toLowerCase();
+    // National ID collisions are intercepted by guard_national_id_unique()
+    // (NATIONALIDUNIQUEMIGRATION.sql) before the plain unique-index message
+    // would ever fire, raising this fixed Arabic string instead of one
+    // containing the literal column name.
+    if (bodyText.includes('الرقم القومي') || lower.includes('national_id')) {
+      return 'هذا الرقم القومي مسجّل بالفعل.';
+    }
+    if (lower.includes('phone'))    return 'هذا الرقم مسجّل بالفعل — سجّل الدخول بدلاً من ذلك.';
+    if (lower.includes('username')) return 'اسم المستخدم محجوز، اختر اسماً آخر.';
+    if (lower.includes('email'))    return 'هذا البريد الإلكتروني مسجّل بالفعل.';
+    if (res.status === 409) return 'حدث تعارض أثناء الإنشاء — قد يكون أحد البيانات مسجّلاً بالفعل.';
+    console.warn('[accounts] sbInsert failed', res.status, bodyText);
+    return 'error';
   } catch (e) {
     console.warn('[accounts] sbInsert exception', e);
     return 'error';
@@ -85,9 +105,11 @@ function lsSave(accounts: Account[]): void {
 
 // ── Public API ──
 
+// Returns true on success, or a specific Arabic message describing why
+// creation failed (naming the conflicting field when known).
 export async function addAccount(
   acc: Omit<Account, 'phone'> & { phone: string }
-): Promise<boolean> {
+): Promise<true | string> {
   const phone  = normalizeEgyptianPhone(acc.phone);
   const record: Account = { ...acc, phone };
 
@@ -96,7 +118,9 @@ export async function addAccount(
 
   // Supabase unavailable → localStorage (phone-only uniqueness)
   const accounts = lsAll();
-  if (accounts.some(a => a.phone === phone)) return false;
+  if (accounts.some(a => a.phone === phone)) {
+    return 'هذا الرقم مسجّل بالفعل — سجّل الدخول بدلاً من ذلك.';
+  }
   lsSave([...accounts, record]);
   return true;
 }

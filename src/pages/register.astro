@@ -632,8 +632,8 @@ const CITIES = ['دمياط الجديدة', 'دمياط', 'كفر سعد', 'ف�
       createdAt: new Date().toISOString(),
     });
 
-    if (!created) {
-      showError('حدث تعارض أثناء الإنشاء — قد يكون أحد البيانات مسجّلاً بالفعل.');
+    if (created !== true) {
+      showError(created);
       return;
     }
 
