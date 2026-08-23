@@ -1,0 +1,747 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>وصّلها — الرئيسية</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=Tajawal:wght@500;700;800&display=swap">
+<link rel="stylesheet" href="./tailwind.css">
+</head>
+<body class="pb-20 md:pb-0">
+
+<a href="#main" class="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:start-3 focus:z-[60] focus:rounded-xl focus:bg-[#4f46e5] focus:px-4 focus:py-2 focus:text-white">تخطَّ إلى المحتوى</a>
+
+<!-- ════════ Sticky navigation ════════ -->
+<header class="sticky top-0 z-50 glass border-b hairline">
+  <div class="mx-auto flex h-16 max-w-[1200px] items-center gap-2 px-4 sm:gap-3 sm:px-6">
+
+    <a href="#" class="flex shrink-0 items-center gap-2" aria-label="وصّلها — الصفحة الرئيسية">
+      <span class="grid h-9 w-9 place-items-center rounded-xl bg-gradient-to-tl from-[#7c3aed] to-[#4f46e5] shadow-[0_6px_16px_-6px_rgba(79,70,229,.9)]">
+        <svg viewBox="0 0 24 24" class="h-5 w-5" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 15.5h2.2"/><path d="M4 11h4"/><path d="M6.6 18.6h9.4"/><path d="M9 8h7.6l2.6 3.4H21v4.2h-2"/><circle cx="17.4" cy="18.4" r="2.1"/><circle cx="9" cy="18.4" r="2.1"/></svg>
+      </span>
+      <span class="font-display text-xl font-extrabold tracking-tight text-strong">وصّلها</span>
+    </a>
+
+    <!-- universal search -->
+    <form class="relative hidden min-w-0 flex-1 md:block" role="search" onsubmit="return false">
+      <label for="nav-search" class="sr-only">ابحث عن منتج أو متجر أو خدمة</label>
+      <svg class="pointer-events-none absolute inset-y-0 start-3.5 my-auto h-4 w-4 text-faint" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.2-3.2"/></svg>
+      <input id="nav-search" type="search" placeholder="ابحث عن منتج، متجر، أو إعلان مستعمل…"
+        class="h-11 w-full rounded-2xl border hairline surface-sunken ps-10 pe-16 text-[15px] text-strong outline-none transition placeholder:text-[var(--text-faint)] focus:border-[var(--ink-brand)] focus:bg-[var(--surface)] focus:shadow-[0_0_0_4px_var(--wash-brand)]">
+      <kbd class="pointer-events-none absolute inset-y-0 end-3 my-auto hidden h-6 items-center rounded-lg border hairline px-2 font-mono text-[11px] text-faint lg:flex">⌘K</kbd>
+    </form>
+
+    <!-- location -->
+    <button type="button" class="hidden shrink-0 items-center gap-2 rounded-2xl border hairline px-3 py-2.5 text-[13px] font-medium text-strong transition hover:border-[var(--ink-brand)] hover:text-[var(--ink-brand)] sm:flex">
+      <svg class="h-4 w-4 text-[var(--ink-brand)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s7-6.1 7-11.5A7 7 0 0 0 5 9.5C5 14.9 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.4"/></svg>
+      دمياط الجديدة
+      <svg class="h-3.5 w-3.5 text-faint" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+    </button>
+
+    <div class="ms-auto flex shrink-0 items-center gap-1.5 md:ms-0">
+      <button type="button" class="grid h-10 w-10 place-items-center rounded-xl text-strong transition hover:bg-[var(--wash-brand)] hover:text-[var(--ink-brand)] md:hidden" aria-label="بحث">
+        <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.2-3.2"/></svg>
+      </button>
+      <button type="button" class="relative grid h-10 w-10 place-items-center rounded-xl text-strong transition hover:bg-[var(--wash-brand)] hover:text-[var(--ink-brand)]" aria-label="سلة المشتريات — 3 عناصر">
+        <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M6 7h13l-1.4 8.6a2 2 0 0 1-2 1.7H9.3a2 2 0 0 1-2-1.6L5.2 4.6a1 1 0 0 0-1-.8H3"/><circle cx="9.5" cy="20" r="1.4"/><circle cx="16.5" cy="20" r="1.4"/></svg>
+        <span class="absolute end-1.5 top-1.5 grid h-4 min-w-4 place-items-center rounded-full bg-[var(--btn-suq-bg)] px-1 font-mono text-[10px] font-semibold text-[var(--btn-suq-fg)]">3</span>
+      </button>
+      <button type="button" class="flex items-center gap-2 rounded-2xl border hairline p-1 ps-3 transition hover:border-[var(--ink-brand)]" aria-label="الحساب الشخصي">
+        <span class="hidden text-[13px] font-medium text-strong lg:block">حسابي</span>
+        <span class="grid h-8 w-8 place-items-center rounded-xl bg-[var(--wash-brand)] font-display text-sm font-bold text-[var(--ink-brand)]">م</span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<main id="main">
+
+<!-- ════════ Hero ════════ -->
+<section class="relative overflow-hidden">
+  <div class="aurora absolute inset-0 -z-10"></div>
+  <div class="grid-field absolute inset-0 -z-10 [mask-image:radial-gradient(60rem_32rem_at_50%_0%,#000,transparent_75%)]"></div>
+
+  <div class="mx-auto max-w-[1200px] px-4 pb-14 pt-14 sm:px-6 sm:pb-20 sm:pt-20">
+    <div class="mx-auto max-w-3xl text-center">
+      <span class="inline-flex items-center gap-2 rounded-full border hairline glass-strong px-3.5 py-1.5 text-[13px] font-medium text-strong">
+        <span class="relative flex h-2 w-2">
+          <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-[var(--ink-mint)] opacity-70"></span>
+          <span class="relative inline-flex h-2 w-2 rounded-full bg-[var(--ink-mint)]"></span>
+        </span>
+        47 مندوبًا متاحين الآن في دمياط الجديدة
+      </span>
+
+      <h1 class="mt-6 font-display text-[2.15rem] font-extrabold leading-[1.12] tracking-tight text-strong sm:text-6xl sm:leading-[1.08]">
+        وصّل، تسوّق، وبيع
+        <span class="block bg-gradient-to-l from-[#7c3aed] via-[#4f46e5] to-[#0ea672] bg-clip-text text-transparent">من مكان واحد</span>
+      </h1>
+      <p class="mx-auto mt-5 max-w-[52ch] text-[17px] leading-8 text-body">
+        منصة واحدة تجمع التوصيل الذكي، متاجر مدينتك، وسوق المستعمل — بسعر معروف قبل الطلب وتتبّع لحظي حتى الباب.
+      </p>
+    </div>
+
+    <!-- unified search block -->
+    <div class="mx-auto mt-10 max-w-4xl rounded-[1.75rem] border hairline glass-strong p-2.5 shadow-[var(--shadow-lift)]">
+      <div class="flex gap-1 rounded-2xl surface-sunken p-1" role="tablist" aria-label="اختر الخدمة">
+        <button role="tab" id="tab-delivery" aria-controls="panel-delivery" aria-selected="true" data-tab="delivery"
+          class="tab-btn flex flex-1 items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-[13px] font-semibold transition sm:text-sm">
+          <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 8h7.6l2.6 3.4H21v4.2h-2"/><path d="M3 15.5h2.2M4 11h4M6.6 18.6h9.4"/><circle cx="17.4" cy="18.4" r="2.1"/><circle cx="9" cy="18.4" r="2.1"/></svg>
+          <span class="sm:hidden">توصيل</span><span class="hidden sm:inline">توصيل ذكي</span>
+        </button>
+        <button role="tab" id="tab-stores" aria-controls="panel-stores" aria-selected="false" data-tab="stores"
+          class="tab-btn flex flex-1 items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-[13px] font-semibold transition sm:text-sm">
+          <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8.5 5.5 4h13L20 8.5"/><path d="M4 8.5v11a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-11"/><path d="M9 20.5v-6a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v6"/></svg>
+          المتاجر
+        </button>
+        <button role="tab" id="tab-suq" aria-controls="panel-suq" aria-selected="false" data-tab="suq"
+          class="tab-btn flex flex-1 items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-[13px] font-semibold transition sm:text-sm">
+          <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11.5 3.5h6a1 1 0 0 1 1 1v6l-8 8-7-7 8-8z"/><circle cx="15" cy="8" r="1.2" fill="currentColor" stroke="none"/></svg>
+          <span class="sm:hidden">السوق</span><span class="hidden sm:inline">سوق المستعمل</span>
+        </button>
+      </div>
+
+      <!-- panel: delivery -->
+      <div id="panel-delivery" role="tabpanel" aria-labelledby="tab-delivery" class="tab-panel mt-2.5 grid gap-2 p-1 sm:grid-cols-[1fr_1fr_auto]">
+        <label class="flex items-center gap-3 rounded-2xl border hairline surface-raised px-4 py-3 transition focus-within:border-[var(--ink-brand)] focus-within:shadow-[0_0_0_4px_var(--wash-brand)]">
+          <span class="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-[var(--wash-brand)]"><span class="h-2 w-2 rounded-full bg-[var(--ink-brand)]"></span></span>
+          <span class="min-w-0 flex-1">
+            <span class="block text-[11px] font-medium text-faint">من</span>
+            <input type="text" value="شارع الجامعة، الحي الأول" class="w-full bg-transparent text-[15px] font-medium text-strong outline-none">
+          </span>
+        </label>
+        <label class="flex items-center gap-3 rounded-2xl border hairline surface-raised px-4 py-3 transition focus-within:border-[var(--ink-brand)] focus-within:shadow-[0_0_0_4px_var(--wash-brand)]">
+          <span class="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-[var(--wash-mint)]"><svg class="h-4 w-4 text-[var(--ink-mint)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s7-6.1 7-11.5A7 7 0 0 0 5 9.5C5 14.9 12 21 12 21z"/></svg></span>
+          <span class="min-w-0 flex-1">
+            <span class="block text-[11px] font-medium text-faint">إلى</span>
+            <input type="text" placeholder="أدخل عنوان الوصول" class="w-full bg-transparent text-[15px] font-medium text-strong outline-none placeholder:font-normal placeholder:text-[var(--text-faint)]">
+          </span>
+        </label>
+        <button type="button" class="h-full rounded-2xl bg-gradient-to-tl from-[#3b31c9] to-[#6d3aed] px-7 py-3.5 text-[15px] font-bold text-white shadow-[0_10px_28px_-12px_rgba(79,70,229,.95)] transition hover:brightness-110 active:scale-[.98]">
+          احسب السعر
+        </button>
+      </div>
+
+      <!-- panel: stores -->
+      <div id="panel-stores" role="tabpanel" aria-labelledby="tab-stores" hidden class="tab-panel mt-2.5 grid gap-2 p-1 sm:grid-cols-[1fr_auto_auto]">
+        <label class="flex items-center gap-3 rounded-2xl border hairline surface-raised px-4 py-3 transition focus-within:border-[var(--ink-mint)] focus-within:shadow-[0_0_0_4px_var(--wash-mint)]">
+          <svg class="h-4.5 w-4.5 shrink-0 text-faint" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.2-3.2"/></svg>
+          <input type="text" placeholder="ابحث عن مطعم، صيدلية، أو منتج…" class="w-full bg-transparent text-[15px] font-medium text-strong outline-none placeholder:font-normal placeholder:text-[var(--text-faint)]">
+        </label>
+        <select class="rounded-2xl border hairline surface-raised px-4 py-3 text-[15px] font-medium text-strong outline-none">
+          <option>كل الأقسام</option><option>مطاعم</option><option>سوبر ماركت</option><option>صيدليات</option><option>مخابز وحلويات</option>
+        </select>
+        <button type="button" class="rounded-2xl bg-[var(--btn-mint-bg)] px-7 py-3.5 text-[15px] font-bold text-[var(--btn-mint-fg)] shadow-[0_10px_28px_-12px_rgba(14,166,114,.95)] transition hover:brightness-110 active:scale-[.98]">تصفّح</button>
+      </div>
+
+      <!-- panel: suq -->
+      <div id="panel-suq" role="tabpanel" aria-labelledby="tab-suq" hidden class="tab-panel mt-2.5 grid gap-2 p-1 sm:grid-cols-[1fr_auto_auto]">
+        <label class="flex items-center gap-3 rounded-2xl border hairline surface-raised px-4 py-3 transition focus-within:border-[var(--ink-suq)] focus-within:shadow-[0_0_0_4px_var(--wash-suq)]">
+          <svg class="h-4.5 w-4.5 shrink-0 text-faint" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.2-3.2"/></svg>
+          <input type="text" placeholder="موبايل، أثاث، عجلة أطفال…" class="w-full bg-transparent text-[15px] font-medium text-strong outline-none placeholder:font-normal placeholder:text-[var(--text-faint)]">
+        </label>
+        <select class="rounded-2xl border hairline surface-raised px-4 py-3 text-[15px] font-medium text-strong outline-none">
+          <option>كل الحالات</option><option>كالجديد</option><option>ممتازة</option><option>جيدة</option>
+        </select>
+        <button type="button" class="rounded-2xl bg-[var(--btn-suq-bg)] px-7 py-3.5 text-[15px] font-bold text-[var(--btn-suq-fg)] shadow-[0_10px_28px_-12px_rgba(217,119,6,.95)] transition hover:brightness-110 active:scale-[.98]">ابحث</button>
+      </div>
+    </div>
+
+    <!-- quick action cards -->
+    <div class="mt-6 grid gap-4 sm:grid-cols-3">
+      <a href="#delivery" class="pillar-brand lift group rounded-[1.5rem] border hairline surface-raised p-5 shadow-[var(--shadow-soft)] hover:border-[var(--pillar)] hover:shadow-[var(--shadow-lift)]">
+        <span class="grid h-11 w-11 place-items-center rounded-2xl bg-[var(--pillar-wash)] text-[var(--pillar)]">
+          <svg class="h-5.5 w-5.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M9 8h7.6l2.6 3.4H21v4.2h-2"/><path d="M3 15.5h2.2M4 11h4M6.6 18.6h9.4"/><circle cx="17.4" cy="18.4" r="2.1"/><circle cx="9" cy="18.4" r="2.1"/></svg>
+        </span>
+        <h2 class="mt-4 text-lg font-bold">توصيل ذكي</h2>
+        <p class="mt-1.5 text-sm leading-6 text-body">مندوب أقرب لك خلال دقائق، بسعر ثابت يظهر قبل التأكيد.</p>
+        <span class="mt-4 inline-flex items-center gap-1.5 text-[13px] font-bold text-[var(--pillar)]">
+          اطلب الآن <span class="transition-transform group-hover:-translate-x-1">←</span>
+        </span>
+      </a>
+
+      <a href="#stores" class="pillar-mint lift group rounded-[1.5rem] border hairline surface-raised p-5 shadow-[var(--shadow-soft)] hover:border-[var(--pillar)] hover:shadow-[var(--shadow-lift)]">
+        <span class="grid h-11 w-11 place-items-center rounded-2xl bg-[var(--pillar-wash)] text-[var(--pillar)]">
+          <svg class="h-5.5 w-5.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8.5 5.5 4h13L20 8.5"/><path d="M4 8.5v11a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-11"/><path d="M9 20.5v-6a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v6"/></svg>
+        </span>
+        <h2 class="mt-4 text-lg font-bold">متاجر المدينة</h2>
+        <p class="mt-1.5 text-sm leading-6 text-body">140+ متجرًا موثوقًا في دمياط — أسعارهم الحقيقية، بدون زيادة.</p>
+        <span class="mt-4 inline-flex items-center gap-1.5 text-[13px] font-bold text-[var(--pillar)]">
+          تسوّق الآن <span class="transition-transform group-hover:-translate-x-1">←</span>
+        </span>
+      </a>
+
+      <a href="#suq" class="pillar-suq lift group rounded-[1.5rem] border hairline surface-raised p-5 shadow-[var(--shadow-soft)] hover:border-[var(--pillar)] hover:shadow-[var(--shadow-lift)]">
+        <span class="grid h-11 w-11 place-items-center rounded-2xl bg-[var(--pillar-wash)] text-[var(--pillar)]">
+          <svg class="h-5.5 w-5.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M11.5 3.5h6a1 1 0 0 1 1 1v6l-8 8-7-7 8-8z"/><circle cx="15" cy="8" r="1.2" fill="currentColor" stroke="none"/></svg>
+        </span>
+        <h2 class="mt-4 text-lg font-bold">سوق المستعمل</h2>
+        <p class="mt-1.5 text-sm leading-6 text-body">بيع واشترِ من جيرانك — نشر مجاني وتسليم عن طريق مندوبنا.</p>
+        <span class="mt-4 inline-flex items-center gap-1.5 text-[13px] font-bold text-[var(--pillar)]">
+          ادخل السوق <span class="transition-transform group-hover:-translate-x-1">←</span>
+        </span>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ════════ Smart delivery ════════ -->
+<section id="delivery" class="scroll-mt-20 border-t hairline-soft surface-sunken">
+  <div class="mx-auto max-w-[1200px] px-4 py-16 sm:px-6 sm:py-24">
+
+    <div class="reveal flex flex-wrap items-end justify-between gap-4">
+      <div>
+        <span class="text-[13px] font-bold uppercase tracking-[.14em] text-[var(--ink-brand)]">التوصيل الذكي</span>
+        <h2 class="mt-2 text-3xl font-extrabold tracking-tight sm:text-4xl">اعرف السعر قبل ما تطلب</h2>
+        <p class="mt-3 max-w-[54ch] text-[15px] leading-7 text-body">
+          نحسب التسعيرة من المسافة ونوع المركبة فقط — بدون زيادات وقت الذروة، وتتابع المندوب على الخريطة لحظة بلحظة.
+        </p>
+      </div>
+      <a href="#" class="rounded-2xl border hairline surface-raised px-5 py-3 text-sm font-bold text-strong transition hover:border-[var(--ink-brand)] hover:text-[var(--ink-brand)]">تتبّع طلب حالي</a>
+    </div>
+
+    <div class="mt-9 grid gap-4 lg:grid-cols-[1.35fr_1fr]">
+
+      <!-- live tracking -->
+      <div class="reveal relative overflow-hidden rounded-[1.75rem] border hairline surface-raised shadow-[var(--shadow-soft)]">
+        <div class="grid-field absolute inset-0"></div>
+        <svg class="absolute inset-0 h-full w-full" viewBox="0 0 640 400" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+          <path d="M-20 270 H170 L240 190 H370 L430 110 H660" fill="none" stroke="var(--hairline)" stroke-width="26" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M205 420 V270 L275 190 V30" fill="none" stroke="var(--hairline)" stroke-width="18" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M395 420 V120" fill="none" stroke="var(--hairline)" stroke-width="18" stroke-linecap="round"/>
+          <path id="route" d="M205 300 L205 215 L350 215 L350 130 L430 130" fill="none" stroke="url(#routeGrad)" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="7 9"/>
+          <defs>
+            <linearGradient id="routeGrad" x1="1" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#7c3aed"/><stop offset="100%" stop-color="#0ea672"/>
+            </linearGradient>
+          </defs>
+          <circle cx="205" cy="300" r="9" fill="#7c3aed"/><circle cx="205" cy="300" r="16" fill="#7c3aed" opacity=".18"/>
+          <circle cx="430" cy="130" r="9" fill="#0ea672"/><circle cx="430" cy="130" r="16" fill="#0ea672" opacity=".18"/>
+          <g id="courier"><circle r="13" fill="#4f46e5"/><circle r="21" fill="#4f46e5" opacity=".16"/>
+            <path d="M-5 1 h4 l2-4 h4" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            <animateMotion dur="9s" repeatCount="indefinite" rotate="0" keyPoints="0;1" keyTimes="0;1" calcMode="linear">
+              <mpath href="#route"/>
+            </animateMotion>
+          </g>
+        </svg>
+
+        <div class="relative flex h-full min-h-[380px] flex-col justify-between p-5">
+          <div class="flex flex-wrap items-center gap-2">
+            <span class="inline-flex items-center gap-2 rounded-full glass-strong border hairline px-3 py-1.5 text-[13px] font-semibold text-strong">
+              <span class="h-2 w-2 rounded-full bg-[var(--ink-mint)]"></span> المندوب في الطريق
+            </span>
+            <span class="rounded-full glass-strong border hairline px-3 py-1.5 text-[13px] font-semibold text-strong">وصول خلال <span class="font-mono">9</span> د</span>
+          </div>
+
+          <div class="rounded-[1.25rem] border hairline glass-strong p-4 shadow-[var(--shadow-soft)]">
+            <div class="flex items-center gap-3">
+              <span class="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-[var(--wash-brand)] font-display text-base font-bold text-[var(--ink-brand)]">ك</span>
+              <div class="min-w-0 flex-1">
+                <p class="truncate text-sm font-bold text-strong">كريم أبو زيد</p>
+                <p class="truncate text-[12px] text-faint"><span class="font-mono">★ 4.9</span> · دراجة نارية<span class="hidden sm:inline"> · د ب ط <span class="font-mono">2473</span></span></p>
+              </div>
+              <button type="button" class="grid h-10 w-10 place-items-center rounded-xl bg-[#4f46e5] text-white transition hover:brightness-110" aria-label="اتصال بالمندوب">
+                <svg class="h-4.5 w-4.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 3h3l1.5 4-2 1.5a12 12 0 0 0 6.5 6.5L17 13l4 1.5v3a2 2 0 0 1-2.2 2A16.5 16.5 0 0 1 4 7.2 2 2 0 0 1 6.5 3z"/></svg>
+              </button>
+              <button type="button" class="grid h-10 w-10 place-items-center rounded-xl border hairline text-strong transition hover:border-[var(--ink-brand)] hover:text-[var(--ink-brand)]" aria-label="مراسلة المندوب">
+                <svg class="h-4.5 w-4.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v11H8l-4 4V5z"/></svg>
+              </button>
+            </div>
+
+            <ol class="mt-4 flex items-center gap-1.5" aria-label="حالة الطلب">
+              <li class="h-1.5 flex-1 rounded-full bg-[var(--ink-mint)]"></li>
+              <li class="h-1.5 flex-1 rounded-full bg-[var(--ink-mint)]"></li>
+              <li class="h-1.5 flex-1 rounded-full bg-gradient-to-l from-[var(--ink-brand)] to-[var(--hairline)]"></li>
+              <li class="h-1.5 flex-1 rounded-full" style="background:var(--hairline)"></li>
+            </ol>
+            <div class="mt-2 flex justify-between text-[11px] text-faint">
+              <span>تم القبول</span><span>تم الاستلام</span><span class="font-semibold text-[var(--ink-brand)]">في الطريق</span><span>التسليم</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- fare estimator -->
+      <div class="reveal rounded-[1.75rem] border hairline surface-raised p-5 shadow-[var(--shadow-soft)] sm:p-6">
+        <h3 class="text-lg font-bold">حاسبة التسعيرة</h3>
+        <p class="mt-1 text-sm text-body">اختر المركبة وحدّد المسافة — السعر يتحدّث فورًا.</p>
+
+        <div class="mt-5 grid grid-cols-3 gap-2" role="radiogroup" aria-label="نوع المركبة">
+          <button type="button" role="radio" aria-checked="true" data-vehicle="bike" data-rate="6.5" data-eta="12"
+            class="veh-btn flex flex-col items-center gap-1.5 rounded-2xl border-2 px-2 py-3.5 transition">
+            <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="5.5" cy="17" r="3.2"/><circle cx="18.5" cy="17" r="3.2"/><path d="M8.5 17h6l-2.5-7H9"/><path d="M14 10h3l1.5 6"/><path d="M13 6.5h3"/></svg>
+            <span class="text-[13px] font-bold">دراجة</span>
+            <span class="text-[11px] opacity-70">حتى <span class="font-mono">5</span> كجم</span>
+          </button>
+          <button type="button" role="radio" aria-checked="false" data-vehicle="car" data-rate="9.5" data-eta="16"
+            class="veh-btn flex flex-col items-center gap-1.5 rounded-2xl border-2 px-2 py-3.5 transition">
+            <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 16v-3.2l2-4A2 2 0 0 1 6.8 7.5h10.4a2 2 0 0 1 1.8 1.3l2 4V16"/><path d="M3 16h18"/><circle cx="7.5" cy="16.5" r="1.8"/><circle cx="16.5" cy="16.5" r="1.8"/></svg>
+            <span class="text-[13px] font-bold">سيارة</span>
+            <span class="text-[11px] opacity-70">حتى <span class="font-mono">40</span> كجم</span>
+          </button>
+          <button type="button" role="radio" aria-checked="false" data-vehicle="van" data-rate="14" data-eta="25"
+            class="veh-btn flex flex-col items-center gap-1.5 rounded-2xl border-2 px-2 py-3.5 transition">
+            <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 16V6.5h11V16"/><path d="M13 9.5h4l4 3.5V16"/><path d="M2 16h20"/><circle cx="7" cy="16.5" r="1.8"/><circle cx="17" cy="16.5" r="1.8"/></svg>
+            <span class="text-[13px] font-bold">نصف نقل</span>
+            <span class="text-[11px] opacity-70">حتى <span class="font-mono">700</span> كجم</span>
+          </button>
+        </div>
+
+        <div class="mt-6">
+          <div class="flex items-baseline justify-between">
+            <label for="dist" class="text-[13px] font-semibold text-strong">المسافة</label>
+            <span class="text-[13px] font-semibold text-strong"><span class="font-mono" id="dist-out">8</span> كم</span>
+          </div>
+          <input id="dist" type="range" min="1" max="30" value="8" class="mt-2.5 w-full accent-[var(--ink-brand)]">
+          <div class="mt-1 flex justify-between text-[11px] text-faint"><span><span class="font-mono">1</span> كم</span><span><span class="font-mono">30</span> كم</span></div>
+        </div>
+
+        <div class="mt-6 rounded-[1.25rem] border hairline surface-sunken p-4">
+          <dl class="space-y-2 text-[13px]">
+            <div class="flex justify-between"><dt class="text-body">فتح العداد</dt><dd class="font-mono text-strong" id="f-base">25.00 ج.م</dd></div>
+            <div class="flex justify-between"><dt class="text-body">المسافة (<span class="font-mono" id="f-rate">6.50</span> ج.م/كم)</dt><dd class="font-mono text-strong" id="f-dist">52.00 ج.م</dd></div>
+            <div class="flex justify-between"><dt class="text-body">رسوم المنصة</dt><dd class="font-mono text-strong" id="f-fee">7.70 ج.م</dd></div>
+          </dl>
+          <div class="mt-3 flex items-end justify-between border-t hairline pt-3">
+            <div>
+              <span class="text-[12px] font-medium text-faint">الإجمالي التقديري</span>
+              <p class="flex items-baseline gap-1.5 leading-tight"><span class="font-mono text-3xl font-semibold text-strong" id="f-total">84.70</span><span class="text-[13px] text-faint">ج.م</span></p>
+            </div>
+            <span class="rounded-full bg-[var(--wash-mint)] px-3 py-1.5 text-[12px] font-semibold text-[var(--ink-mint)]">وصول ~<span class="font-mono" id="f-eta">12</span> د</span>
+          </div>
+        </div>
+
+        <button type="button" class="mt-4 w-full rounded-2xl bg-gradient-to-tl from-[#3b31c9] to-[#6d3aed] px-6 py-3.5 text-[15px] font-bold text-white shadow-[0_12px_30px_-14px_rgba(79,70,229,.95)] transition hover:brightness-110 active:scale-[.99]">
+          أكّد الطلب بهذا السعر
+        </button>
+        <p class="mt-2.5 text-center text-[12px] text-faint">السعر ثابت — لا يتغيّر وقت الذروة ولا في الزحام.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════ Stores ════════ -->
+<section id="stores" class="scroll-mt-20 border-t hairline-soft surface">
+  <div class="mx-auto max-w-[1200px] px-4 py-16 sm:px-6 sm:py-24">
+
+    <div class="reveal flex flex-wrap items-end justify-between gap-4">
+      <div>
+        <span class="text-[13px] font-bold uppercase tracking-[.14em] text-[var(--ink-mint)]">المتاجر</span>
+        <h2 class="mt-2 text-3xl font-extrabold tracking-tight sm:text-4xl">متاجر مدينتك، بأسعارها الحقيقية</h2>
+      </div>
+      <a href="#" class="text-sm font-bold text-[var(--ink-mint)] hover:underline">كل المتاجر (142) ←</a>
+    </div>
+
+    <div class="reveal mt-7 flex gap-2 overflow-x-auto pb-2 [scrollbar-width:none] [&amp;::-webkit-scrollbar]:hidden">
+      <button type="button" class="chip is-active shrink-0 rounded-full border px-4 py-2 text-[13px] font-semibold transition">الكل</button>
+      <button type="button" class="chip shrink-0 rounded-full border px-4 py-2 text-[13px] font-semibold transition">مطاعم</button>
+      <button type="button" class="chip shrink-0 rounded-full border px-4 py-2 text-[13px] font-semibold transition">سوبر ماركت</button>
+      <button type="button" class="chip shrink-0 rounded-full border px-4 py-2 text-[13px] font-semibold transition">صيدليات</button>
+      <button type="button" class="chip shrink-0 rounded-full border px-4 py-2 text-[13px] font-semibold transition">مخابز وحلويات</button>
+      <button type="button" class="chip shrink-0 rounded-full border px-4 py-2 text-[13px] font-semibold transition">خضار وفاكهة</button>
+      <button type="button" class="chip shrink-0 rounded-full border px-4 py-2 text-[13px] font-semibold transition">إلكترونيات</button>
+    </div>
+
+    <div class="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+
+      <a href="#" class="reveal lift group rounded-[1.5rem] border hairline surface-raised p-4 shadow-[var(--shadow-soft)] hover:border-[var(--ink-mint)] hover:shadow-[var(--shadow-lift)]">
+        <div class="flex items-start gap-3.5">
+          <span class="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-[var(--wash-mint)] text-2xl">🦐</span>
+          <div class="min-w-0 flex-1">
+            <h3 class="truncate text-[17px] font-bold">أكلة سمك</h3>
+            <p class="truncate text-[13px] text-body">مأكولات بحرية · الحي الأول</p>
+          </div>
+          <span class="shrink-0 rounded-lg bg-[var(--wash-mint)] px-2 py-1 font-mono text-[12px] font-semibold text-[var(--ink-mint)]">★ 4.9</span>
+        </div>
+        <div class="mt-4 flex flex-wrap gap-1.5">
+          <span class="rounded-full bg-[var(--wash-mint)] px-2.5 py-1 text-[11px] font-bold text-[var(--ink-mint)]">الأعلى تقييمًا</span>
+          <span class="rounded-full border hairline px-2.5 py-1 text-[11px] font-semibold text-body">توصيل مجاني فوق 300 ج.م</span>
+        </div>
+        <div class="mt-4 flex items-center justify-between border-t hairline-soft pt-3 text-[12px] text-faint">
+          <span><span class="font-mono">40–60</span> دقيقة</span><span>أقل طلب <span class="font-mono">120</span> ج.م</span>
+        </div>
+      </a>
+
+      <a href="#" class="reveal lift group rounded-[1.5rem] border hairline surface-raised p-4 shadow-[var(--shadow-soft)] hover:border-[var(--ink-mint)] hover:shadow-[var(--shadow-lift)]">
+        <div class="flex items-start gap-3.5">
+          <span class="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-[var(--wash-brand)] text-2xl">💊</span>
+          <div class="min-w-0 flex-1">
+            <h3 class="truncate text-[17px] font-bold">صيدلية العزبي</h3>
+            <p class="truncate text-[13px] text-body">صيدلية · المنطقة المركزية</p>
+          </div>
+          <span class="shrink-0 rounded-lg bg-[var(--wash-mint)] px-2 py-1 font-mono text-[12px] font-semibold text-[var(--ink-mint)]">★ 4.9</span>
+        </div>
+        <div class="mt-4 flex flex-wrap gap-1.5">
+          <span class="rounded-full bg-[var(--wash-brand)] px-2.5 py-1 text-[11px] font-bold text-[var(--ink-brand)]">توصيل سريع</span>
+          <span class="rounded-full border hairline px-2.5 py-1 text-[11px] font-semibold text-body">مفتوح 24 ساعة</span>
+        </div>
+        <div class="mt-4 flex items-center justify-between border-t hairline-soft pt-3 text-[12px] text-faint">
+          <span><span class="font-mono">15–30</span> دقيقة</span><span>أقل طلب <span class="font-mono">50</span> ج.م</span>
+        </div>
+      </a>
+
+      <a href="#" class="reveal lift group rounded-[1.5rem] border hairline surface-raised p-4 shadow-[var(--shadow-soft)] hover:border-[var(--ink-mint)] hover:shadow-[var(--shadow-lift)]">
+        <div class="flex items-start gap-3.5">
+          <span class="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-[var(--wash-suq)] text-2xl">🍰</span>
+          <div class="min-w-0 flex-1">
+            <h3 class="truncate text-[17px] font-bold">حلويات البدري</h3>
+            <p class="truncate text-[13px] text-body">حلويات شرقية وغربية · الحي الثالث</p>
+          </div>
+          <span class="shrink-0 rounded-lg bg-[var(--wash-mint)] px-2 py-1 font-mono text-[12px] font-semibold text-[var(--ink-mint)]">★ 4.9</span>
+        </div>
+        <div class="mt-4 flex flex-wrap gap-1.5">
+          <span class="rounded-full bg-[var(--wash-mint)] px-2.5 py-1 text-[11px] font-bold text-[var(--ink-mint)]">الأعلى تقييمًا</span>
+          <span class="rounded-full border hairline px-2.5 py-1 text-[11px] font-semibold text-body">طلبات المناسبات</span>
+        </div>
+        <div class="mt-4 flex items-center justify-between border-t hairline-soft pt-3 text-[12px] text-faint">
+          <span><span class="font-mono">30–50</span> دقيقة</span><span>أقل طلب <span class="font-mono">80</span> ج.م</span>
+        </div>
+      </a>
+
+      <a href="#" class="reveal lift group rounded-[1.5rem] border hairline surface-raised p-4 shadow-[var(--shadow-soft)] hover:border-[var(--ink-mint)] hover:shadow-[var(--shadow-lift)]">
+        <div class="flex items-start gap-3.5">
+          <span class="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-[var(--wash-mint)] text-2xl">🛒</span>
+          <div class="min-w-0 flex-1">
+            <h3 class="truncate text-[17px] font-bold">هايبر فتح الله ماركت</h3>
+            <p class="truncate text-[13px] text-body">هايبر ماركت · شارع الجامعة</p>
+          </div>
+          <span class="shrink-0 rounded-lg bg-[var(--wash-mint)] px-2 py-1 font-mono text-[12px] font-semibold text-[var(--ink-mint)]">★ 4.7</span>
+        </div>
+        <div class="mt-4 flex flex-wrap gap-1.5">
+          <span class="rounded-full bg-[var(--wash-suq)] px-2.5 py-1 text-[11px] font-bold text-[var(--ink-suq)]">عروض الأسبوع</span>
+          <span class="rounded-full border hairline px-2.5 py-1 text-[11px] font-semibold text-body">+4000 صنف</span>
+        </div>
+        <div class="mt-4 flex items-center justify-between border-t hairline-soft pt-3 text-[12px] text-faint">
+          <span><span class="font-mono">35–55</span> دقيقة</span><span>أقل طلب <span class="font-mono">150</span> ج.م</span>
+        </div>
+      </a>
+
+      <a href="#" class="reveal lift group rounded-[1.5rem] border hairline surface-raised p-4 shadow-[var(--shadow-soft)] hover:border-[var(--ink-mint)] hover:shadow-[var(--shadow-lift)]">
+        <div class="flex items-start gap-3.5">
+          <span class="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-[var(--wash-brand)] text-2xl">🥩</span>
+          <div class="min-w-0 flex-1">
+            <h3 class="truncate text-[17px] font-bold">مشويات الكيلاني</h3>
+            <p class="truncate text-[13px] text-body">مشويات وكباب · المنطقة المركزية</p>
+          </div>
+          <span class="shrink-0 rounded-lg bg-[var(--wash-mint)] px-2 py-1 font-mono text-[12px] font-semibold text-[var(--ink-mint)]">★ 4.8</span>
+        </div>
+        <div class="mt-4 flex flex-wrap gap-1.5">
+          <span class="rounded-full bg-[var(--wash-brand)] px-2.5 py-1 text-[11px] font-bold text-[var(--ink-brand)]">الأكثر طلبًا</span>
+          <span class="rounded-full border hairline px-2.5 py-1 text-[11px] font-semibold text-body">شواء على الفحم</span>
+        </div>
+        <div class="mt-4 flex items-center justify-between border-t hairline-soft pt-3 text-[12px] text-faint">
+          <span><span class="font-mono">35–50</span> دقيقة</span><span>أقل طلب <span class="font-mono">100</span> ج.م</span>
+        </div>
+      </a>
+
+      <a href="#" class="reveal lift group rounded-[1.5rem] border hairline surface-raised p-4 shadow-[var(--shadow-soft)] hover:border-[var(--ink-mint)] hover:shadow-[var(--shadow-lift)]">
+        <div class="flex items-start gap-3.5">
+          <span class="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-[var(--wash-suq)] text-2xl">🥖</span>
+          <div class="min-w-0 flex-1">
+            <h3 class="truncate text-[17px] font-bold">مخبز ومعجنات النور</h3>
+            <p class="truncate text-[13px] text-body">مخبز وفينو · الحي الخامس</p>
+          </div>
+          <span class="shrink-0 rounded-lg bg-[var(--wash-mint)] px-2 py-1 font-mono text-[12px] font-semibold text-[var(--ink-mint)]">★ 4.6</span>
+        </div>
+        <div class="mt-4 flex flex-wrap gap-1.5">
+          <span class="rounded-full bg-[var(--wash-brand)] px-2.5 py-1 text-[11px] font-bold text-[var(--ink-brand)]">توصيل سريع</span>
+          <span class="rounded-full border hairline px-2.5 py-1 text-[11px] font-semibold text-body">مخبوز اليوم</span>
+        </div>
+        <div class="mt-4 flex items-center justify-between border-t hairline-soft pt-3 text-[12px] text-faint">
+          <span><span class="font-mono">20–35</span> دقيقة</span><span>أقل طلب <span class="font-mono">40</span> ج.م</span>
+        </div>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ════════ Sūq — second-hand ════════ -->
+<section id="suq" class="scroll-mt-20 border-t hairline-soft surface-sunken">
+  <div class="mx-auto max-w-[1200px] px-4 py-16 sm:px-6 sm:py-24">
+
+    <div class="reveal flex flex-wrap items-end justify-between gap-4">
+      <div>
+        <span class="text-[13px] font-bold uppercase tracking-[.14em] text-[var(--ink-suq)]">السوق</span>
+        <h2 class="mt-2 text-3xl font-extrabold tracking-tight sm:text-4xl">سوق المستعمل في دمياط</h2>
+        <p class="mt-3 max-w-[54ch] text-[15px] leading-7 text-body">
+          إعلانات من جيرانك في المدينة. كلّم البائع مباشرة، أو اشترِ فورًا وخلّي مندوبنا يستلم ويوصّل.
+        </p>
+      </div>
+      <a href="#" class="rounded-2xl bg-[var(--btn-suq-bg)] px-5 py-3 text-sm font-bold text-[var(--btn-suq-fg)] shadow-[0_10px_28px_-14px_rgba(217,119,6,.95)] transition hover:brightness-110">أضف إعلانك مجانًا</a>
+    </div>
+
+    <div class="mt-8 masonry columns-1 sm:columns-2 lg:columns-3">
+
+      <article class="reveal lift rounded-[1.5rem] border hairline surface-raised p-4 shadow-[var(--shadow-soft)] hover:border-[var(--ink-suq)] hover:shadow-[var(--shadow-lift)]">
+        <div class="grid h-40 place-items-center rounded-2xl thumb text-5xl">📱</div>
+        <div class="mt-3.5 flex items-start justify-between gap-3">
+          <h3 class="text-[16px] font-bold leading-6">آيفون 13 برو — 256 جيجا</h3>
+          <span class="shrink-0 rounded-full bg-[var(--wash-mint)] px-2.5 py-1 text-[11px] font-bold text-[var(--ink-mint)]">كالجديد</span>
+        </div>
+        <p class="mt-1.5 text-[13px] leading-6 text-body">بطارية 91٪، معاه الشاحن والعلبة، خالي من أي خدوش.</p>
+        <div class="mt-3 flex items-baseline gap-2">
+          <span class="font-mono text-2xl font-semibold text-strong">22,500</span>
+          <span class="text-[13px] text-faint">ج.م</span>
+        </div>
+        <p class="mt-1 text-[12px] text-faint">الحي الأول · منذ 3 ساعات</p>
+        <div class="mt-3.5 grid grid-cols-2 gap-2">
+          <button type="button" class="rounded-xl bg-[var(--btn-suq-bg)] px-3 py-2.5 text-[13px] font-bold text-[var(--btn-suq-fg)] transition hover:brightness-110">اشترِ الآن</button>
+          <button type="button" class="rounded-xl border hairline px-3 py-2.5 text-[13px] font-bold text-strong transition hover:border-[var(--ink-suq)] hover:text-[var(--ink-suq)]">كلّم البائع</button>
+        </div>
+      </article>
+
+      <article class="reveal lift rounded-[1.5rem] border hairline surface-raised p-4 shadow-[var(--shadow-soft)] hover:border-[var(--ink-suq)] hover:shadow-[var(--shadow-lift)]">
+        <div class="grid h-56 place-items-center rounded-2xl thumb-alt text-5xl">🛋️</div>
+        <div class="mt-3.5 flex items-start justify-between gap-3">
+          <h3 class="text-[16px] font-bold leading-6">ركنة دمياطي خشب زان</h3>
+          <span class="shrink-0 rounded-full bg-[var(--wash-brand)] px-2.5 py-1 text-[11px] font-bold text-[var(--ink-brand)]">ممتازة</span>
+        </div>
+        <p class="mt-1.5 text-[13px] leading-6 text-body">صناعة دمياطية، استعمال سنتين، القماش نضيف جدًا. الفك والتركيب علينا.</p>
+        <div class="mt-3 flex items-baseline gap-2">
+          <span class="font-mono text-2xl font-semibold text-strong">9,800</span>
+          <span class="text-[13px] text-faint">ج.م</span>
+        </div>
+        <p class="mt-1 text-[12px] text-faint">الحي الثالث · أمس</p>
+        <div class="mt-3.5 grid grid-cols-2 gap-2">
+          <button type="button" class="rounded-xl bg-[var(--btn-suq-bg)] px-3 py-2.5 text-[13px] font-bold text-[var(--btn-suq-fg)] transition hover:brightness-110">اشترِ الآن</button>
+          <button type="button" class="rounded-xl border hairline px-3 py-2.5 text-[13px] font-bold text-strong transition hover:border-[var(--ink-suq)] hover:text-[var(--ink-suq)]">كلّم البائع</button>
+        </div>
+      </article>
+
+      <article class="reveal lift rounded-[1.5rem] border hairline surface-raised p-4 shadow-[var(--shadow-soft)] hover:border-[var(--ink-suq)] hover:shadow-[var(--shadow-lift)]">
+        <div class="grid h-32 place-items-center rounded-2xl thumb text-5xl">🚲</div>
+        <div class="mt-3.5 flex items-start justify-between gap-3">
+          <h3 class="text-[16px] font-bold leading-6">عجلة أطفال 20 بوصة</h3>
+          <span class="shrink-0 rounded-full bg-[var(--wash-suq)] px-2.5 py-1 text-[11px] font-bold text-[var(--ink-suq)]">جيدة</span>
+        </div>
+        <p class="mt-1.5 text-[13px] leading-6 text-body">محتاجة ضبط فرامل بسيط، الإطارات جديدة.</p>
+        <div class="mt-3 flex items-baseline gap-2">
+          <span class="font-mono text-2xl font-semibold text-strong">1,400</span>
+          <span class="text-[13px] text-faint">ج.م</span>
+        </div>
+        <p class="mt-1 text-[12px] text-faint">الحي الخامس · منذ يومين</p>
+        <div class="mt-3.5 grid grid-cols-2 gap-2">
+          <button type="button" class="rounded-xl bg-[var(--btn-suq-bg)] px-3 py-2.5 text-[13px] font-bold text-[var(--btn-suq-fg)] transition hover:brightness-110">اشترِ الآن</button>
+          <button type="button" class="rounded-xl border hairline px-3 py-2.5 text-[13px] font-bold text-strong transition hover:border-[var(--ink-suq)] hover:text-[var(--ink-suq)]">كلّم البائع</button>
+        </div>
+      </article>
+
+      <article class="reveal lift rounded-[1.5rem] border hairline surface-raised p-4 shadow-[var(--shadow-soft)] hover:border-[var(--ink-suq)] hover:shadow-[var(--shadow-lift)]">
+        <div class="grid h-44 place-items-center rounded-2xl thumb-alt text-5xl">💻</div>
+        <div class="mt-3.5 flex items-start justify-between gap-3">
+          <h3 class="text-[16px] font-bold leading-6">لاب توب Dell Latitude i5</h3>
+          <span class="shrink-0 rounded-full bg-[var(--wash-brand)] px-2.5 py-1 text-[11px] font-bold text-[var(--ink-brand)]">ممتازة</span>
+        </div>
+        <p class="mt-1.5 text-[13px] leading-6 text-body">رام 16 جيجا، SSD 512، مناسب للطلبة والشغل المكتبي.</p>
+        <div class="mt-3 flex items-baseline gap-2">
+          <span class="font-mono text-2xl font-semibold text-strong">13,200</span>
+          <span class="text-[13px] text-faint">ج.م</span>
+        </div>
+        <p class="mt-1 text-[12px] text-faint">المنطقة المركزية · منذ 6 ساعات</p>
+        <div class="mt-3.5 grid grid-cols-2 gap-2">
+          <button type="button" class="rounded-xl bg-[var(--btn-suq-bg)] px-3 py-2.5 text-[13px] font-bold text-[var(--btn-suq-fg)] transition hover:brightness-110">اشترِ الآن</button>
+          <button type="button" class="rounded-xl border hairline px-3 py-2.5 text-[13px] font-bold text-strong transition hover:border-[var(--ink-suq)] hover:text-[var(--ink-suq)]">كلّم البائع</button>
+        </div>
+      </article>
+
+      <article class="reveal lift rounded-[1.5rem] border hairline surface-raised p-4 shadow-[var(--shadow-soft)] hover:border-[var(--ink-suq)] hover:shadow-[var(--shadow-lift)]">
+        <div class="grid h-36 place-items-center rounded-2xl thumb text-5xl">❄️</div>
+        <div class="mt-3.5 flex items-start justify-between gap-3">
+          <h3 class="text-[16px] font-bold leading-6">تكييف شارب 1.5 حصان</h3>
+          <span class="shrink-0 rounded-full bg-[var(--wash-suq)] px-2.5 py-1 text-[11px] font-bold text-[var(--ink-suq)]">جيدة</span>
+        </div>
+        <p class="mt-1.5 text-[13px] leading-6 text-body">شغال بكفاءة، اتعمله غسيل وشحن فريون الشهر اللي فات.</p>
+        <div class="mt-3 flex items-baseline gap-2">
+          <span class="font-mono text-2xl font-semibold text-strong">8,400</span>
+          <span class="text-[13px] text-faint">ج.م</span>
+        </div>
+        <p class="mt-1 text-[12px] text-faint">الحي الثاني · منذ 4 أيام</p>
+        <div class="mt-3.5 grid grid-cols-2 gap-2">
+          <button type="button" class="rounded-xl bg-[var(--btn-suq-bg)] px-3 py-2.5 text-[13px] font-bold text-[var(--btn-suq-fg)] transition hover:brightness-110">اشترِ الآن</button>
+          <button type="button" class="rounded-xl border hairline px-3 py-2.5 text-[13px] font-bold text-strong transition hover:border-[var(--ink-suq)] hover:text-[var(--ink-suq)]">كلّم البائع</button>
+        </div>
+      </article>
+
+      <article class="reveal lift rounded-[1.5rem] border hairline surface-raised p-4 shadow-[var(--shadow-soft)] hover:border-[var(--ink-suq)] hover:shadow-[var(--shadow-lift)]">
+        <div class="grid h-28 place-items-center rounded-2xl thumb-alt text-5xl">📚</div>
+        <div class="mt-3.5 flex items-start justify-between gap-3">
+          <h3 class="text-[16px] font-bold leading-6">كتب كلية تجارة — الفرقة الأولى</h3>
+          <span class="shrink-0 rounded-full bg-[var(--wash-mint)] px-2.5 py-1 text-[11px] font-bold text-[var(--ink-mint)]">كالجديد</span>
+        </div>
+        <p class="mt-1.5 text-[13px] leading-6 text-body">المجموعة كاملة، بدون كتابة أو تظليل.</p>
+        <div class="mt-3 flex items-baseline gap-2">
+          <span class="font-mono text-2xl font-semibold text-strong">450</span>
+          <span class="text-[13px] text-faint">ج.م</span>
+        </div>
+        <p class="mt-1 text-[12px] text-faint">الحي الرابع · اليوم</p>
+        <div class="mt-3.5 grid grid-cols-2 gap-2">
+          <button type="button" class="rounded-xl bg-[var(--btn-suq-bg)] px-3 py-2.5 text-[13px] font-bold text-[var(--btn-suq-fg)] transition hover:brightness-110">اشترِ الآن</button>
+          <button type="button" class="rounded-xl border hairline px-3 py-2.5 text-[13px] font-bold text-strong transition hover:border-[var(--ink-suq)] hover:text-[var(--ink-suq)]">كلّم البائع</button>
+        </div>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ════════ Trust strip ════════ -->
+<section class="border-t hairline-soft surface">
+  <div class="mx-auto grid max-w-[1200px] gap-px overflow-hidden px-4 py-14 sm:grid-cols-2 sm:px-6 lg:grid-cols-4">
+    <div class="reveal px-2 sm:px-6"><p class="text-4xl font-semibold text-strong"><span class="font-mono">28</span> د</p><p class="mt-1.5 text-sm text-body">متوسط زمن التوصيل داخل المدينة</p></div>
+    <div class="reveal px-2 pt-8 sm:px-6 sm:pt-0"><p class="font-mono text-4xl font-semibold text-strong">142</p><p class="mt-1.5 text-sm text-body">متجرًا شريكًا في دمياط الجديدة</p></div>
+    <div class="reveal px-2 pt-8 sm:px-6 lg:pt-0"><p class="font-mono text-4xl font-semibold text-strong">4.8</p><p class="mt-1.5 text-sm text-body">تقييم العملاء من 9,400 طلب</p></div>
+    <div class="reveal px-2 pt-8 sm:px-6 lg:pt-0"><p class="text-4xl font-semibold text-strong"><span class="font-mono">0</span> ج.م</p><p class="mt-1.5 text-sm text-body">عمولة على إعلانات سوق المستعمل</p></div>
+  </div>
+</section>
+
+<!-- ════════ Footer ════════ -->
+<footer class="relative overflow-hidden border-t hairline surface-sunken">
+  <div class="aurora absolute inset-0 opacity-70"></div>
+  <div class="relative mx-auto max-w-[1200px] px-4 py-14 sm:px-6">
+
+    <div class="rounded-[1.75rem] border hairline glass-strong p-6 shadow-[var(--shadow-soft)] sm:p-9">
+      <div class="flex flex-wrap items-center justify-between gap-6">
+        <div>
+          <h2 class="text-2xl font-extrabold tracking-tight sm:text-3xl">نزّل التطبيق وتابع طلبك على الخريطة</h2>
+          <p class="mt-2 max-w-[46ch] text-[15px] text-body">إشعارات لحظية، محفظة، وتاريخ كامل لطلباتك ومشترياتك.</p>
+        </div>
+        <div class="flex flex-wrap gap-2.5">
+          <a href="#" class="rounded-2xl bg-[var(--text-strong)] px-5 py-3.5 text-[15px] font-bold text-[var(--surface)] transition hover:opacity-90">App Store</a>
+          <a href="#" class="rounded-2xl border hairline surface-raised px-5 py-3.5 text-[15px] font-bold text-strong transition hover:border-[var(--ink-brand)]">Google Play</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="mt-12 grid gap-9 sm:grid-cols-2 lg:grid-cols-4">
+      <div>
+        <div class="flex items-center gap-2">
+          <span class="grid h-8 w-8 place-items-center rounded-lg bg-gradient-to-tl from-[#7c3aed] to-[#4f46e5]">
+            <svg viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 8h7.6l2.6 3.4H21v4.2h-2"/><path d="M3 15.5h2.2M4 11h4M6.6 18.6h9.4"/><circle cx="17.4" cy="18.4" r="2.1"/><circle cx="9" cy="18.4" r="2.1"/></svg>
+          </span>
+          <span class="font-display text-lg font-extrabold text-strong">وصّلها</span>
+        </div>
+        <p class="mt-3 max-w-[34ch] text-[13px] leading-6 text-body">توصيل، متاجر، وسوق مستعمل — لمدينة واحدة، بمنصة واحدة.</p>
+      </div>
+      <nav aria-label="الخدمات">
+        <h3 class="text-[13px] font-bold uppercase tracking-[.12em] text-faint">الخدمات</h3>
+        <ul class="mt-3.5 space-y-2.5 text-[14px]">
+          <li><a href="#" class="transition hover:text-[var(--ink-brand)]">مشاوير داخل المدينة</a></li>
+          <li><a href="#" class="transition hover:text-[var(--ink-brand)]">توصيل المطار</a></li>
+          <li><a href="#" class="transition hover:text-[var(--ink-brand)]">توصيل طلبات المتاجر</a></li>
+          <li><a href="#" class="transition hover:text-[var(--ink-brand)]">تتبّع الطلب</a></li>
+        </ul>
+      </nav>
+      <nav aria-label="السوق">
+        <h3 class="text-[13px] font-bold uppercase tracking-[.12em] text-faint">السوق</h3>
+        <ul class="mt-3.5 space-y-2.5 text-[14px]">
+          <li><a href="#" class="transition hover:text-[var(--ink-suq)]">تصفّح الإعلانات</a></li>
+          <li><a href="#" class="transition hover:text-[var(--ink-suq)]">أضف إعلانًا</a></li>
+          <li><a href="#" class="transition hover:text-[var(--ink-suq)]">نصائح البيع الآمن</a></li>
+          <li><a href="#" class="transition hover:text-[var(--ink-suq)]">إعلاناتي</a></li>
+        </ul>
+      </nav>
+      <nav aria-label="الشركاء">
+        <h3 class="text-[13px] font-bold uppercase tracking-[.12em] text-faint">انضم إلينا</h3>
+        <ul class="mt-3.5 space-y-2.5 text-[14px]">
+          <li><a href="#" class="transition hover:text-[var(--ink-mint)]">سجّل متجرك</a></li>
+          <li><a href="#" class="transition hover:text-[var(--ink-mint)]">اشتغل مندوبًا</a></li>
+          <li><a href="#" class="transition hover:text-[var(--ink-mint)]">حلول الشركات</a></li>
+          <li><a href="#" class="transition hover:text-[var(--ink-mint)]">تواصل معنا</a></li>
+        </ul>
+      </nav>
+    </div>
+
+    <div class="mt-11 flex flex-wrap items-center justify-between gap-3 border-t hairline pt-6 text-[13px] text-faint">
+      <p>© 2026 وصّلها — دمياط الجديدة، مصر</p>
+      <div class="flex gap-5">
+        <a href="#" class="transition hover:text-[var(--ink-brand)]">الخصوصية</a>
+        <a href="#" class="transition hover:text-[var(--ink-brand)]">الشروط</a>
+        <a href="#" class="transition hover:text-[var(--ink-brand)]">المساعدة</a>
+      </div>
+    </div>
+  </div>
+</footer>
+</main>
+
+<!-- ════════ Mobile bottom nav ════════ -->
+<nav class="fixed inset-x-0 bottom-0 z-50 glass border-t hairline pb-[env(safe-area-inset-bottom)] md:hidden" aria-label="التنقل السريع">
+  <ul class="mx-auto grid max-w-lg grid-cols-5">
+    <li><a href="#main" class="flex flex-col items-center gap-1 py-2.5 text-[11px] font-semibold text-[var(--ink-brand)]">
+      <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5 12 4l8 6.5V20a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1z"/></svg>الرئيسية</a></li>
+    <li><a href="#delivery" class="flex flex-col items-center gap-1 py-2.5 text-[11px] font-medium text-body">
+      <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M9 8h7.6l2.6 3.4H21v4.2h-2"/><path d="M3 15.5h2.2M4 11h4M6.6 18.6h9.4"/><circle cx="17.4" cy="18.4" r="2.1"/><circle cx="9" cy="18.4" r="2.1"/></svg>توصيل</a></li>
+    <li><a href="#stores" class="flex flex-col items-center gap-1 py-2.5 text-[11px] font-medium text-body">
+      <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8.5 5.5 4h13L20 8.5"/><path d="M4 8.5v11a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-11"/></svg>متاجر</a></li>
+    <li><a href="#suq" class="flex flex-col items-center gap-1 py-2.5 text-[11px] font-medium text-body">
+      <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M11.5 3.5h6a1 1 0 0 1 1 1v6l-8 8-7-7 8-8z"/><circle cx="15" cy="8" r="1.1" fill="currentColor" stroke="none"/></svg>السوق</a></li>
+    <li><a href="#" class="flex flex-col items-center gap-1 py-2.5 text-[11px] font-medium text-body">
+      <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8.5" r="3.5"/><path d="M4.5 20a7.5 7.5 0 0 1 15 0"/></svg>حسابي</a></li>
+  </ul>
+</nav>
+
+<script>
+(() => {
+  // hero tabs
+  const tabs = [...document.querySelectorAll('.tab-btn')];
+  const setTab = (name) => {
+    tabs.forEach(t => t.setAttribute('aria-selected', String(t.dataset.tab === name)));
+    document.querySelectorAll('.tab-panel').forEach(p => { p.hidden = p.id !== `panel-${name}`; });
+  };
+  tabs.forEach(t => t.addEventListener('click', () => setTab(t.dataset.tab)));
+
+  // store category chips
+  const chips = [...document.querySelectorAll('.chip')];
+  chips.forEach(c => c.addEventListener('click', () => {
+    chips.forEach(o => o.classList.toggle('is-active', o === c));
+  }));
+
+  // fare estimator
+  const LOCALE = 'ar-EG-u-nu-latn';
+  const ar = n => n.toLocaleString(LOCALE, { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+  const ar2 = n => n.toLocaleString(LOCALE, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const dist = document.getElementById('dist');
+  const vehicles = [...document.querySelectorAll('.veh-btn')];
+  const BASE = 25, FEE = 0.1;
+  let rate = 6.5, eta = 12;
+
+  const render = () => {
+    const km = +dist.value;
+    const legs = km * rate;
+    const fee = (BASE + legs) * FEE;
+    document.getElementById('dist-out').textContent = ar(km);
+    document.getElementById('f-base').textContent = `${ar2(BASE)} ج.م`;
+    document.getElementById('f-rate').textContent = ar2(rate);
+    document.getElementById('f-dist').textContent = `${ar2(legs)} ج.م`;
+    document.getElementById('f-fee').textContent = `${ar2(fee)} ج.م`;
+    document.getElementById('f-total').textContent = ar2(BASE + legs + fee);
+    document.getElementById('f-eta').textContent = ar(Math.round(eta + km * 1.6));
+  };
+
+  vehicles.forEach(v => v.addEventListener('click', () => {
+    vehicles.forEach(o => o.setAttribute('aria-checked', String(o === v)));
+    rate = +v.dataset.rate;
+    eta = +v.dataset.eta;
+    render();
+  }));
+  dist.addEventListener('input', render);
+  render();
+
+  // scroll reveal
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const items = [...document.querySelectorAll('.reveal')];
+  if (reduce || !('IntersectionObserver' in window)) {
+    items.forEach(el => el.classList.add('is-in'));
+  } else {
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach((e, i) => {
+        if (!e.isIntersecting) return;
+        setTimeout(() => e.target.classList.add('is-in'), Math.min(i * 70, 280));
+        io.unobserve(e.target);
+      });
+    }, { rootMargin: '0px 0px -12% 0px' });
+    items.forEach(el => io.observe(el));
+  }
+})();
+</script>
+</body>
+</html>
