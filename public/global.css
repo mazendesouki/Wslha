@@ -17,8 +17,15 @@
   --color-bg-soft:       #F8FAFC;
   --color-border:        #E2E8F0;
   --color-success:       #22C55E;
-  --color-dark-bg:       #0E4B49;
-  --color-dark-border:   #1E2E2C;
+  /* Site-wide page canvas (html/body) — the brand teal, distinct from
+     --color-dark-bg below which is the footer's own darker grey. */
+  --color-page-bg:       #0E4B49;
+  /* Footer's own background — kept separate from --color-page-bg so the
+     footer still reads as a distinct darker band, not the same flat
+     teal as the page canvas above it (its icon buttons/badges were
+     tuned for contrast against a near-black bg). */
+  --color-dark-bg:       #1E293B;
+  --color-dark-border:   #334155;
 
   /* Typography */
   --font-body:    'Cairo', 'Segoe UI', sans-serif;
@@ -91,7 +98,7 @@ html {
      audited and given an explicit background on whatever previously
      had none, so this only shows through the margins/gaps around
      already-opaque sections and cards, never behind bare text. */
-  background: var(--color-dark-bg);
+  background: var(--color-page-bg);
   font-size: 16px;
   line-height: 1.6;
   scroll-behavior: smooth;
@@ -101,7 +108,7 @@ body {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
-  background: var(--color-dark-bg);
+  background: var(--color-page-bg);
   -webkit-font-smoothing: antialiased;
   /* Safety net: never allow stray decorative/floating elements to
      create a horizontal scrollbar on small screens. */
