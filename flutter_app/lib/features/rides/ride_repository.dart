@@ -69,9 +69,33 @@ class RideRepository {
 
   /// Customer picks one driver's price offer — locks the ride to that
   /// driver at that price (accept_ride_price_offer, db/security-35).
-  Future<bool> acceptPriceOffer(String rideId, String offerId, String customerPhone) async {
+  /// Returns null on success, or a message to show (a recognized reason
+  /// mapped to Arabic, otherwise the raw error so a real failure is
+  /// diagnosable instead of a blanket "try another offer").
+  Future<String?> acceptPriceOffer(String rideId, String offerId, String customerPhone) async {
     try {
       await sb.rpc('accept_ride_price_offer', params: {
+        'p_ride_id': rideId,
+        'p_offer_id': offerId,
+        'p_customer_phone': customerPhone,
+      });
+      return null;
+    } catch (e) {
+      final msg = e.toString();
+      if (msg.contains('ride_already_taken')) return 'الرحلة اتقفلت بالفعل على سائق تاني.';
+      if (msg.contains('offer_no_longer_available')) return 'العرض ده مش متاح دلوقتي، جرّب عرض تاني.';
+      if (msg.contains('not_your_ride')) return 'حصل خطأ في التحقق من الرحلة.';
+      return 'تعذّر قبول العرض: $msg';
+    }
+  }
+
+  /// Customer dismisses a specific driver's offer without accepting it —
+  /// it just disappears from their own list (reject_ride_price_offer,
+  /// db/security-35). Purely a customer-side filter, doesn't stop the
+  /// driver from being picked via a different offer round.
+  Future<bool> rejectPriceOffer(String rideId, String offerId, String customerPhone) async {
+    try {
+      await sb.rpc('reject_ride_price_offer', params: {
         'p_ride_id': rideId,
         'p_offer_id': offerId,
         'p_customer_phone': customerPhone,

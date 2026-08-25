@@ -734,16 +734,29 @@ class _OffersPanel extends StatefulWidget {
 }
 
 class _OffersPanelState extends State<_OffersPanel> {
-  String? _acceptingOfferId;
+  // Tracks which offer is mid-action and which kind, so only that offer's
+  // buttons show a spinner (the rest of the list stays interactive).
+  String? _busyOfferId;
+  bool _busyIsReject = false;
 
   Future<void> _accept(String offerId) async {
-    setState(() => _acceptingOfferId = offerId);
-    final ok = await widget.rideRepo.acceptPriceOffer(widget.rideId, offerId, widget.customerPhone);
+    setState(() { _busyOfferId = offerId; _busyIsReject = false; });
+    final error = await widget.rideRepo.acceptPriceOffer(widget.rideId, offerId, widget.customerPhone);
     if (!mounted) return;
-    setState(() => _acceptingOfferId = null);
+    setState(() => _busyOfferId = null);
+    if (error != null) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error)));
+    }
+  }
+
+  Future<void> _reject(String offerId) async {
+    setState(() { _busyOfferId = offerId; _busyIsReject = true; });
+    final ok = await widget.rideRepo.rejectPriceOffer(widget.rideId, offerId, widget.customerPhone);
+    if (!mounted) return;
+    setState(() => _busyOfferId = null);
     if (!ok) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('العرض ده مبقاش متاح، جرّب عرض تاني')),
+        const SnackBar(content: Text('تعذّر رفض العرض، حاول تاني')),
       );
     }
   }
@@ -798,41 +811,65 @@ class _OffersPanelState extends State<_OffersPanel> {
                   final id = o['id'].toString();
                   final price = (o['offered_price'] as num?)?.toStringAsFixed(0) ?? '—';
                   final name = (o['driver_name'] as String?)?.trim();
-                  final busy = _acceptingOfferId == id;
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 8),
-                    child: Row(
+                  final isBusy = _busyOfferId == id;
+                  final anyBusy = _busyOfferId != null;
+                  return Container(
+                    margin: const EdgeInsets.only(bottom: 8),
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF7FAF9),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        const CircleAvatar(
-                          radius: 18,
-                          backgroundColor: AppColors.primaryLight,
-                          child: Text('🧑‍✈️', style: TextStyle(fontSize: 14)),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Text(
-                            (name != null && name.isNotEmpty) ? name : 'سائق',
-                            style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
-                          ),
-                        ),
-                        Text('$price ج.م', style: const TextStyle(fontWeight: FontWeight.w900, color: AppColors.success, fontSize: 14)),
-                        const SizedBox(width: 10),
-                        SizedBox(
-                          height: 34,
-                          child: ElevatedButton(
-                            onPressed: (_acceptingOfferId == null) ? () => _accept(id) : null,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.primary,
-                              padding: const EdgeInsets.symmetric(horizontal: 14),
+                        Row(
+                          children: [
+                            const CircleAvatar(
+                              radius: 18,
+                              backgroundColor: AppColors.primaryLight,
+                              child: Text('🧑‍✈️', style: TextStyle(fontSize: 14)),
                             ),
-                            child: busy
-                                ? const SizedBox(
-                                    width: 14,
-                                    height: 14,
-                                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                                  )
-                                : const Text('قبول', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w900)),
-                          ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Text(
+                                (name != null && name.isNotEmpty) ? name : 'سائق',
+                                style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+                              ),
+                            ),
+                            Text('$price ج.م', style: const TextStyle(fontWeight: FontWeight.w900, color: AppColors.success, fontSize: 14)),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: OutlinedButton(
+                                onPressed: !anyBusy ? () => _reject(id) : null,
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: AppColors.error,
+                                  side: const BorderSide(color: AppColors.error),
+                                  padding: const EdgeInsets.symmetric(vertical: 8),
+                                ),
+                                child: (isBusy && _busyIsReject)
+                                    ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.error))
+                                    : const Text('رفض', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w900)),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: ElevatedButton(
+                                onPressed: !anyBusy ? () => _accept(id) : null,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppColors.primary,
+                                  padding: const EdgeInsets.symmetric(vertical: 8),
+                                ),
+                                child: (isBusy && !_busyIsReject)
+                                    ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                                    : const Text('قبول', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w900)),
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
