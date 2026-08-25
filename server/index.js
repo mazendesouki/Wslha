@@ -127,6 +127,11 @@ async function dispatchTarget(type, id, lat, lng, label) {
 // ── Realtime: react immediately to new pending rides ──
 db.channel('dispatch-new-rides')
   .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'rides' }, ({ new: ride }) => {
+    // Negotiable rides (db/security-35) are discovered by drivers browsing
+    // directly, not through this sequential nearest-driver queue — a fixed-
+    // price dispatch offer for one would let a driver accept it outright at
+    // the old computed fare, short-circuiting the whole negotiation flow.
+    if (ride.is_negotiable) return;
     if (ride.status === 'pending' && !ride.driver_phone) {
       dispatchTarget('ride', ride.id, ride.from_lat, ride.from_lng, {
         title: '🚗 طلب رحلة جديد!',
@@ -155,9 +160,9 @@ db.channel('dispatch-new-orders')
 async function sweep() {
   try {
     const { data: rides } = await db.from('rides')
-      .select('id, from_lat, from_lng, from_area, to_area, fare')
+      .select('id, from_lat, from_lng, from_area, to_area, fare, is_negotiable')
       .eq('status', 'pending').is('driver_phone', null);
-    for (const r of rides || []) {
+    for (const r of (rides || []).filter(r => !r.is_negotiable)) {
       dispatchTarget('ride', r.id, r.from_lat, r.from_lng, {
         title: '🚗 طلب رحلة جديد!',
         body: `${r.from_area || ''} ← ${r.to_area || ''} — ${r.fare || ''} ج.م`,
