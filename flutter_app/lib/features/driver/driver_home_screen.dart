@@ -14,6 +14,7 @@ import '../ratings/ratings_repository.dart';
 import '../ratings/trust_badge.dart';
 import 'active_job_store.dart';
 import 'driver_repository.dart';
+import 'negotiation_screen.dart';
 
 /// Visual language ported from driver-dashboard.astro: teal online toggle,
 /// pulsing "radar" while idle, a list of 30s-countdown offer cards,
@@ -412,7 +413,16 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
       backgroundColor: const Color(0xFFF7FAF9),
       appBar: AppBar(
         title: const Text('وصّلها سائق'),
-        actions: const [LogoutButton()],
+        actions: [
+          IconButton(
+            tooltip: 'طلبات تفاوض قريبة',
+            icon: const Text('🤝', style: TextStyle(fontSize: 20)),
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => NegotiationScreen(session: widget.session)),
+            ),
+          ),
+          const LogoutButton(),
+        ],
       ),
       body: SafeArea(
         child: Padding(

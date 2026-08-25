@@ -30,6 +30,13 @@ class RideRepository {
     // re-derives fare from the total distance_km + final to_area exactly
     // like a normal single-leg ride (see db/security-29-late-arrival-and-multistop.sql).
     List<Map<String, dynamic>>? stops,
+    // When true, `fare` above is only a reference estimate — guard_ride_fare()
+    // still overwrites it once at INSERT (it has no per-row opt-out), but the
+    // real price is whatever driver offer the customer accepts afterwards via
+    // acceptPriceOffer() (fare gets overwritten again at that point; the
+    // trigger only fires on INSERT, never UPDATE, so it won't clobber that
+    // second write — see db/security-35-ride-price-negotiation.sql).
+    bool isNegotiable = false,
   }) async {
     final row = await sb.from('rides').insert({
       'customer_phone': customerPhone,
@@ -47,9 +54,32 @@ class RideRepository {
       'payment': payment,
       'status': 'pending',
       'ride_type': rideType,
+      'is_negotiable': isNegotiable,
       if (stops != null && stops.isNotEmpty) 'stops': stops,
     }).select().single();
     return row;
+  }
+
+  /// Live list of price offers submitted by drivers on a negotiable ride —
+  /// the customer's tracking screen renders this while the ride is still
+  /// unclaimed (status='pending', driver_phone null).
+  Stream<List<Map<String, dynamic>>> watchRideOffers(String rideId) {
+    return sb.from('ride_price_offers').stream(primaryKey: ['id']).eq('ride_id', rideId);
+  }
+
+  /// Customer picks one driver's price offer — locks the ride to that
+  /// driver at that price (accept_ride_price_offer, db/security-35).
+  Future<bool> acceptPriceOffer(String rideId, String offerId, String customerPhone) async {
+    try {
+      await sb.rpc('accept_ride_price_offer', params: {
+        'p_ride_id': rideId,
+        'p_offer_id': offerId,
+        'p_customer_phone': customerPhone,
+      });
+      return true;
+    } catch (_) {
+      return false;
+    }
   }
 
   /// Realtime status tracking, same table/columns driver-dashboard.astro

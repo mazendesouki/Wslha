@@ -137,6 +137,47 @@ class DriverRepository {
     await sb.rpc('reject_dispatch_offer', params: {'p_offer_id': offerId, 'p_driver_phone': phone});
   }
 
+  /// Negotiable rides still open for bidding (no driver assigned yet) —
+  /// `rides` is anon-readable directly (security07rlslockdown.sql), so this
+  /// is a plain filtered query, not a dedicated RPC; only submitting/
+  /// accepting a price offer needs the security-definer RPCs below (see
+  /// db/security-35-ride-price-negotiation.sql).
+  Stream<List<Map<String, dynamic>>> watchOpenNegotiableRides() {
+    return sb
+        .from('rides')
+        .stream(primaryKey: ['id'])
+        .eq('is_negotiable', true)
+        .order('created_at', ascending: false);
+  }
+
+  /// Every offer on a given negotiable ride — the caller filters down to
+  /// this driver's own row client-side (see negotiation_screen.dart).
+  /// supabase_flutter's `.stream()` only supports a single server-side
+  /// `.eq()` filter, so a second column (driver_phone) can't be chained on
+  /// here the way a normal query would.
+  Stream<List<Map<String, dynamic>>> watchOffersOnRide(String rideId) {
+    return sb.from('ride_price_offers').stream(primaryKey: ['id']).eq('ride_id', rideId);
+  }
+
+  /// Submits (or updates) this driver's price offer on a negotiable ride.
+  /// Returns null on success, or a short failure reason.
+  Future<String?> submitPriceOffer(String rideId, String phone, String name, num price) async {
+    try {
+      await sb.rpc('submit_ride_price_offer', params: {
+        'p_ride_id': rideId,
+        'p_driver_phone': phone,
+        'p_driver_name': name,
+        'p_price': price,
+      });
+      return null;
+    } catch (e) {
+      final msg = e.toString();
+      if (msg.contains('ride_already_taken')) return 'الرحلة اتقفلت — سائق تاني اتقبل عليها.';
+      if (msg.contains('not_negotiable')) return 'الرحلة دي مش تفاوضية.';
+      return 'تعذّر إرسال العرض، حاول مرة أخرى.';
+    }
+  }
+
   /// Marks an order picked up (matches driver-dashboard.astro's PATCH).
   Future<void> markOrderPickedUp(String orderId) async {
     await sb.from('orders').update({

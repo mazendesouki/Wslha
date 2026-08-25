@@ -26,6 +26,7 @@ class _RidesScreenState extends State<RidesScreen> {
   final List<PlaceResult?> _stops = [null];
   int _passengers = 1;
   String _payment = 'cash';
+  bool _negotiable = false;
   bool _submitting = false;
   UserSession? _session;
 
@@ -93,6 +94,7 @@ class _RidesScreenState extends State<RidesScreen> {
       payment: _payment,
       rideType: _isExternal ? 'external' : 'local',
       stops: waypoints.map((p) => {'name': p.name, 'lat': p.lat, 'lng': p.lng}).toList(),
+      isNegotiable: _negotiable,
     );
 
     if (!mounted) return;
@@ -208,6 +210,19 @@ class _RidesScreenState extends State<RidesScreen> {
                 title: const Text('📱 فودافون كاش / إنستاباي'),
                 dense: true,
               ),
+              const SizedBox(height: 8),
+              SwitchListTile(
+                value: _negotiable,
+                onChanged: (v) => setState(() => _negotiable = v),
+                contentPadding: EdgeInsets.zero,
+                dense: true,
+                activeThumbColor: AppColors.primary,
+                title: const Text('🤝 اطلب بسعر تفاوضي', style: TextStyle(fontWeight: FontWeight.w700)),
+                subtitle: const Text(
+                  'السائقين يقدّموا أسعارهم وانت تختار — بدل السعر الثابت',
+                  style: TextStyle(fontSize: 11, color: AppColors.textFaint),
+                ),
+              ),
               const SizedBox(height: 12),
               if (_straightKm > 0)
                 Container(
@@ -218,6 +233,15 @@ class _RidesScreenState extends State<RidesScreen> {
                   ),
                   child: Column(
                     children: [
+                      if (_negotiable)
+                        const Padding(
+                          padding: EdgeInsets.only(bottom: 10),
+                          child: Text(
+                            '🤝 وضع تفاوضي — الرقم اللي تحت ده تقديري بس، السعر النهائي هيكون حسب عرض السائق اللي هتختاره',
+                            style: TextStyle(fontSize: 11, color: AppColors.primaryDark, fontWeight: FontWeight.w700),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
                       if (_isExternal)
                         const Padding(
                           padding: EdgeInsets.only(bottom: 10),
@@ -256,7 +280,7 @@ class _RidesScreenState extends State<RidesScreen> {
                         height: 20,
                         child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                       )
-                    : const Text('🚖 اطلب مشوارك الآن'),
+                    : Text(_negotiable ? '🤝 اطلب عروض أسعار من السائقين' : '🚖 اطلب مشوارك الآن'),
               ),
             ],
           ),

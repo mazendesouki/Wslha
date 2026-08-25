@@ -243,6 +243,18 @@ class _RideTrackingScreenState extends State<RideTrackingScreen> {
                       if (!isCancelled) _EtaCard(status: status),
                       if (!isCancelled &&
                           !widget.isDriverView &&
+                          ride['is_negotiable'] == true &&
+                          status == 'pending' &&
+                          (driverPhone == null || driverPhone.isEmpty)) ...[
+                        const SizedBox(height: 16),
+                        _OffersPanel(
+                          rideRepo: _rideRepo,
+                          rideId: widget.rideId,
+                          customerPhone: customerPhone ?? '',
+                        ),
+                      ],
+                      if (!isCancelled &&
+                          !widget.isDriverView &&
                           driverPhone != null &&
                           driverPhone.isNotEmpty &&
                           _liveTrackStatuses.contains(status)) ...[
@@ -703,6 +715,133 @@ class _CustomerCard extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// Live list of driver price offers on a negotiable ride still waiting for
+/// a driver — shown instead of/above the plain "جارٍ التعيين" state while
+/// status stays 'pending'. Disappears on its own once a driver is assigned
+/// (the outer condition in build() stops rendering it).
+class _OffersPanel extends StatefulWidget {
+  final RideRepository rideRepo;
+  final String rideId;
+  final String customerPhone;
+  const _OffersPanel({required this.rideRepo, required this.rideId, required this.customerPhone});
+
+  @override
+  State<_OffersPanel> createState() => _OffersPanelState();
+}
+
+class _OffersPanelState extends State<_OffersPanel> {
+  String? _acceptingOfferId;
+
+  Future<void> _accept(String offerId) async {
+    setState(() => _acceptingOfferId = offerId);
+    final ok = await widget.rideRepo.acceptPriceOffer(widget.rideId, offerId, widget.customerPhone);
+    if (!mounted) return;
+    setState(() => _acceptingOfferId = null);
+    if (!ok) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('العرض ده مبقاش متاح، جرّب عرض تاني')),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<List<Map<String, dynamic>>>(
+      stream: widget.rideRepo.watchRideOffers(widget.rideId),
+      builder: (context, snapshot) {
+        final offers = (snapshot.data ?? [])
+            .where((o) => o['status'] == 'pending')
+            .toList()
+          ..sort((a, b) => ((a['offered_price'] as num?) ?? 0).compareTo((b['offered_price'] as num?) ?? 0));
+
+        return Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: const [BoxShadow(color: Color(0x14000000), blurRadius: 12, offset: Offset(0, 4))],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                children: [
+                  const Text('🤝', style: TextStyle(fontSize: 16)),
+                  const SizedBox(width: 6),
+                  const Expanded(
+                    child: Text('عروض أسعار السائقين', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 13)),
+                  ),
+                  if (offers.isNotEmpty)
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(color: AppColors.primaryLight, borderRadius: BorderRadius.circular(999)),
+                      child: Text('${offers.length}', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w900, color: AppColors.primary)),
+                    ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              if (offers.isEmpty)
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 10),
+                  child: Text(
+                    'بنستنى سائقين يقدّموا أسعارهم… هتظهر هنا أول ما توصل',
+                    style: TextStyle(fontSize: 12, color: AppColors.textFaint),
+                    textAlign: TextAlign.center,
+                  ),
+                )
+              else
+                ...offers.map((o) {
+                  final id = o['id'].toString();
+                  final price = (o['offered_price'] as num?)?.toStringAsFixed(0) ?? '—';
+                  final name = (o['driver_name'] as String?)?.trim();
+                  final busy = _acceptingOfferId == id;
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: Row(
+                      children: [
+                        const CircleAvatar(
+                          radius: 18,
+                          backgroundColor: AppColors.primaryLight,
+                          child: Text('🧑‍✈️', style: TextStyle(fontSize: 14)),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            (name != null && name.isNotEmpty) ? name : 'سائق',
+                            style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+                          ),
+                        ),
+                        Text('$price ج.م', style: const TextStyle(fontWeight: FontWeight.w900, color: AppColors.success, fontSize: 14)),
+                        const SizedBox(width: 10),
+                        SizedBox(
+                          height: 34,
+                          child: ElevatedButton(
+                            onPressed: (_acceptingOfferId == null) ? () => _accept(id) : null,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.primary,
+                              padding: const EdgeInsets.symmetric(horizontal: 14),
+                            ),
+                            child: busy
+                                ? const SizedBox(
+                                    width: 14,
+                                    height: 14,
+                                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                                  )
+                                : const Text('قبول', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w900)),
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }),
+            ],
+          ),
+        );
+      },
     );
   }
 }
