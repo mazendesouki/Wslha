@@ -3,6 +3,10 @@ interface Props {
   compact?: boolean;
 }
 const { compact = false } = Astro.props;
+
+// See src/pages/download.astro — same static-path caching gotcha, same
+// commit-SHA cache-busting fix.
+const buildId = process.env.VERCEL_GIT_COMMIT_SHA || Date.now().toString();
 ---
 
 <section class:list={['app-cta', { 'app-cta--compact': compact }]}>
@@ -16,7 +20,7 @@ const { compact = false } = Astro.props;
       </p>
     </div>
     <div class="app-cta__actions">
-      <a href="/downloads/wslha-customer.apk" download class="app-cta__btn app-cta__btn--primary">
+      <a href={`/downloads/wslha-customer.apk?v=${buildId}`} download class="app-cta__btn app-cta__btn--primary">
         ⬇️ تحميل تطبيق العميل (Android)
       </a>
       <a href="/download" class="app-cta__btn app-cta__btn--ghost">طريقة التثبيت خطوة بخطوة</a>

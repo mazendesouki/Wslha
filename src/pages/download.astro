@@ -2,10 +2,17 @@
 import Layout from '../components/layout.astro';
 import PageHero from '../components/PageHero.astro';
 
+// The APK files always live at the same static path (wslha-customer.apk
+// etc. — see build-flutter-apps.yml's publish step), so browsers/CDNs
+// happily cache a stale copy forever with no way to tell it's outdated.
+// Appending the deploy's commit SHA as a query string busts that cache on
+// every new build without needing per-build filenames on the CI side.
+const buildId = process.env.VERCEL_GIT_COMMIT_SHA || Date.now().toString();
+
 const apps = [
-  { flavor: 'customer', label: '📱 تطبيق العميل', desc: 'احجز رحلاتك وطلباتك وتابعها لحظة بلحظة.', file: '/downloads/wslha-customer.apk' },
-  { flavor: 'driver', label: '🚗 تطبيق السائق', desc: 'استقبل عروض الرحلات والطلبات واشتغل براحتك.', file: '/downloads/wslha-driver.apk' },
-  { flavor: 'merchant', label: '🏪 تطبيق التاجر', desc: 'استقبل طلبات متجرك وتابعها من مكان واحد.', file: '/downloads/wslha-merchant.apk' },
+  { flavor: 'customer', label: '📱 تطبيق العميل', desc: 'احجز رحلاتك وطلباتك وتابعها لحظة بلحظة.', file: `/downloads/wslha-customer.apk?v=${buildId}` },
+  { flavor: 'driver', label: '🚗 تطبيق السائق', desc: 'استقبل عروض الرحلات والطلبات واشتغل براحتك.', file: `/downloads/wslha-driver.apk?v=${buildId}` },
+  { flavor: 'merchant', label: '🏪 تطبيق التاجر', desc: 'استقبل طلبات متجرك وتابعها من مكان واحد.', file: `/downloads/wslha-merchant.apk?v=${buildId}` },
 ];
 ---
 
