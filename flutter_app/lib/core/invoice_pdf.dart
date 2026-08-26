@@ -230,7 +230,7 @@ pw.Widget _footer() {
       pw.Divider(color: _pdfAccent, thickness: 1.2),
       pw.SizedBox(height: 8),
       pw.Center(
-        child: pw.Text('شكرًا لاستخدامك وصّلها 🧡', style: pw.TextStyle(fontSize: 11, color: _pdfTextFaint, fontWeight: pw.FontWeight.bold)),
+        child: pw.Text('شكرًا لاستخدامك وصّلها', style: pw.TextStyle(fontSize: 11, color: _pdfTextFaint, fontWeight: pw.FontWeight.bold)),
       ),
     ],
   );

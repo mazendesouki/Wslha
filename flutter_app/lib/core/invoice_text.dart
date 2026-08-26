@@ -146,7 +146,7 @@ InvoiceData buildRideInvoiceData(Map<String, dynamic> r) {
 
   return InvoiceData(
     kind: isAirport ? 'airport' : 'ride',
-    title: isAirport ? '✈️ فاتورة توصيل مطار' : '🚖 فاتورة رحلة',
+    title: isAirport ? 'فاتورة توصيل مطار' : 'فاتورة رحلة',
     invoiceNumber: _shortId(r['id']),
     statusLabel: statusAr[status] ?? status,
     statusColor: _statusColor[status] ?? _colorFaint,
@@ -175,7 +175,7 @@ InvoiceData buildOrderInvoiceData(Map<String, dynamic> o) {
 
   return InvoiceData(
     kind: 'order',
-    title: '📦 فاتورة طلب من ${o['store_name'] ?? 'المتجر'}',
+    title: 'فاتورة طلب من ${o['store_name'] ?? 'المتجر'}',
     invoiceNumber: _shortId(o['code'] ?? o['id']),
     statusLabel: statusAr[status] ?? status,
     statusColor: _statusColor[status] ?? _colorFaint,
