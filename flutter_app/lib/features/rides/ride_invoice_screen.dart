@@ -189,7 +189,7 @@ class _RideInvoiceScreenState extends State<RideInvoiceScreen> {
               const SizedBox(width: 10),
               Expanded(
                 child: OutlinedButton.icon(
-                  onPressed: () => printInvoiceText(buildRideInvoiceText(r)),
+                  onPressed: () => printInvoice(buildRideInvoiceData(r)),
                   icon: const Icon(Icons.print_outlined, size: 18),
                   label: const Text('طباعة'),
                 ),

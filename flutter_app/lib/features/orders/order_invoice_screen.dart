@@ -275,7 +275,7 @@ class _OrderInvoiceScreenState extends State<OrderInvoiceScreen> {
               const SizedBox(width: 10),
               Expanded(
                 child: OutlinedButton.icon(
-                  onPressed: () => printInvoiceText(buildOrderInvoiceText(o)),
+                  onPressed: () => printInvoice(buildOrderInvoiceData(o)),
                   icon: const Icon(Icons.print_outlined, size: 18),
                   label: const Text('طباعة'),
                 ),
