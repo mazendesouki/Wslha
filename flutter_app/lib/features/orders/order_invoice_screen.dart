@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import '../../core/contact_launcher.dart';
+import '../../core/date_format_ar.dart';
+import '../../core/invoice_pdf.dart';
+import '../../core/invoice_text.dart';
 import '../../core/supabase_client.dart';
 import '../../core/theme.dart';
 import '../ratings/order_rating_sheet.dart';
@@ -136,6 +140,8 @@ class _OrderInvoiceScreenState extends State<OrderInvoiceScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                const Text('🧾 وصّلها', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 13, letterSpacing: 0.5)),
+                const SizedBox(height: 8),
                 Text(
                   '📦 طلب من ${o['store_name'] ?? 'المتجر'}',
                   style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 16),
@@ -151,7 +157,7 @@ class _OrderInvoiceScreenState extends State<OrderInvoiceScreen> {
                   children: [
                     Text(statusAr[status] ?? status, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 13)),
                     if (createdAt != null)
-                      Text(_formatDate(createdAt), style: const TextStyle(color: Colors.white70, fontSize: 11)),
+                      Text(arDateTime(createdAt), style: const TextStyle(color: Colors.white70, fontSize: 11)),
                   ],
                 ),
               ],
@@ -256,6 +262,26 @@ class _OrderInvoiceScreenState extends State<OrderInvoiceScreen> {
               ],
             ),
           ),
+          const SizedBox(height: 20),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: () => shareTextViaWhatsApp(buildOrderInvoiceText(o)),
+                  icon: const Icon(Icons.chat_bubble_outline, size: 18, color: Color(0xFF25D366)),
+                  label: const Text('واتساب'),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: () => printInvoiceText(buildOrderInvoiceText(o)),
+                  icon: const Icon(Icons.print_outlined, size: 18),
+                  label: const Text('طباعة'),
+                ),
+              ),
+            ],
+          ),
         ],
       ),
     );
@@ -288,10 +314,5 @@ class _OrderInvoiceScreenState extends State<OrderInvoiceScreen> {
     if (code != null && code.isNotEmpty) return code;
     final id = widget.orderId;
     return id.length > 8 ? id.substring(id.length - 8) : id;
-  }
-
-  String _formatDate(DateTime d) {
-    final local = d.toLocal();
-    return '${local.year}/${local.month.toString().padLeft(2, '0')}/${local.day.toString().padLeft(2, '0')} — ${local.hour.toString().padLeft(2, '0')}:${local.minute.toString().padLeft(2, '0')}';
   }
 }

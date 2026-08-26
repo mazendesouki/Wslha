@@ -18,3 +18,12 @@ Future<bool> openWhatsApp(String phone) {
   final uri = Uri.parse('https://wa.me/$intl');
   return launchUrl(uri, mode: LaunchMode.externalApplication);
 }
+
+/// Opens WhatsApp's own contact/chat picker pre-filled with [text] — no
+/// destination phone number, since this is for sharing something (an
+/// invoice) with whichever contact the user picks, not a fixed party like
+/// openWhatsApp() above.
+Future<bool> shareTextViaWhatsApp(String text) {
+  final uri = Uri.parse('https://wa.me/?text=${Uri.encodeComponent(text)}');
+  return launchUrl(uri, mode: LaunchMode.externalApplication);
+}

@@ -8,6 +8,7 @@ import '../../core/theme.dart';
 import '../orders/orders_repository.dart';
 import '../ratings/ratings_repository.dart';
 import 'account_repository.dart';
+import 'invoices_screen.dart';
 
 const Map<String, String> _roleAr = {
   'customer': 'عميل',
@@ -336,6 +337,15 @@ class AccountScreenState extends State<AccountScreen> {
               onPressed: _editProfile,
               icon: const Icon(Icons.edit_outlined),
               label: const Text('تعديل بياناتي'),
+              style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 14)),
+            ),
+            const SizedBox(height: 10),
+            OutlinedButton.icon(
+              onPressed: () => Navigator.of(context).push(MaterialPageRoute(
+                builder: (_) => InvoicesScreen(customerPhone: _session!.phone),
+              )),
+              icon: const Icon(Icons.receipt_long_outlined),
+              label: const Text('🧾 فواتيري'),
               style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 14)),
             ),
             const SizedBox(height: 24),
