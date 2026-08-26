@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import '../../core/contact_launcher.dart';
+import '../../core/date_format_ar.dart';
 import '../../core/location_share.dart';
 import '../../core/maps_launcher.dart';
 import '../../core/notifications.dart';
@@ -241,6 +242,10 @@ class _RideTrackingScreenState extends State<RideTrackingScreen> {
                       ),
                       const SizedBox(height: 16),
                       if (!isCancelled) _EtaCard(status: status),
+                      if (!isCancelled && !widget.isDriverView && status == 'accepted') ...[
+                        const SizedBox(height: 12),
+                        _ArrivalDeadlineCard(acceptedAt: ride['accepted_at'] as String?, etaMinutes: ride['eta_minutes'] as num?),
+                      ],
                       if (!isCancelled &&
                           !widget.isDriverView &&
                           ride['is_negotiable'] == true &&
@@ -322,6 +327,21 @@ class _RideTrackingScreenState extends State<RideTrackingScreen> {
                             padding: const EdgeInsets.symmetric(vertical: 14),
                           ),
                           onPressed: () async {
+                            final confirmed = await showDialog<bool>(
+                              context: context,
+                              builder: (_) => AlertDialog(
+                                title: const Text('إلغاء الرحلة؟'),
+                                content: const Text('هل أنت متأكد إنك عايز تلغي الرحلة دي؟'),
+                                actions: [
+                                  TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('تراجع')),
+                                  TextButton(
+                                    onPressed: () => Navigator.of(context).pop(true),
+                                    child: const Text('إلغاء الرحلة', style: TextStyle(color: AppColors.error)),
+                                  ),
+                                ],
+                              ),
+                            );
+                            if (confirmed != true || !context.mounted) return;
                             final customerPhone = ride['customer_phone'] as String? ?? '';
                             final error = await _rideRepo.cancelRide(widget.rideId, customerPhone);
                             if (!context.mounted) return;
@@ -885,6 +905,58 @@ class _OffersPanelState extends State<_OffersPanel> {
           ),
         );
       },
+    );
+  }
+}
+
+/// Shown while status='accepted' — the driver is en route but hasn't
+/// reached the pickup point yet. Surfaces the same deadline the driver
+/// sees on their own active-job card, plus the late-arrival penalty
+/// (mark_ride_arrived, db/security-29: 20 ج.م خصم من محفظة السائق لو
+/// اتأخر أكتر من 5 دقايق من وقت القبول) so the customer understands why
+/// being ready on time at the pickup point matters — the fee lands on
+/// the driver, not the customer, but a customer who isn't ready is what
+/// usually causes it.
+class _ArrivalDeadlineCard extends StatelessWidget {
+  final String? acceptedAt;
+  final num? etaMinutes;
+  const _ArrivalDeadlineCard({required this.acceptedAt, required this.etaMinutes});
+
+  @override
+  Widget build(BuildContext context) {
+    final accepted = acceptedAt == null ? null : DateTime.tryParse(acceptedAt!)?.toLocal();
+    if (accepted == null || etaMinutes == null) return const SizedBox.shrink();
+    final deadline = accepted.add(Duration(minutes: etaMinutes!.round()));
+
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFFBEB),
+        border: Border.all(color: const Color(0xFFFDE68A), width: 1.5),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Text('🚗', style: TextStyle(fontSize: 18)),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'السائق متوقع يوصل الساعة ${arTime(deadline)} (خلال حوالي ${etaMinutes!.round()} دقيقة)',
+                  style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w900, color: Colors.black87),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          const Text(
+            'يرجى التواجد عند نقطة الانطلاق في الموعد — تأخير السائق أكتر من 5 دقايق بيحمّله غرامة 20 ج.م، فبلاش نتأخر عليه 🙏',
+            style: TextStyle(fontSize: 11, color: AppColors.textFaint, height: 1.4),
+          ),
+        ],
+      ),
     );
   }
 }

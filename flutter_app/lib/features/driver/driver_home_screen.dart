@@ -539,6 +539,10 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
                   const SizedBox(height: 8),
                   _AirportFlightChip(data: job),
                 ],
+                if (!isOrder && job['status'] == 'accepted') ...[
+                  const SizedBox(height: 8),
+                  _ArrivalDeadlineChip(acceptedAt: job['accepted_at'] as String?, etaMinutes: job['eta_minutes'] as num?),
+                ],
                 const SizedBox(height: 12),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
@@ -1119,6 +1123,33 @@ class _RouteRow extends StatelessWidget {
 /// active-job card otherwise look identical to a normal ride, even though
 /// airport bookings have a real deadline (see security-32's flight_time
 /// column) the driver needs to see at a glance.
+/// The deadline the driver needs to reach the customer's pickup point by
+/// (accepted_at + eta_minutes) — matches mark_ride_arrived's own
+/// server-side late calculation (db/security-29): more than 5 minutes
+/// past this deducts 20 ج.م from the driver's wallet automatically once
+/// they mark themselves arrived, so this is a real deadline, not just an
+/// estimate.
+class _ArrivalDeadlineChip extends StatelessWidget {
+  final String? acceptedAt;
+  final num? etaMinutes;
+  const _ArrivalDeadlineChip({required this.acceptedAt, required this.etaMinutes});
+
+  @override
+  Widget build(BuildContext context) {
+    final accepted = acceptedAt == null ? null : DateTime.tryParse(acceptedAt!)?.toLocal();
+    if (accepted == null || etaMinutes == null) return const SizedBox.shrink();
+    final deadline = accepted.add(Duration(minutes: etaMinutes!.round()));
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(color: const Color(0xFFFEF3C7), borderRadius: BorderRadius.circular(999)),
+      child: Text(
+        '🕐 لازم توصل عند العميل الساعة ${arTime(deadline)} بدون تأخير',
+        style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: Color(0xFF92400E)),
+      ),
+    );
+  }
+}
+
 class _AirportFlightChip extends StatelessWidget {
   final Map<String, dynamic> data;
   const _AirportFlightChip({required this.data});
