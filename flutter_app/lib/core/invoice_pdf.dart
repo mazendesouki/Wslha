@@ -1,3 +1,4 @@
+import 'package:flutter/services.dart' show rootBundle;
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
@@ -22,6 +23,8 @@ final _pdfTextFaint = PdfColor.fromInt(0xFF6B7280);
 Future<void> printInvoice(InvoiceData data) async {
   final regular = await PdfGoogleFonts.notoNaskhArabicRegular();
   final bold = await PdfGoogleFonts.notoNaskhArabicBold();
+  final logoBytes = (await rootBundle.load('assets/branding/logo.png')).buffer.asUint8List();
+  final logo = pw.MemoryImage(logoBytes);
   final doc = pw.Document();
   final statusColor = PdfColor.fromInt(data.statusColor);
 
@@ -34,7 +37,7 @@ Future<void> printInvoice(InvoiceData data) async {
       build: (context) => pw.Column(
         crossAxisAlignment: pw.CrossAxisAlignment.stretch,
         children: [
-          _header(data),
+          _header(data, logo),
           pw.Padding(
             padding: const pw.EdgeInsets.fromLTRB(28, 20, 28, 28),
             child: pw.Column(
@@ -68,30 +71,43 @@ Future<void> printInvoice(InvoiceData data) async {
   await Printing.layoutPdf(onLayout: (format) => doc.save());
 }
 
-pw.Widget _header(InvoiceData data) {
+pw.Widget _header(InvoiceData data, pw.ImageProvider logo) {
   return pw.Container(
-    padding: const pw.EdgeInsets.fromLTRB(28, 26, 28, 22),
+    padding: const pw.EdgeInsets.fromLTRB(28, 24, 28, 22),
     decoration: pw.BoxDecoration(
       gradient: pw.LinearGradient(colors: [_pdfPrimaryDark, _pdfPrimary]),
     ),
     child: pw.Row(
       mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-      crossAxisAlignment: pw.CrossAxisAlignment.start,
+      crossAxisAlignment: pw.CrossAxisAlignment.center,
       children: [
-        pw.Column(
-          crossAxisAlignment: pw.CrossAxisAlignment.start,
+        pw.Row(
+          crossAxisAlignment: pw.CrossAxisAlignment.center,
           children: [
-            pw.Text('وصّلها', style: pw.TextStyle(color: PdfColors.white, fontSize: 26, fontWeight: pw.FontWeight.bold)),
-            pw.SizedBox(height: 4),
-            pw.Text('تطبيق النقل والتوصيل', style: const pw.TextStyle(color: PdfColors.white, fontSize: 10)),
+            pw.Container(
+              width: 46,
+              height: 46,
+              padding: const pw.EdgeInsets.all(4),
+              decoration: pw.BoxDecoration(color: PdfColors.white, borderRadius: pw.BorderRadius.circular(10)),
+              child: pw.Image(logo, fit: pw.BoxFit.contain),
+            ),
+            pw.SizedBox(width: 12),
+            pw.Column(
+              crossAxisAlignment: pw.CrossAxisAlignment.start,
+              children: [
+                pw.Text('وصّلها', style: pw.TextStyle(color: PdfColors.white, fontSize: 28, fontWeight: pw.FontWeight.bold)),
+                pw.SizedBox(height: 3),
+                pw.Text('تطبيق النقل والتوصيل', style: const pw.TextStyle(color: PdfColors.white, fontSize: 11)),
+              ],
+            ),
           ],
         ),
         pw.Column(
           crossAxisAlignment: pw.CrossAxisAlignment.end,
           children: [
-            pw.Text(data.title, style: pw.TextStyle(color: PdfColors.white, fontSize: 14, fontWeight: pw.FontWeight.bold)),
+            pw.Text(data.title, style: pw.TextStyle(color: PdfColors.white, fontSize: 15, fontWeight: pw.FontWeight.bold)),
             pw.SizedBox(height: 4),
-            pw.Text('فاتورة رقم #${data.invoiceNumber}', style: const pw.TextStyle(color: PdfColors.white, fontSize: 10)),
+            pw.Text('فاتورة رقم #${data.invoiceNumber}', style: const pw.TextStyle(color: PdfColors.white, fontSize: 11)),
           ],
         ),
       ],
@@ -109,9 +125,9 @@ pw.Widget _statusAndDateRow(InvoiceData data, PdfColor statusColor) {
           color: PdfColor(statusColor.red, statusColor.green, statusColor.blue, 0.12),
           borderRadius: pw.BorderRadius.circular(999),
         ),
-        child: pw.Text(data.statusLabel, style: pw.TextStyle(color: statusColor, fontSize: 11, fontWeight: pw.FontWeight.bold)),
+        child: pw.Text(data.statusLabel, style: pw.TextStyle(color: statusColor, fontSize: 12, fontWeight: pw.FontWeight.bold)),
       ),
-      if (data.dateLabel != null) pw.Text(data.dateLabel!, style: pw.TextStyle(color: _pdfTextFaint, fontSize: 10)),
+      if (data.dateLabel != null) pw.Text(data.dateLabel!, style: pw.TextStyle(color: _pdfTextFaint, fontSize: 11, fontWeight: pw.FontWeight.bold)),
     ],
   );
 }
@@ -125,10 +141,10 @@ pw.Widget _customerBox(InvoiceData data) {
       crossAxisAlignment: pw.CrossAxisAlignment.start,
       children: [
         if (data.customerName != null)
-          pw.Text(data.customerName!, style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold)),
+          pw.Text(data.customerName!, style: pw.TextStyle(fontSize: 13, fontWeight: pw.FontWeight.bold)),
         if (data.customerPhone != null) ...[
-          pw.SizedBox(height: 2),
-          pw.Text(data.customerPhone!, style: pw.TextStyle(fontSize: 10, color: _pdfTextFaint)),
+          pw.SizedBox(height: 3),
+          pw.Text(data.customerPhone!, style: pw.TextStyle(fontSize: 11, color: _pdfTextFaint, fontWeight: pw.FontWeight.bold)),
         ],
       ],
     ),
@@ -145,12 +161,12 @@ pw.Widget _detailsTable(InvoiceData data) {
           decoration: pw.BoxDecoration(color: i.isEven ? PdfColors.white : _pdfLightBg),
           children: [
             pw.Padding(
-              padding: const pw.EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-              child: pw.Text(data.details[i].label, style: pw.TextStyle(fontSize: 10.5, color: _pdfTextFaint, fontWeight: pw.FontWeight.bold)),
+              padding: const pw.EdgeInsets.symmetric(horizontal: 10, vertical: 9),
+              child: pw.Text(data.details[i].label, style: pw.TextStyle(fontSize: 11.5, color: _pdfTextFaint, fontWeight: pw.FontWeight.bold)),
             ),
             pw.Padding(
-              padding: const pw.EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-              child: pw.Text(data.details[i].value, style: const pw.TextStyle(fontSize: 11)),
+              padding: const pw.EdgeInsets.symmetric(horizontal: 10, vertical: 9),
+              child: pw.Text(data.details[i].value, style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold)),
             ),
           ],
         ),
@@ -163,8 +179,8 @@ pw.Widget _itemsTable(InvoiceData data) {
     headers: const ['الصنف', 'الكمية', 'السعر'],
     data: data.items.map((it) => [it.name, '${it.qty}', it.price != null ? '${it.price} ج.م' : '—']).toList(),
     headerDecoration: pw.BoxDecoration(color: _pdfPrimary),
-    headerStyle: pw.TextStyle(color: PdfColors.white, fontSize: 10.5, fontWeight: pw.FontWeight.bold),
-    cellStyle: const pw.TextStyle(fontSize: 10.5),
+    headerStyle: pw.TextStyle(color: PdfColors.white, fontSize: 11.5, fontWeight: pw.FontWeight.bold),
+    cellStyle: pw.TextStyle(fontSize: 11.5, fontWeight: pw.FontWeight.bold),
     cellAlignments: {0: pw.Alignment.centerRight, 1: pw.Alignment.center, 2: pw.Alignment.center},
     oddRowDecoration: pw.BoxDecoration(color: _pdfLightBg),
     border: pw.TableBorder.all(color: _pdfBorder, width: 0.6),
@@ -189,8 +205,8 @@ pw.Widget _totalsBox(InvoiceData data) {
             child: pw.Row(
               mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
               children: [
-                pw.Text(row.label, style: pw.TextStyle(fontSize: 10.5, color: _pdfTextFaint)),
-                pw.Text(row.value, style: const pw.TextStyle(fontSize: 10.5)),
+                pw.Text(row.label, style: pw.TextStyle(fontSize: 11.5, color: _pdfTextFaint, fontWeight: pw.FontWeight.bold)),
+                pw.Text(row.value, style: pw.TextStyle(fontSize: 11.5, fontWeight: pw.FontWeight.bold)),
               ],
             ),
           ),
@@ -198,8 +214,8 @@ pw.Widget _totalsBox(InvoiceData data) {
         pw.Row(
           mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
           children: [
-            pw.Text('الإجمالي', style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold)),
-            pw.Text('${data.total} ج.م', style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold, color: _pdfAccent)),
+            pw.Text('الإجمالي', style: pw.TextStyle(fontSize: 15, fontWeight: pw.FontWeight.bold)),
+            pw.Text('${data.total} ج.م', style: pw.TextStyle(fontSize: 20, fontWeight: pw.FontWeight.bold, color: _pdfAccent)),
           ],
         ),
       ],
