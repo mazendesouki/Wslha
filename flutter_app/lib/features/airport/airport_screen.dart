@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/date_format_ar.dart';
 import '../../core/phone_utils.dart';
 import '../../core/session.dart';
 import '../../core/theme.dart';
@@ -198,7 +199,7 @@ class _AirportScreenState extends State<AirportScreen> {
         if (_terminalCtrl.text.trim().isNotEmpty) '🏁 الصالة: ${_terminalCtrl.text.trim()}',
         if (_flightCountryCtrl.text.trim().isNotEmpty) '🌍 الدولة: ${_flightCountryCtrl.text.trim()}',
         if (_addressCtrl.text.trim().isNotEmpty) '📍 العنوان بالتفصيل: ${_addressCtrl.text.trim()}',
-        '🕐 وقت ${_direction == "departure" ? "الإقلاع" : "الهبوط"}: ${_flightTime!.toLocal()}',
+        '🕐 وقت ${_direction == "departure" ? "الإقلاع" : "الهبوط"}: ${arDateTime(_flightTime!)}',
       ].join(' — ');
 
       final ride = await _repo.createAirportRide(
@@ -382,7 +383,7 @@ class _AirportScreenState extends State<AirportScreen> {
             child: InputDecorator(
               decoration: InputDecoration(labelText: _direction == 'departure' ? 'تاريخ ووقت إقلاع الطائرة' : 'تاريخ ووقت هبوط الطائرة'),
               child: Text(
-                _flightTime == null ? 'اختر التاريخ والوقت' : _flightTime!.toLocal().toString().substring(0, 16),
+                _flightTime == null ? 'اختر التاريخ والوقت' : arDateTime(_flightTime!),
                 style: TextStyle(color: _flightTime == null ? AppColors.textFaint : Colors.black87),
               ),
             ),
@@ -560,7 +561,7 @@ class _AirportScreenState extends State<AirportScreen> {
   }
 
   Widget _timelineRow(fare.TimelineStep step, {required bool isLast}) {
-    final timeStr = TimeOfDay.fromDateTime(step.time).format(context);
+    final timeStr = arTime(step.time);
     final dateStr = '${_weekday(step.time.weekday)} ${step.time.day} ${_month(step.time.month)}';
     return IntrinsicHeight(
       child: Row(

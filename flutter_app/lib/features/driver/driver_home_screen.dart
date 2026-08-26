@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../core/contact_launcher.dart';
+import '../../core/date_format_ar.dart';
 import '../../core/maps_launcher.dart';
 import '../../core/notifications.dart';
 import '../../core/push.dart';
@@ -1129,12 +1130,10 @@ class _AirportFlightChip extends StatelessWidget {
     if (flightTime == null) return const SizedBox.shrink();
     final direction = data['airport_direction'] as String? ?? 'departure';
     final label = direction == 'departure' ? 'إقلاع' : 'هبوط';
-    final timeStr = TimeOfDay.fromDateTime(flightTime).format(context);
-    final dateStr = '${flightTime.day}/${flightTime.month}';
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(color: const Color(0xFFEFF6FF), borderRadius: BorderRadius.circular(999)),
-      child: Text('✈️ $label الساعة $timeStr — $dateStr', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: Color(0xFF1D4ED8))),
+      child: Text('✈️ $label ${arDateTime(flightTime)}', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: Color(0xFF1D4ED8))),
     );
   }
 }
@@ -1156,6 +1155,8 @@ class _AirportDetailsCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final direction = data['airport_direction'] as String? ?? 'departure';
     final directionLabel = direction == 'departure' ? '🛫 توصيل من العميل إلى المطار (مغادرة)' : '🛬 توصيل من المطار إلى العميل (وصول)';
+    final rawFlightTime = data['flight_time'];
+    final flightTime = rawFlightTime == null ? null : DateTime.tryParse(rawFlightTime.toString())?.toLocal();
     final notes = (data['notes'] as String?) ?? '';
     final lines = notes.split(' — ').where((l) => l.trim().isNotEmpty).toList();
 
@@ -1168,6 +1169,17 @@ class _AirportDetailsCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(directionLabel, style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 13)),
+          if (flightTime != null) ...[
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(color: const Color(0xFFEFF6FF), borderRadius: BorderRadius.circular(8)),
+              child: Text(
+                '🕐 ${direction == "departure" ? "موعد الإقلاع" : "موعد الهبوط"}: ${arDateTime(flightTime)}',
+                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w900, color: Color(0xFF1D4ED8)),
+              ),
+            ),
+          ],
           const SizedBox(height: 10),
           ...lines.map((l) => Padding(
                 padding: const EdgeInsets.only(bottom: 4),

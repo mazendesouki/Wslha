@@ -119,8 +119,25 @@ class RideRepository {
     return sb.from('driver_locations').stream(primaryKey: ['driver_phone']).eq('driver_phone', driverPhone);
   }
 
-  Future<void> cancelRide(String rideId) async {
-    await sb.from('rides').update({'status': 'cancelled'}).eq('id', rideId);
+  /// Customer cancels their own ride — allowed while it's still pending or
+  /// while a driver has accepted/arrived but hasn't started the trip yet
+  /// (customer_cancel_ride, db/security-40). No matching driver-side
+  /// cancel exists anywhere in the app: once a driver accepts, cancelling
+  /// is a customer-only right.
+  /// Returns null on success, or a message to show.
+  Future<String?> cancelRide(String rideId, String customerPhone) async {
+    try {
+      await sb.rpc('customer_cancel_ride', params: {
+        'p_ride_id': rideId,
+        'p_customer_phone': customerPhone,
+      });
+      return null;
+    } catch (e) {
+      final msg = e.toString();
+      if (msg.contains('cannot_cancel_now')) return 'الرحلة بدأت بالفعل، مش ممكن تلغيها دلوقتي.';
+      if (msg.contains('not_your_ride')) return 'حصل خطأ في التحقق من الرحلة.';
+      return 'تعذّر إلغاء الرحلة: $msg';
+    }
   }
 
   /// `rides` only carries driver_name/driver_phone once a driver accepts —

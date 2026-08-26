@@ -314,7 +314,7 @@ class _RideTrackingScreenState extends State<RideTrackingScreen> {
                         ),
                       ),
                       const SizedBox(height: 20),
-                      if (!widget.isDriverView && status == 'pending')
+                      if (!widget.isDriverView && (status == 'pending' || status == 'accepted' || status == 'arrived'))
                         OutlinedButton(
                           style: OutlinedButton.styleFrom(
                             foregroundColor: AppColors.error,
@@ -322,8 +322,14 @@ class _RideTrackingScreenState extends State<RideTrackingScreen> {
                             padding: const EdgeInsets.symmetric(vertical: 14),
                           ),
                           onPressed: () async {
-                            await _rideRepo.cancelRide(widget.rideId);
-                            if (context.mounted) Navigator.of(context).pop();
+                            final customerPhone = ride['customer_phone'] as String? ?? '';
+                            final error = await _rideRepo.cancelRide(widget.rideId, customerPhone);
+                            if (!context.mounted) return;
+                            if (error != null) {
+                              ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error)));
+                              return;
+                            }
+                            Navigator.of(context).pop();
                           },
                           child: const Text('إلغاء الرحلة'),
                         ),

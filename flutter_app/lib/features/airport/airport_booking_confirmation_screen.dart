@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../../core/date_format_ar.dart';
 import '../../core/notifications.dart';
 import '../../core/theme.dart';
 import '../rides/ride_tracking_screen.dart';
@@ -159,6 +160,11 @@ class _AirportBookingConfirmationScreenState extends State<AirportBookingConfirm
             children: [
               _row('الاتجاه', widget.direction == 'departure' ? 'مغادر من مصر' : 'قادم إلى مصر'),
               _row('نوع الرحلة', widget.tripType == 'international' ? 'دولية' : 'محلية'),
+              _row(
+                widget.direction == 'departure' ? 'تاريخ ووقت الإقلاع' : 'تاريخ ووقت الهبوط',
+                arDateTime(widget.flightTime),
+                bold: true,
+              ),
               _row('السيارة', widget.vehicleLabel),
               if (widget.qualityLabel.isNotEmpty) _row('مستوى الخدمة', widget.qualityLabel),
               _row('عدد المسافرين', '${widget.passengers}'),
@@ -246,7 +252,7 @@ class _AirportBookingConfirmationScreenState extends State<AirportBookingConfirm
   }
 
   Widget _timelineRow(fare.TimelineStep step, {required bool isNext}) {
-    final timeStr = TimeOfDay.fromDateTime(step.time).format(context);
+    final timeStr = arTime(step.time);
     final passed = step.time.isBefore(DateTime.now());
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),
