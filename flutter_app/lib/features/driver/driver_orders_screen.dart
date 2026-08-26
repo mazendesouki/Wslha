@@ -95,13 +95,18 @@ class _DriverOrdersScreenState extends State<DriverOrdersScreen> {
     if (_periodFilter == 'all') return true;
     if (date == null) return false;
     final now = DateTime.now();
+    // created_at comes back from Supabase as UTC — comparing its raw
+    // year/month/day against DateTime.now() (local) misclassifies "اليوم"
+    // near midnight (an order from 1am Cairo time is still "yesterday"
+    // in UTC), silently dropping today's real items from the filter.
+    final local = date.toLocal();
     switch (_periodFilter) {
       case 'today':
-        return date.year == now.year && date.month == now.month && date.day == now.day;
+        return local.year == now.year && local.month == now.month && local.day == now.day;
       case 'week':
-        return now.difference(date).inDays < 7;
+        return now.difference(local).inDays < 7;
       case 'month':
-        return date.year == now.year && date.month == now.month;
+        return local.year == now.year && local.month == now.month;
       default:
         return true;
     }
