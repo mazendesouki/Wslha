@@ -202,9 +202,15 @@ pw.Widget _customerBox(InvoiceData data) {
 }
 
 pw.Widget _detailsTable(InvoiceData data) {
+  // pw.Table lays its columns out by physical left-to-right index — unlike
+  // pw.Row/pw.Column, it doesn't mirror for the page's RTL text direction.
+  // Column 0 always renders on the physical left, so with (label, value) in
+  // that order the label ended up on the left and the value on the right —
+  // backwards for Arabic reading order. Swapped to (value, label) so the
+  // label — physical column 1 — lands on the right, value on the left.
   return pw.Table(
     border: pw.TableBorder.all(color: _pdfBorder, width: 0.6),
-    columnWidths: const {0: pw.FlexColumnWidth(1.2), 1: pw.FlexColumnWidth(2)},
+    columnWidths: const {0: pw.FlexColumnWidth(2), 1: pw.FlexColumnWidth(1.2)},
     children: [
       for (var i = 0; i < data.details.length; i++)
         pw.TableRow(
@@ -212,11 +218,11 @@ pw.Widget _detailsTable(InvoiceData data) {
           children: [
             pw.Padding(
               padding: const pw.EdgeInsets.symmetric(horizontal: 10, vertical: 9),
-              child: pw.Text(data.details[i].label, style: pw.TextStyle(fontSize: 11.5, color: _pdfTextFaint, fontWeight: pw.FontWeight.bold)),
+              child: pw.Text(data.details[i].value, style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold)),
             ),
             pw.Padding(
               padding: const pw.EdgeInsets.symmetric(horizontal: 10, vertical: 9),
-              child: pw.Text(data.details[i].value, style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold)),
+              child: pw.Text(data.details[i].label, style: pw.TextStyle(fontSize: 11.5, color: _pdfTextFaint, fontWeight: pw.FontWeight.bold)),
             ),
           ],
         ),
@@ -225,13 +231,16 @@ pw.Widget _detailsTable(InvoiceData data) {
 }
 
 pw.Widget _itemsTable(InvoiceData data) {
+  // Same physical-left-to-right column order as _detailsTable — reversed so
+  // "الصنف" (which should read first, rightmost, in Arabic) is physical
+  // column 2 instead of column 0.
   return pw.TableHelper.fromTextArray(
-    headers: const ['الصنف', 'الكمية', 'السعر'],
-    data: data.items.map((it) => [it.name, '${it.qty}', it.price != null ? '${it.price} ج.م' : '—']).toList(),
+    headers: const ['السعر', 'الكمية', 'الصنف'],
+    data: data.items.map((it) => [it.price != null ? '${it.price} ج.م' : '—', '${it.qty}', it.name]).toList(),
     headerDecoration: pw.BoxDecoration(color: _pdfPrimary),
     headerStyle: pw.TextStyle(color: PdfColors.white, fontSize: 11.5, fontWeight: pw.FontWeight.bold),
     cellStyle: pw.TextStyle(fontSize: 11.5, fontWeight: pw.FontWeight.bold),
-    cellAlignments: {0: pw.Alignment.centerRight, 1: pw.Alignment.center, 2: pw.Alignment.center},
+    cellAlignments: {0: pw.Alignment.center, 1: pw.Alignment.center, 2: pw.Alignment.centerRight},
     oddRowDecoration: pw.BoxDecoration(color: _pdfLightBg),
     border: pw.TableBorder.all(color: _pdfBorder, width: 0.6),
     cellPadding: const pw.EdgeInsets.symmetric(horizontal: 10, vertical: 8),
