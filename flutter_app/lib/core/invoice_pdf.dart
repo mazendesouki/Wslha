@@ -146,6 +146,20 @@ pw.Widget _header(InvoiceData data, pw.MemoryImage? logo) {
   );
 }
 
+/// Manually blends [c] toward white instead of using an alpha channel — the
+/// status pill used PdfColor(...,  0.12) for a light tinted background, but
+/// this PDF engine wasn't actually compositing that transparency: the pill
+/// rendered as a fully solid statusColor, the exact same color as its own
+/// text, making the label invisible against its background. A precomputed
+/// solid tint avoids depending on transparency rendering at all.
+PdfColor _tint(PdfColor c, double amount) {
+  return PdfColor(
+    c.red + (1 - c.red) * amount,
+    c.green + (1 - c.green) * amount,
+    c.blue + (1 - c.blue) * amount,
+  );
+}
+
 pw.Widget _statusAndDateRow(InvoiceData data, PdfColor statusColor) {
   return pw.Row(
     mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
@@ -153,7 +167,7 @@ pw.Widget _statusAndDateRow(InvoiceData data, PdfColor statusColor) {
       pw.Container(
         padding: const pw.EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: pw.BoxDecoration(
-          color: PdfColor(statusColor.red, statusColor.green, statusColor.blue, 0.12),
+          color: _tint(statusColor, 0.85),
           // A radius this small relative to the pill's real ~24px height is
           // already a full stadium shape — pw.BorderRadius.circular(999) (an
           // enormous value versus the container's actual size) triggered a
