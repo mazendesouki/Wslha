@@ -15,103 +15,107 @@ final _pdfLightBg = PdfColor.fromInt(0xFFF7FAF9);
 final _pdfBorder = PdfColor.fromInt(0xFFE5E7EB);
 final _pdfTextFaint = PdfColor.fromInt(0xFF6B7280);
 
-/// Renders [data] as a colorful, branded one-page PDF (teal header banner,
-/// status pill, bordered detail/items tables, a highlighted total) and
-/// hands it to the OS print/save dialog — covers both "اطبع" (a real
-/// printer) and "احفظ كـ PDF", per the request for a professional,
-/// company-style printed invoice instead of plain text.
+/// Renders [data] as a branded, professional-looking one-page PDF and hands
+/// it to the OS print/save dialog — covers both "اطبع" (a real printer) and
+/// "احفظ كـ PDF".
+///
+/// Uses pw.MultiPage (not a fixed pw.Page) so content that doesn't fit one
+/// page flows onto a second instead of the previous single-Page layout
+/// silently mis-rendering when content overflowed its bounds. The logo load
+/// is wrapped in try/catch — a decode failure just skips the image instead
+/// of leaving a broken/blank box in a fixed-size container.
 Future<void> printInvoice(InvoiceData data) async {
   final regular = await PdfGoogleFonts.notoNaskhArabicRegular();
   final bold = await PdfGoogleFonts.notoNaskhArabicBold();
-  final logoBytes = (await rootBundle.load('assets/branding/logo.png')).buffer.asUint8List();
-  final logo = pw.MemoryImage(logoBytes);
+  pw.MemoryImage? logo;
+  try {
+    final logoBytes = (await rootBundle.load('assets/branding/logo.png')).buffer.asUint8List();
+    logo = pw.MemoryImage(logoBytes);
+  } catch (_) {
+    logo = null;
+  }
   final doc = pw.Document();
   final statusColor = PdfColor.fromInt(data.statusColor);
 
   doc.addPage(
-    pw.Page(
+    pw.MultiPage(
       pageFormat: PdfPageFormat.a4,
       textDirection: pw.TextDirection.rtl,
       theme: pw.ThemeData.withFont(base: regular, bold: bold),
-      margin: const pw.EdgeInsets.all(0),
-      build: (context) => pw.Column(
-        crossAxisAlignment: pw.CrossAxisAlignment.stretch,
-        children: [
-          _header(data, logo),
-          pw.Padding(
-            padding: const pw.EdgeInsets.fromLTRB(28, 20, 28, 28),
-            child: pw.Column(
-              crossAxisAlignment: pw.CrossAxisAlignment.stretch,
-              children: [
-                _statusAndDateRow(data, statusColor),
-                if (data.customerName != null || data.customerPhone != null) ...[
-                  pw.SizedBox(height: 16),
-                  _customerBox(data),
-                ],
-                if (data.details.isNotEmpty) ...[
-                  pw.SizedBox(height: 16),
-                  _detailsTable(data),
-                ],
-                if (data.items.isNotEmpty) ...[
-                  pw.SizedBox(height: 16),
-                  _itemsTable(data),
-                ],
-                pw.SizedBox(height: 16),
-                _totalsBox(data),
-                pw.SizedBox(height: 28),
-                _footer(),
-              ],
-            ),
-          ),
+      margin: const pw.EdgeInsets.fromLTRB(28, 26, 28, 26),
+      header: (context) => context.pageNumber == 1 ? _header(data, logo) : pw.SizedBox(),
+      build: (context) => [
+        pw.SizedBox(height: 18),
+        _statusAndDateRow(data, statusColor),
+        if (data.customerName != null || data.customerPhone != null) ...[
+          pw.SizedBox(height: 14),
+          _customerBox(data),
         ],
-      ),
+        if (data.details.isNotEmpty) ...[
+          pw.SizedBox(height: 14),
+          _detailsTable(data),
+        ],
+        if (data.items.isNotEmpty) ...[
+          pw.SizedBox(height: 14),
+          _itemsTable(data),
+        ],
+        pw.SizedBox(height: 14),
+        _totalsBox(data),
+        pw.SizedBox(height: 24),
+        _footer(),
+      ],
     ),
   );
 
   await Printing.layoutPdf(onLayout: (format) => doc.save());
 }
 
-pw.Widget _header(InvoiceData data, pw.ImageProvider logo) {
-  return pw.Container(
-    padding: const pw.EdgeInsets.fromLTRB(28, 24, 28, 22),
-    decoration: pw.BoxDecoration(
-      gradient: pw.LinearGradient(colors: [_pdfPrimaryDark, _pdfPrimary]),
-    ),
-    child: pw.Row(
-      mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-      crossAxisAlignment: pw.CrossAxisAlignment.center,
-      children: [
-        pw.Row(
-          crossAxisAlignment: pw.CrossAxisAlignment.center,
-          children: [
+/// Simple two-line masthead: bold app name + invoice title/number under a
+/// thin accent rule — no gradients, no overlapping containers, so it can't
+/// mis-render regardless of page content below it.
+pw.Widget _header(InvoiceData data, pw.MemoryImage? logo) {
+  return pw.Column(
+    crossAxisAlignment: pw.CrossAxisAlignment.stretch,
+    children: [
+      pw.Row(
+        crossAxisAlignment: pw.CrossAxisAlignment.center,
+        children: [
+          if (logo != null) ...[
             pw.Container(
-              width: 46,
-              height: 46,
-              padding: const pw.EdgeInsets.all(4),
-              decoration: pw.BoxDecoration(color: PdfColors.white, borderRadius: pw.BorderRadius.circular(10)),
+              width: 42,
+              height: 42,
+              padding: const pw.EdgeInsets.all(3),
+              decoration: pw.BoxDecoration(
+                color: _pdfLightBg,
+                borderRadius: pw.BorderRadius.circular(8),
+                border: pw.Border.all(color: _pdfBorder, width: 0.6),
+              ),
               child: pw.Image(logo, fit: pw.BoxFit.contain),
             ),
-            pw.SizedBox(width: 12),
-            pw.Column(
+            pw.SizedBox(width: 10),
+          ],
+          pw.Expanded(
+            child: pw.Column(
               crossAxisAlignment: pw.CrossAxisAlignment.start,
               children: [
-                pw.Text('وصّلها', style: pw.TextStyle(color: PdfColors.white, fontSize: 28, fontWeight: pw.FontWeight.bold)),
-                pw.SizedBox(height: 3),
-                pw.Text('تطبيق النقل والتوصيل', style: const pw.TextStyle(color: PdfColors.white, fontSize: 11)),
+                pw.Text('وصّلها', style: pw.TextStyle(color: _pdfPrimaryDark, fontSize: 24, fontWeight: pw.FontWeight.bold)),
+                pw.Text('تطبيق النقل والتوصيل', style: pw.TextStyle(color: _pdfTextFaint, fontSize: 10, fontWeight: pw.FontWeight.bold)),
               ],
             ),
-          ],
-        ),
-        pw.Column(
-          crossAxisAlignment: pw.CrossAxisAlignment.end,
-          children: [
-            pw.Text(data.title, style: pw.TextStyle(color: PdfColors.white, fontSize: 15, fontWeight: pw.FontWeight.bold)),
-            pw.SizedBox(height: 4),
-            pw.Text('فاتورة رقم #${data.invoiceNumber}', style: const pw.TextStyle(color: PdfColors.white, fontSize: 11)),
-          ],
-        ),
-      ],
-    ),
+          ),
+          pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.end,
+            children: [
+              pw.Text(data.title, style: pw.TextStyle(color: _pdfPrimaryDark, fontSize: 14, fontWeight: pw.FontWeight.bold)),
+              pw.SizedBox(height: 3),
+              pw.Text('فاتورة رقم #${data.invoiceNumber}', style: pw.TextStyle(color: _pdfTextFaint, fontSize: 10, fontWeight: pw.FontWeight.bold)),
+            ],
+          ),
+        ],
+      ),
+      pw.SizedBox(height: 14),
+      pw.Container(height: 2.5, color: _pdfAccent),
+    ],
   );
 }
 
