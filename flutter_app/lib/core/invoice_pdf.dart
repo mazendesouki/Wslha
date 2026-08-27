@@ -18,13 +18,40 @@ final _pdfTextFaint = PdfColor.fromInt(0xFF6B7280);
 /// Renders [data] as a branded, professional-looking one-page PDF and hands
 /// it to the OS print/save dialog — covers both "اطبع" (a real printer) and
 /// "احفظ كـ PDF".
-///
-/// Uses pw.MultiPage (not a fixed pw.Page) so content that doesn't fit one
-/// page flows onto a second instead of the previous single-Page layout
-/// silently mis-rendering when content overflowed its bounds. The logo load
-/// is wrapped in try/catch — a decode failure just skips the image instead
-/// of leaving a broken/blank box in a fixed-size container.
 Future<void> printInvoice(InvoiceData data) async {
+  final doc = await _buildDoc(data);
+  await Printing.layoutPdf(onLayout: (format) => doc.save());
+}
+
+/// Builds the same PDF and hands its bytes to the OS share sheet, so the
+/// customer can pick "حفظ في الملفات"/Drive to actually download the file
+/// (Flutter has no direct "save to public downloads" API without extra
+/// storage permissions — the native share sheet's save targets cover this).
+Future<void> downloadInvoicePdf(InvoiceData data) async {
+  final doc = await _buildDoc(data);
+  await Printing.sharePdf(bytes: await doc.save(), filename: 'wslha-invoice-${data.invoiceNumber}.pdf');
+}
+
+/// Same PDF via the OS share sheet, for the customer to pick واتساب and
+/// send the actual file as an attachment (unlike shareTextViaWhatsApp,
+/// which only sends plain text — there's no wa.me-style deep link that
+/// accepts a binary attachment, so this has to go through the share sheet
+/// same as downloadInvoicePdf; only the filename/label differ).
+Future<void> shareInvoicePdfViaWhatsApp(InvoiceData data) async {
+  final doc = await _buildDoc(data);
+  await Printing.sharePdf(
+    bytes: await doc.save(),
+    filename: 'wslha-invoice-${data.invoiceNumber}.pdf',
+    subject: 'فاتورة وصّلها #${data.invoiceNumber}',
+  );
+}
+
+/// Uses pw.MultiPage (not a fixed pw.Page) so content that doesn't fit one
+/// page flows onto a second instead of a single-Page layout silently
+/// mis-rendering when content overflows its bounds. The logo load is
+/// wrapped in try/catch — a decode failure just skips the image instead of
+/// leaving a broken/blank box in a fixed-size container.
+Future<pw.Document> _buildDoc(InvoiceData data) async {
   final regular = await PdfGoogleFonts.notoNaskhArabicRegular();
   final bold = await PdfGoogleFonts.notoNaskhArabicBold();
   pw.MemoryImage? logo;
@@ -67,7 +94,7 @@ Future<void> printInvoice(InvoiceData data) async {
     ),
   );
 
-  await Printing.layoutPdf(onLayout: (format) => doc.save());
+  return doc;
 }
 
 /// Simple two-line masthead: bold app name + invoice title/number under a
@@ -127,7 +154,12 @@ pw.Widget _statusAndDateRow(InvoiceData data, PdfColor statusColor) {
         padding: const pw.EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: pw.BoxDecoration(
           color: PdfColor(statusColor.red, statusColor.green, statusColor.blue, 0.12),
-          borderRadius: pw.BorderRadius.circular(999),
+          // A radius this small relative to the pill's real ~24px height is
+          // already a full stadium shape — pw.BorderRadius.circular(999) (an
+          // enormous value versus the container's actual size) triggered a
+          // degenerate curve in the PDF renderer that blew up into a huge
+          // stray diagonal shape covering much of the page.
+          borderRadius: pw.BorderRadius.circular(14),
         ),
         child: pw.Text(data.statusLabel, style: pw.TextStyle(color: statusColor, fontSize: 12, fontWeight: pw.FontWeight.bold)),
       ),

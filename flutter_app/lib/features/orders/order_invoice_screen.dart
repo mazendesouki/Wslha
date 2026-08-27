@@ -269,7 +269,7 @@ class _OrderInvoiceScreenState extends State<OrderInvoiceScreen> {
                 child: OutlinedButton.icon(
                   onPressed: () => shareTextViaWhatsApp(buildOrderInvoiceText(o)),
                   icon: const Icon(Icons.chat_bubble_outline, size: 18, color: Color(0xFF25D366)),
-                  label: const Text('واتساب'),
+                  label: const Text('نص واتساب'),
                 ),
               ),
               const SizedBox(width: 10),
@@ -278,6 +278,26 @@ class _OrderInvoiceScreenState extends State<OrderInvoiceScreen> {
                   onPressed: () => printInvoice(buildOrderInvoiceData(o)),
                   icon: const Icon(Icons.print_outlined, size: 18),
                   label: const Text('طباعة'),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: () => downloadInvoicePdf(buildOrderInvoiceData(o)),
+                  icon: const Icon(Icons.download_outlined, size: 18),
+                  label: const Text('تحميل PDF'),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: () => shareInvoicePdfViaWhatsApp(buildOrderInvoiceData(o)),
+                  icon: const Icon(Icons.picture_as_pdf_outlined, size: 18, color: Color(0xFF25D366)),
+                  label: const Text('PDF واتساب'),
                 ),
               ),
             ],

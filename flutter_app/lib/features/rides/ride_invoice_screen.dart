@@ -183,7 +183,7 @@ class _RideInvoiceScreenState extends State<RideInvoiceScreen> {
                 child: OutlinedButton.icon(
                   onPressed: () => shareTextViaWhatsApp(buildRideInvoiceText(r)),
                   icon: const Icon(Icons.chat_bubble_outline, size: 18, color: Color(0xFF25D366)),
-                  label: const Text('واتساب'),
+                  label: const Text('نص واتساب'),
                 ),
               ),
               const SizedBox(width: 10),
@@ -192,6 +192,26 @@ class _RideInvoiceScreenState extends State<RideInvoiceScreen> {
                   onPressed: () => printInvoice(buildRideInvoiceData(r)),
                   icon: const Icon(Icons.print_outlined, size: 18),
                   label: const Text('طباعة'),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: () => downloadInvoicePdf(buildRideInvoiceData(r)),
+                  icon: const Icon(Icons.download_outlined, size: 18),
+                  label: const Text('تحميل PDF'),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: () => shareInvoicePdfViaWhatsApp(buildRideInvoiceData(r)),
+                  icon: const Icon(Icons.picture_as_pdf_outlined, size: 18, color: Color(0xFF25D366)),
+                  label: const Text('PDF واتساب'),
                 ),
               ),
             ],
