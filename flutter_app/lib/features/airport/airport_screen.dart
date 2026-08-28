@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../core/date_format_ar.dart';
 import '../../core/phone_utils.dart';
+import '../../core/pricing_settings.dart';
 import '../../core/session.dart';
 import '../../core/theme.dart';
 import '../rides/address_field.dart';
@@ -70,6 +71,13 @@ class _AirportScreenState extends State<AirportScreen> {
       });
     });
     _loadVehicles();
+    // Airport fares have no server-side recompute (see pricing_settings.dart),
+    // so this is what actually keeps the price shown here in sync with any
+    // admin change — refreshed on every visit to this screen instead of once
+    // at app startup, so a price update takes effect without an app restart.
+    PricingSettings.refresh().then((_) {
+      if (mounted) setState(() {});
+    });
   }
 
   @override

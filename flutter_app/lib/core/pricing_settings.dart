@@ -30,9 +30,20 @@ class PricingSettings {
   static bool _loaded = false;
 
   /// Fire-and-forget is fine to call repeatedly (e.g. from each screen's
-  /// initState) — only the first successful fetch actually applies.
+  /// initState) — only the first successful fetch actually applies. Use
+  /// refresh() instead on a screen that needs the latest admin-set prices
+  /// every time it opens (airport pricing has no server-side recompute, so
+  /// this is the only thing that ever picks up an admin change without a
+  /// full app restart).
   static Future<void> load() async {
     if (_loaded) return;
+    await refresh();
+  }
+
+  /// Always fetches, ignoring any previous load — unlike load(), a failed
+  /// refresh silently keeps whatever values are already in memory (the
+  /// hardcoded defaults, or the last successful fetch).
+  static Future<void> refresh() async {
     try {
       final rows = await sb.from('app_settings').select('key,value').inFilter('key', [
         'local_base_fee', 'local_min_fare', 'local_rate_sedan',
