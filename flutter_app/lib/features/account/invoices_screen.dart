@@ -228,7 +228,7 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
   Widget _invoiceTile(_InvoiceRow row) {
     final color = _statusColor[row.status] ?? AppColors.textFaint;
     return Material(
-      color: Colors.white,
+      color: AppColors.cardTint,
       borderRadius: BorderRadius.circular(14),
       child: InkWell(
         borderRadius: BorderRadius.circular(14),

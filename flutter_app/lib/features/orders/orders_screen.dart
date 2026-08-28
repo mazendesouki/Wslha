@@ -123,7 +123,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
         label: Text(label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: selected ? Colors.white : AppColors.textFaint)),
         selected: selected,
         selectedColor: AppColors.primary,
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.cardTint,
         onSelected: (_) => onSelect(value),
       ),
     );
@@ -419,7 +419,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
           decoration: BoxDecoration(
-            color: selected ? color.withValues(alpha: 0.12) : Colors.white,
+            color: selected ? color.withValues(alpha: 0.12) : AppColors.cardTint,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(color: color.withValues(alpha: selected ? 0.9 : 0.25), width: selected ? 1.6 : 1),
           ),
@@ -445,7 +445,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 14),
           decoration: BoxDecoration(
-            color: selected ? AppColors.primary.withValues(alpha: 0.1) : Colors.white,
+            color: selected ? AppColors.primary.withValues(alpha: 0.1) : AppColors.cardTint,
             borderRadius: BorderRadius.circular(99),
             border: Border.all(color: selected ? AppColors.primary : const Color(0xFFE5E7EB), width: selected ? 1.6 : 1),
           ),
