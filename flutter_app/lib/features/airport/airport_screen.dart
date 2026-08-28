@@ -116,7 +116,19 @@ class _AirportScreenState extends State<AirportScreen> {
   }
 
   double get _roadKm => _straightKm * fare_calc.roadFactor;
-  int get _driveMinutes => _straightKm > 0 ? fare_calc.etaMinutes(_straightKm) : 0;
+
+  // etaMinutes() assumes a flat 40km/h city-traffic average, which is
+  // realistic for a short in-town trip but wildly pessimistic once the
+  // distance is a real highway drive (e.g. Damietta→Cairo was estimating
+  // ~5-6 hours instead of the real ~2h45m). Prefer the known airport's
+  // real, highway-calibrated drive time when the picked airport matches
+  // one in fare.knownAirports; fall back to the straight-line estimate
+  // only for an airport outside that list.
+  int get _driveMinutes {
+    final known = fare.matchKnownAirport(_airport?.name);
+    if (known != null) return known.driveMinutes;
+    return _straightKm > 0 ? fare_calc.etaMinutes(_straightKm) : 0;
+  }
 
   int get _baseFare {
     if (_roadKm <= 0 || _selectedVehicle == null) return 0;
@@ -221,7 +233,7 @@ class _AirportScreenState extends State<AirportScreen> {
         airportLng: _airport!.lng,
         distanceKm: _roadKm,
         fare: _total,
-        etaMinutes: fare_calc.etaMinutes(_straightKm),
+        etaMinutes: _driveMinutes,
         passengers: _passengers,
         vehicleYear: _selectedYear,
         vehicleCategory: _selectedVehicle!.category,
@@ -298,6 +310,13 @@ class _AirportScreenState extends State<AirportScreen> {
               'international': '✈️ دولية (3 ساعات)',
               'domestic': '🛫 محلية (ساعتان)',
             }, (v) => setState(() => _tripType = v)),
+            const SizedBox(height: 8),
+            Text(
+              _tripType == 'international'
+                  ? 'ℹ️ دولية: للرحلات خارج مصر — بيحسب وصولك المطار قبل الإقلاع بـ 3 ساعات (وقت تسجيل وجوازات أطول)، وبعد الهبوط بيدي 45 دقيقة لإجراءات الجوازات والجمارك.'
+                  : 'ℹ️ محلية: لرحلات داخل مصر — بيحسب وصولك المطار قبل الإقلاع بساعتين بس، وبعد الهبوط 20 دقيقة فقط (من غير جوازات/جمارك).',
+              style: const TextStyle(fontSize: 11, color: AppColors.primaryDark, fontWeight: FontWeight.w600),
+            ),
           ]),
           const SizedBox(height: 18),
 

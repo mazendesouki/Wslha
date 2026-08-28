@@ -136,6 +136,60 @@ const Map<String, VehicleCategoryInfo> vehicleCategoryInfo = {
 const double damiettaLat = 31.418;
 const double damiettaLng = 31.814;
 
+class KnownAirport {
+  final String id;
+  final String name;
+  final String city;
+  final String code;
+  final int distanceKm;
+  final int driveMinutes;
+  const KnownAirport({
+    required this.id,
+    required this.name,
+    required this.city,
+    required this.code,
+    required this.distanceKm,
+    required this.driveMinutes,
+  });
+}
+
+/// Ported from src/data/airports.ts's AIRPORTS — real road distance/drive
+/// time per airport (highway-speed calibrated), not a generic haversine
+/// estimate. Used to correct the drive-time shown in the trip timeline,
+/// which previously fed a straight-line distance into etaMinutes()'s flat
+/// 40km/h city-traffic assumption — wildly pessimistic over a 200+ km
+/// highway trip (was showing ~5-6h to Cairo airport instead of ~2h45m).
+const List<KnownAirport> knownAirports = [
+  KnownAirport(id: 'cai', name: 'مطار القاهرة الدولي', city: 'القاهرة', code: 'CAI', distanceKm: 200, driveMinutes: 165),
+  KnownAirport(id: 'spx', name: 'مطار سفنكس الدولي', city: 'الجيزة', code: 'SPX', distanceKm: 215, driveMinutes: 180),
+  KnownAirport(id: 'hbe', name: 'مطار برج العرب (الإسكندرية)', city: 'الإسكندرية', code: 'HBE', distanceKm: 250, driveMinutes: 180),
+  KnownAirport(id: 'psd', name: 'مطار بورسعيد', city: 'بورسعيد', code: 'PSD', distanceKm: 85, driveMinutes: 80),
+  KnownAirport(id: 'muh', name: 'مطار مرسى مطروح', city: 'مرسى مطروح', code: 'MUH', distanceKm: 410, driveMinutes: 300),
+  KnownAirport(id: 'ssh', name: 'مطار شرم الشيخ الدولي', city: 'شرم الشيخ', code: 'SSH', distanceKm: 520, driveMinutes: 390),
+  KnownAirport(id: 'hrg', name: 'مطار الغردقة الدولي', city: 'الغردقة', code: 'HRG', distanceKm: 480, driveMinutes: 360),
+  KnownAirport(id: 'lxr', name: 'مطار الأقصر الدولي', city: 'الأقصر', code: 'LXR', distanceKm: 700, driveMinutes: 480),
+  KnownAirport(id: 'asw', name: 'مطار أسوان الدولي', city: 'أسوان', code: 'ASW', distanceKm: 900, driveMinutes: 600),
+  KnownAirport(id: 'rmf', name: 'مطار مرسى علم الدولي', city: 'مرسى علم', code: 'RMF', distanceKm: 720, driveMinutes: 510),
+  KnownAirport(id: 'hmb', name: 'مطار سوهاج الدولي', city: 'سوهاج', code: 'HMB', distanceKm: 580, driveMinutes: 420),
+  KnownAirport(id: 'atz', name: 'مطار أسيوط', city: 'أسيوط', code: 'ATZ', distanceKm: 620, driveMinutes: 450),
+];
+
+/// Matches a Places-picked airport name against the known list by simple
+/// substring containment (name or city) — Places API results don't carry
+/// this list's ids/codes, so this is a best-effort match rather than an
+/// exact key lookup. Returns null for an airport outside this list (e.g. a
+/// smaller regional strip), which callers fall back to the straight-line
+/// estimate for.
+KnownAirport? matchKnownAirport(String? pickedName) {
+  if (pickedName == null || pickedName.isEmpty) return null;
+  for (final a in knownAirports) {
+    if (pickedName.contains(a.city) || pickedName.contains(a.code) || a.name.contains(pickedName) || pickedName.contains(a.name)) {
+      return a;
+    }
+  }
+  return null;
+}
+
 // ─── Timeline (رحلتك) — ported from airport.astro's live schedule preview ──
 const Map<String, int> checkinBufferMinutes = {'domestic': 120, 'international': 180};
 const int safetyMarginMinutes = 20;
