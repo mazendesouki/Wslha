@@ -54,11 +54,19 @@ ThemeData buildAppTheme({bool modern = false}) {
           )
         : textTheme,
     appBarTheme: AppBarTheme(
-      backgroundColor: modern ? _modernSurfaceTint : Colors.white,
-      foregroundColor: Colors.black,
+      // A colored app bar is the single most visible "this looks different"
+      // cue on nearly every screen — the earlier off-white-vs-white tint
+      // was too close to read as a real change at a glance.
+      backgroundColor: modern ? AppColors.primary : Colors.white,
+      foregroundColor: modern ? Colors.white : Colors.black,
       elevation: 0,
       surfaceTintColor: Colors.transparent,
-      titleTextStyle: textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w900),
+      titleTextStyle: textTheme.titleLarge?.copyWith(
+        fontWeight: FontWeight.w900,
+        color: modern ? Colors.white : null,
+      ),
+      iconTheme: IconThemeData(color: modern ? Colors.white : Colors.black),
+      actionsIconTheme: IconThemeData(color: modern ? Colors.white : Colors.black),
     ),
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(
@@ -129,5 +137,25 @@ ThemeData buildAppTheme({bool modern = false}) {
       type: BottomNavigationBarType.fixed,
       elevation: modern ? 8 : null,
     ),
+    // Only consumed where a screen opts into the Material 3 NavigationBar
+    // widget instead of the classic BottomNavigationBar (currently just the
+    // customer app's HomeShell) — the pill-shaped selected-tab indicator is
+    // a much more recognizable "modern" cue than a themed classic bar.
+    navigationBarTheme: modern
+        ? NavigationBarThemeData(
+            backgroundColor: Colors.white,
+            elevation: 8,
+            indicatorColor: AppColors.primaryLight,
+            indicatorShape: const StadiumBorder(),
+            labelTextStyle: WidgetStateProperty.resolveWith((states) {
+              final selected = states.contains(WidgetState.selected);
+              return TextStyle(
+                fontSize: 11,
+                fontWeight: selected ? FontWeight.w900 : FontWeight.w700,
+                color: selected ? AppColors.primaryDark : AppColors.textFaint,
+              );
+            }),
+          )
+        : null,
   );
 }

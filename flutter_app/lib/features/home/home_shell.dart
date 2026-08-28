@@ -43,16 +43,19 @@ class _HomeShellState extends State<HomeShell> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: IndexedStack(index: _index, children: _tabs),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _index,
-        onTap: _goToTab,
-        items: const [
-          BottomNavigationBarItem(icon: Text('🏠', style: TextStyle(fontSize: 20)), label: 'الرئيسية'),
-          BottomNavigationBarItem(icon: Text('💳', style: TextStyle(fontSize: 20)), label: 'المحفظة'),
-          BottomNavigationBarItem(icon: Text('👤', style: TextStyle(fontSize: 20)), label: 'حسابي'),
-          BottomNavigationBarItem(icon: Text('📦', style: TextStyle(fontSize: 20)), label: 'الطلبات'),
-          BottomNavigationBarItem(icon: Text('🚖', style: TextStyle(fontSize: 20)), label: 'رحلات'),
-          BottomNavigationBarItem(icon: Text('⚙️', style: TextStyle(fontSize: 20)), label: 'الإعدادات'),
+      // Material 3 NavigationBar (pill indicator behind the selected tab)
+      // instead of the classic BottomNavigationBar — part of the customer
+      // app's "modern" visual trial (core/theme.dart's navigationBarTheme).
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: _index,
+        onDestinationSelected: _goToTab,
+        destinations: const [
+          NavigationDestination(icon: Text('🏠', style: TextStyle(fontSize: 20)), label: 'الرئيسية'),
+          NavigationDestination(icon: Text('💳', style: TextStyle(fontSize: 20)), label: 'المحفظة'),
+          NavigationDestination(icon: Text('👤', style: TextStyle(fontSize: 20)), label: 'حسابي'),
+          NavigationDestination(icon: Text('📦', style: TextStyle(fontSize: 20)), label: 'الطلبات'),
+          NavigationDestination(icon: Text('🚖', style: TextStyle(fontSize: 20)), label: 'رحلات'),
+          NavigationDestination(icon: Text('⚙️', style: TextStyle(fontSize: 20)), label: 'الإعدادات'),
         ],
       ),
     );
