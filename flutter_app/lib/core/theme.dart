@@ -138,6 +138,12 @@ ThemeData buildAppTheme({bool modern = false}) {
         borderRadius: BorderRadius.circular(fieldRadius),
         borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
       ),
+      // The default label color (a light grey meant for a white background)
+      // was nearly unreadable floating above a field sitting on the new
+      // teal cardTint — "العناوين محتاجة تظبيط". A darker, bold label reads
+      // clearly against both the white field fill and the tinted card.
+      labelStyle: modern ? const TextStyle(color: AppColors.primaryDark, fontWeight: FontWeight.w700) : null,
+      floatingLabelStyle: modern ? const TextStyle(color: AppColors.primaryDark, fontWeight: FontWeight.w800) : null,
     ),
     bottomNavigationBarTheme: BottomNavigationBarThemeData(
       backgroundColor: Colors.white,

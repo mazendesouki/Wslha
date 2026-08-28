@@ -238,7 +238,7 @@ class _RidesScreenState extends State<RidesScreen> {
                       title: const Text('🤝 اطلب بسعر تفاوضي', style: TextStyle(fontWeight: FontWeight.w700)),
                       subtitle: const Text(
                         'السائقين يقدّموا أسعارهم وانت تختار — بدل السعر الثابت',
-                        style: TextStyle(fontSize: 11, color: AppColors.textFaint),
+                        style: TextStyle(fontSize: 11, color: AppColors.primaryDark, fontWeight: FontWeight.w600),
                       ),
                     ),
                   ],
@@ -315,8 +315,8 @@ class _RidesScreenState extends State<RidesScreen> {
   Widget _statColumn(String value, String label) {
     return Column(
       children: [
-        Text(value, style: const TextStyle(fontWeight: FontWeight.w900, color: AppColors.primary)),
-        Text(label, style: const TextStyle(fontSize: 11, color: AppColors.textFaint)),
+        Text(value, style: const TextStyle(fontWeight: FontWeight.w900, color: AppColors.primaryDark)),
+        Text(label, style: const TextStyle(fontSize: 11, color: AppColors.primaryDark, fontWeight: FontWeight.w600)),
       ],
     );
   }
