@@ -140,96 +140,118 @@ class _RidesScreenState extends State<RidesScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              AddressField(
-                label: 'من',
-                hint: 'نقطة الانطلاق',
-                showLocationButton: true,
-                onSelected: (r) => setState(() => _from = r),
-              ),
-              const SizedBox(height: 16),
-              for (var i = 0; i < _stops.length; i++) ...[
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+              _sectionLabel('📍 نقطة الانطلاق والوجهة'),
+              Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(color: AppColors.cardTint, borderRadius: BorderRadius.circular(16)),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Expanded(
-                      child: AddressField(
-                        key: ValueKey('stop-$i-${_stops.length}'),
-                        label: _stopLabel(i),
-                        hint: i == _stops.length - 1 ? 'الوجهة' : 'وين تحب تقف؟',
-                        onSelected: (r) => setState(() => _stops[i] = r),
-                      ),
+                    AddressField(
+                      label: 'من',
+                      hint: 'نقطة الانطلاق',
+                      showLocationButton: true,
+                      onSelected: (r) => setState(() => _from = r),
                     ),
-                    if (_stops.length > 1)
-                      IconButton(
-                        icon: const Icon(Icons.close, color: AppColors.textFaint),
-                        onPressed: () => _removeStop(i),
-                        tooltip: 'حذف نقطة التوقف',
+                    const SizedBox(height: 12),
+                    for (var i = 0; i < _stops.length; i++) ...[
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: AddressField(
+                              key: ValueKey('stop-$i-${_stops.length}'),
+                              label: _stopLabel(i),
+                              hint: i == _stops.length - 1 ? 'الوجهة' : 'وين تحب تقف؟',
+                              onSelected: (r) => setState(() => _stops[i] = r),
+                            ),
+                          ),
+                          if (_stops.length > 1)
+                            IconButton(
+                              icon: const Icon(Icons.close, color: AppColors.textFaint),
+                              onPressed: () => _removeStop(i),
+                              tooltip: 'حذف نقطة التوقف',
+                            ),
+                        ],
+                      ),
+                      if (i < _stops.length - 1) const SizedBox(height: 12),
+                    ],
+                    if (_stops.length < _maxStops)
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: TextButton.icon(
+                          onPressed: _addStop,
+                          icon: const Icon(Icons.add_location_alt_outlined, size: 18),
+                          label: const Text('إضافة نقطة توقف (مشوار متعدد)'),
+                        ),
                       ),
                   ],
                 ),
-                const SizedBox(height: 12),
-              ],
-              if (_stops.length < _maxStops)
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: TextButton.icon(
-                    onPressed: _addStop,
-                    icon: const Icon(Icons.add_location_alt_outlined, size: 18),
-                    label: const Text('إضافة نقطة توقف (مشوار متعدد)'),
-                  ),
+              ),
+              const SizedBox(height: 18),
+              _sectionLabel('🚗 تفاصيل الرحلة'),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+                decoration: BoxDecoration(color: AppColors.cardTint, borderRadius: BorderRadius.circular(16)),
+                child: Column(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 10),
+                      child: Row(
+                        children: [
+                          const Text('عدد الركاب', style: TextStyle(fontWeight: FontWeight.w700)),
+                          const Spacer(),
+                          IconButton(
+                            onPressed: _passengers > 1 ? () => setState(() => _passengers--) : null,
+                            icon: const Icon(Icons.remove_circle_outline),
+                          ),
+                          Text('$_passengers', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900)),
+                          IconButton(
+                            onPressed: _passengers < 4 ? () => setState(() => _passengers++) : null,
+                            icon: const Icon(Icons.add_circle_outline),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const Divider(height: 1),
+                    RadioListTile<String>(
+                      value: 'cash',
+                      groupValue: _payment,
+                      onChanged: (v) => setState(() => _payment = v!),
+                      title: const Text('💵 كاش عند الاستلام'),
+                      dense: true,
+                    ),
+                    RadioListTile<String>(
+                      value: 'wallet',
+                      groupValue: _payment,
+                      onChanged: (v) => setState(() => _payment = v!),
+                      title: const Text('📱 فودافون كاش / إنستاباي'),
+                      dense: true,
+                    ),
+                    const Divider(height: 1),
+                    SwitchListTile(
+                      value: _negotiable,
+                      onChanged: (v) => setState(() => _negotiable = v),
+                      contentPadding: EdgeInsets.zero,
+                      dense: true,
+                      activeThumbColor: AppColors.primary,
+                      title: const Text('🤝 اطلب بسعر تفاوضي', style: TextStyle(fontWeight: FontWeight.w700)),
+                      subtitle: const Text(
+                        'السائقين يقدّموا أسعارهم وانت تختار — بدل السعر الثابت',
+                        style: TextStyle(fontSize: 11, color: AppColors.textFaint),
+                      ),
+                    ),
+                  ],
                 ),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  const Text('عدد الركاب', style: TextStyle(fontWeight: FontWeight.w700)),
-                  const Spacer(),
-                  IconButton(
-                    onPressed: _passengers > 1 ? () => setState(() => _passengers--) : null,
-                    icon: const Icon(Icons.remove_circle_outline),
-                  ),
-                  Text('$_passengers', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900)),
-                  IconButton(
-                    onPressed: _passengers < 4 ? () => setState(() => _passengers++) : null,
-                    icon: const Icon(Icons.add_circle_outline),
-                  ),
-                ],
               ),
-              const SizedBox(height: 12),
-              const Text('طريقة الدفع', style: TextStyle(fontWeight: FontWeight.w700)),
-              RadioListTile<String>(
-                value: 'cash',
-                groupValue: _payment,
-                onChanged: (v) => setState(() => _payment = v!),
-                title: const Text('💵 كاش عند الاستلام'),
-                dense: true,
-              ),
-              RadioListTile<String>(
-                value: 'wallet',
-                groupValue: _payment,
-                onChanged: (v) => setState(() => _payment = v!),
-                title: const Text('📱 فودافون كاش / إنستاباي'),
-                dense: true,
-              ),
-              const SizedBox(height: 8),
-              SwitchListTile(
-                value: _negotiable,
-                onChanged: (v) => setState(() => _negotiable = v),
-                contentPadding: EdgeInsets.zero,
-                dense: true,
-                activeThumbColor: AppColors.primary,
-                title: const Text('🤝 اطلب بسعر تفاوضي', style: TextStyle(fontWeight: FontWeight.w700)),
-                subtitle: const Text(
-                  'السائقين يقدّموا أسعارهم وانت تختار — بدل السعر الثابت',
-                  style: TextStyle(fontSize: 11, color: AppColors.textFaint),
-                ),
-              ),
-              const SizedBox(height: 12),
-              if (_straightKm > 0)
+              const SizedBox(height: 18),
+              if (_straightKm > 0) ...[
+                _sectionLabel('💰 ملخص الأجرة'),
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: AppColors.primaryLight,
-                    borderRadius: BorderRadius.circular(14),
+                    color: AppColors.cardTint,
+                    borderRadius: BorderRadius.circular(16),
                   ),
                   child: Column(
                     children: [
@@ -271,6 +293,7 @@ class _RidesScreenState extends State<RidesScreen> {
                     ],
                   ),
                 ),
+              ],
               const SizedBox(height: 20),
               ElevatedButton(
                 onPressed: ready ? _submit : null,
@@ -297,4 +320,9 @@ class _RidesScreenState extends State<RidesScreen> {
       ],
     );
   }
+
+  Widget _sectionLabel(String text) => Padding(
+        padding: const EdgeInsets.only(bottom: 8, right: 4),
+        child: Text(text, style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 13)),
+      );
 }
