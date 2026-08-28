@@ -140,10 +140,13 @@ ThemeData buildAppTheme({bool modern = false}) {
       ),
       // The default label color (a light grey meant for a white background)
       // was nearly unreadable floating above a field sitting on the new
-      // teal cardTint — "العناوين محتاجة تظبيط". A darker, bold label reads
-      // clearly against both the white field fill and the tinted card.
-      labelStyle: modern ? const TextStyle(color: AppColors.primaryDark, fontWeight: FontWeight.w700) : null,
-      floatingLabelStyle: modern ? const TextStyle(color: AppColors.primaryDark, fontWeight: FontWeight.w800) : null,
+      // teal cardTint — "العناوين محتاجة تظبيط". Color-only fix — the first
+      // attempt also bumped fontWeight, which made the inline (unfloated,
+      // full-size) label render heavier/wider and crowd into the field box
+      // ("العناوين متداخلة على الخانات"). Same size/weight as Material's
+      // default, just a darker color.
+      labelStyle: modern ? const TextStyle(color: AppColors.primaryDark) : null,
+      floatingLabelStyle: modern ? const TextStyle(color: AppColors.primaryDark) : null,
     ),
     bottomNavigationBarTheme: BottomNavigationBarThemeData(
       backgroundColor: Colors.white,
