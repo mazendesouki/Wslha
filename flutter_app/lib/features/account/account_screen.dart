@@ -373,24 +373,30 @@ class AccountScreenState extends State<AccountScreen> {
   Widget _statsRow() {
     return Row(
       children: [
-        Expanded(child: _statTile('📦', '${_stats.totalOrders + _stats.totalRides}', 'إجمالي الطلبات')),
+        Expanded(child: _statTile('📦', AppColors.primary, '${_stats.totalOrders + _stats.totalRides}', 'إجمالي الطلبات')),
         const SizedBox(width: 10),
-        Expanded(child: _statTile('💰', _stats.totalSpent.toStringAsFixed(0), 'إجمالي الإنفاق (ج.م)')),
+        Expanded(child: _statTile('💰', AppColors.accent, _stats.totalSpent.toStringAsFixed(0), 'إجمالي الإنفاق (ج.م)')),
         const SizedBox(width: 10),
-        Expanded(child: _statTile('🚖', '${_stats.totalRides}', 'عدد الرحلات')),
+        Expanded(child: _statTile('🚖', AppColors.primaryDark, '${_stats.totalRides}', 'عدد الرحلات')),
       ],
     );
   }
 
-  Widget _statTile(String emoji, String value, String label) {
+  Widget _statTile(String emoji, Color accent, String value, String label) {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(14)),
+      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16)),
       child: Column(
         children: [
-          Text(emoji, style: const TextStyle(fontSize: 18)),
-          const SizedBox(height: 6),
-          Text(value, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w900, color: AppColors.primary)),
+          Container(
+            width: 34,
+            height: 34,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(color: accent.withValues(alpha: 0.12), shape: BoxShape.circle),
+            child: Text(emoji, style: const TextStyle(fontSize: 16)),
+          ),
+          const SizedBox(height: 8),
+          Text(value, style: TextStyle(fontSize: 15, fontWeight: FontWeight.w900, color: accent)),
           const SizedBox(height: 2),
           Text(label, textAlign: TextAlign.center, style: const TextStyle(fontSize: 10, color: AppColors.textFaint)),
         ],

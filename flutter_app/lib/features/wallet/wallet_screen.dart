@@ -288,10 +288,15 @@ class _WalletScreenState extends State<WalletScreen> {
           padding: const EdgeInsets.all(16),
           children: [
             Container(
-              padding: const EdgeInsets.all(20),
+              padding: const EdgeInsets.all(22),
               decoration: BoxDecoration(
-                color: AppColors.primary,
-                borderRadius: BorderRadius.circular(18),
+                gradient: const LinearGradient(
+                  colors: [AppColors.primaryDark, AppColors.primary],
+                  begin: Alignment.topRight,
+                  end: Alignment.bottomLeft,
+                ),
+                borderRadius: BorderRadius.circular(22),
+                boxShadow: [BoxShadow(color: AppColors.primary.withValues(alpha: 0.25), blurRadius: 20, offset: const Offset(0, 8))],
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -305,38 +310,11 @@ class _WalletScreenState extends State<WalletScreen> {
                   const SizedBox(height: 16),
                   Row(
                     children: [
-                      Expanded(
-                        child: OutlinedButton(
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: Colors.white,
-                            side: const BorderSide(color: Colors.white54),
-                          ),
-                          onPressed: _openDepositSheet,
-                          child: const Text('إيداع'),
-                        ),
-                      ),
+                      Expanded(child: _WalletPillButton(label: 'إيداع', onPressed: _openDepositSheet)),
                       const SizedBox(width: 8),
-                      Expanded(
-                        child: OutlinedButton(
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: Colors.white,
-                            side: const BorderSide(color: Colors.white54),
-                          ),
-                          onPressed: _openWithdrawSheet,
-                          child: const Text('سحب'),
-                        ),
-                      ),
+                      Expanded(child: _WalletPillButton(label: 'سحب', onPressed: _openWithdrawSheet)),
                       const SizedBox(width: 8),
-                      Expanded(
-                        child: OutlinedButton(
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: Colors.white,
-                            side: const BorderSide(color: Colors.white54),
-                          ),
-                          onPressed: _openTransferSheet,
-                          child: const Text('تحويل'),
-                        ),
-                      ),
+                      Expanded(child: _WalletPillButton(label: 'تحويل', onPressed: _openTransferSheet)),
                     ],
                   ),
                 ],
@@ -356,31 +334,33 @@ class _WalletScreenState extends State<WalletScreen> {
                 final isPos = amount >= 0;
                 final label = _txLabels[t['type']] ?? t['type'] as String;
                 final note = (t['note'] as String?)?.trim();
+                final tint = isPos ? AppColors.success : AppColors.error;
                 return Container(
-                  margin: const EdgeInsets.only(bottom: 8),
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  margin: const EdgeInsets.only(bottom: 10),
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                   decoration: BoxDecoration(
                     color: Colors.white,
-                    borderRadius: BorderRadius.circular(12),
-                    boxShadow: const [BoxShadow(color: Color(0x0D000000), blurRadius: 4)],
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: const [BoxShadow(color: Color(0x0D000000), blurRadius: 6)],
                   ),
                   child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
+                      Container(
+                        width: 40,
+                        height: 40,
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(color: tint.withValues(alpha: 0.12), shape: BoxShape.circle),
+                        child: Icon(isPos ? Icons.arrow_downward : Icons.arrow_upward, size: 18, color: tint),
+                      ),
+                      const SizedBox(width: 12),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Row(
-                              children: [
-                                Icon(isPos ? Icons.check_circle : Icons.cancel, size: 16, color: isPos ? AppColors.success : AppColors.error),
-                                const SizedBox(width: 6),
-                                Text(label, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
-                              ],
-                            ),
+                            Text(label, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13)),
                             if (note != null && note.isNotEmpty) ...[
-                              const SizedBox(height: 4),
+                              const SizedBox(height: 3),
                               Text(note, style: const TextStyle(fontSize: 11, color: AppColors.textFaint)),
                             ],
                           ],
@@ -389,7 +369,7 @@ class _WalletScreenState extends State<WalletScreen> {
                       const SizedBox(width: 8),
                       Text(
                         '${isPos ? '+' : '-'}${amount.abs().toStringAsFixed(0)} ج.م',
-                        style: TextStyle(fontWeight: FontWeight.w900, color: isPos ? AppColors.success : AppColors.error),
+                        style: TextStyle(fontWeight: FontWeight.w900, fontSize: 13, color: tint),
                       ),
                     ],
                   ),
@@ -398,6 +378,30 @@ class _WalletScreenState extends State<WalletScreen> {
           ],
         ),
       ),
+    );
+  }
+}
+
+/// Solid white pill on the teal balance card — reads as a real tappable
+/// action against the gradient, unlike the previous faint outlined buttons.
+class _WalletPillButton extends StatelessWidget {
+  final String label;
+  final VoidCallback onPressed;
+  const _WalletPillButton({required this.label, required this.onPressed});
+
+  @override
+  Widget build(BuildContext context) {
+    return ElevatedButton(
+      style: ElevatedButton.styleFrom(
+        backgroundColor: Colors.white,
+        foregroundColor: AppColors.primaryDark,
+        elevation: 0,
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
+        textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w900),
+      ),
+      onPressed: onPressed,
+      child: Text(label),
     );
   }
 }

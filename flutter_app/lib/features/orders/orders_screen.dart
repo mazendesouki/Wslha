@@ -330,9 +330,9 @@ class _OrdersScreenState extends State<OrdersScreen> {
                                 final isRide = item.kind == 'ride';
                                 return Material(
                                   color: Colors.white,
-                                  borderRadius: BorderRadius.circular(14),
+                                  borderRadius: BorderRadius.circular(16),
                                   child: InkWell(
-                                    borderRadius: BorderRadius.circular(14),
+                                    borderRadius: BorderRadius.circular(16),
                                     onTap: () => Navigator.of(context).push(
                                       MaterialPageRoute(
                                         builder: (_) => isRide
@@ -343,18 +343,35 @@ class _OrdersScreenState extends State<OrdersScreen> {
                                     child: Container(
                                       padding: const EdgeInsets.all(14),
                                       decoration: BoxDecoration(
-                                        borderRadius: BorderRadius.circular(14),
+                                        borderRadius: BorderRadius.circular(16),
                                         boxShadow: const [BoxShadow(color: Color(0x0F000000), blurRadius: 8, offset: Offset(0, 2))],
                                       ),
                                       child: Row(
                                         children: [
+                                          Container(
+                                            width: 42,
+                                            height: 42,
+                                            alignment: Alignment.center,
+                                            decoration: BoxDecoration(
+                                              color: (isRide ? AppColors.primary : AppColors.accent).withValues(alpha: 0.12),
+                                              borderRadius: BorderRadius.circular(13),
+                                            ),
+                                            child: Text(isRide ? '🚖' : '📦', style: const TextStyle(fontSize: 19)),
+                                          ),
+                                          const SizedBox(width: 12),
                                           Expanded(
                                             child: Column(
                                               crossAxisAlignment: CrossAxisAlignment.start,
                                               children: [
                                                 Text(item.title, style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 13)),
                                                 const SizedBox(height: 4),
-                                                Text(item.subtitle, style: TextStyle(fontSize: 11, color: color, fontWeight: FontWeight.w700)),
+                                                Row(
+                                                  children: [
+                                                    Container(width: 6, height: 6, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
+                                                    const SizedBox(width: 5),
+                                                    Text(item.subtitle, style: TextStyle(fontSize: 11, color: color, fontWeight: FontWeight.w700)),
+                                                  ],
+                                                ),
                                                 if (item.createdAt != null) ...[
                                                   const SizedBox(height: 4),
                                                   Text(
