@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/session.dart';
 import '../../core/theme.dart';
@@ -19,6 +20,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   static const _notifKey = 'wslha_notif';
   UserSession? _session;
   bool _notifEnabled = true;
+  String? _versionLabel;
 
   @override
   void initState() {
@@ -34,6 +36,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
       _session = session;
       _notifEnabled = prefs.getBool(_notifKey) ?? true;
     });
+    // Was a hardcoded "1.0.0" string that never once matched the real
+    // installed build across this whole session's version bumps — read the
+    // actual version+build straight from the installed package instead, so
+    // this label never goes stale again.
+    final info = await PackageInfo.fromPlatform();
+    if (!mounted) return;
+    setState(() => _versionLabel = '${info.version}+${info.buildNumber}');
   }
 
   Future<void> _toggleNotif(bool value) async {
@@ -108,8 +117,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
               onTap: _logout,
             ),
           const SizedBox(height: 24),
-          const Center(
-            child: Text('وصّلها — الإصدار 1.0.0', style: TextStyle(fontSize: 11, color: AppColors.textFaint)),
+          Center(
+            child: Text(
+              'وصّلها — الإصدار ${_versionLabel ?? '...'}',
+              style: const TextStyle(fontSize: 11, color: AppColors.textFaint),
+            ),
           ),
           const SizedBox(height: 24),
         ],
