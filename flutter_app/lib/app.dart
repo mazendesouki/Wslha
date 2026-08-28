@@ -40,7 +40,9 @@ class WslhaApp extends StatelessWidget {
     return MaterialApp(
       title: config.appTitle,
       debugShowCheckedModeBanner: false,
-      theme: buildAppTheme(),
+      // "modern" is trialled on the customer app only for now — see
+      // core/theme.dart's buildAppTheme() doc comment.
+      theme: buildAppTheme(modern: config.flavor == AppFlavor.customer),
       locale: const Locale('ar'),
       // DefaultMaterialLocalizations/DefaultWidgetsLocalizations only ever
       // support English — that's the "no real localization" fallback, not

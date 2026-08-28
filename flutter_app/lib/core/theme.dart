@@ -14,7 +14,17 @@ class AppColors {
   static const textFaint = Color(0xFF9CA3AF);
 }
 
-ThemeData buildAppTheme() {
+// Soft off-white used by the "modern" theme variant's backgrounds/fills —
+// matches the tint already used elsewhere in the app (e.g. invoice PDF's
+// _pdfLightBg) so the refreshed look still reads as the same brand.
+const _modernSurfaceTint = Color(0xFFF7FAF9);
+const _modernBorder = Color(0xFFE5E7EB);
+
+/// [modern] is a safe, screen-layout-untouched visual refresh (rounder
+/// corners, softer surface tint, bolder type) — trialled on the customer
+/// app only (see app.dart) before considering it for driver/merchant, so it
+/// stays an opt-in flag rather than replacing the existing theme outright.
+ThemeData buildAppTheme({bool modern = false}) {
   final base = ThemeData(
     useMaterial3: true,
     colorScheme: ColorScheme.fromSeed(
@@ -23,7 +33,7 @@ ThemeData buildAppTheme() {
       secondary: AppColors.accent,
       error: AppColors.error,
     ),
-    scaffoldBackgroundColor: Colors.white,
+    scaffoldBackgroundColor: modern ? _modernSurfaceTint : Colors.white,
   );
 
   // Cairo matches the web app's Arabic display font (see global.css
@@ -32,12 +42,22 @@ ThemeData buildAppTheme() {
   // family for a simpler Flutter theme.
   final textTheme = GoogleFonts.cairoTextTheme(base.textTheme);
 
+  final buttonRadius = modern ? 16.0 : 12.0;
+  final fieldRadius = modern ? 14.0 : 10.0;
+  final cardRadius = modern ? 18.0 : 12.0;
+
   return base.copyWith(
-    textTheme: textTheme,
+    textTheme: modern
+        ? textTheme.copyWith(
+            titleLarge: textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w900, letterSpacing: -0.2),
+            titleMedium: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+          )
+        : textTheme,
     appBarTheme: AppBarTheme(
-      backgroundColor: Colors.white,
+      backgroundColor: modern ? _modernSurfaceTint : Colors.white,
       foregroundColor: Colors.black,
       elevation: 0,
+      surfaceTintColor: Colors.transparent,
       titleTextStyle: textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w900),
     ),
     elevatedButtonTheme: ElevatedButtonThemeData(
@@ -45,32 +65,69 @@ ThemeData buildAppTheme() {
         backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
         padding: const EdgeInsets.symmetric(vertical: 16),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        elevation: modern ? 0 : null,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(buttonRadius)),
         textStyle: textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w900),
       ),
     ),
+    outlinedButtonTheme: modern
+        ? OutlinedButtonThemeData(
+            style: OutlinedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              side: const BorderSide(color: _modernBorder, width: 1.5),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(buttonRadius)),
+              textStyle: textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w800),
+            ),
+          )
+        : null,
+    cardTheme: modern
+        ? CardThemeData(
+            elevation: 0,
+            color: Colors.white,
+            surfaceTintColor: Colors.transparent,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(cardRadius)),
+            margin: EdgeInsets.zero,
+          )
+        : null,
+    chipTheme: modern
+        ? ChipThemeData(
+            backgroundColor: AppColors.primaryLight,
+            labelStyle: textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w800, color: AppColors.primaryDark),
+            side: BorderSide.none,
+            shape: const StadiumBorder(),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          )
+        : null,
+    snackBarTheme: modern
+        ? SnackBarThemeData(
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          )
+        : null,
+    dialogTheme: modern ? DialogThemeData(shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20))) : null,
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
-      fillColor: Colors.white,
+      fillColor: modern ? _modernSurfaceTint : Colors.white,
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(10),
-        borderSide: const BorderSide(color: Color(0xFFE5E7EB), width: 1.5),
+        borderRadius: BorderRadius.circular(fieldRadius),
+        borderSide: modern ? BorderSide.none : const BorderSide(color: _modernBorder, width: 1.5),
       ),
       enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(10),
-        borderSide: const BorderSide(color: Color(0xFFE5E7EB), width: 1.5),
+        borderRadius: BorderRadius.circular(fieldRadius),
+        borderSide: modern ? BorderSide.none : const BorderSide(color: _modernBorder, width: 1.5),
       ),
       focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(fieldRadius),
         borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
       ),
     ),
-    bottomNavigationBarTheme: const BottomNavigationBarThemeData(
+    bottomNavigationBarTheme: BottomNavigationBarThemeData(
       backgroundColor: Colors.white,
       selectedItemColor: AppColors.primary,
       unselectedItemColor: AppColors.textFaint,
       type: BottomNavigationBarType.fixed,
+      elevation: modern ? 8 : null,
     ),
   );
 }
