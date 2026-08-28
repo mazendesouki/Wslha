@@ -13,11 +13,12 @@ class AppColors {
   static const success = Color(0xFF16A34A);
   static const textFaint = Color(0xFF9CA3AF);
 
-  /// Soft teal-tinted card/list-row background — replaces plain white on
-  /// list items across the customer app so they read as shaded content
-  /// against the page instead of blending into it (the page background is
-  /// already a near-white tint, so a plain-white card barely stood out).
-  static const cardTint = Color(0xFFEEF5F4);
+  /// Teal-tinted card/list-row background — replaces plain white on list
+  /// items across the customer app. The first attempt (0xFFEEF5F4) was too
+  /// close to the page's own near-white tint to actually read as a change
+  /// ("اللون خفيف مش ظاهر") — this is noticeably more saturated so it's
+  /// unmistakable at a glance, not just technically different in hex.
+  static const cardTint = Color(0xFFD9EAE7);
 }
 
 // Soft off-white used by the "modern" theme variant's backgrounds/fills —
