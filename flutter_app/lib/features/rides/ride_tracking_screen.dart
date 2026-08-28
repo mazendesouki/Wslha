@@ -226,7 +226,7 @@ class _RideTrackingScreenState extends State<RideTrackingScreen> {
                       Container(
                         padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
                         decoration: BoxDecoration(
-                          color: Colors.white,
+                          color: AppColors.cardTint,
                           borderRadius: BorderRadius.circular(16),
                           boxShadow: const [BoxShadow(color: Color(0x14000000), blurRadius: 12, offset: Offset(0, 4))],
                         ),
@@ -293,7 +293,7 @@ class _RideTrackingScreenState extends State<RideTrackingScreen> {
                       Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: Colors.white,
+                          color: AppColors.cardTint,
                           borderRadius: BorderRadius.circular(16),
                         ),
                         child: Column(
@@ -451,7 +451,7 @@ class _LiveMapSection extends StatelessWidget {
           children: [
             Container(
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: AppColors.cardTint,
                 borderRadius: BorderRadius.circular(16),
                 boxShadow: const [BoxShadow(color: Color(0x14000000), blurRadius: 12, offset: Offset(0, 4))],
               ),
@@ -589,7 +589,7 @@ class _DriverCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.cardTint,
         borderRadius: BorderRadius.circular(16),
         boxShadow: const [BoxShadow(color: Color(0x14000000), blurRadius: 12, offset: Offset(0, 4))],
       ),
@@ -704,7 +704,7 @@ class _CustomerCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.cardTint,
         borderRadius: BorderRadius.circular(16),
         boxShadow: const [BoxShadow(color: Color(0x14000000), blurRadius: 12, offset: Offset(0, 4))],
       ),
@@ -800,7 +800,7 @@ class _OffersPanelState extends State<_OffersPanel> {
         return Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: AppColors.cardTint,
             borderRadius: BorderRadius.circular(16),
             boxShadow: const [BoxShadow(color: Color(0x14000000), blurRadius: 12, offset: Offset(0, 4))],
           ),
@@ -990,7 +990,7 @@ class _EtaCard extends StatelessWidget {
           ),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(999)),
+            decoration: BoxDecoration(color: AppColors.cardTint, borderRadius: BorderRadius.circular(999)),
             child: Text(badge, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w900, color: badgeColor)),
           ),
         ],

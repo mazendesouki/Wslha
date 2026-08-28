@@ -128,7 +128,7 @@ class _RideInvoiceScreenState extends State<RideInvoiceScreen> {
           _sectionTitle('📍 الرحلة'),
           Container(
             padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(14)),
+            decoration: BoxDecoration(color: AppColors.cardTint, borderRadius: BorderRadius.circular(14)),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -150,7 +150,7 @@ class _RideInvoiceScreenState extends State<RideInvoiceScreen> {
           _sectionTitle('💰 تفاصيل الفاتورة'),
           Container(
             padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(14)),
+            decoration: BoxDecoration(color: AppColors.cardTint, borderRadius: BorderRadius.circular(14)),
             child: Column(
               children: [
                 _row('طريقة الدفع', (r['payment'] as String?) ?? 'كاش'),
@@ -163,7 +163,7 @@ class _RideInvoiceScreenState extends State<RideInvoiceScreen> {
           _sectionTitle('👤 العميل'),
           Container(
             padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(14)),
+            decoration: BoxDecoration(color: AppColors.cardTint, borderRadius: BorderRadius.circular(14)),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
