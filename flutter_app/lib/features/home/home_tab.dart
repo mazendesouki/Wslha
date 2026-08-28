@@ -69,7 +69,7 @@ class _ServiceCardTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: Colors.white,
+      color: AppColors.cardTint,
       borderRadius: BorderRadius.circular(20),
       elevation: 0,
       child: InkWell(

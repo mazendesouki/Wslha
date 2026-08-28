@@ -322,7 +322,7 @@ class AccountScreenState extends State<AccountScreen> {
             const SizedBox(height: 16),
             Container(
               padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16)),
+              decoration: BoxDecoration(color: AppColors.cardTint, borderRadius: BorderRadius.circular(16)),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
@@ -385,7 +385,7 @@ class AccountScreenState extends State<AccountScreen> {
   Widget _statTile(String emoji, Color accent, String value, String label) {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16)),
+      decoration: BoxDecoration(color: AppColors.cardTint, borderRadius: BorderRadius.circular(16)),
       child: Column(
         children: [
           Container(
@@ -422,7 +422,7 @@ class AccountScreenState extends State<AccountScreen> {
         if (_addresses.isEmpty)
           Container(
             padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16)),
+            decoration: BoxDecoration(color: AppColors.cardTint, borderRadius: BorderRadius.circular(16)),
             child: const Center(
               child: Text('مفيش عناوين محفوظة — ضيف عنوان عشان تختاره بسرعة وقت الطلب', style: TextStyle(color: AppColors.textFaint, fontSize: 12)),
             ),
@@ -440,7 +440,7 @@ class AccountScreenState extends State<AccountScreen> {
       margin: const EdgeInsets.only(top: 10),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.cardTint,
         borderRadius: BorderRadius.circular(14),
         border: isDefault ? Border.all(color: AppColors.primary, width: 1.5) : null,
       ),
@@ -504,7 +504,7 @@ class AccountScreenState extends State<AccountScreen> {
         if (_reviews.isEmpty)
           Container(
             padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16)),
+            decoration: BoxDecoration(color: AppColors.cardTint, borderRadius: BorderRadius.circular(16)),
             child: const Center(
               child: Text('لسه ما قيّمتش أي رحلة', style: TextStyle(color: AppColors.textFaint, fontSize: 12)),
             ),
@@ -524,7 +524,7 @@ class AccountScreenState extends State<AccountScreen> {
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(14)),
+      decoration: BoxDecoration(color: AppColors.cardTint, borderRadius: BorderRadius.circular(14)),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -568,7 +568,7 @@ class AccountScreenState extends State<AccountScreen> {
         if (_driverNotes.isEmpty)
           Container(
             padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16)),
+            decoration: BoxDecoration(color: AppColors.cardTint, borderRadius: BorderRadius.circular(16)),
             child: const Center(
               child: Text('لسه مفيش تقييم أو ملاحظة من سائق — بتظهر هنا فور ما رحلتك تخلص ويقيّمك السائق', style: TextStyle(color: AppColors.textFaint, fontSize: 12), textAlign: TextAlign.center),
             ),

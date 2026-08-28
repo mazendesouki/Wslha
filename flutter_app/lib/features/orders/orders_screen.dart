@@ -329,7 +329,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
                                 final color = _statusColor[item.status] ?? AppColors.textFaint;
                                 final isRide = item.kind == 'ride';
                                 return Material(
-                                  color: Colors.white,
+                                  color: AppColors.cardTint,
                                   borderRadius: BorderRadius.circular(16),
                                   child: InkWell(
                                     borderRadius: BorderRadius.circular(16),

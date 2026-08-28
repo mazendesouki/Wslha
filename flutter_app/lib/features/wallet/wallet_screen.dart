@@ -339,7 +339,7 @@ class _WalletScreenState extends State<WalletScreen> {
                   margin: const EdgeInsets.only(bottom: 10),
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: AppColors.cardTint,
                     borderRadius: BorderRadius.circular(16),
                     boxShadow: const [BoxShadow(color: Color(0x0D000000), blurRadius: 6)],
                   ),
