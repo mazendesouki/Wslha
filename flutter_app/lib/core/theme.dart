@@ -14,11 +14,13 @@ class AppColors {
   static const textFaint = Color(0xFF9CA3AF);
 
   /// Teal-tinted card/list-row background — replaces plain white on list
-  /// items across the customer app. The first attempt (0xFFEEF5F4) was too
-  /// close to the page's own near-white tint to actually read as a change
-  /// ("اللون خفيف مش ظاهر") — this is noticeably more saturated so it's
-  /// unmistakable at a glance, not just technically different in hex.
-  static const cardTint = Color(0xFFD9EAE7);
+  /// items across the customer app. Went through two lighter attempts
+  /// (0xFFEEF5F4, then 0xFFD9EAE7) that still read as "too faint" —
+  /// explicitly asked for a dark, unmistakable tint, so this is a clearly
+  /// saturated mid-teal rather than a subtle background wash. Text on top
+  /// stays dark (near-black/primary), which still reads fine at this
+  /// saturation.
+  static const cardTint = Color(0xFFAAD2CA);
 }
 
 // Soft off-white used by the "modern" theme variant's backgrounds/fills —
