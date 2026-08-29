@@ -212,10 +212,16 @@ import PageHero from '../components/PageHero.astro';
   // model. Best-effort: any failure here is silent and never blocks login.
   async function startServerSession(phone: string, password: string) {
     try {
+      // `keepalive` lets this request finish (and its Set-Cookie response
+      // header still get applied) even if the page navigates away before
+      // it resolves — without it, the redirect below was cancelling this
+      // fetch mid-flight before the browser ever received the refresh
+      // cookie, silently.
       const res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ phone, password }),
+        keepalive: true,
       });
       if (!res.ok) return;
       const { accessToken, expiresIn } = await res.json();
