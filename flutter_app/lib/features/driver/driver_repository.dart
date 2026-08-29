@@ -240,7 +240,7 @@ class DriverRepository {
     final rows = await sb
         .from('driver_applications')
         .select(
-          'vehicle_model,vehicle_color,vehicle_year,vehicle_reg_number,'
+          'vehicle_category,vehicle_model,vehicle_color,vehicle_year,vehicle_reg_number,'
           'vehicle_front_url,vehicle_back_url,vehicle_right_url,vehicle_left_url,plate_photo_url',
         )
         .eq('phone', phone)

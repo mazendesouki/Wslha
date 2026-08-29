@@ -69,7 +69,7 @@ export const VEHICLE_TYPES: VehicleType[] = [
 // المستخدم في تسجيل السائقين) — العميل يختار موديل وسنة من المسجّل فقط.
 export interface VehicleModel {
   id: string;
-  category: 'sedan' | 'suv' | 'van';
+  category: 'sedan' | 'suv' | 'van' | 'motorcycle';
   name: string;       // الماركة والموديل
   yearFrom: number;
   yearTo: number;
@@ -112,6 +112,10 @@ export const VEHICLE_MODELS: VehicleModel[] = [
   { id: 'carnival',   category: 'van', name: 'كيا كارنيفال',        yearFrom: 2019, yearTo: 2027 },
   { id: 'traveller',  category: 'van', name: 'بيجو ترافيلر',        yearFrom: 2018, yearTo: 2027 },
   { id: 'sprinter',   category: 'van', name: 'مرسيدس سبرينتر',      yearFrom: 2015, yearTo: 2027 },
+  // دراجة نارية — توصيل فقط (لا تدخل حجوزات المشاوير/المطار)
+  { id: 'cg125',      category: 'motorcycle', name: 'هوندا CG 125',   yearFrom: 2015, yearTo: 2027 },
+  { id: 'bajaj',      category: 'motorcycle', name: 'باجاج بوكسر',    yearFrom: 2015, yearTo: 2027 },
+  { id: 'tvs',        category: 'motorcycle', name: 'TVS ستار سيتي',  yearFrom: 2015, yearTo: 2027 },
 ];
 
 // Year adjustment: continuous per-year gradient (not fixed bands), so each model

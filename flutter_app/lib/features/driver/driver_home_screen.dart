@@ -48,6 +48,7 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
   List<PendingOffer> _offers = [];
   String? _actingOnOfferId;
   final _jobs = ActiveJobStore.instance;
+  String? _vehicleCategory;
 
   @override
   void initState() {
@@ -59,6 +60,12 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
     // while location permission/GPS lock is still settling) before the
     // driver had a chance to do anything. The switch now starts off and
     // stays exactly where the driver last left it — fully manual.
+    // Motorcycle drivers do delivery only — the negotiation entry point
+    // (ride requests) is hidden for them; the actual enforcement (never
+    // seeing/accepting a ride offer at all) lives server-side.
+    _repo.fetchVehicleInfo(widget.session.phone).then((info) {
+      if (mounted && info != null) setState(() => _vehicleCategory = info['vehicle_category'] as String?);
+    });
   }
 
   void _onJobsChanged() {
@@ -415,13 +422,14 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
       appBar: AppBar(
         title: const Text('وصّلها سائق'),
         actions: [
-          IconButton(
-            tooltip: 'طلبات تفاوض قريبة',
-            icon: const Text('🤝', style: TextStyle(fontSize: 20)),
-            onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => NegotiationScreen(session: widget.session)),
+          if (_vehicleCategory != 'motorcycle')
+            IconButton(
+              tooltip: 'طلبات تفاوض قريبة',
+              icon: const Text('🤝', style: TextStyle(fontSize: 20)),
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => NegotiationScreen(session: widget.session)),
+              ),
             ),
-          ),
           const LogoutButton(),
         ],
       ),

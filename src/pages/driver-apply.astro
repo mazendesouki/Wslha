@@ -259,7 +259,11 @@ import { VEHICLE_MODELS } from '../data/airports';
                 <option value="sedan">🚗 سيدان</option>
                 <option value="suv">🚙 SUV / كروز</option>
                 <option value="van">🚐 ميكروباص</option>
+                <option value="motorcycle">🏍️ دراجة نارية (توصيل فقط)</option>
               </select>
+              <p id="veh-cat-hint" style="display:none; font-size:.78rem; color:#64748B; margin-top:.35rem">
+                ملاحظة: تسجيل الدراجة النارية بيقتصر على طلبات خدمة الدليفري فقط — مش هتستقبل طلبات مشاوير عادية.
+              </p>
             </div>
             <div class="form-group">
               <label>الماركة والموديل <span class="req">*</span></label>
@@ -472,7 +476,11 @@ function populateVehYears() {
   for (let y = model.yearTo; y >= model.yearFrom; y--) years.push(y);
   vehYearSel.innerHTML = years.map(y => `<option value="${y}">${y}</option>`).join('');
 }
-vehCatSel.addEventListener('change', () => populateVehModels(vehCatSel.value));
+const vehCatHint = document.getElementById('veh-cat-hint');
+vehCatSel.addEventListener('change', () => {
+  populateVehModels(vehCatSel.value);
+  vehCatHint.style.display = vehCatSel.value === 'motorcycle' ? 'block' : 'none';
+});
 vehModelSel.addEventListener('change', populateVehYears);
 populateVehModels('sedan');
 
