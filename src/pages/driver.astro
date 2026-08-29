@@ -388,6 +388,25 @@ label .req { color: #DC2626; }
       </div>
     </div>
 
+    <!-- نوع التسجيل — يُختار هنا أولاً، قبل أي خطوة تانية، لأن كل نوع
+         مستنداته ومواصفاته مختلفة (الخانة تحت بتتغيّر على أساسه). -->
+    <div class="card">
+      <div class="card__head">🚦 نوع التسجيل</div>
+      <div class="card__body">
+        <div class="fg" style="margin:0">
+          <label>هتسجّل كإيه؟ <span class="req">*</span></label>
+          <div class="radio-row" id="grp-vtype">
+            <label class="radio-pill sel" data-v="car"><input type="radio" name="vtype" value="car" checked/> 🚗 سيارة أفراد</label>
+            <label class="radio-pill" data-v="motorcycle"><input type="radio" name="vtype" value="motorcycle"/> 🏍️ دراجة نارية</label>
+            <label class="radio-pill" data-v="cargo"><input type="radio" name="vtype" value="cargo"/> 📦 سيارة نقل أغراض</label>
+          </div>
+          <div style="font-size:var(--text-xs);color:var(--color-text-muted);margin-top:6px">
+            الدراجة النارية وسيارة نقل الأغراض مخصّصتين لطلبات خدمة الدليفري فقط — مش هتستقبلوا طلبات مشاوير عادية.
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- What you'll need -->
     <div class="card">
       <div class="card__head">📋 ما ستحتاجه لإكمال الطلب</div>
@@ -400,9 +419,9 @@ label .req { color: #DC2626; }
             <div style="display:flex;align-items:center;gap:8px;font-size:var(--text-sm)">✅ رخصة قيادة سارية</div>
           </div>
           <div style="display:flex;flex-direction:column;gap:var(--sp-2)">
-            <div style="font-size:var(--text-xs);font-weight:var(--weight-bold);color:var(--color-text-muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">وثائق السيارة</div>
-            <div style="display:flex;align-items:center;gap:8px;font-size:var(--text-sm)">✅ رخصة سيارة + تأمين + فحص</div>
-            <div style="display:flex;align-items:center;gap:8px;font-size:var(--text-sm)">✅ صور السيارة (4 جوانب)</div>
+            <div style="font-size:var(--text-xs);font-weight:var(--weight-bold);color:var(--color-text-muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px" id="need-vehicle-title">وثائق السيارة</div>
+            <div style="display:flex;align-items:center;gap:8px;font-size:var(--text-sm)" id="need-vehicle-1">✅ رخصة سيارة + تأمين + فحص</div>
+            <div style="display:flex;align-items:center;gap:8px;font-size:var(--text-sm)" id="need-vehicle-2">✅ صور السيارة (4 جوانب)</div>
             <div style="display:flex;align-items:center;gap:8px;font-size:var(--text-sm)">✅ شهادة حسن سيرة (الفيش) — مطلوبة · 🔵 التأمين والفحص اختياريان</div>
           </div>
         </div>
@@ -639,17 +658,8 @@ label .req { color: #DC2626; }
     <div class="card">
       <div class="card__head">🔧 مواصفات المركبة</div>
       <div class="card__body">
-        <div class="fg" style="margin-bottom:var(--sp-4)">
-          <label>نوع التسجيل <span class="req">*</span></label>
-          <div class="radio-row" id="grp-vtype">
-            <label class="radio-pill sel" data-v="car"><input type="radio" name="vtype" value="car" checked/> 🚗 سيارة ركاب</label>
-            <label class="radio-pill" data-v="motorcycle"><input type="radio" name="vtype" value="motorcycle"/> 🏍️ دراجة نارية</label>
-            <label class="radio-pill" data-v="cargo"><input type="radio" name="vtype" value="cargo"/> 📦 سيارة نقل بضائع</label>
-          </div>
-          <div style="font-size:var(--text-xs);color:var(--color-text-muted);margin-top:4px">
-            الدراجة النارية وسيارة نقل البضائع مخصّصتين لطلبات خدمة الدليفري فقط — مش هتستقبلوا طلبات مشاوير عادية.
-          </div>
-        </div>
+        <!-- نوع التسجيل اتحدد فعلاً في الخطوة الأولى — الحقول تحت بتتظبط
+             تلقائيًا عليه (applyVehicleType، بيتنادى عند دخول الخطوة دي). -->
         <div class="grid-3">
           <div class="fg" id="fg-car-cat">
             <label for="v-cat">فئة السيارة <span class="req">*</span></label>
@@ -1356,10 +1366,18 @@ document.querySelectorAll('.radio-row').forEach(function(row) {
   });
 });
 
-/* ── نوع التسجيل: سيارة ركاب / دراجة نارية / سيارة نقل بضائع ──
-   Motorcycle/cargo skip the sedan/suv/van picker (their category is set
-   directly) and the A/C+clean comfort tier (not meaningful for either) —
-   they're delivery-only regardless, see db/security-41. */
+/* ── نوع التسجيل: سيارة أفراد / دراجة نارية / سيارة نقل أغراض ──
+   Chosen once, up front in panel-0 — Motorcycle/cargo skip the
+   sedan/suv/van picker (their category is set directly) and the
+   A/C+clean comfort tier (not meaningful for either) when the driver
+   later reaches the vehicle step (panel-3); they're delivery-only
+   regardless, see db/security-41 / security-42. Also updates the
+   "ما ستحتاجه" requirements preview in panel-0 to match. */
+var VEHICLE_TYPE_NEEDS = {
+  car:        { title: 'وثائق السيارة',      doc1: '✅ رخصة سيارة + تأمين + فحص',        doc2: '✅ صور السيارة (4 جوانب)' },
+  motorcycle: { title: 'وثائق الدراجة النارية', doc1: '✅ رخصة قيادة دراجات + تأمين المركبة', doc2: '✅ صور الدراجة (4 جوانب)' },
+  cargo:      { title: 'وثائق سيارة النقل',   doc1: '✅ رخصة نقل + تأمين + فحص',           doc2: '✅ صور السيارة (4 جوانب)' },
+};
 function applyVehicleType(vtype) {
   var carCat = $('fg-car-cat');
   var ac = $('fg-comfort-ac'), clean = $('fg-comfort-clean'), note = $('fg-comfort-note');
@@ -1375,6 +1393,10 @@ function applyVehicleType(vtype) {
     $('v-has-ac').checked = false;
     $('v-is-clean').checked = false;
   }
+  var needs = VEHICLE_TYPE_NEEDS[vtype] || VEHICLE_TYPE_NEEDS.car;
+  if ($('need-vehicle-title')) $('need-vehicle-title').textContent = needs.title;
+  if ($('need-vehicle-1')) $('need-vehicle-1').textContent = needs.doc1;
+  if ($('need-vehicle-2')) $('need-vehicle-2').textContent = needs.doc2;
 }
 
 /* ── Validations ── */
