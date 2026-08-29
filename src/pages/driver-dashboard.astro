@@ -884,6 +884,7 @@ import PageHero from '../components/PageHero.astro';
 <script>
   import { carIcon, bearingBetween, animateMarkerTo } from '../utils/mapMarker';
   import { computeRatingStats, isTopRated, BADGE_LABELS, AC_BADGE_LABEL, ratingStarsText } from '../utils/reputation';
+  import { getValidAccessToken } from '../utils/clientSession';
 
   function escapeHtml(s) {
     return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
@@ -2127,15 +2128,45 @@ import PageHero from '../components/PageHero.astro';
 
   /* ── Load wallet, points, ratings ── */
   let _driverHasAc = false;
+
+  // Access-token-first, phone-trust-RPC-fallback — same shape as
+  // wallet.astro, reusing the same /api/wallet/* endpoints (security
+  // system, security-50) since this is the same underlying feature just
+  // read from the driver dashboard instead of the customer wallet page.
+  async function fetchDriverBalance(phone) {
+    try {
+      const token = await getValidAccessToken();
+      if (token) {
+        const res = await fetch('/api/wallet/balance', { headers: { Authorization: 'Bearer ' + token } });
+        if (res.ok) { const { balance } = await res.json(); return balance ?? 0; }
+      }
+    } catch {}
+    try {
+      const res = await fetch(`${SB_URL}/rest/v1/rpc/get_my_wallet_balance`, { method: 'POST', headers: { ...SB_H, 'Content-Type': 'application/json' }, body: JSON.stringify({ p_phone: phone }) });
+      return res.ok ? ((await res.json()) ?? 0) : 0;
+    } catch { return 0; }
+  }
+  async function fetchDriverWalletTx(phone) {
+    try {
+      const token = await getValidAccessToken();
+      if (token) {
+        const res = await fetch('/api/wallet/transactions?limit=10', { headers: { Authorization: 'Bearer ' + token } });
+        if (res.ok) { const { transactions } = await res.json(); if (Array.isArray(transactions)) return transactions; }
+      }
+    } catch {}
+    try {
+      const res = await fetch(`${SB_URL}/rest/v1/wallet_transactions?phone=eq.${encodeURIComponent(phone)}&select=amount,type,note,created_at&order=created_at.desc&limit=10`, { headers: SB_H });
+      return res.ok ? await res.json() : [];
+    } catch { return []; }
+  }
+
   async function loadAccountData() {
     if (!driver) return;
     const phone = encodeURIComponent(driver.phone);
     // Parallel fetches
-    const [walletRes, walletTxRes, pointsRes, pointsTxRes, ratingsRes, ridesCountRes, ordersCountRes, appRes] = await Promise.allSettled([
-      // get_my_wallet_balance (security-49) — direct SELECT on wallets is
-      // closed since it had no filter and dumped every user's balance.
-      fetch(`${SB_URL}/rest/v1/rpc/get_my_wallet_balance`, { method: 'POST', headers: { ...SB_H, 'Content-Type': 'application/json' }, body: JSON.stringify({ p_phone: driver.phone }) }),
-      fetch(`${SB_URL}/rest/v1/wallet_transactions?phone=eq.${phone}&select=amount,type,note,created_at&order=created_at.desc&limit=10`, { headers: SB_H }),
+    const [walletBalance, walletTxs, pointsRes, pointsTxRes, ratingsRes, ridesCountRes, ordersCountRes, appRes] = await Promise.allSettled([
+      fetchDriverBalance(driver.phone),
+      fetchDriverWalletTx(driver.phone),
       fetch(`${SB_URL}/rest/v1/points?phone=eq.${phone}&select=total_points`, { headers: SB_H }),
       fetch(`${SB_URL}/rest/v1/point_transactions?phone=eq.${phone}&select=points,type,created_at&order=created_at.desc&limit=10`, { headers: SB_H }),
       fetch(`${SB_URL}/rest/v1/ratings?driver_phone=eq.${driver.phone}&rated_by=eq.customer&select=id,rating,comment,service_type,created_at,driver_reply&order=created_at.desc&limit=20`, { headers: SB_H }),
@@ -2165,11 +2196,11 @@ import PageHero from '../components/PageHero.astro';
 
     // Wallet
     try {
-      const balance = (await walletRes.value.json()) ?? 0;
+      const balance = walletBalance.value ?? 0;
       document.getElementById('wallet-balance').textContent = Number(balance).toLocaleString('ar-EG');
     } catch {}
     try {
-      const txs = await walletTxRes.value.json();
+      const txs = walletTxs.value;
       const container = document.getElementById('wallet-txs');
       if (Array.isArray(txs) && txs.length) {
         container.innerHTML = txs.map(t => {

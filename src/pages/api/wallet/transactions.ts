@@ -15,7 +15,7 @@ export const prerender = false;
 
 const SB_ANON_KEY = 'sb_publishable_PLSnpvCT-sAyUMtymNgTwA_QmL2suw4';
 
-export const GET: APIRoute = async ({ request }) => {
+export const GET: APIRoute = async ({ request, url: reqUrl }) => {
   const auth = request.headers.get('authorization');
   const token = auth?.startsWith('Bearer ') ? auth.slice(7) : null;
   if (!token) {
@@ -26,9 +26,12 @@ export const GET: APIRoute = async ({ request }) => {
     return new Response(JSON.stringify({ error: 'invalid_token' }), { status: 401 });
   }
 
+  const limitParam = parseInt(reqUrl.searchParams.get('limit') || '50', 10);
+  const limit = Number.isFinite(limitParam) ? Math.min(Math.max(limitParam, 1), 100) : 50;
+
   const url =
     `${SB_URL}/rest/v1/wallet_transactions?phone=eq.${encodeURIComponent(payload.sub)}` +
-    `&select=amount,type,note,created_at&order=created_at.desc&limit=50`;
+    `&select=amount,type,note,created_at&order=created_at.desc&limit=${limit}`;
   const res = await fetch(url, {
     headers: { apikey: SB_ANON_KEY, Authorization: `Bearer ${SB_ANON_KEY}` },
   });

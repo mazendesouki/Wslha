@@ -655,6 +655,7 @@ import Layout from '../components/layout.astro';
 </Layout>
 
 <script>
+  import { getValidAccessToken } from '../utils/clientSession';
   function escapeHtml(s: string | null | undefined): string {
     return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' } as Record<string,string>)[c]);
   }
@@ -1596,6 +1597,32 @@ import Layout from '../components/layout.astro';
     } catch {}
   }
 
+  // Access-token-first, phone-trust-RPC-fallback — same shape as
+  // wallet.astro, reusing the same /api/wallet/* endpoints (security
+  // system, security-50) for the merchant dashboard's own wallet card.
+  async function fetchMerchantBalance(phone: string): Promise<number> {
+    try {
+      const token = await getValidAccessToken();
+      if (token) {
+        const res = await fetch('/api/wallet/balance', { headers: { Authorization: 'Bearer ' + token } });
+        if (res.ok) { const { balance } = await res.json(); return balance ?? 0; }
+      }
+    } catch {}
+    const b = await sbPost('rpc/get_my_wallet_balance', { p_phone: phone });
+    return (b as any) ?? 0;
+  }
+  async function fetchMerchantWalletTx(phone: string): Promise<any[]> {
+    try {
+      const token = await getValidAccessToken();
+      if (token) {
+        const res = await fetch('/api/wallet/transactions?limit=10', { headers: { Authorization: 'Bearer ' + token } });
+        if (res.ok) { const { transactions } = await res.json(); if (Array.isArray(transactions)) return transactions; }
+      }
+    } catch {}
+    const txs = await sbGet(`wallet_transactions?phone=eq.${encodeURIComponent(phone)}&select=amount,type,note,created_at&order=created_at.desc&limit=10`);
+    return Array.isArray(txs) ? txs : [];
+  }
+
   // ── Merchant account data (wallet, points, ratings) ──
   async function loadMerchantAccountData() {
     let user: any = null;
@@ -1604,10 +1631,8 @@ import Layout from '../components/layout.astro';
     const phone = encodeURIComponent(user.phone);
 
     const [walletRes, walletTxRes, pointsRes, pointsTxRes, ratingsRes, salesRes] = await Promise.allSettled([
-      // get_my_wallet_balance (security-49) — direct SELECT on wallets is
-      // closed since it had no filter and dumped every user's balance.
-      sbPost('rpc/get_my_wallet_balance', { p_phone: user.phone }),
-      sbGet(`wallet_transactions?phone=eq.${phone}&select=amount,type,note,created_at&order=created_at.desc&limit=10`),
+      fetchMerchantBalance(user.phone),
+      fetchMerchantWalletTx(user.phone),
       sbGet(`points?phone=eq.${phone}&select=total_points`),
       sbGet(`point_transactions?phone=eq.${phone}&select=points,type,created_at&order=created_at.desc&limit=10`),
       currentStore?.id
