@@ -31,6 +31,42 @@ export async function startServerSession(phone: string, password: string): Promi
   }
 }
 
+/**
+ * Returns a currently-valid (not expired, 30s safety margin) access
+ * token, refreshing it via /api/auth/refresh first if the cached one is
+ * missing or stale. Returns null if there's no active session at all
+ * (e.g. this browser logged in before the session system shipped, or the
+ * refresh cookie is gone/expired/revoked) — callers must fall back to
+ * whatever they did before this system existed in that case, not treat
+ * null as an error.
+ */
+export async function getValidAccessToken(): Promise<string | null> {
+  try {
+    const token = sessionStorage.getItem('wslha_access_token');
+    const expRaw = sessionStorage.getItem('wslha_access_token_exp');
+    const exp = expRaw ? Number(expRaw) : 0;
+    if (token && exp > Date.now() + 30_000) return token;
+  } catch {
+    /* sessionStorage unavailable — fall through to a fresh refresh attempt */
+  }
+
+  try {
+    const res = await fetch('/api/auth/refresh', { method: 'POST' });
+    if (!res.ok) return null;
+    const { accessToken, expiresIn } = await res.json();
+    if (!accessToken) return null;
+    try {
+      sessionStorage.setItem('wslha_access_token', accessToken);
+      sessionStorage.setItem('wslha_access_token_exp', String(Date.now() + expiresIn * 1000));
+    } catch {
+      /* ignore — the token is still usable for this one call */
+    }
+    return accessToken;
+  } catch {
+    return null;
+  }
+}
+
 export function endServerSession(): void {
   try {
     fetch('/api/auth/logout', {

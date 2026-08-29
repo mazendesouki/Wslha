@@ -259,7 +259,8 @@ import Layout from '../components/layout.astro';
   <div class="w-toast" id="w-toast"></div>
 </Layout>
 
-<script is:inline>
+<script>
+  import { getValidAccessToken } from '../utils/clientSession';
   const SB_URL = 'https://vtikgyiopkjnrwlqnmfx.supabase.co';
   const SB_KEY = 'sb_publishable_PLSnpvCT-sAyUMtymNgTwA_QmL2suw4';
   const SB_H = { apikey: SB_KEY, Authorization: 'Bearer ' + SB_KEY, 'Content-Type': 'application/json' };
@@ -293,8 +294,32 @@ import Layout from '../components/layout.astro';
     document.querySelectorAll('.quick-btn').forEach(function(b) { b.classList.remove('sel'); });
   });
 
+  function renderBalance(bal) {
+    document.getElementById('balance-val').textContent = Number(bal).toLocaleString('ar-EG');
+    document.getElementById('withdraw-avail').textContent = Number(bal).toLocaleString('ar-EG');
+  }
+
   async function loadWallet() {
     if (!user) return;
+
+    // First choice: the new access-token-verified endpoint (security
+    // system, security-50) — the server reads the phone from the signed
+    // token itself, never from anything this page sends. Only reachable
+    // if this browser has an active session (logged in/registered since
+    // that system shipped); falls through to the old phone-trust RPC
+    // otherwise so nothing breaks for existing sessions.
+    try {
+      const token = await getValidAccessToken();
+      if (token) {
+        const res = await fetch('/api/wallet/balance', { headers: { Authorization: 'Bearer ' + token } });
+        if (res.ok) {
+          const { balance } = await res.json();
+          renderBalance(balance || 0);
+          return;
+        }
+      }
+    } catch {}
+
     try {
       // get_my_wallet_balance (security-49) — direct SELECT on wallets is
       // closed since it had no filter and dumped every user's balance.
@@ -303,8 +328,7 @@ import Layout from '../components/layout.astro';
         body: JSON.stringify({ p_phone: user.phone }),
       });
       var bal = res.ok ? (await res.json()) || 0 : 0;
-      document.getElementById('balance-val').textContent = Number(bal).toLocaleString('ar-EG');
-      document.getElementById('withdraw-avail').textContent = Number(bal).toLocaleString('ar-EG');
+      renderBalance(bal);
     } catch {}
   }
 
