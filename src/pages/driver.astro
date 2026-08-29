@@ -168,6 +168,12 @@ label .req { color: #DC2626; }
   font-size: var(--text-xs); font-weight: var(--weight-bold);
   margin-top: var(--sp-2); min-height: 16px;
 }
+.upload-zone--photo { width: 160px; max-width: 100%; margin: 0 auto; padding: var(--sp-3); }
+.upload-preview--photo {
+  width: 160px; height: 160px; max-width: 100%; object-fit: cover;
+  border: 1px solid var(--color-border);
+  border-radius: 50%; margin: var(--sp-2) auto 0; display: none;
+}
 .upload-preview {
   width: 100%; max-height: 140px; object-fit: cover;
   border-radius: var(--radius); margin-top: var(--sp-2);
@@ -451,13 +457,13 @@ label .req { color: #DC2626; }
       <div class="card__body">
         <div class="fg">
           <label>صورة شخصية واضحة للوجه <span class="req">*</span></label>
-          <div class="upload-zone" id="zone-driver-photo">
+          <div class="upload-zone upload-zone--photo" id="zone-driver-photo">
             <div class="upload-zone__icon">📷</div>
             <div class="upload-zone__text">انقر أو اسحب لرفع صورتك</div>
-            <div class="upload-zone__sub">JPG أو PNG · يجب أن يكون الوجه واضحاً</div>
+            <div class="upload-zone__sub">JPG أو PNG</div>
             <input type="file" accept="image/*" onchange="handleUpload(this,'driver-photo','zone-driver-photo')"/>
           </div>
-          <img id="prev-driver-photo" class="upload-preview" alt=""/>
+          <img id="prev-driver-photo" class="upload-preview--photo" alt=""/>
           <div class="upload-status" id="status-driver-photo"></div>
         </div>
       </div>
