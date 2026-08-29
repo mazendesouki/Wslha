@@ -2350,6 +2350,12 @@ async function openDriverModal(phone) {
     </div>`;
   };
   const ownershipAr = { owned: 'ملك', rented: 'إيجار', borrowed: 'مستعار' }[a.vehicle_ownership] || a.vehicle_ownership;
+  const VTYPE_LABELS = {
+    car:        { icon: '🚘', title: 'بيانات السيارة', docsTitle: 'وثائق السيارة', regDoc: 'رخصة تسجيل السيارة' },
+    motorcycle: { icon: '🏍️', title: 'بيانات الدراجة النارية', docsTitle: 'وثائق الدراجة النارية', regDoc: 'رخصة تسجيل الدراجة' },
+    cargo:      { icon: '📦', title: 'بيانات سيارة النقل', docsTitle: 'وثائق سيارة النقل', regDoc: 'رخصة تسجيل سيارة النقل' },
+  };
+  const vt = VTYPE_LABELS[a.vehicle_category] || VTYPE_LABELS.car;
 
   document.getElementById('driver-modal-body').innerHTML = `
     <div class="rev-header">
@@ -2380,7 +2386,7 @@ async function openDriverModal(phone) {
       rdoc('صورة الرخصة', a.license_photo_url),
     ])}
 
-    ${rsection('🚘', 'بيانات السيارة', [
+    ${rsection(vt.icon, vt.title, [
       rfield('الموديل', a.vehicle_model),
       rfield('اللون', a.vehicle_color),
       rfield('سنة الصنع', a.vehicle_year),
@@ -2395,12 +2401,12 @@ async function openDriverModal(phone) {
       rdoc('يسار', a.vehicle_left_url),
     ])}
 
-    ${rsection('📋', 'وثائق السيارة', [
+    ${rsection('📋', vt.docsTitle, [
       rfield('انتهاء رخصة التسجيل', fmtDate(a.vehicle_reg_expiry), a.vehicle_reg_expiry),
       rfield('انتهاء التأمين', a.insurance_expiry ? fmtDate(a.insurance_expiry) : null, a.insurance_expiry),
       rfield('انتهاء الفحص', a.inspection_expiry ? fmtDate(a.inspection_expiry) : null, a.inspection_expiry),
     ], [
-      rdoc('رخصة تسجيل السيارة', a.vehicle_reg_photo_url),
+      rdoc(vt.regDoc, a.vehicle_reg_photo_url),
       a.insurance_photo_url ? rdoc('التأمين', a.insurance_photo_url) : '',
       a.inspection_photo_url ? rdoc('شهادة الفحص', a.inspection_photo_url) : '',
     ])}
