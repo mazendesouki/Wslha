@@ -29,6 +29,9 @@ dist/
 # Astro
 .astro/
 
+# Vercel adapter build output
+.vercel/
+
 .env.local
 
 .firebase/

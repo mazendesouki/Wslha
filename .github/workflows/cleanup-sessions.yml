@@ -1,0 +1,33 @@
+name: Daily session cleanup
+
+# Garbage-collects expired/revoked rows from auth_sessions + old
+# security_alerts (db/security-50-session-management.sql). Runs daily
+# instead of relying on pg_cron, which isn't enabled on every Supabase
+# plan — this workflow calls the same cleanup_expired_sessions() RPC a
+# pg_cron job would, just from GitHub Actions' scheduler instead.
+#
+# Requires two repo secrets:
+#   SUPABASE_URL              — e.g. https://xxxx.supabase.co
+#   SUPABASE_SERVICE_ROLE_KEY — service role key (NOT the anon key —
+#                                cleanup_expired_sessions() is revoked
+#                                from anon/authenticated on purpose)
+
+on:
+  schedule:
+    - cron: '0 3 * * *'
+  workflow_dispatch:
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call cleanup_expired_sessions()
+        run: |
+          curl -sS -X POST "$SUPABASE_URL/rest/v1/rpc/cleanup_expired_sessions" \
+            -H "apikey: $SUPABASE_SERVICE_ROLE_KEY" \
+            -H "Authorization: Bearer $SUPABASE_SERVICE_ROLE_KEY" \
+            -H "Content-Type: application/json" \
+            --fail-with-body
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
