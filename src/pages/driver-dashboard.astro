@@ -2160,15 +2160,41 @@ import PageHero from '../components/PageHero.astro';
     } catch { return []; }
   }
 
+  // Access-token-first, phone-trust-fallback for the loyalty points card
+  // — /api/points/summary (security-50) returns both the total and
+  // recent history in one call.
+  async function fetchDriverPoints(phone) {
+    try {
+      const token = await getValidAccessToken();
+      if (token) {
+        const res = await fetch('/api/points/summary?limit=10', { headers: { Authorization: 'Bearer ' + token } });
+        if (res.ok) {
+          const data = await res.json();
+          if (Array.isArray(data.transactions)) return data;
+        }
+      }
+    } catch {}
+    try {
+      const [totalsRes, txRes] = await Promise.all([
+        fetch(`${SB_URL}/rest/v1/points?phone=eq.${encodeURIComponent(phone)}&select=total_points`, { headers: SB_H }),
+        fetch(`${SB_URL}/rest/v1/point_transactions?phone=eq.${encodeURIComponent(phone)}&select=points,type,created_at&order=created_at.desc&limit=10`, { headers: SB_H }),
+      ]);
+      const totals = totalsRes.ok ? await totalsRes.json() : [];
+      const transactions = txRes.ok ? await txRes.json() : [];
+      return { totalPoints: (Array.isArray(totals) && totals[0]?.total_points) || 0, transactions: Array.isArray(transactions) ? transactions : [] };
+    } catch {
+      return { totalPoints: 0, transactions: [] };
+    }
+  }
+
   async function loadAccountData() {
     if (!driver) return;
     const phone = encodeURIComponent(driver.phone);
     // Parallel fetches
-    const [walletBalance, walletTxs, pointsRes, pointsTxRes, ratingsRes, ridesCountRes, ordersCountRes, appRes] = await Promise.allSettled([
+    const [walletBalance, walletTxs, pointsSummary, ratingsRes, ridesCountRes, ordersCountRes, appRes] = await Promise.allSettled([
       fetchDriverBalance(driver.phone),
       fetchDriverWalletTx(driver.phone),
-      fetch(`${SB_URL}/rest/v1/points?phone=eq.${phone}&select=total_points`, { headers: SB_H }),
-      fetch(`${SB_URL}/rest/v1/point_transactions?phone=eq.${phone}&select=points,type,created_at&order=created_at.desc&limit=10`, { headers: SB_H }),
+      fetchDriverPoints(driver.phone),
       fetch(`${SB_URL}/rest/v1/ratings?driver_phone=eq.${driver.phone}&rated_by=eq.customer&select=id,rating,comment,service_type,created_at,driver_reply&order=created_at.desc&limit=20`, { headers: SB_H }),
       fetch(`${SB_URL}/rest/v1/rides?driver_phone=eq.${phone}&status=eq.completed&select=id`, { headers: { ...SB_H, Prefer: 'count=exact' } }),
       fetch(`${SB_URL}/rest/v1/orders?driver_phone=eq.${phone}&status=eq.delivered&select=id`, { headers: { ...SB_H, Prefer: 'count=exact' } }),
@@ -2216,11 +2242,10 @@ import PageHero from '../components/PageHero.astro';
 
     // Points
     try {
-      const pointsData = await pointsRes.value.json();
-      document.getElementById('points-total').textContent = (pointsData?.[0]?.total_points ?? 0).toLocaleString('ar-EG');
+      document.getElementById('points-total').textContent = (pointsSummary.value?.totalPoints ?? 0).toLocaleString('ar-EG');
     } catch {}
     try {
-      const ptxs = await pointsTxRes.value.json();
+      const ptxs = pointsSummary.value?.transactions;
       const container = document.getElementById('points-txs');
       if (Array.isArray(ptxs) && ptxs.length) {
         container.innerHTML = ptxs.map(t => {
