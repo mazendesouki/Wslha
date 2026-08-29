@@ -1018,7 +1018,8 @@ import Layout from '../components/layout.astro';
 
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-<script is:inline>
+<script>
+import { endServerSession } from '../utils/clientSession';
 (function () {
   /* ── Constants ─────────────────────────────────────────────── */
   function escapeHtml(s) {
@@ -1744,6 +1745,7 @@ import Layout from '../components/layout.astro';
 
   /* ── Logout ────────────────────────────────────────────────── */
   $('logout-btn').addEventListener('click', () => {
+    endServerSession();
     localStorage.removeItem('wslha_user');
     window.location.href = '/';
   });

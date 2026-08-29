@@ -374,6 +374,7 @@ const CITIES = ['دمياط الجديدة', 'دمياط', 'كفر سعد', 'ف�
   import { validatePassword }    from '../utils/password';
   import { addAccount, fieldExists } from '../utils/accounts';
   import { validateFullName, defaultAvatar, isValidEgyptianNationalId, isFutureDate } from '../utils/validation';
+  import { startServerSession } from '../utils/clientSession';
 
   const form      = document.getElementById('register-form')   as HTMLFormElement;
   const errorBox  = document.getElementById('register-error')  as HTMLElement;
@@ -653,6 +654,11 @@ const CITIES = ['دمياط الجديدة', 'دمياط', 'كفر سعد', 'ف�
         loginAt:   new Date().toISOString(),
       }));
     } catch {}
+
+    // First connection point to the new session-management system for
+    // freshly-created accounts too (same as login.astro) — additive,
+    // never blocks the existing signup flow.
+    startServerSession(norm, pass);
 
     submitBtn.textContent = '✅ تم الإنشاء، جاري التحويل...';
     setTimeout(() => { window.location.href = '/orders'; }, 700);

@@ -184,6 +184,7 @@ const { currentPage } = Astro.props;
 </header>
 
 <script>
+  import { endServerSession } from '../utils/clientSession';
   /* ── Profile dropdown ─────────────────────────────────── */
   const profileBtn      = document.getElementById('profile-btn')      as HTMLButtonElement;
   const profileDropdown = document.getElementById('profile-dropdown') as HTMLElement;
@@ -316,6 +317,7 @@ const { currentPage } = Astro.props;
   });
 
   dropdownLogout.addEventListener('click', () => {
+    endServerSession();
     localStorage.removeItem('wslha_user');
     updateProfileUI();
     profileDropdown.hidden = true;

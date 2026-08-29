@@ -77,7 +77,8 @@ import Layout from '../components/layout.astro';
   <p class="set-foot">وصّلها — خدمة توصيل دمياط · الإصدار 1.0</p>
 </div>
 
-<script is:inline>
+<script>
+  import { endServerSession } from '../utils/clientSession';
   (function () {
     var user = null;
     try { user = JSON.parse(localStorage.getItem('wslha_user') || 'null'); } catch (e) {}
@@ -95,7 +96,7 @@ import Layout from '../components/layout.astro';
     if (on) tg.classList.add('on');
     tg.addEventListener('click', function () { on = !on; tg.classList.toggle('on', on); try { localStorage.setItem('wslha_notif', on ? '1' : '0'); } catch (e) {} });
     var lo = document.getElementById('btn-logout');
-    if (lo) lo.addEventListener('click', function () { if (!confirm('تسجيل الخروج من حسابك؟')) return; try { localStorage.removeItem('wslha_user'); } catch (e) {} window.location.href = '/'; });
+    if (lo) lo.addEventListener('click', function () { if (!confirm('تسجيل الخروج من حسابك؟')) return; endServerSession(); try { localStorage.removeItem('wslha_user'); } catch (e) {} window.location.href = '/'; });
   })();
 </script>
 </Layout>

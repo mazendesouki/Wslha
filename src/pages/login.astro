@@ -170,6 +170,7 @@ import PageHero from '../components/PageHero.astro';
   import { validatePassword } from '../utils/password';
   import { verifyLogin, lookupAccount } from '../utils/accounts';
   import { SB_URL, SB_KEY } from '../utils/supabaseClient';
+  import { startServerSession } from '../utils/clientSession';
 
   const SB_H = { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}`, 'Content-Type': 'application/json' };
 
@@ -198,40 +199,6 @@ import PageHero from '../components/PageHero.astro';
       role: account?.role || 'customer', city: account?.city || '',
       loginAt: new Date().toISOString(),
     }));
-  }
-
-  // Calls the new /api/auth/login endpoint (this server, not Supabase
-  // directly) to start a session-management-system family: it verifies
-  // the password itself (again — cheap, and keeps this call
-  // self-contained/independent of the RPC call above) and sets the
-  // HttpOnly/Secure/SameSite=Strict refresh cookie server-side, which
-  // client JS can never read directly. The returned access token is
-  // cached in sessionStorage (cleared when the tab closes, unlike
-  // localStorage) — not consumed by anything yet, but this is the seam
-  // future pages will read from once they migrate off the phone-trust
-  // model. Best-effort: any failure here is silent and never blocks login.
-  async function startServerSession(phone: string, password: string) {
-    try {
-      // `keepalive` lets this request finish (and its Set-Cookie response
-      // header still get applied) even if the page navigates away before
-      // it resolves — without it, the redirect below was cancelling this
-      // fetch mid-flight before the browser ever received the refresh
-      // cookie, silently.
-      const res = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone, password }),
-        keepalive: true,
-      });
-      if (!res.ok) return;
-      const { accessToken, expiresIn } = await res.json();
-      if (accessToken) {
-        sessionStorage.setItem('wslha_access_token', accessToken);
-        sessionStorage.setItem('wslha_access_token_exp', String(Date.now() + expiresIn * 1000));
-      }
-    } catch {
-      /* best-effort — the existing localStorage-based session already succeeded */
-    }
   }
 
   /* ─────────────────────────  STEP 1: PASSWORD LOGIN  ───────────────────────── */
