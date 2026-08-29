@@ -43,6 +43,21 @@ const VISION_CHECKED: Record<string, string> = {
   conduct: 'شهادة حسن سيرة وسلوك صادرة من وزارة الداخلية المصرية',
 };
 
+// The specific printed Arabic markings each document type must actually
+// show — a template/sample or a foreign document (e.g. a Saudi ID) can
+// look superficially similar but will never carry these exact phrases.
+// Told to Claude explicitly so a "reject" verdict names what's missing
+// instead of a vague "doesn't look right".
+const REQUIRED_MARKERS: Record<string, string> = {
+  'nat-front': '"جمهورية مصر العربية" و"بطاقة تحقيق الشخصية" (أو الرقم القومي)',
+  'nat-back': '"جمهورية مصر العربية"',
+  license: '"جمهورية مصر العربية" و"وزارة الداخلية" و"الإدارة العامة للمرور" (رخصة قيادة)',
+  vreg: '"جمهورية مصر العربية" و"وزارة الداخلية" و"إدارة المرور" (استمارة/رخصة تسيير مركبة)',
+  insurance: 'اسم شركة تأمين حقيقية ورقم وثيقة/بوليصة',
+  inspection: 'ختم/بيانات جهة فحص فني رسمية',
+  conduct: '"جمهورية مصر العربية" و"وزارة الداخلية" (شهادة حسن سيرة وسلوك)',
+};
+
 function requireEnv(name: string): string {
   const v = import.meta.env[name];
   if (!v) throw new Error(`Missing required env var: ${name}`);
@@ -139,8 +154,11 @@ export const POST: APIRoute = async ({ request }) => {
                   type: 'text',
                   text:
                     `هذه صورة رفعها سائق أثناء التسجيل في تطبيق توصيل مصري، والمفترض إنها: "${expectedDoc}".\n\n` +
-                    `افحص الصورة وحدد: هل هي فعلاً صورة واضحة ومقروءة لمستند رسمي مصري من النوع ده (مش صورة عشوائية، ` +
-                    `مش صفحة فاضية، مش صورة شاشة لحاجة تانية، مش صورة شخص أو منظر عام، ومش صورة لمستند من نوع مختلف تمامًا)؟\n\n` +
+                    `المستند المصري الحقيقي من النوع ده لازم يكون مطبوع عليه بوضوح: ${REQUIRED_MARKERS[docType as string] || 'عبارات رسمية مصرية واضحة'}.\n\n` +
+                    `افحص الصورة حرفيًا واقرأ أي نص مطبوع عليها، وحدد: هل هي فعلاً صورة واضحة ومقروءة لمستند رسمي مصري من النوع ده، وعليها العبارات المطلوبة دي فعلاً؟ ` +
+                    `ارفضها (valid:false) لو أي حاجة من دي: مش مكتوب عليها العبارات المطلوبة، أو مكتوب عليها اسم دولة تانية غير مصر (زي "المملكة العربية السعودية"/"Kingdom")، ` +
+                    `أو صورة عشوائية، أو صفحة فاضية، أو صورة شاشة لحاجة تانية، أو صورة شخص أو منظر عام، أو مستند من نوع مختلف تمامًا، أو نموذج/قالب فاضي (Template) مالوش بيانات شخص حقيقي.\n\n` +
+                    `لو رفضتها، اكتب في "reason" بالظبط إيه الناقص أو الغلط (مثلاً: "الصورة مالهاش عبارة جمهورية مصر العربية ومكتوب عليها اسم دولة تانية").\n\n` +
                     `رد بصيغة JSON فقط بدون أي نص إضافي، بالشكل ده بالظبط: {"valid": true أو false, "reason": "سبب قصير بالعربي"}`,
                 },
               ],
