@@ -575,23 +575,23 @@ label .req { color: #DC2626; }
 
     <!-- Vehicle docs -->
     <div class="card">
-      <div class="card__head">📋 وثائق السيارة</div>
+      <div class="card__head" id="docs-vehicle-title">📋 وثائق السيارة</div>
       <div class="card__body">
         <div class="grid-2">
           <div class="fg">
-            <label for="d-vreg-num">رقم رخصة تسجيل السيارة (الرخصة الصفراء — مش رقم اللوحة) <span class="req">*</span></label>
+            <label for="d-vreg-num"><span id="lbl-vreg-num">رقم رخصة تسجيل السيارة (الرخصة الصفراء — مش رقم اللوحة)</span> <span class="req">*</span></label>
             <input class="fi" id="d-vreg-num" type="text" placeholder="رقم رخصة المركبة" dir="ltr"/>
             <span class="field-err" id="err-d-vreg-num"></span>
           </div>
           <div class="fg">
-            <label for="d-vreg-exp">انتهاء رخصة السيارة <span class="req">*</span></label>
+            <label for="d-vreg-exp"><span id="lbl-vreg-exp">انتهاء رخصة السيارة</span> <span class="req">*</span></label>
             <input class="fi" id="d-vreg-exp" type="date"/>
           </div>
           <div class="fg">
-            <label>صورة رخصة السيارة <span class="req">*</span></label>
+            <label><span id="lbl-vreg-photo">صورة رخصة السيارة</span> <span class="req">*</span></label>
             <div class="upload-zone" id="zone-vreg">
               <div class="upload-zone__icon">📋</div>
-              <div class="upload-zone__text">رخصة السيارة</div>
+              <div class="upload-zone__text" id="uztext-vreg">رخصة السيارة</div>
               <input type="file" accept="image/*" onchange="handleUpload(this,'vreg','zone-vreg')"/>
             </div>
             <img id="prev-vreg" class="upload-preview" alt=""/>
@@ -639,7 +639,7 @@ label .req { color: #DC2626; }
     <div class="nav-btns">
       <button class="btn-back" onclick="goPanel(1)">→ رجوع</button>
       <button class="btn-next" onclick="goPanel(3)">
-        التالي — بيانات السيارة
+        <span id="btn-docs-next-label">التالي — بيانات السيارة</span>
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
       </button>
     </div>
@@ -650,7 +650,7 @@ label .req { color: #DC2626; }
     <div class="step-title-row">
       <div class="step-icon">🚗</div>
       <div>
-        <div class="step-title">بيانات السيارة</div>
+        <div class="step-title" id="step3-title">بيانات السيارة</div>
         <div class="step-subtitle">مواصفات المركبة وصورها</div>
       </div>
     </div>
@@ -700,7 +700,7 @@ label .req { color: #DC2626; }
             ⚠️ اختر الخيارين دول بأمانة فقط لو سيارتك فعلاً مكيفة و/أو نظيفة — العميل بيختار ويدفع سعر أعلى بناءً على كلامك، ولو سيارتك مش مطابقة فعليًا هيحس إنه اتخدع، وده بيضر ثقة العملاء في المنصة وممكن يعرّض حسابك للمراجعة.
           </div>
           <div class="fg">
-            <label for="v-plate">رقم اللوحة (الأرقام والحروف المكتوبة على لوحة السيارة نفسها) <span class="req">*</span></label>
+            <label for="v-plate">رقم اللوحة (الأرقام والحروف المكتوبة على لوحة المركبة نفسها) <span class="req">*</span></label>
             <input class="fi" id="v-plate" type="text" placeholder="مثال: أ ب ج 1234" dir="ltr"/>
             <span class="field-err" id="err-v-plate"></span>
           </div>
@@ -730,7 +730,7 @@ label .req { color: #DC2626; }
 
     <!-- Vehicle photos -->
     <div class="card">
-      <div class="card__head">📸 صور السيارة — 4 جوانب + لوحة الترقيم</div>
+      <div class="card__head" id="photos-title">📸 صور السيارة — 4 جوانب + لوحة الترقيم</div>
       <div class="card__body">
         <div class="grid-2" style="margin-bottom:var(--sp-4)">
           <div class="fg">
@@ -835,7 +835,7 @@ label .req { color: #DC2626; }
     </div>
 
     <div class="card">
-      <div class="card__head">🚗 بيانات السيارة</div>
+      <div class="card__head" id="review-vehicle-title">🚗 بيانات السيارة</div>
       <div class="card__body" id="review-vehicle">
         <p style="color:var(--color-text-muted);font-size:var(--text-sm)">جاري التحميل…</p>
       </div>
@@ -1373,10 +1373,31 @@ document.querySelectorAll('.radio-row').forEach(function(row) {
    later reaches the vehicle step (panel-3); they're delivery-only
    regardless, see db/security-41 / security-42. Also updates the
    "ما ستحتاجه" requirements preview in panel-0 to match. */
-var VEHICLE_TYPE_NEEDS = {
-  car:        { title: 'وثائق السيارة',      doc1: '✅ رخصة سيارة + تأمين + فحص',        doc2: '✅ صور السيارة (4 جوانب)' },
-  motorcycle: { title: 'وثائق الدراجة النارية', doc1: '✅ رخصة قيادة دراجات + تأمين المركبة', doc2: '✅ صور الدراجة (4 جوانب)' },
-  cargo:      { title: 'وثائق سيارة النقل',   doc1: '✅ رخصة نقل + تأمين + فحص',           doc2: '✅ صور السيارة (4 جوانب)' },
+var VEHICLE_TYPE_TEXT = {
+  car: {
+    needTitle: 'وثائق السيارة', needDoc1: '✅ رخصة سيارة + تأمين + فحص', needDoc2: '✅ صور السيارة (4 جوانب)',
+    docsTitle: '📋 وثائق السيارة',
+    vregNum: 'رقم رخصة تسجيل السيارة (الرخصة الصفراء — مش رقم اللوحة)',
+    vregExp: 'انتهاء رخصة السيارة', vregPhoto: 'صورة رخصة السيارة', uztextVreg: 'رخصة السيارة',
+    nextLabel: 'التالي — بيانات السيارة', step3Title: 'بيانات السيارة',
+    photosTitle: '📸 صور السيارة — 4 جوانب + لوحة الترقيم', reviewTitle: '🚗 بيانات السيارة',
+  },
+  motorcycle: {
+    needTitle: 'وثائق الدراجة النارية', needDoc1: '✅ رخصة دراجة + تأمين (اختياري)', needDoc2: '✅ صور الدراجة (4 جوانب)',
+    docsTitle: '📋 وثائق الدراجة النارية',
+    vregNum: 'رقم رخصة تسجيل الدراجة (الرخصة الصفراء — مش رقم اللوحة)',
+    vregExp: 'انتهاء رخصة الدراجة', vregPhoto: 'صورة رخصة الدراجة', uztextVreg: 'رخصة الدراجة',
+    nextLabel: 'التالي — بيانات الدراجة النارية', step3Title: 'بيانات الدراجة النارية',
+    photosTitle: '📸 صور الدراجة النارية — 4 جوانب + لوحة الترقيم', reviewTitle: '🏍️ بيانات الدراجة النارية',
+  },
+  cargo: {
+    needTitle: 'وثائق سيارة النقل', needDoc1: '✅ رخصة نقل + تأمين + فحص', needDoc2: '✅ صور سيارة النقل (4 جوانب)',
+    docsTitle: '📋 وثائق سيارة النقل',
+    vregNum: 'رقم رخصة تسجيل سيارة النقل (الرخصة الصفراء — مش رقم اللوحة)',
+    vregExp: 'انتهاء رخصة سيارة النقل', vregPhoto: 'صورة رخصة سيارة النقل', uztextVreg: 'رخصة سيارة النقل',
+    nextLabel: 'التالي — بيانات سيارة النقل', step3Title: 'بيانات سيارة النقل',
+    photosTitle: '📸 صور سيارة النقل — 4 جوانب + لوحة الترقيم', reviewTitle: '📦 بيانات سيارة النقل',
+  },
 };
 function applyVehicleType(vtype) {
   var carCat = $('fg-car-cat');
@@ -1393,10 +1414,20 @@ function applyVehicleType(vtype) {
     $('v-has-ac').checked = false;
     $('v-is-clean').checked = false;
   }
-  var needs = VEHICLE_TYPE_NEEDS[vtype] || VEHICLE_TYPE_NEEDS.car;
-  if ($('need-vehicle-title')) $('need-vehicle-title').textContent = needs.title;
-  if ($('need-vehicle-1')) $('need-vehicle-1').textContent = needs.doc1;
-  if ($('need-vehicle-2')) $('need-vehicle-2').textContent = needs.doc2;
+  var t = VEHICLE_TYPE_TEXT[vtype] || VEHICLE_TYPE_TEXT.car;
+  var set = function(id, text) { if ($(id)) $(id).textContent = text; };
+  set('need-vehicle-title', t.needTitle);
+  set('need-vehicle-1', t.needDoc1);
+  set('need-vehicle-2', t.needDoc2);
+  set('docs-vehicle-title', t.docsTitle);
+  set('lbl-vreg-num', t.vregNum);
+  set('lbl-vreg-exp', t.vregExp);
+  set('lbl-vreg-photo', t.vregPhoto);
+  set('uztext-vreg', t.uztextVreg);
+  set('btn-docs-next-label', t.nextLabel);
+  set('step3-title', t.step3Title);
+  set('photos-title', t.photosTitle);
+  set('review-vehicle-title', t.reviewTitle);
 }
 
 /* ── Validations ── */
@@ -1465,13 +1496,14 @@ function validateDocs() {
   else clearFieldErr('err-d-lic-exp');
   if (!needUpload('license', 'zone-license', 'status-license', miss, 'صورة رخصة القيادة')) ok = false;
 
-  // Vehicle registration
-  if (!$('d-vreg-num').value.trim()) { fieldErr('err-d-vreg-num', 'رقم رخصة السيارة مطلوب'); ok = false; }
+  // Vehicle registration — wording kept generic ("المركبة") since this
+  // step applies the same to سيارة/دراجة نارية/سيارة نقل.
+  if (!$('d-vreg-num').value.trim()) { fieldErr('err-d-vreg-num', 'رقم رخصة المركبة مطلوب'); ok = false; }
   else clearFieldErr('err-d-vreg-num');
   var ve = $('d-vreg-exp').value;
-  if (!ve) { showErr('err-docs', ''); ok = false; miss.push('تاريخ انتهاء رخصة السيارة'); }
-  else if (!isFutureDate(ve)) { ok = false; miss.push('رخصة السيارة منتهية'); }
-  if (!needUpload('vreg', 'zone-vreg', 'status-vreg', miss, 'صورة رخصة السيارة')) ok = false;
+  if (!ve) { showErr('err-docs', ''); ok = false; miss.push('تاريخ انتهاء رخصة المركبة'); }
+  else if (!isFutureDate(ve)) { ok = false; miss.push('رخصة المركبة منتهية'); }
+  if (!needUpload('vreg', 'zone-vreg', 'status-vreg', miss, 'صورة رخصة المركبة')) ok = false;
 
   // Insurance & inspection: OPTIONAL — but if a date is entered it must be valid.
   var ins = $('d-ins-exp').value;
@@ -1492,8 +1524,8 @@ function validateVehicle() {
   showErr('err-vehicle', '');
 
   var checks = [
-    ['v-model', 'err-v-model', 'موديل السيارة مطلوب'],
-    ['v-color', 'err-v-color', 'لون السيارة مطلوب'],
+    ['v-model', 'err-v-model', 'الماركة والموديل مطلوبين'],
+    ['v-color', 'err-v-color', 'اللون مطلوب'],
     ['v-year',  'err-v-year',  'سنة الصنع مطلوبة'],
     ['v-plate', 'err-v-plate', 'رقم اللوحة مطلوب'],
     ['v-hw-text','err-v-hw-text','النص المكتوب بخط اليد مطلوب'],
