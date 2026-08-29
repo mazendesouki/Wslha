@@ -90,8 +90,18 @@ export const POST: APIRoute = async ({ request }) => {
   const hash = createHash('sha256').update(Buffer.from(imageBytes)).digest('hex');
 
   // ── 1) Duplicate check ────────────────────────────────────────────
+  // Two cases, both fraud patterns:
+  //   a) another account already used this exact image (cross-account reuse)
+  //   b) THIS account already used this exact image for a different
+  //      document slot (e.g. the same template/photo re-uploaded as
+  //      both "national ID front" and "driving license") — a real ID's
+  //      front, back, license, etc. are always genuinely different
+  //      photos, so same-hash-different-slot is never legitimate.
   try {
-    const dupRes = await svc(`document_image_hashes?image_hash=eq.${hash}&phone=neq.${encodeURIComponent(phone)}&select=id&limit=1`);
+    const encPhone = encodeURIComponent(phone);
+    const dupRes = await svc(
+      `document_image_hashes?image_hash=eq.${hash}&select=id&or=(phone.neq.${encPhone},and(phone.eq.${encPhone},doc_type.neq.${encodeURIComponent(docType)}))&limit=1`,
+    );
     const dupRows = dupRes.ok ? await dupRes.json() : [];
     if (Array.isArray(dupRows) && dupRows.length > 0) {
       return new Response(JSON.stringify({ ok: false, reason: 'duplicate_image' }), { status: 409 });
