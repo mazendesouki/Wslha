@@ -60,9 +60,9 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
     // while location permission/GPS lock is still settling) before the
     // driver had a chance to do anything. The switch now starts off and
     // stays exactly where the driver last left it — fully manual.
-    // Motorcycle drivers do delivery only — the negotiation entry point
-    // (ride requests) is hidden for them; the actual enforcement (never
-    // seeing/accepting a ride offer at all) lives server-side.
+    // Motorcycle/cargo drivers do delivery only — the negotiation entry
+    // point (ride requests) is hidden for them; the actual enforcement
+    // (never seeing/accepting a ride offer at all) lives server-side.
     _repo.fetchVehicleInfo(widget.session.phone).then((info) {
       if (mounted && info != null) setState(() => _vehicleCategory = info['vehicle_category'] as String?);
     });
@@ -422,7 +422,7 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
       appBar: AppBar(
         title: const Text('وصّلها سائق'),
         actions: [
-          if (_vehicleCategory != 'motorcycle')
+          if (_vehicleCategory != 'motorcycle' && _vehicleCategory != 'cargo')
             IconButton(
               tooltip: 'طلبات تفاوض قريبة',
               icon: const Text('🤝', style: TextStyle(fontSize: 20)),

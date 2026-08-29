@@ -639,13 +639,26 @@ label .req { color: #DC2626; }
     <div class="card">
       <div class="card__head">🔧 مواصفات المركبة</div>
       <div class="card__body">
+        <div class="fg" style="margin-bottom:var(--sp-4)">
+          <label>نوع التسجيل <span class="req">*</span></label>
+          <div class="radio-row" id="grp-vtype">
+            <label class="radio-pill sel" data-v="car"><input type="radio" name="vtype" value="car" checked/> 🚗 سيارة ركاب</label>
+            <label class="radio-pill" data-v="motorcycle"><input type="radio" name="vtype" value="motorcycle"/> 🏍️ دراجة نارية</label>
+            <label class="radio-pill" data-v="cargo"><input type="radio" name="vtype" value="cargo"/> 📦 سيارة نقل بضائع</label>
+          </div>
+          <div style="font-size:var(--text-xs);color:var(--color-text-muted);margin-top:4px">
+            الدراجة النارية وسيارة نقل البضائع مخصّصتين لطلبات خدمة الدليفري فقط — مش هتستقبلوا طلبات مشاوير عادية.
+          </div>
+        </div>
         <div class="grid-3">
-          <div class="fg">
+          <div class="fg" id="fg-car-cat">
             <label for="v-cat">فئة السيارة <span class="req">*</span></label>
             <select class="fi" id="v-cat">
               <option value="sedan">🚗 سيدان</option>
               <option value="suv">🚙 SUV / كروز</option>
               <option value="van">🚐 ميكروباص</option>
+              <option value="motorcycle" hidden>🏍️ دراجة نارية</option>
+              <option value="cargo" hidden>📦 سيارة نقل بضائع</option>
             </select>
           </div>
           <div class="fg">
@@ -663,17 +676,17 @@ label .req { color: #DC2626; }
             <input class="fi" id="v-color" type="text" placeholder="مثال: أبيض"/>
             <span class="field-err" id="err-v-color"></span>
           </div>
-          <div class="fg">
+          <div class="fg" id="fg-comfort-ac">
             <label style="display:flex;align-items:center;gap:8px;cursor:pointer;margin:0">
               <input type="checkbox" id="v-has-ac"/> ❄️ سيارتي مكيفة
             </label>
           </div>
-          <div class="fg">
+          <div class="fg" id="fg-comfort-clean">
             <label style="display:flex;align-items:center;gap:8px;cursor:pointer;margin:0">
               <input type="checkbox" id="v-is-clean"/> 🧼 سيارتي نظيفة
             </label>
           </div>
-          <div class="fg" style="grid-column:1/-1;background:#FFFBEB;border:1px solid #FDE68A;border-radius:10px;padding:10px 14px;font-size:.8rem;color:#92400E;line-height:1.6">
+          <div class="fg" id="fg-comfort-note" style="grid-column:1/-1;background:#FFFBEB;border:1px solid #FDE68A;border-radius:10px;padding:10px 14px;font-size:.8rem;color:#92400E;line-height:1.6">
             ⚠️ اختر الخيارين دول بأمانة فقط لو سيارتك فعلاً مكيفة و/أو نظيفة — العميل بيختار ويدفع سعر أعلى بناءً على كلامك، ولو سيارتك مش مطابقة فعليًا هيحس إنه اتخدع، وده بيضر ثقة العملاء في المنصة وممكن يعرّض حسابك للمراجعة.
           </div>
           <div class="fg">
@@ -1338,9 +1351,31 @@ document.querySelectorAll('.radio-row').forEach(function(row) {
       row.querySelectorAll('.radio-pill').forEach(function(p) { p.classList.remove('sel', 'sel-green'); });
       pill.classList.add(isGreen && pill.dataset.v === 'no' ? 'sel-green' : 'sel');
       pill.querySelector('input').checked = true;
+      if (row.id === 'grp-vtype') applyVehicleType(pill.dataset.v);
     });
   });
 });
+
+/* ── نوع التسجيل: سيارة ركاب / دراجة نارية / سيارة نقل بضائع ──
+   Motorcycle/cargo skip the sedan/suv/van picker (their category is set
+   directly) and the A/C+clean comfort tier (not meaningful for either) —
+   they're delivery-only regardless, see db/security-41. */
+function applyVehicleType(vtype) {
+  var carCat = $('fg-car-cat');
+  var ac = $('fg-comfort-ac'), clean = $('fg-comfort-clean'), note = $('fg-comfort-note');
+  var isCar = vtype === 'car';
+  carCat.style.display = isCar ? '' : 'none';
+  ac.style.display = isCar ? '' : 'none';
+  clean.style.display = isCar ? '' : 'none';
+  note.style.display = isCar ? '' : 'none';
+  if (isCar) {
+    if (['motorcycle', 'cargo'].includes($('v-cat').value)) $('v-cat').value = 'sedan';
+  } else {
+    $('v-cat').value = vtype; // 'motorcycle' or 'cargo'
+    $('v-has-ac').checked = false;
+    $('v-is-clean').checked = false;
+  }
+}
 
 /* ── Validations ── */
 // Valid, non-expired date (YYYY-MM-DD, today or later).
@@ -1493,7 +1528,7 @@ function buildReview() {
 
   // Vehicle
   var vehRows = [
-    ['الفئة', {sedan:'سيدان',suv:'SUV / كروز',van:'ميكروباص'}[$('v-cat').value] || $('v-cat').value],
+    ['الفئة', {sedan:'سيدان',suv:'SUV / كروز',van:'ميكروباص',motorcycle:'🏍️ دراجة نارية',cargo:'📦 سيارة نقل بضائع'}[$('v-cat').value] || $('v-cat').value],
     ['الماركة والموديل', $('v-model').value],
     ['اللون', $('v-color').value],
     ['سنة الصنع', $('v-year').value],
