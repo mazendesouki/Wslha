@@ -648,7 +648,7 @@ label .req { color: #DC2626; }
   <!-- ══ Step 3: Vehicle ══ -->
   <div class="step-panel" id="panel-3">
     <div class="step-title-row">
-      <div class="step-icon">🚗</div>
+      <div class="step-icon" id="step3-icon">🚗</div>
       <div>
         <div class="step-title" id="step3-title">بيانات السيارة</div>
         <div class="step-subtitle">مواصفات المركبة وصورها</div>
@@ -656,7 +656,7 @@ label .req { color: #DC2626; }
     </div>
 
     <div class="card">
-      <div class="card__head">🔧 مواصفات المركبة</div>
+      <div class="card__head" id="veh-spec-title">🔧 مواصفات المركبة</div>
       <div class="card__body">
         <!-- نوع التسجيل اتحدد فعلاً في الخطوة الأولى — الحقول تحت بتتظبط
              تلقائيًا عليه (applyVehicleType، بيتنادى عند دخول الخطوة دي). -->
@@ -672,7 +672,7 @@ label .req { color: #DC2626; }
             </select>
           </div>
           <div class="fg">
-            <label for="v-model">الماركة والموديل <span class="req">*</span></label>
+            <label for="v-model"><span id="lbl-v-model">الماركة والموديل</span> <span class="req">*</span></label>
             <input class="fi" id="v-model" type="text" placeholder="مثال: تويوتا كورولا"/>
             <span class="field-err" id="err-v-model"></span>
           </div>
@@ -736,7 +736,7 @@ label .req { color: #DC2626; }
           <div class="fg">
             <label>الواجهة الأمامية <span class="req">*</span></label>
             <div class="upload-zone" id="zone-veh-front">
-              <div class="upload-zone__icon">🚗</div>
+              <div class="upload-zone__icon veh-photo-icon">🚗</div>
               <div class="upload-zone__text">الأمامية</div>
               <input type="file" accept="image/*" onchange="handleUpload(this,'veh-front','zone-veh-front')"/>
             </div>
@@ -746,7 +746,7 @@ label .req { color: #DC2626; }
           <div class="fg">
             <label>الخلف <span class="req">*</span></label>
             <div class="upload-zone" id="zone-veh-back">
-              <div class="upload-zone__icon">🚗</div>
+              <div class="upload-zone__icon veh-photo-icon">🚗</div>
               <div class="upload-zone__text">الخلف</div>
               <input type="file" accept="image/*" onchange="handleUpload(this,'veh-back','zone-veh-back')"/>
             </div>
@@ -756,7 +756,7 @@ label .req { color: #DC2626; }
           <div class="fg">
             <label>الجانب الأيمن <span class="req">*</span></label>
             <div class="upload-zone" id="zone-veh-right">
-              <div class="upload-zone__icon">🚗</div>
+              <div class="upload-zone__icon veh-photo-icon">🚗</div>
               <div class="upload-zone__text">الأيمن</div>
               <input type="file" accept="image/*" onchange="handleUpload(this,'veh-right','zone-veh-right')"/>
             </div>
@@ -766,7 +766,7 @@ label .req { color: #DC2626; }
           <div class="fg">
             <label>الجانب الأيسر <span class="req">*</span></label>
             <div class="upload-zone" id="zone-veh-left">
-              <div class="upload-zone__icon">🚗</div>
+              <div class="upload-zone__icon veh-photo-icon">🚗</div>
               <div class="upload-zone__text">الأيسر</div>
               <input type="file" accept="image/*" onchange="handleUpload(this,'veh-left','zone-veh-left')"/>
             </div>
@@ -1401,6 +1401,8 @@ var VEHICLE_TYPE_TEXT = {
     vregExp: 'انتهاء رخصة السيارة', vregPhoto: 'صورة رخصة السيارة', uztextVreg: 'رخصة السيارة',
     nextLabel: 'التالي — بيانات السيارة', step3Title: 'بيانات السيارة',
     photosTitle: '📸 صور السيارة — 4 جوانب + لوحة الترقيم', reviewTitle: '🚗 بيانات السيارة',
+    stepIcon: '🚗', specTitle: '🔧 مواصفات السيارة', modelLabel: 'الماركة والموديل',
+    modelPlaceholder: 'مثال: تويوتا كورولا', photoIcon: '🚗',
   },
   motorcycle: {
     needTitle: 'وثائق الدراجة النارية', needDoc1: '✅ رخصة دراجة + تأمين (اختياري)', needDoc2: '✅ صور الدراجة (4 جوانب)',
@@ -1409,6 +1411,8 @@ var VEHICLE_TYPE_TEXT = {
     vregExp: 'انتهاء رخصة الدراجة', vregPhoto: 'صورة رخصة الدراجة', uztextVreg: 'رخصة الدراجة',
     nextLabel: 'التالي — بيانات الدراجة النارية', step3Title: 'بيانات الدراجة النارية',
     photosTitle: '📸 صور الدراجة النارية — 4 جوانب + لوحة الترقيم', reviewTitle: '🏍️ بيانات الدراجة النارية',
+    stepIcon: '🏍️', specTitle: '🔧 مواصفات الدراجة النارية', modelLabel: 'الماركة والموديل',
+    modelPlaceholder: 'مثال: هوندا CG125', photoIcon: '🏍️',
   },
   cargo: {
     needTitle: 'وثائق سيارة النقل', needDoc1: '✅ رخصة نقل + تأمين + فحص', needDoc2: '✅ صور سيارة النقل (4 جوانب)',
@@ -1417,6 +1421,8 @@ var VEHICLE_TYPE_TEXT = {
     vregExp: 'انتهاء رخصة سيارة النقل', vregPhoto: 'صورة رخصة سيارة النقل', uztextVreg: 'رخصة سيارة النقل',
     nextLabel: 'التالي — بيانات سيارة النقل', step3Title: 'بيانات سيارة النقل',
     photosTitle: '📸 صور سيارة النقل — 4 جوانب + لوحة الترقيم', reviewTitle: '📦 بيانات سيارة النقل',
+    stepIcon: '📦', specTitle: '🔧 مواصفات سيارة النقل', modelLabel: 'الماركة والموديل',
+    modelPlaceholder: 'مثال: تويوتا هايس', photoIcon: '📦',
   },
 };
 function applyVehicleType(vtype) {
@@ -1446,8 +1452,14 @@ function applyVehicleType(vtype) {
   set('uztext-vreg', t.uztextVreg);
   set('btn-docs-next-label', t.nextLabel);
   set('step3-title', t.step3Title);
+  set('step3-icon', t.stepIcon);
+  set('veh-spec-title', t.specTitle);
+  set('lbl-v-model', t.modelLabel);
   set('photos-title', t.photosTitle);
   set('review-vehicle-title', t.reviewTitle);
+  var modelInput = $('v-model');
+  if (modelInput) modelInput.placeholder = t.modelPlaceholder;
+  document.querySelectorAll('.veh-photo-icon').forEach(function(el) { el.textContent = t.photoIcon; });
 }
 
 /* ── Validations ── */
