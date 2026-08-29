@@ -1313,6 +1313,31 @@ async function photoHasFace(file) {
   return !!detection;
 }
 
+// Center-crop + resize to a small square — only used for the personal
+// photo (driver-photo), so its stored file is a consistent, reasonably
+// sized headshot instead of whatever resolution/aspect ratio the
+// driver's phone camera produced.
+function resizeImageToSquare(file, size) {
+  return new Promise(function(resolve, reject) {
+    var img = new Image();
+    img.onload = function() {
+      var canvas = document.createElement('canvas');
+      canvas.width = size; canvas.height = size;
+      var ctx = canvas.getContext('2d');
+      var scale = Math.max(size / img.width, size / img.height);
+      var w = img.width * scale, h = img.height * scale;
+      ctx.drawImage(img, (size - w) / 2, (size - h) / 2, w, h);
+      URL.revokeObjectURL(img.src);
+      canvas.toBlob(function(blob) {
+        if (!blob) { reject(new Error('resize_failed')); return; }
+        resolve(new File([blob], (file.name || 'photo') + '.jpg', { type: 'image/jpeg' }));
+      }, 'image/jpeg', 0.9);
+    };
+    img.onerror = function() { reject(new Error('resize_load_failed')); };
+    img.src = URL.createObjectURL(file);
+  });
+}
+
 window.handleUpload = async function(input, key, zoneId) {
   var file = input.files[0];
   if (!file) return;
@@ -1336,6 +1361,7 @@ window.handleUpload = async function(input, key, zoneId) {
       // تعذّر تحميل أداة الكشف (مثلاً بدون إنترنت) — نكمل بدون حجب رفع الصورة
       // بدل ما نمنع السائق من التسجيل بسبب مشكلة شبكة لا علاقة له بها.
     }
+    try { file = await resizeImageToSquare(file, 400); } catch (e) { /* ارفع الأصلية لو فشل القص */ }
   }
 
   // Preview
@@ -1358,7 +1384,41 @@ window.handleUpload = async function(input, key, zoneId) {
       body: file,
     });
     if (res.ok) {
-      uploads[key] = SB_URL + '/storage/v1/object/public/documents/' + path;
+      var publicUrl = SB_URL + '/storage/v1/object/public/documents/' + path;
+
+      // Duplicate-image + (for official documents) AI content check —
+      // server-side, see src/pages/api/documents/verify.ts. Runs after
+      // the upload since the check needs a fetchable URL; a rejection
+      // here removes the file from `uploads` so the submit-time
+      // validation catches it as missing, same as never having uploaded
+      // anything.
+      if (status) { status.textContent = '🔍 جارٍ مراجعة المستند…'; status.style.color = 'var(--color-text-muted)'; }
+      try {
+        var vRes = await fetch('/api/documents/verify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ imageUrl: publicUrl, docType: key, phone: (USER && USER.phone) || 'anon' }),
+        });
+        var vData = vRes.ok ? await vRes.json() : { ok: true }; // fail-open on infra errors, not on explicit rejections
+        if (vData.ok === false) {
+          input.value = '';
+          delete uploads[key];
+          if (prev)   { prev.style.display = 'none'; }
+          if (zone)   { zone.style.borderColor = '#DC2626'; zone.classList.remove('has-file'); }
+          var msg = vData.reason === 'duplicate_image'
+            ? '⚠️ الصورة دي مُستخدمة بالفعل في تسجيل آخر — ارفع صورة تانية.'
+            : (vData.reason === 'not_matching_document'
+                ? '⚠️ الصورة دي مش واضح إنها المستند المطلوب' + (vData.detail ? (' — ' + vData.detail) : '') + '. ارفع صورة واضحة للمستند الصحيح.'
+                : '⚠️ تعذّرت مراجعة الصورة — حاول ترفعها تاني.');
+          if (status) { status.textContent = msg; status.style.color = '#DC2626'; }
+          return;
+        }
+      } catch (e) {
+        // تعذّر الوصول لخدمة المراجعة نفسها (مش رفض صريح) — نكمل عشان
+        // مشكلة شبكة عندنا ما توقفش تسجيل سائق حقيقي.
+      }
+
+      uploads[key] = publicUrl;
       if (status) { status.textContent = '✅ تم الرفع بنجاح'; status.style.color = '#16A34A'; }
       if (zone)   { zone.classList.add('has-file'); }
     } else {
