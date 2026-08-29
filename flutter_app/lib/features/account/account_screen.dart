@@ -254,6 +254,7 @@ class AccountScreenState extends State<AccountScreen> {
     } else {
       await _repo.updateSavedAddress(
         existing['id'].toString(),
+        _session!.phone,
         label: labelCtrl.text.trim(),
         area: areaCtrl.text.trim(),
         address: addressCtrl.text.trim(),
@@ -274,7 +275,7 @@ class AccountScreenState extends State<AccountScreen> {
       ),
     );
     if (confirmed != true) return;
-    await _repo.deleteSavedAddress(id);
+    await _repo.deleteSavedAddress(id, _session!.phone);
     await _load();
   }
 

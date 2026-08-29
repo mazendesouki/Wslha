@@ -1148,11 +1148,17 @@ import Layout from '../components/layout.astro';
       return Array.isArray(rows) ? (rows[0] || null) : null;
     } catch { return null; }
   }
+  // get_my_wallet_balance (security-49) — direct SELECT on wallets is
+  // closed since it had no filter and dumped every user's balance.
   async function fetchWallet(phone) {
-    const intl  = intlPhone(phone);
-    const local = localPhone(phone);
-    const data  = await sbFetch(SB_URL + '/rest/v1/wallets?or=(phone.eq.' + encodeURIComponent(intl) + ',phone.eq.' + encodeURIComponent(local) + ')&select=balance&limit=1');
-    return Array.isArray(data) && data[0] ? data[0] : null;
+    try {
+      const res = await fetch(SB_URL + '/rest/v1/rpc/get_my_wallet_balance', {
+        method: 'POST', headers: { ...SB_H, 'Content-Type': 'application/json' }, body: JSON.stringify({ p_phone: phone }),
+      });
+      if (!res.ok) return null;
+      const balance = await res.json();
+      return { balance };
+    } catch { return null; }
   }
   async function fetchDriverApp(phone) {
     const data = await sbFetch(

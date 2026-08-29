@@ -2132,7 +2132,9 @@ import PageHero from '../components/PageHero.astro';
     const phone = encodeURIComponent(driver.phone);
     // Parallel fetches
     const [walletRes, walletTxRes, pointsRes, pointsTxRes, ratingsRes, ridesCountRes, ordersCountRes, appRes] = await Promise.allSettled([
-      fetch(`${SB_URL}/rest/v1/wallets?phone=eq.${phone}&select=balance`, { headers: SB_H }),
+      // get_my_wallet_balance (security-49) — direct SELECT on wallets is
+      // closed since it had no filter and dumped every user's balance.
+      fetch(`${SB_URL}/rest/v1/rpc/get_my_wallet_balance`, { method: 'POST', headers: { ...SB_H, 'Content-Type': 'application/json' }, body: JSON.stringify({ p_phone: driver.phone }) }),
       fetch(`${SB_URL}/rest/v1/wallet_transactions?phone=eq.${phone}&select=amount,type,note,created_at&order=created_at.desc&limit=10`, { headers: SB_H }),
       fetch(`${SB_URL}/rest/v1/points?phone=eq.${phone}&select=total_points`, { headers: SB_H }),
       fetch(`${SB_URL}/rest/v1/point_transactions?phone=eq.${phone}&select=points,type,created_at&order=created_at.desc&limit=10`, { headers: SB_H }),
@@ -2163,8 +2165,7 @@ import PageHero from '../components/PageHero.astro';
 
     // Wallet
     try {
-      const walletData = await walletRes.value.json();
-      const balance = walletData?.[0]?.balance ?? 0;
+      const balance = (await walletRes.value.json()) ?? 0;
       document.getElementById('wallet-balance').textContent = Number(balance).toLocaleString('ar-EG');
     } catch {}
     try {

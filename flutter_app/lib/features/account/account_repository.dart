@@ -61,18 +61,17 @@ class AccountRepository {
   }
 
   // ---------------------------------------------------------------------
-  // Saved addresses (customer account screen — see
-  // db/security-31-customer-account-plus.sql for the table/policies).
+  // Saved addresses (customer account screen). Routed through RPCs
+  // (db/security-49-secure-wallets-and-addresses.sql) instead of direct
+  // table access — the table had no row filter at all, so a raw SELECT
+  // dumped every customer's saved addresses, and any row id could be
+  // edited/deleted by anyone. Every call here is phone-scoped and, for
+  // update/delete, re-verified against the row's own customer_phone.
   // ---------------------------------------------------------------------
 
   Future<List<Map<String, dynamic>>> fetchSavedAddresses(String phone) async {
-    final rows = await sb
-        .from('saved_addresses')
-        .select('id,label,area,address,is_default,created_at')
-        .eq('customer_phone', phone)
-        .order('is_default', ascending: false)
-        .order('created_at', ascending: false);
-    return List<Map<String, dynamic>>.from(rows);
+    final rows = await sb.rpc('list_saved_addresses', params: {'p_phone': phone});
+    return List<Map<String, dynamic>>.from(rows as List);
   }
 
   Future<void> addSavedAddress(
@@ -82,35 +81,38 @@ class AccountRepository {
     required String address,
     bool makeDefault = false,
   }) async {
-    if (makeDefault) {
-      await sb.from('saved_addresses').update({'is_default': false}).eq('customer_phone', phone);
-    }
-    await sb.from('saved_addresses').insert({
-      'customer_phone': phone,
-      'label': label,
-      'area': area,
-      'address': address,
-      'is_default': makeDefault,
+    await sb.rpc('add_saved_address', params: {
+      'p_phone': phone,
+      'p_label': label,
+      'p_area': area,
+      'p_address': address,
+      'p_make_default': makeDefault,
     });
   }
 
   Future<void> updateSavedAddress(
-    String id, {
+    String id,
+    String phone, {
     required String label,
     String? area,
     required String address,
   }) async {
-    await sb.from('saved_addresses').update({'label': label, 'area': area, 'address': address}).eq('id', id);
+    await sb.rpc('update_saved_address', params: {
+      'p_id': id,
+      'p_phone': phone,
+      'p_label': label,
+      'p_area': area,
+      'p_address': address,
+    });
   }
 
   /// Unsets any other default for this phone first — only one address can
   /// be the default at a time.
   Future<void> setDefaultAddress(String id, String phone) async {
-    await sb.from('saved_addresses').update({'is_default': false}).eq('customer_phone', phone);
-    await sb.from('saved_addresses').update({'is_default': true}).eq('id', id);
+    await sb.rpc('set_default_saved_address', params: {'p_id': id, 'p_phone': phone});
   }
 
-  Future<void> deleteSavedAddress(String id) async {
-    await sb.from('saved_addresses').delete().eq('id', id);
+  Future<void> deleteSavedAddress(String id, String phone) async {
+    await sb.rpc('delete_saved_address', params: {'p_id': id, 'p_phone': phone});
   }
 }

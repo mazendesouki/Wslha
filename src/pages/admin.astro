@@ -2055,8 +2055,9 @@ async function openUserProfile(phone) {
     revField('تاريخ الانضمام', fmtDate(acc.created_at)),
   ].join('') || '<p style="color:#94A3B8;font-size:.85rem">لا توجد بيانات إضافية</p>';
 
-  const wallet = await sbGet(`wallets?${phoneOrFilter(acc.phone)}&select=balance&limit=1`);
-  const balance = Math.round((wallet && wallet[0] && wallet[0].balance) || 0);
+  let walletBal = 0;
+  try { walletBal = await sbRpcJson('get_my_wallet_balance', { p_phone: acc.phone }); } catch {}
+  const balance = Math.round(walletBal || 0);
   const kpis = [];
   const activityRows = [];
   const ratingsBox = document.getElementById('up-ratings');
@@ -3520,8 +3521,9 @@ async function loadWalletsSection() {
   document.getElementById('wallets-tbody').innerHTML = '<tr><td colspan="5" style="text-align:center;color:#94A3B8;padding:2rem">جاري التحميل…</td></tr>';
   document.getElementById('all-tx-tbody').innerHTML  = '<tr><td colspan="6" style="text-align:center;color:#94A3B8;padding:2rem">جاري التحميل…</td></tr>';
 
+  const pass = getAdminPass();
   const [wallets, accounts, txData] = await Promise.all([
-    sbGet('wallets?select=phone,balance,updated_at&order=balance.desc&limit=2000'),
+    pass ? sbRpcRows('admin_list_wallets', { p_admin_phone: ADMIN.phone, p_admin_password: pass }) : Promise.resolve([]),
     adminListAccounts(),
     sbGet('wallet_transactions?select=id,phone,amount,type,note,reference_id,created_at&order=created_at.desc&limit=500'),
   ]);
@@ -3786,7 +3788,7 @@ async function viewUserStats(phone, name, role) {
   const [orders, rides, wallet] = await Promise.all([
     sbGet(`orders?${filter}&select=total,status,created_at&order=created_at.desc&limit=200`),
     sbGet(`rides?${filter}&select=fare,status,created_at,from_area,to_area&order=created_at.desc&limit=200`),
-    sbGet(`wallets?${phoneOrFilter(phone)}&select=balance&limit=1`),
+    sbRpcJson('get_my_wallet_balance', { p_phone: phone }).catch(() => 0),
   ]);
 
   const ordersArr = orders || [];
@@ -3799,7 +3801,7 @@ async function viewUserStats(phone, name, role) {
   document.getElementById('us-rides').textContent  = ridesArr.length;
   document.getElementById('us-amount').textContent = fmt(Math.round(amount)) + ' ج.م';
   document.getElementById('us-amount-lbl').textContent = role === 'driver' ? '💰 أرباح' : '💰 إنفاق';
-  document.getElementById('us-balance').textContent = fmt(Math.round((wallet && wallet[0] && wallet[0].balance) || 0)) + ' ج.م';
+  document.getElementById('us-balance').textContent = fmt(Math.round(wallet || 0)) + ' ج.م';
 
   const rows = [
     ...ordersArr.map(o => ({ type: 'طلب', date: o.created_at, amount: o.total, status: o.status })),
@@ -3835,7 +3837,7 @@ async function viewMerchantStats(phone, name) {
   const [orders, ratings, wallet] = await Promise.all([
     sbGet(`orders?store_id=eq.${encodeURIComponent(storeId)}&status=in.(delivered,completed)&select=total,status,created_at&order=created_at.desc&limit=300`),
     sbGet(`ratings?store_id=eq.${encodeURIComponent(storeId)}&store_rating=not.is.null&select=store_rating`),
-    sbGet(`wallets?${phoneOrFilter(phone)}&select=balance&limit=1`),
+    sbRpcJson('get_my_wallet_balance', { p_phone: phone }).catch(() => 0),
   ]);
 
   const ordersArr = orders || [];
@@ -3846,7 +3848,7 @@ async function viewMerchantStats(phone, name) {
   document.getElementById('us-orders').textContent = ordersArr.length;
   document.getElementById('us-rides').textContent  = ratingsArr.length ? avgRating.toFixed(1) : '—';
   document.getElementById('us-amount').textContent = fmt(Math.round(amount)) + ' ج.م';
-  document.getElementById('us-balance').textContent = fmt(Math.round((wallet && wallet[0] && wallet[0].balance) || 0)) + ' ج.م';
+  document.getElementById('us-balance').textContent = fmt(Math.round(wallet || 0)) + ' ج.م';
 
   document.getElementById('user-stats-tbody').innerHTML = ordersArr.length
     ? ordersArr.map(o => `<tr>

@@ -1604,7 +1604,9 @@ import Layout from '../components/layout.astro';
     const phone = encodeURIComponent(user.phone);
 
     const [walletRes, walletTxRes, pointsRes, pointsTxRes, ratingsRes, salesRes] = await Promise.allSettled([
-      sbGet(`wallets?phone=eq.${phone}&select=balance`),
+      // get_my_wallet_balance (security-49) — direct SELECT on wallets is
+      // closed since it had no filter and dumped every user's balance.
+      sbPost('rpc/get_my_wallet_balance', { p_phone: user.phone }),
       sbGet(`wallet_transactions?phone=eq.${phone}&select=amount,type,note,created_at&order=created_at.desc&limit=10`),
       sbGet(`points?phone=eq.${phone}&select=total_points`),
       sbGet(`point_transactions?phone=eq.${phone}&select=points,type,created_at&order=created_at.desc&limit=10`),
@@ -1618,7 +1620,7 @@ import Layout from '../components/layout.astro';
 
     // Wallet
     if (walletRes.status === 'fulfilled') {
-      const b = (walletRes.value as any)?.[0]?.balance ?? 0;
+      const b = (walletRes.value as any) ?? 0;
       document.getElementById('m-wallet-balance')!.textContent = Number(b).toLocaleString('ar-EG');
     }
     if (walletTxRes.status === 'fulfilled') {

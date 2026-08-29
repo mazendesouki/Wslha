@@ -4,10 +4,11 @@ import '../../core/supabase_client.dart';
 /// the client never writes a balance directly, only calls these
 /// security-definer RPCs (db/security-02-wallet.sql).
 class WalletRepository {
+  // get_my_wallet_balance (security-49) — direct SELECT on wallets is
+  // closed since it had no filter and dumped every user's balance.
   Future<double> getBalance(String phone) async {
-    final rows = await sb.from('wallets').select('balance').eq('phone', phone).limit(1);
-    if (rows.isEmpty) return 0;
-    return (rows.first['balance'] as num?)?.toDouble() ?? 0;
+    final result = await sb.rpc('get_my_wallet_balance', params: {'p_phone': phone});
+    return (result as num?)?.toDouble() ?? 0;
   }
 
   Future<List<Map<String, dynamic>>> getTransactions(String phone) async {
