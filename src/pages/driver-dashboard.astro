@@ -731,6 +731,24 @@ import PageHero from '../components/PageHero.astro';
           </div>
         </div>
 
+        <!-- Delete account — self-service, only allowed while the
+             application is still pending (not yet approved), so a driver
+             stuck mid-registration (e.g. after the "already registered"
+             shortcut skipped the rest of the form) can start over without
+             needing an admin. An already-approved account can't be
+             self-deleted this way — needs an admin (real ride/wallet
+             history at stake). -->
+        <div class="acct-card" id="delete-account-card" style="border:1.5px solid #FCA5A5;background:#FEF2F2">
+          <div class="acct-card__header">
+            <div class="acct-card__title" style="color:#991B1B">🗑️ حذف الحساب</div>
+          </div>
+          <div style="font-size:var(--text-xs);color:#991B1B;margin-bottom:var(--sp-3);line-height:1.7">
+            لو طلبك لسه معلّق (مش معتمد) وعايز تبدأ التسجيل من الأول (مثلاً غيّرت نوع المركبة)، تقدر تحذف الحساب من هنا مباشرة بدل ما تستنى مراجعة إدارية. الحذف نهائي ومش هيرجع.
+          </div>
+          <button class="btn" id="delete-account-btn" style="width:100%;background:#DC2626;color:#fff;border:none">🗑️ حذف حسابي نهائيًا</button>
+          <div id="delete-account-msg" style="display:none;font-size:.78rem;font-weight:700;padding:.5rem .75rem;border-radius:6px;margin-top:.5rem"></div>
+        </div>
+
       </div><!-- /tab-account -->
 
       <!-- Tab: Activity log -->
@@ -2258,6 +2276,48 @@ import PageHero from '../components/PageHero.astro';
       showToast('تعذّر إرسال الرد — تحقق من الاتصال');
     }
   }
+
+  /* ── Self-delete a still-pending account ──
+     "امنع هذا... ضيف زر بحساب السائق حذف الحساب" — lets a driver stuck
+     mid-registration wipe their own account and re-register, instead of
+     waiting on an admin. Server-side RPC (driver_delete_own_pending_account,
+     db/security-43) refuses to run unless the account/application is
+     still pending, so this can't be used to delete an approved account. */
+  document.getElementById('delete-account-btn')?.addEventListener('click', async () => {
+    if (!driver) return;
+    const msg = document.getElementById('delete-account-msg');
+    const btn = document.getElementById('delete-account-btn');
+    const showMsg = (text, ok) => {
+      msg.style.display = 'block';
+      msg.style.background = ok ? '#DCFCE7' : '#FEE2E2';
+      msg.style.color = ok ? '#166534' : '#991B1B';
+      msg.textContent = text;
+    };
+    if (!confirm('هل أنت متأكد من حذف حسابك نهائيًا؟ هذا الإجراء لا يمكن التراجع عنه.')) return;
+    btn.disabled = true;
+    btn.textContent = 'جارٍ الحذف...';
+    try {
+      const res = await fetch(`${SB_URL}/rest/v1/rpc/driver_delete_own_pending_account`, {
+        method: 'POST',
+        headers: { ...SB_H, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ p_phone: driver.phone }),
+      });
+      const ok = res.ok ? await res.json() : false;
+      if (ok === true) {
+        showMsg('تم حذف الحساب، جارٍ تحويلك لصفحة التسجيل...', true);
+        localStorage.removeItem('wslha_user');
+        setTimeout(() => { window.location.href = '/driver'; }, 1200);
+      } else {
+        btn.disabled = false;
+        btn.textContent = '🗑️ حذف حسابي نهائيًا';
+        showMsg('لا يمكن حذف الحساب — الحساب معتمد بالفعل أو تمت مراجعته. تواصل مع الدعم.', false);
+      }
+    } catch {
+      btn.disabled = false;
+      btn.textContent = '🗑️ حذف حسابي نهائيًا';
+      showMsg('تعذّر حذف الحساب — تحقق من الاتصال وحاول مرة أخرى.', false);
+    }
+  });
 
   /* ── Load activity log ── */
   let activityItems = [];

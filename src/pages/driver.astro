@@ -1148,8 +1148,28 @@ window.doRegister = async function() {
     if (Array.isArray(existing) && existing.length > 0) {
       var acc = existing[0];
       if (acc.role === 'driver') {
-        localStorage.setItem('wslha_user', JSON.stringify({ phone: acc.phone, name: acc.name || name, role: 'driver', status: acc.status || 'pending', city: acc.city || city, avatar: dAvatar(acc.name || name) }));
-        window.location.href = '/driver-dashboard';
+        // "بعد تسجيل البيانات الشخصية والنوع يتم انشاء الحساب تلقائي بدون
+        // تكملة إنشاء الحساب" — the account row (role='driver') gets
+        // created right after step 0, so re-entering the same phone
+        // later (e.g. after a reload) used to jump straight to the
+        // dashboard even if documents/vehicle/photos were never filled.
+        // Only treat this as "already fully registered" when the
+        // application is actually complete (has vehicle_model) or
+        // already reviewed — otherwise resume registration instead of
+        // skipping the rest of it.
+        var existingApp = await getApp(acc.phone, 'status,vehicle_model');
+        var isComplete = existingApp && (existingApp.status !== 'pending' || existingApp.vehicle_model);
+        if (isComplete) {
+          localStorage.setItem('wslha_user', JSON.stringify({ phone: acc.phone, name: acc.name || name, role: 'driver', status: acc.status || 'pending', city: acc.city || city, avatar: dAvatar(acc.name || name) }));
+          window.location.href = '/driver-dashboard';
+          return;
+        }
+        USER = { phone: acc.phone, name: acc.name || name, role: 'driver', status: acc.status || 'pending', city: acc.city || city };
+        if (!USER.avatar) USER.avatar = dAvatar(USER.name);
+        localStorage.setItem('wslha_user', JSON.stringify(USER));
+        showProgressBar();
+        prefillUser();
+        setPanel(1);
         return;
       }
       // Upgrade to driver — a direct PATCH here 401s ("permission denied
@@ -1213,9 +1233,9 @@ window.doRegister = async function() {
   }
 };
 
-async function getApp(phone) {
+async function getApp(phone, fields) {
   try {
-    var r = await fetch(SB_URL + '/rest/v1/driver_applications?' + orFilter(phone) + '&select=id&limit=1', { headers: SB_H });
+    var r = await fetch(SB_URL + '/rest/v1/driver_applications?' + orFilter(phone) + '&select=' + (fields || 'id') + '&limit=1', { headers: SB_H });
     var d = r.ok ? await r.json() : [];
     return Array.isArray(d) && d.length > 0 ? d[0] : null;
   } catch { return null; }
