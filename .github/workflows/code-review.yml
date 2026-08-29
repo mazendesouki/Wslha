@@ -1,0 +1,72 @@
+name: Automated Backend Code Review
+
+# Runs Claude as an automated reviewer on every PR that touches backend
+# code (SQL functions under db/, the dispatch server under server/) —
+# this is a SECURITY DEFINER-heavy, anon-key-trust architecture where a
+# missing ownership check in one RPC can be exploited directly from the
+# client apps, so backend changes get an extra automated pass focused on
+# security and correctness before a human reviews them.
+#
+# Requires an ANTHROPIC_API_KEY secret in this repo's Settings → Secrets
+# and variables → Actions.
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths:
+      - 'db/**.sql'
+      - 'server/**'
+      - '**.sql'
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+jobs:
+  claude-review:
+    if: github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run Claude backend security review
+        uses: anthropics/claude-code-action@main
+        with:
+          prompt: |
+            Review only the backend files changed in this pull request:
+            SQL migrations under db/**.sql and the dispatch server under
+            server/**. This codebase's RPC functions are SECURITY DEFINER
+            Postgres functions called directly from client apps (Flutter
+            + Astro) using a shared anon Supabase key — there is no real
+            user auth beyond a phone number, so every RPC parameter must
+            be treated as attacker-controlled.
+
+            Focus on:
+            - SQL injection (dynamic SQL / string-built queries)
+            - missing ownership/authorization checks (one phone number
+              acting on another phone's data)
+            - privilege escalation via the set_config('app.privileged', ...)
+              RLS-bypass pattern used in this codebase — verify it is
+              always paired with a real check first and reliably reset
+              even on early returns/exceptions
+            - race conditions / TOCTOU bugs (check-then-act without a
+              row lock)
+            - wallet/commission math bugs (negative amounts, overflow,
+              double-settlement)
+            - missing or overly broad grant/revoke statements
+            - logic bugs: wrong status check, wrong table/column, wrong
+              operator
+
+            Ignore style/cosmetic issues and anything outside db/**.sql
+            and server/**. Post inline PR comments only for concrete,
+            traceable issues — state the exact exploit or failure
+            scenario for each, not vague concerns.
+          claude_args: |
+            {
+              "allowedTools": ["Read", "Grep", "Glob"]
+            }
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
