@@ -1405,7 +1405,12 @@ window.handleUpload = async function(input, key, zoneId) {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ imageUrl: publicUrl, docType: key, phone: (USER && USER.phone) || 'anon' }),
         });
-        var vData = vRes.ok ? await vRes.json() : { ok: true }; // fail-open on infra errors, not on explicit rejections
+        // The endpoint returns a real JSON body on every explicit
+        // rejection too (409/422/etc, not just 200) — vRes.ok is only
+        // true for 2xx, so it must NOT gate whether we parse the body,
+        // or every rejection silently reads as { ok: true }.
+        var vData;
+        try { vData = await vRes.json(); } catch (e) { vData = { ok: true }; } // unparsable body = infra issue, fail open
         if (vData.ok === false) {
           input.value = '';
           delete uploads[key];
