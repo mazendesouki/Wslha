@@ -1944,9 +1944,10 @@ document.getElementById('users-status-filter').addEventListener('change', render
 
 async function changeUserStatus(phone, status) {
   if (!status) return;
-  const ok = await sbPatch(`accounts?phone=eq.${encodeURIComponent(phone)}`, { status });
+  const pass = getAdminPass(); if (!pass) return;
+  const ok = await sbRpc('admin_set_user_status', { p_admin_phone: ADMIN.phone, p_admin_password: pass, p_target_phone: phone, p_status: status });
   if (ok) { showToast(`✅ تم تغيير الحالة إلى "${STATUS_AR[status]||status}"`, '#16A34A'); loadUsers(); }
-  else showToast('❌ حدث خطأ', '#DC2626');
+  else { clearAdminPass(); showToast('❌ حدث خطأ', '#DC2626'); }
 }
 async function makeAdmin(phone) {
   if (!confirm('منح صلاحيات المشرف لهذا المستخدم؟')) return;
@@ -1980,11 +1981,10 @@ async function changeUserRole(phone, role) {
   if (!confirm(`تغيير دور هذا المستخدم إلى "${{driver:'سائق',merchant:'تاجر',customer:'عميل'}[role]||role}"؟`)) {
     renderUsers(); return;
   }
-  const patch = { role };
-  if (role === 'driver') patch.status = 'approved';
-  const ok = await sbPatch(`accounts?phone=eq.${encodeURIComponent(phone)}`, patch);
+  const pass = getAdminPass(); if (!pass) return;
+  const ok = await sbRpc('admin_set_user_role', { p_admin_phone: ADMIN.phone, p_admin_password: pass, p_target_phone: phone, p_role: role });
   if (ok) { showToast('✅ تم تغيير الدور', '#16A34A'); loadUsers(); }
-  else showToast('❌ حدث خطأ', '#DC2626');
+  else { clearAdminPass(); showToast('❌ حدث خطأ', '#DC2626'); }
 }
 
 /* ═══════════════════ USER PROFILE ══════════════════════════ */
@@ -2683,18 +2683,22 @@ document.getElementById('courier-search').addEventListener('input', renderCourie
 document.getElementById('courier-status-filter').addEventListener('change', renderCourierOrders);
 
 async function courierAccept(id) {
+  const pass = getAdminPass(); if (!pass) return;
   // 'preparing' is what trg_dispatch_new_order actually watches for — this
   // is the moment the shipment goes out to the nearest available driver,
-  // same as a merchant accepting a store order.
-  const ok = await sbPatch(`orders?id=eq.${encodeURIComponent(id)}`, { status: 'preparing', accepted_at: new Date().toISOString() });
+  // same as a merchant accepting a store order. Routed through
+  // admin_set_order_status (security-48) — orders/rides no longer accept
+  // a direct PATCH.
+  const ok = await sbRpc('admin_set_order_status', { p_admin_phone: ADMIN.phone, p_admin_password: pass, p_order_id: id, p_status: 'preparing' });
   if (ok) { showToast('✅ تم قبول الشحنة — جارٍ البحث عن سائق', '#16A34A'); loadCourierOrders(); }
-  else showToast('❌ حدث خطأ', '#DC2626');
+  else { clearAdminPass(); showToast('❌ حدث خطأ', '#DC2626'); }
 }
 async function courierReject(id) {
   if (!confirm('رفض هذه الشحنة؟')) return;
-  const ok = await sbPatch(`orders?id=eq.${encodeURIComponent(id)}`, { status: 'rejected' });
+  const pass = getAdminPass(); if (!pass) return;
+  const ok = await sbRpc('admin_set_order_status', { p_admin_phone: ADMIN.phone, p_admin_password: pass, p_order_id: id, p_status: 'rejected' });
   if (ok) { showToast('تم رفض الشحنة', '#DC2626'); loadCourierOrders(); }
-  else showToast('❌ حدث خطأ', '#DC2626');
+  else { clearAdminPass(); showToast('❌ حدث خطأ', '#DC2626'); }
 }
 
 /* ═══════════════════ MERCHANT DELIVERY (store↔customer) ════ */
@@ -2739,17 +2743,19 @@ document.getElementById('mdlv-search').addEventListener('input', renderMerchantD
 document.getElementById('mdlv-status-filter').addEventListener('change', renderMerchantDeliveries);
 
 async function merchantDeliveryAccept(id) {
+  const pass = getAdminPass(); if (!pass) return;
   // Same 'preparing' flip trg_dispatch_new_order watches for — see
   // courierAccept() above, identical dispatch trigger point.
-  const ok = await sbPatch(`orders?id=eq.${encodeURIComponent(id)}`, { status: 'preparing', accepted_at: new Date().toISOString() });
+  const ok = await sbRpc('admin_set_order_status', { p_admin_phone: ADMIN.phone, p_admin_password: pass, p_order_id: id, p_status: 'preparing' });
   if (ok) { showToast('✅ تم قبول الطلب — جارٍ البحث عن سائق', '#16A34A'); loadMerchantDeliveries(); }
-  else showToast('❌ حدث خطأ', '#DC2626');
+  else { clearAdminPass(); showToast('❌ حدث خطأ', '#DC2626'); }
 }
 async function merchantDeliveryReject(id) {
   if (!confirm('رفض هذا الطلب؟')) return;
-  const ok = await sbPatch(`orders?id=eq.${encodeURIComponent(id)}`, { status: 'rejected' });
+  const pass = getAdminPass(); if (!pass) return;
+  const ok = await sbRpc('admin_set_order_status', { p_admin_phone: ADMIN.phone, p_admin_password: pass, p_order_id: id, p_status: 'rejected' });
   if (ok) { showToast('تم رفض الطلب', '#DC2626'); loadMerchantDeliveries(); }
-  else showToast('❌ حدث خطأ', '#DC2626');
+  else { clearAdminPass(); showToast('❌ حدث خطأ', '#DC2626'); }
 }
 function openMerchantDeliveryModal(id) {
   currentOrderId = id;
@@ -2819,15 +2825,17 @@ document.getElementById('gdlv-search').addEventListener('input', renderGeneralDe
 document.getElementById('gdlv-status-filter').addEventListener('change', renderGeneralDeliveries);
 
 async function generalDeliveryAccept(id) {
-  const ok = await sbPatch(`orders?id=eq.${encodeURIComponent(id)}`, { status: 'preparing', accepted_at: new Date().toISOString() });
+  const pass = getAdminPass(); if (!pass) return;
+  const ok = await sbRpc('admin_set_order_status', { p_admin_phone: ADMIN.phone, p_admin_password: pass, p_order_id: id, p_status: 'preparing' });
   if (ok) { showToast('✅ تم قبول الطلب — جارٍ البحث عن سائق', '#16A34A'); loadGeneralDeliveries(); }
-  else showToast('❌ حدث خطأ', '#DC2626');
+  else { clearAdminPass(); showToast('❌ حدث خطأ', '#DC2626'); }
 }
 async function generalDeliveryReject(id) {
   if (!confirm('رفض هذا الطلب؟')) return;
-  const ok = await sbPatch(`orders?id=eq.${encodeURIComponent(id)}`, { status: 'rejected' });
+  const pass = getAdminPass(); if (!pass) return;
+  const ok = await sbRpc('admin_set_order_status', { p_admin_phone: ADMIN.phone, p_admin_password: pass, p_order_id: id, p_status: 'rejected' });
   if (ok) { showToast('تم رفض الطلب', '#DC2626'); loadGeneralDeliveries(); }
-  else showToast('❌ حدث خطأ', '#DC2626');
+  else { clearAdminPass(); showToast('❌ حدث خطأ', '#DC2626'); }
 }
 function openGeneralDeliveryModal(id) {
   currentOrderId = id;
@@ -2994,18 +3002,20 @@ function openOrderModal(id) {
 }
 async function saveOrderStatus() {
   const status = document.getElementById('order-status-select').value;
-  const ok = await sbPatch(`orders?id=eq.${encodeURIComponent(currentOrderId)}`, { status });
+  const pass = getAdminPass(); if (!pass) return;
+  const ok = await sbRpc('admin_set_order_status', { p_admin_phone: ADMIN.phone, p_admin_password: pass, p_order_id: currentOrderId, p_status: status });
   if (ok) {
     showToast('✅ تم تحديث حالة الطلب', '#16A34A');
     closeModal('order-modal');
     loadOrders();
-  } else showToast('❌ حدث خطأ', '#DC2626');
+  } else { clearAdminPass(); showToast('❌ حدث خطأ', '#DC2626'); }
 }
 async function deleteCurrentOrder() {
   if (!confirm('حذف هذا الطلب نهائياً؟')) return;
-  const ok = await sbDelete(`orders?id=eq.${encodeURIComponent(currentOrderId)}`);
+  const pass = getAdminPass(); if (!pass) return;
+  const ok = await sbRpc('admin_delete_order', { p_admin_phone: ADMIN.phone, p_admin_password: pass, p_order_id: currentOrderId });
   if (ok) { showToast('✅ تم الحذف', '#16A34A'); closeModal('order-modal'); loadOrders(); }
-  else showToast('❌ حدث خطأ', '#DC2626');
+  else { clearAdminPass(); showToast('❌ حدث خطأ', '#DC2626'); }
 }
 
 /* ═══════════════════ RIDES ═════════════════════════════════ */
@@ -3057,9 +3067,10 @@ document.getElementById('rides-search').addEventListener('input', renderRides);
 document.getElementById('rides-status-filter').addEventListener('change', renderRides);
 async function updateRideStatus(id, status) {
   if (!status) return;
-  const ok = await sbPatch(`rides?id=eq.${encodeURIComponent(id)}`, { status });
+  const pass = getAdminPass(); if (!pass) return;
+  const ok = await sbRpc('admin_set_ride_status', { p_admin_phone: ADMIN.phone, p_admin_password: pass, p_ride_id: id, p_status: status });
   if (ok) { showToast('✅ تم التحديث', '#16A34A'); loadRides(); }
-  else showToast('❌ حدث خطأ', '#DC2626');
+  else { clearAdminPass(); showToast('❌ حدث خطأ', '#DC2626'); }
 }
 
 /* ═══════════════════ STORES ════════════════════════════════ */

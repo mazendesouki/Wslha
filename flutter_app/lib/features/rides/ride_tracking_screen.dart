@@ -145,7 +145,7 @@ class _RideTrackingScreenState extends State<RideTrackingScreen> {
           }
           break;
         case 'arrived':
-          await _driverRepo.markRideInProgress(widget.rideId);
+          await _driverRepo.markRideInProgress(widget.rideId, _myPhone!);
           break;
         default:
           final settlement = await _driverRepo.completeRide(widget.rideId, _myPhone!);

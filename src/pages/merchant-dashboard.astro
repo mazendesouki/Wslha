@@ -1515,26 +1515,25 @@ import Layout from '../components/layout.astro';
     }
   }
 
-  // Merchant accepts → preparing + becomes visible to drivers (broadcast)
+  // Merchant accepts → preparing + becomes visible to drivers (broadcast).
+  // Routed through merchant_accept_order (security-48) which verifies
+  // currentStore.owner_phone actually owns this order's store — a raw
+  // PATCH here would let anyone accept/reject/ready any store's orders.
   async function acceptOrder(id: string) {
-    const ok = await sbPatch(`orders?id=eq.${id}`, {
-      status: 'preparing', accepted_at: new Date().toISOString(),
-    });
+    const ok = await sbPost('rpc/merchant_accept_order', { p_order_id: id, p_merchant_phone: currentStore.owner_phone });
     if (ok) { toast('✅ تم قبول الطلب — جارٍ البحث عن سائق'); knownPendingIds.delete(id); await loadOrders(); loadStats(); }
     else toast('❌ فشل قبول الطلب');
   }
 
   async function rejectOrder(id: string) {
     if (!confirm('هل تريد رفض هذا الطلب؟')) return;
-    const ok = await sbPatch(`orders?id=eq.${id}`, {
-      status: 'rejected', rejected_at: new Date().toISOString(),
-    });
+    const ok = await sbPost('rpc/merchant_reject_order', { p_order_id: id, p_merchant_phone: currentStore.owner_phone });
     if (ok) { toast('تم رفض الطلب'); knownPendingIds.delete(id); await loadOrders(); }
     else toast('❌ فشل رفض الطلب');
   }
 
   async function markReady(id: string) {
-    const ok = await sbPatch(`orders?id=eq.${id}`, { ready_at: new Date().toISOString() });
+    const ok = await sbPost('rpc/merchant_mark_order_ready', { p_order_id: id, p_merchant_phone: currentStore.owner_phone });
     if (ok) { toast('📦 تم وسم الطلب كجاهز'); await loadOrders(); }
   }
 

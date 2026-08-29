@@ -178,12 +178,15 @@ class DriverRepository {
     }
   }
 
-  /// Marks an order picked up (matches driver-dashboard.astro's PATCH).
-  Future<void> markOrderPickedUp(String orderId) async {
-    await sb.from('orders').update({
-      'status': 'on_the_way',
-      'picked_up_at': DateTime.now().toIso8601String(),
-    }).eq('id', orderId);
+  /// Marks an order picked up — routed through driver_mark_order_picked_up
+  /// (security-48), which verifies this order is actually assigned to this
+  /// driver server-side. A raw table UPDATE would let anyone mark any
+  /// order picked up directly.
+  Future<void> markOrderPickedUp(String orderId, String driverPhone) async {
+    await sb.rpc('driver_mark_order_picked_up', params: {
+      'p_order_id': orderId,
+      'p_driver_phone': driverPhone,
+    });
   }
 
   /// Confirms delivery via the same RPC (which also handles the
@@ -220,8 +223,14 @@ class DriverRepository {
     return (0, false);
   }
 
-  Future<void> markRideInProgress(String rideId) async {
-    await sb.from('rides').update({'status': 'in_progress'}).eq('id', rideId);
+  /// Routed through driver_update_ride_status (security-48), which
+  /// verifies this ride is actually assigned to this driver server-side.
+  Future<void> markRideInProgress(String rideId, String driverPhone) async {
+    await sb.rpc('driver_update_ride_status', params: {
+      'p_ride_id': rideId,
+      'p_driver_phone': driverPhone,
+      'p_status': 'in_progress',
+    });
   }
 
   /// Server-side lifetime trip breakdown — same RPC driver-dashboard.astro's
@@ -251,10 +260,14 @@ class DriverRepository {
   }
 
   Future<RideSettlement?> completeRide(String rideId, String driverPhone) async {
-    final ride = await sb.from('rides').update({
-      'status': 'completed',
-      'completed_at': DateTime.now().toIso8601String(),
-    }).eq('id', rideId).select('fare').single();
+    // driver_update_ride_status (security-48) verifies ride ownership
+    // server-side before allowing the transition to 'completed'.
+    await sb.rpc('driver_update_ride_status', params: {
+      'p_ride_id': rideId,
+      'p_driver_phone': driverPhone,
+      'p_status': 'completed',
+    });
+    final ride = await sb.from('rides').select('fare').eq('id', rideId).single();
     // Server reads the real fare + commission rate itself and credits the
     // driver's wallet — see db/security-07-commission-settlement.sql.
     // (This app never credited ride earnings at all before; orders already

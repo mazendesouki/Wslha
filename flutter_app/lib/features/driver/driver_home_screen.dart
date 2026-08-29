@@ -300,7 +300,7 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
           }
           return;
         case 'arrived':
-          await _repo.markRideInProgress(rideId);
+          await _repo.markRideInProgress(rideId, widget.session.phone);
           if (!mounted) return;
           _jobs.setRideStep('in_progress');
           setState(() => _busy = false);
@@ -352,7 +352,7 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
     if (!_jobs.pickedUp) {
       setState(() => _busy = true);
       try {
-        await _repo.markOrderPickedUp(orderId);
+        await _repo.markOrderPickedUp(orderId, widget.session.phone);
         if (!mounted) return;
         _jobs.setPickedUp(true);
         setState(() => _busy = false);

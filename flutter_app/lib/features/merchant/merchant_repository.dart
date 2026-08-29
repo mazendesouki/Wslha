@@ -22,18 +22,21 @@ class MerchantRepository {
     return sb.from('orders').stream(primaryKey: ['id']).eq('store_id', storeId).order('created_at', ascending: false);
   }
 
-  Future<void> acceptOrder(String orderId, {int? prepMinutes}) async {
-    await sb.from('orders').update({
-      'status': 'preparing',
-      'accepted_at': DateTime.now().toIso8601String(),
-      if (prepMinutes != null) 'prep_minutes': prepMinutes,
-    }).eq('id', orderId);
+  // merchant_accept_order/merchant_reject_order (security-48) verify the
+  // caller's phone actually owns this order's store server-side — a raw
+  // table UPDATE would let anyone accept/reject any store's orders.
+  Future<void> acceptOrder(String orderId, String merchantPhone, {int? prepMinutes}) async {
+    await sb.rpc('merchant_accept_order', params: {
+      'p_order_id': orderId,
+      'p_merchant_phone': merchantPhone,
+      if (prepMinutes != null) 'p_prep_minutes': prepMinutes,
+    });
   }
 
-  Future<void> rejectOrder(String orderId) async {
-    await sb.from('orders').update({
-      'status': 'rejected',
-      'rejected_at': DateTime.now().toIso8601String(),
-    }).eq('id', orderId);
+  Future<void> rejectOrder(String orderId, String merchantPhone) async {
+    await sb.rpc('merchant_reject_order', params: {
+      'p_order_id': orderId,
+      'p_merchant_phone': merchantPhone,
+    });
   }
 }

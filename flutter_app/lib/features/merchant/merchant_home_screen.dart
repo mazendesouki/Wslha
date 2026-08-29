@@ -108,7 +108,7 @@ class _MerchantHomeScreenState extends State<MerchantHomeScreen> {
       ),
     );
     if (minutes == null) return; // dismissed without picking — still accept with no ETA
-    await _repo.acceptOrder(orderId, prepMinutes: minutes);
+    await _repo.acceptOrder(orderId, widget.session.phone, prepMinutes: minutes);
   }
 
   @override
@@ -174,7 +174,7 @@ class _MerchantHomeScreenState extends State<MerchantHomeScreen> {
             showActions: showActions,
             muted: muted,
             onAccept: () => _acceptWithPrepTime(o['id'].toString()),
-            onReject: () => _repo.rejectOrder(o['id'].toString()),
+            onReject: () => _repo.rejectOrder(o['id'].toString(), widget.session.phone),
           )),
     ];
   }

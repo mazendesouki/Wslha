@@ -16,16 +16,27 @@ class AccountRepository {
     String phone, {
     String? name,
     String? city,
-    String? email,
     String? username,
   }) async {
     final patch = <String, dynamic>{};
     if (name != null) patch['name'] = name;
     if (city != null) patch['city'] = city;
-    if (email != null) patch['email'] = email;
     if (username != null) patch['username'] = username;
     if (patch.isEmpty) return;
     await sb.from('accounts').update(patch).eq('phone', phone);
+  }
+
+  /// email is deliberately not part of updateProfile()'s direct table
+  /// UPDATE — an unverified email change would let anyone hijack an
+  /// account via "forgot password" (security-47), so it goes through this
+  /// password-verified RPC instead.
+  Future<bool> updateEmail(String phone, String password, String newEmail) async {
+    final result = await sb.rpc('update_account_email', params: {
+      'p_phone': phone,
+      'p_password': password,
+      'p_new_email': newEmail,
+    });
+    return result == true;
   }
 
   /// Uploads to the same anon-writable `documents` storage bucket

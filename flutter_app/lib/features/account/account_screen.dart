@@ -109,7 +109,9 @@ class AccountScreenState extends State<AccountScreen> {
     if (_session == null) return;
     final nameCtrl = TextEditingController(text: _account?['name'] as String? ?? _session!.name);
     final cityCtrl = TextEditingController(text: _account?['city'] as String? ?? _session!.city ?? '');
-    final emailCtrl = TextEditingController(text: _account?['email'] as String? ?? '');
+    final originalEmail = _account?['email'] as String? ?? '';
+    final emailCtrl = TextEditingController(text: originalEmail);
+    final passwordCtrl = TextEditingController();
     final saved = await showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
@@ -121,37 +123,65 @@ class AccountScreenState extends State<AccountScreen> {
           top: 20,
           bottom: MediaQuery.of(sheetContext).viewInsets.bottom + 20,
         ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const Text('تعديل بياناتي', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w900)),
-            const SizedBox(height: 16),
-            TextField(controller: nameCtrl, decoration: const InputDecoration(labelText: 'الاسم')),
-            const SizedBox(height: 12),
-            TextField(controller: cityCtrl, decoration: const InputDecoration(labelText: 'المدينة')),
-            const SizedBox(height: 12),
-            TextField(
-              controller: emailCtrl,
-              keyboardType: TextInputType.emailAddress,
-              textDirection: TextDirection.ltr,
-              decoration: const InputDecoration(labelText: 'البريد الإلكتروني'),
-            ),
-            const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: () => Navigator.of(sheetContext).pop(true),
-              child: const Text('حفظ'),
-            ),
-          ],
+        child: StatefulBuilder(
+          builder: (sheetContext, setSheetState) => Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const Text('تعديل بياناتي', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w900)),
+              const SizedBox(height: 16),
+              TextField(controller: nameCtrl, decoration: const InputDecoration(labelText: 'الاسم')),
+              const SizedBox(height: 12),
+              TextField(controller: cityCtrl, decoration: const InputDecoration(labelText: 'المدينة')),
+              const SizedBox(height: 12),
+              TextField(
+                controller: emailCtrl,
+                keyboardType: TextInputType.emailAddress,
+                textDirection: TextDirection.ltr,
+                decoration: const InputDecoration(labelText: 'البريد الإلكتروني'),
+                onChanged: (_) => setSheetState(() {}),
+              ),
+              // Changing the email needs a password check (update_account_email,
+              // security-47) — an unverified email change would let someone
+              // hijack the account via "forgot password".
+              if (emailCtrl.text.trim().toLowerCase() != originalEmail.trim().toLowerCase()) ...[
+                const SizedBox(height: 12),
+                TextField(
+                  controller: passwordCtrl,
+                  obscureText: true,
+                  decoration: const InputDecoration(labelText: 'كلمة مرور حسابك (لتأكيد تغيير البريد)'),
+                ),
+              ],
+              const SizedBox(height: 20),
+              ElevatedButton(
+                onPressed: () => Navigator.of(sheetContext).pop(true),
+                child: const Text('حفظ'),
+              ),
+            ],
+          ),
         ),
       ),
     );
     if (saved != true) return;
+
+    final newEmail = emailCtrl.text.trim();
+    if (newEmail.toLowerCase() != originalEmail.trim().toLowerCase()) {
+      if (passwordCtrl.text.isEmpty) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('أدخل كلمة مرور حسابك لتأكيد تغيير البريد الإلكتروني')));
+        return;
+      }
+      final ok = await _repo.updateEmail(_session!.phone, passwordCtrl.text, newEmail);
+      if (!ok) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('كلمة المرور غير صحيحة — لم يتم تغيير البريد الإلكتروني')));
+        return;
+      }
+    }
     await _repo.updateProfile(
       _session!.phone,
       name: nameCtrl.text.trim(),
       city: cityCtrl.text.trim(),
-      email: emailCtrl.text.trim(),
     );
     await _load();
     if (!mounted) return;

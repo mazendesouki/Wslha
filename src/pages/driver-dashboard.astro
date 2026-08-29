@@ -1591,33 +1591,32 @@ import PageHero from '../components/PageHero.astro';
     }
   }
 
+  // driver_accept_ride verifies the driver is approved (and not a
+  // delivery-only motorcycle/cargo vehicle) server-side before letting
+  // the ride through — a raw PATCH here would let anyone claim any
+  // ride directly (security-48).
   async function acceptRide(ride) {
     try {
-      const res = await fetch(`${SB_URL}/rest/v1/rides?id=eq.${ride.id}`, {
-        method: 'PATCH',
-        headers: { ...SB_H, Prefer: 'return=representation' },
-        body: JSON.stringify({
-          status: 'accepted',
-          driver_phone: driver.phone,
-          driver_name: driver.name || driver.phone,
-          accepted_at: new Date().toISOString(),
-        }),
+      const res = await fetch(`${SB_URL}/rest/v1/rpc/driver_accept_ride`, {
+        method: 'POST',
+        headers: { ...SB_H, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ p_ride_id: ride.id, p_driver_phone: driver.phone, p_driver_name: driver.name || driver.phone }),
       });
+      if (!res.ok) return null;
       const rows = await res.json();
-      return Array.isArray(rows) ? rows[0] : null;
+      return Array.isArray(rows) && rows.length ? rows[0] : null;
     } catch { return null; }
   }
 
-  async function patchRide(id, data) {
+  async function driverUpdateRideStatus(id, status) {
     try {
-      const res = await fetch(`${SB_URL}/rest/v1/rides?id=eq.${id}`, {
-        method: 'PATCH',
-        headers: { ...SB_H, Prefer: 'return=representation' },
-        body: JSON.stringify(data),
+      const res = await fetch(`${SB_URL}/rest/v1/rpc/driver_update_ride_status`, {
+        method: 'POST',
+        headers: { ...SB_H, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ p_ride_id: id, p_driver_phone: driver.phone, p_status: status }),
       });
-      const rows = await res.json();
-      return Array.isArray(rows) ? rows[0] : null;
-    } catch { return null; }
+      return res.ok ? await res.json() : false;
+    } catch { return false; }
   }
 
   /* ── Delivery orders polling + actions ── */
@@ -1645,34 +1644,16 @@ import PageHero from '../components/PageHero.astro';
     } catch {}
   }
 
-  async function patchOrder(id, data) {
-    try {
-      const res = await fetch(`${SB_URL}/rest/v1/orders?id=eq.${id}`, {
-        method: 'PATCH',
-        headers: { ...SB_H, Prefer: 'return=representation' },
-        body: JSON.stringify(data),
-      });
-      const rows = await res.json();
-      return Array.isArray(rows) ? rows[0] : null;
-    } catch { return null; }
-  }
-
-  // Atomic-ish claim: only set driver if still unclaimed
+  // Atomic claim (driver_claim_delivery_order verifies the driver is
+  // approved server-side, and only claims if still unassigned — security-48).
   async function claimOrder(order) {
     try {
-      const res = await fetch(
-        `${SB_URL}/rest/v1/orders?id=eq.${order.id}&driver_phone=is.null&status=eq.preparing`,
-        {
-          method: 'PATCH',
-          headers: { ...SB_H, Prefer: 'return=representation' },
-          body: JSON.stringify({
-            status: 'on_the_way',
-            driver_phone: driver.phone,
-            driver_name: driver.name || driver.phone,
-            picked_up_at: null,
-          }),
-        }
-      );
+      const res = await fetch(`${SB_URL}/rest/v1/rpc/driver_claim_delivery_order`, {
+        method: 'POST',
+        headers: { ...SB_H, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ p_order_id: order.id, p_driver_phone: driver.phone, p_driver_name: driver.name || driver.phone }),
+      });
+      if (!res.ok) return null;
       const rows = await res.json();
       return Array.isArray(rows) && rows.length ? rows[0] : null;  // empty array = already claimed
     } catch { return null; }
@@ -1787,7 +1768,12 @@ import PageHero from '../components/PageHero.astro';
     const arriveBtn  = document.getElementById('btn-arrive');
     const pickupBtn  = document.getElementById('btn-pickup');
     if (currentRide) {
-      await patchRide(currentRide.id, { status: 'arrived' });
+      // mark_ride_arrived (security-29) also handles the late-arrival
+      // penalty server-side.
+      await fetch(`${SB_URL}/rest/v1/rpc/mark_ride_arrived`, {
+        method: 'POST', headers: { ...SB_H, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ p_ride_id: currentRide.id, p_driver_phone: driver.phone }),
+      }).catch(() => {});
       currentRide.status = 'arrived';
       document.getElementById('active-trip-status').textContent = 'وصلت — انتظر الراكب 📍';
     }
@@ -1803,7 +1789,10 @@ import PageHero from '../components/PageHero.astro';
   document.getElementById('btn-pickup').addEventListener('click', async () => {
     // Delivery order branch — picked up from store
     if (currentOrder) {
-      await patchOrder(currentOrder.id, { status: 'on_the_way', picked_up_at: new Date().toISOString() });
+      await fetch(`${SB_URL}/rest/v1/rpc/driver_mark_order_picked_up`, {
+        method: 'POST', headers: { ...SB_H, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ p_order_id: currentOrder.id, p_driver_phone: driver.phone }),
+      }).catch(() => {});
       currentOrder.status = 'on_the_way';
       document.getElementById('active-trip-status').textContent = 'في الطريق للعميل 🚗';
       const pickupBtn   = document.getElementById('btn-pickup');
@@ -1819,7 +1808,7 @@ import PageHero from '../components/PageHero.astro';
 
     if (!currentRide) return;
     stopWaitingTimer();
-    await patchRide(currentRide.id, { status: 'in_progress' });
+    await driverUpdateRideStatus(currentRide.id, 'in_progress');
     currentRide.status = 'in_progress';
     document.getElementById('active-trip-status').textContent = 'في الطريق للوجهة 🚗';
     const pickupBtn   = document.getElementById('btn-pickup');
@@ -1899,7 +1888,7 @@ import PageHero from '../components/PageHero.astro';
     }
 
     if (!currentRide) return;
-    await patchRide(currentRide.id, { status: 'completed', completed_at: new Date().toISOString() });
+    await driverUpdateRideStatus(currentRide.id, 'completed');
     const fare   = currentRide.fare;
     const rideId = currentRide.id;
     try {

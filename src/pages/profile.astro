@@ -740,6 +740,12 @@ import Layout from '../components/layout.astro';
                   <input class="form-input" id="edit-city" type="text" placeholder="مثال: دمياط الجديدة">
                 </div>
               </div>
+              <div class="form-row" id="edit-email-password-row" hidden>
+                <div class="form-group">
+                  <label class="form-label" for="edit-email-password">كلمة مرور حسابك (لتأكيد تغيير البريد)</label>
+                  <input class="form-input" id="edit-email-password" type="password" placeholder="••••••••">
+                </div>
+              </div>
               <div style="display:flex;gap:var(--sp-3);align-items:center;flex-wrap:wrap">
                 <button class="btn-save" type="submit">💾 حفظ التغييرات</button>
                 <button class="btn-save" type="button" id="edit-cancel-btn" style="background:#F2F7F6;color:var(--color-text);border:1.5px solid #C9DEDC">إلغاء</button>
@@ -1262,6 +1268,7 @@ import Layout from '../components/layout.astro';
     $('edit-name').value     = name !== '—' ? name : '';
     $('edit-username').value = acc.username || '';
     $('edit-email').value    = acc.email    || '';
+    $('edit-email').dataset.original = acc.email || '';
     $('edit-city').value     = city;
   }
 
@@ -1657,16 +1664,43 @@ import Layout from '../components/layout.astro';
     $('save-success-msg').style.display = 'none';
   });
 
+  // Changing the email needs an extra password check (update_account_email,
+  // security-47) since an unverified email change would let someone hijack
+  // the account via "forgot password" — only show that field when the
+  // email actually differs from what's saved.
+  $('edit-email').addEventListener('input', () => {
+    const changed = $('edit-email').value.trim().toLowerCase() !== ($('edit-email').dataset.original || '').toLowerCase();
+    $('edit-email-password-row').hidden = !changed;
+  });
+
   $('profile-edit-form').addEventListener('submit', async e => {
     e.preventDefault();
     const name     = $('edit-name').value.trim();
     const username = $('edit-username').value.trim().toLowerCase();
-    const email    = $('edit-email').value.trim().toLowerCase();
+    const email     = $('edit-email').value.trim().toLowerCase();
+    const emailChanged = email !== ($('edit-email').dataset.original || '').toLowerCase();
     const city     = $('edit-city').value.trim();
     if (!name) { showToast('الاسم مطلوب'); return; }
 
+    if (emailChanged) {
+      const pass = $('edit-email-password').value;
+      if (!pass) { showToast('أدخل كلمة مرور حسابك لتأكيد تغيير البريد الإلكتروني'); return; }
+      try {
+        const res = await fetch(SB_URL + '/rest/v1/rpc/update_account_email', {
+          method: 'POST',
+          headers: { ...SB_H, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ p_phone: user.phone, p_password: pass, p_new_email: email }),
+        });
+        const ok = res.ok ? await res.json() : false;
+        if (!ok) { showToast('كلمة المرور غير صحيحة — لم يتم تغيير البريد الإلكتروني'); return; }
+        $('edit-email').dataset.original = email;
+        $('edit-email-password').value = '';
+        $('edit-email-password-row').hidden = true;
+      } catch { showToast('تعذّر تغيير البريد الإلكتروني'); return; }
+    }
+
     try {
-      const patch = { name, city: city || null, email: email || null, username: username || null };
+      const patch = { name, city: city || null, username: username || null };
       await fetch(SB_URL + '/rest/v1/accounts?' + phoneOrFilter(user.phone), {
         method: 'PATCH',
         headers: { ...SB_H, 'Content-Type': 'application/json', Prefer: 'return=minimal' },
