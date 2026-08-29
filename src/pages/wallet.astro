@@ -332,11 +332,27 @@ import Layout from '../components/layout.astro';
     } catch {}
   }
 
+  async function fetchTransactions() {
+    // Same access-token-first, phone-trust-RPC-fallback shape as
+    // loadWallet() above — see that function's comment for why.
+    try {
+      const token = await getValidAccessToken();
+      if (token) {
+        const res = await fetch('/api/wallet/transactions', { headers: { Authorization: 'Bearer ' + token } });
+        if (res.ok) {
+          const { transactions } = await res.json();
+          if (Array.isArray(transactions)) return transactions;
+        }
+      }
+    } catch {}
+    var res = await fetch(SB_URL + '/rest/v1/wallet_transactions?phone=eq.' + encodeURIComponent(user.phone) + '&select=amount,type,note,created_at&order=created_at.desc&limit=50', { headers: SB_H });
+    return await res.json();
+  }
+
   async function loadLog() {
     if (!user) return;
     try {
-      var res = await fetch(SB_URL + '/rest/v1/wallet_transactions?phone=eq.' + encodeURIComponent(user.phone) + '&select=amount,type,note,created_at&order=created_at.desc&limit=50', { headers: SB_H });
-      var txs = await res.json();
+      var txs = await fetchTransactions();
       var el = document.getElementById('tx-list');
       if (!Array.isArray(txs) || !txs.length) { el.innerHTML = '<div class="tx-empty">لا توجد معاملات بعد</div>'; return; }
       var labels = { topup:'إيداع', deposit:'إيداع', earning:'أرباح', refund:'استرداد', transfer_in:'تحويل وارد', commission:'عمولة', payment:'مدفوعات', withdrawal:'سحب', transfer_out:'تحويل صادر', admin_credit:'شحن يدوي', admin_debit:'خصم يدوي' };
