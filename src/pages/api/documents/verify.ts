@@ -40,7 +40,7 @@ const VISION_CHECKED: Record<string, string> = {
   vreg: 'رخصة تسجيل مركبة مصرية (الرخصة الصفراء) صادرة من إدارة المرور',
   insurance: 'وثيقة تأمين على مركبة',
   inspection: 'شهادة فحص فني لمركبة',
-  conduct: 'شهادة حسن سيرة وسلوك صادرة من وزارة الداخلية المصرية',
+  conduct: 'صحيفة الحالة الجنائية (شهادة حسن سيرة وسلوك) صادرة من وزارة الداخلية المصرية',
 };
 
 // The specific printed Arabic markings each document type must actually
@@ -55,7 +55,7 @@ const REQUIRED_MARKERS: Record<string, string> = {
   vreg: '"جمهورية مصر العربية" و"وزارة الداخلية" و"إدارة المرور" (استمارة/رخصة تسيير مركبة)',
   insurance: 'اسم شركة تأمين حقيقية ورقم وثيقة/بوليصة',
   inspection: 'ختم/بيانات جهة فحص فني رسمية',
-  conduct: '"جمهورية مصر العربية" و"وزارة الداخلية" (شهادة حسن سيرة وسلوك)',
+  conduct: '"وزارة الداخلية" و"قطاع مصلحة الأمن العام" و"صحيفة الحالة الجنائية"',
 };
 
 function requireEnv(name: string): string {
