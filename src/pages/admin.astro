@@ -3713,20 +3713,19 @@ async function execAdminWalletOp() {
   const fullNote = note + adminTag;
   const amt  = _walletOpType === 'credit' ? amtRaw : -amtRaw;
   const type = _walletOpType === 'credit' ? 'admin_credit' : 'admin_debit';
-  const txId = `adm-${_walletOpType === 'credit' ? 'cr' : 'db'}-${Date.now()}`;
+  const pass = getAdminPass();
+  if (!pass) return;
   const btn  = document.getElementById('wallet-op-confirm-btn');
   btn.textContent = 'جاري التنفيذ…'; btn.disabled = true;
 
-  // The transaction-log record is the source of truth and MUST succeed first;
-  // only then do we adjust the balance — so no balance change is ever unlogged.
-  const logged = await sbPost('rpc/log_wallet_transaction', { p_id: txId, p_phone: _walletOpPhone, p_amount: amt, p_type: type, p_note: fullNote });
-  if (!logged) {
-    btn.disabled = false;
-    btn.textContent = _walletOpType === 'credit' ? '✅ تأكيد الشحن' : '⚠️ تأكيد الخصم';
-    showOpErr('❌ تعذّر تسجيل العملية في السجل — لم يتم تغيير الرصيد');
-    return;
-  }
-  const ok1 = await sbPost('rpc/add_wallet_balance', { p_phone: _walletOpPhone, p_amount: amt });
+  // admin_adjust_wallet يسجّل المعاملة ويعدّل الرصيد سوا (ذرّي) بعد التحقق
+  // من باسورد الأدمن — بدل نداء log_wallet_transaction/add_wallet_balance
+  // مباشرة، اللي بقت add_wallet_balance مقفولة عن anon أصلاً (security-44).
+  const ok1 = await sbRpc('admin_adjust_wallet', {
+    p_admin_phone: ADMIN.phone, p_admin_password: pass,
+    p_phone: _walletOpPhone, p_amount: amt, p_type: type, p_note: fullNote,
+  });
+  if (!ok1) clearAdminPass();
 
   btn.disabled = false;
   if (ok1) {

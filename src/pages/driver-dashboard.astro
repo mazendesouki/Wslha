@@ -1877,20 +1877,15 @@ import PageHero from '../components/PageHero.astro';
         renderStats();
       } catch {}
       await recordCompletion('delivery', orderId, fee);
-      // Credit merchant wallet with order subtotal (order total minus delivery fee)
-      if (storeId) {
-        try {
-          const storeData = await fetch(`${SB_URL}/rest/v1/stores?id=eq.${storeId}&select=owner_phone`, { headers: SB_H }).then(r => r.json());
-          const mPhone = storeData?.[0]?.owner_phone;
-          if (mPhone) {
-            const subtotal = Math.max(0, (currentOrder.subtotal || currentOrder.total || 0) - fee);
-            await Promise.allSettled([
-              fetch(`${SB_URL}/rest/v1/rpc/add_wallet_balance`, { method: 'POST', headers: SB_H, body: JSON.stringify({ p_phone: mPhone, p_amount: subtotal }) }),
-              fetch(`${SB_URL}/rest/v1/rpc/log_wallet_transaction`, { method: 'POST', headers: { ...SB_H, 'Content-Type': 'application/json' }, body: JSON.stringify({ p_phone: mPhone, p_amount: subtotal, p_type: 'earning', p_reference_id: orderId, p_note: `أرباح طلب #${currentOrder.code || orderId}` }) }),
-            ]);
-          }
-        } catch {}
-      }
+      // Credit merchant wallet with the order subtotal — computed and
+      // ownership-checked server-side (security-44), not from a
+      // client-supplied amount straight into add_wallet_balance.
+      try {
+        await fetch(`${SB_URL}/rest/v1/rpc/settle_order_merchant_credit`, {
+          method: 'POST', headers: { ...SB_H, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ p_order_id: orderId, p_driver_phone: driver.phone }),
+        });
+      } catch {}
       const completedOrder = { ...currentOrder };
       currentOrder = null;
       await upsertLocation(true);

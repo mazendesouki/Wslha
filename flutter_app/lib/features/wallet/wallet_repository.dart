@@ -44,9 +44,10 @@ class WalletRepository {
     return null;
   }
 
-  Future<void> transfer(String fromPhone, String toPhone, double amount, String? note) async {
+  Future<void> transfer(String fromPhone, String fromPassword, String toPhone, double amount, String? note) async {
     await sb.rpc('wallet_transfer', params: {
       'p_from': fromPhone,
+      'p_from_password': fromPassword,
       'p_to': toPhone,
       'p_amount': amount,
       'p_note': note,
@@ -63,5 +64,6 @@ String walletErrorMessage(Object error) {
   if (txt.contains('destination_required')) return 'أدخل رقم التحويل';
   if (txt.contains('recipient_not_found')) return 'لم يُعثر على هذا المستخدم';
   if (txt.contains('same_account')) return 'لا يمكن التحويل لنفس الحساب';
+  if (txt.contains('invalid_credentials')) return 'كلمة المرور غير صحيحة';
   return 'حدث خطأ، حاول مرة أخرى';
 }

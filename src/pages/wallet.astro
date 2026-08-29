@@ -248,6 +248,8 @@ import Layout from '../components/layout.astro';
       <input type="number" id="transfer-amount" class="s-input" placeholder="أدخل المبلغ" min="1" />
       <label class="s-label">ملاحظة (اختياري)</label>
       <input type="text" id="transfer-note" class="s-input" placeholder="سبب التحويل..." />
+      <label class="s-label">كلمة مرور حسابك (للتأكيد)</label>
+      <input type="password" id="transfer-password" class="s-input" placeholder="••••••••" />
       <button class="s-btn" id="transfer-btn" type="button">تحويل الآن</button>
     </div>
   </div>
@@ -340,6 +342,7 @@ import Layout from '../components/layout.astro';
     if (/destination_required/.test(txt))   return 'أدخل رقم التحويل';
     if (/recipient_not_found/.test(txt))    return 'لم يُعثر على هذا المستخدم';
     if (/same_account/.test(txt))           return 'لا يمكن التحويل لنفس الحساب';
+    if (/invalid_credentials/.test(txt))    return 'كلمة المرور غير صحيحة';
     return 'حدث خطأ، حاول مرة أخرى';
   }
   async function callRpc(name, payload) {
@@ -470,9 +473,11 @@ import Layout from '../components/layout.astro';
     var toPhone = document.getElementById('transfer-phone').value.trim();
     var amt = parseFloat(document.getElementById('transfer-amount').value);
     var note = document.getElementById('transfer-note').value.trim();
+    var password = document.getElementById('transfer-password').value;
     if (!toPhone) { toast('أدخل رقم المستلم', false); return; }
     if (toPhone === user.phone) { toast('لا يمكن التحويل لنفس الحساب', false); return; }
     if (!amt || amt < 1) { toast('أدخل مبلغاً صحيحاً', false); return; }
+    if (!password) { toast('أدخل كلمة مرور حسابك لتأكيد التحويل', false); return; }
 
     // Resolve the recipient to their canonical stored phone via the narrow lookup RPC.
     var rRes = await fetch(SB_URL+'/rest/v1/rpc/lookup_account', {
@@ -485,10 +490,11 @@ import Layout from '../components/layout.astro';
 
     var btn = this; btn.disabled = true; btn.textContent = 'جاري التحويل...';
     try {
-      await callRpc('wallet_transfer', { p_from:user.phone, p_to:recipientPhone, p_amount:amt, p_note:note || null });
+      await callRpc('wallet_transfer', { p_from:user.phone, p_from_password:password, p_to:recipientPhone, p_amount:amt, p_note:note || null });
       document.getElementById('transfer-phone').value = '';
       document.getElementById('transfer-amount').value = '';
       document.getElementById('transfer-note').value = '';
+      document.getElementById('transfer-password').value = '';
       document.getElementById('transfer-recipient').classList.remove('visible');
       closeSheet('sheet-transfer');
       toast('✅ تم تحويل ' + amt + ' ج.م بنجاح!');

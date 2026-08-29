@@ -185,6 +185,7 @@ class _WalletScreenState extends State<WalletScreen> {
   Future<void> _openTransferSheet() async {
     final phoneController = TextEditingController();
     final amountController = TextEditingController();
+    final passwordController = TextEditingController();
     Map<String, dynamic>? recipient;
     Timer? debounce;
 
@@ -237,6 +238,12 @@ class _WalletScreenState extends State<WalletScreen> {
                 decoration: const InputDecoration(labelText: 'المبلغ (جنيه)'),
               ),
               const SizedBox(height: 12),
+              TextField(
+                controller: passwordController,
+                obscureText: true,
+                decoration: const InputDecoration(labelText: 'كلمة مرور حسابك (للتأكيد)'),
+              ),
+              const SizedBox(height: 12),
               ElevatedButton(
                 onPressed: () async {
                   final amount = double.tryParse(amountController.text) ?? 0;
@@ -253,8 +260,12 @@ class _WalletScreenState extends State<WalletScreen> {
                     _showToast('أدخل مبلغاً صحيحاً', ok: false);
                     return;
                   }
+                  if (passwordController.text.isEmpty) {
+                    _showToast('أدخل كلمة مرور حسابك لتأكيد التحويل', ok: false);
+                    return;
+                  }
                   try {
-                    await _walletRepo.transfer(_session!.phone, recipientPhone, amount, null);
+                    await _walletRepo.transfer(_session!.phone, passwordController.text, recipientPhone, amount, null);
                     if (ctx.mounted) Navigator.pop(ctx);
                     _showToast('✅ تم تحويل $amount ج.م بنجاح!');
                     _load();
