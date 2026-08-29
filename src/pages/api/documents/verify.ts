@@ -128,8 +128,13 @@ export const POST: APIRoute = async ({ request }) => {
   }
 
   // ── 2) Vision check (official documents only) ───────────────────────
+  // debug: surfaced in the JSON response (harmless — the client only
+  // reads ok/reason/detail) so we can tell from DevTools whether the
+  // check actually ran, instead of guessing at fail-open causes.
+  const debug: Record<string, unknown> = { visionApplicable: false };
   const expectedDoc = VISION_CHECKED[docType as string];
   if (expectedDoc) {
+    debug.visionApplicable = true;
     try {
       const apiKey = requireEnv('ANTHROPIC_API_KEY');
       const base64 = Buffer.from(imageBytes).toString('base64');
@@ -161,9 +166,11 @@ export const POST: APIRoute = async ({ request }) => {
                     `المستند المصري الحقيقي من النوع المطلوب لازم يكون مطبوع عليه بوضوح: ${REQUIRED_MARKERS[docType as string] || 'عبارات رسمية مصرية واضحة'}.\n\n` +
                     `ارفضها (valid:false) لو أي حاجة من دي: النوع اللي حددته في الخطوة (1) مش نفس النوع المطلوب حتى لو مستند مصري رسمي حقيقي (اكتب في السبب إيه النوع اللي ظهرلك فعلاً)، ` +
                     `أو مش مكتوب عليها العبارات المطلوبة، أو مكتوب عليها اسم دولة تانية غير مصر (زي "المملكة العربية السعودية"/"Kingdom")، ` +
-                    `أو صورة عشوائية، أو صفحة فاضية، أو صورة شاشة لحاجة تانية، أو صورة شخص أو منظر عام، أو نموذج/قالب فاضي (Template) مالوش بيانات شخص حقيقي.\n\n` +
-                    `لو رفضتها، اكتب في "reason" بالظبط إيه الناقص أو الغلط (مثلاً: "الصورة دي رخصة قيادة مش بطاقة رقم قومي").\n\n` +
-                    `رد بصيغة JSON فقط بدون أي نص إضافي، بالشكل ده بالظبط: {"valid": true أو false, "reason": "سبب قصير بالعربي"}`,
+                    `أو صورة عشوائية، أو صفحة فاضية، أو صورة شاشة لحاجة تانية، أو صورة شخص أو منظر عام، أو نموذج/قالب فاضي (Template) مالوش بيانات شخص حقيقي، ` +
+                    `أو الصورة مش واضحة بما يكفي (ضبابية، مهزوزة، معتمة، مقصوصة، أو أي نص أساسي فيها غير مقروء) بحيث محدش يقدر يتأكد من نوعها أو بياناتها بثقة.\n\n` +
+                    `لو رفضتها بسبب إن الصورة مش واضحة تحديدًا (مش بسبب نوع المستند نفسه)، حط "blurry": true في الرد. لو غير كده سيبها false.\n\n` +
+                    `لو رفضتها، اكتب في "reason" بالظبط إيه الناقص أو الغلط (مثلاً: "الصورة دي رخصة قيادة مش بطاقة رقم قومي" أو "الصورة ضبابية ومش واضحة").\n\n` +
+                    `رد بصيغة JSON فقط بدون أي نص إضافي، بالشكل ده بالظبط: {"valid": true أو false, "blurry": true أو false, "reason": "سبب قصير بالعربي"}`,
                 },
               ],
             },
@@ -175,23 +182,36 @@ export const POST: APIRoute = async ({ request }) => {
         // Vision service itself failed (quota/outage) — don't block
         // registration on an infra hiccup; log it and let the duplicate
         // check (already passed above) be the gate for this attempt.
-        console.error('[api/documents/verify] Claude API error', claudeRes.status, await claudeRes.text().catch(() => ''));
+        const errText = await claudeRes.text().catch(() => '');
+        console.error('[api/documents/verify] Claude API error', claudeRes.status, errText);
+        debug.claudeHttpStatus = claudeRes.status;
+        debug.claudeError = errText.slice(0, 300);
       } else {
         const claudeData = await claudeRes.json();
         const text: string = claudeData?.content?.[0]?.text || '';
+        debug.claudeRawText = text.slice(0, 300);
         const jsonMatch = text.match(/\{[\s\S]*\}/);
         if (jsonMatch) {
           const verdict = JSON.parse(jsonMatch[0]);
+          debug.verdict = verdict;
           if (verdict.valid !== true) {
             return new Response(
-              JSON.stringify({ ok: false, reason: 'not_matching_document', detail: verdict.reason || '' }),
+              JSON.stringify({
+                ok: false,
+                reason: verdict.blurry === true ? 'unclear_image' : 'not_matching_document',
+                detail: verdict.reason || '',
+                debug,
+              }),
               { status: 422 },
             );
           }
+        } else {
+          debug.parseFailed = true;
         }
       }
     } catch (e) {
       console.error('[api/documents/verify] vision check threw', e);
+      debug.threw = e instanceof Error ? e.message : String(e);
       // Same fail-open-on-infra-error stance as above.
     }
   }
@@ -208,7 +228,7 @@ export const POST: APIRoute = async ({ request }) => {
        checked against future uploads, not a reason to fail this one */
   }
 
-  return new Response(JSON.stringify({ ok: true }), {
+  return new Response(JSON.stringify({ ok: true, debug }), {
     status: 200,
     headers: { 'Content-Type': 'application/json' },
   });

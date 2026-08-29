@@ -1418,9 +1418,11 @@ window.handleUpload = async function(input, key, zoneId) {
           if (zone)   { zone.style.borderColor = '#DC2626'; zone.classList.remove('has-file'); }
           var msg = vData.reason === 'duplicate_image'
             ? '⚠️ الصورة دي مُستخدمة بالفعل في تسجيل آخر — ارفع صورة تانية.'
-            : (vData.reason === 'not_matching_document'
-                ? '⚠️ الصورة دي مش واضح إنها المستند المطلوب' + (vData.detail ? (' — ' + vData.detail) : '') + '. ارفع صورة واضحة للمستند الصحيح.'
-                : '⚠️ تعذّرت مراجعة الصورة — حاول ترفعها تاني.');
+            : (vData.reason === 'unclear_image'
+                ? '⚠️ الصورة غير واضحة، يرجى رفعها مرة أخرى.'
+                : (vData.reason === 'not_matching_document'
+                    ? '⚠️ الصورة دي مش واضح إنها المستند المطلوب' + (vData.detail ? (' — ' + vData.detail) : '') + '. ارفع صورة واضحة للمستند الصحيح.'
+                    : '⚠️ تعذّرت مراجعة الصورة — حاول ترفعها تاني.'));
           if (status) { status.textContent = msg; status.style.color = '#DC2626'; }
           return;
         }
