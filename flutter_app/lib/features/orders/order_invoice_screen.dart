@@ -48,8 +48,6 @@ class _OrderInvoiceScreenState extends State<OrderInvoiceScreen> {
     if (result == null || !mounted) return;
     await _ratingsRepo.rateOrder(
       orderCode: code,
-      storeId: o['store_id'] as String? ?? '',
-      driverPhone: driverPhone,
       storeRating: result.storeRating,
       driverRating: result.driverRating,
       tags: result.tags,

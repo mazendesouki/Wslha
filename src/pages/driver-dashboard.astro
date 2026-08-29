@@ -1131,14 +1131,15 @@ import PageHero from '../components/PageHero.astro';
   document.getElementById('rate-customer-submit')?.addEventListener('click', async () => {
     if (!_rcSelected || !_rateCustomerTarget) return;
     try {
-      const res = await fetch(`${SB_URL}/rest/v1/ratings`, {
-        method: 'POST', headers: { ...SB_H, Prefer: 'return=minimal' },
+      // submit_customer_rating verifies server-side that this ride/order
+      // is actually completed/delivered and assigned to this driver
+      // before letting the rating through (security-45).
+      const res = await fetch(`${SB_URL}/rest/v1/rpc/submit_customer_rating`, {
+        method: 'POST', headers: { ...SB_H, 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          driver_phone: driver.phone, customer_phone: _rateCustomerTarget.phone,
-          rating: _rcSelected, service_type: _rateCustomerTarget.serviceType,
-          ride_id: _rateCustomerTarget.referenceId, rated_by: 'driver',
-          comment: document.getElementById('rate-customer-comment').value.trim() || null,
-          created_at: new Date().toISOString(),
+          p_driver_phone: driver.phone, p_service_type: _rateCustomerTarget.serviceType,
+          p_reference_id: _rateCustomerTarget.referenceId, p_rating: _rcSelected,
+          p_comment: document.getElementById('rate-customer-comment').value.trim() || null,
         }),
       });
       if (!res.ok) {

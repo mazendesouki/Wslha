@@ -57,78 +57,62 @@ DriverLevel? nextLevelFor(int count) {
   return null;
 }
 
-/// Same `ratings` table + `update_store_rating` RPC the web app
-/// (rides.astro / driver-dashboard.astro / track.astro) already reads and
-/// writes directly via the anon key — this mirrors those exact REST calls
-/// instead of adding new RPCs, since the table is already anon-readable/
-/// writable in production (confirmed by the web code doing so).
+/// Same `ratings` table the web app (rides.astro / driver-dashboard.astro /
+/// track.astro) uses, but inserts now go through SECURITY DEFINER RPCs
+/// (db/security-45-secure-ratings.sql) instead of a raw table INSERT —
+/// each RPC verifies server-side that a real, completed/delivered
+/// ride/order actually ties the two parties together before letting the
+/// rating through, and store_id/driver_phone for order ratings are read
+/// from the order row itself rather than trusted from the client.
 class RatingsRepository {
   Future<void> rateDriver({
     required String rideId,
-    required String driverPhone,
     required String customerPhone,
     required int rating,
     List<String>? tags,
     String? comment,
   }) async {
-    await sb.from('ratings').insert({
-      'driver_phone': driverPhone,
-      'customer_phone': customerPhone,
-      'rating': rating,
-      'comment': comment,
-      'service_type': 'ride',
-      'ride_id': rideId,
-      'rated_by': 'customer',
-      if (tags != null && tags.isNotEmpty) 'tags': tags,
+    await sb.rpc('submit_ride_rating', params: {
+      'p_ride_id': rideId,
+      'p_customer_phone': customerPhone,
+      'p_rating': rating,
+      'p_comment': comment,
+      if (tags != null && tags.isNotEmpty) 'p_tags': tags,
     });
   }
 
   Future<void> rateCustomer({
     required String driverPhone,
-    required String customerPhone,
     required int rating,
-    required String serviceType, // 'ride' | 'order'
+    required String serviceType, // 'ride' | 'delivery'
     required String referenceId,
     List<String>? tags,
     String? comment,
   }) async {
-    await sb.from('ratings').insert({
-      'driver_phone': driverPhone,
-      'customer_phone': customerPhone,
-      'rating': rating,
-      'comment': comment,
-      'service_type': serviceType,
-      'ride_id': referenceId,
-      'rated_by': 'driver',
-      if (tags != null && tags.isNotEmpty) 'tags': tags,
+    await sb.rpc('submit_customer_rating', params: {
+      'p_driver_phone': driverPhone,
+      'p_service_type': serviceType,
+      'p_reference_id': referenceId,
+      'p_rating': rating,
+      'p_comment': comment,
+      if (tags != null && tags.isNotEmpty) 'p_tags': tags,
     });
   }
 
   Future<void> rateOrder({
     required String orderCode,
-    required String storeId,
-    String? driverPhone,
     required int storeRating,
     int? driverRating,
     List<String>? tags,
     String? comment,
   }) async {
-    await sb.from('ratings').insert({
-      'order_code': orderCode,
-      'store_id': storeId,
-      'driver_phone': driverPhone,
-      'store_rating': storeRating,
-      'driver_rating': driverRating,
-      'comment': comment,
-      if (tags != null && tags.isNotEmpty) 'tags': tags,
+    await sb.rpc('submit_order_rating', params: {
+      'p_order_code': orderCode,
+      'p_store_rating': storeRating,
+      'p_driver_rating': driverRating,
+      'p_comment': comment,
+      if (tags != null && tags.isNotEmpty) 'p_tags': tags,
     });
-    try {
-      await sb.rpc('update_store_rating', params: {'p_store_id': storeId, 'p_new_rating': storeRating});
-    } catch (_) {
-      // Same best-effort handling as track.astro — the raw rating row above
-      // is already saved either way, this only keeps stores.rating's cached
-      // average in sync.
-    }
   }
 
   Future<bool> hasRatedRide(String rideId) async {

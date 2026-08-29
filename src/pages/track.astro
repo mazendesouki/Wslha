@@ -684,25 +684,18 @@ import PageHero from '../components/PageHero.astro';
     const btn = document.getElementById('rate-submit');
     btn.disabled = true; btn.textContent = 'جارٍ الإرسال...';
 
-    // Save the rating row
+    // Save the rating row — server-side RPC verifies the order code is
+    // real and delivered, and derives store_id/driver_phone from the
+    // order itself (not from this request), then updates the store's
+    // average rating too (security-45).
     try {
-      await fetch(`${SB_URL}/rest/v1/ratings`, {
-        method: 'POST',
-        headers: { ...SB_H, 'Content-Type': 'application/json', Prefer: 'return=minimal' },
-        body: JSON.stringify({
-          order_code: o.code, store_id: o.store_id, driver_phone: o.driver_phone || null,
-          store_rating: storeRating, driver_rating: driverRating || null, comment: comment || null,
-        }),
-      });
-    } catch {}
-
-    // Update store's average rating — عبر دالة محمية تحسب المتوسط التراكمي
-    // على الخادم (بدل قراءة/تعديل مباشر يقدر أي حد يزوّره بمفتاح anon)
-    try {
-      await fetch(`${SB_URL}/rest/v1/rpc/update_store_rating`, {
+      await fetch(`${SB_URL}/rest/v1/rpc/submit_order_rating`, {
         method: 'POST',
         headers: { ...SB_H, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ p_store_id: o.store_id, p_new_rating: storeRating }),
+        body: JSON.stringify({
+          p_order_code: o.code, p_store_rating: storeRating,
+          p_driver_rating: driverRating || null, p_comment: comment || null,
+        }),
       });
     } catch {}
 

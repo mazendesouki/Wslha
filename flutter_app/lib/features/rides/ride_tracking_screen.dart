@@ -109,7 +109,6 @@ class _RideTrackingScreenState extends State<RideTrackingScreen> {
     if (result == null || !mounted) return;
     await _ratingsRepo.rateDriver(
       rideId: widget.rideId,
-      driverPhone: driverPhone,
       customerPhone: customerPhone ?? '',
       rating: result.rating,
       tags: result.tags,

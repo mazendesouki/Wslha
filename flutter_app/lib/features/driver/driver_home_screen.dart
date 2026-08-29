@@ -336,7 +336,6 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
     if (result == null || !mounted) return;
     await _ratingsRepo.rateCustomer(
       driverPhone: widget.session.phone,
-      customerPhone: customerPhone,
       rating: result.rating,
       serviceType: serviceType,
       referenceId: referenceId,
@@ -378,7 +377,7 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
       }
       _jobs.clearActive();
       setState(() => _busy = false);
-      _promptRateCustomer(job, serviceType: 'order', referenceId: orderId);
+      _promptRateCustomer(job, serviceType: 'delivery', referenceId: orderId);
     } catch (e) {
       _showError(e);
       if (!mounted) return;
