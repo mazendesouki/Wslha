@@ -1623,18 +1623,41 @@ import Layout from '../components/layout.astro';
     return Array.isArray(txs) ? txs : [];
   }
 
+  // Access-token-first, phone-trust-fallback for the loyalty points
+  // card — reuses /api/points/summary (security-50), same as
+  // driver-dashboard.astro's version of this same feature.
+  async function fetchMerchantPoints(phone: string): Promise<{ totalPoints: number; transactions: any[] }> {
+    try {
+      const token = await getValidAccessToken();
+      if (token) {
+        const res = await fetch('/api/points/summary?limit=10', { headers: { Authorization: 'Bearer ' + token } });
+        if (res.ok) {
+          const data = await res.json();
+          if (Array.isArray(data.transactions)) return data;
+        }
+      }
+    } catch {}
+    const encoded = encodeURIComponent(phone);
+    const [totals, transactions] = await Promise.all([
+      sbGet(`points?phone=eq.${encoded}&select=total_points`),
+      sbGet(`point_transactions?phone=eq.${encoded}&select=points,type,created_at&order=created_at.desc&limit=10`),
+    ]);
+    return {
+      totalPoints: (Array.isArray(totals) && (totals as any)[0]?.total_points) || 0,
+      transactions: Array.isArray(transactions) ? (transactions as any[]) : [],
+    };
+  }
+
   // ── Merchant account data (wallet, points, ratings) ──
   async function loadMerchantAccountData() {
     let user: any = null;
     try { user = JSON.parse(localStorage.getItem('wslha_user') || 'null'); } catch {}
     if (!user?.phone) return;
-    const phone = encodeURIComponent(user.phone);
 
-    const [walletRes, walletTxRes, pointsRes, pointsTxRes, ratingsRes, salesRes] = await Promise.allSettled([
+    const [walletRes, walletTxRes, pointsSummary, ratingsRes, salesRes] = await Promise.allSettled([
       fetchMerchantBalance(user.phone),
       fetchMerchantWalletTx(user.phone),
-      sbGet(`points?phone=eq.${phone}&select=total_points`),
-      sbGet(`point_transactions?phone=eq.${phone}&select=points,type,created_at&order=created_at.desc&limit=10`),
+      fetchMerchantPoints(user.phone),
       currentStore?.id
         ? sbGet(`ratings?store_id=eq.${encodeURIComponent(currentStore.id)}&store_rating=not.is.null&select=store_rating,comment,order_code,created_at&order=created_at.desc&limit=10`)
         : Promise.resolve(null),
@@ -1661,12 +1684,12 @@ import Layout from '../components/layout.astro';
       }
     }
     // Points
-    if (pointsRes.status === 'fulfilled') {
-      const p = (pointsRes.value as any)?.[0]?.total_points ?? 0;
+    if (pointsSummary.status === 'fulfilled') {
+      const p = pointsSummary.value?.totalPoints ?? 0;
       document.getElementById('m-points-total')!.textContent = Number(p).toLocaleString('ar-EG');
     }
-    if (pointsTxRes.status === 'fulfilled') {
-      const ptxs = pointsTxRes.value as any[];
+    if (pointsSummary.status === 'fulfilled') {
+      const ptxs = pointsSummary.value?.transactions;
       const el   = document.getElementById('m-points-txs')!;
       if (Array.isArray(ptxs) && ptxs.length) {
         el.innerHTML = ptxs.map(t => {
