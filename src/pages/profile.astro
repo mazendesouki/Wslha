@@ -1019,7 +1019,7 @@ import Layout from '../components/layout.astro';
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <script>
-import { endServerSession } from '../utils/clientSession';
+import { endServerSession, getValidAccessToken } from '../utils/clientSession';
 (function () {
   /* ── Constants ─────────────────────────────────────────────── */
   function escapeHtml(s) {
@@ -1110,7 +1110,20 @@ import { endServerSession } from '../utils/clientSession';
       .then(r => { clearTimeout(tid); return r.ok ? r.json() : null; })
       .catch(() => null);
   }
+  // Access-token-first, phone-trust-fallback — same shape as
+  // wallet.astro's loadWallet()/loadLog(). The new endpoints match on
+  // the token's own phone regardless of role, so no role param is sent.
   async function fetchOrders(phone, role) {
+    try {
+      const token = await getValidAccessToken();
+      if (token) {
+        const res = await fetch('/api/history/orders', { headers: { Authorization: 'Bearer ' + token } });
+        if (res.ok) {
+          const { orders } = await res.json();
+          if (Array.isArray(orders)) return orders;
+        }
+      }
+    } catch {}
     const intl  = intlPhone(phone);
     const local = localPhone(phone);
     const col = role === 'driver' ? 'driver_phone' : 'customer_phone';
@@ -1119,6 +1132,16 @@ import { endServerSession } from '../utils/clientSession';
     return Array.isArray(data) ? data : [];
   }
   async function fetchRides(phone, role) {
+    try {
+      const token = await getValidAccessToken();
+      if (token) {
+        const res = await fetch('/api/history/rides', { headers: { Authorization: 'Bearer ' + token } });
+        if (res.ok) {
+          const { rides } = await res.json();
+          if (Array.isArray(rides)) return rides;
+        }
+      }
+    } catch {}
     const intl  = intlPhone(phone);
     const local = localPhone(phone);
     const col = role === 'driver' ? 'driver_phone' : 'customer_phone';
