@@ -334,14 +334,28 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
       negativeTags: negativeCustomerTags,
     );
     if (result == null || !mounted) return;
-    await _ratingsRepo.rateCustomer(
-      driverPhone: widget.session.phone,
-      rating: result.rating,
-      serviceType: serviceType,
-      referenceId: referenceId,
-      tags: result.tags,
-      comment: result.comment,
-    );
+    try {
+      await _ratingsRepo.rateCustomer(
+        driverPhone: widget.session.phone,
+        rating: result.rating,
+        serviceType: serviceType,
+        referenceId: referenceId,
+        tags: result.tags,
+        comment: result.comment,
+      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('✅ تم إرسال تقييمك للعميل')));
+      }
+    } catch (e) {
+      // Same silent-failure pattern as the other two rating flows — the
+      // RPC can reject (already rated, reference doesn't belong to this
+      // driver, etc.) and nothing said so before this fix.
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('تعذّر إرسال التقييم: $e'), backgroundColor: AppColors.error, duration: const Duration(seconds: 6)),
+        );
+      }
+    }
   }
 
   Future<void> _advanceOrder() async {

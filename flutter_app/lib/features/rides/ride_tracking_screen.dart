@@ -107,15 +107,26 @@ class _RideTrackingScreenState extends State<RideTrackingScreen> {
       negativeTags: negativeDriverTags,
     );
     if (result == null || !mounted) return;
-    await _ratingsRepo.rateDriver(
-      rideId: widget.rideId,
-      customerPhone: customerPhone ?? '',
-      rating: result.rating,
-      tags: result.tags,
-      comment: result.comment,
-    );
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('✅ شكرًا على تقييمك')));
+    try {
+      await _ratingsRepo.rateDriver(
+        rideId: widget.rideId,
+        customerPhone: customerPhone ?? '',
+        rating: result.rating,
+        tags: result.tags,
+        comment: result.comment,
+      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('✅ شكرًا على تقييمك')));
+      }
+    } catch (e) {
+      // Submission can fail server-side (RPC rejects an already-rated or
+      // not-yet-completed ride) — surface it instead of staying silent,
+      // which looked like the rating just vanished with no feedback.
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('تعذّر إرسال التقييم: $e'), backgroundColor: AppColors.error, duration: const Duration(seconds: 6)),
+        );
+      }
     }
   }
 

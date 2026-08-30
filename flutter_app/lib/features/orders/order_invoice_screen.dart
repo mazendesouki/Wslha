@@ -46,14 +46,25 @@ class _OrderInvoiceScreenState extends State<OrderInvoiceScreen> {
     final driverPhone = o['driver_phone'] as String?;
     final result = await OrderRatingSheet.show(context, storeName: storeName, hasDriver: driverPhone != null && driverPhone.isNotEmpty);
     if (result == null || !mounted) return;
-    await _ratingsRepo.rateOrder(
-      orderCode: code,
-      storeRating: result.storeRating,
-      driverRating: result.driverRating,
-      tags: result.tags,
-      comment: result.comment,
-    );
-    if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('✅ شكرًا على تقييمك')));
+    try {
+      await _ratingsRepo.rateOrder(
+        orderCode: code,
+        storeRating: result.storeRating,
+        driverRating: result.driverRating,
+        tags: result.tags,
+        comment: result.comment,
+      );
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('✅ شكرًا على تقييمك')));
+    } catch (e) {
+      // Submission can fail server-side (RPC rejects an already-rated or
+      // not-yet-delivered order) — surface it instead of staying silent,
+      // which looked like the rating just vanished with no feedback.
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('تعذّر إرسال التقييم: $e'), backgroundColor: AppColors.error, duration: const Duration(seconds: 6)),
+        );
+      }
+    }
   }
 
   Future<void> _load() async {
