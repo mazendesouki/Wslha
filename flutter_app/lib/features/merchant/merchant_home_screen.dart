@@ -107,8 +107,28 @@ class _MerchantHomeScreenState extends State<MerchantHomeScreen> {
         ),
       ),
     );
-    if (minutes == null) return; // dismissed without picking — still accept with no ETA
-    await _repo.acceptOrder(orderId, widget.session.phone, prepMinutes: minutes);
+    // Dismissed without picking a chip (tap outside, swipe down, back
+    // button) still accepts the order — just without a prep-time ETA —
+    // instead of silently doing nothing, which looked like a dead button.
+    try {
+      await _repo.acceptOrder(orderId, widget.session.phone, prepMinutes: minutes);
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('فشل قبول الطلب: $e'), backgroundColor: AppColors.error, duration: const Duration(seconds: 6)),
+      );
+    }
+  }
+
+  Future<void> _reject(String orderId) async {
+    try {
+      await _repo.rejectOrder(orderId, widget.session.phone);
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('فشل رفض الطلب: $e'), backgroundColor: AppColors.error, duration: const Duration(seconds: 6)),
+      );
+    }
   }
 
   @override
@@ -174,7 +194,7 @@ class _MerchantHomeScreenState extends State<MerchantHomeScreen> {
             showActions: showActions,
             muted: muted,
             onAccept: () => _acceptWithPrepTime(o['id'].toString()),
-            onReject: () => _repo.rejectOrder(o['id'].toString(), widget.session.phone),
+            onReject: () => _reject(o['id'].toString()),
           )),
     ];
   }
