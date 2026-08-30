@@ -32,6 +32,7 @@ class _WalletScreenState extends State<WalletScreen> {
   double _balance = 0;
   List<Map<String, dynamic>> _transactions = [];
   bool _loading = true;
+  String? _error;
 
   @override
   void initState() {
@@ -40,22 +41,37 @@ class _WalletScreenState extends State<WalletScreen> {
   }
 
   Future<void> _load() async {
-    final session = await SessionStore.load();
-    if (session == null) {
-      setState(() => _loading = false);
-      return;
-    }
-    final results = await Future.wait([
-      _walletRepo.getBalance(session.phone),
-      _walletRepo.getTransactions(session.phone),
-    ]);
-    if (!mounted) return;
     setState(() {
-      _session = session;
-      _balance = results[0] as double;
-      _transactions = results[1] as List<Map<String, dynamic>>;
-      _loading = false;
+      _loading = true;
+      _error = null;
     });
+    try {
+      final session = await SessionStore.load();
+      if (session == null) {
+        setState(() => _loading = false);
+        return;
+      }
+      final results = await Future.wait([
+        _walletRepo.getBalance(session.phone),
+        _walletRepo.getTransactions(session.phone),
+      ]);
+      if (!mounted) return;
+      setState(() {
+        _session = session;
+        _balance = results[0] as double;
+        _transactions = results[1] as List<Map<String, dynamic>>;
+        _loading = false;
+      });
+    } catch (e) {
+      // A failed balance/transactions read (RLS denial, network error,
+      // etc.) used to leave _loading true forever — an infinite spinner
+      // with no way out. Surface the error and let the user retry instead.
+      if (!mounted) return;
+      setState(() {
+        _error = walletErrorMessage(e);
+        _loading = false;
+      });
+    }
   }
 
   void _showToast(String message, {bool ok = true}) {
@@ -286,6 +302,24 @@ class _WalletScreenState extends State<WalletScreen> {
   Widget build(BuildContext context) {
     if (_loading) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+    if (_error != null) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('محفظتي')),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(_error!, textAlign: TextAlign.center),
+                const SizedBox(height: 16),
+                ElevatedButton(onPressed: _load, child: const Text('إعادة المحاولة')),
+              ],
+            ),
+          ),
+        ),
+      );
     }
     if (_session == null) {
       return const Scaffold(body: Center(child: Text('يرجى تسجيل الدخول')));
