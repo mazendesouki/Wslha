@@ -1,9 +1,12 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
+import '../../core/phone_utils.dart';
 import '../../core/session.dart';
+import '../../core/supabase_client.dart';
 import '../../core/theme.dart';
 import '../account/account_repository.dart';
 import '../ratings/ratings_repository.dart';
@@ -35,7 +38,6 @@ class DriverProfileScreen extends StatefulWidget {
 class DriverProfileScreenState extends State<DriverProfileScreen> {
   final _accountRepo = AccountRepository();
   final _driverRepo = DriverRepository();
-  final _ratingsRepo = RatingsRepository();
   final _picker = ImagePicker();
 
   Map<String, dynamic>? _account;
@@ -46,10 +48,51 @@ class DriverProfileScreenState extends State<DriverProfileScreen> {
   bool _loading = true;
   bool _uploadingAvatar = false;
 
+  // Ratings arrive on THIS device from a rating another party (the
+  // customer) submits on THEIRS — a tab-reselect refresh on the driver's
+  // own phone can never see that. These two live streams (db/security-53
+  // adds `ratings` to the realtime publication) are what actually makes a
+  // brand-new customer rating show up here without the driver manually
+  // reopening the app, right after the ride ends.
+  List<Map<String, dynamic>> _ratingsLocal = [];
+  List<Map<String, dynamic>> _ratingsIntl = [];
+  final List<StreamSubscription> _ratingSubs = [];
+
   @override
   void initState() {
     super.initState();
     _load();
+    final local = normalizeEgyptianPhone(widget.session.phone);
+    final intl = toIntlEgyptianPhone(widget.session.phone);
+    _ratingSubs.add(sb.from('ratings').stream(primaryKey: ['id']).eq('driver_phone', local).listen((rows) {
+      if (!mounted) return;
+      setState(() => _ratingsLocal = rows);
+      _recomputeRatings();
+    }));
+    _ratingSubs.add(sb.from('ratings').stream(primaryKey: ['id']).eq('driver_phone', intl).listen((rows) {
+      if (!mounted) return;
+      setState(() => _ratingsIntl = rows);
+      _recomputeRatings();
+    }));
+  }
+
+  @override
+  void dispose() {
+    for (final s in _ratingSubs) {
+      s.cancel();
+    }
+    super.dispose();
+  }
+
+  void _recomputeRatings() {
+    final rows = [..._ratingsLocal, ..._ratingsIntl].where((r) => r['rated_by'] == 'customer').toList()
+      ..sort((a, b) => (b['created_at'] as String? ?? '').compareTo(a['created_at'] as String? ?? ''));
+    final nums = rows.map((r) => (r['rating'] as num?)?.toDouble()).whereType<double>().toList();
+    if (!mounted) return;
+    setState(() {
+      _ratingSummary = nums.isEmpty ? RatingSummary(0, 0) : RatingSummary(nums.reduce((a, b) => a + b) / nums.length, nums.length);
+      _reviews = rows.take(20).toList();
+    });
   }
 
   /// Called by DriverHomeShell when the "حسابي" tab is selected again.
@@ -66,20 +109,18 @@ class DriverProfileScreenState extends State<DriverProfileScreen> {
     // get_driver_trip_stats() compared a text column to a uuid one without a
     // cast, and ratings.tags didn't exist yet on this project (security-24
     // had never actually been run here) — both now fixed server-side.
+    // Ratings themselves are no longer fetched here — see the live
+    // _ratingsLocal/_ratingsIntl streams started in initState().
     final results = await Future.wait([
       _accountRepo.lookupAccount(phone).catchError((_) => null),
       _driverRepo.fetchVehicleInfo(phone).catchError((_) => null),
       _driverRepo.fetchTripStats(phone).catchError((_) => <String, dynamic>{}),
-      _ratingsRepo.driverTrustBadge(phone).catchError((_) => RatingSummary(0, 0)),
-      _ratingsRepo.driverReviews(phone).catchError((_) => <Map<String, dynamic>>[]),
     ]);
     if (!mounted) return;
     setState(() {
       _account = results[0] as Map<String, dynamic>?;
       _vehicle = results[1] as Map<String, dynamic>?;
       _stats = results[2] as Map<String, dynamic>;
-      _ratingSummary = results[3] as RatingSummary;
-      _reviews = results[4] as List<Map<String, dynamic>>;
       _loading = false;
     });
   }

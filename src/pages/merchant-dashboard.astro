@@ -767,6 +767,7 @@ import Layout from '../components/layout.astro';
   // ── Realtime ──
   let _sb: any = null;
   let _ordersChannel: any = null;
+  let _ratingsChannel: any = null;
 
   function loadSupabaseSDK(): Promise<void> {
     return new Promise((resolve) => {
@@ -813,6 +814,41 @@ import Layout from '../components/layout.astro';
           if (ordersPollTimer) { clearInterval(ordersPollTimer); ordersPollTimer = null; }
         }
       });
+  }
+
+  // A new customer rating lands on the CUSTOMER's device, not the
+  // merchant's — the "account" tab's ratings list only refetched on tab
+  // reselect (loadMerchantAccountData() at line ~1028), so a rating given
+  // while the merchant already had that tab open never showed up until
+  // they left and came back. This mirrors subscribeOrders() above (same
+  // realtime table needed to be added to the publication too — see
+  // db/security-53-enable-realtime-ratings-stores.sql).
+  function subscribeRatings() {
+    if (!_sb || !currentStore) return;
+    if (_ratingsChannel) { try { _sb.removeChannel(_ratingsChannel); } catch {} }
+
+    _ratingsChannel = _sb
+      .channel(`merchant-ratings-${currentStore.id}`)
+      .on('postgres_changes', {
+        event: 'INSERT', schema: 'public', table: 'ratings',
+        filter: `store_id=eq.${currentStore.id}`,
+      }, () => {
+        if (document.getElementById('tab-account')?.classList.contains('active')) {
+          loadMerchantAccountData();
+        }
+      })
+      .on('postgres_changes', {
+        event: 'UPDATE', schema: 'public', table: 'stores',
+        filter: `id=eq.${currentStore.id}`,
+      }, (payload: any) => {
+        const s = payload.new || {};
+        if (typeof s.rating === 'number') {
+          currentStore.rating = s.rating;
+          const el = document.getElementById('stat-rating');
+          if (el) el.textContent = '★ ' + s.rating.toFixed(1);
+        }
+      })
+      .subscribe();
   }
 
   async function requestNotificationPermission() {
@@ -1014,7 +1050,7 @@ import Layout from '../components/layout.astro';
 
     // Load orders + start Realtime (with polling fallback)
     await loadOrders();
-    loadSupabaseSDK().then(() => subscribeOrders());
+    loadSupabaseSDK().then(() => { subscribeOrders(); subscribeRatings(); });
     requestNotificationPermission();
 
     // Tabs
