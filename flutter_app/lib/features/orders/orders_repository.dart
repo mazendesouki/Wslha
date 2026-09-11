@@ -77,6 +77,27 @@ class OrdersRepository {
     return rows.isEmpty ? null : rows.first['id'] as String;
   }
 
+  /// Driver-side counterpart, used by DriverHomeScreen to repopulate
+  /// ActiveJobStore on relaunch — same reasoning as
+  /// RideRepository.findActiveRide()'s doc comment. Returns the full row
+  /// (not just the id): the caller needs `status` to know whether to
+  /// restore as "picked up" (status='on_the_way', per
+  /// driver_mark_order_picked_up in security-48) or still heading to the
+  /// store.
+  Future<Map<String, dynamic>?> findActiveOrderForDriver(String phone) async {
+    final local = normalizeEgyptianPhone(phone);
+    final intl = toIntlEgyptianPhone(phone);
+    final filter = 'driver_phone.eq.$local,driver_phone.eq.$intl';
+    final rows = await sb
+        .from('orders')
+        .select()
+        .or(filter)
+        .not('status', 'in', '(delivered,rejected,cancelled)')
+        .order('created_at', ascending: false)
+        .limit(1);
+    return rows.isEmpty ? null : Map<String, dynamic>.from(rows.first);
+  }
+
   Future<HistoryStats> fetchStats(String phone) async {
     final local = normalizeEgyptianPhone(phone);
     final intl = toIntlEgyptianPhone(phone);

@@ -11,6 +11,7 @@ import '../../core/session.dart';
 import '../../core/theme.dart';
 import '../../shared/widgets/logout_button.dart';
 import '../airport/airport_fare.dart' as airport_fare;
+import '../orders/orders_repository.dart';
 import '../ratings/rate_sheet.dart';
 import '../ratings/ratings_repository.dart';
 import '../ratings/trust_badge.dart';
@@ -40,6 +41,7 @@ class DriverHomeScreen extends StatefulWidget {
 class _DriverHomeScreenState extends State<DriverHomeScreen> {
   final _repo = DriverRepository();
   final _rideRepo = RideRepository();
+  final _ordersRepo = OrdersRepository();
   Timer? _pollTimer;
   Timer? _countdownTimer;
   Timer? _locationTimer;
@@ -78,9 +80,17 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
   }
 
   Future<void> _restoreActiveJob() async {
+    if (_jobs.job != null) return;
     final ride = await _rideRepo.findActiveRide(widget.session.phone, asDriver: true).catchError((_) => null);
-    if (ride == null || !mounted || _jobs.job != null) return;
-    _jobs.activate('ride', ride, rideStep: ride['status'] as String? ?? 'accepted');
+    if (ride != null) {
+      if (!mounted || _jobs.job != null) return;
+      _jobs.activate('ride', ride, rideStep: ride['status'] as String? ?? 'accepted');
+      return;
+    }
+    final order = await _ordersRepo.findActiveOrderForDriver(widget.session.phone).catchError((_) => null);
+    if (order == null || !mounted || _jobs.job != null) return;
+    _jobs.activate('order', order);
+    if (order['status'] == 'on_the_way') _jobs.setPickedUp(true);
   }
 
   /// Auto-reconnecting on every cold start (regardless of prior state) used
