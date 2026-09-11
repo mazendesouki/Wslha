@@ -13,6 +13,8 @@ import 'features/auth/login_screen.dart';
 import 'features/driver/driver_home_shell.dart';
 import 'features/home/home_shell.dart';
 import 'features/merchant/merchant_home_screen.dart';
+import 'features/rides/ride_repository.dart';
+import 'features/rides/ride_tracking_screen.dart';
 import 'shared/widgets/animated_splash.dart';
 
 /// Shared entry point for all three build flavors — main_customer.dart,
@@ -105,14 +107,62 @@ class _SessionGate extends StatelessWidget {
         // so this is a cheap no-op once already registered this run.
         unawaited(PushRegistrar.registerForSession(session));
 
-        return switch (config.flavor) {
+        final homeScreen = switch (config.flavor) {
           AppFlavor.customer => HomeShell(session: session),
           AppFlavor.driver => DriverHomeShell(session: session),
           AppFlavor.merchant => MerchantHomeScreen(session: session),
         };
+        // Only rides (not delivery orders) have their own dedicated
+        // full-screen tracking view to resume into — see _ResumeActiveRide.
+        if (config.flavor == AppFlavor.merchant) return homeScreen;
+        return _ResumeActiveRide(
+          phone: session.phone,
+          isDriverView: config.flavor == AppFlavor.driver,
+          child: homeScreen,
+        );
       },
     );
   }
+}
+
+/// Wraps the normal home screen and, once it's actually on screen, checks
+/// for a ride this phone is still "in" and pushes straight into
+/// RideTrackingScreen if one exists — see findActiveRide()'s doc comment
+/// for why this is needed (Android reclaiming the backgrounded app resets
+/// Flutter's navigation to this default route, which otherwise looks like
+/// the ride just vanished). Runs once per cold start, not on every rebuild.
+class _ResumeActiveRide extends StatefulWidget {
+  final String phone;
+  final bool isDriverView;
+  final Widget child;
+  const _ResumeActiveRide({required this.phone, required this.isDriverView, required this.child});
+
+  @override
+  State<_ResumeActiveRide> createState() => _ResumeActiveRideState();
+}
+
+class _ResumeActiveRideState extends State<_ResumeActiveRide> {
+  final _rideRepo = RideRepository();
+  bool _checked = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _check());
+  }
+
+  Future<void> _check() async {
+    if (_checked || !mounted) return;
+    _checked = true;
+    final rideId = await _rideRepo.findActiveRide(widget.phone, asDriver: widget.isDriverView).catchError((_) => null);
+    if (rideId == null || !mounted) return;
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => RideTrackingScreen(rideId: rideId, isDriverView: widget.isDriverView)),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) => widget.child;
 }
 
 class _WrongRoleScreen extends StatelessWidget {

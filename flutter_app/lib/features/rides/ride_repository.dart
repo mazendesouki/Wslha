@@ -1,3 +1,4 @@
+import '../../core/phone_utils.dart';
 import '../../core/supabase_client.dart';
 
 /// Same `rides` table the web app writes to (rides.astro's sbCreateRide()) —
@@ -138,6 +139,27 @@ class RideRepository {
       if (msg.contains('not_your_ride')) return 'حصل خطأ في التحقق من الرحلة.';
       return 'تعذّر إلغاء الرحلة: $msg';
     }
+  }
+
+  /// Finds a ride this phone is still "in" (not completed/cancelled) so
+  /// app startup can resume straight into RideTrackingScreen instead of
+  /// the home screen — fixes the ride "disappearing" after Android kills
+  /// the app in the background (e.g. the user switches to another app
+  /// mid-ride) and Flutter cold-starts back at its default route on
+  /// return, losing whatever screen was showing before.
+  Future<String?> findActiveRide(String phone, {required bool asDriver}) async {
+    final local = normalizeEgyptianPhone(phone);
+    final intl = toIntlEgyptianPhone(phone);
+    final column = asDriver ? 'driver_phone' : 'customer_phone';
+    final filter = '$column.eq.$local,$column.eq.$intl';
+    final rows = await sb
+        .from('rides')
+        .select('id')
+        .or(filter)
+        .not('status', 'in', '(completed,cancelled)')
+        .order('created_at', ascending: false)
+        .limit(1);
+    return rows.isEmpty ? null : rows.first['id'] as String;
   }
 
   /// `rides` only carries driver_name/driver_phone once a driver accepts —
