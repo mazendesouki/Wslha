@@ -58,6 +58,25 @@ const Map<String, String> statusAr = {
 };
 
 class OrdersRepository {
+  /// Same purpose as RideRepository.findActiveRide() — lets app startup
+  /// resume straight into OrderInvoiceScreen for a delivery order this
+  /// customer is still waiting on, instead of losing it to the home screen
+  /// after Android kills the app in the background. Returns the order id,
+  /// or null if there's nothing still in flight.
+  Future<String?> findActiveOrder(String phone) async {
+    final local = normalizeEgyptianPhone(phone);
+    final intl = toIntlEgyptianPhone(phone);
+    final filter = 'customer_phone.eq.$local,customer_phone.eq.$intl';
+    final rows = await sb
+        .from('orders')
+        .select('id')
+        .or(filter)
+        .not('status', 'in', '(delivered,rejected,cancelled)')
+        .order('created_at', ascending: false)
+        .limit(1);
+    return rows.isEmpty ? null : rows.first['id'] as String;
+  }
+
   Future<HistoryStats> fetchStats(String phone) async {
     final local = normalizeEgyptianPhone(phone);
     final intl = toIntlEgyptianPhone(phone);

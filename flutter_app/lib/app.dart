@@ -13,6 +13,8 @@ import 'features/auth/login_screen.dart';
 import 'features/driver/driver_home_shell.dart';
 import 'features/home/home_shell.dart';
 import 'features/merchant/merchant_home_screen.dart';
+import 'features/orders/order_invoice_screen.dart';
+import 'features/orders/orders_repository.dart';
 import 'features/rides/ride_repository.dart';
 import 'features/rides/ride_tracking_screen.dart';
 import 'shared/widgets/animated_splash.dart';
@@ -126,12 +128,15 @@ class _SessionGate extends StatelessWidget {
 }
 
 /// Customer-only: wraps the normal home screen and, once it's actually on
-/// screen, checks for a ride this phone is still "in" and pushes straight
-/// into RideTrackingScreen if one exists — see findActiveRide()'s doc
-/// comment for why this is needed (Android reclaiming the backgrounded app
-/// resets Flutter's navigation to this default route, which otherwise
-/// looks like the ride just vanished). Runs once per cold start, not on
-/// every rebuild.
+/// screen, checks for a ride or delivery order this phone is still "in"
+/// and pushes straight into its tracking screen if one exists — see
+/// findActiveRide()'s doc comment for why this is needed (Android
+/// reclaiming the backgrounded app resets Flutter's navigation to this
+/// default route, which otherwise looks like the ride/order just
+/// vanished). Runs once per cold start, not on every rebuild. A ride takes
+/// priority if a customer somehow has both in flight at once — same
+/// "whichever's more urgent" call as the rest of the app not supporting
+/// tracking two active things simultaneously.
 class _ResumeActiveRide extends StatefulWidget {
   final String phone;
   final Widget child;
@@ -143,6 +148,7 @@ class _ResumeActiveRide extends StatefulWidget {
 
 class _ResumeActiveRideState extends State<_ResumeActiveRide> {
   final _rideRepo = RideRepository();
+  final _ordersRepo = OrdersRepository();
   bool _checked = false;
 
   @override
@@ -155,9 +161,16 @@ class _ResumeActiveRideState extends State<_ResumeActiveRide> {
     if (_checked || !mounted) return;
     _checked = true;
     final ride = await _rideRepo.findActiveRide(widget.phone, asDriver: false).catchError((_) => null);
-    if (ride == null || !mounted) return;
+    if (ride != null && mounted) {
+      Navigator.of(context).push(
+        MaterialPageRoute(builder: (_) => RideTrackingScreen(rideId: ride['id'] as String)),
+      );
+      return;
+    }
+    final orderId = await _ordersRepo.findActiveOrder(widget.phone).catchError((_) => null);
+    if (orderId == null || !mounted) return;
     Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => RideTrackingScreen(rideId: ride['id'] as String)),
+      MaterialPageRoute(builder: (_) => OrderInvoiceScreen(orderId: orderId)),
     );
   }
 
