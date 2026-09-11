@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/contact_launcher.dart';
 import '../../core/date_format_ar.dart';
 import '../../core/maps_launcher.dart';
@@ -13,6 +14,7 @@ import '../airport/airport_fare.dart' as airport_fare;
 import '../ratings/rate_sheet.dart';
 import '../ratings/ratings_repository.dart';
 import '../ratings/trust_badge.dart';
+import '../rides/ride_repository.dart';
 import 'active_job_store.dart';
 import 'driver_repository.dart';
 import 'negotiation_screen.dart';
@@ -37,6 +39,7 @@ class DriverHomeScreen extends StatefulWidget {
 
 class _DriverHomeScreenState extends State<DriverHomeScreen> {
   final _repo = DriverRepository();
+  final _rideRepo = RideRepository();
   Timer? _pollTimer;
   Timer? _countdownTimer;
   Timer? _locationTimer;
@@ -50,22 +53,49 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
   final _jobs = ActiveJobStore.instance;
   String? _vehicleCategory;
 
+  String get _onlinePrefKey => 'driver_online_${widget.session.phone}';
+
   @override
   void initState() {
     super.initState();
     _jobs.addListener(_onJobsChanged);
-    // Deliberately NOT auto-going-online here — a driver reported the app
-    // reading as "locked" for a few seconds on every open, which turned out
-    // to be this auto-toggle silently trying (and sometimes failing, e.g.
-    // while location permission/GPS lock is still settling) before the
-    // driver had a chance to do anything. The switch now starts off and
-    // stays exactly where the driver last left it — fully manual.
     // Motorcycle/cargo drivers do delivery only — the negotiation entry
     // point (ride requests) is hidden for them; the actual enforcement
     // (never seeing/accepting a ride offer at all) lives server-side.
     _repo.fetchVehicleInfo(widget.session.phone).then((info) {
       if (mounted && info != null) setState(() => _vehicleCategory = info['vehicle_category'] as String?);
     });
+
+    // Restores state that used to be lost every time Android killed the
+    // app in the background (e.g. the driver switched to another app
+    // mid-ride) and it cold-started fresh on return: the active ride
+    // (ActiveJobStore is in-memory only, so it comes back empty on a fresh
+    // process) and the online/offline toggle (previously always started
+    // off — see the removed comment below — which forced the driver to
+    // manually reconnect every single time, not just after a real kill).
+    _restoreActiveJob();
+    _restoreOnlineStatus();
+  }
+
+  Future<void> _restoreActiveJob() async {
+    final ride = await _rideRepo.findActiveRide(widget.session.phone, asDriver: true).catchError((_) => null);
+    if (ride == null || !mounted || _jobs.job != null) return;
+    _jobs.activate('ride', ride, rideStep: ride['status'] as String? ?? 'accepted');
+  }
+
+  /// Auto-reconnecting on every cold start (regardless of prior state) used
+  /// to make the app read as "locked" for a few seconds while location
+  /// permission/GPS settled, before the driver could do anything — that's
+  /// why this used to be fully manual. The difference here: this only
+  /// re-runs _toggleOnline(true) when the driver's own last action was
+  /// going online (an explicit, saved choice), not unconditionally on
+  /// every open — going through the exact same code path (including its
+  /// permission-failure Snackbar) rather than a separate, untested one.
+  Future<void> _restoreOnlineStatus() async {
+    final prefs = await SharedPreferences.getInstance();
+    final wasOnline = prefs.getBool(_onlinePrefKey) ?? false;
+    if (!wasOnline || !mounted || _online) return;
+    await _toggleOnline(true);
   }
 
   void _onJobsChanged() {
@@ -167,6 +197,11 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
         _online = ok;
         _busy = false;
       });
+      // Persisted so a real app relaunch (not just backgrounding) restores
+      // this — see _restoreOnlineStatus() in initState(). Only saved on
+      // success: a failed attempt (e.g. permission denied) must not look
+      // "online" to the next cold start either.
+      (await SharedPreferences.getInstance()).setBool(_onlinePrefKey, ok);
       if (ok) {
         _startPolling();
         _startPushWatch();
@@ -184,6 +219,7 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
         _busy = false;
         _offers = [];
       });
+      (await SharedPreferences.getInstance()).setBool(_onlinePrefKey, false);
     }
   }
 

@@ -112,30 +112,30 @@ class _SessionGate extends StatelessWidget {
           AppFlavor.driver => DriverHomeShell(session: session),
           AppFlavor.merchant => MerchantHomeScreen(session: session),
         };
-        // Only rides (not delivery orders) have their own dedicated
-        // full-screen tracking view to resume into — see _ResumeActiveRide.
-        if (config.flavor == AppFlavor.merchant) return homeScreen;
-        return _ResumeActiveRide(
-          phone: session.phone,
-          isDriverView: config.flavor == AppFlavor.driver,
-          child: homeScreen,
-        );
+        // Customer-only: there's no dedicated full-screen tracking view to
+        // resume into for merchant, and the driver flavor now restores its
+        // own native active-job card (ActiveJobStore) from
+        // DriverHomeScreen.initState() instead — pushing this same generic
+        // RideTrackingScreen on top of it looked like a second, wrong
+        // screen missing the driver's usual live-navigation/contact card.
+        if (config.flavor != AppFlavor.customer) return homeScreen;
+        return _ResumeActiveRide(phone: session.phone, child: homeScreen);
       },
     );
   }
 }
 
-/// Wraps the normal home screen and, once it's actually on screen, checks
-/// for a ride this phone is still "in" and pushes straight into
-/// RideTrackingScreen if one exists — see findActiveRide()'s doc comment
-/// for why this is needed (Android reclaiming the backgrounded app resets
-/// Flutter's navigation to this default route, which otherwise looks like
-/// the ride just vanished). Runs once per cold start, not on every rebuild.
+/// Customer-only: wraps the normal home screen and, once it's actually on
+/// screen, checks for a ride this phone is still "in" and pushes straight
+/// into RideTrackingScreen if one exists — see findActiveRide()'s doc
+/// comment for why this is needed (Android reclaiming the backgrounded app
+/// resets Flutter's navigation to this default route, which otherwise
+/// looks like the ride just vanished). Runs once per cold start, not on
+/// every rebuild.
 class _ResumeActiveRide extends StatefulWidget {
   final String phone;
-  final bool isDriverView;
   final Widget child;
-  const _ResumeActiveRide({required this.phone, required this.isDriverView, required this.child});
+  const _ResumeActiveRide({required this.phone, required this.child});
 
   @override
   State<_ResumeActiveRide> createState() => _ResumeActiveRideState();
@@ -154,10 +154,10 @@ class _ResumeActiveRideState extends State<_ResumeActiveRide> {
   Future<void> _check() async {
     if (_checked || !mounted) return;
     _checked = true;
-    final rideId = await _rideRepo.findActiveRide(widget.phone, asDriver: widget.isDriverView).catchError((_) => null);
-    if (rideId == null || !mounted) return;
+    final ride = await _rideRepo.findActiveRide(widget.phone, asDriver: false).catchError((_) => null);
+    if (ride == null || !mounted) return;
     Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => RideTrackingScreen(rideId: rideId, isDriverView: widget.isDriverView)),
+      MaterialPageRoute(builder: (_) => RideTrackingScreen(rideId: ride['id'] as String)),
     );
   }
 

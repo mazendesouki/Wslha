@@ -142,24 +142,26 @@ class RideRepository {
   }
 
   /// Finds a ride this phone is still "in" (not completed/cancelled) so
-  /// app startup can resume straight into RideTrackingScreen instead of
-  /// the home screen — fixes the ride "disappearing" after Android kills
-  /// the app in the background (e.g. the user switches to another app
-  /// mid-ride) and Flutter cold-starts back at its default route on
-  /// return, losing whatever screen was showing before.
-  Future<String?> findActiveRide(String phone, {required bool asDriver}) async {
+  /// app startup can resume into it instead of the home screen — fixes the
+  /// ride "disappearing" after Android kills the app in the background
+  /// (e.g. the user switches to another app mid-ride) and Flutter
+  /// cold-starts back at its default route on return, losing whatever
+  /// screen was showing before. Returns the full row (not just the id) —
+  /// the driver-side resume path needs every column to repopulate
+  /// ActiveJobStore, not just enough to open RideTrackingScreen.
+  Future<Map<String, dynamic>?> findActiveRide(String phone, {required bool asDriver}) async {
     final local = normalizeEgyptianPhone(phone);
     final intl = toIntlEgyptianPhone(phone);
     final column = asDriver ? 'driver_phone' : 'customer_phone';
     final filter = '$column.eq.$local,$column.eq.$intl';
     final rows = await sb
         .from('rides')
-        .select('id')
+        .select()
         .or(filter)
         .not('status', 'in', '(completed,cancelled)')
         .order('created_at', ascending: false)
         .limit(1);
-    return rows.isEmpty ? null : rows.first['id'] as String;
+    return rows.isEmpty ? null : Map<String, dynamic>.from(rows.first);
   }
 
   /// `rides` only carries driver_name/driver_phone once a driver accepts —
