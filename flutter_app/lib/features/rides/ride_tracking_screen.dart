@@ -268,6 +268,22 @@ class _RideTrackingScreenState extends State<RideTrackingScreen> {
                           customerPhone: customerPhone ?? '',
                         ),
                       ],
+                      // Fixed-price rides go through the dispatch engine
+                      // (server/index.js), which offers the ride to one
+                      // nearby driver at a time with its own 30s countdown
+                      // — a driver sees that timer, but the customer
+                      // previously saw nothing at all while this cycled
+                      // through several drivers, with no way to tell
+                      // "still working on it" from "stuck", which is
+                      // exactly why they'd give up and cancel manually.
+                      if (!isCancelled &&
+                          !widget.isDriverView &&
+                          ride['is_negotiable'] != true &&
+                          status == 'pending' &&
+                          (driverPhone == null || driverPhone.isEmpty)) ...[
+                        const SizedBox(height: 16),
+                        _SearchingForDriverCard(createdAt: ride['created_at'] as String?),
+                      ],
                       if (!isCancelled &&
                           !widget.isDriverView &&
                           driverPhone != null &&
@@ -965,6 +981,81 @@ class _ArrivalDeadlineCard extends StatelessWidget {
             'يرجى التواجد عند نقطة الانطلاق في الموعد — تأخير السائق أكتر من 5 دقايق بيحمّله غرامة 20 ج.م، فبلاش نتأخر عليه 🙏',
             style: TextStyle(fontSize: 11, color: AppColors.textFaint, height: 1.4),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Ticks on its own (independent of the ride row's StreamBuilder, which
+/// only rebuilds on an actual database change — and nothing changes while
+/// this cycles silently through drivers) so the elapsed counter visibly
+/// moves instead of looking frozen. Escalates its message/color past 90s
+/// as a hint toward the existing "إلغاء الرحلة" button rather than a
+/// separate auto-cancel — this app has always left cancellation as an
+/// explicit customer choice.
+class _SearchingForDriverCard extends StatefulWidget {
+  final String? createdAt;
+  const _SearchingForDriverCard({required this.createdAt});
+
+  @override
+  State<_SearchingForDriverCard> createState() => _SearchingForDriverCardState();
+}
+
+class _SearchingForDriverCardState extends State<_SearchingForDriverCard> {
+  Timer? _timer;
+
+  @override
+  void initState() {
+    super.initState();
+    _timer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (mounted) setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final created = widget.createdAt == null ? null : DateTime.tryParse(widget.createdAt!)?.toLocal();
+    final elapsedSeconds = created == null ? 0 : DateTime.now().difference(created).inSeconds.clamp(0, 999);
+    final longWait = elapsedSeconds >= 90;
+
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: longWait ? const Color(0xFFFFFBEB) : AppColors.cardTint,
+        border: longWait ? Border.all(color: const Color(0xFFFDE68A), width: 1.5) : null,
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  longWait ? 'لسه بندوّر على سائق قريب — استغرق الأمر وقت أطول من المعتاد' : 'جارٍ البحث عن أقرب سائق متاح…',
+                  style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w900, color: Colors.black87),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text('$elapsedSeconds ث', style: const TextStyle(fontSize: 11, color: AppColors.textFaint)),
+            ],
+          ),
+          if (longWait) ...[
+            const SizedBox(height: 6),
+            const Text(
+              'محدش من السواقين القريبين قبل الطلب لحد دلوقتي. تقدر تستنى شوية، أو تلغي الطلب من تحت.',
+              style: TextStyle(fontSize: 11, color: AppColors.textFaint, height: 1.4),
+            ),
+          ],
         ],
       ),
     );
