@@ -80,16 +80,12 @@
              service actually starts (i.e. right when a driver goes
              online), crashing the app. stopWithTask="false" so it
              survives the driver swiping the app away from Recents, not
-             just backgrounding it — the whole point of this feature.
-             exported="true" matches (not overrides) the plugin's own
-             bundled manifest — anything else fails the manifest merge
-             (confirmed by CI: "is also present at
-             [:flutter_background_service_android] ... value=(true)"). -->
+             just backgrounding it — the whole point of this feature. -->
         <service
             android:name="id.flutter.flutter_background_service.BackgroundService"
             android:foregroundServiceType="location"
             android:stopWithTask="false"
-            android:exported="true" />
+            android:exported="false" />
     </application>
     <!-- Required to query activities that can process text, see:
          https://developer.android.com/training/package-visibility and
