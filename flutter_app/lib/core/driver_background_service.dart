@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:flutter_background_service/flutter_background_service.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
@@ -53,30 +52,18 @@ Future<void> initDriverBackgroundService() async {
 
 /// Starts (or, if already running, just re-registers the current phone —
 /// e.g. after a relaunch restores "online" status) the background pings.
-/// Never throws — a failure here (permission not fully granted yet, a
-/// platform quirk) should just mean the driver keeps working with
-/// foreground-only location like before this feature existed, not a
-/// crash or a blocked "غير متصل → متصل" toggle.
 Future<void> startDriverBackgroundService(String phone) async {
-  try {
-    final service = FlutterBackgroundService();
-    if (!await service.isRunning()) {
-      await service.startService();
-    }
-    service.invoke('setPhone', {'phone': phone});
-  } catch (e) {
-    debugPrint('startDriverBackgroundService failed: $e');
+  final service = FlutterBackgroundService();
+  if (!await service.isRunning()) {
+    await service.startService();
   }
+  service.invoke('setPhone', {'phone': phone});
 }
 
 Future<void> stopDriverBackgroundService() async {
-  try {
-    final service = FlutterBackgroundService();
-    if (await service.isRunning()) {
-      service.invoke('stopService');
-    }
-  } catch (e) {
-    debugPrint('stopDriverBackgroundService failed: $e');
+  final service = FlutterBackgroundService();
+  if (await service.isRunning()) {
+    service.invoke('stopService');
   }
 }
 

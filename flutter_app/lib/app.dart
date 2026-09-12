@@ -30,18 +30,9 @@ Future<void> runWslhaApp(FlavorConfig config) async {
   await AppNotifications.instance.init();
   // Only the driver flavor pings its own location — registering the
   // (persistent-notification) foreground service on the other flavors
-  // would just be dead weight they never start. Wrapped defensively: this
-  // runs before runApp() on every single launch, so any native-side
-  // failure here (a bad plugin config, a missing manifest declaration on
-  // an OEM build) must not crash the whole app before it ever shows a
-  // screen — the driver just loses the background-tracking feature for
-  // that session instead of losing the app entirely.
+  // would just be dead weight they never start.
   if (config.flavor == AppFlavor.driver) {
-    try {
-      await initDriverBackgroundService();
-    } catch (e) {
-      debugPrint('initDriverBackgroundService failed: $e');
-    }
+    await initDriverBackgroundService();
   }
   // Fire-and-forget: admin-configurable pricing (see core/pricing_settings.dart).
   // Booking screens read PricingSettings synchronously, so a slow/failed
