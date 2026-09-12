@@ -71,6 +71,21 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
+        <!-- flutter_background_service (core/driver_background_service.dart,
+             driver flavor only). Declared explicitly with
+             foregroundServiceType="location" — Android 14+ requires every
+             foreground service to declare its type in the manifest, and a
+             mismatch/missing declaration throws
+             MissingForegroundServiceTypeException at the moment the
+             service actually starts (i.e. right when a driver goes
+             online), crashing the app. stopWithTask="false" so it
+             survives the driver swiping the app away from Recents, not
+             just backgrounding it — the whole point of this feature. -->
+        <service
+            android:name="id.flutter.flutter_background_service.BackgroundService"
+            android:foregroundServiceType="location"
+            android:stopWithTask="false"
+            android:exported="false" />
     </application>
     <!-- Required to query activities that can process text, see:
          https://developer.android.com/training/package-visibility and
