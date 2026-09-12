@@ -61,20 +61,24 @@ class OrdersRepository {
   /// Same purpose as RideRepository.findActiveRide() — lets app startup
   /// resume straight into OrderInvoiceScreen for a delivery order this
   /// customer is still waiting on, instead of losing it to the home screen
-  /// after Android kills the app in the background. Returns the order id,
-  /// or null if there's nothing still in flight.
-  Future<String?> findActiveOrder(String phone) async {
+  /// after Android kills the app in the background. Returns the full row
+  /// (not just the id) so the caller can compare created_at against a
+  /// competing active ride and resume into whichever is actually more
+  /// recent — a customer with any stray never-finished ride sitting in
+  /// their history (a cancelled test, an old bug) would otherwise always
+  /// get sent back into that instead of a genuinely newer order.
+  Future<Map<String, dynamic>?> findActiveOrder(String phone) async {
     final local = normalizeEgyptianPhone(phone);
     final intl = toIntlEgyptianPhone(phone);
     final filter = 'customer_phone.eq.$local,customer_phone.eq.$intl';
     final rows = await sb
         .from('orders')
-        .select('id')
+        .select()
         .or(filter)
         .not('status', 'in', '(delivered,rejected,cancelled)')
         .order('created_at', ascending: false)
         .limit(1);
-    return rows.isEmpty ? null : rows.first['id'] as String;
+    return rows.isEmpty ? null : Map<String, dynamic>.from(rows.first);
   }
 
   /// Driver-side counterpart, used by DriverHomeScreen to repopulate

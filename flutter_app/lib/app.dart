@@ -133,10 +133,9 @@ class _SessionGate extends StatelessWidget {
 /// findActiveRide()'s doc comment for why this is needed (Android
 /// reclaiming the backgrounded app resets Flutter's navigation to this
 /// default route, which otherwise looks like the ride/order just
-/// vanished). Runs once per cold start, not on every rebuild. A ride takes
-/// priority if a customer somehow has both in flight at once — same
-/// "whichever's more urgent" call as the rest of the app not supporting
-/// tracking two active things simultaneously.
+/// vanished). Runs once per cold start, not on every rebuild. If both a
+/// ride and an order are somehow active at once, resumes into whichever
+/// was created more recently (see findActiveOrder()'s doc comment).
 class _ResumeActiveRide extends StatefulWidget {
   final String phone;
   final Widget child;
@@ -160,18 +159,31 @@ class _ResumeActiveRideState extends State<_ResumeActiveRide> {
   Future<void> _check() async {
     if (_checked || !mounted) return;
     _checked = true;
-    final ride = await _rideRepo.findActiveRide(widget.phone, asDriver: false).catchError((_) => null);
-    if (ride != null && mounted) {
+    final results = await Future.wait([
+      _rideRepo.findActiveRide(widget.phone, asDriver: false).catchError((_) => null),
+      _ordersRepo.findActiveOrder(widget.phone).catchError((_) => null),
+    ]);
+    final ride = results[0];
+    final order = results[1];
+    if (ride == null && order == null || !mounted) return;
+
+    // Resume whichever is actually more recent — always favoring the ride
+    // meant a customer with any stray never-finished ride sitting in their
+    // history (a cancelled test, an old bug) would get sent back into
+    // that forever instead of a genuinely newer order.
+    final rideNewer = order == null ||
+        (ride != null && (DateTime.tryParse(ride['created_at'] as String? ?? '') ?? DateTime(0))
+            .isAfter(DateTime.tryParse(order['created_at'] as String? ?? '') ?? DateTime(0)));
+
+    if (rideNewer && ride != null) {
       Navigator.of(context).push(
         MaterialPageRoute(builder: (_) => RideTrackingScreen(rideId: ride['id'] as String)),
       );
-      return;
+    } else if (order != null) {
+      Navigator.of(context).push(
+        MaterialPageRoute(builder: (_) => OrderInvoiceScreen(orderId: order['id'] as String)),
+      );
     }
-    final orderId = await _ordersRepo.findActiveOrder(widget.phone).catchError((_) => null);
-    if (orderId == null || !mounted) return;
-    Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => OrderInvoiceScreen(orderId: orderId)),
-    );
   }
 
   @override
