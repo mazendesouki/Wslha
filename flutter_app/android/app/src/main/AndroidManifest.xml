@@ -7,16 +7,6 @@
          Geolocator. -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
-    <!-- Driver flavor only (core/driver_background_service.dart): keeps
-         location pings going after the app is fully closed, via a real
-         Android foreground service with a persistent notification — the
-         OS requires this for any background location access, it isn't
-         something we can hide or make optional. Harmless to declare on
-         every flavor since only the driver app ever starts the service. -->
-    <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION"/>
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION"/>
-    <uses-permission android:name="android.permission.WAKE_LOCK"/>
     <!-- Flutter's tooling auto-injects this for debug/profile builds, but
          NOT for release — declare it explicitly so Supabase/Places/HTTP
          calls keep working once we build a real release APK. -->

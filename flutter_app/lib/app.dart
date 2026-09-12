@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'core/driver_background_service.dart';
 import 'core/flavor.dart';
 import 'core/notifications.dart';
 import 'core/pricing_settings.dart';
@@ -28,12 +27,6 @@ Future<void> runWslhaApp(FlavorConfig config) async {
   WidgetsFlutterBinding.ensureInitialized();
   await initSupabase();
   await AppNotifications.instance.init();
-  // Only the driver flavor pings its own location — registering the
-  // (persistent-notification) foreground service on the other flavors
-  // would just be dead weight they never start.
-  if (config.flavor == AppFlavor.driver) {
-    await initDriverBackgroundService();
-  }
   // Fire-and-forget: admin-configurable pricing (see core/pricing_settings.dart).
   // Booking screens read PricingSettings synchronously, so a slow/failed
   // fetch just means the first quote after launch uses the hardcoded

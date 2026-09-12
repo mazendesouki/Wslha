@@ -4,7 +4,6 @@ import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/contact_launcher.dart';
 import '../../core/date_format_ar.dart';
-import '../../core/driver_background_service.dart';
 import '../../core/maps_launcher.dart';
 import '../../core/notifications.dart';
 import '../../core/push.dart';
@@ -217,13 +216,6 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
         _startPolling();
         _startPushWatch();
         _startLocationPings();
-        // Keeps location pings going (via a real Android foreground
-        // service + persistent notification — required by the OS, not
-        // optional) after the app is closed, not just backgrounded, so
-        // the driver stays visibly online/matchable for new requests
-        // without having to keep the app open. _locationTimer above still
-        // covers the foreground case; this is purely the background one.
-        unawaited(startDriverBackgroundService(widget.session.phone));
       }
     } else {
       await _repo.goOffline(widget.session.phone);
@@ -232,7 +224,6 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
       _locationTimer?.cancel();
       _countdownTimer?.cancel();
       _countdownTimer = null;
-      unawaited(stopDriverBackgroundService());
       setState(() {
         _online = false;
         _busy = false;
