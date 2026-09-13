@@ -123,7 +123,8 @@ class _RidesScreenState extends State<RidesScreen> {
     if (!mounted) return;
     setState(() => _submitting = false);
 
-    if (ride == null || ride['id'] == null) {
+    final rideId = ride?['id']?.toString();
+    if (rideId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('تعذّر إرسال الطلب، حاول مجدداً')),
       );
@@ -131,7 +132,7 @@ class _RidesScreenState extends State<RidesScreen> {
     }
 
     Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => RideTrackingScreen(rideId: ride['id'].toString())),
+      MaterialPageRoute(builder: (_) => RideTrackingScreen(rideId: rideId)),
     );
   }
 
