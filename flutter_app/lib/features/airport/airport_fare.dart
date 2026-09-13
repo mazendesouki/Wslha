@@ -37,9 +37,9 @@ const Map<String, String> qualityLabels = {
 
 const Map<String, double> qualityMultiplier = {
   'regular': 1.0,
-  'clean': 1.08,
-  'ac': 1.12,
-  'modern': 1.20,
+  'clean': 1.15,
+  'ac': 1.25,
+  'modern': 1.35,
 };
 
 /// TRIP_RATES.airport — sedan/SUV/van per-km rate before the year
