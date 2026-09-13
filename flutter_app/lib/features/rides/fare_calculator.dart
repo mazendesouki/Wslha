@@ -70,9 +70,14 @@ int fareForDistance(double straightKm, {String? toArea, String qualityTier = 're
   final roadKm = straightKm * roadFactor;
   final zone = _resolveZone(toArea);
   final effRate = _sedanRatePerKm * _defaultYearMult;
-  final raw = ((baseFare + _tieredKm(roadKm) * effRate) * zone.factor + zone.surcharge) *
-      (qualityMultiplier[qualityTier] ?? 1.0);
-  return (math.max(raw, minFare) / 5).ceil() * 5;
+  final mult = qualityMultiplier[qualityTier] ?? 1.0;
+  final raw = ((baseFare + _tieredKm(roadKm) * effRate) * zone.factor + zone.surcharge) * mult;
+  // The floor has to scale by the same multiplier too, not just the raw
+  // fare — otherwise a short trip (very common; base_fee/rate are low
+  // enough that most short local trips land below minFare) floors to the
+  // exact same number regardless of tier, and picking "مكيّفة"/"نظيفة"/
+  // "موديل حديث" over "عادية" looks like it does nothing to the price.
+  return (math.max(raw, minFare * mult) / 5).ceil() * 5;
 }
 
 int etaMinutes(double straightKm) {
@@ -103,6 +108,7 @@ bool isExternalTrip(double roadKm) => roadKm > externalThresholdKm;
 
 int externalFareForDistance(double roadKm, {String qualityTier = 'regular'}) {
   final rate = _externalRatePerKm * _yearMultiplier(2022); // same sedan/2022 default as fareForDistance()
-  final raw = (PricingSettings.externalBaseFee + roadKm * rate) * (qualityMultiplier[qualityTier] ?? 1.0);
-  return (math.max(raw, PricingSettings.externalMinFare) / 5).ceil() * 5;
+  final mult = qualityMultiplier[qualityTier] ?? 1.0;
+  final raw = (PricingSettings.externalBaseFee + roadKm * rate) * mult;
+  return (math.max(raw, PricingSettings.externalMinFare * mult) / 5).ceil() * 5;
 }
