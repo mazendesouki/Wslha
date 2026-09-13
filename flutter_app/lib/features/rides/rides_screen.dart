@@ -123,7 +123,7 @@ class _RidesScreenState extends State<RidesScreen> {
     if (!mounted) return;
     setState(() => _submitting = false);
 
-    if (ride['id'] == null) {
+    if (ride == null || ride['id'] == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('تعذّر إرسال الطلب، حاول مجدداً')),
       );
