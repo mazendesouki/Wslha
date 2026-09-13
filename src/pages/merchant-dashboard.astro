@@ -1328,7 +1328,12 @@ import Layout from '../components/layout.astro';
     const imageInput  = document.getElementById(`np-image-${sid}`) as HTMLInputElement;
     const attributes  = readAttrInputs('np', sid);
 
-    if (!name || !price) { toast('❌ اسم المنتج والسعر مطلوبان'); return; }
+    // `!price` is truthy-falsy on a *number* — a negative price (e.g. -50)
+    // is truthy in JS and sailed straight past this check into a direct
+    // REST insert (no server-side price validation existed at all).
+    if (!name || price <= 0) { toast('❌ اسم المنتج والسعر مطلوبان (سعر أكبر من صفر)'); return; }
+    if (compareStr && parseFloat(compareStr) < 0) { toast('❌ سعر ما قبل الخصم لا يمكن أن يكون سالبًا'); return; }
+    if (stockStr && parseInt(stockStr) < 0) { toast('❌ الكمية لا يمكن أن تكون سالبة'); return; }
 
     if (btn) { btn.disabled = true; btn.textContent = 'جاري الحفظ...'; }
 
@@ -1369,7 +1374,12 @@ import Layout from '../components/layout.astro';
     const imageInput  = document.getElementById(`ep-image-${pid}`) as HTMLInputElement;
     const attributes  = readAttrInputs('ep', pid);
 
-    if (!name || !price) { toast('❌ الاسم والسعر مطلوبان'); return; }
+    // Same fix as saveNewProduct() — `!price` doesn't catch a negative
+    // number (truthy in JS), which sailed straight into a direct REST
+    // PATCH with no server-side price validation.
+    if (!name || price <= 0) { toast('❌ الاسم والسعر مطلوبان (سعر أكبر من صفر)'); return; }
+    if (compareStr && parseFloat(compareStr) < 0) { toast('❌ سعر ما قبل الخصم لا يمكن أن يكون سالبًا'); return; }
+    if (stockStr && parseInt(stockStr) < 0) { toast('❌ الكمية لا يمكن أن تكون سالبة'); return; }
 
     let imageUrl: string | undefined;
     const file = imageInput?.files?.[0];
