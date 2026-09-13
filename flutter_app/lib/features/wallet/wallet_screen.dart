@@ -83,6 +83,7 @@ class _WalletScreenState extends State<WalletScreen> {
   Future<void> _openDepositSheet() async {
     final amountController = TextEditingController(text: '100');
     String method = 'فودافون كاش';
+    bool busy = false;
 
     await showModalBottomSheet(
       context: context,
@@ -114,22 +115,28 @@ class _WalletScreenState extends State<WalletScreen> {
                   )),
               const SizedBox(height: 12),
               ElevatedButton(
-                onPressed: () async {
-                  final amount = double.tryParse(amountController.text) ?? 0;
-                  if (amount < 10) {
-                    _showToast('أدخل مبلغاً لا يقل عن 10 جنيه', ok: false);
-                    return;
-                  }
-                  try {
-                    await _walletRepo.requestDeposit(_session!.phone, amount, method, 'طلب إيداع عبر $method');
-                    if (ctx.mounted) Navigator.pop(ctx);
-                    _showToast('✅ تم استلام طلب الإيداع — سيُضاف الرصيد بعد تأكيد التحويل');
-                    _load();
-                  } catch (e) {
-                    _showToast(walletErrorMessage(e), ok: false);
-                  }
-                },
-                child: const Text('إيداع الرصيد'),
+                onPressed: busy
+                    ? null
+                    : () async {
+                        final amount = double.tryParse(amountController.text) ?? 0;
+                        if (amount < 10) {
+                          _showToast('أدخل مبلغاً لا يقل عن 10 جنيه', ok: false);
+                          return;
+                        }
+                        setSheetState(() => busy = true);
+                        try {
+                          await _walletRepo.requestDeposit(_session!.phone, amount, method, 'طلب إيداع عبر $method');
+                          if (ctx.mounted) Navigator.pop(ctx);
+                          _showToast('✅ تم استلام طلب الإيداع — سيُضاف الرصيد بعد تأكيد التحويل');
+                          _load();
+                        } catch (e) {
+                          _showToast(walletErrorMessage(e), ok: false);
+                          if (ctx.mounted) setSheetState(() => busy = false);
+                        }
+                      },
+                child: busy
+                    ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                    : const Text('إيداع الرصيد'),
               ),
             ],
           ),
@@ -141,6 +148,7 @@ class _WalletScreenState extends State<WalletScreen> {
   Future<void> _openWithdrawSheet() async {
     final amountController = TextEditingController();
     final destController = TextEditingController();
+    bool busy = false;
 
     await showModalBottomSheet(
       context: context,
@@ -150,49 +158,57 @@ class _WalletScreenState extends State<WalletScreen> {
           left: 20, right: 20, top: 20,
           bottom: MediaQuery.of(ctx).viewInsets.bottom + 20,
         ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const Text('⬇️ سحب الرصيد', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900)),
-            const SizedBox(height: 4),
-            Text('رصيدك المتاح: ${_balance.toStringAsFixed(0)} ج.م', textAlign: TextAlign.center),
-            const SizedBox(height: 16),
-            TextField(
-              controller: amountController,
-              keyboardType: TextInputType.number,
-              decoration: const InputDecoration(labelText: 'المبلغ (جنيه)'),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: destController,
-              keyboardType: TextInputType.phone,
-              decoration: const InputDecoration(labelText: 'رقم فودافون كاش / إنستاباي'),
-            ),
-            const SizedBox(height: 12),
-            ElevatedButton(
-              onPressed: () async {
-                final amount = double.tryParse(amountController.text) ?? 0;
-                if (amount < 10) {
-                  _showToast('أدخل مبلغاً لا يقل عن 10 جنيه', ok: false);
-                  return;
-                }
-                if (destController.text.trim().isEmpty) {
-                  _showToast('أدخل رقم فودافون كاش أو إنستاباي', ok: false);
-                  return;
-                }
-                try {
-                  await _walletRepo.requestWithdrawal(_session!.phone, amount, destController.text.trim(), null);
-                  if (ctx.mounted) Navigator.pop(ctx);
-                  _showToast('✅ تم طلب سحب $amount ج.م — قيد المراجعة');
-                  _load();
-                } catch (e) {
-                  _showToast(walletErrorMessage(e), ok: false);
-                }
-              },
-              child: const Text('طلب سحب'),
-            ),
-          ],
+        child: StatefulBuilder(
+          builder: (ctx, setSheetState) => Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const Text('⬇️ سحب الرصيد', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900)),
+              const SizedBox(height: 4),
+              Text('رصيدك المتاح: ${_balance.toStringAsFixed(0)} ج.م', textAlign: TextAlign.center),
+              const SizedBox(height: 16),
+              TextField(
+                controller: amountController,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(labelText: 'المبلغ (جنيه)'),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: destController,
+                keyboardType: TextInputType.phone,
+                decoration: const InputDecoration(labelText: 'رقم فودافون كاش / إنستاباي'),
+              ),
+              const SizedBox(height: 12),
+              ElevatedButton(
+                onPressed: busy
+                    ? null
+                    : () async {
+                        final amount = double.tryParse(amountController.text) ?? 0;
+                        if (amount < 10) {
+                          _showToast('أدخل مبلغاً لا يقل عن 10 جنيه', ok: false);
+                          return;
+                        }
+                        if (destController.text.trim().isEmpty) {
+                          _showToast('أدخل رقم فودافون كاش أو إنستاباي', ok: false);
+                          return;
+                        }
+                        setSheetState(() => busy = true);
+                        try {
+                          await _walletRepo.requestWithdrawal(_session!.phone, amount, destController.text.trim(), null);
+                          if (ctx.mounted) Navigator.pop(ctx);
+                          _showToast('✅ تم طلب سحب $amount ج.م — قيد المراجعة');
+                          _load();
+                        } catch (e) {
+                          _showToast(walletErrorMessage(e), ok: false);
+                          if (ctx.mounted) setSheetState(() => busy = false);
+                        }
+                      },
+                child: busy
+                    ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                    : const Text('طلب سحب'),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -204,6 +220,7 @@ class _WalletScreenState extends State<WalletScreen> {
     final passwordController = TextEditingController();
     Map<String, dynamic>? recipient;
     Timer? debounce;
+    bool busy = false;
 
     await showModalBottomSheet(
       context: context,
@@ -261,35 +278,41 @@ class _WalletScreenState extends State<WalletScreen> {
               ),
               const SizedBox(height: 12),
               ElevatedButton(
-                onPressed: () async {
-                  final amount = double.tryParse(amountController.text) ?? 0;
-                  if (recipient == null) {
-                    _showToast('لم يُعثر على هذا المستخدم', ok: false);
-                    return;
-                  }
-                  final recipientPhone = recipient!['phone'] as String;
-                  if (recipientPhone == _session!.phone) {
-                    _showToast('لا يمكن التحويل لنفس الحساب', ok: false);
-                    return;
-                  }
-                  if (amount < 1) {
-                    _showToast('أدخل مبلغاً صحيحاً', ok: false);
-                    return;
-                  }
-                  if (passwordController.text.isEmpty) {
-                    _showToast('أدخل كلمة مرور حسابك لتأكيد التحويل', ok: false);
-                    return;
-                  }
-                  try {
-                    await _walletRepo.transfer(_session!.phone, passwordController.text, recipientPhone, amount, null);
-                    if (ctx.mounted) Navigator.pop(ctx);
-                    _showToast('✅ تم تحويل $amount ج.م بنجاح!');
-                    _load();
-                  } catch (e) {
-                    _showToast(walletErrorMessage(e), ok: false);
-                  }
-                },
-                child: const Text('تحويل الآن'),
+                onPressed: busy
+                    ? null
+                    : () async {
+                        final amount = double.tryParse(amountController.text) ?? 0;
+                        if (recipient == null) {
+                          _showToast('لم يُعثر على هذا المستخدم', ok: false);
+                          return;
+                        }
+                        final recipientPhone = recipient!['phone'] as String;
+                        if (recipientPhone == _session!.phone) {
+                          _showToast('لا يمكن التحويل لنفس الحساب', ok: false);
+                          return;
+                        }
+                        if (amount < 1) {
+                          _showToast('أدخل مبلغاً صحيحاً', ok: false);
+                          return;
+                        }
+                        if (passwordController.text.isEmpty) {
+                          _showToast('أدخل كلمة مرور حسابك لتأكيد التحويل', ok: false);
+                          return;
+                        }
+                        setSheetState(() => busy = true);
+                        try {
+                          await _walletRepo.transfer(_session!.phone, passwordController.text, recipientPhone, amount, null);
+                          if (ctx.mounted) Navigator.pop(ctx);
+                          _showToast('✅ تم تحويل $amount ج.م بنجاح!');
+                          _load();
+                        } catch (e) {
+                          _showToast(walletErrorMessage(e), ok: false);
+                          if (ctx.mounted) setSheetState(() => busy = false);
+                        }
+                      },
+                child: busy
+                    ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                    : const Text('تحويل الآن'),
               ),
             ],
           ),
