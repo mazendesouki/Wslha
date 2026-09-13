@@ -510,31 +510,78 @@ class DriverProfileScreenState extends State<DriverProfileScreen> {
             ],
           ),
           const Divider(height: 22),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text('❄️ عربيتي مكيّفة', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800)),
-              Switch(
-                value: hasAc,
-                onChanged: (val) async {
-                  setState(() => _vehicle = {...v, 'has_ac': val});
-                  try {
-                    await _driverRepo.updateHasAc(widget.session.phone, val);
-                  } catch (_) {
-                    if (!mounted) return;
-                    setState(() => _vehicle = {...v, 'has_ac': hasAc});
-                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تعذّر الحفظ، حاول تاني')));
-                  }
-                },
-              ),
-            ],
+          _qualityToggle(
+            v: v,
+            column: 'has_ac',
+            value: hasAc,
+            label: '❄️ عربيتي مكيّفة',
+            hint: 'فعّلها لو عربيتك بتكييف — كده هتوصلك طلبات "عربية مكيّفة" اللي العميل بيدفع فيها سعر أعلى.',
           ),
-          const Text(
-            'فعّلها لو عربيتك بتكييف — كده هتوصلك طلبات "عربية مكيّفة" اللي العميل بيدفع فيها سعر أعلى.',
-            style: TextStyle(fontSize: 11, color: AppColors.textFaint),
+          const SizedBox(height: 14),
+          _qualityToggle(
+            v: v,
+            column: 'is_clean',
+            value: v['is_clean'] == true,
+            label: '🧼 عربيتي نظيفة',
+            hint: 'فعّلها لو عربيتك دايمًا نظيفة من جوه وبره — كده هتوصلك طلبات "عربية نظيفة" اللي العميل بيدفع فيها سعر أعلى.',
+          ),
+          const SizedBox(height: 14),
+          _qualityToggle(
+            v: v,
+            column: 'is_modern',
+            value: v['is_modern'] == true,
+            label: '✨ عربيتي موديل حديث',
+            hint: 'فعّلها لو عربيتك موديل حديث فعلًا — كده هتوصلك طلبات "موديل حديث" اللي العميل بيدفع فيها سعر أعلى.',
           ),
         ],
       ),
+    );
+  }
+
+  /// A single self-declared quality-tier flag (has_ac/is_clean/is_modern) —
+  /// each toggle writes straight to its driver_applications column and
+  /// determines whether this driver is offered that tier's rides at all
+  /// (accept_dispatch_offer() checks the same column server-side). The red
+  /// warning is the only guard against a driver lying about their car —
+  /// there's no way to verify this automatically, so honesty here directly
+  /// determines whether the customer actually gets the service they paid
+  /// extra for.
+  Widget _qualityToggle({
+    required Map<String, dynamic> v,
+    required String column,
+    required bool value,
+    required String label,
+    required String hint,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(label, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w800)),
+            Switch(
+              value: value,
+              onChanged: (val) async {
+                setState(() => _vehicle = {...v, column: val});
+                try {
+                  await _driverRepo.updateQualityFlag(widget.session.phone, column, val);
+                } catch (_) {
+                  if (!mounted) return;
+                  setState(() => _vehicle = {...v, column: value});
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تعذّر الحفظ، حاول تاني')));
+                }
+              },
+            ),
+          ],
+        ),
+        Text(hint, style: const TextStyle(fontSize: 11, color: AppColors.textFaint)),
+        const SizedBox(height: 4),
+        const Text(
+          '⚠️ تفعيل الخدمة دي من غير ما تكون العربية فعلًا مطابقة يُعد مخالفة أخلاقية وعدم مصداقية في تقديم الخدمة — من فضلك التزم بالمصداقية حفاظًا على مستوى الخدمة.',
+          style: TextStyle(fontSize: 10.5, color: Colors.red, fontWeight: FontWeight.w700),
+        ),
+      ],
     );
   }
 

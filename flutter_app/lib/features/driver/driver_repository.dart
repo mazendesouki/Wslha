@@ -251,7 +251,7 @@ class DriverRepository {
         .select(
           'vehicle_category,vehicle_model,vehicle_color,vehicle_year,vehicle_reg_number,'
           'vehicle_front_url,vehicle_back_url,vehicle_right_url,vehicle_left_url,plate_photo_url,'
-          'has_ac,is_clean',
+          'has_ac,is_clean,is_modern',
         )
         .eq('phone', phone)
         .order('created_at', ascending: false)
@@ -261,14 +261,15 @@ class DriverRepository {
   }
 
   /// Same raw PATCH driver-dashboard.astro's "عربية مكيّفة" toggle does —
-  /// lets a driver declare their car has AC themselves. Without this, the
-  /// Flutter driver app had no way at all to set has_ac (only set once at
-  /// signup, web-only), so accept_dispatch_offer()'s AC-tier check would
-  /// reject every driver who never happened to check that box during
-  /// registration — the tier picker on the customer side looked broken
-  /// because no driver could ever actually qualify as "AC" from this app.
-  Future<void> updateHasAc(String phone, bool value) async {
-    await sb.from('driver_applications').update({'has_ac': value}).eq('phone', phone);
+  /// lets a driver self-declare a quality tier (has_ac/is_clean/is_modern).
+  /// Without this, the Flutter driver app had no way at all to set these
+  /// (has_ac was only ever set once at signup, web-only), so
+  /// accept_dispatch_offer()'s tier check would reject every driver who
+  /// never happened to check that box during registration — the tier
+  /// picker on the customer side looked broken because no driver could
+  /// ever actually qualify.
+  Future<void> updateQualityFlag(String phone, String column, bool value) async {
+    await sb.from('driver_applications').update({column: value}).eq('phone', phone);
   }
 
   Future<RideSettlement?> completeRide(String rideId, String driverPhone) async {

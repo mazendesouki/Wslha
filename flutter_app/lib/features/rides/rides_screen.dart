@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../core/session.dart';
 import '../../core/theme.dart';
+import '../airport/airport_fare.dart' show qualityLabels;
 import 'address_field.dart';
 import 'fare_calculator.dart' as fare_calc;
 import 'places_service.dart';
@@ -241,10 +242,12 @@ class _RidesScreenState extends State<RidesScreen> {
                     RadioGroup<String>(
                       groupValue: _qualityTier,
                       onChanged: (v) => setState(() => _qualityTier = v!),
-                      child: const Column(
+                      child: Column(
                         children: [
-                          RadioListTile<String>(value: 'regular', title: Text('عربية عادية'), dense: true),
-                          RadioListTile<String>(value: 'ac', title: Text('❄️ عربية مكيّفة'), dense: true),
+                          RadioListTile<String>(value: 'regular', title: Text(qualityLabels['regular']!), dense: true),
+                          RadioListTile<String>(value: 'clean', title: Text(qualityLabels['clean']!), dense: true),
+                          RadioListTile<String>(value: 'ac', title: Text(qualityLabels['ac']!), dense: true),
+                          RadioListTile<String>(value: 'modern', title: Text(qualityLabels['modern']!), dense: true),
                         ],
                       ),
                     ),
