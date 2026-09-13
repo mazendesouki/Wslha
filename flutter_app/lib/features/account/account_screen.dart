@@ -24,7 +24,7 @@ class AccountScreen extends StatefulWidget {
   State<AccountScreen> createState() => AccountScreenState();
 }
 
-/// Public (not `_`-prefixed) so HomeShell can hold a GlobalKey<AccountScreenState>
+/// Public (not `_`-prefixed) so HomeShell can hold a `GlobalKey<AccountScreenState>`
 /// and call refresh() when the "حسابي" tab is (re)selected — this screen sits
 /// inside an IndexedStack, so switching tabs back to it does NOT re-run
 /// initState()/_load(), which is why the stats/addresses/reviews used to look

@@ -121,7 +121,7 @@ class _LiveTrackingMapState extends State<LiveTrackingMap> with SingleTickerProv
   void _fitToMarkers(LatLng? driver) {
     if (_fitted) return;
     _fitted = true;
-    final points = [widget.origin, widget.destination, if (driver != null) driver];
+    final points = [widget.origin, widget.destination, ?driver];
     Future.delayed(const Duration(milliseconds: 300), () {
       _map?.animateCamera(CameraUpdate.newLatLngBounds(_boundsFor(points), 60));
     });

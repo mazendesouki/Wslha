@@ -30,7 +30,7 @@ class DriverProfileScreen extends StatefulWidget {
 }
 
 /// Public (not `_`-prefixed) so DriverHomeShell can hold a
-/// GlobalKey<DriverProfileScreenState> and call refresh() when the "حسابي"
+/// `GlobalKey<DriverProfileScreenState>` and call refresh() when the "حسابي"
 /// tab is (re)selected — this screen sits inside an IndexedStack, so
 /// switching tabs back to it does NOT re-run initState()/_load(), which is
 /// why the trip totals/ratings looked frozen even right after finishing a
@@ -118,8 +118,8 @@ class DriverProfileScreenState extends State<DriverProfileScreen> {
     ]);
     if (!mounted) return;
     setState(() {
-      _account = results[0] as Map<String, dynamic>?;
-      _vehicle = results[1] as Map<String, dynamic>?;
+      _account = results[0];
+      _vehicle = results[1];
       _stats = results[2] as Map<String, dynamic>;
       _loading = false;
     });

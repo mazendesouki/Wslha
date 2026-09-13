@@ -106,13 +106,15 @@ class _WalletScreenState extends State<WalletScreen> {
                 decoration: const InputDecoration(labelText: 'المبلغ (جنيه)'),
               ),
               const SizedBox(height: 12),
-              ...['فودافون كاش', 'إنستاباي', 'تحويل بنكي'].map((m) => RadioListTile<String>(
-                    value: m,
-                    groupValue: method,
-                    onChanged: (v) => setSheetState(() => method = v!),
-                    title: Text(m),
-                    dense: true,
-                  )),
+              RadioGroup<String>(
+                groupValue: method,
+                onChanged: (v) => setSheetState(() => method = v!),
+                child: Column(
+                  children: ['فودافون كاش', 'إنستاباي', 'تحويل بنكي']
+                      .map((m) => RadioListTile<String>(value: m, title: Text(m), dense: true))
+                      .toList(),
+                ),
+              ),
               const SizedBox(height: 12),
               ElevatedButton(
                 onPressed: busy

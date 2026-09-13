@@ -29,7 +29,7 @@ class MerchantRepository {
     await sb.rpc('merchant_accept_order', params: {
       'p_order_id': orderId,
       'p_merchant_phone': merchantPhone,
-      if (prepMinutes != null) 'p_prep_minutes': prepMinutes,
+      'p_prep_minutes': ?prepMinutes,
     });
   }
 

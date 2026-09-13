@@ -206,7 +206,7 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
                 : ListView.separated(
                     padding: const EdgeInsets.fromLTRB(12, 0, 12, 16),
                     itemCount: rows.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 8),
+                    separatorBuilder: (_, _) => const SizedBox(height: 8),
                     itemBuilder: (context, i) => _invoiceTile(rows[i]),
                   ),
           ),

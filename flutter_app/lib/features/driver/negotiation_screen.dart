@@ -49,7 +49,7 @@ class _NegotiationScreenState extends State<NegotiationScreen> {
           return ListView.separated(
             padding: const EdgeInsets.all(16),
             itemCount: rides.length,
-            separatorBuilder: (_, __) => const SizedBox(height: 12),
+            separatorBuilder: (_, _) => const SizedBox(height: 12),
             itemBuilder: (context, i) => _NegotiableRideCard(repo: _repo, ride: rides[i], session: widget.session),
           );
         },

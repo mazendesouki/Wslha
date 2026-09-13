@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/foundation.dart' show debugPrint;
 
 import 'notifications.dart';
 import 'session.dart';
@@ -56,17 +57,17 @@ class PushRegistrar {
       await messaging.requestPermission();
       final token = await messaging.getToken();
       if (token == null) {
-        print('[push] getToken() returned null for ${session.phone}');
+        debugPrint('[push] getToken() returned null for ${session.phone}');
         return;
       }
-      print('[push] registering token ${token.substring(0, 12)}... for ${session.phone}');
+      debugPrint('[push] registering token ${token.substring(0, 12)}... for ${session.phone}');
 
       await sb.rpc('upsert_device_token', params: {
         'p_phone': session.phone,
         'p_token': token,
         'p_platform': 'android',
       });
-      print('[push] upsert_device_token ok');
+      debugPrint('[push] upsert_device_token ok');
       _registeredPhones.add(session.phone);
 
       messaging.onTokenRefresh.listen((newToken) {
@@ -79,7 +80,7 @@ class PushRegistrar {
     } catch (e, st) {
       // No google-services.json yet, or the device has no Play Services —
       // the app should keep working without push either way.
-      print('[push] registerForSession failed: $e\n$st');
+      debugPrint('[push] registerForSession failed: $e\n$st');
     }
   }
 }

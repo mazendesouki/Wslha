@@ -238,34 +238,26 @@ class _RidesScreenState extends State<RidesScreen> {
                       ),
                     ),
                     const Divider(height: 1),
-                    RadioListTile<String>(
-                      value: 'regular',
+                    RadioGroup<String>(
                       groupValue: _qualityTier,
                       onChanged: (v) => setState(() => _qualityTier = v!),
-                      title: const Text('عربية عادية'),
-                      dense: true,
-                    ),
-                    RadioListTile<String>(
-                      value: 'ac',
-                      groupValue: _qualityTier,
-                      onChanged: (v) => setState(() => _qualityTier = v!),
-                      title: const Text('❄️ عربية مكيّفة'),
-                      dense: true,
+                      child: const Column(
+                        children: [
+                          RadioListTile<String>(value: 'regular', title: Text('عربية عادية'), dense: true),
+                          RadioListTile<String>(value: 'ac', title: Text('❄️ عربية مكيّفة'), dense: true),
+                        ],
+                      ),
                     ),
                     const Divider(height: 1),
-                    RadioListTile<String>(
-                      value: 'cash',
+                    RadioGroup<String>(
                       groupValue: _payment,
                       onChanged: (v) => setState(() => _payment = v!),
-                      title: const Text('💵 كاش عند الاستلام'),
-                      dense: true,
-                    ),
-                    RadioListTile<String>(
-                      value: 'wallet',
-                      groupValue: _payment,
-                      onChanged: (v) => setState(() => _payment = v!),
-                      title: const Text('📱 فودافون كاش / إنستاباي'),
-                      dense: true,
+                      child: const Column(
+                        children: [
+                          RadioListTile<String>(value: 'cash', title: Text('💵 كاش عند الاستلام'), dense: true),
+                          RadioListTile<String>(value: 'wallet', title: Text('📱 فودافون كاش / إنستاباي'), dense: true),
+                        ],
+                      ),
                     ),
                     const Divider(height: 1),
                     SwitchListTile(

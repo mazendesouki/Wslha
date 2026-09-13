@@ -215,7 +215,7 @@ class _OrderInvoiceScreenState extends State<OrderInvoiceScreen> {
                     leading: Text('$emoji', style: const TextStyle(fontSize: 20)),
                     title: Text('$name', style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13)),
                     trailing: Text(
-                      price != null ? '$qty× ${price} ج.م' : '$qty×',
+                      price != null ? '$qty× $price ج.م' : '$qty×',
                       style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 12, color: AppColors.textFaint),
                     ),
                   );
