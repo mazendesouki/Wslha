@@ -137,6 +137,7 @@ class _CheckoutSheetState extends State<CheckoutSheet> {
         'area': area,
         'address': address,
         'items': _cart.lines.map((l) => {
+              'id': l.product.id,
               'qty': l.qty,
               'name': l.product.name,
               'emoji': l.product.emoji,
