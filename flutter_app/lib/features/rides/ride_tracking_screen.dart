@@ -10,6 +10,7 @@ import '../../core/notifications.dart';
 import '../../core/session.dart';
 import '../../core/theme.dart';
 import '../../shared/widgets/live_tracking_map.dart';
+import '../airport/airport_fare.dart' show qualityLabels;
 import '../driver/driver_repository.dart';
 import '../ratings/rate_sheet.dart';
 import '../ratings/ratings_repository.dart';
@@ -198,11 +199,21 @@ class _RideTrackingScreenState extends State<RideTrackingScreen> {
           final customerPhone = ride['customer_phone'] as String?;
           final curIdx = _stepIndex(status);
 
+          final qualityTier = ride['airport_quality_tier'] as String?;
           if (!widget.isDriverView &&
               _lastNotifiedStatus != null &&
               _lastNotifiedStatus != status &&
               _statusNotif.containsKey(status)) {
-            AppNotifications.instance.show('وصّلها — تحديث رحلتك', _statusNotif[status]!);
+            // accept_dispatch_offer() already refused this driver server-side
+            // if their car didn't match the requested tier — so an
+            // "accepted" ride here always genuinely has it. Naming that
+            // explicitly (instead of a generic "قبِل السائق طلبك") is what
+            // was asked for: the customer should see confirmation the
+            // service they picked and paid extra for is actually coming.
+            final msg = (status == 'accepted' && qualityTier != null && qualityTier != 'regular')
+                ? '🚗 قبِل السائق طلبك، وخدمة "${qualityLabels[qualityTier] ?? qualityTier}" اللي اخترتها متوفرة معاه ✅'
+                : _statusNotif[status]!;
+            AppNotifications.instance.show('وصّلها — تحديث رحلتك', msg);
           }
           _lastNotifiedStatus = status;
 
@@ -257,6 +268,14 @@ class _RideTrackingScreenState extends State<RideTrackingScreen> {
                       if (!isCancelled && !widget.isDriverView && status == 'accepted') ...[
                         const SizedBox(height: 12),
                         _ArrivalDeadlineCard(acceptedAt: ride['accepted_at'] as String?, etaMinutes: ride['eta_minutes'] as num?),
+                      ],
+                      if (!isCancelled &&
+                          !widget.isDriverView &&
+                          status == 'accepted' &&
+                          qualityTier != null &&
+                          qualityTier != 'regular') ...[
+                        const SizedBox(height: 12),
+                        _TierConfirmedCard(tierLabel: qualityLabels[qualityTier] ?? qualityTier),
                       ],
                       if (!isCancelled &&
                           !widget.isDriverView &&
@@ -658,9 +677,18 @@ class _DriverCard extends StatelessWidget {
                     ),
                     if (driverPhone != null && driverPhone!.isNotEmpty) ...[
                       const SizedBox(height: 6),
-                      TrustBadge(
-                        future: RatingsRepository().driverTrustBadge(driverPhone!),
-                        trustedLabel: 'سائق موثوق',
+                      Wrap(
+                        spacing: 6,
+                        runSpacing: 6,
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        children: [
+                          TrustBadge(
+                            future: RatingsRepository().driverTrustBadge(driverPhone!),
+                            trustedLabel: 'سائق موثوق',
+                          ),
+                          _DriverLevelBadge(driverPhone: driverPhone!),
+                          _DriverTripCountBadge(driverPhone: driverPhone!),
+                        ],
                       ),
                     ],
                   ],
@@ -718,6 +746,58 @@ class _DriverCard extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(color: AppColors.primaryLight, borderRadius: BorderRadius.circular(999)),
       child: Text(label, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: AppColors.primary)),
+    );
+  }
+}
+
+/// Same level tiers driver_profile_screen.dart shows the driver about
+/// themselves (🌱/🥉/🥈/🥇/💎, based on how many customer ratings they've
+/// accumulated) — surfaced here too so the customer sees it before/during
+/// the ride, not just the raw "4.8 (23)" number.
+class _DriverLevelBadge extends StatelessWidget {
+  final String driverPhone;
+  const _DriverLevelBadge({required this.driverPhone});
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<RatingSummary>(
+      future: RatingsRepository().driverTrustBadge(driverPhone),
+      builder: (context, snap) {
+        if (!snap.hasData) return const SizedBox.shrink();
+        final level = levelForRatingCount(snap.data!.count);
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+          decoration: BoxDecoration(color: const Color(0xFFF3F4F6), borderRadius: BorderRadius.circular(999)),
+          child: Text(
+            '${level.emoji} ${level.label}',
+            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: Colors.black87),
+          ),
+        );
+      },
+    );
+  }
+}
+
+/// Total completed trips (rides only, same "overall.trips" the driver's own
+/// stats tab reads) — lets the customer see this isn't a brand-new driver
+/// even if they don't have many ratings yet.
+class _DriverTripCountBadge extends StatelessWidget {
+  final String driverPhone;
+  const _DriverTripCountBadge({required this.driverPhone});
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<Map<String, dynamic>>(
+      future: DriverRepository().fetchTripStats(driverPhone),
+      builder: (context, snap) {
+        final trips = ((snap.data?['overall'] as Map?)?['trips'] as num?)?.toInt();
+        if (trips == null) return const SizedBox.shrink();
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+          decoration: BoxDecoration(color: const Color(0xFFF3F4F6), borderRadius: BorderRadius.circular(999)),
+          child: Text('🚗 $trips رحلة', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: Colors.black87)),
+        );
+      },
     );
   }
 }
@@ -982,6 +1062,40 @@ class _ArrivalDeadlineCard extends StatelessWidget {
           const Text(
             'يرجى التواجد عند نقطة الانطلاق في الموعد — تأخير السائق أكتر من 5 دقايق بيحمّله غرامة 20 ج.م، فبلاش نتأخر عليه 🙏',
             style: TextStyle(fontSize: 11, color: AppColors.textFaint, height: 1.4),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Confirms the paid-for tier is actually coming — accept_dispatch_offer()
+/// already refused this driver server-side if their car didn't match, so
+/// this is a guarantee, not a hope. In-page (not just the push notification
+/// _statusNotif triggers) so it's still visible if the customer missed/
+/// dismissed the notification.
+class _TierConfirmedCard extends StatelessWidget {
+  final String tierLabel;
+  const _TierConfirmedCard({required this.tierLabel});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: const Color(0xFFECFDF5),
+        border: Border.all(color: const Color(0xFFA7F3D0), width: 1.5),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Row(
+        children: [
+          const Text('✅', style: TextStyle(fontSize: 18)),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              'خدمة "$tierLabel" اللي اخترتها متوفرة مع السائق ده',
+              style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w900, color: Color(0xFF065F46)),
+            ),
           ),
         ],
       ),

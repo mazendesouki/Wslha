@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../core/session.dart';
 import '../../core/theme.dart';
+import '../airport/airport_fare.dart' show qualityLabels;
 import 'driver_repository.dart';
 
 /// Open negotiable ride requests nearby — a driver browses and submits
@@ -104,6 +105,7 @@ class _NegotiableRideCardState extends State<_NegotiableRideCard> {
     final refFare = ride['fare'];
     final distanceKm = (ride['distance_km'] as num?)?.toStringAsFixed(1);
     final etaMinutes = ride['eta_minutes'];
+    final qualityTier = ride['airport_quality_tier'] as String?;
 
     return Container(
       padding: const EdgeInsets.all(14),
@@ -141,6 +143,10 @@ class _NegotiableRideCardState extends State<_NegotiableRideCard> {
               if (distanceKm != null) _chip('📏 $distanceKm كم'),
               if (etaMinutes != null) _chip('🕐 $etaMinutes د'),
               if (refFare != null) _chip('💡 سعر تقديري: $refFare ج.م'),
+              // Only submit a bid on this if your car actually matches — the
+              // customer picked and paid for this tier specifically.
+              if (qualityTier != null && qualityTier != 'regular')
+                _chip('${qualityLabels[qualityTier] ?? qualityTier} مطلوبة', warn: true),
             ],
           ),
           const SizedBox(height: 12),
@@ -183,11 +189,17 @@ class _NegotiableRideCardState extends State<_NegotiableRideCard> {
     );
   }
 
-  Widget _chip(String label) {
+  Widget _chip(String label, {bool warn = false}) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(color: AppColors.primaryLight, borderRadius: BorderRadius.circular(999)),
-      child: Text(label, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.primary)),
+      decoration: BoxDecoration(
+        color: warn ? const Color(0xFFFFEDD5) : AppColors.primaryLight,
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: warn ? const Color(0xFFB45309) : AppColors.primary),
+      ),
     );
   }
 }

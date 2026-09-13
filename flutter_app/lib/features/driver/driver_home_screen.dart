@@ -482,12 +482,42 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
         title: const Text('وصّلها سائق'),
         actions: [
           if (_vehicleCategory != 'motorcycle' && _vehicleCategory != 'cargo')
-            IconButton(
-              tooltip: 'طلبات تفاوض قريبة',
-              icon: const Text('🤝', style: TextStyle(fontSize: 20)),
-              onPressed: () => Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => NegotiationScreen(session: widget.session)),
-              ),
+            // A driver previously had to remember to open this screen and
+            // check manually — unlike fixed-price rides (actively pushed via
+            // the dispatch engine), a new negotiable ride gave no signal at
+            // all that it existed. This live badge (same open-rides stream
+            // NegotiationScreen itself uses) is the closest equivalent to
+            // that active "searching" experience without building a full
+            // push-notification pipeline for negotiable rides.
+            StreamBuilder<List<Map<String, dynamic>>>(
+              stream: _repo.watchOpenNegotiableRides(),
+              builder: (context, snap) {
+                final count = (snap.data ?? [])
+                    .where((r) => r['status'] == 'pending' && (r['driver_phone'] == null || (r['driver_phone'] as String).isEmpty))
+                    .length;
+                return Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    IconButton(
+                      tooltip: 'طلبات تفاوض قريبة',
+                      icon: const Text('🤝', style: TextStyle(fontSize: 20)),
+                      onPressed: () => Navigator.of(context).push(
+                        MaterialPageRoute(builder: (_) => NegotiationScreen(session: widget.session)),
+                      ),
+                    ),
+                    if (count > 0)
+                      Positioned(
+                        right: 4,
+                        top: 4,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                          decoration: BoxDecoration(color: AppColors.error, borderRadius: BorderRadius.circular(999)),
+                          child: Text('$count', style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w900)),
+                        ),
+                      ),
+                  ],
+                );
+              },
             ),
           const LogoutButton(),
         ],
