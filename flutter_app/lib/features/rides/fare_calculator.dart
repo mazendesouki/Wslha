@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 import '../../core/pricing_settings.dart';
+import '../airport/airport_fare.dart' show qualityMultiplier;
 
 // Ported 1:1 from rides.astro's fareFor()/tieredKm()/resolveZone(), which is
 // the formula actually enforced server-side by guard_ride_fare() (see
@@ -59,12 +60,18 @@ double haversineKm(double lat1, double lng1, double lat2, double lng2) {
 }
 
 /// [straightKm] is the haversine distance; road distance (× roadFactor) is
-/// what the tiered meter actually runs on, same as the web.
-int fareForDistance(double straightKm, {String? toArea}) {
+/// what the tiered meter actually runs on, same as the web. [qualityTier]
+/// ('regular'/'ac', matching airport_fare.dart's qualityMultiplier) must be
+/// applied in the exact same order as guard_ride_fare() does server-side
+/// (db/security-55-local-ride-ac-tier.sql) — before the min-fare floor, not
+/// after — or this preview would silently disagree with what the customer
+/// actually gets charged at insert.
+int fareForDistance(double straightKm, {String? toArea, String qualityTier = 'regular'}) {
   final roadKm = straightKm * roadFactor;
   final zone = _resolveZone(toArea);
   final effRate = _sedanRatePerKm * _defaultYearMult;
-  final raw = (baseFare + _tieredKm(roadKm) * effRate) * zone.factor + zone.surcharge;
+  final raw = ((baseFare + _tieredKm(roadKm) * effRate) * zone.factor + zone.surcharge) *
+      (qualityMultiplier[qualityTier] ?? 1.0);
   return (math.max(raw, minFare) / 5).ceil() * 5;
 }
 
@@ -94,8 +101,8 @@ double _yearMultiplier(int year) {
 
 bool isExternalTrip(double roadKm) => roadKm > externalThresholdKm;
 
-int externalFareForDistance(double roadKm) {
+int externalFareForDistance(double roadKm, {String qualityTier = 'regular'}) {
   final rate = _externalRatePerKm * _yearMultiplier(2022); // same sedan/2022 default as fareForDistance()
-  final raw = PricingSettings.externalBaseFee + roadKm * rate;
+  final raw = (PricingSettings.externalBaseFee + roadKm * rate) * (qualityMultiplier[qualityTier] ?? 1.0);
   return (math.max(raw, PricingSettings.externalMinFare) / 5).ceil() * 5;
 }

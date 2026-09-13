@@ -26,6 +26,11 @@ class _RidesScreenState extends State<RidesScreen> {
   final List<PlaceResult?> _stops = [null];
   int _passengers = 1;
   String _payment = 'cash';
+  // 'regular' | 'ac' — same tier system airport rides already use (see
+  // fare_calculator.dart's qualityMultiplier import), now offered on
+  // regular/external rides too so a driver whose registered car has no AC
+  // can't be matched to a customer who specifically asked for one.
+  String _qualityTier = 'regular';
   bool _negotiable = false;
   bool _submitting = false;
   UserSession? _session;
@@ -57,7 +62,9 @@ class _RidesScreenState extends State<RidesScreen> {
   bool get _isExternal => _roadKm > 0 && fare_calc.isExternalTrip(_roadKm);
   int get _fare {
     if (_straightKm <= 0) return 0;
-    return _isExternal ? fare_calc.externalFareForDistance(_roadKm) : fare_calc.fareForDistance(_straightKm, toArea: _filledPoints.last.name);
+    return _isExternal
+        ? fare_calc.externalFareForDistance(_roadKm, qualityTier: _qualityTier)
+        : fare_calc.fareForDistance(_straightKm, toArea: _filledPoints.last.name, qualityTier: _qualityTier);
   }
 
   int get _eta => _straightKm > 0 ? fare_calc.etaMinutes(_straightKm) : 0;
@@ -78,29 +85,45 @@ class _RidesScreenState extends State<RidesScreen> {
     final destination = points.last;
     final waypoints = points.sublist(1, points.length - 1); // between origin and final destination
 
-    final ride = await _rideRepo.createRide(
-      customerPhone: _session!.phone,
-      customerName: _session!.name,
-      fromArea: _from!.name,
-      fromLat: _from!.lat,
-      fromLng: _from!.lng,
-      toArea: destination.name,
-      toLat: destination.lat,
-      toLng: destination.lng,
-      distanceKm: _roadKm,
-      fare: _fare,
-      etaMinutes: _eta,
-      passengers: _passengers,
-      payment: _payment,
-      rideType: _isExternal ? 'external' : 'local',
-      stops: waypoints.map((p) => {'name': p.name, 'lat': p.lat, 'lng': p.lng}).toList(),
-      isNegotiable: _negotiable,
-    );
+    Map<String, dynamic>? ride;
+    try {
+      ride = await _rideRepo.createRide(
+        customerPhone: _session!.phone,
+        customerName: _session!.name,
+        fromArea: _from!.name,
+        fromLat: _from!.lat,
+        fromLng: _from!.lng,
+        toArea: destination.name,
+        toLat: destination.lat,
+        toLng: destination.lng,
+        distanceKm: _roadKm,
+        fare: _fare,
+        etaMinutes: _eta,
+        passengers: _passengers,
+        payment: _payment,
+        rideType: _isExternal ? 'external' : 'local',
+        stops: waypoints.map((p) => {'name': p.name, 'lat': p.lat, 'lng': p.lng}).toList(),
+        isNegotiable: _negotiable,
+        qualityTier: _qualityTier,
+      );
+    } catch (e) {
+      // createRide() throws straight from the Supabase insert on failure
+      // (network drop, RLS denial) rather than returning null — without
+      // this catch, _submitting stayed true forever with the button
+      // frozen mid-spinner and no explanation, on the single most-used
+      // action in the customer app.
+      if (!mounted) return;
+      setState(() => _submitting = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('تعذّر إرسال الطلب: $e'), backgroundColor: AppColors.error, duration: const Duration(seconds: 6)),
+      );
+      return;
+    }
 
     if (!mounted) return;
     setState(() => _submitting = false);
 
-    if (ride == null || ride['id'] == null) {
+    if (ride['id'] == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('تعذّر إرسال الطلب، حاول مجدداً')),
       );
@@ -212,6 +235,21 @@ class _RidesScreenState extends State<RidesScreen> {
                           ),
                         ],
                       ),
+                    ),
+                    const Divider(height: 1),
+                    RadioListTile<String>(
+                      value: 'regular',
+                      groupValue: _qualityTier,
+                      onChanged: (v) => setState(() => _qualityTier = v!),
+                      title: const Text('عربية عادية'),
+                      dense: true,
+                    ),
+                    RadioListTile<String>(
+                      value: 'ac',
+                      groupValue: _qualityTier,
+                      onChanged: (v) => setState(() => _qualityTier = v!),
+                      title: const Text('❄️ عربية مكيّفة'),
+                      dense: true,
                     ),
                     const Divider(height: 1),
                     RadioListTile<String>(

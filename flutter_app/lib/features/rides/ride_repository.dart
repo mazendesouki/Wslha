@@ -38,6 +38,13 @@ class RideRepository {
     // trigger only fires on INSERT, never UPDATE, so it won't clobber that
     // second write — see db/security-35-ride-price-negotiation.sql).
     bool isNegotiable = false,
+    // 'regular' | 'ac' — same column/multiplier airport rides already use
+    // (airport_quality_tier, see airport/airport_fare.dart's
+    // qualityMultiplier) reused here for local/external rides so a driver
+    // without AC can't be matched to a customer who specifically asked for
+    // one — see db/security-55-local-ride-ac-tier.sql. Null/omitted means
+    // no preference (back-compat with rides booked before this existed).
+    String? qualityTier,
   }) async {
     final row = await sb.from('rides').insert({
       'customer_phone': customerPhone,
@@ -57,6 +64,7 @@ class RideRepository {
       'ride_type': rideType,
       'is_negotiable': isNegotiable,
       if (stops != null && stops.isNotEmpty) 'stops': stops,
+      if (qualityTier != null && qualityTier != 'regular') 'airport_quality_tier': qualityTier,
     }).select().single();
     return row;
   }
