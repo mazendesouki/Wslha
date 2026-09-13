@@ -250,13 +250,25 @@ class DriverRepository {
         .from('driver_applications')
         .select(
           'vehicle_category,vehicle_model,vehicle_color,vehicle_year,vehicle_reg_number,'
-          'vehicle_front_url,vehicle_back_url,vehicle_right_url,vehicle_left_url,plate_photo_url',
+          'vehicle_front_url,vehicle_back_url,vehicle_right_url,vehicle_left_url,plate_photo_url,'
+          'has_ac,is_clean',
         )
         .eq('phone', phone)
         .order('created_at', ascending: false)
         .limit(1);
     if (rows.isEmpty) return null;
     return Map<String, dynamic>.from(rows.first);
+  }
+
+  /// Same raw PATCH driver-dashboard.astro's "عربية مكيّفة" toggle does —
+  /// lets a driver declare their car has AC themselves. Without this, the
+  /// Flutter driver app had no way at all to set has_ac (only set once at
+  /// signup, web-only), so accept_dispatch_offer()'s AC-tier check would
+  /// reject every driver who never happened to check that box during
+  /// registration — the tier picker on the customer side looked broken
+  /// because no driver could ever actually qualify as "AC" from this app.
+  Future<void> updateHasAc(String phone, bool value) async {
+    await sb.from('driver_applications').update({'has_ac': value}).eq('phone', phone);
   }
 
   Future<RideSettlement?> completeRide(String rideId, String driverPhone) async {

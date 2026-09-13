@@ -466,42 +466,72 @@ class DriverProfileScreenState extends State<DriverProfileScreen> {
     final year = v['vehicle_year']?.toString();
     final model = v['vehicle_model']?.toString();
     final color = v['vehicle_color']?.toString();
+    final hasAc = v['has_ac'] == true;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), boxShadow: const [
         BoxShadow(color: Color(0x11000000), blurRadius: 8, offset: Offset(0, 2)),
       ]),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(12),
-            child: photo != null
-                ? Image.network(photo, width: 72, height: 72, fit: BoxFit.cover)
-                : Container(
-                    width: 72,
-                    height: 72,
-                    color: AppColors.primaryLight,
-                    child: const Center(child: Text('🚗', style: TextStyle(fontSize: 28))),
-                  ),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text('السيارة', style: TextStyle(fontSize: 12, color: AppColors.textFaint, fontWeight: FontWeight.w700)),
-                const SizedBox(height: 4),
-                Text(
-                  [model, color].where((e) => e != null && e.isNotEmpty).join(' — '),
-                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w900),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: photo != null
+                    ? Image.network(photo, width: 72, height: 72, fit: BoxFit.cover)
+                    : Container(
+                        width: 72,
+                        height: 72,
+                        color: AppColors.primaryLight,
+                        child: const Center(child: Text('🚗', style: TextStyle(fontSize: 28))),
+                      ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('السيارة', style: TextStyle(fontSize: 12, color: AppColors.textFaint, fontWeight: FontWeight.w700)),
+                    const SizedBox(height: 4),
+                    Text(
+                      [model, color].where((e) => e != null && e.isNotEmpty).join(' — '),
+                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w900),
+                    ),
+                    if (regNumber != null && regNumber.isNotEmpty)
+                      Text('لوحة: $regNumber', style: const TextStyle(fontSize: 12, color: AppColors.textFaint)),
+                    if (year != null && year.isNotEmpty)
+                      Text('موديل: $year', style: const TextStyle(fontSize: 12, color: AppColors.textFaint)),
+                  ],
                 ),
-                if (regNumber != null && regNumber.isNotEmpty)
-                  Text('لوحة: $regNumber', style: const TextStyle(fontSize: 12, color: AppColors.textFaint)),
-                if (year != null && year.isNotEmpty)
-                  Text('موديل: $year', style: const TextStyle(fontSize: 12, color: AppColors.textFaint)),
-              ],
-            ),
+              ),
+            ],
+          ),
+          const Divider(height: 22),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text('❄️ عربيتي مكيّفة', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800)),
+              Switch(
+                value: hasAc,
+                onChanged: (val) async {
+                  setState(() => _vehicle = {...v, 'has_ac': val});
+                  try {
+                    await _driverRepo.updateHasAc(widget.session.phone, val);
+                  } catch (_) {
+                    if (!mounted) return;
+                    setState(() => _vehicle = {...v, 'has_ac': hasAc});
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تعذّر الحفظ، حاول تاني')));
+                  }
+                },
+              ),
+            ],
+          ),
+          const Text(
+            'فعّلها لو عربيتك بتكييف — كده هتوصلك طلبات "عربية مكيّفة" اللي العميل بيدفع فيها سعر أعلى.',
+            style: TextStyle(fontSize: 11, color: AppColors.textFaint),
           ),
         ],
       ),
