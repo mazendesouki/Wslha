@@ -270,7 +270,21 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
         _actingOnOfferId = null;
         _offers = _offers.where((o) => o.offerId != offer.offerId).toList();
         if (ok) {
-          final job = QueuedJob(offer.targetType, offer.data);
+          // offer.data is a snapshot taken when the offer was CREATED, not
+          // when it was accepted just now — accepted_at is still null on
+          // it, so _ArrivalDeadlineChip (which needs accepted_at +
+          // eta_minutes) silently rendered nothing on the active-job card,
+          // even though the customer's own deadline card worked fine
+          // (their ride row was fetched live, already carrying the real
+          // accepted_at the server just set). Stamping it here with "now"
+          // is accurate enough — accept_dispatch_offer() just set it
+          // server-side a moment ago.
+          final data = {
+            ...offer.data,
+            'status': 'accepted',
+            'accepted_at': DateTime.now().toUtc().toIso8601String(),
+          };
+          final job = QueuedJob(offer.targetType, data);
           if (_jobs.job == null) {
             _jobs.activate(job.type, job.data);
           } else {
