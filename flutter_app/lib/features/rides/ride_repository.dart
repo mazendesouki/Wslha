@@ -5,6 +5,19 @@ import '../../core/supabase_client.dart';
 /// only the core columns needed for a working booking (vehicle-model
 /// selection and free-text notes are a web-only extra, skipped here).
 class RideRepository {
+  /// Live surge multiplier from current_surge_multiplier() (db/security-62)
+  /// — always 1.0 unless the admin has dynamic_pricing_enabled on AND
+  /// current demand/driver-supply crosses a threshold. A failed/slow fetch
+  /// just falls back to 1.0 (no surge shown) rather than blocking booking.
+  Future<double> fetchSurgeMultiplier({String rideType = 'local'}) async {
+    try {
+      final result = await sb.rpc('current_surge_multiplier', params: {'p_ride_type': rideType});
+      return (result as num?)?.toDouble() ?? 1.0;
+    } catch (_) {
+      return 1.0;
+    }
+  }
+
   Future<Map<String, dynamic>?> createRide({
     required String customerPhone,
     required String customerName,

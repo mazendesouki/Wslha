@@ -35,6 +35,8 @@ class _RidesScreenState extends State<RidesScreen> {
   bool _negotiable = false;
   bool _submitting = false;
   UserSession? _session;
+  double _surgeMult = 1.0;
+  String? _surgeFetchedFor;
 
   /// Every leg's PlaceResult in order, stopping at the first unfilled one —
   /// so a driver can fill stop 1 and leave stop 2/3 empty without breaking
@@ -64,8 +66,8 @@ class _RidesScreenState extends State<RidesScreen> {
   int get _fare {
     if (_straightKm <= 0) return 0;
     return _isExternal
-        ? fare_calc.externalFareForDistance(_roadKm, qualityTier: _qualityTier)
-        : fare_calc.fareForDistance(_straightKm, toArea: _filledPoints.last.name, qualityTier: _qualityTier);
+        ? fare_calc.externalFareForDistance(_roadKm, qualityTier: _qualityTier, surgeMultiplier: _surgeMult)
+        : fare_calc.fareForDistance(_straightKm, toArea: _filledPoints.last.name, qualityTier: _qualityTier, surgeMultiplier: _surgeMult);
   }
 
   int get _eta => _straightKm > 0 ? fare_calc.etaMinutes(_straightKm) : 0;
@@ -76,6 +78,20 @@ class _RidesScreenState extends State<RidesScreen> {
   void initState() {
     super.initState();
     SessionStore.load().then((s) => setState(() => _session = s));
+  }
+
+  /// Refetches the surge multiplier only when the ride type (local ↔
+  /// external) actually changes — cheap guard so this doesn't fire on
+  /// every rebuild (setState during address selection, tier toggling…),
+  /// just the ones where the multiplier could genuinely be different.
+  void _maybeRefreshSurge() {
+    final rideType = _isExternal ? 'external' : 'local';
+    if (_surgeFetchedFor == rideType) return;
+    _surgeFetchedFor = rideType;
+    _rideRepo.fetchSurgeMultiplier(rideType: rideType).then((mult) {
+      if (!mounted) return;
+      setState(() => _surgeMult = mult);
+    });
   }
 
   Future<void> _submit() async {
@@ -155,6 +171,7 @@ class _RidesScreenState extends State<RidesScreen> {
 
   @override
   Widget build(BuildContext context) {
+    if (_filledPoints.length >= 2) _maybeRefreshSurge();
     final ready = _filledPoints.length >= 2 && _session != null && !_submitting;
 
     return Scaffold(
@@ -251,6 +268,13 @@ class _RidesScreenState extends State<RidesScreen> {
                         ],
                       ),
                     ),
+                    const Padding(
+                      padding: EdgeInsets.fromLTRB(16, 0, 16, 10),
+                      child: Text(
+                        'باختيارك لنوع الخدمة أعلاه، فإنك توافق على الخيار المحدد وتقرّ بأن تغيير نوع الخدمة أو طلب خدمة مختلفة بعد بدء الرحلة وركوبك السيارة يُعد مخالفة للقواعد واللوائح — ولا تتحمّل الشركة أو الكابتن أي مسؤولية عن هذا الاختيار.',
+                        style: TextStyle(fontSize: 10.5, color: AppColors.textFaint, height: 1.4),
+                      ),
+                    ),
                     const Divider(height: 1),
                     RadioGroup<String>(
                       groupValue: _payment,
@@ -304,6 +328,15 @@ class _RidesScreenState extends State<RidesScreen> {
                           child: Text(
                             '🛣️ رحلة خارج محافظة دمياط — سعر مختلف عن المشاوير الداخلية',
                             style: TextStyle(fontSize: 11, color: AppColors.primaryDark, fontWeight: FontWeight.w700),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      if (_surgeMult > 1)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 10),
+                          child: Text(
+                            '🔥 الطلب مرتفع دلوقتي — السعر شمل زيادة مؤقتة ×${_surgeMult.toStringAsFixed(2)}',
+                            style: const TextStyle(fontSize: 11, color: AppColors.error, fontWeight: FontWeight.w800),
                             textAlign: TextAlign.center,
                           ),
                         ),

@@ -1076,10 +1076,10 @@
             <div style="margin-top:1.25rem;padding:.85rem 1rem;background:#F1F5F9;border-radius:10px;display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap">
               <div>
                 <div style="font-weight:800;font-size:.85rem">🧠 التسعير الذكي الديناميكي (Surge)</div>
-                <div style="font-size:.75rem;color:#64748B;margin-top:.2rem">رفع السعر تلقائيًا وقت ارتفاع الطلب مقارنة بعدد السائقين المتاحين — لسه قيد التطوير، مفيش تأثير فعلي على السعر لحد ما يتفعّل.</div>
+                <div style="font-size:.75rem;color:#64748B;margin-top:.2rem">رفع السعر تلقائيًا وقت ارتفاع الطلب (طلبات معلّقة آخر 15 دقيقة) مقارنة بعدد السائقين المتصلين (آخر 10 دقايق) — زيادة تلقائية تصل لـ×1.5 وقت الذروة. فعّلها واضغط "حفظ" تحت.</div>
               </div>
-              <label style="display:flex;align-items:center;gap:.5rem;font-size:.8rem;font-weight:700;white-space:nowrap;opacity:.6">
-                <input type="checkbox" id="dynamic-pricing-toggle" disabled/> قريبًا
+              <label style="display:flex;align-items:center;gap:.5rem;font-size:.8rem;font-weight:700;white-space:nowrap">
+                <input type="checkbox" id="dynamic-pricing-toggle"/> تفعيل
               </label>
             </div>
             <button class="btn btn--primary" onclick="saveTripPricing()" id="save-pricing-btn" style="margin-top:1rem">💾 حفظ تسعيرة المشاوير</button>
@@ -3413,6 +3413,8 @@ async function saveTripPricing() {
   if (!pass) { msg.textContent='مطلوب كلمة مرور المشرف'; msg.style.cssText='display:block;background:#FEE2E2;color:#991B1B;font-size:.82rem;font-weight:700;padding:.5rem .75rem;border-radius:6px'; return; }
   btn.disabled = true; btn.textContent = 'جاري الحفظ...';
   const pairs = Object.entries(PRICING_FIELD_MAP).map(([key, elId]) => ({ key, value: document.getElementById(elId).value }));
+  const dynToggle = document.getElementById('dynamic-pricing-toggle');
+  if (dynToggle) pairs.push({ key: 'dynamic_pricing_enabled', value: dynToggle.checked ? 'true' : 'false' });
   try {
     const results = await Promise.all(pairs.map(p =>
       sbRpc('admin_set_setting', { p_admin_phone: ADMIN.phone, p_admin_password: pass, p_key: p.key, p_value: p.value })

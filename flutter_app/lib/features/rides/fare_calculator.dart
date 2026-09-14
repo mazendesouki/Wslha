@@ -66,11 +66,16 @@ double haversineKm(double lat1, double lng1, double lat2, double lng2) {
 /// (db/security-55-local-ride-ac-tier.sql) — before the min-fare floor, not
 /// after — or this preview would silently disagree with what the customer
 /// actually gets charged at insert.
-int fareForDistance(double straightKm, {String? toArea, String qualityTier = 'regular'}) {
+/// [surgeMultiplier] mirrors current_surge_multiplier() (db/security-62) —
+/// >1.0 only when dynamic_pricing_enabled is on and live demand/driver-
+/// supply crosses a threshold. Combined with the tier multiplier the exact
+/// same way (both floor and raw fare use the combined factor) so surge
+/// stacks on top of the tier price rather than replacing it.
+int fareForDistance(double straightKm, {String? toArea, String qualityTier = 'regular', double surgeMultiplier = 1.0}) {
   final roadKm = straightKm * roadFactor;
   final zone = _resolveZone(toArea);
   final effRate = _sedanRatePerKm * _defaultYearMult;
-  final mult = qualityMultiplier[qualityTier] ?? 1.0;
+  final mult = (qualityMultiplier[qualityTier] ?? 1.0) * surgeMultiplier;
   final raw = ((baseFare + _tieredKm(roadKm) * effRate) * zone.factor + zone.surcharge) * mult;
   // The floor has to scale by the same multiplier too, not just the raw
   // fare — otherwise a short trip (very common; base_fee/rate are low
@@ -106,9 +111,9 @@ double _yearMultiplier(int year) {
 
 bool isExternalTrip(double roadKm) => roadKm > externalThresholdKm;
 
-int externalFareForDistance(double roadKm, {String qualityTier = 'regular'}) {
+int externalFareForDistance(double roadKm, {String qualityTier = 'regular', double surgeMultiplier = 1.0}) {
   final rate = _externalRatePerKm * _yearMultiplier(2022); // same sedan/2022 default as fareForDistance()
-  final mult = qualityMultiplier[qualityTier] ?? 1.0;
+  final mult = (qualityMultiplier[qualityTier] ?? 1.0) * surgeMultiplier;
   final raw = (PricingSettings.externalBaseFee + roadKm * rate) * mult;
   return (math.max(raw, PricingSettings.externalMinFare * mult) / 5).ceil() * 5;
 }
