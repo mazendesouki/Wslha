@@ -219,7 +219,18 @@ class _RideTrackingScreenState extends State<RideTrackingScreen> {
 
           if (!widget.isDriverView && status == 'completed' && !_ratingPrompted && driverPhone != null && driverPhone.isNotEmpty) {
             _ratingPrompted = true;
-            WidgetsBinding.instance.addPostFrameCallback((_) => _maybePromptRating(driverPhone, customerPhone));
+            // Same "فاتورة الرحلة" the driver already sees on completion
+            // (driver_home_screen.dart's _ReceiptDialog) — shown here too,
+            // minus the app's commission cut, which is between the
+            // platform and the driver, not something the customer needs
+            // to see. Shown first, then chains into the existing rating
+            // prompt once dismissed.
+            WidgetsBinding.instance.addPostFrameCallback((_) async {
+              if (!mounted) return;
+              await showDialog(context: context, builder: (_) => _CustomerInvoiceDialog(ride: ride));
+              if (!mounted) return;
+              _maybePromptRating(driverPhone, customerPhone);
+            });
           }
 
           if (!widget.isDriverView) {
@@ -1099,6 +1110,94 @@ class _TierConfirmedCard extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+const Map<String, String> _paymentLabels = {'cash': '💵 كاش عند الاستلام', 'wallet': '📱 محفظة إلكترونية'};
+
+/// Customer's own copy of the "فاتورة الرحلة" the driver already gets on
+/// completion (driver_home_screen.dart's _ReceiptDialog) — same event,
+/// deliberately different fields: no commission (that's a platform↔driver
+/// split, not the customer's business), and adds the route/distance/
+/// date-time/payment-method context a driver's receipt doesn't need.
+class _CustomerInvoiceDialog extends StatelessWidget {
+  final Map<String, dynamic> ride;
+  const _CustomerInvoiceDialog({required this.ride});
+
+  @override
+  Widget build(BuildContext context) {
+    final fare = (ride['fare'] as num?) ?? 0;
+    final tier = ride['airport_quality_tier'] as String?;
+    final distanceKm = (ride['distance_km'] as num?)?.toStringAsFixed(1);
+    final payment = ride['payment'] as String?;
+    final completedAt = DateTime.tryParse(ride['completed_at'] as String? ?? '')?.toLocal();
+
+    return Dialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const Center(child: Text('✅', style: TextStyle(fontSize: 40))),
+            const SizedBox(height: 8),
+            const Center(child: Text('فاتورة الرحلة', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w900))),
+            const SizedBox(height: 20),
+            _row('من', '${ride['from_area'] ?? '—'}'),
+            const Divider(height: 22),
+            _row('إلى', '${ride['to_area'] ?? '—'}'),
+            if (distanceKm != null) ...[
+              const Divider(height: 22),
+              _row('المسافة', '$distanceKm كم'),
+            ],
+            if (completedAt != null) ...[
+              const Divider(height: 22),
+              _row('التاريخ والوقت', arDateTime(completedAt)),
+            ],
+            if (tier != null && tier != 'regular') ...[
+              const Divider(height: 22),
+              _row('الخدمة المختارة', qualityLabels[tier] ?? tier),
+            ],
+            const Divider(height: 22),
+            _row('أجرة الرحلة', '${fare.toStringAsFixed(0)} ج.م'),
+            if (payment != null) ...[
+              const Divider(height: 22),
+              _row('طريقة الدفع', _paymentLabels[payment] ?? payment),
+            ],
+            const Divider(height: 22),
+            _row('الإجمالي المستحق', '${fare.toStringAsFixed(0)} ج.م', bold: true, color: AppColors.success),
+            const SizedBox(height: 24),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('تمام'),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _row(String label, String value, {bool bold = false, Color? color}) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Expanded(
+          child: Text(label, style: const TextStyle(fontSize: 13, color: AppColors.textFaint, fontWeight: FontWeight.w700)),
+        ),
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: bold ? 17 : 14,
+            fontWeight: bold ? FontWeight.w900 : FontWeight.w800,
+            color: color ?? Colors.black87,
+          ),
+        ),
+      ],
     );
   }
 }
