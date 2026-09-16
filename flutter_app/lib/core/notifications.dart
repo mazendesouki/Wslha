@@ -59,6 +59,23 @@ class AppNotifications {
       importance: Importance.high,
       enableVibration: true,
     ));
+    // Experimental tone for the "السائق قرّب منك" proximity alert only —
+    // Android locks a channel's sound permanently once created, so this
+    // can't just be a config tweak on 'wslha_rides'; it needs its own
+    // channel id. No custom audio file is bundled (this environment's
+    // network egress can't reach sound-effect sites to fetch one) — this
+    // points at the device's own built-in alarm tone as a genuinely
+    // different-from-default system sound to test with. If this isn't the
+    // right feel, swap the sound: line below once a real audio file is
+    // available to bundle as a raw Android resource instead.
+    await androidImpl?.createNotificationChannel(const AndroidNotificationChannel(
+      'wslha_proximity',
+      'تنبيه اقتراب السائق (تجريبي)',
+      description: 'نغمة تجريبية لتنبيه اقتراب السائق من العميل',
+      importance: Importance.high,
+      enableVibration: true,
+      sound: UriAndroidNotificationSound('content://settings/system/alarm_alert'),
+    ));
   }
 
   Future<bool> _enabled() async {
@@ -69,11 +86,16 @@ class AppNotifications {
   Future<void> show(String title, String body, {String channelId = 'wslha_rides'}) async {
     if (!await _enabled()) return;
     await init();
+    final (channelName, channelDesc) = switch (channelId) {
+      'wslha_orders' => ('الطلبات الجديدة', 'إشعار فوري عند وصول طلب جديد'),
+      'wslha_proximity' => ('تنبيه اقتراب السائق (تجريبي)', 'نغمة تجريبية لتنبيه اقتراب السائق من العميل'),
+      _ => ('تحديثات المشاوير والطلبات', 'إشعارات تغيّر حالة المشاوير والطلبات'),
+    };
     final details = NotificationDetails(
       android: AndroidNotificationDetails(
         channelId,
-        channelId == 'wslha_orders' ? 'الطلبات الجديدة' : 'تحديثات المشاوير والطلبات',
-        channelDescription: 'إشعارات تغيّر حالة المشاوير والطلبات',
+        channelName,
+        channelDescription: channelDesc,
         importance: Importance.max,
         priority: Priority.high,
         enableVibration: true,
