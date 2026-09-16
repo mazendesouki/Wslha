@@ -1082,6 +1082,28 @@
                 <input type="checkbox" id="dynamic-pricing-toggle"/> تفعيل
               </label>
             </div>
+            <div style="margin-top:1.25rem;padding:.85rem 1rem;background:#F1F5F9;border-radius:10px">
+              <div style="font-weight:800;font-size:.85rem;margin-bottom:.6rem">⏱️ غرامات وقت الانتظار</div>
+              <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:.75rem">
+                <div>
+                  <label style="font-size:.75rem;color:#64748B;display:block;margin-bottom:.3rem">مهلة السائق قبل الغرامة (دقايق)</label>
+                  <input class="search-input" id="wait-driver-grace" type="number" min="0" step="1"/>
+                </div>
+                <div>
+                  <label style="font-size:.75rem;color:#64748B;display:block;margin-bottom:.3rem">غرامة تأخير السائق (ج.م)</label>
+                  <input class="search-input" id="wait-driver-fee" type="number" min="0" step="1"/>
+                </div>
+                <div>
+                  <label style="font-size:.75rem;color:#64748B;display:block;margin-bottom:.3rem">مهلة العميل للركوب (دقايق)</label>
+                  <input class="search-input" id="wait-customer-grace" type="number" min="0" step="1"/>
+                </div>
+                <div>
+                  <label style="font-size:.75rem;color:#64748B;display:block;margin-bottom:.3rem">خصم تأخير العميل (ج.م/دقيقة)</label>
+                  <input class="search-input" id="wait-customer-fee" type="number" min="0" step="1"/>
+                </div>
+              </div>
+              <div style="font-size:.72rem;color:#94A3B8;margin-top:.5rem">لو السائق اتأخر عن العميل أكتر من المهلة، بيتخصم من رصيده تلقائيًا. ولو العميل اتأخر يركب بعد وصول السائق أكتر من مهلته، بيتخصم منه المبلغ عن كل دقيقة إضافية.</div>
+            </div>
             <button class="btn btn--primary" onclick="saveTripPricing()" id="save-pricing-btn" style="margin-top:1rem">💾 حفظ تسعيرة المشاوير</button>
             <div id="pricing-msg" style="display:none;font-size:.82rem;font-weight:700;padding:.5rem .75rem;border-radius:6px;margin-top:.5rem"></div>
           </div>
@@ -3390,6 +3412,8 @@ const PRICING_FIELD_MAP = {
   external_rate_sedan: 'price-external-sedan', external_rate_suv: 'price-external-suv', external_rate_van: 'price-external-van',
   airport_base_fee: 'price-airport-base', airport_min_fare: 'price-airport-min',
   airport_rate_sedan: 'price-airport-sedan', airport_rate_suv: 'price-airport-suv', airport_rate_van: 'price-airport-van',
+  driver_late_grace_minutes: 'wait-driver-grace', driver_late_fee: 'wait-driver-fee',
+  customer_late_grace_minutes: 'wait-customer-grace', customer_late_fee_per_minute: 'wait-customer-fee',
 };
 
 async function loadTripPricing() {

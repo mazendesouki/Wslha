@@ -7,9 +7,11 @@ import '../../core/date_format_ar.dart';
 import '../../core/location_share.dart';
 import '../../core/maps_launcher.dart';
 import '../../core/notifications.dart';
+import '../../core/pricing_settings.dart';
 import '../../core/session.dart';
 import '../../core/theme.dart';
 import '../../shared/widgets/live_tracking_map.dart';
+import '../../shared/widgets/waiting_timer_card.dart';
 import '../airport/airport_fare.dart' show qualityLabels;
 import '../driver/driver_repository.dart';
 import '../ratings/rate_sheet.dart';
@@ -96,6 +98,12 @@ class _RideTrackingScreenState extends State<RideTrackingScreen> {
         if (mounted) setState(() => _myPhone = s?.phone);
       });
     }
+    // Needed for WaitingTimerCard's grace-period/fee display (admin-
+    // configurable, db/security-63) to show the real numbers instead of
+    // the hardcoded fallback defaults.
+    PricingSettings.refresh().then((_) {
+      if (mounted) setState(() {});
+    });
   }
 
   Future<void> _maybePromptRating(String driverPhone, String? customerPhone) async {
@@ -279,6 +287,22 @@ class _RideTrackingScreenState extends State<RideTrackingScreen> {
                       if (!isCancelled && !widget.isDriverView && status == 'accepted') ...[
                         const SizedBox(height: 12),
                         _ArrivalDeadlineCard(acceptedAt: ride['accepted_at'] as String?, etaMinutes: ride['eta_minutes'] as num?),
+                      ],
+                      // Shown to both sides, right when the ride is
+                      // accepted — before the waiting period actually
+                      // starts (that only begins once the driver marks
+                      // arrived) — so both know the rule up front instead
+                      // of finding out from a live counter after the fact.
+                      if (!isCancelled && status == 'accepted') ...[
+                        const SizedBox(height: 12),
+                        _WaitingRulesNoticeCard(isDriverView: widget.isDriverView),
+                      ],
+                      if (!isCancelled && status == 'arrived' && ride['arrived_at'] != null) ...[
+                        const SizedBox(height: 12),
+                        WaitingTimerCard(
+                          arrivedAt: DateTime.parse(ride['arrived_at'] as String).toLocal(),
+                          isCustomerView: !widget.isDriverView,
+                        ),
                       ],
                       if (!isCancelled &&
                           !widget.isDriverView &&
@@ -1070,9 +1094,39 @@ class _ArrivalDeadlineCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 6),
-          const Text(
-            'يرجى التواجد عند نقطة الانطلاق في الموعد — تأخير السائق أكتر من 5 دقايق بيحمّله غرامة 20 ج.م، فبلاش نتأخر عليه 🙏',
-            style: TextStyle(fontSize: 11, color: AppColors.textFaint, height: 1.4),
+          Text(
+            'يرجى التواجد عند نقطة الانطلاق في الموعد — تأخير السائق أكتر من ${PricingSettings.driverLateGraceMinutes} دقايق بيحمّله غرامة ${PricingSettings.driverLateFee.toStringAsFixed(0)} ج.م، فبلاش نتأخر عليه 🙏',
+            style: const TextStyle(fontSize: 11, color: AppColors.textFaint, height: 1.4),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Shown to both sides right when the ride is accepted (before any
+/// waiting actually starts) — explains both penalty rules up front:
+/// the driver's for arriving late, and the customer's for taking too
+/// long to board once the driver's there. Values come from
+/// PricingSettings (db/security-63, admin-configurable).
+class _WaitingRulesNoticeCard extends StatelessWidget {
+  final bool isDriverView;
+  const _WaitingRulesNoticeCard({required this.isDriverView});
+
+  @override
+  Widget build(BuildContext context) {
+    final text = isDriverView
+        ? 'لو اتأخرت عن العميل أكتر من ${PricingSettings.driverLateGraceMinutes} دقايق من وقت قبولك للرحلة، هيتم خصم ${PricingSettings.driverLateFee.toStringAsFixed(0)} ج.م من رصيدك تلقائيًا.'
+        : 'لما السائق يوصل، هيكون عندك ${PricingSettings.customerLateGraceMinutes} دقايق تركب فيها من غير أي خصم — لو اتأخرت أكتر من كده، هيتم خصم ${PricingSettings.customerLateFeePerMinute.toStringAsFixed(0)} ج.م عن كل دقيقة تأخير إضافية.';
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(color: const Color(0xFFF1F5F9), borderRadius: BorderRadius.circular(12)),
+      child: Row(
+        children: [
+          const Text('ℹ️', style: TextStyle(fontSize: 16)),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(text, style: const TextStyle(fontSize: 11, color: AppColors.textFaint, fontWeight: FontWeight.w700, height: 1.4)),
           ),
         ],
       ),

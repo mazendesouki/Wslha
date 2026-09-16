@@ -27,6 +27,13 @@ class PricingSettings {
   static double externalMinFare = 150;
   static double externalRateSedan = 7;
 
+  // Waiting-time penalties (db/security-63) — same defaults the SQL side
+  // falls back to if a key is missing.
+  static int driverLateGraceMinutes = 5;
+  static double driverLateFee = 10;
+  static int customerLateGraceMinutes = 5;
+  static double customerLateFeePerMinute = 5;
+
   static bool _loaded = false;
 
   /// Fire-and-forget is fine to call repeatedly (e.g. from each screen's
@@ -49,6 +56,8 @@ class PricingSettings {
         'local_base_fee', 'local_min_fare', 'local_rate_sedan',
         'airport_base_fee', 'airport_min_fare', 'airport_rate_sedan', 'airport_rate_suv', 'airport_rate_van',
         'external_base_fee', 'external_min_fare', 'external_rate_sedan',
+        'driver_late_grace_minutes', 'driver_late_fee',
+        'customer_late_grace_minutes', 'customer_late_fee_per_minute',
       ]);
       double? num(String key) {
         final row = (rows as List).cast<Map<String, dynamic>>().where((r) => r['key'] == key).toList();
@@ -67,6 +76,10 @@ class PricingSettings {
       externalBaseFee   = num('external_base_fee') ?? externalBaseFee;
       externalMinFare   = num('external_min_fare') ?? externalMinFare;
       externalRateSedan = num('external_rate_sedan') ?? externalRateSedan;
+      driverLateGraceMinutes   = (num('driver_late_grace_minutes') ?? driverLateGraceMinutes.toDouble()).round();
+      driverLateFee            = num('driver_late_fee') ?? driverLateFee;
+      customerLateGraceMinutes = (num('customer_late_grace_minutes') ?? customerLateGraceMinutes.toDouble()).round();
+      customerLateFeePerMinute = num('customer_late_fee_per_minute') ?? customerLateFeePerMinute;
       _loaded = true;
     } catch (_) {
       // Network hiccup — keep the hardcoded defaults.

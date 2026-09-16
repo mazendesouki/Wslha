@@ -6,10 +6,12 @@ import '../../core/contact_launcher.dart';
 import '../../core/date_format_ar.dart';
 import '../../core/maps_launcher.dart';
 import '../../core/notifications.dart';
+import '../../core/pricing_settings.dart';
 import '../../core/push.dart';
 import '../../core/session.dart';
 import '../../core/theme.dart';
 import '../../shared/widgets/logout_button.dart';
+import '../../shared/widgets/waiting_timer_card.dart';
 import '../airport/airport_fare.dart' as airport_fare;
 import '../orders/orders_repository.dart';
 import '../ratings/rate_sheet.dart';
@@ -77,6 +79,11 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
     // manually reconnect every single time, not just after a real kill).
     _restoreActiveJob();
     _restoreOnlineStatus();
+    // Needed for the waiting-time penalty cards below (grace period/fee,
+    // db/security-63) to show the real admin-configured numbers.
+    PricingSettings.refresh().then((_) {
+      if (mounted) setState(() {});
+    });
   }
 
   Future<void> _restoreActiveJob() async {
@@ -347,12 +354,18 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
         case 'accepted':
           final (lateMinutes, feeApplied) = await _repo.markRideArrived(rideId, widget.session.phone);
           if (!mounted) return;
+          // Same stale-snapshot issue the accepted_at fix addressed
+          // earlier — job's map has no live arrived_at until this is
+          // stamped, so WaitingTimerCard below (needs arrived_at) would
+          // otherwise never appear right after tapping this button.
+          job['arrived_at'] = DateTime.now().toUtc().toIso8601String();
+          job['status'] = 'arrived';
           _jobs.setRideStep('arrived');
           setState(() => _busy = false);
           if (feeApplied && mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text('⚠️ اتأخرت $lateMinutes دقيقة عن العميل — اتخصم 20 ج.م تلقائيًا من محفظتك'),
+                content: Text('⚠️ اتأخرت $lateMinutes دقيقة عن العميل — اتخصم ${PricingSettings.driverLateFee.toStringAsFixed(0)} ج.م تلقائيًا من محفظتك'),
                 backgroundColor: AppColors.error,
                 duration: const Duration(seconds: 6),
               ),
@@ -653,6 +666,19 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
                 if (!isOrder && job['status'] == 'accepted') ...[
                   const SizedBox(height: 8),
                   _ArrivalDeadlineChip(acceptedAt: job['accepted_at'] as String?, etaMinutes: job['eta_minutes'] as num?),
+                  const SizedBox(height: 8),
+                  Text(
+                    'لو اتأخرت عن العميل أكتر من ${PricingSettings.driverLateGraceMinutes} دقايق من وقت قبولك، هيتخصم ${PricingSettings.driverLateFee.toStringAsFixed(0)} ج.م من رصيدك تلقائيًا.',
+                    style: const TextStyle(fontSize: 10.5, color: AppColors.textFaint, fontWeight: FontWeight.w700, height: 1.4),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+                if (!isOrder && job['status'] == 'arrived' && job['arrived_at'] != null) ...[
+                  const SizedBox(height: 8),
+                  WaitingTimerCard(
+                    arrivedAt: DateTime.parse(job['arrived_at'] as String).toLocal(),
+                    isCustomerView: false,
+                  ),
                 ],
                 const SizedBox(height: 12),
                 Container(
