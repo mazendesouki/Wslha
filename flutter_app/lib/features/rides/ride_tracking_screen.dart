@@ -1232,56 +1232,76 @@ class _CustomerInvoiceDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final fare = (ride['fare'] as num?) ?? 0;
+    final fare = ((ride['fare'] as num?) ?? 0).toDouble();
     final tier = ride['airport_quality_tier'] as String?;
     final distanceKm = (ride['distance_km'] as num?)?.toStringAsFixed(1);
     final payment = ride['payment'] as String?;
     final completedAt = DateTime.tryParse(ride['completed_at'] as String? ?? '')?.toLocal();
+    final rideId = ride['id']?.toString();
+    final customerPhone = ride['customer_phone'] as String?;
 
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       child: Padding(
         padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const Center(child: Text('✅', style: TextStyle(fontSize: 40))),
-            const SizedBox(height: 8),
-            const Center(child: Text('فاتورة الرحلة', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w900))),
-            const SizedBox(height: 20),
-            _row('من', '${ride['from_area'] ?? '—'}'),
-            const Divider(height: 22),
-            _row('إلى', '${ride['to_area'] ?? '—'}'),
-            if (distanceKm != null) ...[
-              const Divider(height: 22),
-              _row('المسافة', '$distanceKm كم'),
-            ],
-            if (completedAt != null) ...[
-              const Divider(height: 22),
-              _row('التاريخ والوقت', arDateTime(completedAt)),
-            ],
-            if (tier != null && tier != 'regular') ...[
-              const Divider(height: 22),
-              _row('الخدمة المختارة', qualityLabels[tier] ?? tier),
-            ],
-            const Divider(height: 22),
-            _row('أجرة الرحلة', '${fare.toStringAsFixed(0)} ج.م'),
-            if (payment != null) ...[
-              const Divider(height: 22),
-              _row('طريقة الدفع', _paymentLabels[payment] ?? payment),
-            ],
-            const Divider(height: 22),
-            _row('الإجمالي المستحق', '${fare.toStringAsFixed(0)} ج.م', bold: true, color: AppColors.success),
-            const SizedBox(height: 24),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: const Text('تمام'),
-              ),
-            ),
-          ],
+        child: FutureBuilder<List<Map<String, dynamic>>>(
+          // Only fetched once the ride is already completed (this dialog
+          // only ever shows then), by which point any late-boarding fee
+          // (charged at the arrived→in_progress transition, db/security-63)
+          // has long since been recorded.
+          future: (rideId != null) ? RideRepository().fetchRidePenalties(rideId) : Future.value(const []),
+          builder: (context, snap) {
+            final lateFee = (snap.data ?? [])
+                .where((p) => p['phone'] == customerPhone)
+                .fold<double>(0, (sum, p) => sum + ((p['amount'] as num).abs()));
+            final total = fare + lateFee;
+
+            return Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const Center(child: Text('✅', style: TextStyle(fontSize: 40))),
+                const SizedBox(height: 8),
+                const Center(child: Text('فاتورة الرحلة', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w900))),
+                const SizedBox(height: 20),
+                _row('من', '${ride['from_area'] ?? '—'}'),
+                const Divider(height: 22),
+                _row('إلى', '${ride['to_area'] ?? '—'}'),
+                if (distanceKm != null) ...[
+                  const Divider(height: 22),
+                  _row('المسافة', '$distanceKm كم'),
+                ],
+                if (completedAt != null) ...[
+                  const Divider(height: 22),
+                  _row('التاريخ والوقت', arDateTime(completedAt)),
+                ],
+                if (tier != null && tier != 'regular') ...[
+                  const Divider(height: 22),
+                  _row('الخدمة المختارة', qualityLabels[tier] ?? tier),
+                ],
+                const Divider(height: 22),
+                _row('أجرة الرحلة', '${fare.toStringAsFixed(0)} ج.م'),
+                if (lateFee > 0) ...[
+                  const Divider(height: 22),
+                  _row('رسوم تأخير الركوب', '+ ${lateFee.toStringAsFixed(0)} ج.م', color: AppColors.error),
+                ],
+                if (payment != null) ...[
+                  const Divider(height: 22),
+                  _row('طريقة الدفع', _paymentLabels[payment] ?? payment),
+                ],
+                const Divider(height: 22),
+                _row('الإجمالي المستحق', '${total.toStringAsFixed(0)} ج.م', bold: true, color: AppColors.success),
+                const SizedBox(height: 24),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: const Text('تمام'),
+                  ),
+                ),
+              ],
+            );
+          },
         ),
       ),
     );

@@ -247,11 +247,11 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
     );
   }
 
-  void _showReceipt(RideSettlement s) {
+  void _showReceipt(RideSettlement s, String rideId) {
     if (!mounted) return;
     showDialog(
       context: context,
-      builder: (_) => _ReceiptDialog(settlement: s),
+      builder: (_) => _ReceiptDialog(settlement: s, rideId: rideId, driverPhone: widget.session.phone),
     );
   }
 
@@ -375,6 +375,13 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
         case 'arrived':
           await _repo.markRideInProgress(rideId, widget.session.phone);
           if (!mounted) return;
+          // Same stale job['status'] issue as the accepted_at/arrived_at
+          // fixes above — WaitingTimerCard's guard checks job['status'],
+          // not _jobs.rideStep, so without this the waiting counter kept
+          // counting on the driver's screen forever after tapping "ابدأ
+          // الرحلة", even though the customer's own copy (driven by the
+          // live ride stream) correctly disappeared right away.
+          job['status'] = 'in_progress';
           _jobs.setRideStep('in_progress');
           setState(() => _busy = false);
           return;
@@ -383,7 +390,7 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
           if (!mounted) return;
           _jobs.clearActive();
           setState(() => _busy = false);
-          if (settlement != null) _showReceipt(settlement);
+          if (settlement != null) _showReceipt(settlement, rideId);
           _promptRateCustomer(job, serviceType: 'ride', referenceId: rideId);
       }
     } catch (e) {
@@ -1371,7 +1378,9 @@ class _AirportDetailsCard extends StatelessWidget {
 
 class _ReceiptDialog extends StatelessWidget {
   final RideSettlement settlement;
-  const _ReceiptDialog({required this.settlement});
+  final String rideId;
+  final String driverPhone;
+  const _ReceiptDialog({required this.settlement, required this.rideId, required this.driverPhone});
 
   String _egp(double v) => '${v.toStringAsFixed(0)} ج.م';
 
@@ -1382,27 +1391,48 @@ class _ReceiptDialog extends StatelessWidget {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       child: Padding(
         padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text('✅', style: TextStyle(fontSize: 40)),
-            const SizedBox(height: 8),
-            const Text('فاتورة الرحلة', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w900)),
-            const SizedBox(height: 20),
-            _row('المبلغ الأصلي (الأجرة)', _egp(s.fare)),
-            const Divider(height: 24),
-            _row('رسوم التطبيق (${s.rate.toStringAsFixed(0)}%)', '- ${_egp(s.commission)}', color: AppColors.error),
-            const Divider(height: 24),
-            _row('الإجمالي المستحق لك', _egp(s.driverEarn), bold: true, color: AppColors.success),
-            const SizedBox(height: 24),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: const Text('تمام'),
-              ),
-            ),
-          ],
+        child: FutureBuilder<List<Map<String, dynamic>>>(
+          future: RideRepository().fetchRidePenalties(rideId),
+          builder: (context, snap) {
+            // A late-arrival fee (db/security-63/64) is deducted from the
+            // driver's wallet separately, at the moment they mark
+            // "arrived" — well before settle_ride_commission() runs here,
+            // so driverEarn above already doesn't include it. Shown as an
+            // informational line so the driver understands why their
+            // wallet moved by more than just this ride's commission cut,
+            // not folded into the totals above (which are this ride's
+            // fare/commission/earnings specifically).
+            final lateFee = (snap.data ?? [])
+                .where((p) => p['phone'] == driverPhone)
+                .fold<double>(0, (sum, p) => sum + ((p['amount'] as num).abs()));
+
+            return Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text('✅', style: TextStyle(fontSize: 40)),
+                const SizedBox(height: 8),
+                const Text('فاتورة الرحلة', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w900)),
+                const SizedBox(height: 20),
+                _row('المبلغ الأصلي (الأجرة)', _egp(s.fare)),
+                const Divider(height: 24),
+                _row('رسوم التطبيق (${s.rate.toStringAsFixed(0)}%)', '- ${_egp(s.commission)}', color: AppColors.error),
+                const Divider(height: 24),
+                _row('الإجمالي المستحق لك', _egp(s.driverEarn), bold: true, color: AppColors.success),
+                if (lateFee > 0) ...[
+                  const Divider(height: 24),
+                  _row('⚠️ خصم تأخيرك عن الوصول', '- ${_egp(lateFee)}', color: AppColors.error),
+                ],
+                const SizedBox(height: 24),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: const Text('تمام'),
+                  ),
+                ),
+              ],
+            );
+          },
         ),
       ),
     );

@@ -18,6 +18,22 @@ class RideRepository {
     }
   }
 
+  /// Late-arrival/late-boarding penalty rows for a ride (db/security-63,
+  /// security-64) — 'penalty' wallet_transactions with reference_id set
+  /// to the ride id. Distinguishing driver-late vs. customer-late is just
+  /// matching `phone` against the ride's driver_phone/customer_phone,
+  /// since only the charged party's own phone gets a row for it. Used by
+  /// both invoice dialogs to show the real final total, not just the
+  /// original fare.
+  Future<List<Map<String, dynamic>>> fetchRidePenalties(String rideId) async {
+    try {
+      final rows = await sb.from('wallet_transactions').select('phone,amount,note').eq('reference_id', rideId).eq('type', 'penalty');
+      return List<Map<String, dynamic>>.from(rows);
+    } catch (_) {
+      return [];
+    }
+  }
+
   Future<Map<String, dynamic>?> createRide({
     required String customerPhone,
     required String customerName,
