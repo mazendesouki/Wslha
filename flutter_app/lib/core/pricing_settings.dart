@@ -33,6 +33,10 @@ class PricingSettings {
   static double driverLateFee = 10;
   static int customerLateGraceMinutes = 5;
   static double customerLateFeePerMinute = 5;
+  // On/off switch for the driver's own late-arrival fee (db/security-64)
+  // — off by default per explicit request; admin can re-enable from the
+  // dashboard. The customer-late-to-board fee is unaffected by this.
+  static bool driverLateFeeEnabled = false;
 
   static bool _loaded = false;
 
@@ -56,13 +60,19 @@ class PricingSettings {
         'local_base_fee', 'local_min_fare', 'local_rate_sedan',
         'airport_base_fee', 'airport_min_fare', 'airport_rate_sedan', 'airport_rate_suv', 'airport_rate_van',
         'external_base_fee', 'external_min_fare', 'external_rate_sedan',
-        'driver_late_grace_minutes', 'driver_late_fee',
+        'driver_late_grace_minutes', 'driver_late_fee', 'driver_late_fee_enabled',
         'customer_late_grace_minutes', 'customer_late_fee_per_minute',
       ]);
       double? num(String key) {
         final row = (rows as List).cast<Map<String, dynamic>>().where((r) => r['key'] == key).toList();
         if (row.isEmpty) return null;
         return double.tryParse('${row.first['value']}');
+      }
+
+      bool? boolSetting(String key) {
+        final row = (rows as List).cast<Map<String, dynamic>>().where((r) => r['key'] == key).toList();
+        if (row.isEmpty) return null;
+        return '${row.first['value']}' == 'true';
       }
 
       localBaseFee    = num('local_base_fee') ?? localBaseFee;
@@ -78,6 +88,7 @@ class PricingSettings {
       externalRateSedan = num('external_rate_sedan') ?? externalRateSedan;
       driverLateGraceMinutes   = (num('driver_late_grace_minutes') ?? driverLateGraceMinutes.toDouble()).round();
       driverLateFee            = num('driver_late_fee') ?? driverLateFee;
+      driverLateFeeEnabled     = boolSetting('driver_late_fee_enabled') ?? driverLateFeeEnabled;
       customerLateGraceMinutes = (num('customer_late_grace_minutes') ?? customerLateGraceMinutes.toDouble()).round();
       customerLateFeePerMinute = num('customer_late_fee_per_minute') ?? customerLateFeePerMinute;
       _loaded = true;

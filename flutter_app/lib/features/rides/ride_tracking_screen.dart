@@ -1095,7 +1095,9 @@ class _ArrivalDeadlineCard extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           Text(
-            'يرجى التواجد عند نقطة الانطلاق في الموعد — تأخير السائق أكتر من ${PricingSettings.driverLateGraceMinutes} دقايق بيحمّله غرامة ${PricingSettings.driverLateFee.toStringAsFixed(0)} ج.م، فبلاش نتأخر عليه 🙏',
+            PricingSettings.driverLateFeeEnabled
+                ? 'يرجى التواجد عند نقطة الانطلاق في الموعد — تأخير السائق أكتر من ${PricingSettings.driverLateGraceMinutes} دقايق بيحمّله غرامة ${PricingSettings.driverLateFee.toStringAsFixed(0)} ج.م، فبلاش نتأخر عليه 🙏'
+                : 'يرجى التواجد عند نقطة الانطلاق في الموعد 🙏',
             style: const TextStyle(fontSize: 11, color: AppColors.textFaint, height: 1.4),
           ),
         ],
@@ -1115,6 +1117,11 @@ class _WaitingRulesNoticeCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (isDriverView && !PricingSettings.driverLateFeeEnabled) {
+      // Driver-lateness fee is currently switched off by the admin
+      // (db/security-64) — nothing to warn the driver about here.
+      return const SizedBox.shrink();
+    }
     final text = isDriverView
         ? 'لو اتأخرت عن العميل أكتر من ${PricingSettings.driverLateGraceMinutes} دقايق من وقت قبولك للرحلة، هيتم خصم ${PricingSettings.driverLateFee.toStringAsFixed(0)} ج.م من رصيدك تلقائيًا.'
         : 'لما السائق يوصل، هيكون عندك ${PricingSettings.customerLateGraceMinutes} دقايق تركب فيها من غير أي خصم — لو اتأخرت أكتر من كده، هيتم خصم ${PricingSettings.customerLateFeePerMinute.toStringAsFixed(0)} ج.م عن كل دقيقة تأخير إضافية.';

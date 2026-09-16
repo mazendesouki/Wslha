@@ -666,12 +666,14 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
                 if (!isOrder && job['status'] == 'accepted') ...[
                   const SizedBox(height: 8),
                   _ArrivalDeadlineChip(acceptedAt: job['accepted_at'] as String?, etaMinutes: job['eta_minutes'] as num?),
-                  const SizedBox(height: 8),
-                  Text(
-                    'لو اتأخرت عن العميل أكتر من ${PricingSettings.driverLateGraceMinutes} دقايق من وقت قبولك، هيتخصم ${PricingSettings.driverLateFee.toStringAsFixed(0)} ج.م من رصيدك تلقائيًا.',
-                    style: const TextStyle(fontSize: 10.5, color: AppColors.textFaint, fontWeight: FontWeight.w700, height: 1.4),
-                    textAlign: TextAlign.center,
-                  ),
+                  if (PricingSettings.driverLateFeeEnabled) ...[
+                    const SizedBox(height: 8),
+                    Text(
+                      'لو اتأخرت عن العميل أكتر من ${PricingSettings.driverLateGraceMinutes} دقايق من وقت قبولك، هيتخصم ${PricingSettings.driverLateFee.toStringAsFixed(0)} ج.م من رصيدك تلقائيًا.',
+                      style: const TextStyle(fontSize: 10.5, color: AppColors.textFaint, fontWeight: FontWeight.w700, height: 1.4),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
                 ],
                 if (!isOrder && job['status'] == 'arrived' && job['arrived_at'] != null) ...[
                   const SizedBox(height: 8),

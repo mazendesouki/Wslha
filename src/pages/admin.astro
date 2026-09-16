@@ -1083,7 +1083,12 @@
               </label>
             </div>
             <div style="margin-top:1.25rem;padding:.85rem 1rem;background:#F1F5F9;border-radius:10px">
-              <div style="font-weight:800;font-size:.85rem;margin-bottom:.6rem">⏱️ غرامات وقت الانتظار</div>
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;margin-bottom:.6rem">
+                <div style="font-weight:800;font-size:.85rem">⏱️ غرامات وقت الانتظار</div>
+                <label style="display:flex;align-items:center;gap:.5rem;font-size:.78rem;font-weight:700;white-space:nowrap">
+                  <input type="checkbox" id="wait-driver-fee-enabled"/> تفعيل خصم تأخير السائق
+                </label>
+              </div>
               <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:.75rem">
                 <div>
                   <label style="font-size:.75rem;color:#64748B;display:block;margin-bottom:.3rem">مهلة السائق قبل الغرامة (دقايق)</label>
@@ -3418,12 +3423,16 @@ const PRICING_FIELD_MAP = {
 
 async function loadTripPricing() {
   try {
-    const rows = await sbGet(`app_settings?key=in.(${Object.keys(PRICING_FIELD_MAP).join(',')},dynamic_pricing_enabled)&select=key,value`);
+    const rows = await sbGet(`app_settings?key=in.(${Object.keys(PRICING_FIELD_MAP).join(',')},dynamic_pricing_enabled,driver_late_fee_enabled)&select=key,value`);
     (rows||[]).forEach(r => {
       const elId = PRICING_FIELD_MAP[r.key];
       if (elId) { const el = document.getElementById(elId); if (el) el.value = r.value; }
       if (r.key === 'dynamic_pricing_enabled') {
         const el = document.getElementById('dynamic-pricing-toggle');
+        if (el) el.checked = r.value === 'true';
+      }
+      if (r.key === 'driver_late_fee_enabled') {
+        const el = document.getElementById('wait-driver-fee-enabled');
         if (el) el.checked = r.value === 'true';
       }
     });
@@ -3439,6 +3448,8 @@ async function saveTripPricing() {
   const pairs = Object.entries(PRICING_FIELD_MAP).map(([key, elId]) => ({ key, value: document.getElementById(elId).value }));
   const dynToggle = document.getElementById('dynamic-pricing-toggle');
   if (dynToggle) pairs.push({ key: 'dynamic_pricing_enabled', value: dynToggle.checked ? 'true' : 'false' });
+  const driverLateToggle = document.getElementById('wait-driver-fee-enabled');
+  if (driverLateToggle) pairs.push({ key: 'driver_late_fee_enabled', value: driverLateToggle.checked ? 'true' : 'false' });
   try {
     const results = await Promise.all(pairs.map(p =>
       sbRpc('admin_set_setting', { p_admin_phone: ADMIN.phone, p_admin_password: pass, p_key: p.key, p_value: p.value })
