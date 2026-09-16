@@ -17,6 +17,7 @@ import '../driver/driver_repository.dart';
 import '../ratings/rate_sheet.dart';
 import '../ratings/ratings_repository.dart';
 import '../ratings/trust_badge.dart';
+import 'fare_calculator.dart' show haversineKm;
 import 'ride_repository.dart';
 
 const Set<String> _liveTrackStatuses = {'accepted', 'arrived', 'in_progress'};
@@ -501,16 +502,30 @@ class _DriverStepButton extends StatelessWidget {
 /// for the customer, shown while a driver is assigned and the ride hasn't
 /// finished yet — lets them see for themselves whether the driver is on
 /// the right path, instead of trusting the status text alone.
-class _LiveMapSection extends StatelessWidget {
+/// The "assistant" layer on top of the raw live map: a plain-language
+/// distance/ETA readout that updates on every location ping (instead of
+/// making the customer read the driver's position off the map
+/// themselves), plus a one-time "السائق قرّب منك" push once the driver's
+/// still-approaching-pickup distance drops under 300m — this is what
+/// actually answers "فين السائق دلوقتي؟" instead of just showing a dot.
+class _LiveMapSection extends StatefulWidget {
   final RideRepository rideRepo;
   final String driverPhone;
   final Map<String, dynamic> ride;
   const _LiveMapSection({required this.rideRepo, required this.driverPhone, required this.ride});
 
+  @override
+  State<_LiveMapSection> createState() => _LiveMapSectionState();
+}
+
+class _LiveMapSectionState extends State<_LiveMapSection> {
+  bool _nearAlertSent = false;
+
   double? _num(dynamic v) => v == null ? null : (v as num).toDouble();
 
   @override
   Widget build(BuildContext context) {
+    final ride = widget.ride;
     final fromLat = _num(ride['from_lat']);
     final fromLng = _num(ride['from_lng']);
     final toLat = _num(ride['to_lat']);
@@ -518,15 +533,39 @@ class _LiveMapSection extends StatelessWidget {
     if (fromLat == null || fromLng == null || toLat == null || toLng == null) return const SizedBox.shrink();
     final origin = LatLng(fromLat, fromLng);
     final destination = LatLng(toLat, toLng);
+    final status = ride['status'] as String? ?? 'accepted';
+    // Before pickup the driver is heading to the customer; after pickup
+    // they're heading to the drop-off — the readout should always track
+    // whichever leg is actually happening right now.
+    final headingToPickup = status == 'accepted' || status == 'arrived';
+    final target = headingToPickup ? origin : destination;
 
     return StreamBuilder<List<Map<String, dynamic>>>(
-      stream: rideRepo.watchDriverLocation(driverPhone),
+      stream: widget.rideRepo.watchDriverLocation(widget.driverPhone),
       builder: (context, snap) {
         final loc = (snap.data != null && snap.data!.isNotEmpty) ? snap.data!.first : null;
         final driverLat = _num(loc?['lat']);
         final driverLng = _num(loc?['lng']);
         final driverHeading = _num(loc?['heading']);
         final driverPos = (driverLat != null && driverLng != null) ? LatLng(driverLat, driverLng) : null;
+
+        String? readout;
+        if (driverPos != null && status != 'arrived') {
+          final distanceKm = haversineKm(driverPos.latitude, driverPos.longitude, target.latitude, target.longitude);
+          final distanceM = distanceKm * 1000;
+          final etaMin = (distanceKm / 25 * 60).ceil().clamp(1, 999); // ~25 km/h city average
+          final distanceLabel = distanceM < 1000 ? '${distanceM.round()} م' : '${distanceKm.toStringAsFixed(1)} كم';
+          readout = headingToPickup
+              ? '🚗 السائق على بعد $distanceLabel منك — وصول متوقع خلال ~$etaMin دقيقة'
+              : '🚖 باقي $distanceLabel على وجهتك — حوالي ~$etaMin دقيقة';
+
+          if (headingToPickup && distanceM < 300 && !_nearAlertSent) {
+            _nearAlertSent = true;
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              AppNotifications.instance.show('وصّلها', '🚗 السائق قرّب منك أوي — استعد للنزول');
+            });
+          }
+        }
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -540,13 +579,18 @@ class _LiveMapSection extends StatelessWidget {
               clipBehavior: Clip.antiAlias,
               child: Column(
                 children: [
-                  const Padding(
-                    padding: EdgeInsets.fromLTRB(14, 10, 14, 6),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(14, 10, 14, 6),
                     child: Row(
                       children: [
-                        Text('🚖', style: TextStyle(fontSize: 14)),
-                        SizedBox(width: 6),
-                        Text('السائق على الخريطة الآن', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 12)),
+                        const Text('🚖', style: TextStyle(fontSize: 14)),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            readout ?? 'السائق على الخريطة الآن',
+                            style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 12),
+                          ),
+                        ),
                       ],
                     ),
                   ),
