@@ -59,22 +59,25 @@ class AppNotifications {
       importance: Importance.high,
       enableVibration: true,
     ));
-    // Experimental tone for the "السائق قرّب منك" proximity alert only —
-    // Android locks a channel's sound permanently once created, so this
-    // can't just be a config tweak on 'wslha_rides'; it needs its own
-    // channel id. No custom audio file is bundled (this environment's
-    // network egress can't reach sound-effect sites to fetch one) — this
-    // points at the device's own built-in alarm tone as a genuinely
-    // different-from-default system sound to test with. If this isn't the
-    // right feel, swap the sound: line below once a real audio file is
-    // available to bundle as a raw Android resource instead.
+    // Custom tone for the "السائق قرّب منك" proximity alert only — bundled
+    // audio file at android/app/src/main/res/raw/proximity_alert.mp3
+    // (user-provided). Android locks a channel's sound permanently once
+    // created, so this can't be a config tweak on 'wslha_rides'; it needs
+    // its own channel id — and a NEW id here (not the old 'wslha_proximity'
+    // from the earlier system-URI experiment, which failed silently:
+    // third-party apps can't actually reference system settings URIs like
+    // content://settings/system/alarm_alert for notification sounds,
+    // Android just falls back to the default). Any device that already
+    // installed that earlier build has 'wslha_proximity' permanently
+    // locked to the wrong sound, so this must be a fresh channel id to
+    // actually pick up the real file.
     await androidImpl?.createNotificationChannel(const AndroidNotificationChannel(
-      'wslha_proximity',
-      'تنبيه اقتراب السائق (تجريبي)',
-      description: 'نغمة تجريبية لتنبيه اقتراب السائق من العميل',
+      'wslha_proximity_v2',
+      'تنبيه اقتراب السائق',
+      description: 'نغمة تنبيه اقتراب السائق من العميل',
       importance: Importance.high,
       enableVibration: true,
-      sound: UriAndroidNotificationSound('content://settings/system/alarm_alert'),
+      sound: RawResourceAndroidNotificationSound('proximity_alert'),
     ));
   }
 
@@ -88,7 +91,7 @@ class AppNotifications {
     await init();
     final (channelName, channelDesc) = switch (channelId) {
       'wslha_orders' => ('الطلبات الجديدة', 'إشعار فوري عند وصول طلب جديد'),
-      'wslha_proximity' => ('تنبيه اقتراب السائق (تجريبي)', 'نغمة تجريبية لتنبيه اقتراب السائق من العميل'),
+      'wslha_proximity_v2' => ('تنبيه اقتراب السائق', 'نغمة تنبيه اقتراب السائق من العميل'),
       _ => ('تحديثات المشاوير والطلبات', 'إشعارات تغيّر حالة المشاوير والطلبات'),
     };
     final details = NotificationDetails(
