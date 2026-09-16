@@ -17,6 +17,7 @@ import '../orders/orders_repository.dart';
 import '../ratings/rate_sheet.dart';
 import '../ratings/ratings_repository.dart';
 import '../ratings/trust_badge.dart';
+import '../rides/fare_calculator.dart' show haversineKm;
 import '../rides/ride_repository.dart';
 import 'active_job_store.dart';
 import 'driver_repository.dart';
@@ -666,6 +667,13 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
                 ],
                 const SizedBox(height: 14),
                 _RouteRow(from: from, to: to),
+                if (!isOrder && destination != null && (job['status'] == 'accepted' || job['status'] == 'in_progress'))
+                  _DriverDistanceReadout(
+                    driverPhone: widget.session.phone,
+                    targetLat: destination.$1,
+                    targetLng: destination.$2,
+                    headingToPickup: job['status'] == 'accepted',
+                  ),
                 if (job['ride_type'] == 'airport') ...[
                   const SizedBox(height: 8),
                   _AirportFlightChip(data: job),
@@ -1292,6 +1300,52 @@ class _ArrivalDeadlineChip extends StatelessWidget {
         '🕐 لازم توصل عند العميل الساعة ${arTime(deadline)} بدون تأخير',
         style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: Color(0xFF92400E)),
       ),
+    );
+  }
+}
+
+/// Same live distance/ETA readout ride_tracking_screen.dart shows the
+/// customer (fed by the driver's own periodic pingLocation() writes to
+/// driver_locations) — mirrored here so the driver sees the same numbers
+/// about themselves, not just the customer. Kept separate from that
+/// customer-facing widget instead of sharing one, since the two screens
+/// differ enough (layout, "you"/"them" wording) that factoring it out
+/// wasn't worth the indirection for ~15 lines of logic.
+class _DriverDistanceReadout extends StatelessWidget {
+  final String driverPhone;
+  final double targetLat;
+  final double targetLng;
+  final bool headingToPickup;
+  const _DriverDistanceReadout({
+    required this.driverPhone,
+    required this.targetLat,
+    required this.targetLng,
+    required this.headingToPickup,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<List<Map<String, dynamic>>>(
+      stream: RideRepository().watchDriverLocation(driverPhone),
+      builder: (context, snap) {
+        final loc = (snap.data != null && snap.data!.isNotEmpty) ? snap.data!.first : null;
+        final lat = (loc?['lat'] as num?)?.toDouble();
+        final lng = (loc?['lng'] as num?)?.toDouble();
+        if (lat == null || lng == null) return const SizedBox.shrink();
+
+        final distanceKm = haversineKm(lat, lng, targetLat, targetLng);
+        final distanceM = distanceKm * 1000;
+        final etaMin = (distanceKm / 25 * 60).ceil().clamp(1, 999); // ~25 km/h city average
+        final distanceLabel = distanceM < 1000 ? '${distanceM.round()} م' : '${distanceKm.toStringAsFixed(1)} كم';
+        final text = headingToPickup
+            ? '📍 المسافة للعميل: $distanceLabel — وصول متوقع خلال ~$etaMin دقيقة'
+            : '📍 المسافة للوجهة: $distanceLabel — وصول متوقع خلال ~$etaMin دقيقة';
+
+        return Padding(
+          padding: const EdgeInsets.only(top: 6),
+          child: Text(text, style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w800, color: AppColors.primary)),
+        );
+      },
     );
   }
 }
