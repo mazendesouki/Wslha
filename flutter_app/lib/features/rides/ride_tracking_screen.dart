@@ -1251,8 +1251,12 @@ class _CustomerInvoiceDialog extends StatelessWidget {
           // has long since been recorded.
           future: (rideId != null) ? RideRepository().fetchRidePenalties(rideId) : Future.value(const []),
           builder: (context, snap) {
+            // Filters by note text (not just phone) — if the same phone
+            // was used to test both the customer and driver accounts,
+            // matching on phone alone would wrongly pull the driver's
+            // own late-arrival fee into the customer's invoice.
             final lateFee = (snap.data ?? [])
-                .where((p) => p['phone'] == customerPhone)
+                .where((p) => p['phone'] == customerPhone && (p['note'] as String? ?? '').contains('انتظار السائق'))
                 .fold<double>(0, (sum, p) => sum + ((p['amount'] as num).abs()));
             final total = fare + lateFee;
 

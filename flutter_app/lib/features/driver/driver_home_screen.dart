@@ -1402,8 +1402,12 @@ class _ReceiptDialog extends StatelessWidget {
             // wallet moved by more than just this ride's commission cut,
             // not folded into the totals above (which are this ride's
             // fare/commission/earnings specifically).
+            // Filters by note text (not just phone) — if the same phone
+            // was used to test both the customer and driver accounts,
+            // matching on phone alone would wrongly pull the customer's
+            // late-boarding fee into the driver's own receipt.
             final lateFee = (snap.data ?? [])
-                .where((p) => p['phone'] == driverPhone)
+                .where((p) => p['phone'] == driverPhone && (p['note'] as String? ?? '').contains('تأخير وصول'))
                 .fold<double>(0, (sum, p) => sum + ((p['amount'] as num).abs()));
 
             return Column(
