@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../core/session.dart';
 import '../../core/theme.dart';
+import '../../shared/widgets/selectable_pill.dart';
 import 'wallet_repository.dart';
 
 // Same Arabic labels as wallet.astro's `labels` map.
@@ -106,14 +107,12 @@ class _WalletScreenState extends State<WalletScreen> {
                 decoration: const InputDecoration(labelText: 'المبلغ (جنيه)'),
               ),
               const SizedBox(height: 12),
-              RadioGroup<String>(
-                groupValue: method,
-                onChanged: (v) => setSheetState(() => method = v!),
-                child: Column(
-                  children: ['فودافون كاش', 'إنستاباي', 'تحويل بنكي']
-                      .map((m) => RadioListTile<String>(value: m, title: Text(m), dense: true))
-                      .toList(),
-                ),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: ['فودافون كاش', 'إنستاباي', 'تحويل بنكي']
+                    .map((m) => SelectablePill(label: m, selected: method == m, onTap: () => setSheetState(() => method = m)))
+                    .toList(),
               ),
               const SizedBox(height: 12),
               ElevatedButton(
@@ -409,8 +408,9 @@ class _WalletScreenState extends State<WalletScreen> {
                   margin: const EdgeInsets.only(bottom: 10),
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                   decoration: BoxDecoration(
-                    color: AppColors.cardTint,
+                    color: Colors.white,
                     borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: const Color(0xFFE9ECEB)),
                     boxShadow: const [BoxShadow(color: Color(0x0D000000), blurRadius: 6)],
                   ),
                   child: Row(
