@@ -332,11 +332,15 @@ class _AirportScreenState extends State<AirportScreen> {
             else ...[
               for (final cat in fare.vehicleCategoryInfo.keys.where((cat) => _vehicles.any((v) => v.category == cat)))
                 Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
+                  padding: const EdgeInsets.only(bottom: 10),
                   child: _VehicleCategoryCard(
                     info: fare.vehicleCategoryInfo[cat]!,
                     label: fare.categoryLabels[cat]!.replaceAll(RegExp(r'^[^ ]+ '), ''),
                     selected: _category == cat,
+                    mostPopular: cat == 'sedan',
+                    estimatedFare: _roadKm > 0
+                        ? fare.fareForVehicle(_roadKm, cat, _vehicles.firstWhere((v) => v.category == cat).yearTo)
+                        : null,
                     onTap: () => _onCategoryChanged(cat),
                   ),
                 ),
@@ -725,57 +729,125 @@ class _AirportScreenState extends State<AirportScreen> {
   }
 }
 
-/// One selectable card per vehicle category — replaces the old ChoiceChip
-/// row with something that actually shows capacity (passengers/bags) up
-/// front, the way a real car-selection screen should, instead of hiding it
-/// until the dropdown below is opened.
+/// Vehicle-category picker card — a fresh layout (icon badge, capacity
+/// pills, live price, "الأكثر طلبًا" tag) rather than just adding fields to
+/// the old chip shape, while staying on the app's own teal/gold identity
+/// instead of borrowing the reference mockup's navy palette.
 class _VehicleCategoryCard extends StatelessWidget {
   final fare.VehicleCategoryInfo info;
   final String label;
   final bool selected;
+  final bool mostPopular;
+  final int? estimatedFare;
   final VoidCallback onTap;
-  const _VehicleCategoryCard({required this.info, required this.label, required this.selected, required this.onTap});
+  const _VehicleCategoryCard({
+    required this.info,
+    required this.label,
+    required this.selected,
+    required this.mostPopular,
+    required this.estimatedFare,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: selected ? AppColors.primaryLight : Colors.white,
-      borderRadius: BorderRadius.circular(14),
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(18),
       child: InkWell(
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(18),
         onTap: onTap,
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: selected ? AppColors.primary : const Color(0xFFE5E7EB), width: selected ? 1.6 : 1),
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: selected ? AppColors.primary : const Color(0xFFE9ECEB), width: selected ? 2 : 1),
+            boxShadow: selected
+                ? [BoxShadow(color: AppColors.primary.withValues(alpha: 0.14), blurRadius: 14, offset: const Offset(0, 4))]
+                : null,
           ),
           child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(info.icon, style: const TextStyle(fontSize: 26)),
+              Container(
+                width: 52,
+                height: 52,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: selected ? AppColors.primary : AppColors.primaryLight,
+                  shape: BoxShape.circle,
+                ),
+                child: Text(info.icon, style: const TextStyle(fontSize: 26)),
+              ),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(label, style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 14)),
-                    Text(info.desc, style: const TextStyle(fontSize: 11, color: AppColors.textFaint)),
+                    Row(
+                      children: [
+                        Text(label, style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 15)),
+                        if (mostPopular) ...[
+                          const SizedBox(width: 6),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                            decoration: BoxDecoration(color: AppColors.success.withValues(alpha: 0.14), borderRadius: BorderRadius.circular(20)),
+                            child: const Text('الأكثر طلبًا', style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.w800, color: AppColors.success)),
+                          ),
+                        ],
+                      ],
+                    ),
+                    const SizedBox(height: 2),
+                    Text(info.desc, style: const TextStyle(fontSize: 11.5, color: AppColors.textFaint)),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        _capacityPill(Icons.person_outline, '${info.maxTravelers}'),
+                        const SizedBox(width: 6),
+                        _capacityPill(Icons.luggage_outlined, '${info.maxBags}'),
+                      ],
+                    ),
                   ],
                 ),
               ),
-              Row(
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  const Icon(Icons.person_outline, size: 14, color: AppColors.textFaint),
-                  Text(' ${info.maxTravelers}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
-                  const SizedBox(width: 8),
-                  const Icon(Icons.luggage_outlined, size: 14, color: AppColors.textFaint),
-                  Text(' ${info.maxBags}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
+                  Container(
+                    width: 24,
+                    height: 24,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: selected ? AppColors.primary : Colors.transparent,
+                      border: Border.all(color: selected ? AppColors.primary : const Color(0xFFCBD5D3), width: 1.6),
+                    ),
+                    child: selected ? const Icon(Icons.check, size: 15, color: Colors.white) : null,
+                  ),
+                  if (estimatedFare != null) ...[
+                    const SizedBox(height: 10),
+                    Text('$estimatedFare ج.م', style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 14, color: AppColors.primaryDark)),
+                  ],
                 ],
               ),
-              if (selected) const Padding(padding: EdgeInsets.only(right: 8), child: Icon(Icons.check_circle, color: AppColors.primary, size: 20)),
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _capacityPill(IconData icon, String value) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+      decoration: BoxDecoration(color: const Color(0xFFF3F5F4), borderRadius: BorderRadius.circular(20)),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 13, color: AppColors.textFaint),
+          const SizedBox(width: 3),
+          Text(value, style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700)),
+        ],
       ),
     );
   }
