@@ -3,6 +3,8 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/session.dart';
 import '../../core/theme.dart';
+import '../notifications/notifications_screen.dart';
+import '../support/support_screen.dart';
 
 /// Mirrors settings.astro: links to Profile/Wallet/Orders, a local
 /// notifications toggle (localStorage['wslha_notif'] there → shared_prefs
@@ -104,10 +106,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
             activeThumbColor: AppColors.primary,
             onChanged: _toggleNotif,
           ),
+          _SettingsTile(
+            icon: '🗂️',
+            title: 'سجل الإشعارات',
+            onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const NotificationsScreen())),
+          ),
           const ListTile(
             leading: Text('🌐', style: TextStyle(fontSize: 20)),
             title: Text('اللغة'),
             trailing: Text('العربية', style: TextStyle(color: AppColors.textFaint)),
+          ),
+          _SettingsTile(
+            icon: '🛟',
+            title: 'المساعدة والدعم',
+            onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const SupportScreen())),
           ),
           const Divider(height: 24),
           if (_session != null)

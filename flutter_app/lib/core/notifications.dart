@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -18,6 +19,14 @@ class AppNotifications {
   static final AppNotifications instance = AppNotifications._();
 
   static const _notifPrefKey = 'wslha_notif';
+  // Device-local log of what show() actually displayed, for the "سجل
+  // الإشعارات" screen (features/notifications/notifications_screen.dart).
+  // No Supabase table backs this — nothing server-side needs a durable
+  // notification history yet, and this is purely "what did I see on this
+  // phone", so on-device storage is the right scope. Newest first, capped
+  // so it can't grow unbounded on a long-lived install.
+  static const _historyKey = 'wslha_notif_history';
+  static const _historyMax = 100;
   final _plugin = FlutterLocalNotificationsPlugin();
   bool _initialized = false;
   int _nextId = 1000;
@@ -109,6 +118,33 @@ class AppNotifications {
       ),
     );
     await _plugin.show(_nextId++, title, body, details);
+    await _logHistory(title, body, channelId);
+  }
+
+  Future<void> _logHistory(String title, String body, String channelId) async {
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getStringList(_historyKey) ?? <String>[];
+    raw.insert(0, jsonEncode({
+      'title': title,
+      'body': body,
+      'channelId': channelId,
+      'at': DateTime.now().toIso8601String(),
+    }));
+    if (raw.length > _historyMax) raw.removeRange(_historyMax, raw.length);
+    await prefs.setStringList(_historyKey, raw);
+  }
+
+  /// Newest-first log of notifications shown on this device — see
+  /// `_historyKey` above for why this is local-only, not server-backed.
+  Future<List<Map<String, dynamic>>> history() async {
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getStringList(_historyKey) ?? <String>[];
+    return raw.map((s) => Map<String, dynamic>.from(jsonDecode(s) as Map)).toList();
+  }
+
+  Future<void> clearHistory() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_historyKey);
   }
 
   /// Schedules a one-off local reminder for `whenLocal` (Cairo time) — used

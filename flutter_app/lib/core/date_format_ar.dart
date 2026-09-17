@@ -29,3 +29,14 @@ String arDate(DateTime dt) {
 
 /// e.g. "30 أغسطس 2026 — 2:05 م"
 String arDateTime(DateTime dt) => '${arDate(dt)} — ${arTime(dt)}';
+
+/// e.g. "منذ 5 دقائق" — falls back to arDateTime() past a day old, since
+/// "منذ 3 أيام" is less useful than just seeing the actual date at that
+/// point (notifications history screen).
+String arRelativeTime(DateTime dt) {
+  final diff = DateTime.now().difference(dt.toLocal());
+  if (diff.inSeconds < 60) return 'منذ لحظات';
+  if (diff.inMinutes < 60) return 'منذ ${diff.inMinutes} دقيقة';
+  if (diff.inHours < 24) return 'منذ ${diff.inHours} ساعة';
+  return arDateTime(dt);
+}
