@@ -349,35 +349,47 @@ class AccountScreenState extends State<AccountScreen> {
               ),
             ),
             const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: _editProfile,
+                    icon: const Icon(Icons.edit_outlined),
+                    label: const Text('تعديل بياناتي'),
+                    style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 14)),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () => Navigator.of(context).push(MaterialPageRoute(
+                      builder: (_) => InvoicesScreen(customerPhone: _session!.phone),
+                    )),
+                    icon: const Icon(Icons.receipt_long_outlined),
+                    label: const Text('فواتيري'),
+                    style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 14)),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
             _statsRow(),
             const SizedBox(height: 16),
             Container(
               padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(color: AppColors.cardTint, borderRadius: BorderRadius.circular(16)),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: const Color(0xFFE9ECEB)),
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  _infoRow('المدينة', (city?.isNotEmpty == true) ? city! : '—'),
+                  _infoRow(Icons.location_city_outlined, 'المدينة', (city?.isNotEmpty == true) ? city! : '—'),
                   const Divider(height: 20),
-                  _infoRow('البريد الإلكتروني', (email?.isNotEmpty == true) ? email! : '—'),
+                  _infoRow(Icons.email_outlined, 'البريد الإلكتروني', (email?.isNotEmpty == true) ? email! : '—'),
                 ],
               ),
-            ),
-            const SizedBox(height: 16),
-            OutlinedButton.icon(
-              onPressed: _editProfile,
-              icon: const Icon(Icons.edit_outlined),
-              label: const Text('تعديل بياناتي'),
-              style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 14)),
-            ),
-            const SizedBox(height: 10),
-            OutlinedButton.icon(
-              onPressed: () => Navigator.of(context).push(MaterialPageRoute(
-                builder: (_) => InvoicesScreen(customerPhone: _session!.phone),
-              )),
-              icon: const Icon(Icons.receipt_long_outlined),
-              label: const Text('🧾 فواتيري'),
-              style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 14)),
             ),
             const SizedBox(height: 24),
             _addressesSection(),
@@ -416,7 +428,11 @@ class AccountScreenState extends State<AccountScreen> {
   Widget _statTile(String emoji, Color accent, String value, String label) {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
-      decoration: BoxDecoration(color: AppColors.cardTint, borderRadius: BorderRadius.circular(16)),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE9ECEB)),
+      ),
       child: Column(
         children: [
           Container(
@@ -451,13 +467,7 @@ class AccountScreenState extends State<AccountScreen> {
           ],
         ),
         if (_addresses.isEmpty)
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(color: AppColors.cardTint, borderRadius: BorderRadius.circular(16)),
-            child: const Center(
-              child: Text('مفيش عناوين محفوظة — ضيف عنوان عشان تختاره بسرعة وقت الطلب', style: TextStyle(color: AppColors.textFaint, fontSize: 12)),
-            ),
-          )
+          _emptyStateBox('مفيش عناوين محفوظة — ضيف عنوان عشان تختاره بسرعة وقت الطلب')
         else
           ..._addresses.map(_addressTile),
       ],
@@ -471,9 +481,9 @@ class AccountScreenState extends State<AccountScreen> {
       margin: const EdgeInsets.only(top: 10),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: AppColors.cardTint,
+        color: Colors.white,
         borderRadius: BorderRadius.circular(14),
-        border: isDefault ? Border.all(color: AppColors.primary, width: 1.5) : null,
+        border: Border.all(color: isDefault ? AppColors.primary : const Color(0xFFE9ECEB), width: isDefault ? 1.6 : 1),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -533,13 +543,7 @@ class AccountScreenState extends State<AccountScreen> {
         const Text('⭐ تقييماتي للسائقين', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 15)),
         const SizedBox(height: 10),
         if (_reviews.isEmpty)
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(color: AppColors.cardTint, borderRadius: BorderRadius.circular(16)),
-            child: const Center(
-              child: Text('لسه ما قيّمتش أي رحلة', style: TextStyle(color: AppColors.textFaint, fontSize: 12)),
-            ),
-          )
+          _emptyStateBox('لسه ما قيّمتش أي رحلة')
         else
           ..._reviews.map(_reviewTile),
       ],
@@ -555,7 +559,11 @@ class AccountScreenState extends State<AccountScreen> {
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(color: AppColors.cardTint, borderRadius: BorderRadius.circular(14)),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFFE9ECEB)),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -597,26 +605,39 @@ class AccountScreenState extends State<AccountScreen> {
         const Text('💬 ملاحظات وتقييمات السائقين عني', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 15)),
         const SizedBox(height: 10),
         if (_driverNotes.isEmpty)
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(color: AppColors.cardTint, borderRadius: BorderRadius.circular(16)),
-            child: const Center(
-              child: Text('لسه مفيش تقييم أو ملاحظة من سائق — بتظهر هنا فور ما رحلتك تخلص ويقيّمك السائق', style: TextStyle(color: AppColors.textFaint, fontSize: 12), textAlign: TextAlign.center),
-            ),
-          )
+          _emptyStateBox('لسه مفيش تقييم أو ملاحظة من سائق — بتظهر هنا فور ما رحلتك تخلص ويقيّمك السائق')
         else
           ..._driverNotes.map(_reviewTile),
       ],
     );
   }
 
-  Widget _infoRow(String label, String value) {
+  Widget _infoRow(IconData icon, String label, String value) {
     return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
+        Icon(icon, size: 18, color: AppColors.textFaint),
+        const SizedBox(width: 8),
         Text(label, style: const TextStyle(fontSize: 12, color: AppColors.textFaint, fontWeight: FontWeight.w700)),
+        const Spacer(),
         Text(value, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w900)),
       ],
+    );
+  }
+
+  /// Same white-bordered-card look every non-empty tile on this screen now
+  /// uses, so an empty section reads as "part of the same list" rather than
+  /// a leftover solid-tint box.
+  Widget _emptyStateBox(String message) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE9ECEB)),
+      ),
+      child: Center(
+        child: Text(message, textAlign: TextAlign.center, style: const TextStyle(color: AppColors.textFaint, fontSize: 12)),
+      ),
     );
   }
 }

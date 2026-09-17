@@ -120,10 +120,11 @@ class _OrdersScreenState extends State<OrdersScreen> {
     return Padding(
       padding: const EdgeInsets.only(left: 8),
       child: ChoiceChip(
-        label: Text(label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: selected ? Colors.white : AppColors.textFaint)),
+        label: Text(label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: selected ? Colors.white : Colors.black87)),
         selected: selected,
         selectedColor: AppColors.primary,
-        backgroundColor: AppColors.cardTint,
+        backgroundColor: Colors.white,
+        side: BorderSide(color: selected ? AppColors.primary : const Color(0xFFE9ECEB)),
         onSelected: (_) => onSelect(value),
       ),
     );
@@ -329,7 +330,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
                                 final color = _statusColor[item.status] ?? AppColors.textFaint;
                                 final isRide = item.kind == 'ride';
                                 return Material(
-                                  color: AppColors.cardTint,
+                                  color: Colors.white,
                                   borderRadius: BorderRadius.circular(16),
                                   child: InkWell(
                                     borderRadius: BorderRadius.circular(16),
@@ -344,7 +345,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
                                       padding: const EdgeInsets.all(14),
                                       decoration: BoxDecoration(
                                         borderRadius: BorderRadius.circular(16),
-                                        boxShadow: const [BoxShadow(color: Color(0x0F000000), blurRadius: 8, offset: Offset(0, 2))],
+                                        border: Border.all(color: const Color(0xFFE9ECEB)),
                                       ),
                                       child: Row(
                                         children: [
@@ -419,9 +420,9 @@ class _OrdersScreenState extends State<OrdersScreen> {
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
           decoration: BoxDecoration(
-            color: selected ? color.withValues(alpha: 0.12) : AppColors.cardTint,
+            color: selected ? color.withValues(alpha: 0.12) : Colors.white,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: color.withValues(alpha: selected ? 0.9 : 0.25), width: selected ? 1.6 : 1),
+            border: Border.all(color: selected ? color : const Color(0xFFE9ECEB), width: selected ? 1.6 : 1),
           ),
           child: Column(
             children: [
@@ -445,9 +446,9 @@ class _OrdersScreenState extends State<OrdersScreen> {
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 14),
           decoration: BoxDecoration(
-            color: selected ? AppColors.primary.withValues(alpha: 0.1) : AppColors.cardTint,
+            color: selected ? AppColors.primary.withValues(alpha: 0.1) : Colors.white,
             borderRadius: BorderRadius.circular(99),
-            border: Border.all(color: selected ? AppColors.primary : const Color(0xFFE5E7EB), width: selected ? 1.6 : 1),
+            border: Border.all(color: selected ? AppColors.primary : const Color(0xFFE9ECEB), width: selected ? 1.6 : 1),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
