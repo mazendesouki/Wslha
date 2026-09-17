@@ -84,7 +84,7 @@ jobs:
           WSLHA_KEYSTORE_PASSWORD: ${{ secrets.WSLHA_KEYSTORE_PASSWORD }}
           WSLHA_KEY_ALIAS: ${{ secrets.WSLHA_KEY_ALIAS }}
           WSLHA_KEY_PASSWORD: ${{ secrets.WSLHA_KEY_PASSWORD }}
-        run: flutter build apk --release --flavor driver -t lib/main_driver.dart
+        run: flutter build apk --release --flavor driver -t lib/main_driver.dart --build-number=${{ github.run_number }}
 
       - name: Upload driver APK
         uses: actions/upload-artifact@v4
@@ -105,7 +105,7 @@ jobs:
           WSLHA_KEYSTORE_PASSWORD: ${{ secrets.WSLHA_KEYSTORE_PASSWORD }}
           WSLHA_KEY_ALIAS: ${{ secrets.WSLHA_KEY_ALIAS }}
           WSLHA_KEY_PASSWORD: ${{ secrets.WSLHA_KEY_PASSWORD }}
-        run: flutter build appbundle --release --flavor driver -t lib/main_driver.dart
+        run: flutter build appbundle --release --flavor driver -t lib/main_driver.dart --build-number=${{ github.run_number }}
 
       - name: Upload driver AAB
         uses: actions/upload-artifact@v4
@@ -114,13 +114,39 @@ jobs:
           path: flutter_app/build/app/outputs/bundle/driverRelease/app-driver-release.aab
           retention-days: 90
 
+      # TEMPORARY — diagnosing why res/raw/proximity_alert.mp3 (used by the
+      # proximity-alert notification's custom sound) isn't present anywhere
+      # in the built customer APK (verified via `unzip -l` and grepping the
+      # extracted resources.arsc, both come up empty) despite the file being
+      # committed and confirmed present on disk right before this step.
+      # Remove once the cause is found.
+      - name: Diagnostic — confirm raw resource before build
+        run: |
+          echo "--- source res/raw/ ---"
+          ls -la android/app/src/main/res/raw/ || echo "MISSING: res/raw dir not found"
+          file android/app/src/main/res/raw/proximity_alert.mp3 || true
+
       - name: Build customer APK
         env:
           WSLHA_KEYSTORE_PATH: ${{ secrets.WSLHA_KEYSTORE_BASE64 != '' && 'release.keystore' || '' }}
           WSLHA_KEYSTORE_PASSWORD: ${{ secrets.WSLHA_KEYSTORE_PASSWORD }}
           WSLHA_KEY_ALIAS: ${{ secrets.WSLHA_KEY_ALIAS }}
           WSLHA_KEY_PASSWORD: ${{ secrets.WSLHA_KEY_PASSWORD }}
-        run: flutter build apk --release --flavor customer -t lib/main_customer.dart
+        run: |
+          set -euo pipefail
+          flutter build apk --release --flavor customer -t lib/main_customer.dart --build-number=${{ github.run_number }} --verbose 2>&1 | tee /tmp/customer_build.log
+          echo "--- verbose log lines mentioning raw/proximity/resource ---"
+          grep -iE "raw|proximity|resource" /tmp/customer_build.log || echo "(no matching lines)"
+
+      # TEMPORARY — see note above. Checks the merged/compiled intermediates
+      # (before final packaging) as well as the final APK, to pinpoint
+      # exactly which stage drops the file.
+      - name: Diagnostic — confirm raw resource after build
+        run: |
+          echo "--- merged resources intermediates ---"
+          find build/app/intermediates -ipath "*raw*" 2>/dev/null | grep -i proximity || echo "not found in intermediates"
+          echo "--- final APK contents ---"
+          unzip -l build/app/outputs/flutter-apk/app-customer-release.apk | grep -iE "raw|proximity" || echo "not found in final APK"
 
       - name: Upload customer APK
         uses: actions/upload-artifact@v4
@@ -135,7 +161,7 @@ jobs:
           WSLHA_KEYSTORE_PASSWORD: ${{ secrets.WSLHA_KEYSTORE_PASSWORD }}
           WSLHA_KEY_ALIAS: ${{ secrets.WSLHA_KEY_ALIAS }}
           WSLHA_KEY_PASSWORD: ${{ secrets.WSLHA_KEY_PASSWORD }}
-        run: flutter build appbundle --release --flavor customer -t lib/main_customer.dart
+        run: flutter build appbundle --release --flavor customer -t lib/main_customer.dart --build-number=${{ github.run_number }}
 
       - name: Upload customer AAB
         uses: actions/upload-artifact@v4
@@ -150,7 +176,7 @@ jobs:
           WSLHA_KEYSTORE_PASSWORD: ${{ secrets.WSLHA_KEYSTORE_PASSWORD }}
           WSLHA_KEY_ALIAS: ${{ secrets.WSLHA_KEY_ALIAS }}
           WSLHA_KEY_PASSWORD: ${{ secrets.WSLHA_KEY_PASSWORD }}
-        run: flutter build apk --release --flavor merchant -t lib/main_merchant.dart
+        run: flutter build apk --release --flavor merchant -t lib/main_merchant.dart --build-number=${{ github.run_number }}
 
       - name: Upload merchant APK
         uses: actions/upload-artifact@v4
@@ -165,7 +191,7 @@ jobs:
           WSLHA_KEYSTORE_PASSWORD: ${{ secrets.WSLHA_KEYSTORE_PASSWORD }}
           WSLHA_KEY_ALIAS: ${{ secrets.WSLHA_KEY_ALIAS }}
           WSLHA_KEY_PASSWORD: ${{ secrets.WSLHA_KEY_PASSWORD }}
-        run: flutter build appbundle --release --flavor merchant -t lib/main_merchant.dart
+        run: flutter build appbundle --release --flavor merchant -t lib/main_merchant.dart --build-number=${{ github.run_number }}
 
       - name: Upload merchant AAB
         uses: actions/upload-artifact@v4
