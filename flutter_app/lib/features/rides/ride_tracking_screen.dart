@@ -269,8 +269,9 @@ class _RideTrackingScreenState extends State<RideTrackingScreen> {
                       Container(
                         padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
                         decoration: BoxDecoration(
-                          color: AppColors.cardTint,
+                          color: Colors.white,
                           borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: const Color(0xFFE9ECEB)),
                           boxShadow: const [BoxShadow(color: Color(0x14000000), blurRadius: 12, offset: Offset(0, 4))],
                         ),
                         child: isCancelled
@@ -376,8 +377,9 @@ class _RideTrackingScreenState extends State<RideTrackingScreen> {
                       Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: AppColors.cardTint,
+                          color: Colors.white,
                           borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: const Color(0xFFE9ECEB)),
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -577,8 +579,9 @@ class _LiveMapSectionState extends State<_LiveMapSection> {
           children: [
             Container(
               decoration: BoxDecoration(
-                color: AppColors.cardTint,
+                color: Colors.white,
                 borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: const Color(0xFFE9ECEB)),
                 boxShadow: const [BoxShadow(color: Color(0x14000000), blurRadius: 12, offset: Offset(0, 4))],
               ),
               clipBehavior: Clip.antiAlias,
@@ -720,8 +723,9 @@ class _DriverCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.cardTint,
+        color: Colors.white,
         borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE9ECEB)),
         boxShadow: const [BoxShadow(color: Color(0x14000000), blurRadius: 12, offset: Offset(0, 4))],
       ),
       child: Column(
@@ -896,8 +900,9 @@ class _CustomerCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.cardTint,
+        color: Colors.white,
         borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE9ECEB)),
         boxShadow: const [BoxShadow(color: Color(0x14000000), blurRadius: 12, offset: Offset(0, 4))],
       ),
       child: Row(
@@ -992,8 +997,9 @@ class _OffersPanelState extends State<_OffersPanel> {
         return Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: AppColors.cardTint,
+            color: Colors.white,
             borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: const Color(0xFFE9ECEB)),
             boxShadow: const [BoxShadow(color: Color(0x14000000), blurRadius: 12, offset: Offset(0, 4))],
           ),
           child: Column(
@@ -1377,8 +1383,8 @@ class _SearchingForDriverCardState extends State<_SearchingForDriverCard> {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: longWait ? const Color(0xFFFFFBEB) : AppColors.cardTint,
-        border: longWait ? Border.all(color: const Color(0xFFFDE68A), width: 1.5) : null,
+        color: longWait ? const Color(0xFFFFFBEB) : Colors.white,
+        border: Border.all(color: longWait ? const Color(0xFFFDE68A) : const Color(0xFFE9ECEB), width: longWait ? 1.5 : 1),
         borderRadius: BorderRadius.circular(14),
       ),
       child: Column(

@@ -4,6 +4,7 @@ import '../../core/phone_utils.dart';
 import '../../core/pricing_settings.dart';
 import '../../core/session.dart';
 import '../../core/theme.dart';
+import '../../shared/widgets/selectable_pill.dart';
 import '../rides/address_field.dart';
 import '../rides/fare_calculator.dart' as fare_calc;
 import '../rides/places_service.dart';
@@ -379,7 +380,7 @@ class _AirportScreenState extends State<AirportScreen> {
                 spacing: 8,
                 runSpacing: 8,
                 children: fare.qualityLabels.keys
-                    .map((q) => _SelectablePill(
+                    .map((q) => SelectablePill(
                           label: '${fare.qualityLabels[q]}'
                               '${q == 'regular' ? '' : ' (+${(((fare.qualityMultiplier[q] ?? 1) - 1) * 100).round()}%)'}',
                           selected: _quality == q,
@@ -744,7 +745,7 @@ class _AirportScreenState extends State<AirportScreen> {
           spacing: 8,
           runSpacing: 8,
           children: options.entries
-              .map((e) => _SelectablePill(label: e.value, selected: value == e.key, onTap: () => onChanged(e.key)))
+              .map((e) => SelectablePill(label: e.value, selected: value == e.key, onTap: () => onChanged(e.key)))
               .toList(),
         ),
       ],
@@ -848,46 +849,6 @@ class _StepperCard extends StatelessWidget {
           Text('$value', style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16)),
           IconButton(onPressed: value < max ? () => onChanged(value + 1) : null, icon: const Icon(Icons.add_circle_outline)),
         ],
-      ),
-    );
-  }
-}
-
-/// Outlined selectable pill — white/transparent with a border that turns
-/// green and grows a checkmark when selected, replacing every ChoiceChip
-/// on this screen (which rendered as a solid filled green pill, clashing
-/// with the vehicle card's white-bordered look right below it).
-class _SelectablePill extends StatelessWidget {
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-  const _SelectablePill({required this.label, required this.selected, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: selected ? AppColors.primaryLight : Colors.white,
-      borderRadius: BorderRadius.circular(30),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(30),
-        onTap: onTap,
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(30),
-            border: Border.all(color: selected ? AppColors.primary : const Color(0xFFE9ECEB), width: selected ? 1.6 : 1),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (selected) ...[
-                const Icon(Icons.check, size: 15, color: AppColors.primary),
-                const SizedBox(width: 5),
-              ],
-              Text(label, style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: selected ? AppColors.primaryDark : Colors.black87)),
-            ],
-          ),
-        ),
       ),
     );
   }

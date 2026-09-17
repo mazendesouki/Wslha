@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../core/session.dart';
 import '../../core/theme.dart';
+import '../../shared/widgets/selectable_pill.dart';
 import '../airport/airport_fare.dart' show qualityLabels, qualityMultiplier;
 import 'address_field.dart';
 import 'fare_calculator.dart' as fare_calc;
@@ -185,7 +186,11 @@ class _RidesScreenState extends State<RidesScreen> {
               _sectionLabel('📍 نقطة الانطلاق والوجهة'),
               Container(
                 padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(color: AppColors.cardTint, borderRadius: BorderRadius.circular(16)),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: const Color(0xFFE9ECEB)),
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
@@ -236,7 +241,11 @@ class _RidesScreenState extends State<RidesScreen> {
               _sectionLabel('🚗 تفاصيل الرحلة'),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
-                decoration: BoxDecoration(color: AppColors.cardTint, borderRadius: BorderRadius.circular(16)),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: const Color(0xFFE9ECEB)),
+                ),
                 child: Column(
                   children: [
                     Padding(
@@ -284,13 +293,14 @@ class _RidesScreenState extends State<RidesScreen> {
                       ),
                     ),
                     const Divider(height: 1),
-                    RadioGroup<String>(
-                      groupValue: _payment,
-                      onChanged: (v) => setState(() => _payment = v!),
-                      child: const Column(
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 10),
+                      child: Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
                         children: [
-                          RadioListTile<String>(value: 'cash', title: Text('💵 كاش عند الاستلام'), dense: true),
-                          RadioListTile<String>(value: 'wallet', title: Text('📱 فودافون كاش / إنستاباي'), dense: true),
+                          SelectablePill(label: '💵 كاش عند الاستلام', selected: _payment == 'cash', onTap: () => setState(() => _payment = 'cash')),
+                          SelectablePill(label: '📱 فودافون كاش / إنستاباي', selected: _payment == 'wallet', onTap: () => setState(() => _payment = 'wallet')),
                         ],
                       ),
                     ),
@@ -316,8 +326,9 @@ class _RidesScreenState extends State<RidesScreen> {
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: AppColors.cardTint,
+                    color: Colors.white,
                     borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: const Color(0xFFE9ECEB)),
                   ),
                   child: Column(
                     children: [
