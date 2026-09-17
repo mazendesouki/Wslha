@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Diagnosed via a temporary CI step that traced proximity_alert.mp3 through
+  every build intermediate: it survives mergeResources → packageResources
+  intact, then vanishes at the optimizeReleaseResources step specifically.
+  That step strips resources it can't prove are referenced — and this one
+  never gets a compiled R.raw.proximity_alert reference anywhere, since
+  flutter_local_notifications passes the name as a plain string across the
+  Dart/native bridge at runtime (RawResourceAndroidNotificationSound
+  ('proximity_alert')), not via generated Java/Kotlin code. This is the
+  documented fix for exactly that case:
+  https://developer.android.com/studio/build/shrink-code#keep-resources
+-->
+<resources xmlns:tools="http://schemas.android.com/tools"
+    tools:keep="@raw/proximity_alert" />
