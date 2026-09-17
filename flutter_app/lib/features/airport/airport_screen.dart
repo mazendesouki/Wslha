@@ -413,7 +413,10 @@ class _AirportScreenState extends State<AirportScreen> {
             InkWell(
               onTap: _pickFlightTime,
               child: InputDecorator(
-                decoration: InputDecoration(labelText: _direction == 'departure' ? 'تاريخ ووقت إقلاع الطائرة' : 'تاريخ ووقت هبوط الطائرة'),
+                decoration: InputDecoration(
+                  labelText: _direction == 'departure' ? 'تاريخ ووقت إقلاع الطائرة' : 'تاريخ ووقت هبوط الطائرة',
+                  prefixIcon: const Icon(Icons.event_outlined),
+                ),
                 child: Text(
                   _flightTime == null ? 'اختر التاريخ والوقت' : arDateTime(_flightTime!),
                   style: TextStyle(color: _flightTime == null ? AppColors.textFaint : Colors.black87),
@@ -464,28 +467,32 @@ class _AirportScreenState extends State<AirportScreen> {
 
           _sectionTitle('6', 'بيانات الطيران (اختياري)'),
           _sectionCard([
-            TextField(controller: _airlineCtrl, decoration: const InputDecoration(labelText: 'شركة الطيران', hintText: 'مثال: مصر للطيران')),
+            TextField(controller: _airlineCtrl, decoration: const InputDecoration(labelText: 'شركة الطيران', hintText: 'مثال: مصر للطيران', prefixIcon: Icon(Icons.airlines_outlined))),
             const SizedBox(height: 10),
-            TextField(controller: _flightNoCtrl, decoration: const InputDecoration(labelText: 'رقم الرحلة', hintText: 'MS 712')),
+            TextField(controller: _flightNoCtrl, decoration: const InputDecoration(labelText: 'رقم الرحلة', hintText: 'MS 712', prefixIcon: Icon(Icons.confirmation_number_outlined))),
             const SizedBox(height: 10),
-            TextField(controller: _terminalCtrl, decoration: const InputDecoration(labelText: 'رقم الصالة / المبنى', hintText: 'مثال: مبنى 2')),
+            TextField(controller: _terminalCtrl, decoration: const InputDecoration(labelText: 'رقم الصالة / المبنى', hintText: 'مثال: مبنى 2', prefixIcon: Icon(Icons.holiday_village_outlined))),
             const SizedBox(height: 10),
             TextField(
               controller: _flightCountryCtrl,
-              decoration: InputDecoration(labelText: _direction == 'departure' ? 'مسافر إلى (الدولة)' : 'قادم من (الدولة)', hintText: 'مثال: السعودية'),
+              decoration: InputDecoration(
+                labelText: _direction == 'departure' ? 'مسافر إلى (الدولة)' : 'قادم من (الدولة)',
+                hintText: 'مثال: السعودية',
+                prefixIcon: const Icon(Icons.public_outlined),
+              ),
             ),
           ]),
           const SizedBox(height: 18),
 
           _sectionTitle('7', 'بيانات المسافر'),
           _sectionCard([
-            TextField(controller: _nameCtrl, decoration: const InputDecoration(labelText: 'اسم المسافر')),
+            TextField(controller: _nameCtrl, decoration: const InputDecoration(labelText: 'اسم المسافر', prefixIcon: Icon(Icons.person_outline))),
             const SizedBox(height: 10),
             TextField(
               controller: _phoneCtrl,
               keyboardType: TextInputType.phone,
               textDirection: TextDirection.ltr,
-              decoration: const InputDecoration(labelText: 'رقم الجوال', hintText: '01xxxxxxxxx'),
+              decoration: const InputDecoration(labelText: 'رقم الجوال', hintText: '01xxxxxxxxx', prefixIcon: Icon(Icons.phone_outlined)),
             ),
           ]),
           const SizedBox(height: 20),

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../core/session.dart';
 import '../../core/theme.dart';
-import '../airport/airport_fare.dart' show qualityLabels;
+import '../airport/airport_fare.dart' show qualityLabels, qualityMultiplier;
 import 'address_field.dart';
 import 'fare_calculator.dart' as fare_calc;
 import 'places_service.dart';
@@ -256,15 +256,21 @@ class _RidesScreenState extends State<RidesScreen> {
                       ),
                     ),
                     const Divider(height: 1),
-                    RadioGroup<String>(
-                      groupValue: _qualityTier,
-                      onChanged: (v) => setState(() => _qualityTier = v!),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 10),
                       child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          RadioListTile<String>(value: 'regular', title: Text(qualityLabels['regular']!), dense: true),
-                          RadioListTile<String>(value: 'clean', title: Text(qualityLabels['clean']!), dense: true),
-                          RadioListTile<String>(value: 'ac', title: Text(qualityLabels['ac']!), dense: true),
-                          RadioListTile<String>(value: 'modern', title: Text(qualityLabels['modern']!), dense: true),
+                          for (final tier in const ['regular', 'clean', 'ac', 'modern'])
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 8),
+                              child: _QualityTierCard(
+                                label: qualityLabels[tier]!,
+                                extraPercent: ((qualityMultiplier[tier] ?? 1) - 1) * 100,
+                                selected: _qualityTier == tier,
+                                onTap: () => setState(() => _qualityTier = tier),
+                              ),
+                            ),
                         ],
                       ),
                     ),
@@ -392,4 +398,62 @@ class _RidesScreenState extends State<RidesScreen> {
         padding: const EdgeInsets.only(bottom: 8, right: 4),
         child: Text(text, style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 13)),
       );
+}
+
+/// One selectable card per service-quality tier — replaces the old plain
+/// RadioListTile column with something closer to how the airport form's
+/// vehicle-category chips read (icon + price delta visible at a glance),
+/// so picking a tier feels like choosing a car, not filling a form field.
+class _QualityTierCard extends StatelessWidget {
+  final String label;
+  final double extraPercent;
+  final bool selected;
+  final VoidCallback onTap;
+  const _QualityTierCard({
+    required this.label,
+    required this.extraPercent,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: selected ? AppColors.primaryLight : Colors.white,
+      borderRadius: BorderRadius.circular(14),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(14),
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: selected ? AppColors.primary : const Color(0xFFE5E7EB), width: selected ? 1.6 : 1),
+          ),
+          child: Row(
+            children: [
+              Icon(
+                selected ? Icons.check_circle : Icons.circle_outlined,
+                color: selected ? AppColors.primary : AppColors.textFaint,
+                size: 20,
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(label, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13)),
+              ),
+              if (extraPercent > 0)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(color: AppColors.accent.withValues(alpha: 0.14), borderRadius: BorderRadius.circular(20)),
+                  child: Text(
+                    '+${extraPercent.round()}%',
+                    style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: AppColors.accent),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }
