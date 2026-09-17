@@ -305,7 +305,9 @@ class _AirportScreenState extends State<AirportScreen> {
               'departure': '🛫 مغادر من مصر',
               'arrival': '🛬 قادم إلى مصر',
             }, (v) => setState(() => _direction = v)),
-            const SizedBox(height: 10),
+          ]),
+          const SizedBox(height: 10),
+          _sectionCard([
             _radioRow('نوع الرحلة', _tripType, {
               'international': '✈️ دولية (3 ساعات)',
               'domestic': '🛫 محلية (ساعتان)',
@@ -347,7 +349,7 @@ class _AirportScreenState extends State<AirportScreen> {
               const SizedBox(height: 10),
               DropdownButtonFormField<fare.RegisteredVehicle>(
                 initialValue: _selectedVehicle,
-                decoration: const InputDecoration(labelText: 'الماركة والموديل'),
+                decoration: const InputDecoration(labelText: 'الماركة والموديل', prefixIcon: Icon(Icons.directions_car_outlined)),
                 items: _vehicles
                     .where((v) => v.category == _category)
                     .map((v) => DropdownMenuItem(value: v, child: Text(v.name)))
@@ -364,7 +366,7 @@ class _AirportScreenState extends State<AirportScreen> {
               if (_selectedVehicle != null)
                 DropdownButtonFormField<int>(
                   initialValue: _selectedYear,
-                  decoration: const InputDecoration(labelText: 'سنة الصنع'),
+                  decoration: const InputDecoration(labelText: 'سنة الصنع', prefixIcon: Icon(Icons.calendar_today_outlined)),
                   items: [for (var y = _selectedVehicle!.yearTo; y >= _selectedVehicle!.yearFrom; y--) y]
                       .map((y) => DropdownMenuItem(value: y, child: Text('$y')))
                       .toList(),
@@ -472,7 +474,7 @@ class _AirportScreenState extends State<AirportScreen> {
           _sectionCard([
             DropdownButtonFormField<int>(
               initialValue: _waitPickupMin,
-              decoration: const InputDecoration(labelText: 'انتظار السائق عند الاستلام'),
+              decoration: const InputDecoration(labelText: 'انتظار السائق عند الاستلام', prefixIcon: Icon(Icons.hourglass_empty)),
               items: const [
                 DropdownMenuItem(value: 0, child: Text('بدون انتظار')),
                 DropdownMenuItem(value: 15, child: Text('15 دقيقة مجانًا')),
@@ -486,7 +488,7 @@ class _AirportScreenState extends State<AirportScreen> {
               const SizedBox(height: 10),
               DropdownButtonFormField<int>(
                 initialValue: _waitAirportMin,
-                decoration: const InputDecoration(labelText: 'انتظار السائق في ساحة المطار'),
+                decoration: const InputDecoration(labelText: 'انتظار السائق في ساحة المطار', prefixIcon: Icon(Icons.timer_outlined)),
                 items: const [
                   DropdownMenuItem(value: 0, child: Text('بدون انتظار')),
                   DropdownMenuItem(value: 30, child: Text('30 دقيقة مجانًا')),
