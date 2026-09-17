@@ -390,6 +390,10 @@ class _AirportScreenState extends State<AirportScreen> {
           const SizedBox(height: 18),
 
           _sectionTitle('3', 'نقطة البداية والوصول'),
+          if (_airport != null) ...[
+            _AirportBanner(airportName: _airport!.name),
+            const SizedBox(height: 12),
+          ],
           _sectionCard([
             AddressField(
               label: _direction == 'departure' ? 'نقطة البداية (منطقتك)' : 'وجهتك (منطقتك)',
@@ -434,11 +438,34 @@ class _AirportScreenState extends State<AirportScreen> {
           const SizedBox(height: 18),
 
           _sectionTitle('4', 'الركاب والأمتعة'),
-          _sectionCard([
-            _stepperRow('عدد المسافرين', _passengers, 1, maxTravelers, (v) => setState(() => _passengers = v)),
-            _stepperRow('مرافق رايح جاي (${fare.companionFee} ج.م/فرد)', _companions, 0, 9, (v) => setState(() => _companions = v)),
-            _stepperRow('شنط كبيرة (تُسجَّل في الطائرة)', _bags, 0, maxBags, (v) => setState(() => _bags = v)),
-          ]),
+          _StepperCard(
+            icon: Icons.person_outline,
+            label: 'عدد المسافرين',
+            value: _passengers,
+            min: 1,
+            max: maxTravelers,
+            onChanged: (v) => setState(() => _passengers = v),
+          ),
+          const SizedBox(height: 10),
+          _StepperCard(
+            icon: Icons.group_outlined,
+            label: 'مرافق رايح جاي',
+            sublabel: '${fare.companionFee} ج.م/فرد',
+            value: _companions,
+            min: 0,
+            max: 9,
+            onChanged: (v) => setState(() => _companions = v),
+          ),
+          const SizedBox(height: 10),
+          _StepperCard(
+            icon: Icons.luggage_outlined,
+            label: 'شنط كبيرة',
+            sublabel: 'تُسجَّل في الطائرة',
+            value: _bags,
+            min: 0,
+            max: maxBags,
+            onChanged: (v) => setState(() => _bags = v),
+          ),
           const SizedBox(height: 18),
 
           _sectionTitle('5', 'أوقات الانتظار'),
@@ -722,14 +749,101 @@ class _AirportScreenState extends State<AirportScreen> {
     );
   }
 
-  Widget _stepperRow(String label, int value, int min, int max, ValueChanged<int> onChanged) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
+}
+
+/// Confirms the picked airport at a glance — the reference mockup used a
+/// full photo banner; wslha has no real per-airport photo library, so this
+/// keeps the same "you're booking to/from X" reassurance with an icon
+/// badge on brand instead of borrowing a stock photo.
+class _AirportBanner extends StatelessWidget {
+  final String airportName;
+  const _AirportBanner({required this.airportName});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(colors: [AppColors.primaryDark, AppColors.primary]),
+        borderRadius: BorderRadius.circular(18),
+      ),
       child: Row(
         children: [
-          Expanded(child: Text(label, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700))),
+          Container(
+            width: 48,
+            height: 48,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.18), shape: BoxShape.circle),
+            child: const Icon(Icons.flight_takeoff, color: Colors.white, size: 24),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(airportName, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 15), maxLines: 1, overflow: TextOverflow.ellipsis),
+                const SizedBox(height: 2),
+                const Text('اختر تفاصيل رحلتك بالأسفل', style: TextStyle(color: Colors.white70, fontSize: 11.5)),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// One field, one card — mirrors the reference mockup's passenger/luggage
+/// steppers (icon badge + label + -/value/+ row) instead of stacking three
+/// stepper rows inside a single shared card.
+class _StepperCard extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String? sublabel;
+  final int value;
+  final int min;
+  final int max;
+  final ValueChanged<int> onChanged;
+  const _StepperCard({
+    required this.icon,
+    required this.label,
+    this.sublabel,
+    required this.value,
+    required this.min,
+    required this.max,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE9ECEB)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            alignment: Alignment.center,
+            decoration: const BoxDecoration(color: AppColors.primaryLight, shape: BoxShape.circle),
+            child: Icon(icon, color: AppColors.primaryDark, size: 20),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(label, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13)),
+                if (sublabel != null) Text(sublabel!, style: const TextStyle(fontSize: 11, color: AppColors.textFaint)),
+              ],
+            ),
+          ),
           IconButton(onPressed: value > min ? () => onChanged(value - 1) : null, icon: const Icon(Icons.remove_circle_outline)),
-          Text('$value', style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 15)),
+          Text('$value', style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16)),
           IconButton(onPressed: value < max ? () => onChanged(value + 1) : null, icon: const Icon(Icons.add_circle_outline)),
         ],
       ),
