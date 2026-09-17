@@ -377,13 +377,11 @@ class _AirportScreenState extends State<AirportScreen> {
                 spacing: 8,
                 runSpacing: 8,
                 children: fare.qualityLabels.keys
-                    .map((q) => ChoiceChip(
-                          label: Text(
-                            '${fare.qualityLabels[q]}'
-                            '${q == 'regular' ? '' : ' (+${(((fare.qualityMultiplier[q] ?? 1) - 1) * 100).round()}%)'}',
-                          ),
+                    .map((q) => _SelectablePill(
+                          label: '${fare.qualityLabels[q]}'
+                              '${q == 'regular' ? '' : ' (+${(((fare.qualityMultiplier[q] ?? 1) - 1) * 100).round()}%)'}',
                           selected: _quality == q,
-                          onSelected: (_) => setState(() => _quality = q),
+                          onTap: () => setState(() => _quality = q),
                         ))
                     .toList(),
               ),
@@ -678,10 +676,18 @@ class _AirportScreenState extends State<AirportScreen> {
   /// Groups a numbered section's fields into one tinted card instead of a
   /// flat list separated by dividers — same card language as the rest of
   /// the app's screens.
+  // White + thin border instead of a solid teal fill — was the one thing
+  // still visibly unchanged after the vehicle-card redesign below (every
+  // section on this screen sat inside a solid green-tinted box, which read
+  // as the "same as before" even once the card contents were reworked).
   Widget _sectionCard(List<Widget> children) {
     return Container(
       padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(color: AppColors.cardTint, borderRadius: BorderRadius.circular(16)),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE9ECEB)),
+      ),
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: children),
     );
   }
@@ -704,10 +710,12 @@ class _AirportScreenState extends State<AirportScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: AppColors.primaryDark)),
+        const SizedBox(height: 6),
         Wrap(
           spacing: 8,
+          runSpacing: 8,
           children: options.entries
-              .map((e) => ChoiceChip(label: Text(e.value), selected: value == e.key, onSelected: (_) => onChanged(e.key)))
+              .map((e) => _SelectablePill(label: e.value, selected: value == e.key, onTap: () => onChanged(e.key)))
               .toList(),
         ),
       ],
@@ -724,6 +732,46 @@ class _AirportScreenState extends State<AirportScreen> {
           Text('$value', style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 15)),
           IconButton(onPressed: value < max ? () => onChanged(value + 1) : null, icon: const Icon(Icons.add_circle_outline)),
         ],
+      ),
+    );
+  }
+}
+
+/// Outlined selectable pill — white/transparent with a border that turns
+/// green and grows a checkmark when selected, replacing every ChoiceChip
+/// on this screen (which rendered as a solid filled green pill, clashing
+/// with the vehicle card's white-bordered look right below it).
+class _SelectablePill extends StatelessWidget {
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+  const _SelectablePill({required this.label, required this.selected, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: selected ? AppColors.primaryLight : Colors.white,
+      borderRadius: BorderRadius.circular(30),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(30),
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(30),
+            border: Border.all(color: selected ? AppColors.primary : const Color(0xFFE9ECEB), width: selected ? 1.6 : 1),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (selected) ...[
+                const Icon(Icons.check, size: 15, color: AppColors.primary),
+                const SizedBox(width: 5),
+              ],
+              Text(label, style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: selected ? AppColors.primaryDark : Colors.black87)),
+            ],
+          ),
+        ),
       ),
     );
   }
