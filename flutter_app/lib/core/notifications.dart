@@ -63,16 +63,19 @@ class AppNotifications {
     // audio file at android/app/src/main/res/raw/proximity_alert.mp3
     // (user-provided). Android locks a channel's sound permanently once
     // created, so this can't be a config tweak on 'wslha_rides'; it needs
-    // its own channel id — and a NEW id here (not the old 'wslha_proximity'
-    // from the earlier system-URI experiment, which failed silently:
-    // third-party apps can't actually reference system settings URIs like
-    // content://settings/system/alarm_alert for notification sounds,
-    // Android just falls back to the default). Any device that already
-    // installed that earlier build has 'wslha_proximity' permanently
-    // locked to the wrong sound, so this must be a fresh channel id to
-    // actually pick up the real file.
+    // its own channel id. THIRD id here — 'wslha_proximity' (system-URI
+    // experiment) and 'wslha_proximity_v2' (first real-audio attempt) are
+    // both burned: testing showed 'wslha_proximity_v2' got permanently
+    // locked to a device-default fallback tone (confirmed via the
+    // system notification settings showing a built-in tone name, not our
+    // file) on at least one test device — almost certainly because the
+    // very first time that channel id was created on it, the raw
+    // resource lookup didn't resolve yet, and Android locked in whatever
+    // fallback it picked right then. Re-encoding the audio file (done in
+    // a previous commit) can never fix this on that device: the channel
+    // id itself is poisoned. Only a fresh id actually picks up the file.
     await androidImpl?.createNotificationChannel(const AndroidNotificationChannel(
-      'wslha_proximity_v2',
+      'wslha_proximity_v3',
       'تنبيه اقتراب السائق',
       description: 'نغمة تنبيه اقتراب السائق من العميل',
       importance: Importance.high,
@@ -91,7 +94,7 @@ class AppNotifications {
     await init();
     final (channelName, channelDesc) = switch (channelId) {
       'wslha_orders' => ('الطلبات الجديدة', 'إشعار فوري عند وصول طلب جديد'),
-      'wslha_proximity_v2' => ('تنبيه اقتراب السائق', 'نغمة تنبيه اقتراب السائق من العميل'),
+      'wslha_proximity_v3' => ('تنبيه اقتراب السائق', 'نغمة تنبيه اقتراب السائق من العميل'),
       _ => ('تحديثات المشاوير والطلبات', 'إشعارات تغيّر حالة المشاوير والطلبات'),
     };
     final details = NotificationDetails(

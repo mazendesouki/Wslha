@@ -567,7 +567,7 @@ class _LiveMapSectionState extends State<_LiveMapSection> {
           if (headingToPickup && distanceM < 2000000 && !_nearAlertSent) {
             _nearAlertSent = true;
             WidgetsBinding.instance.addPostFrameCallback((_) {
-              AppNotifications.instance.show('وصّلها', '🚗 السائق قرّب منك أوي — استعد للنزول', channelId: 'wslha_proximity_v2');
+              AppNotifications.instance.show('وصّلها', '🚗 السائق قرّب منك أوي — استعد للنزول', channelId: 'wslha_proximity_v3');
             });
           }
         }
