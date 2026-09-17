@@ -15,6 +15,10 @@ class AddressField extends StatefulWidget {
   /// Passed through to PlacesService.autocomplete's `types` — e.g.
   /// 'airport' for the airport picker (airport.astro's #airport-input).
   final String? placesTypes;
+  /// Leading icon distinguishing this field at a glance (e.g. a start pin
+  /// vs. a flag for the destination) — optional so callers that don't set
+  /// one keep the plain look.
+  final IconData? prefixIcon;
 
   const AddressField({
     super.key,
@@ -23,6 +27,7 @@ class AddressField extends StatefulWidget {
     required this.onSelected,
     this.showLocationButton = false,
     this.placesTypes,
+    this.prefixIcon,
   });
 
   @override
@@ -122,6 +127,7 @@ class _AddressFieldState extends State<AddressField> {
           decoration: InputDecoration(
             labelText: widget.label,
             hintText: widget.hint,
+            prefixIcon: widget.prefixIcon == null ? null : Icon(widget.prefixIcon),
             suffixIcon: _loading || _locLoading
                 ? const Padding(
                     padding: EdgeInsets.all(12),

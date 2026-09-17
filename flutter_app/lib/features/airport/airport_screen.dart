@@ -330,17 +330,16 @@ class _AirportScreenState extends State<AirportScreen> {
                 child: Text('لا توجد سيارات مسجّلة متاحة حاليًا.', style: TextStyle(color: AppColors.error, fontSize: 12)),
               )
             else ...[
-              Wrap(
-                spacing: 8,
-                children: fare.vehicleCategoryInfo.keys
-                    .where((cat) => _vehicles.any((v) => v.category == cat))
-                    .map((cat) => ChoiceChip(
-                          label: Text('${fare.vehicleCategoryInfo[cat]!.icon} ${fare.categoryLabels[cat]!.replaceAll(RegExp(r'^[^ ]+ '), '')}'),
-                          selected: _category == cat,
-                          onSelected: (_) => _onCategoryChanged(cat),
-                        ))
-                    .toList(),
-              ),
+              for (final cat in fare.vehicleCategoryInfo.keys.where((cat) => _vehicles.any((v) => v.category == cat)))
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: _VehicleCategoryCard(
+                    info: fare.vehicleCategoryInfo[cat]!,
+                    label: fare.categoryLabels[cat]!.replaceAll(RegExp(r'^[^ ]+ '), ''),
+                    selected: _category == cat,
+                    onTap: () => _onCategoryChanged(cat),
+                  ),
+                ),
               const SizedBox(height: 10),
               DropdownButtonFormField<fare.RegisteredVehicle>(
                 initialValue: _selectedVehicle,
@@ -394,6 +393,7 @@ class _AirportScreenState extends State<AirportScreen> {
               label: _direction == 'departure' ? 'نقطة البداية (منطقتك)' : 'وجهتك (منطقتك)',
               hint: 'اكتب منطقتك أو حيّك في دمياط...',
               showLocationButton: true,
+              prefixIcon: Icons.trip_origin,
               onSelected: (r) => setState(() => _from = r),
             ),
             const SizedBox(height: 12),
@@ -401,13 +401,18 @@ class _AirportScreenState extends State<AirportScreen> {
               label: _direction == 'departure' ? 'المطار (نقطة النهاية)' : 'المطار (نقطة البداية)',
               hint: 'ابحث باسم المطار: مطار القاهرة، مطار شرم الشيخ...',
               placesTypes: 'airport',
+              prefixIcon: Icons.flight_takeoff,
               onSelected: (r) => setState(() => _airport = r),
             ),
             const SizedBox(height: 12),
             TextField(
               controller: _addressCtrl,
               maxLines: 2,
-              decoration: const InputDecoration(labelText: 'عنوان الاستلام بالتفصيل (اختياري)', hintText: 'الحي، الشارع، رقم المبنى، علامة مميزة...'),
+              decoration: const InputDecoration(
+                labelText: 'عنوان الاستلام بالتفصيل (اختياري)',
+                hintText: 'الحي، الشارع، رقم المبنى، علامة مميزة...',
+                prefixIcon: Icon(Icons.home_outlined),
+              ),
             ),
             const SizedBox(height: 12),
             InkWell(
@@ -715,6 +720,62 @@ class _AirportScreenState extends State<AirportScreen> {
           Text('$value', style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 15)),
           IconButton(onPressed: value < max ? () => onChanged(value + 1) : null, icon: const Icon(Icons.add_circle_outline)),
         ],
+      ),
+    );
+  }
+}
+
+/// One selectable card per vehicle category — replaces the old ChoiceChip
+/// row with something that actually shows capacity (passengers/bags) up
+/// front, the way a real car-selection screen should, instead of hiding it
+/// until the dropdown below is opened.
+class _VehicleCategoryCard extends StatelessWidget {
+  final fare.VehicleCategoryInfo info;
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+  const _VehicleCategoryCard({required this.info, required this.label, required this.selected, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: selected ? AppColors.primaryLight : Colors.white,
+      borderRadius: BorderRadius.circular(14),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(14),
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: selected ? AppColors.primary : const Color(0xFFE5E7EB), width: selected ? 1.6 : 1),
+          ),
+          child: Row(
+            children: [
+              Text(info.icon, style: const TextStyle(fontSize: 26)),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(label, style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 14)),
+                    Text(info.desc, style: const TextStyle(fontSize: 11, color: AppColors.textFaint)),
+                  ],
+                ),
+              ),
+              Row(
+                children: [
+                  const Icon(Icons.person_outline, size: 14, color: AppColors.textFaint),
+                  Text(' ${info.maxTravelers}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
+                  const SizedBox(width: 8),
+                  const Icon(Icons.luggage_outlined, size: 14, color: AppColors.textFaint),
+                  Text(' ${info.maxBags}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
+                ],
+              ),
+              if (selected) const Padding(padding: EdgeInsets.only(right: 8), child: Icon(Icons.check_circle, color: AppColors.primary, size: 20)),
+            ],
+          ),
+        ),
       ),
     );
   }
