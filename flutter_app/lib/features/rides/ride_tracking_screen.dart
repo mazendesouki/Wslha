@@ -559,7 +559,12 @@ class _LiveMapSectionState extends State<_LiveMapSection> {
               ? '🚗 السائق على بعد $distanceLabel منك — وصول متوقع خلال ~$etaMin دقيقة'
               : '🚖 باقي $distanceLabel على وجهتك — حوالي ~$etaMin دقيقة';
 
-          if (headingToPickup && distanceM < 300 && !_nearAlertSent) {
+          // TEMPORARY test threshold — the tester's phone GPS is ~1,646 km
+          // from the pickup coordinates used in test rides, so the real
+          // 300m trigger can never fire during testing. Widened here only
+          // to confirm the notification/sound mechanics work at all;
+          // revert to 300 once that's confirmed.
+          if (headingToPickup && distanceM < 2000000 && !_nearAlertSent) {
             _nearAlertSent = true;
             WidgetsBinding.instance.addPostFrameCallback((_) {
               AppNotifications.instance.show('وصّلها', '🚗 السائق قرّب منك أوي — استعد للنزول', channelId: 'wslha_proximity_v2');
