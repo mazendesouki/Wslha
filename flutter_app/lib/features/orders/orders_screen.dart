@@ -117,16 +117,13 @@ class _OrdersScreenState extends State<OrdersScreen> {
 
   Widget _chip(String value, String label, String groupValue, ValueChanged<String> onSelect) {
     final selected = value == groupValue;
-    return Padding(
-      padding: const EdgeInsets.only(left: 8),
-      child: ChoiceChip(
-        label: Text(label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: selected ? Colors.white : Colors.black87)),
-        selected: selected,
-        selectedColor: AppColors.primary,
-        backgroundColor: Colors.white,
-        side: BorderSide(color: selected ? AppColors.primary : const Color(0xFFE9ECEB)),
-        onSelected: (_) => onSelect(value),
-      ),
+    return ChoiceChip(
+      label: Text(label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: selected ? Colors.white : Colors.black87)),
+      selected: selected,
+      selectedColor: AppColors.primary,
+      backgroundColor: Colors.white,
+      side: BorderSide(color: selected ? AppColors.primary : const Color(0xFFE9ECEB)),
+      onSelected: (_) => onSelect(value),
     );
   }
 
@@ -192,29 +189,27 @@ class _OrdersScreenState extends State<OrdersScreen> {
         children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: [
-                  _chip('all', '📋 الكل', _kindFilter, (v) => setState(() => _kindFilter = v)),
-                  _chip('ride', '🚗 رحلات', _kindFilter, (v) => setState(() => _kindFilter = v)),
-                  _chip('order', '🛵 توصيل', _kindFilter, (v) => setState(() => _kindFilter = v)),
-                ],
-              ),
+            child: Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                _chip('all', '📋 الكل', _kindFilter, (v) => setState(() => _kindFilter = v)),
+                _chip('ride', '🚗 رحلات', _kindFilter, (v) => setState(() => _kindFilter = v)),
+                _chip('order', '🛵 توصيل', _kindFilter, (v) => setState(() => _kindFilter = v)),
+              ],
             ),
           ),
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: [
-                  _chip('today', '📅 اليوم', _periodFilter, (v) => setState(() => _periodFilter = v)),
-                  _chip('week', '🗓️ الأسبوع', _periodFilter, (v) => setState(() => _periodFilter = v)),
-                  _chip('month', '📆 الشهر', _periodFilter, (v) => setState(() => _periodFilter = v)),
-                  _chip('all', '⏳ كل الوقت', _periodFilter, (v) => setState(() => _periodFilter = v)),
-                ],
-              ),
+            padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+            child: Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                _chip('today', '📅 اليوم', _periodFilter, (v) => setState(() => _periodFilter = v)),
+                _chip('week', '🗓️ الأسبوع', _periodFilter, (v) => setState(() => _periodFilter = v)),
+                _chip('month', '📆 الشهر', _periodFilter, (v) => setState(() => _periodFilter = v)),
+                _chip('all', '⏳ كل الوقت', _periodFilter, (v) => setState(() => _periodFilter = v)),
+              ],
             ),
           ),
           if (statsBase != null && statsBase.isNotEmpty) ...[
@@ -263,19 +258,15 @@ class _OrdersScreenState extends State<OrdersScreen> {
             ),
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-              child: SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Row(
-                  children: [
-                    _typeTile('🛵', 'توصيل', deliveryCount, selected: _typeFilter == 'order', onTap: () => _toggleTypeFilter('order')),
-                    const SizedBox(width: 8),
-                    _typeTile('🚗', 'داخلي', localCount, selected: _typeFilter == 'local', onTap: () => _toggleTypeFilter('local')),
-                    const SizedBox(width: 8),
-                    _typeTile('🛣️', 'خارجي', externalCount, selected: _typeFilter == 'external', onTap: () => _toggleTypeFilter('external')),
-                    const SizedBox(width: 8),
-                    _typeTile('✈️', 'مطار', airportCount, selected: _typeFilter == 'airport', onTap: () => _toggleTypeFilter('airport')),
-                  ],
-                ),
+              child: Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  _typeTile('🛵', 'توصيل', deliveryCount, selected: _typeFilter == 'order', onTap: () => _toggleTypeFilter('order')),
+                  _typeTile('🚗', 'داخلي', localCount, selected: _typeFilter == 'local', onTap: () => _toggleTypeFilter('local')),
+                  _typeTile('🛣️', 'خارجي', externalCount, selected: _typeFilter == 'external', onTap: () => _toggleTypeFilter('external')),
+                  _typeTile('✈️', 'مطار', airportCount, selected: _typeFilter == 'airport', onTap: () => _toggleTypeFilter('airport')),
+                ],
               ),
             ),
           ],
