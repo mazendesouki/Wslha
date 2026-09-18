@@ -574,65 +574,72 @@ class AccountScreenState extends State<AccountScreen> {
     );
   }
 
+  /// Average + count of the ratings the customer themselves gave drivers —
+  /// computed locally from the already-fetched _reviews list (same shape
+  /// RatingsRepository._summarize produces server-side for driverTrustBadge/
+  /// customerReliability), so this card follows the exact same avg/count
+  /// calculation as a driver's own profile card.
+  RatingSummary get _givenSummary {
+    final nums = _reviews.map((r) => (r['rating'] as num?)?.toDouble()).whereType<double>().toList();
+    if (nums.isEmpty) return RatingSummary(0, 0);
+    return RatingSummary(nums.reduce((a, b) => a + b) / nums.length, nums.length);
+  }
+
   Widget _reviewsSection() {
+    final s = _givenSummary;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text('⭐ تقييماتي للسائقين', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 15)),
         const SizedBox(height: 10),
-        if (_reviews.isEmpty)
-          _emptyStateBox('لسه ما قيّمتش أي رحلة')
-        else
-          ..._reviews.map(_reviewTile),
-      ],
-    );
-  }
-
-  Widget _reviewTile(Map<String, dynamic> r) {
-    final rating = ((r['rating'] as num?) ?? 0).toInt();
-    final emoji = rating >= 1 && rating <= 5 ? ratingEmojis[rating - 1] : '⭐';
-    final comment = r['comment'] as String?;
-    final tags = (r['tags'] as List?)?.cast<String>() ?? [];
-    final createdAt = DateTime.tryParse(r['created_at'] as String? ?? '');
-    return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFE9ECEB)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Text(emoji, style: const TextStyle(fontSize: 20)),
-              const Spacer(),
-              if (createdAt != null)
-                Text('${createdAt.year}/${createdAt.month}/${createdAt.day}', style: const TextStyle(fontSize: 11, color: AppColors.textFaint)),
-            ],
-          ),
-          if (comment != null && comment.isNotEmpty) ...[
-            const SizedBox(height: 8),
-            Text('"$comment"', style: const TextStyle(fontSize: 13)),
-          ],
-          if (tags.isNotEmpty) ...[
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 6,
-              runSpacing: 6,
-              children: tags
-                  .map((t) => Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                        decoration: BoxDecoration(color: AppColors.primaryLight, borderRadius: BorderRadius.circular(999)),
-                        child: Text(t, style: const TextStyle(fontSize: 10, color: AppColors.primaryDark)),
-                      ))
-                  .toList(),
+        Material(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(16),
+            onTap: () => Navigator.of(context).push(MaterialPageRoute(
+              builder: (_) => RatingsListScreen(
+                title: '⭐ تقييماتي للسائقين',
+                summary: s,
+                reviews: _reviews,
+                countLabel: 'تقييم للسائقين',
+                emptyMessage: 'لسه ما قيّمتش أي رحلة',
+              ),
+            )),
+            child: Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), boxShadow: const [
+                BoxShadow(color: Color(0x11000000), blurRadius: 8, offset: Offset(0, 2)),
+              ]),
+              child: Row(
+                children: [
+                  Text(
+                    s.isNew ? '🆕' : (s.avg >= 4.5 ? '😍' : s.avg >= 3.5 ? '🙂' : s.avg >= 2.5 ? '😐' : '🙁'),
+                    style: const TextStyle(fontSize: 32),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          s.isNew ? 'لسه ما قيّمتش أي رحلة' : s.avg.toStringAsFixed(1),
+                          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
+                        ),
+                        Text(
+                          s.isNew ? 'تقييماتك للسائقين هتظهر هنا' : '${s.count} تقييم للسائقين',
+                          style: const TextStyle(fontSize: 12, color: AppColors.textFaint),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const Icon(Icons.chevron_left, color: AppColors.textFaint),
+                ],
+              ),
             ),
-          ],
-        ],
-      ),
+          ),
+        ),
+      ],
     );
   }
 
