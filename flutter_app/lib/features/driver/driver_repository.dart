@@ -290,6 +290,16 @@ class DriverRepository {
     });
   }
 
+  /// Today/this-week completed trip+order counts (db/security-71) — a
+  /// lightweight count query, unlike fetchTripStats' lifetime breakdown.
+  Future<(int, int)> fetchProgress(String phone) async {
+    final result = await sb.rpc('get_driver_progress', params: {'p_driver_phone': phone});
+    if (result is Map) {
+      return (((result['today'] as num?) ?? 0).toInt(), ((result['week'] as num?) ?? 0).toInt());
+    }
+    return (0, 0);
+  }
+
   /// Server-side lifetime trip breakdown — same RPC driver-dashboard.astro's
   /// إحصائيات tab calls (see db/security-17-driver-trip-stats.sql, extended
   /// with a store_orders category by db/security-28-driver-profile.sql).

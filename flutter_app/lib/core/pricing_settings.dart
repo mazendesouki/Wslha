@@ -43,6 +43,11 @@ class PricingSettings {
   static int noShowGraceMinutes = 10;
   static double noShowFee = 15;
 
+  // Driver motivation counter (db/security-71) — today/week completed
+  // trip+order goals shown on driver_profile_screen.dart.
+  static int driverDailyGoal = 8;
+  static int driverWeeklyGoal = 40;
+
   static bool _loaded = false;
 
   /// Fire-and-forget is fine to call repeatedly (e.g. from each screen's
@@ -68,6 +73,7 @@ class PricingSettings {
         'driver_late_grace_minutes', 'driver_late_fee', 'driver_late_fee_enabled',
         'customer_late_grace_minutes', 'customer_late_fee_per_minute',
         'no_show_grace_minutes', 'no_show_fee',
+        'driver_daily_goal', 'driver_weekly_goal',
       ]);
       double? num(String key) {
         final row = (rows as List).cast<Map<String, dynamic>>().where((r) => r['key'] == key).toList();
@@ -99,6 +105,8 @@ class PricingSettings {
       customerLateFeePerMinute = num('customer_late_fee_per_minute') ?? customerLateFeePerMinute;
       noShowGraceMinutes = (num('no_show_grace_minutes') ?? noShowGraceMinutes.toDouble()).round();
       noShowFee = num('no_show_fee') ?? noShowFee;
+      driverDailyGoal = (num('driver_daily_goal') ?? driverDailyGoal.toDouble()).round();
+      driverWeeklyGoal = (num('driver_weekly_goal') ?? driverWeeklyGoal.toDouble()).round();
       _loaded = true;
     } catch (_) {
       // Network hiccup — keep the hardcoded defaults.

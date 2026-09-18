@@ -196,21 +196,47 @@ jobs:
       - name: Publish APKs to website downloads
         if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master' || github.ref == 'refs/heads/claude/dreamy-johnson-nuzHs'
         run: |
-          mkdir -p ../public/downloads
-          cp build/app/outputs/flutter-apk/app-driver-release.apk   ../public/downloads/wslha-driver.apk
-          cp build/app/outputs/flutter-apk/app-customer-release.apk ../public/downloads/wslha-customer.apk
-          cp build/app/outputs/flutter-apk/app-merchant-release.apk ../public/downloads/wslha-merchant.apk
-          VERSION_NAME=$(grep '^version:' pubspec.yaml | sed 's/version: *//' | cut -d+ -f1)
-          cat > ../public/downloads/version.json <<EOF
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+          publish_once() {
+            mkdir -p ../public/downloads
+            cp build/app/outputs/flutter-apk/app-driver-release.apk   ../public/downloads/wslha-driver.apk
+            cp build/app/outputs/flutter-apk/app-customer-release.apk ../public/downloads/wslha-customer.apk
+            cp build/app/outputs/flutter-apk/app-merchant-release.apk ../public/downloads/wslha-merchant.apk
+            VERSION_NAME=$(grep '^version:' pubspec.yaml | sed 's/version: *//' | cut -d+ -f1)
+            cat > ../public/downloads/version.json <<EOF
           {"buildNumber": ${{ github.run_number }}, "versionName": "$VERSION_NAME", "releasedAt": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"}
           EOF
-          cd ..
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add public/downloads
-          if ! git diff --cached --quiet; then
+          }
+
+          # Multiple builds on this branch can race to publish here — retry
+          # a few times instead of failing outright, but never let an older
+          # (lower run_number) retry clobber a newer version.json that
+          # already made it in while we were waiting.
+          for attempt in 1 2 3 4 5; do
+            publish_once
+            cd ..
+            git add public/downloads
+            if git diff --cached --quiet; then
+              echo "No APK changes to publish."
+              cd flutter_app
+              break
+            fi
             git commit -m "chore: publish latest APKs to website downloads"
-            git push
-          else
-            echo "No APK changes to publish."
-          fi
+            if git push; then
+              echo "Published successfully."
+              cd flutter_app
+              break
+            fi
+            echo "Push rejected (attempt $attempt) — checking remote state..."
+            git fetch origin "$GITHUB_REF_NAME"
+            REMOTE_BUILD=$(git show "origin/$GITHUB_REF_NAME:public/downloads/version.json" 2>/dev/null | grep -o '"buildNumber":[^,]*' | grep -o '[0-9]*' || echo 0)
+            git reset --hard "origin/$GITHUB_REF_NAME"
+            cd flutter_app
+            if [ "${REMOTE_BUILD:-0}" -ge "${{ github.run_number }}" ]; then
+              echo "Remote already has build $REMOTE_BUILD >= ours (${{ github.run_number }}) — nothing to do."
+              break
+            fi
+            sleep $((attempt * 3))
+          done

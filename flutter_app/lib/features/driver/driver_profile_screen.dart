@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../core/phone_utils.dart';
+import '../../core/pricing_settings.dart';
 import '../../core/session.dart';
 import '../../core/supabase_client.dart';
 import '../../core/theme.dart';
@@ -45,6 +46,7 @@ class DriverProfileScreenState extends State<DriverProfileScreen> {
   Map<String, dynamic>? _account;
   Map<String, dynamic>? _vehicle;
   Map<String, dynamic> _stats = {};
+  (int, int) _progress = (0, 0);
   RatingSummary _ratingSummary = RatingSummary(0, 0);
   List<Map<String, dynamic>> _reviews = [];
   bool _loading = true;
@@ -117,12 +119,14 @@ class DriverProfileScreenState extends State<DriverProfileScreen> {
       _accountRepo.lookupAccount(phone).catchError((_) => null),
       _driverRepo.fetchVehicleInfo(phone).catchError((_) => null),
       _driverRepo.fetchTripStats(phone).catchError((_) => <String, dynamic>{}),
+      _driverRepo.fetchProgress(phone).catchError((_) => (0, 0)),
     ]);
     if (!mounted) return;
     setState(() {
       _account = results[0];
       _vehicle = results[1];
       _stats = results[2] as Map<String, dynamic>;
+      _progress = results[3] as (int, int);
       _loading = false;
     });
   }
@@ -294,6 +298,8 @@ class DriverProfileScreenState extends State<DriverProfileScreen> {
           children: [
             _buildHeader(name, avatarUrl, level, next),
             const SizedBox(height: 16),
+            _buildGoalCard(),
+            const SizedBox(height: 16),
             _buildRatingCard(),
             const SizedBox(height: 16),
             _buildTripStats(),
@@ -457,6 +463,58 @@ class DriverProfileScreenState extends State<DriverProfileScreen> {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildGoalCard() {
+    final (today, week) = _progress;
+    final dailyGoal = PricingSettings.driverDailyGoal;
+    final weeklyGoal = PricingSettings.driverWeeklyGoal;
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), boxShadow: const [
+        BoxShadow(color: Color(0x11000000), blurRadius: 8, offset: Offset(0, 2)),
+      ]),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text('🎯 هدفك', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 14)),
+          const SizedBox(height: 12),
+          _goalRow('اليوم', today, dailyGoal),
+          const SizedBox(height: 12),
+          _goalRow('الأسبوع', week, weeklyGoal),
+        ],
+      ),
+    );
+  }
+
+  Widget _goalRow(String label, int done, int goal) {
+    final ratio = goal > 0 ? (done / goal).clamp(0.0, 1.0) : 0.0;
+    final reached = done >= goal;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.textFaint)),
+            Text(
+              reached ? '🎉 وصلت للهدف!' : '$done / $goal رحلة',
+              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w900, color: reached ? AppColors.success : AppColors.primary),
+            ),
+          ],
+        ),
+        const SizedBox(height: 6),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(999),
+          child: LinearProgressIndicator(
+            value: ratio,
+            minHeight: 8,
+            backgroundColor: const Color(0xFFE9ECEB),
+            valueColor: AlwaysStoppedAnimation(reached ? AppColors.success : AppColors.primary),
+          ),
+        ),
+      ],
     );
   }
 
