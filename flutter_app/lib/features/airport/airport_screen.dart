@@ -31,7 +31,7 @@ class _AirportScreenState extends State<AirportScreen> {
   // Wizard steps instead of one long scroll — same fields/validation as
   // before, just shown one group at a time with a progress bar and
   // رجوع/التالي buttons, per the reference mockup's multi-page flow.
-  static const _stepTitles = ['نوع الرحلة', 'اختيار السيارة', 'نقطة الانطلاق والوصول', 'الركاب والانتظار', 'بيانات الرحلة والحجز'];
+  static const _stepTitles = ['نوع الرحلة', 'اختيار السيارة', 'نقطة الانطلاق والوصول', 'الركاب والانتظار', 'بيانات الرحلة', 'تأكيد الحجز'];
   int _currentStep = 0;
   final _scrollController = ScrollController();
 
@@ -109,6 +109,10 @@ class _AirportScreenState extends State<AirportScreen> {
       if (_from == null) return _direction == 'departure' ? 'يرجى اختيار نقطة الانطلاق.' : 'يرجى اختيار وجهتك.';
       if (_airport == null) return 'يرجى اختيار المطار.';
       if (_flightTime == null) return 'يرجى تحديد تاريخ ووقت الرحلة.';
+    }
+    if (step == 4) {
+      if (_nameCtrl.text.trim().length < 2) return 'يرجى إدخال اسم المسافر.';
+      if (!isEgyptianMobile(normalizeEgyptianPhone(_phoneCtrl.text.trim()))) return egPhoneError;
     }
     return null;
   }
@@ -678,7 +682,7 @@ class _AirportScreenState extends State<AirportScreen> {
           ],
         );
 
-      default:
+      case 4:
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -711,7 +715,14 @@ class _AirportScreenState extends State<AirportScreen> {
                 decoration: const InputDecoration(labelText: 'رقم الجوال', hintText: '01xxxxxxxxx', prefixIcon: Icon(Icons.phone_outlined)),
               ),
             ]),
-            const SizedBox(height: 20),
+          ],
+        );
+
+      default:
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            _sectionTitle('8', 'تأكيد الحجز'),
             if (_roadKm > 0 && _flightTime != null)
               _tripSummaryCard()
             else
