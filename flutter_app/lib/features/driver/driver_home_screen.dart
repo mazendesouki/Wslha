@@ -404,6 +404,23 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
     }
   }
 
+  /// "العميل لم يحضر" (db/security-70) — the only way a driver could end a
+  /// ride before this was cancel it themselves at all: customer_cancel_ride
+  /// (security-40) is customer-only. Frees the driver immediately for
+  /// another job and settles a wallet transfer both ways.
+  Future<void> _handleNoShow(String rideId) async {
+    try {
+      final (waited, fee) = await _repo.reportNoShow(rideId, widget.session.phone);
+      if (!mounted) return;
+      _jobs.clearActive();
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text('تم إلغاء الرحلة — استنيت $waited دقيقة، اتضاف ${fee.toStringAsFixed(0)} ج.م لمحفظتك تعويض'),
+      ));
+    } catch (e) {
+      _showError(e);
+    }
+  }
+
   /// Driver→customer, mirroring driver-dashboard.astro's rate-customer
   /// modal — same private "reliability" signal shown to other drivers
   /// before they accept an offer (see _OfferCard).
@@ -747,6 +764,10 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
                   WaitingTimerCard(
                     arrivedAt: DateTime.parse(job['arrived_at'] as String).toLocal(),
                     isCustomerView: false,
+                  ),
+                  _NoShowButton(
+                    arrivedAt: DateTime.parse(job['arrived_at'] as String).toLocal(),
+                    onReport: () => _handleNoShow(job['id'] as String),
                   ),
                 ],
                 const SizedBox(height: 12),
@@ -1194,6 +1215,81 @@ class _OfferCard extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(color: AppColors.primaryLight, borderRadius: BorderRadius.circular(10)),
       child: Text(value, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 11, color: AppColors.primary)),
+    );
+  }
+}
+
+/// Appears once PricingSettings.noShowGraceMinutes have passed since
+/// arrived_at — before that it renders nothing (WaitingTimerCard already
+/// covers the countdown/fee-estimate UI for the earlier period).
+class _NoShowButton extends StatefulWidget {
+  final DateTime arrivedAt;
+  final Future<void> Function() onReport;
+  const _NoShowButton({required this.arrivedAt, required this.onReport});
+
+  @override
+  State<_NoShowButton> createState() => _NoShowButtonState();
+}
+
+class _NoShowButtonState extends State<_NoShowButton> {
+  Timer? _timer;
+  bool _ready = false;
+  bool _busy = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _check();
+    _timer = Timer.periodic(const Duration(seconds: 5), (_) => _check());
+  }
+
+  void _check() {
+    final elapsedMinutes = DateTime.now().difference(widget.arrivedAt).inMinutes;
+    final ready = elapsedMinutes >= PricingSettings.noShowGraceMinutes;
+    if (ready != _ready && mounted) setState(() => _ready = ready);
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _confirm() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('العميل لم يحضر؟'),
+        content: const Text('هيتم إلغاء الرحلة فورًا — العميل هيتخصم منه رسوم عدم حضور، وانت هتاخد تعويض انتظار في محفظتك.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('تراجع')),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('تأكيد الإلغاء', style: TextStyle(color: AppColors.error)),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    setState(() => _busy = true);
+    await widget.onReport();
+    if (mounted) setState(() => _busy = false);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!_ready) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.only(top: 8),
+      child: OutlinedButton.icon(
+        onPressed: _busy ? null : _confirm,
+        icon: const Icon(Icons.person_off_outlined, color: AppColors.error),
+        label: const Text('العميل لم يحضر — إلغاء الرحلة', style: TextStyle(color: AppColors.error)),
+        style: OutlinedButton.styleFrom(
+          side: const BorderSide(color: AppColors.error),
+          padding: const EdgeInsets.symmetric(vertical: 12),
+        ),
+      ),
     );
   }
 }

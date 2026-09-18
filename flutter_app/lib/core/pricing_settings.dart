@@ -38,6 +38,11 @@ class PricingSettings {
   // dashboard. The customer-late-to-board fee is unaffected by this.
   static bool driverLateFeeEnabled = false;
 
+  // "العميل لم يحضر" (db/security-70) — how long a driver must wait past
+  // arrived_at before they're allowed to end the ride as a no-show.
+  static int noShowGraceMinutes = 10;
+  static double noShowFee = 15;
+
   static bool _loaded = false;
 
   /// Fire-and-forget is fine to call repeatedly (e.g. from each screen's
@@ -62,6 +67,7 @@ class PricingSettings {
         'external_base_fee', 'external_min_fare', 'external_rate_sedan',
         'driver_late_grace_minutes', 'driver_late_fee', 'driver_late_fee_enabled',
         'customer_late_grace_minutes', 'customer_late_fee_per_minute',
+        'no_show_grace_minutes', 'no_show_fee',
       ]);
       double? num(String key) {
         final row = (rows as List).cast<Map<String, dynamic>>().where((r) => r['key'] == key).toList();
@@ -91,6 +97,8 @@ class PricingSettings {
       driverLateFeeEnabled     = boolSetting('driver_late_fee_enabled') ?? driverLateFeeEnabled;
       customerLateGraceMinutes = (num('customer_late_grace_minutes') ?? customerLateGraceMinutes.toDouble()).round();
       customerLateFeePerMinute = num('customer_late_fee_per_minute') ?? customerLateFeePerMinute;
+      noShowGraceMinutes = (num('no_show_grace_minutes') ?? noShowGraceMinutes.toDouble()).round();
+      noShowFee = num('no_show_fee') ?? noShowFee;
       _loaded = true;
     } catch (_) {
       // Network hiccup — keep the hardcoded defaults.

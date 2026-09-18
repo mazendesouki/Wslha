@@ -260,6 +260,26 @@ class DriverRepository {
     return (0, false);
   }
 
+  /// "العميل لم يحضر" — db/security-70. Server re-validates the ride is
+  /// still 'arrived' and that enough time has actually passed since
+  /// arrived_at (PricingSettings.noShowGraceMinutes is only used
+  /// client-side to gate showing the button at all). Returns the actual
+  /// waited minutes + fee charged, or throws if the grace period hasn't
+  /// elapsed yet server-side.
+  Future<(int, double)> reportNoShow(String rideId, String driverPhone) async {
+    final result = await sb.rpc('driver_report_no_show', params: {
+      'p_ride_id': rideId,
+      'p_driver_phone': driverPhone,
+    });
+    if (result is Map) {
+      return (
+        ((result['waited_minutes'] as num?) ?? 0).toInt(),
+        ((result['fee'] as num?) ?? 0).toDouble(),
+      );
+    }
+    return (0, 0.0);
+  }
+
   /// Routed through driver_update_ride_status (security-48), which
   /// verifies this ride is actually assigned to this driver server-side.
   Future<void> markRideInProgress(String rideId, String driverPhone) async {
