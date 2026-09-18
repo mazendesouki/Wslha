@@ -1,10 +1,14 @@
 import 'package:http/http.dart' as http;
 import '../../core/supabase_client.dart';
 
-/// The `accounts` table is not directly SELECTable by the anon key — the
-/// web app (profile.astro) goes through the same `lookup_account` RPC and
-/// PATCHes `accounts` directly for edits, which does work under RLS since
-/// the row is matched by phone. Mirrors that exactly.
+/// The `accounts` table has no SELECT grant for anon/authenticated at all —
+/// reads go through the `lookup_account` RPC. A direct `.update()` also
+/// needs fixing here: Postgres requires SELECT on any column referenced in
+/// an UPDATE's WHERE clause (here, `phone`) in addition to UPDATE on the
+/// changed columns, so a raw `sb.from('accounts').update(...).eq('phone', ...)`
+/// fails with "permission denied for table accounts" (db/security-67) —
+/// writes go through security-definer RPCs instead, same as
+/// update_account_email() already did.
 class AccountRepository {
   Future<Map<String, dynamic>?> lookupAccount(String phone) async {
     final rows = await sb.rpc('lookup_account', params: {'p_phone': phone});
@@ -18,12 +22,13 @@ class AccountRepository {
     String? city,
     String? username,
   }) async {
-    final patch = <String, dynamic>{};
-    if (name != null) patch['name'] = name;
-    if (city != null) patch['city'] = city;
-    if (username != null) patch['username'] = username;
-    if (patch.isEmpty) return;
-    await sb.from('accounts').update(patch).eq('phone', phone);
+    if (name == null && city == null && username == null) return;
+    await sb.rpc('update_account_profile', params: {
+      'p_phone': phone,
+      if (name != null) 'p_name': name,
+      if (city != null) 'p_city': city,
+      if (username != null) 'p_username': username,
+    });
   }
 
   /// email is deliberately not part of updateProfile()'s direct table
@@ -56,7 +61,7 @@ class AccountRepository {
     );
     if (uploadRes.statusCode != 200 && uploadRes.statusCode != 201) return null;
     final url = '$supabaseUrl/storage/v1/object/public/documents/$path';
-    await sb.from('accounts').update({'avatar_url': url}).eq('phone', phone);
+    await sb.rpc('update_account_avatar', params: {'p_phone': phone, 'p_avatar_url': url});
     return url;
   }
 
