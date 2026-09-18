@@ -405,6 +405,20 @@ class _RideTrackingScreenState extends State<RideTrackingScreen> {
                         ),
                       ),
                       const SizedBox(height: 20),
+                      if (!widget.isDriverView && !isCancelled && status != 'completed') ...[
+                        OutlinedButton.icon(
+                          onPressed: () => shareRideTracking(
+                            rideId: widget.rideId,
+                            fromArea: ride['from_area'] as String?,
+                            toArea: ride['to_area'] as String?,
+                            driverName: driverName,
+                          ),
+                          icon: const Icon(Icons.family_restroom),
+                          label: const Text('مشاركة الرحلة مع أهلي (أمان)'),
+                          style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 14)),
+                        ),
+                        const SizedBox(height: 10),
+                      ],
                       if (!widget.isDriverView && (status == 'pending' || status == 'accepted' || status == 'arrived'))
                         OutlinedButton(
                           style: OutlinedButton.styleFrom(

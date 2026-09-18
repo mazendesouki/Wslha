@@ -1,0 +1,500 @@
+---
+import Layout from '../components/layout.astro';
+import PageHero from '../components/PageHero.astro';
+---
+
+<style>
+  .rt-wrap {
+    padding: var(--sp-12) var(--sp-6) var(--sp-20);
+    max-width: 680px;
+    margin: 0 auto;
+  }
+
+  .rt-card {
+    background: var(--color-bg);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-md);
+    border: 1px solid var(--color-border);
+    overflow: hidden;
+    margin-bottom: var(--sp-6);
+  }
+
+  .rt-card__head {
+    background: linear-gradient(135deg, var(--color-primary-dark), var(--color-primary));
+    color: #fff;
+    padding: var(--sp-8) var(--sp-6);
+  }
+
+  .rt-card__route {
+    font-size: var(--text-lg);
+    font-weight: var(--weight-black);
+  }
+
+  .rt-status {
+    display: inline-block;
+    margin-top: var(--sp-2);
+    padding: 0.3rem 0.9rem;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.2);
+    font-size: var(--text-sm);
+    font-weight: var(--weight-bold);
+  }
+
+  .rt-card__body {
+    padding: var(--sp-6);
+  }
+
+  .rt-timeline {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: var(--sp-8);
+  }
+
+  .rt-step {
+    flex: 1;
+    text-align: center;
+    font-size: var(--text-xs);
+    color: #9ca3af;
+    position: relative;
+  }
+
+  .rt-step__icon {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: #e5e7eb;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto var(--sp-2);
+    font-size: 15px;
+  }
+
+  .rt-step.done .rt-step__icon { background: var(--color-primary); color: #fff; }
+  .rt-step.done { color: var(--color-text); font-weight: var(--weight-bold); }
+
+  .rt-info dl {
+    display: grid;
+    gap: var(--sp-3);
+    margin: 0;
+  }
+
+  .rt-info > div {
+    display: flex;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--color-border);
+    padding-bottom: var(--sp-2);
+  }
+
+  .rt-info dt { color: #6b7280; font-size: var(--text-sm); }
+  .rt-info dd { margin: 0; font-weight: var(--weight-bold); }
+
+  .rt-driver {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-4);
+    padding: var(--sp-4) 0;
+  }
+
+  .rt-driver img, .rt-driver .rt-driver__ph {
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    object-fit: cover;
+    background: var(--color-primary-light, #e8fdf1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+  }
+
+  .rt-driver__call {
+    margin-inline-start: auto;
+    background: #dcfce7;
+    color: #16a34a;
+    border: none;
+    border-radius: 999px;
+    padding: 0.5rem 1rem;
+    font-weight: var(--weight-bold);
+    font-size: var(--text-sm);
+    text-decoration: none;
+  }
+
+  .rt-map-card {
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    border: 1px solid var(--color-border);
+    display: none;
+  }
+
+  .rt-map-card.visible { display: block; }
+
+  .rt-map-head {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-2);
+    padding: var(--sp-3) var(--sp-4);
+    background: #f7faf9;
+    font-size: var(--text-sm);
+    font-weight: var(--weight-bold);
+  }
+
+  .live-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #ef4444;
+    animation: pulse-dot 1.4s infinite;
+  }
+
+  @keyframes pulse-dot {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  #rt-map { width: 100%; height: 320px; }
+
+  .rt-empty, .rt-error {
+    text-align: center;
+    padding: var(--sp-12) var(--sp-6);
+    color: #6b7280;
+  }
+
+  .rt-final {
+    text-align: center;
+    padding: var(--sp-6);
+    font-weight: var(--weight-bold);
+  }
+  .rt-final.completed { color: #15803d; }
+  .rt-final.cancelled { color: #dc2626; }
+</style>
+
+<Layout
+  title="تتبع الرحلة"
+  description="تابع رحلة أحد أفراد عائلتك لحظة بلحظة مع وصّلها"
+  page="ride-track"
+>
+  <PageHero
+    badge="📡 متابعة أمان"
+    title="تتبع الرحلة"
+    subtitle="شوف موقع السائق وحالة الرحلة لحظة بلحظة"
+  />
+
+  <div class="rt-wrap">
+    <div id="rt-loading" class="rt-empty">جارٍ تحميل بيانات الرحلة...</div>
+
+    <div id="rt-notfound" class="rt-error" style="display:none">
+      ⚠️ الرابط ده مش صحيح أو الرحلة مش موجودة.
+    </div>
+
+    <div id="rt-content" style="display:none">
+      <div class="rt-card">
+        <div class="rt-card__head">
+          <div class="rt-card__route" id="rt-route">— ← —</div>
+          <span class="rt-status" id="rt-status-badge">—</span>
+        </div>
+        <div class="rt-card__body">
+          <div class="rt-timeline" id="rt-timeline">
+            <div class="rt-step" id="rt-step-pending"><div class="rt-step__icon">📋</div><span>تم الحجز</span></div>
+            <div class="rt-step" id="rt-step-accepted"><div class="rt-step__icon">🚗</div><span>قبول السائق</span></div>
+            <div class="rt-step" id="rt-step-arrived"><div class="rt-step__icon">📍</div><span>وصل للانطلاق</span></div>
+            <div class="rt-step" id="rt-step-in_progress"><div class="rt-step__icon">🛣️</div><span>في الطريق</span></div>
+            <div class="rt-step" id="rt-step-completed"><div class="rt-step__icon">✅</div><span>وصلت</span></div>
+          </div>
+
+          <div id="rt-driver-box" class="rt-driver" style="display:none">
+            <img id="rt-driver-photo" style="display:none" alt="السائق" />
+            <div id="rt-driver-placeholder" class="rt-driver__ph">🚖</div>
+            <div>
+              <div style="font-weight:900" id="rt-driver-name">—</div>
+              <div style="font-size:.8rem;color:#6b7280" id="rt-driver-car">—</div>
+            </div>
+            <a id="rt-driver-call" class="rt-driver__call" href="#">📞 اتصال</a>
+          </div>
+
+          <div class="rt-info">
+            <div><dt>من</dt><dd id="rt-from">—</dd></div>
+            <div><dt>إلى</dt><dd id="rt-to">—</dd></div>
+            <div><dt>عدد الركاب</dt><dd id="rt-passengers">—</dd></div>
+            <div><dt>الأجرة</dt><dd id="rt-fare">—</dd></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="rt-map-card" id="rt-map-card">
+        <div class="rt-map-head"><span class="live-dot"></span><span>🚖 موقع السائق المباشر</span></div>
+        <div id="rt-map"></div>
+      </div>
+
+      <div id="rt-final" class="rt-final" style="display:none"></div>
+    </div>
+  </div>
+</Layout>
+
+<script>
+  import { carIcon, bearingBetween, animateMarkerTo } from '../utils/mapMarker';
+
+  const SB_URL = 'https://vtikgyiopkjnrwlqnmfx.supabase.co';
+  const SB_KEY = 'sb_publishable_PLSnpvCT-sAyUMtymNgTwA_QmL2suw4';
+  const SB_H = { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}` };
+
+  const rideId = new URLSearchParams(location.search).get('id');
+
+  const STEP_ORDER = ['pending', 'accepted', 'arrived', 'in_progress', 'completed'];
+  const STATUS_LABEL = {
+    pending: 'بانتظار سائق',
+    accepted: 'السائق في الطريق إليك',
+    arrived: 'السائق وصل لنقطة الانطلاق',
+    in_progress: 'الرحلة جارية',
+    completed: 'اكتملت الرحلة',
+    cancelled: 'تم إلغاء الرحلة',
+  };
+  const LIVE_STATUSES = new Set(['accepted', 'arrived', 'in_progress']);
+  const TERMINAL_STATUSES = new Set(['completed', 'cancelled']);
+
+  let _prevDriverPos = null;
+  let map = null;
+  let driverMarker = null;
+  let originMarker = null;
+  let destMarker = null;
+  let _sb = null;
+  let _rideChannel = null;
+  let _locationChannel = null;
+  let ridePollTimer = null;
+  let driverPollTimer = null;
+  let currentRide = null;
+
+  (function loadSbClient() {
+    const s = document.createElement('script');
+    s.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js';
+    s.onload = () => { _sb = window.supabase.createClient(SB_URL, SB_KEY); };
+    document.head.appendChild(s);
+  })();
+
+  function el(id) { return document.getElementById(id); }
+
+  async function fetchRide(id) {
+    const r = await fetch(`${SB_URL}/rest/v1/rides?id=eq.${id}&select=*`, { headers: SB_H });
+    if (!r.ok) return null;
+    const rows = await r.json();
+    return rows?.[0] || null;
+  }
+
+  async function fetchDriverProfile(phone) {
+    if (!phone) return null;
+    try {
+      const r = await fetch(
+        `${SB_URL}/rest/v1/driver_applications?phone=eq.${encodeURIComponent(phone)}&status=eq.approved&select=full_name,driver_photo_url,vehicle_model,vehicle_color&order=created_at.desc&limit=1`,
+        { headers: SB_H },
+      );
+      if (!r.ok) return null;
+      const rows = await r.json();
+      return rows?.[0] || null;
+    } catch { return null; }
+  }
+
+  async function fetchAccountAvatar(phone) {
+    try {
+      const r = await fetch(`${SB_URL}/rest/v1/rpc/lookup_account`, {
+        method: 'POST',
+        headers: { ...SB_H, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ p_phone: phone }),
+      });
+      if (!r.ok) return null;
+      const rows = await r.json();
+      return rows?.[0]?.avatar_url || null;
+    } catch { return null; }
+  }
+
+  function renderTimeline(status) {
+    const idx = STEP_ORDER.indexOf(status);
+    STEP_ORDER.forEach((s, i) => {
+      const stepEl = el(`rt-step-${s}`);
+      if (!stepEl) return;
+      stepEl.classList.toggle('done', idx >= 0 && i <= idx);
+    });
+  }
+
+  async function renderRide(ride) {
+    currentRide = ride;
+    el('rt-loading').style.display = 'none';
+    el('rt-content').style.display = 'block';
+
+    el('rt-route').textContent = `${ride.from_area || '—'} ← ${ride.to_area || '—'}`;
+    el('rt-status-badge').textContent = STATUS_LABEL[ride.status] || ride.status;
+    el('rt-from').textContent = ride.from_area || '—';
+    el('rt-to').textContent = ride.to_area || '—';
+    el('rt-passengers').textContent = ride.passengers != null ? String(ride.passengers) : '—';
+    el('rt-fare').textContent = ride.fare != null ? `${ride.fare} ج.م` : '—';
+
+    renderTimeline(ride.status);
+
+    if (ride.driver_phone) {
+      el('rt-driver-box').style.display = 'flex';
+      el('rt-driver-name').textContent = ride.driver_name || 'السائق';
+      el('rt-driver-call').href = `tel:${ride.driver_phone}`;
+      const [profile, avatarUrl] = await Promise.all([
+        fetchDriverProfile(ride.driver_phone),
+        fetchAccountAvatar(ride.driver_phone),
+      ]);
+      const photo = avatarUrl || profile?.driver_photo_url;
+      if (photo) {
+        el('rt-driver-photo').src = photo;
+        el('rt-driver-photo').style.display = 'block';
+        el('rt-driver-placeholder').style.display = 'none';
+      }
+      const carLine = [profile?.vehicle_model, profile?.vehicle_color].filter(Boolean).join(' — ');
+      if (carLine) el('rt-driver-car').textContent = carLine;
+    }
+
+    if (TERMINAL_STATUSES.has(ride.status)) {
+      stopLive();
+      const box = el('rt-final');
+      box.style.display = 'block';
+      box.className = `rt-final ${ride.status}`;
+      box.textContent = ride.status === 'completed' ? '🎉 الرحلة اكتملت بأمان' : '❌ الرحلة اتلغت';
+      return;
+    }
+
+    if (LIVE_STATUSES.has(ride.status) && ride.driver_phone) {
+      await ensureMap(ride);
+      subscribeDriverLocation(ride.driver_phone);
+    }
+    subscribeRideUpdates(ride.id);
+  }
+
+  // ── Google Maps ──
+  const GMAPS_KEY = 'AIzaSyAKvFfBYNDcTZgvZZH5s_lQbOc24LNjLsY';
+  function loadGoogleMaps() {
+    return new Promise((resolve) => {
+      if (window.google?.maps) { resolve(); return; }
+      window.__gmRideInit = resolve;
+      const s = document.createElement('script');
+      s.src = `https://maps.googleapis.com/maps/api/js?key=${GMAPS_KEY}&callback=__gmRideInit&language=ar`;
+      s.async = true;
+      document.head.appendChild(s);
+    });
+  }
+
+  async function ensureMap(ride) {
+    el('rt-map-card').classList.add('visible');
+    try { await loadGoogleMaps(); } catch { return; }
+    if (map) return;
+    const G = window.google.maps;
+    const center = { lat: ride.from_lat || 30.05, lng: ride.from_lng || 31.24 };
+    map = new G.Map(el('rt-map'), { center, zoom: 13, mapTypeControl: false, fullscreenControl: false, streetViewControl: false });
+
+    if (ride.from_lat && ride.from_lng) {
+      originMarker = new G.Marker({
+        position: { lat: ride.from_lat, lng: ride.from_lng }, map,
+        icon: { path: G.SymbolPath.CIRCLE, fillColor: '#3b82f6', fillOpacity: 1, strokeColor: '#fff', strokeWeight: 3, scale: 9 },
+        title: 'نقطة الانطلاق',
+      });
+    }
+    if (ride.to_lat && ride.to_lng) {
+      destMarker = new G.Marker({
+        position: { lat: ride.to_lat, lng: ride.to_lng }, map,
+        icon: { path: G.SymbolPath.CIRCLE, fillColor: '#ef4444', fillOpacity: 1, strokeColor: '#fff', strokeWeight: 3, scale: 9 },
+        title: 'الوجهة',
+      });
+    }
+  }
+
+  function updateDriverOnMap(lat, lng, heading) {
+    if (!map) return;
+    const G = window.google.maps;
+    const hasHeading = typeof heading === 'number' && !isNaN(heading);
+    if (!hasHeading && _prevDriverPos) heading = bearingBetween(_prevDriverPos.lat, _prevDriverPos.lng, lat, lng);
+    _prevDriverPos = { lat, lng };
+
+    if (driverMarker) {
+      animateMarkerTo(driverMarker, lat, lng);
+      if (typeof heading === 'number' && !isNaN(heading)) driverMarker.setIcon(carIcon(heading));
+    } else {
+      driverMarker = new G.Marker({ position: { lat, lng }, map, title: 'السائق', zIndex: 999, icon: carIcon(hasHeading ? heading : 0) });
+    }
+
+    const bounds = new G.LatLngBounds();
+    bounds.extend({ lat, lng });
+    if (originMarker) bounds.extend(originMarker.getPosition());
+    if (destMarker) bounds.extend(destMarker.getPosition());
+    map.fitBounds(bounds);
+  }
+
+  async function pollDriverLocation(phone) {
+    try {
+      const r = await fetch(
+        `${SB_URL}/rest/v1/driver_locations?driver_phone=eq.${encodeURIComponent(phone)}&select=lat,lng,heading&limit=1`,
+        { headers: SB_H },
+      );
+      if (!r.ok) return;
+      const rows = await r.json();
+      const loc = rows?.[0];
+      if (loc?.lat && loc?.lng) updateDriverOnMap(Number(loc.lat), Number(loc.lng), loc.heading != null ? Number(loc.heading) : undefined);
+    } catch {}
+  }
+
+  function subscribeDriverLocation(phone) {
+    if (_locationChannel) { _locationChannel.unsubscribe(); _locationChannel = null; }
+    if (driverPollTimer) { clearInterval(driverPollTimer); driverPollTimer = null; }
+
+    function tryRealtime() {
+      if (!_sb) { driverPollTimer = setInterval(() => pollDriverLocation(phone), 4000); return; }
+      _locationChannel = _sb.channel(`ride-drv-loc-${phone}`)
+        .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'driver_locations', filter: `driver_phone=eq.${phone}` }, (payload) => {
+          const loc = payload.new;
+          if (loc.lat && loc.lng) updateDriverOnMap(Number(loc.lat), Number(loc.lng), loc.heading != null ? Number(loc.heading) : undefined);
+        })
+        .subscribe((status) => {
+          if ((status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') && !driverPollTimer) {
+            driverPollTimer = setInterval(() => pollDriverLocation(phone), 4000);
+          }
+          if (status === 'SUBSCRIBED') { clearInterval(driverPollTimer); driverPollTimer = null; }
+        });
+    }
+    if (_sb) tryRealtime(); else setTimeout(tryRealtime, 1200);
+    pollDriverLocation(phone);
+  }
+
+  function subscribeRideUpdates(id) {
+    if (_rideChannel) { _rideChannel.unsubscribe(); _rideChannel = null; }
+    if (ridePollTimer) { clearInterval(ridePollTimer); ridePollTimer = null; }
+
+    function tryRealtime() {
+      if (!_sb) { ridePollTimer = setInterval(() => fetchRide(id).then((r) => r && renderRide(r)), 6000); return; }
+      _rideChannel = _sb.channel(`ride-${id}`)
+        .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'rides', filter: `id=eq.${id}` }, (payload) => {
+          renderRide(payload.new);
+        })
+        .subscribe((status) => {
+          if ((status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') && !ridePollTimer) {
+            ridePollTimer = setInterval(() => fetchRide(id).then((r) => r && renderRide(r)), 6000);
+          }
+          if (status === 'SUBSCRIBED') { clearInterval(ridePollTimer); ridePollTimer = null; }
+        });
+    }
+    if (_sb) tryRealtime(); else setTimeout(tryRealtime, 1200);
+  }
+
+  function stopLive() {
+    if (_rideChannel) { _rideChannel.unsubscribe(); _rideChannel = null; }
+    if (_locationChannel) { _locationChannel.unsubscribe(); _locationChannel = null; }
+    if (ridePollTimer) { clearInterval(ridePollTimer); ridePollTimer = null; }
+    if (driverPollTimer) { clearInterval(driverPollTimer); driverPollTimer = null; }
+  }
+
+  (async function init() {
+    if (!rideId) {
+      el('rt-loading').style.display = 'none';
+      el('rt-notfound').style.display = 'block';
+      return;
+    }
+    const ride = await fetchRide(rideId);
+    if (!ride) {
+      el('rt-loading').style.display = 'none';
+      el('rt-notfound').style.display = 'block';
+      return;
+    }
+    await renderRide(ride);
+  })();
+</script>
