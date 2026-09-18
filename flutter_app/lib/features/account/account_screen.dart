@@ -5,9 +5,11 @@ import 'package:image_picker/image_picker.dart';
 
 import '../../core/session.dart';
 import '../../core/theme.dart';
+import '../favorites/favorite_drivers_screen.dart';
 import '../orders/orders_repository.dart';
 import '../ratings/ratings_list_screen.dart';
 import '../ratings/ratings_repository.dart';
+import '../referrals/referral_screen.dart';
 import 'account_repository.dart';
 import 'invoices_screen.dart';
 
@@ -419,6 +421,28 @@ class AccountScreenState extends State<AccountScreen> {
                     )),
                     icon: const Icon(Icons.receipt_long_outlined),
                     label: const Text('فواتيري'),
+                    style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 14)),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const FavoriteDriversScreen())),
+                    icon: const Icon(Icons.favorite_border),
+                    label: const Text('السائقين المفضّلين'),
+                    style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 14)),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const ReferralScreen())),
+                    icon: const Icon(Icons.card_giftcard_outlined),
+                    label: const Text('كود الدعوة'),
                     style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 14)),
                   ),
                 ),

@@ -16,10 +16,12 @@ import '../../shared/widgets/sos_button.dart';
 import '../../shared/widgets/waiting_timer_card.dart';
 import '../airport/airport_fare.dart' show qualityLabels;
 import '../driver/driver_repository.dart';
+import '../favorites/favorite_driver_button.dart';
 import '../ratings/rate_sheet.dart';
 import '../ratings/ratings_repository.dart';
 import '../ratings/trust_badge.dart';
 import 'fare_calculator.dart' show haversineKm;
+import 'ride_chat_screen.dart';
 import 'ride_repository.dart';
 
 const Set<String> _liveTrackStatuses = {'accepted', 'arrived', 'in_progress'};
@@ -262,6 +264,23 @@ class _RideTrackingScreenState extends State<RideTrackingScreen> {
                 foregroundColor: Colors.white,
                 title: Text(widget.isDriverView ? 'تفاصيل الرحلة' : 'تتبّع الرحلة'),
                 actions: [
+                  if (!isCancelled && status != 'completed' && driverPhone != null && driverPhone.isNotEmpty)
+                    IconButton(
+                      onPressed: () {
+                        final myPhone = widget.isDriverView ? driverPhone : customerPhone;
+                        if (myPhone == null || myPhone.isEmpty) return;
+                        Navigator.of(context).push(MaterialPageRoute(
+                          builder: (_) => RideChatScreen(
+                            rideId: widget.rideId,
+                            myPhone: myPhone,
+                            myRole: widget.isDriverView ? 'driver' : 'customer',
+                            otherPartyName: widget.isDriverView ? (customerName ?? 'العميل') : (driverName ?? 'السائق'),
+                          ),
+                        ));
+                      },
+                      icon: const Icon(Icons.chat_bubble_outline),
+                      tooltip: 'محادثة',
+                    ),
                   if (!isCancelled && status != 'completed' && status != 'pending')
                     Padding(
                       padding: const EdgeInsets.only(left: 12),
@@ -831,7 +850,8 @@ class _DriverCard extends StatelessWidget {
                   ],
                 ),
               ),
-              if (driverPhone != null && driverPhone!.isNotEmpty)
+              if (driverPhone != null && driverPhone!.isNotEmpty) ...[
+                FavoriteDriverButton(driverPhone: driverPhone!),
                 Container(
                   margin: const EdgeInsets.only(right: 8),
                   decoration: BoxDecoration(color: const Color(0xFFDCFCE7), borderRadius: BorderRadius.circular(12)),
@@ -841,6 +861,7 @@ class _DriverCard extends StatelessWidget {
                     tooltip: 'اتصل بالسائق',
                   ),
                 ),
+              ],
             ],
           ),
           if (hasAc || isClean) ...[

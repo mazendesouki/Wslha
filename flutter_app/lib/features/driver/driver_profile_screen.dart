@@ -11,6 +11,7 @@ import '../../core/theme.dart';
 import '../account/account_repository.dart';
 import '../ratings/ratings_list_screen.dart';
 import '../ratings/ratings_repository.dart';
+import '../referrals/referral_screen.dart';
 import 'driver_repository.dart';
 
 /// The driver's own profile tab — replaces the generic AccountScreen for
@@ -307,6 +308,13 @@ class DriverProfileScreenState extends State<DriverProfileScreen> {
               onPressed: _editProfile,
               icon: const Icon(Icons.edit_outlined),
               label: const Text('تعديل بياناتي'),
+              style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 14)),
+            ),
+            const SizedBox(height: 10),
+            OutlinedButton.icon(
+              onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const ReferralScreen())),
+              icon: const Icon(Icons.card_giftcard_outlined),
+              label: const Text('كود الدعوة'),
               style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 14)),
             ),
             const SizedBox(height: 16),
