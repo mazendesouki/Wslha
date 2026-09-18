@@ -152,19 +152,29 @@ class DriverProfileScreenState extends State<DriverProfileScreen> {
   Future<void> _pickAvatar() async {
     final source = await _chooseImageSource();
     if (source == null) return;
-    final shot = await _picker.pickImage(source: source, imageQuality: 85, maxWidth: 800);
-    if (shot == null) return;
-    setState(() => _uploadingAvatar = true);
-    final bytes = await File(shot.path).readAsBytes();
-    final ext = shot.path.split('.').last.toLowerCase();
-    final url = await _accountRepo.uploadAvatar(widget.session.phone, bytes, ext.isEmpty ? 'jpg' : ext);
-    if (!mounted) return;
-    setState(() => _uploadingAvatar = false);
-    if (url == null) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تعذّر رفع الصورة، حاول تاني')));
-      return;
+    try {
+      final shot = await _picker.pickImage(source: source, imageQuality: 85, maxWidth: 800);
+      if (shot == null) return;
+      setState(() => _uploadingAvatar = true);
+      final bytes = await File(shot.path).readAsBytes();
+      final ext = shot.path.split('.').last.toLowerCase();
+      final url = await _accountRepo.uploadAvatar(widget.session.phone, bytes, ext.isEmpty ? 'jpg' : ext);
+      if (!mounted) return;
+      if (url == null) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تعذّر رفع الصورة، حاول تاني')));
+        return;
+      }
+      await _load();
+    } catch (e) {
+      // Without this, an exception mid-upload (e.g. the camera capture
+      // never producing a readable file) left _uploadingAvatar stuck true
+      // forever — an endless spinner with no error shown, since nothing
+      // downstream of the throw point ever ran.
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('تعذّر التقاط/رفع الصورة: $e')));
+    } finally {
+      if (mounted) setState(() => _uploadingAvatar = false);
     }
-    await _load();
   }
 
   Future<void> _editProfile() async {
