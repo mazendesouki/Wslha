@@ -33,11 +33,13 @@ class OrdersScreen extends StatefulWidget {
   State<OrdersScreen> createState() => _OrdersScreenState();
 }
 
-class _OrdersScreenState extends State<OrdersScreen> {
+class _OrdersScreenState extends State<OrdersScreen> with SingleTickerProviderStateMixin {
   final _repo = OrdersRepository();
   List<HistoryItem>? _items;
   bool _loading = true;
   String? _error;
+  static const _kinds = ['all', 'ride', 'order'];
+  late final TabController _tabController;
   String _kindFilter = 'all'; // 'all' | 'ride' | 'order'
   String _periodFilter = 'all'; // 'all' | 'today' | 'week' | 'month'
   String _statusFilter = 'all'; // 'all' | 'completed' | 'cancelled' | 'active'
@@ -46,7 +48,22 @@ class _OrdersScreenState extends State<OrdersScreen> {
   @override
   void initState() {
     super.initState();
+    _tabController = TabController(length: _kinds.length, vsync: this);
+    _tabController.addListener(() {
+      if (!_tabController.indexIsChanging) return;
+      setState(() {
+        _kindFilter = _kinds[_tabController.index];
+        _statusFilter = 'all';
+        _typeFilter = 'all';
+      });
+    });
     _load();
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
   }
 
   Future<void> _load() async {
@@ -132,30 +149,28 @@ class _OrdersScreenState extends State<OrdersScreen> {
     final byKind = _items == null
         ? null
         : (_kindFilter == 'all' ? _items! : _items!.where((it) => it.kind == _kindFilter).toList());
-    // Stats (status/type tiles) are computed on this — kind+period only, so
-    // the counts stay stable while a status/type tile is selected.
+    // kind+period only — the shared base both breakdowns below narrow further.
     final statsBase = byKind?.where((it) => _withinPeriod(it.createdAt)).toList();
-    // The visible list additionally honors the status/type tile selection.
+    // The visible list honors both the status and type tile selection.
     final filtered = statsBase
         ?.where((it) => _statusFilter == 'all' || _itemStatusBucket(it) == _statusFilter)
         .where((it) => _typeFilter == 'all' || _itemTypeBucket(it) == _typeFilter)
         .toList();
 
-    // Overall + status breakdown
+    // Status counts are scoped by the selected type tile, so tapping
+    // "داخلي" narrows مكتملة/ملغاة/قيد التنفيذ to داخلي rides only.
+    final statusScope = _typeFilter == 'all' ? statsBase : statsBase?.where((it) => _itemTypeBucket(it) == _typeFilter).toList();
+    // Type counts are scoped by the selected status tile, symmetrically.
+    final typeScope = _statusFilter == 'all' ? statsBase : statsBase?.where((it) => _itemStatusBucket(it) == _statusFilter).toList();
+
     num totalSpent = 0;
     int completedCount = 0;
     int cancelledCount = 0;
     num cancelledTotal = 0;
     int activeCount = 0;
     num activeTotal = 0;
-    // Type breakdown
-    int deliveryCount = 0;
-    int localCount = 0;
-    int externalCount = 0;
-    int airportCount = 0;
-
-    if (statsBase != null) {
-      for (final it in statsBase) {
+    if (statusScope != null) {
+      for (final it in statusScope) {
         if (_completedStatuses.contains(it.status)) {
           totalSpent += it.total;
           completedCount++;
@@ -166,7 +181,15 @@ class _OrdersScreenState extends State<OrdersScreen> {
           activeCount++;
           activeTotal += it.total;
         }
+      }
+    }
 
+    int deliveryCount = 0;
+    int localCount = 0;
+    int externalCount = 0;
+    int airportCount = 0;
+    if (typeScope != null) {
+      for (final it in typeScope) {
         if (it.kind == 'order') {
           deliveryCount++;
         } else {
@@ -187,15 +210,22 @@ class _OrdersScreenState extends State<OrdersScreen> {
       appBar: AppBar(title: const Text('طلباتي ومشاويري')),
       body: Column(
         children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-            child: Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                _chip('all', '📋 الكل', _kindFilter, (v) => setState(() => _kindFilter = v)),
-                _chip('ride', '🚗 رحلات', _kindFilter, (v) => setState(() => _kindFilter = v)),
-                _chip('order', '🛵 توصيل', _kindFilter, (v) => setState(() => _kindFilter = v)),
+          Container(
+            margin: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), border: Border.all(color: const Color(0xFFE9ECEB))),
+            child: TabBar(
+              controller: _tabController,
+              labelColor: Colors.white,
+              unselectedLabelColor: AppColors.textFaint,
+              labelStyle: const TextStyle(fontWeight: FontWeight.w900, fontSize: 13),
+              indicator: BoxDecoration(color: AppColors.primary, borderRadius: BorderRadius.circular(10)),
+              indicatorSize: TabBarIndicatorSize.tab,
+              dividerColor: Colors.transparent,
+              padding: const EdgeInsets.all(4),
+              tabs: const [
+                Tab(text: '📋 الكل'),
+                Tab(text: '🚗 رحلات'),
+                Tab(text: '🛵 توصيل'),
               ],
             ),
           ),
@@ -258,14 +288,15 @@ class _OrdersScreenState extends State<OrdersScreen> {
             ),
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-              child: Wrap(
-                spacing: 8,
-                runSpacing: 8,
+              child: Row(
                 children: [
-                  _typeTile('🛵', 'توصيل', deliveryCount, selected: _typeFilter == 'order', onTap: () => _toggleTypeFilter('order')),
-                  _typeTile('🚗', 'داخلي', localCount, selected: _typeFilter == 'local', onTap: () => _toggleTypeFilter('local')),
-                  _typeTile('🛣️', 'خارجي', externalCount, selected: _typeFilter == 'external', onTap: () => _toggleTypeFilter('external')),
-                  _typeTile('✈️', 'مطار', airportCount, selected: _typeFilter == 'airport', onTap: () => _toggleTypeFilter('airport')),
+                  Expanded(child: _typeTile('🛵', 'توصيل', deliveryCount, selected: _typeFilter == 'order', onTap: () => _toggleTypeFilter('order'))),
+                  const SizedBox(width: 8),
+                  Expanded(child: _typeTile('🚗', 'داخلي', localCount, selected: _typeFilter == 'local', onTap: () => _toggleTypeFilter('local'))),
+                  const SizedBox(width: 8),
+                  Expanded(child: _typeTile('🛣️', 'خارجي', externalCount, selected: _typeFilter == 'external', onTap: () => _toggleTypeFilter('external'))),
+                  const SizedBox(width: 8),
+                  Expanded(child: _typeTile('✈️', 'مطار', airportCount, selected: _typeFilter == 'airport', onTap: () => _toggleTypeFilter('airport'))),
                 ],
               ),
             ),
@@ -417,7 +448,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
           ),
           child: Column(
             children: [
-              Text('$emoji $count', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 15, color: color)),
+              Text('$emoji $count', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 19, color: color)),
               const SizedBox(height: 2),
               Text(label, style: const TextStyle(fontSize: 10, color: AppColors.textFaint, fontWeight: FontWeight.w700)),
               Text('${total.toStringAsFixed(0)} ج.م', style: TextStyle(fontSize: 10, color: color, fontWeight: FontWeight.w700)),
@@ -432,27 +463,27 @@ class _OrdersScreenState extends State<OrdersScreen> {
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        borderRadius: BorderRadius.circular(99),
+        borderRadius: BorderRadius.circular(12),
         onTap: onTap,
         child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 14),
+          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 6),
           decoration: BoxDecoration(
             color: selected ? AppColors.primary.withValues(alpha: 0.1) : Colors.white,
-            borderRadius: BorderRadius.circular(99),
+            borderRadius: BorderRadius.circular(12),
             border: Border.all(color: selected ? AppColors.primary : const Color(0xFFE9ECEB), width: selected ? 1.6 : 1),
           ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
+          child: Column(
             children: [
-              Text(emoji, style: const TextStyle(fontSize: 14)),
-              const SizedBox(width: 6),
+              Text(emoji, style: const TextStyle(fontSize: 15)),
+              const SizedBox(height: 3),
               Text(
-                '$label ($count)',
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w800,
-                  color: selected ? AppColors.primary : AppColors.textFaint,
-                ),
+                '$count',
+                style: TextStyle(fontWeight: FontWeight.w900, fontSize: 18, color: selected ? AppColors.primary : Colors.black87),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                label,
+                style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: selected ? AppColors.primary : AppColors.textFaint),
               ),
             ],
           ),

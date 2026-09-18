@@ -10,6 +10,7 @@ import '../../core/pricing_settings.dart';
 import '../../core/push.dart';
 import '../../core/session.dart';
 import '../../core/theme.dart';
+import '../../shared/widgets/finish_ride_button.dart';
 import '../../shared/widgets/logout_button.dart';
 import '../../shared/widgets/waiting_timer_card.dart';
 import '../airport/airport_fare.dart' as airport_fare;
@@ -772,7 +773,14 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
               child: Text(_jobs.pickedUp ? '✓ تم التسليم' : '📦 التقطت الطلب من المتجر'),
             )
           else
-            _RideStepButtons(step: _jobs.rideStep, busy: _busy, onTap: _advanceRide),
+            _RideStepButtons(
+              step: _jobs.rideStep,
+              busy: _busy,
+              onTap: _advanceRide,
+              driverPhone: widget.session.phone,
+              destinationLat: destination?.$1,
+              destinationLng: destination?.$2,
+            ),
         ],
       ),
     );
@@ -1558,10 +1566,29 @@ class _RideStepButtons extends StatelessWidget {
   final String step; // accepted | arrived | in_progress
   final bool busy;
   final VoidCallback onTap;
-  const _RideStepButtons({required this.step, required this.busy, required this.onTap});
+  final String? driverPhone;
+  final double? destinationLat;
+  final double? destinationLng;
+  const _RideStepButtons({
+    required this.step,
+    required this.busy,
+    required this.onTap,
+    this.driverPhone,
+    this.destinationLat,
+    this.destinationLng,
+  });
 
   @override
   Widget build(BuildContext context) {
+    if (step != 'accepted' && step != 'arrived' && driverPhone != null && destinationLat != null && destinationLng != null) {
+      return FinishRideButton(
+        busy: busy,
+        onTap: onTap,
+        driverPhone: driverPhone!,
+        destinationLat: destinationLat!,
+        destinationLng: destinationLng!,
+      );
+    }
     final (label, color) = switch (step) {
       'accepted' => ('📍 وصلت لنقطة الانطلاق', AppColors.primaryLight),
       'arrived' => ('✓ الراكب صعد، ابدأ الرحلة', AppColors.primary),

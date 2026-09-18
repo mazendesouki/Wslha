@@ -10,6 +10,7 @@ import '../../core/notifications.dart';
 import '../../core/pricing_settings.dart';
 import '../../core/session.dart';
 import '../../core/theme.dart';
+import '../../shared/widgets/finish_ride_button.dart';
 import '../../shared/widgets/live_tracking_map.dart';
 import '../../shared/widgets/waiting_timer_card.dart';
 import '../airport/airport_fare.dart' show qualityLabels;
@@ -439,7 +440,14 @@ class _RideTrackingScreenState extends State<RideTrackingScreen> {
                           child: const Text('إلغاء الرحلة'),
                         ),
                       if (widget.isDriverView && !isCancelled && status != 'completed' && status != 'pending')
-                        _DriverStepButton(status: status, busy: _advancing, onTap: () => _advance(status)),
+                        _DriverStepButton(
+                          status: status,
+                          busy: _advancing,
+                          onTap: () => _advance(status),
+                          driverPhone: _myPhone,
+                          destinationLat: (ride['to_lat'] as num?)?.toDouble(),
+                          destinationLng: (ride['to_lng'] as num?)?.toDouble(),
+                        ),
                     ],
                   ),
                 ),
@@ -476,10 +484,29 @@ class _DriverStepButton extends StatelessWidget {
   final String status; // accepted | arrived | in_progress
   final bool busy;
   final VoidCallback onTap;
-  const _DriverStepButton({required this.status, required this.busy, required this.onTap});
+  final String? driverPhone;
+  final double? destinationLat;
+  final double? destinationLng;
+  const _DriverStepButton({
+    required this.status,
+    required this.busy,
+    required this.onTap,
+    this.driverPhone,
+    this.destinationLat,
+    this.destinationLng,
+  });
 
   @override
   Widget build(BuildContext context) {
+    if (status != 'accepted' && status != 'arrived' && driverPhone != null && destinationLat != null && destinationLng != null) {
+      return FinishRideButton(
+        busy: busy,
+        onTap: onTap,
+        driverPhone: driverPhone!,
+        destinationLat: destinationLat!,
+        destinationLng: destinationLng!,
+      );
+    }
     final (label, color) = switch (status) {
       'accepted' => ('📍 وصلت لنقطة الانطلاق', AppColors.primaryLight),
       'arrived' => ('✓ الراكب صعد، ابدأ الرحلة', AppColors.primary),
