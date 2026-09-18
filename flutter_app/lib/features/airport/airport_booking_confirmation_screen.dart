@@ -125,10 +125,6 @@ class _AirportBookingConfirmationScreenState extends State<AirportBookingConfirm
 
   @override
   Widget build(BuildContext context) {
-    final now = DateTime.now();
-    final nextStep = _steps.firstWhere((s) => s.time.isAfter(now), orElse: () => _steps.last);
-    final flightRemaining = widget.flightTime.difference(now);
-
     return Scaffold(
       backgroundColor: const Color(0xFFF7FAF9),
       appBar: AppBar(title: const Text('تفاصيل حجزك')),
@@ -142,6 +138,10 @@ class _AirportBookingConfirmationScreenState extends State<AirportBookingConfirm
   }
 
   Widget _content() {
+    final now = DateTime.now();
+    final nextStep = _steps.firstWhere((s) => s.time.isAfter(now), orElse: () => _steps.last);
+    final flightRemaining = widget.flightTime.difference(now);
+
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
