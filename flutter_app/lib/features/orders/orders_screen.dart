@@ -44,6 +44,9 @@ class _OrdersScreenState extends State<OrdersScreen> with SingleTickerProviderSt
   String _periodFilter = 'all'; // 'all' | 'today' | 'week' | 'month'
   String _statusFilter = 'all'; // 'all' | 'completed' | 'cancelled' | 'active'
   String _typeFilter = 'all'; // 'all' | 'order' | 'local' | 'external' | 'airport'
+  bool _statsExpanded = false;
+  final _searchCtrl = TextEditingController();
+  String _search = '';
 
   @override
   void initState() {
@@ -57,12 +60,14 @@ class _OrdersScreenState extends State<OrdersScreen> with SingleTickerProviderSt
         _typeFilter = 'all';
       });
     });
+    _searchCtrl.addListener(() => setState(() => _search = _searchCtrl.text.trim().toLowerCase()));
     _load();
   }
 
   @override
   void dispose() {
     _tabController.dispose();
+    _searchCtrl.dispose();
     super.dispose();
   }
 
@@ -151,11 +156,36 @@ class _OrdersScreenState extends State<OrdersScreen> with SingleTickerProviderSt
         : (_kindFilter == 'all' ? _items! : _items!.where((it) => it.kind == _kindFilter).toList());
     // kind+period only — the shared base both breakdowns below narrow further.
     final statsBase = byKind?.where((it) => _withinPeriod(it.createdAt)).toList();
-    // The visible list honors both the status and type tile selection.
+    // The visible list honors the status/type tile selection plus the
+    // invoice search box (matches id, route/store title, or subtitle).
     final filtered = statsBase
         ?.where((it) => _statusFilter == 'all' || _itemStatusBucket(it) == _statusFilter)
         .where((it) => _typeFilter == 'all' || _itemTypeBucket(it) == _typeFilter)
+        .where((it) =>
+            _search.isEmpty ||
+            it.id.toLowerCase().contains(_search) ||
+            it.title.toLowerCase().contains(_search) ||
+            it.subtitle.toLowerCase().contains(_search))
         .toList();
+
+    // Independent of the period chip — always "this calendar month" — so
+    // the driver/customer can see monthly cost+count even while "اليوم" or
+    // "الأسبوع" is the active period filter, plus a week-by-week split.
+    final now = DateTime.now();
+    final monthItems = byKind?.where((it) {
+          final d = it.createdAt?.toLocal();
+          return d != null && d.year == now.year && d.month == now.month;
+        }).toList() ??
+        const <HistoryItem>[];
+    final monthCount = monthItems.length;
+    num monthTotal = 0;
+    final Map<int, List<HistoryItem>> byWeek = {};
+    for (final it in monthItems) {
+      if (_completedStatuses.contains(it.status)) monthTotal += it.total;
+      final week = ((it.createdAt!.toLocal().day - 1) ~/ 7) + 1;
+      byWeek.putIfAbsent(week, () => []).add(it);
+    }
+    final weekKeys = byWeek.keys.toList()..sort();
 
     // Status counts are scoped by the selected type tile, so tapping
     // "داخلي" narrows مكتملة/ملغاة/قيد التنفيذ to داخلي rides only.
@@ -244,63 +274,118 @@ class _OrdersScreenState extends State<OrdersScreen> with SingleTickerProviderSt
           ),
           if (statsBase != null && statsBase.isNotEmpty) ...[
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [AppColors.primary, Color(0xFF0E4D3D)],
-                    begin: Alignment.topRight,
-                    end: Alignment.bottomLeft,
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(14),
+                      onTap: () => setState(() => _statsExpanded = !_statsExpanded),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: [AppColors.primary, Color(0xFF0E4D3D)],
+                            begin: Alignment.topRight,
+                            end: Alignment.bottomLeft,
+                          ),
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Row(
+                                children: [
+                                  _summaryStat('$monthCount', 'رحلة/طلب هذا الشهر'),
+                                  const SizedBox(width: 18),
+                                  Container(width: 1, height: 26, color: Colors.white24),
+                                  const SizedBox(width: 18),
+                                  _summaryStat('${monthTotal.toStringAsFixed(0)} ج.م', 'تكلفة الشهر'),
+                                ],
+                              ),
+                            ),
+                            Icon(_statsExpanded ? Icons.expand_less : Icons.expand_more, color: Colors.white),
+                          ],
+                        ),
+                      ),
+                    ),
                   ),
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    _summaryStat('$completedCount', 'رحلة/طلب مكتمل'),
-                    Container(width: 1, height: 32, color: Colors.white24),
-                    _summaryStat('${totalSpent.toStringAsFixed(0)} ج.م', 'إجمالي المبالغ'),
+                  if (_statsExpanded) ...[
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _statusTile('✅', 'مكتملة', completedCount, totalSpent, AppColors.success,
+                              selected: _statusFilter == 'completed', onTap: () => _toggleStatusFilter('completed')),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: _statusTile('❌', 'ملغاة', cancelledCount, cancelledTotal, AppColors.error,
+                              selected: _statusFilter == 'cancelled', onTap: () => _toggleStatusFilter('cancelled')),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: _statusTile('⏳', 'قيد التنفيذ', activeCount, activeTotal, AppColors.accent,
+                              selected: _statusFilter == 'active', onTap: () => _toggleStatusFilter('active')),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Expanded(child: _typeTile('🛵', 'توصيل', deliveryCount, selected: _typeFilter == 'order', onTap: () => _toggleTypeFilter('order'))),
+                        const SizedBox(width: 8),
+                        Expanded(child: _typeTile('🚗', 'داخلي', localCount, selected: _typeFilter == 'local', onTap: () => _toggleTypeFilter('local'))),
+                        const SizedBox(width: 8),
+                        Expanded(child: _typeTile('🛣️', 'خارجي', externalCount, selected: _typeFilter == 'external', onTap: () => _toggleTypeFilter('external'))),
+                        const SizedBox(width: 8),
+                        Expanded(child: _typeTile('✈️', 'مطار', airportCount, selected: _typeFilter == 'airport', onTap: () => _toggleTypeFilter('airport'))),
+                      ],
+                    ),
+                    if (weekKeys.isNotEmpty) ...[
+                      const SizedBox(height: 8),
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), border: Border.all(color: const Color(0xFFE9ECEB))),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text('📅 تقسيم أسبوعي (الشهر الحالي)', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 12)),
+                            const SizedBox(height: 6),
+                            for (final w in weekKeys)
+                              _weekRow(
+                                'الأسبوع $w (${(w - 1) * 7 + 1}–${w * 7})',
+                                byWeek[w]!.length,
+                                byWeek[w]!.where((it) => _completedStatuses.contains(it.status)).fold<num>(0, (sum, it) => sum + it.total),
+                              ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ],
-                ),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 6),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: _statusTile('✅', 'مكتملة', completedCount, totalSpent, AppColors.success,
-                        selected: _statusFilter == 'completed', onTap: () => _toggleStatusFilter('completed')),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: _statusTile('❌', 'ملغاة', cancelledCount, cancelledTotal, AppColors.error,
-                        selected: _statusFilter == 'cancelled', onTap: () => _toggleStatusFilter('cancelled')),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: _statusTile('⏳', 'قيد التنفيذ', activeCount, activeTotal, AppColors.accent,
-                        selected: _statusFilter == 'active', onTap: () => _toggleStatusFilter('active')),
-                  ),
-                ],
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-              child: Row(
-                children: [
-                  Expanded(child: _typeTile('🛵', 'توصيل', deliveryCount, selected: _typeFilter == 'order', onTap: () => _toggleTypeFilter('order'))),
-                  const SizedBox(width: 8),
-                  Expanded(child: _typeTile('🚗', 'داخلي', localCount, selected: _typeFilter == 'local', onTap: () => _toggleTypeFilter('local'))),
-                  const SizedBox(width: 8),
-                  Expanded(child: _typeTile('🛣️', 'خارجي', externalCount, selected: _typeFilter == 'external', onTap: () => _toggleTypeFilter('external'))),
-                  const SizedBox(width: 8),
-                  Expanded(child: _typeTile('✈️', 'مطار', airportCount, selected: _typeFilter == 'airport', onTap: () => _toggleTypeFilter('airport'))),
                 ],
               ),
             ),
           ],
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+            child: TextField(
+              controller: _searchCtrl,
+              decoration: InputDecoration(
+                hintText: 'ابحث برقم الفاتورة أو الاسم...',
+                prefixIcon: const Icon(Icons.search, size: 20),
+                suffixIcon: _search.isNotEmpty ? IconButton(icon: const Icon(Icons.close, size: 18), onPressed: _searchCtrl.clear) : null,
+                isDense: true,
+                filled: true,
+                fillColor: Colors.white,
+                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFE9ECEB))),
+                enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFE9ECEB))),
+              ),
+            ),
+          ),
           Expanded(
             child: _loading
                 ? const Center(child: CircularProgressIndicator())
@@ -328,13 +413,15 @@ class _OrdersScreenState extends State<OrdersScreen> with SingleTickerProviderSt
                                 const Text('📦', style: TextStyle(fontSize: 48)),
                                 const SizedBox(height: 12),
                                 Text(
-                                  _statusFilter != 'all' || _typeFilter != 'all'
-                                      ? 'مفيش نتائج للتصنيف المحدد — جرّب تشيل الفلتر'
-                                      : _kindFilter == 'all'
-                                          ? 'لا يوجد طلبات أو مشاوير سابقة بعد'
-                                          : _kindFilter == 'ride'
-                                              ? 'لسه مفيش رحلات في الفترة دي'
-                                              : 'لسه مفيش توصيل في الفترة دي',
+                                  _search.isNotEmpty
+                                      ? 'مفيش نتائج تطابق البحث "${_searchCtrl.text}"'
+                                      : _statusFilter != 'all' || _typeFilter != 'all'
+                                          ? 'مفيش نتائج للتصنيف المحدد — جرّب تشيل الفلتر'
+                                          : _kindFilter == 'all'
+                                              ? 'لا يوجد طلبات أو مشاوير سابقة بعد'
+                                              : _kindFilter == 'ride'
+                                                  ? 'لسه مفيش رحلات في الفترة دي'
+                                                  : 'لسه مفيش توصيل في الفترة دي',
                                   style: const TextStyle(color: AppColors.textFaint),
                                   textAlign: TextAlign.center,
                                 ),
@@ -429,6 +516,19 @@ class _OrdersScreenState extends State<OrdersScreen> with SingleTickerProviderSt
         const SizedBox(height: 2),
         Text(label, style: const TextStyle(color: Colors.white70, fontSize: 11, fontWeight: FontWeight.w700)),
       ],
+    );
+  }
+
+  Widget _weekRow(String label, int count, num total) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 3),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label, style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700, color: AppColors.textFaint)),
+          Text('$count رحلة/طلب — ${total.toStringAsFixed(0)} ج.م', style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w800, color: Colors.black87)),
+        ],
+      ),
     );
   }
 
