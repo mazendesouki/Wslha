@@ -174,30 +174,28 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
         children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(12, 10, 12, 0),
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: [
-                  _chip('all', 'الكل', _category, (v) => setState(() => _category = v)),
-                  _chip('ride', '🚖 رحلات', _category, (v) => setState(() => _category = v)),
-                  _chip('airport', '✈️ مطار', _category, (v) => setState(() => _category = v)),
-                  _chip('order', '📦 توصيل', _category, (v) => setState(() => _category = v)),
-                ],
-              ),
+            child: Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                _chip('all', 'الكل', _category, (v) => setState(() => _category = v)),
+                _chip('ride', '🚖 رحلات', _category, (v) => setState(() => _category = v)),
+                _chip('airport', '✈️ مطار', _category, (v) => setState(() => _category = v)),
+                _chip('order', '📦 توصيل', _category, (v) => setState(() => _category = v)),
+              ],
             ),
           ),
           Padding(
             padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: [
-                  _periodChip('all', '⏳ كل الوقت'),
-                  _periodChip('today', '📅 اليوم'),
-                  _periodChip('week', '🗓️ الأسبوع'),
-                  _periodChip('month', '📆 الشهر'),
-                ],
-              ),
+            child: Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                _periodChip('all', '⏳ كل الوقت'),
+                _periodChip('today', '📅 اليوم'),
+                _periodChip('week', '🗓️ الأسبوع'),
+                _periodChip('month', '📆 الشهر'),
+              ],
             ),
           ),
           Expanded(
@@ -217,9 +215,13 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
 
   Widget _chip(String value, String label, String current, ValueChanged<String> onChanged) {
     final selected = current == value;
-    return Padding(
-      padding: const EdgeInsets.only(left: 8),
-      child: ChoiceChip(label: Text(label), selected: selected, onSelected: (_) => onChanged(value)),
+    return ChoiceChip(
+      label: Text(label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: selected ? Colors.white : AppColors.textFaint)),
+      selected: selected,
+      selectedColor: AppColors.primary,
+      backgroundColor: Colors.white,
+      side: BorderSide(color: selected ? AppColors.primary : const Color(0xFFE9ECEB)),
+      onSelected: (_) => onChanged(value),
     );
   }
 
@@ -228,13 +230,14 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
   Widget _invoiceTile(_InvoiceRow row) {
     final color = _statusColor[row.status] ?? AppColors.textFaint;
     return Material(
-      color: AppColors.cardTint,
+      color: Colors.white,
       borderRadius: BorderRadius.circular(14),
       child: InkWell(
         borderRadius: BorderRadius.circular(14),
         onTap: () => _openInvoice(row),
-        child: Padding(
+        child: Container(
           padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(borderRadius: BorderRadius.circular(14), border: Border.all(color: const Color(0xFFE9ECEB))),
           child: Row(
             children: [
               Expanded(

@@ -176,7 +176,7 @@ class _SecondaryServiceTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: AppColors.cardTint,
+      color: Colors.white,
       borderRadius: BorderRadius.circular(16),
       elevation: 0,
       child: InkWell(

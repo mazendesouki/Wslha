@@ -203,7 +203,7 @@ class _OrderInvoiceScreenState extends State<OrderInvoiceScreen> {
             _sectionTitle('🧾 الأصناف'),
             Container(
               padding: const EdgeInsets.all(4),
-              decoration: BoxDecoration(color: AppColors.cardTint, borderRadius: BorderRadius.circular(14)),
+              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(14), border: Border.all(color: const Color(0xFFE9ECEB))),
               child: Column(
                 children: _items.map((it) {
                   final qty = it['qty'] ?? 1;
@@ -228,7 +228,7 @@ class _OrderInvoiceScreenState extends State<OrderInvoiceScreen> {
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(color: AppColors.cardTint, borderRadius: BorderRadius.circular(14)),
+              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(14), border: Border.all(color: const Color(0xFFE9ECEB))),
               child: Text(o['items_summary'] as String, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
             ),
             const SizedBox(height: 16),
@@ -236,7 +236,7 @@ class _OrderInvoiceScreenState extends State<OrderInvoiceScreen> {
           _sectionTitle('💰 تفاصيل الفاتورة'),
           Container(
             padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(color: AppColors.cardTint, borderRadius: BorderRadius.circular(14)),
+            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(14), border: Border.all(color: const Color(0xFFE9ECEB))),
             child: Column(
               children: [
                 _row('المجموع الفرعي', '${subtotal.toStringAsFixed(0)} ج.م'),
@@ -252,7 +252,7 @@ class _OrderInvoiceScreenState extends State<OrderInvoiceScreen> {
           _sectionTitle('📍 التوصيل'),
           Container(
             padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(color: AppColors.cardTint, borderRadius: BorderRadius.circular(14)),
+            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(14), border: Border.all(color: const Color(0xFFE9ECEB))),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
