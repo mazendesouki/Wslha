@@ -179,7 +179,7 @@ class _RidesScreenState extends State<RidesScreen> {
       appBar: AppBar(title: const Text('مشاوير دمياط')),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(14),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -237,7 +237,7 @@ class _RidesScreenState extends State<RidesScreen> {
                   ],
                 ),
               ),
-              const SizedBox(height: 18),
+              const SizedBox(height: 12),
               _sectionLabel('🚗 تفاصيل الرحلة'),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
@@ -268,36 +268,34 @@ class _RidesScreenState extends State<RidesScreen> {
                     ),
                     const Divider(height: 1),
                     Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 10),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      child: Wrap(
+                        spacing: 6,
+                        runSpacing: 6,
                         children: [
                           for (final tier in const ['regular', 'clean', 'ac', 'modern'])
-                            Padding(
-                              padding: const EdgeInsets.only(bottom: 8),
-                              child: _QualityTierCard(
-                                label: qualityLabels[tier]!,
-                                extraPercent: ((qualityMultiplier[tier] ?? 1) - 1) * 100,
-                                selected: _qualityTier == tier,
-                                onTap: () => setState(() => _qualityTier = tier),
-                              ),
+                            SelectablePill(
+                              label: '${qualityLabels[tier]!}'
+                                  '${tier == 'regular' ? '' : ' (+${(((qualityMultiplier[tier] ?? 1) - 1) * 100).round()}%)'}',
+                              selected: _qualityTier == tier,
+                              onTap: () => setState(() => _qualityTier = tier),
                             ),
                         ],
                       ),
                     ),
                     const Padding(
-                      padding: EdgeInsets.fromLTRB(16, 0, 16, 10),
+                      padding: EdgeInsets.fromLTRB(4, 0, 4, 8),
                       child: Text(
-                        'باختيارك لنوع الخدمة أعلاه، فإنك توافق على الخيار المحدد وتقرّ بأن تغيير نوع الخدمة أو طلب خدمة مختلفة بعد بدء الرحلة وركوبك السيارة يُعد مخالفة للقواعد واللوائح — ولا تتحمّل الشركة أو الكابتن أي مسؤولية عن هذا الاختيار.',
-                        style: TextStyle(fontSize: 10.5, color: AppColors.textFaint, height: 1.4),
+                        'تغيير نوع الخدمة بعد بدء الرحلة يُعد مخالفة — الشركة والكابتن غير مسؤولين عن هذا الاختيار.',
+                        style: TextStyle(fontSize: 9.5, color: AppColors.textFaint, height: 1.3),
                       ),
                     ),
                     const Divider(height: 1),
                     Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 10),
+                      padding: const EdgeInsets.symmetric(vertical: 8),
                       child: Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
+                        spacing: 6,
+                        runSpacing: 6,
                         children: [
                           SelectablePill(label: '💵 كاش عند الاستلام', selected: _payment == 'cash', onTap: () => setState(() => _payment = 'cash')),
                           SelectablePill(label: '📱 فودافون كاش / إنستاباي', selected: _payment == 'wallet', onTap: () => setState(() => _payment = 'wallet')),
@@ -310,17 +308,18 @@ class _RidesScreenState extends State<RidesScreen> {
                       onChanged: (v) => setState(() => _negotiable = v),
                       contentPadding: EdgeInsets.zero,
                       dense: true,
+                      visualDensity: VisualDensity.compact,
                       activeThumbColor: AppColors.primary,
-                      title: const Text('🤝 اطلب بسعر تفاوضي', style: TextStyle(fontWeight: FontWeight.w700)),
+                      title: const Text('🤝 اطلب بسعر تفاوضي', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
                       subtitle: const Text(
-                        'السائقين يقدّموا أسعارهم وانت تختار — بدل السعر الثابت',
-                        style: TextStyle(fontSize: 11, color: AppColors.primaryDark, fontWeight: FontWeight.w600),
+                        'السائقين يقدّموا أسعارهم وانت تختار',
+                        style: TextStyle(fontSize: 10.5, color: AppColors.primaryDark, fontWeight: FontWeight.w600),
                       ),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(height: 18),
+              const SizedBox(height: 12),
               if (_straightKm > 0) ...[
                 _sectionLabel('💰 ملخص الأجرة'),
                 Container(
@@ -411,62 +410,4 @@ class _RidesScreenState extends State<RidesScreen> {
         padding: const EdgeInsets.only(bottom: 8, right: 4),
         child: Text(text, style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 13)),
       );
-}
-
-/// One selectable card per service-quality tier — replaces the old plain
-/// RadioListTile column with something closer to how the airport form's
-/// vehicle-category chips read (icon + price delta visible at a glance),
-/// so picking a tier feels like choosing a car, not filling a form field.
-class _QualityTierCard extends StatelessWidget {
-  final String label;
-  final double extraPercent;
-  final bool selected;
-  final VoidCallback onTap;
-  const _QualityTierCard({
-    required this.label,
-    required this.extraPercent,
-    required this.selected,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: selected ? AppColors.primaryLight : Colors.white,
-      borderRadius: BorderRadius.circular(14),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(14),
-        onTap: onTap,
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: selected ? AppColors.primary : const Color(0xFFE5E7EB), width: selected ? 1.6 : 1),
-          ),
-          child: Row(
-            children: [
-              Icon(
-                selected ? Icons.check_circle : Icons.circle_outlined,
-                color: selected ? AppColors.primary : AppColors.textFaint,
-                size: 20,
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text(label, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13)),
-              ),
-              if (extraPercent > 0)
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                  decoration: BoxDecoration(color: AppColors.accent.withValues(alpha: 0.14), borderRadius: BorderRadius.circular(20)),
-                  child: Text(
-                    '+${extraPercent.round()}%',
-                    style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: AppColors.accent),
-                  ),
-                ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
 }
