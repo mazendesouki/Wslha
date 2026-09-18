@@ -735,7 +735,7 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
                   _CustomerContactRow(name: customerName, phone: customerPhone),
                 ],
                 const SizedBox(height: 14),
-                _RouteRow(from: from, to: to),
+                _RouteRow(from: from, to: to, stops: isOrder ? const [] : _stopNames(job)),
                 if (!isOrder && destination != null && (job['status'] == 'accepted' || job['status'] == 'in_progress'))
                   _DriverDistanceReadout(
                     driverPhone: widget.session.phone,
@@ -1155,7 +1155,7 @@ class _OfferCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                _RouteRow(from: from, to: to),
+                _RouteRow(from: from, to: to, stops: _stopNames(data)),
                 if (data['ride_type'] == 'airport') _AirportFlightChip(data: data),
                 if (data['customer_phone'] != null && (data['customer_phone'] as String).isNotEmpty) ...[
                   const SizedBox(height: 8),
@@ -1396,10 +1396,31 @@ class _RouteMapCard extends StatelessWidget {
   }
 }
 
+/// rides.stops (db/security-29) — intermediate waypoints as
+/// [{"name":...,"lat":...,"lng":...}, ...], excluding origin/destination.
+/// Top-level so both _DriverHomeScreenState and the offer-card widget can
+/// call it without duplicating the same parsing logic.
+List<String> _stopNames(Map<String, dynamic> job) {
+  final stops = job['stops'];
+  if (stops is! List) return const [];
+  return stops
+      .whereType<Map>()
+      .map((s) => (s['name'] as String?)?.trim())
+      .whereType<String>()
+      .where((s) => s.isNotEmpty)
+      .toList();
+}
+
 class _RouteRow extends StatelessWidget {
   final String from;
   final String to;
-  const _RouteRow({required this.from, required this.to});
+  final List<String> stops;
+  const _RouteRow({required this.from, required this.to, this.stops = const []});
+
+  Widget _connector() => Padding(
+        padding: const EdgeInsets.only(right: 4.5),
+        child: Container(width: 1.5, height: 14, color: const Color(0xFFE5E7EB)),
+      );
 
   @override
   Widget build(BuildContext context) {
@@ -1412,10 +1433,17 @@ class _RouteRow extends StatelessWidget {
             Expanded(child: Text(from, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700))),
           ],
         ),
-        Padding(
-          padding: const EdgeInsets.only(right: 4.5),
-          child: Container(width: 1.5, height: 14, color: const Color(0xFFE5E7EB)),
-        ),
+        for (final stop in stops) ...[
+          _connector(),
+          Row(
+            children: [
+              Container(width: 8, height: 8, decoration: const BoxDecoration(color: AppColors.accent, shape: BoxShape.circle)),
+              const SizedBox(width: 9),
+              Expanded(child: Text('🛑 $stop', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.textFaint))),
+            ],
+          ),
+        ],
+        _connector(),
         Row(
           children: [
             Container(width: 10, height: 10, decoration: const BoxDecoration(color: Color(0xFFEF4444), shape: BoxShape.circle)),
