@@ -215,6 +215,19 @@ class RideRepository {
         .eq('status', 'approved')
         .order('created_at', ascending: false)
         .limit(1);
-    return rows.isEmpty ? null : rows.first;
+    if (rows.isEmpty) return null;
+    final profile = Map<String, dynamic>.from(rows.first);
+    // Prefer the driver's own up-to-date photo (accounts.avatar_url, the
+    // same one shown on their "حسابي" screen and editable there anytime)
+    // over the frozen registration selfie, so the customer always sees the
+    // same photo the driver currently has on their profile — db/security-66
+    // seeds avatar_url from driver_photo_url at approval time, but a driver
+    // can replace it afterward from their own app.
+    final accountRows = await sb.from('accounts').select('avatar_url').eq('phone', driverPhone).limit(1);
+    final avatarUrl = accountRows.isNotEmpty ? accountRows.first['avatar_url'] as String? : null;
+    if (avatarUrl != null && avatarUrl.isNotEmpty) {
+      profile['driver_photo_url'] = avatarUrl;
+    }
+    return profile;
   }
 }
