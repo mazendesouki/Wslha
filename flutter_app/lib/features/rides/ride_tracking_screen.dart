@@ -934,10 +934,17 @@ class _CustomerCard extends StatelessWidget {
       ),
       child: Row(
         children: [
-          const CircleAvatar(
-            radius: 24,
-            backgroundColor: AppColors.primaryLight,
-            child: Text('🧑', style: TextStyle(fontSize: 20)),
+          FutureBuilder<String?>(
+            future: RideRepository().fetchAccountAvatar(phone),
+            builder: (context, snap) {
+              final avatarUrl = snap.data;
+              return CircleAvatar(
+                radius: 24,
+                backgroundColor: AppColors.primaryLight,
+                backgroundImage: (avatarUrl != null && avatarUrl.isNotEmpty) ? NetworkImage(avatarUrl) : null,
+                child: (avatarUrl == null || avatarUrl.isEmpty) ? const Text('🧑', style: TextStyle(fontSize: 20)) : null,
+              );
+            },
           ),
           const SizedBox(width: 12),
           Expanded(

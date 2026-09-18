@@ -222,12 +222,23 @@ class RideRepository {
     // over the frozen registration selfie, so the customer always sees the
     // same photo the driver currently has on their profile — db/security-66
     // seeds avatar_url from driver_photo_url at approval time, but a driver
-    // can replace it afterward from their own app.
-    final accountRows = await sb.from('accounts').select('avatar_url').eq('phone', driverPhone).limit(1);
-    final avatarUrl = accountRows.isNotEmpty ? accountRows.first['avatar_url'] as String? : null;
+    // can replace it afterward from their own app. `accounts` has no direct
+    // SELECT grant for anon/authenticated (RLS allows it but the column
+    // grants don't — see AccountRepository.lookupAccount's comment), so
+    // this goes through the same lookup_account RPC instead of `.select()`.
+    final avatarUrl = await fetchAccountAvatar(driverPhone);
     if (avatarUrl != null && avatarUrl.isNotEmpty) {
       profile['driver_photo_url'] = avatarUrl;
     }
     return profile;
+  }
+
+  /// Any account's current profile photo by phone (driver or customer) —
+  /// via lookup_account (security definer), since `accounts` itself has no
+  /// direct SELECT grant for anon/authenticated.
+  Future<String?> fetchAccountAvatar(String phone) async {
+    final rows = await sb.rpc('lookup_account', params: {'p_phone': phone});
+    if (rows is List && rows.isNotEmpty) return rows.first['avatar_url'] as String?;
+    return null;
   }
 }
