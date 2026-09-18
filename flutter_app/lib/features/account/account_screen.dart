@@ -387,6 +387,10 @@ class AccountScreenState extends State<AccountScreen> {
               ),
             ),
             const SizedBox(height: 16),
+            _driverNotesSection(),
+            const SizedBox(height: 12),
+            _reviewsSection(),
+            const SizedBox(height: 16),
             Row(
               children: [
                 Expanded(
@@ -431,10 +435,6 @@ class AccountScreenState extends State<AccountScreen> {
             ),
             const SizedBox(height: 24),
             _addressesSection(),
-            const SizedBox(height: 24),
-            _reviewsSection(),
-            const SizedBox(height: 24),
-            _driverNotesSection(),
             const SizedBox(height: 24),
             OutlinedButton.icon(
               onPressed: _logout,
