@@ -415,10 +415,7 @@ class _AirportScreenState extends State<AirportScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Not shown on the last step — _tripSummaryCard() has its own
-            // error box right above its submit button there, so this would
-            // just duplicate it.
-            if (_error != null && !isLast)
+            if (_error != null)
               Padding(
                 padding: const EdgeInsets.only(bottom: 10),
                 child: Container(
@@ -432,21 +429,25 @@ class _AirportScreenState extends State<AirportScreen> {
                 if (_currentStep > 0)
                   Expanded(
                     child: OutlinedButton(
-                      onPressed: _prevStep,
+                      onPressed: _submitting ? null : _prevStep,
                       style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 14)),
                       child: const Text('→ رجوع'),
                     ),
                   ),
                 if (_currentStep > 0) const SizedBox(width: 10),
-                if (!isLast)
-                  Expanded(
-                    flex: 2,
-                    child: ElevatedButton(
-                      onPressed: _nextStep,
-                      style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 14)),
-                      child: const Text('التالي ←'),
+                Expanded(
+                  flex: 2,
+                  child: ElevatedButton(
+                    onPressed: _submitting ? null : (isLast ? _submit : _nextStep),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: isLast ? AppColors.accent : null,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
                     ),
+                    child: _submitting
+                        ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                        : Text(isLast ? 'تأكيد الحجز ←' : 'التالي ←'),
                   ),
+                ),
               ],
             ),
           ],
@@ -733,7 +734,10 @@ class _AirportScreenState extends State<AirportScreen> {
   }
 
   /// Matches airport.astro's "رحلتك" sidebar: route header, live timeline,
-  /// price breakdown table, total, error box, and the confirm button.
+  /// price breakdown table, total — confirm button and error box now live
+  /// in the fixed _stepNavBar() instead of scrolling with this card, same
+  /// as every other step's رجوع/التالي bar, so this whole step fits one
+  /// screen without needing to scroll to reach the confirm action.
   Widget _tripSummaryCard() {
     final steps = fare.buildTimeline(
       direction: _direction,
@@ -749,23 +753,22 @@ class _AirportScreenState extends State<AirportScreen> {
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: const Color(0xFFE9ECEB)),
-        boxShadow: const [BoxShadow(color: Color(0x14000000), blurRadius: 12, offset: Offset(0, 4))],
       ),
       clipBehavior: Clip.antiAlias,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Container(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             decoration: const BoxDecoration(gradient: LinearGradient(colors: [AppColors.primaryDark, AppColors.primary])),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('رحلتك', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 15)),
-                const SizedBox(height: 4),
+                const Text('رحلتك', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 14)),
+                const SizedBox(height: 3),
                 Text(
                   '${_from?.name ?? "—"} ← ${_airport?.name ?? "—"}',
-                  style: const TextStyle(color: Colors.white70, fontSize: 12),
+                  style: const TextStyle(color: Colors.white70, fontSize: 11),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -773,44 +776,20 @@ class _AirportScreenState extends State<AirportScreen> {
             ),
           ),
           Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(14),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 for (var i = 0; i < steps.length; i++) _timelineRow(steps[i], isLast: i == steps.length - 1),
-                const Divider(height: 24),
+                const Divider(height: 16),
                 _fareLine('المسافة', '${_roadKm.toStringAsFixed(0)} كم', isText: true),
-                _fareLine('سعر المسافة', '$_baseFare ج.م', isText: true),
                 _fareLine('السيارة', vehicleLabel, isText: true),
                 if (_extraBagsFee > 0) _fareLine('شنط إضافية', '$_extraBagsFee ج.م', isText: true),
                 if (_companionsFee > 0) _fareLine('مرافق رايح جاي', '$_companionsFee ج.م', isText: true),
                 if (_waitPickupFee > 0) _fareLine('انتظار عند الاستلام', '$_waitPickupFee ج.م', isText: true),
                 if (_waitAirportFee > 0) _fareLine('انتظار في ساحة المطار', '$_waitAirportFee ج.م', isText: true),
-                const Divider(height: 24),
+                const Divider(height: 16),
                 _fareLine('الإجمالي', '$_total ج.م', bold: true),
-                const SizedBox(height: 16),
-                if (_error != null)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 12),
-                    child: Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(color: const Color(0xFFFEF2F2), border: Border.all(color: const Color(0xFFFCA5A5)), borderRadius: BorderRadius.circular(10)),
-                      child: Text(_error!, style: const TextStyle(color: AppColors.error, fontSize: 13)),
-                    ),
-                  ),
-                ElevatedButton(
-                  onPressed: _submitting ? null : _submit,
-                  style: ElevatedButton.styleFrom(backgroundColor: AppColors.accent, padding: const EdgeInsets.symmetric(vertical: 16)),
-                  child: _submitting
-                      ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                      : const Text('تأكيد الحجز ←'),
-                ),
-                const SizedBox(height: 8),
-                const Text(
-                  'سعر ثابت حسب المسافة — الدفع نقدًا أو إلكترونيًا',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 10, color: AppColors.textFaint),
-                ),
               ],
             ),
           ),
