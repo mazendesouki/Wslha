@@ -132,9 +132,19 @@ class _AirportBookingConfirmationScreenState extends State<AirportBookingConfirm
     return Scaffold(
       backgroundColor: const Color(0xFFF7FAF9),
       appBar: AppBar(title: const Text('تفاصيل حجزك')),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
+      body: Column(
         children: [
+          Expanded(child: _content()),
+          _bottomBar(context),
+        ],
+      ),
+    );
+  }
+
+  Widget _content() {
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
@@ -199,19 +209,38 @@ class _AirportBookingConfirmationScreenState extends State<AirportBookingConfirm
               const Text('الدفع نقدًا عند الوصول', style: TextStyle(fontSize: 11, color: AppColors.textFaint)),
             ],
           ),
-          const SizedBox(height: 20),
-          ElevatedButton(
-            onPressed: () => Navigator.of(context).pushReplacement(
-              MaterialPageRoute(builder: (_) => RideTrackingScreen(rideId: widget.rideId)),
-            ),
-            child: const Text('تتبع حالة الحجز مباشرة'),
-          ),
-          const SizedBox(height: 10),
-          OutlinedButton(
-            onPressed: () => Navigator.of(context).popUntil((r) => r.isFirst),
-            child: const Text('العودة للرئيسية'),
-          ),
         ],
+    );
+  }
+
+  Widget _bottomBar(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: const BoxDecoration(color: Colors.white, border: Border(top: BorderSide(color: Color(0xFFE9ECEB)))),
+      child: SafeArea(
+        top: false,
+        child: Row(
+          children: [
+            Expanded(
+              child: OutlinedButton(
+                onPressed: () => Navigator.of(context).popUntil((r) => r.isFirst),
+                style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 14)),
+                child: const Text('العودة للرئيسية'),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              flex: 2,
+              child: ElevatedButton(
+                onPressed: () => Navigator.of(context).pushReplacement(
+                  MaterialPageRoute(builder: (_) => RideTrackingScreen(rideId: widget.rideId)),
+                ),
+                style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 14)),
+                child: const Text('تتبع حالة الحجز مباشرة'),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
