@@ -178,6 +178,43 @@ class DriverRepository {
     }
   }
 
+  /// Open airport rides not yet assigned to a driver — same open-table
+  /// read as watchOpenNegotiableRides() above, just filtered to
+  /// ride_type='airport' instead of is_negotiable. Shown as a persistent
+  /// browsable list (no countdown) alongside the timed dispatch_offers
+  /// path, per db/security-65-airport-ride-requests.sql.
+  Stream<List<Map<String, dynamic>>> watchOpenAirportRides() {
+    return sb
+        .from('rides')
+        .stream(primaryKey: ['id'])
+        .eq('ride_type', 'airport')
+        .order('created_at', ascending: false);
+  }
+
+  /// This driver's own rejected-ride ids, fetched once per screen open —
+  /// used to filter watchOpenAirportRides() client-side so a rejected
+  /// ride doesn't keep resurfacing in this driver's own list.
+  Future<Set<String>> fetchRejectedAirportRideIds(String phone) async {
+    final rows = await sb.from('airport_ride_rejections').select('ride_id').eq('driver_phone', phone);
+    return List<Map<String, dynamic>>.from(rows).map((r) => r['ride_id'].toString()).toSet();
+  }
+
+  /// Returns 'ok', or a failure reason string ('vehicle_category_mismatch',
+  /// 'quality_tier_mismatch', 'already_taken') — same shape as acceptOffer().
+  Future<String> acceptAirportRide(String rideId, String phone, String name) async {
+    final result = await sb.rpc('accept_airport_ride', params: {
+      'p_ride_id': rideId,
+      'p_driver_phone': phone,
+      'p_driver_name': name,
+    });
+    if (result is Map && result['ok'] == true) return 'ok';
+    return (result is Map ? result['reason'] as String? : null) ?? 'error';
+  }
+
+  Future<void> rejectAirportRide(String rideId, String phone) async {
+    await sb.rpc('reject_airport_ride', params: {'p_ride_id': rideId, 'p_driver_phone': phone});
+  }
+
   /// Marks an order picked up — routed through driver_mark_order_picked_up
   /// (security-48), which verifies this order is actually assigned to this
   /// driver server-side. A raw table UPDATE would let anyone mark any

@@ -20,6 +20,7 @@ import '../ratings/trust_badge.dart';
 import '../rides/fare_calculator.dart' show haversineKm;
 import '../rides/ride_repository.dart';
 import 'active_job_store.dart';
+import 'airport_ride_requests_screen.dart';
 import 'driver_repository.dart';
 import 'negotiation_screen.dart';
 
@@ -538,6 +539,43 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
                       icon: const Text('🤝', style: TextStyle(fontSize: 20)),
                       onPressed: () => Navigator.of(context).push(
                         MaterialPageRoute(builder: (_) => NegotiationScreen(session: widget.session)),
+                      ),
+                    ),
+                    if (count > 0)
+                      Positioned(
+                        right: 4,
+                        top: 4,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                          decoration: BoxDecoration(color: AppColors.error, borderRadius: BorderRadius.circular(999)),
+                          child: Text('$count', style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w900)),
+                        ),
+                      ),
+                  ],
+                );
+              },
+            ),
+          if (_vehicleCategory != 'motorcycle' && _vehicleCategory != 'cargo')
+            // Same live-badge pattern as the negotiation icon above, for
+            // the parallel no-countdown airport-ride request list (see
+            // db/security-65-airport-ride-requests.sql) — a driver
+            // otherwise only ever sees an airport ride via the single
+            // timed dispatch_offers card, with no way to browse or
+            // inspect full trip details before deciding.
+            StreamBuilder<List<Map<String, dynamic>>>(
+              stream: _repo.watchOpenAirportRides(),
+              builder: (context, snap) {
+                final count = (snap.data ?? [])
+                    .where((r) => r['status'] == 'pending' && (r['driver_phone'] == null || (r['driver_phone'] as String).isEmpty))
+                    .length;
+                return Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    IconButton(
+                      tooltip: 'طلبات توصيل المطار',
+                      icon: const Text('✈️', style: TextStyle(fontSize: 20)),
+                      onPressed: () => Navigator.of(context).push(
+                        MaterialPageRoute(builder: (_) => AirportRideRequestsScreen(session: widget.session)),
                       ),
                     ),
                     if (count > 0)
