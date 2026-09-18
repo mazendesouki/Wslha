@@ -230,15 +230,36 @@ class _RidesScreenState extends State<RidesScreen> {
                         alignment: Alignment.centerRight,
                         child: TextButton.icon(
                           onPressed: _addStop,
+                          style: TextButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4), visualDensity: VisualDensity.compact),
                           icon: const Icon(Icons.add_location_alt_outlined, size: 18),
-                          label: const Text('إضافة نقطة توقف (مشوار متعدد)'),
+                          label: const Text('إضافة نقطة توقف (مشوار متعدد)', style: TextStyle(fontSize: 12)),
                         ),
                       ),
+                    const Divider(height: 20),
+                    Row(
+                      children: [
+                        const Icon(Icons.people_outline, size: 20, color: AppColors.textFaint),
+                        const SizedBox(width: 8),
+                        const Text('عدد الركاب', style: TextStyle(fontWeight: FontWeight.w700)),
+                        const Spacer(),
+                        IconButton(
+                          visualDensity: VisualDensity.compact,
+                          onPressed: _passengers > 1 ? () => setState(() => _passengers--) : null,
+                          icon: const Icon(Icons.remove_circle_outline),
+                        ),
+                        Text('$_passengers', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900)),
+                        IconButton(
+                          visualDensity: VisualDensity.compact,
+                          onPressed: _passengers < 4 ? () => setState(() => _passengers++) : null,
+                          icon: const Icon(Icons.add_circle_outline),
+                        ),
+                      ],
+                    ),
                   ],
                 ),
               ),
               const SizedBox(height: 12),
-              _sectionLabel('🚗 تفاصيل الرحلة'),
+              _sectionLabel('⭐ نوع الخدمة والدفع'),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
                 decoration: BoxDecoration(
@@ -248,25 +269,7 @@ class _RidesScreenState extends State<RidesScreen> {
                 ),
                 child: Column(
                   children: [
-                    Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 10),
-                      child: Row(
-                        children: [
-                          const Text('عدد الركاب', style: TextStyle(fontWeight: FontWeight.w700)),
-                          const Spacer(),
-                          IconButton(
-                            onPressed: _passengers > 1 ? () => setState(() => _passengers--) : null,
-                            icon: const Icon(Icons.remove_circle_outline),
-                          ),
-                          Text('$_passengers', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900)),
-                          IconButton(
-                            onPressed: _passengers < 4 ? () => setState(() => _passengers++) : null,
-                            icon: const Icon(Icons.add_circle_outline),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const Divider(height: 1),
+                    const SizedBox(height: 4),
                     Padding(
                       padding: const EdgeInsets.symmetric(vertical: 8),
                       child: Wrap(
@@ -379,7 +382,7 @@ class _RidesScreenState extends State<RidesScreen> {
                   ),
                 ),
               ],
-              const SizedBox(height: 20),
+              const SizedBox(height: 12),
               ElevatedButton(
                 onPressed: ready ? _submit : null,
                 child: _submitting
