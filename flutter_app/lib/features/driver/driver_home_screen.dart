@@ -12,6 +12,7 @@ import '../../core/session.dart';
 import '../../core/theme.dart';
 import '../../shared/widgets/finish_ride_button.dart';
 import '../../shared/widgets/logout_button.dart';
+import '../../shared/widgets/sos_button.dart';
 import '../../shared/widgets/waiting_timer_card.dart';
 import '../airport/airport_fare.dart' as airport_fare;
 import '../orders/orders_repository.dart';
@@ -699,7 +700,19 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
             ),
             child: Column(
               children: [
-                Text(isOrder ? '📦 طلب قيد التنفيذ' : '🚖 مشوار قيد التنفيذ', style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16)),
+                Row(
+                  children: [
+                    const SizedBox(width: 72),
+                    Expanded(
+                      child: Text(
+                        isOrder ? '📦 طلب قيد التنفيذ' : '🚖 مشوار قيد التنفيذ',
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16),
+                      ),
+                    ),
+                    SosButton(role: 'driver', rideId: isOrder ? null : job['id'] as String?),
+                  ],
+                ),
                 if (customerPhone != null && customerPhone.isNotEmpty) ...[
                   const SizedBox(height: 12),
                   _CustomerContactRow(name: customerName, phone: customerPhone),

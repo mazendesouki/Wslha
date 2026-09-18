@@ -7,6 +7,7 @@ import '../../core/session.dart';
 import '../../core/theme.dart';
 import '../../core/update_checker.dart';
 import '../notifications/notifications_screen.dart';
+import '../safety/emergency_contacts_screen.dart';
 import '../support/support_screen.dart';
 
 /// Mirrors settings.astro: links to Profile/Wallet/Orders, a local
@@ -144,6 +145,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
             icon: '📦',
             title: 'طلباتي ومشاويري',
             onTap: () => widget.onNavigateTab?.call(3),
+          ),
+          _SettingsTile(
+            icon: '🆘',
+            title: 'جهات اتصال الطوارئ',
+            onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const EmergencyContactsScreen())),
           ),
           const Divider(height: 24),
           SwitchListTile(

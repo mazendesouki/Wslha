@@ -12,6 +12,7 @@ import '../../core/session.dart';
 import '../../core/theme.dart';
 import '../../shared/widgets/finish_ride_button.dart';
 import '../../shared/widgets/live_tracking_map.dart';
+import '../../shared/widgets/sos_button.dart';
 import '../../shared/widgets/waiting_timer_card.dart';
 import '../airport/airport_fare.dart' show qualityLabels;
 import '../driver/driver_repository.dart';
@@ -260,6 +261,13 @@ class _RideTrackingScreenState extends State<RideTrackingScreen> {
                 backgroundColor: isCancelled ? AppColors.error : AppColors.primary,
                 foregroundColor: Colors.white,
                 title: Text(widget.isDriverView ? 'تفاصيل الرحلة' : 'تتبّع الرحلة'),
+                actions: [
+                  if (!isCancelled && status != 'completed' && status != 'pending')
+                    Padding(
+                      padding: const EdgeInsets.only(left: 12),
+                      child: SosButton(role: widget.isDriverView ? 'driver' : 'customer', rideId: widget.rideId),
+                    ),
+                ],
               ),
               SliverToBoxAdapter(
                 child: Padding(
