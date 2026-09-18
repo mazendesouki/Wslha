@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:url_launcher/url_launcher.dart';
+import '../../core/flavor.dart';
 import '../../core/session.dart';
 import '../../core/theme.dart';
+import '../../core/update_checker.dart';
 import '../notifications/notifications_screen.dart';
 import '../support/support_screen.dart';
 
@@ -12,7 +15,8 @@ import '../support/support_screen.dart';
 /// is phone-only, no password field exists anywhere in this app.
 class SettingsScreen extends StatefulWidget {
   final void Function(int tabIndex)? onNavigateTab;
-  const SettingsScreen({super.key, this.onNavigateTab});
+  final AppFlavor flavor;
+  const SettingsScreen({super.key, this.onNavigateTab, required this.flavor});
 
   @override
   State<SettingsScreen> createState() => _SettingsScreenState();
@@ -23,6 +27,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   UserSession? _session;
   bool _notifEnabled = true;
   String? _versionLabel;
+  UpdateInfo? _updateInfo;
 
   @override
   void initState() {
@@ -45,6 +50,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final info = await PackageInfo.fromPlatform();
     if (!mounted) return;
     setState(() => _versionLabel = '${info.version}+${info.buildNumber}');
+
+    final update = await UpdateChecker().checkForUpdate(widget.flavor);
+    if (!mounted) return;
+    setState(() => _updateInfo = update);
+  }
+
+  Future<void> _openUpdateLink() async {
+    final url = _updateInfo?.apkUrl;
+    if (url == null) return;
+    await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
   }
 
   Future<void> _toggleNotif(bool value) async {
@@ -80,6 +95,38 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ],
                   ),
                 ],
+              ),
+            ),
+          if (_updateInfo != null)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+              child: Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFEFF6FF),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: const Color(0xFFBFDBFE)),
+                ),
+                child: Row(
+                  children: [
+                    const Text('🎉', style: TextStyle(fontSize: 24)),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text('نسخة جديدة متاحة', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 13)),
+                          Text('الإصدار ${_updateInfo!.versionName}', style: const TextStyle(fontSize: 11, color: AppColors.textFaint)),
+                        ],
+                      ),
+                    ),
+                    ElevatedButton(
+                      onPressed: _openUpdateLink,
+                      style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10)),
+                      child: const Text('تحديث الآن'),
+                    ),
+                  ],
+                ),
               ),
             ),
           const SizedBox(height: 8),

@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../core/flavor.dart';
 import '../../core/session.dart';
 import '../../core/theme.dart';
+import '../../core/update_checker.dart';
 import '../settings/settings_screen.dart';
 import '../wallet/wallet_screen.dart';
 import 'driver_home_screen.dart';
@@ -28,11 +30,15 @@ class _DriverHomeShellState extends State<DriverHomeShell> {
   final _profileKey = GlobalKey<DriverProfileScreenState>();
   bool _loadingStatus = true;
   String? _status;
+  bool _updateAvailable = false;
 
   @override
   void initState() {
     super.initState();
     _loadStatus();
+    UpdateChecker().checkForUpdate(AppFlavor.driver).then((info) {
+      if (mounted && info != null) setState(() => _updateAvailable = true);
+    });
   }
 
   static const _statusCacheKey = 'wslha_driver_status_cache';
@@ -84,7 +90,7 @@ class _DriverHomeShellState extends State<DriverHomeShell> {
     const WalletScreen(),
     DriverProfileScreen(key: _profileKey, session: widget.session),
     DriverOrdersScreen(onNavigateTab: _goToTab),
-    SettingsScreen(onNavigateTab: _goToTab),
+    SettingsScreen(onNavigateTab: _goToTab, flavor: AppFlavor.driver),
   ];
 
   @override
@@ -108,12 +114,17 @@ class _DriverHomeShellState extends State<DriverHomeShell> {
         currentIndex: _index,
         onTap: _goToTab,
         type: BottomNavigationBarType.fixed,
-        items: const [
-          BottomNavigationBarItem(icon: Text('🚗', style: TextStyle(fontSize: 20)), label: 'الرئيسية'),
-          BottomNavigationBarItem(icon: Text('💳', style: TextStyle(fontSize: 20)), label: 'المحفظة'),
-          BottomNavigationBarItem(icon: Text('👤', style: TextStyle(fontSize: 20)), label: 'حسابي'),
-          BottomNavigationBarItem(icon: Text('📦', style: TextStyle(fontSize: 20)), label: 'الطلبات'),
-          BottomNavigationBarItem(icon: Text('⚙️', style: TextStyle(fontSize: 20)), label: 'الإعدادات'),
+        items: [
+          const BottomNavigationBarItem(icon: Text('🚗', style: TextStyle(fontSize: 20)), label: 'الرئيسية'),
+          const BottomNavigationBarItem(icon: Text('💳', style: TextStyle(fontSize: 20)), label: 'المحفظة'),
+          const BottomNavigationBarItem(icon: Text('👤', style: TextStyle(fontSize: 20)), label: 'حسابي'),
+          const BottomNavigationBarItem(icon: Text('📦', style: TextStyle(fontSize: 20)), label: 'الطلبات'),
+          BottomNavigationBarItem(
+            icon: _updateAvailable
+                ? const Badge(smallSize: 8, child: Text('⚙️', style: TextStyle(fontSize: 20)))
+                : const Text('⚙️', style: TextStyle(fontSize: 20)),
+            label: 'الإعدادات',
+          ),
         ],
       ),
     );

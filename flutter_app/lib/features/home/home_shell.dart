@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import '../../core/flavor.dart';
 import '../../core/session.dart';
+import '../../core/update_checker.dart';
 import '../account/account_screen.dart';
 import '../orders/orders_screen.dart';
 import '../rides/rides_screen.dart';
@@ -20,6 +22,15 @@ class HomeShell extends StatefulWidget {
 class _HomeShellState extends State<HomeShell> {
   int _index = 0;
   final _accountKey = GlobalKey<AccountScreenState>();
+  bool _updateAvailable = false;
+
+  @override
+  void initState() {
+    super.initState();
+    UpdateChecker().checkForUpdate(AppFlavor.customer).then((info) {
+      if (mounted && info != null) setState(() => _updateAvailable = true);
+    });
+  }
 
   void _goToTab(int i) {
     setState(() => _index = i);
@@ -36,7 +47,7 @@ class _HomeShellState extends State<HomeShell> {
     AccountScreen(key: _accountKey),
     const OrdersScreen(),
     const RidesScreen(),
-    SettingsScreen(onNavigateTab: _goToTab),
+    SettingsScreen(onNavigateTab: _goToTab, flavor: AppFlavor.customer),
   ];
 
   @override
@@ -49,13 +60,18 @@ class _HomeShellState extends State<HomeShell> {
       bottomNavigationBar: NavigationBar(
         selectedIndex: _index,
         onDestinationSelected: _goToTab,
-        destinations: const [
-          NavigationDestination(icon: Text('🏠', style: TextStyle(fontSize: 20)), label: 'الرئيسية'),
-          NavigationDestination(icon: Text('💳', style: TextStyle(fontSize: 20)), label: 'المحفظة'),
-          NavigationDestination(icon: Text('👤', style: TextStyle(fontSize: 20)), label: 'حسابي'),
-          NavigationDestination(icon: Text('📦', style: TextStyle(fontSize: 20)), label: 'الطلبات'),
-          NavigationDestination(icon: Text('🚖', style: TextStyle(fontSize: 20)), label: 'رحلات'),
-          NavigationDestination(icon: Text('⚙️', style: TextStyle(fontSize: 20)), label: 'الإعدادات'),
+        destinations: [
+          const NavigationDestination(icon: Text('🏠', style: TextStyle(fontSize: 20)), label: 'الرئيسية'),
+          const NavigationDestination(icon: Text('💳', style: TextStyle(fontSize: 20)), label: 'المحفظة'),
+          const NavigationDestination(icon: Text('👤', style: TextStyle(fontSize: 20)), label: 'حسابي'),
+          const NavigationDestination(icon: Text('📦', style: TextStyle(fontSize: 20)), label: 'الطلبات'),
+          const NavigationDestination(icon: Text('🚖', style: TextStyle(fontSize: 20)), label: 'رحلات'),
+          NavigationDestination(
+            icon: _updateAvailable
+                ? const Badge(smallSize: 8, child: Text('⚙️', style: TextStyle(fontSize: 20)))
+                : const Text('⚙️', style: TextStyle(fontSize: 20)),
+            label: 'الإعدادات',
+          ),
         ],
       ),
     );

@@ -188,6 +188,11 @@ jobs:
       # with no extra network hop, sidesteps that entirely. Runs on ubuntu-
       # latest's default branch only, not on every PR/branch build, so a
       # driver-only or scratch push doesn't churn the live download files.
+      # version.json is what the in-app "check for updates" feature
+      # (core/update_checker.dart) polls: its buildNumber is the same
+      # ${{ github.run_number }} every flutter build apk --build-number=
+      # above used, so it's already one shared, always-ascending sequence
+      # across all three flavors — no separate per-app numbering needed.
       - name: Publish APKs to website downloads
         if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master' || github.ref == 'refs/heads/claude/dreamy-johnson-nuzHs'
         run: |
@@ -195,6 +200,10 @@ jobs:
           cp build/app/outputs/flutter-apk/app-driver-release.apk   ../public/downloads/wslha-driver.apk
           cp build/app/outputs/flutter-apk/app-customer-release.apk ../public/downloads/wslha-customer.apk
           cp build/app/outputs/flutter-apk/app-merchant-release.apk ../public/downloads/wslha-merchant.apk
+          VERSION_NAME=$(grep '^version:' pubspec.yaml | sed 's/version: *//' | cut -d+ -f1)
+          cat > ../public/downloads/version.json <<EOF
+          {"buildNumber": ${{ github.run_number }}, "versionName": "$VERSION_NAME", "releasedAt": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"}
+          EOF
           cd ..
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
