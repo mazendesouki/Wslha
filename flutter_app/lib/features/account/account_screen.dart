@@ -6,6 +6,7 @@ import 'package:image_picker/image_picker.dart';
 import '../../core/session.dart';
 import '../../core/theme.dart';
 import '../orders/orders_repository.dart';
+import '../ratings/ratings_list_screen.dart';
 import '../ratings/ratings_repository.dart';
 import 'account_repository.dart';
 import 'invoices_screen.dart';
@@ -41,6 +42,7 @@ class AccountScreenState extends State<AccountScreen> {
   List<Map<String, dynamic>> _addresses = [];
   List<Map<String, dynamic>> _reviews = [];
   List<Map<String, dynamic>> _driverNotes = [];
+  RatingSummary _reliability = RatingSummary(0, 0);
   bool _loading = true;
   bool _uploadingAvatar = false;
 
@@ -69,6 +71,7 @@ class AccountScreenState extends State<AccountScreen> {
       _repo.fetchSavedAddresses(phone).catchError((_) => <Map<String, dynamic>>[]),
       _ratingsRepo.customerGivenReviews(phone).catchError((_) => <Map<String, dynamic>>[]),
       _ratingsRepo.driverGivenReviews(phone).catchError((_) => <Map<String, dynamic>>[]),
+      _ratingsRepo.customerReliability(phone).catchError((_) => RatingSummary(0, 0)),
     ]);
     if (!mounted) return;
     setState(() {
@@ -78,6 +81,7 @@ class AccountScreenState extends State<AccountScreen> {
       _addresses = results[2] as List<Map<String, dynamic>>;
       _driverNotes = results[4] as List<Map<String, dynamic>>;
       _reviews = results[3] as List<Map<String, dynamic>>;
+      _reliability = results[5] as RatingSummary;
       _loading = false;
     });
   }
@@ -88,9 +92,34 @@ class AccountScreenState extends State<AccountScreen> {
     Navigator.of(context).pushNamedAndRemoveUntil('/home', (route) => false);
   }
 
+  Future<ImageSource?> _chooseImageSource() {
+    return showModalBottomSheet<ImageSource>(
+      context: context,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (sheetContext) => SafeArea(
+        child: Wrap(
+          children: [
+            ListTile(
+              leading: const Icon(Icons.camera_alt_outlined),
+              title: const Text('التقاط صورة بالكاميرا'),
+              onTap: () => Navigator.pop(sheetContext, ImageSource.camera),
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library_outlined),
+              title: const Text('اختيار من معرض الصور'),
+              onTap: () => Navigator.pop(sheetContext, ImageSource.gallery),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Future<void> _pickAvatar() async {
     if (_session == null) return;
-    final shot = await _picker.pickImage(source: ImageSource.gallery, imageQuality: 85, maxWidth: 800);
+    final source = await _chooseImageSource();
+    if (source == null) return;
+    final shot = await _picker.pickImage(source: source, imageQuality: 85, maxWidth: 800);
     if (shot == null) return;
     setState(() => _uploadingAvatar = true);
     final bytes = await File(shot.path).readAsBytes();
@@ -336,7 +365,16 @@ class AccountScreenState extends State<AccountScreen> {
                     ),
                   ),
                   const SizedBox(height: 10),
-                  Text(name, style: const TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.w900)),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(name, style: const TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.w900)),
+                      if (_reliability.isTrusted) ...[
+                        const SizedBox(width: 6),
+                        const Icon(Icons.verified, color: Color(0xFFFFD54F), size: 18),
+                      ],
+                    ],
+                  ),
                   const SizedBox(height: 4),
                   Text(_session!.phone, style: const TextStyle(color: Colors.white70, fontSize: 12), textDirection: TextDirection.ltr),
                   const SizedBox(height: 10),
@@ -599,15 +637,66 @@ class AccountScreenState extends State<AccountScreen> {
   }
 
   Widget _driverNotesSection() {
+    final s = _reliability;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('💬 ملاحظات وتقييمات السائقين عني', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 15)),
+        const Text('💬 تقييمات السائقين عني', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 15)),
         const SizedBox(height: 10),
-        if (_driverNotes.isEmpty)
-          _emptyStateBox('لسه مفيش تقييم أو ملاحظة من سائق — بتظهر هنا فور ما رحلتك تخلص ويقيّمك السائق')
-        else
-          ..._driverNotes.map(_reviewTile),
+        Material(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(16),
+            onTap: () => Navigator.of(context).push(MaterialPageRoute(
+              builder: (_) => RatingsListScreen(
+                title: '💬 تقييمات السائقين عني',
+                summary: s,
+                reviews: _driverNotes,
+                countLabel: 'تقييم من السائقين',
+                emptyMessage: 'لسه مفيش تقييم أو ملاحظة من سائق — بتظهر هنا فور ما رحلتك تخلص ويقيّمك السائق',
+              ),
+            )),
+            child: Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), boxShadow: const [
+                BoxShadow(color: Color(0x11000000), blurRadius: 8, offset: Offset(0, 2)),
+              ]),
+              child: Row(
+                children: [
+                  Text(
+                    s.isNew ? '🆕' : (s.avg >= 4.5 ? '😍' : s.avg >= 3.5 ? '🙂' : s.avg >= 2.5 ? '😐' : '🙁'),
+                    style: const TextStyle(fontSize: 32),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          s.isNew ? 'لسه ما وصلكش تقييم' : s.avg.toStringAsFixed(1),
+                          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
+                        ),
+                        Text(
+                          s.isNew ? 'التقييمات هتظهر هنا بعد أول رحلة' : '${s.count} تقييم من السائقين',
+                          style: const TextStyle(fontSize: 12, color: AppColors.textFaint),
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (s.isTrusted)
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                      decoration: BoxDecoration(color: AppColors.success.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(999)),
+                      child: const Text('✅ عميل موثوق', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w900, color: AppColors.success)),
+                    ),
+                  const SizedBox(width: 4),
+                  const Icon(Icons.chevron_left, color: AppColors.textFaint),
+                ],
+              ),
+            ),
+          ),
+        ),
       ],
     );
   }

@@ -9,6 +9,7 @@ import '../../core/session.dart';
 import '../../core/supabase_client.dart';
 import '../../core/theme.dart';
 import '../account/account_repository.dart';
+import '../ratings/ratings_list_screen.dart';
 import '../ratings/ratings_repository.dart';
 import 'driver_repository.dart';
 
@@ -125,8 +126,33 @@ class DriverProfileScreenState extends State<DriverProfileScreen> {
     });
   }
 
+  Future<ImageSource?> _chooseImageSource() {
+    return showModalBottomSheet<ImageSource>(
+      context: context,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (sheetContext) => SafeArea(
+        child: Wrap(
+          children: [
+            ListTile(
+              leading: const Icon(Icons.camera_alt_outlined),
+              title: const Text('التقاط صورة بالكاميرا'),
+              onTap: () => Navigator.pop(sheetContext, ImageSource.camera),
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library_outlined),
+              title: const Text('اختيار من معرض الصور'),
+              onTap: () => Navigator.pop(sheetContext, ImageSource.gallery),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Future<void> _pickAvatar() async {
-    final shot = await _picker.pickImage(source: ImageSource.gallery, imageQuality: 85, maxWidth: 800);
+    final source = await _chooseImageSource();
+    if (source == null) return;
+    final shot = await _picker.pickImage(source: source, imageQuality: 85, maxWidth: 800);
     if (shot == null) return;
     setState(() => _uploadingAvatar = true);
     final bytes = await File(shot.path).readAsBytes();
@@ -274,8 +300,6 @@ class DriverProfileScreenState extends State<DriverProfileScreen> {
               style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 14)),
             ),
             const SizedBox(height: 16),
-            _buildReviewsSection(),
-            const SizedBox(height: 16),
             OutlinedButton.icon(
               onPressed: _logout,
               icon: const Icon(Icons.logout, color: AppColors.error),
@@ -326,7 +350,16 @@ class DriverProfileScreenState extends State<DriverProfileScreen> {
             ],
           ),
           const SizedBox(height: 10),
-          Text(name, style: const TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.w900)),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(name, style: const TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.w900)),
+              if (_ratingSummary.isTrusted) ...[
+                const SizedBox(width: 6),
+                const Icon(Icons.verified, color: Color(0xFFFFD54F), size: 18),
+              ],
+            ],
+          ),
           const SizedBox(height: 4),
           Text(widget.session.phone, style: const TextStyle(color: Colors.white70, fontSize: 12), textDirection: TextDirection.ltr),
           const SizedBox(height: 12),
@@ -353,40 +386,58 @@ class DriverProfileScreenState extends State<DriverProfileScreen> {
 
   Widget _buildRatingCard() {
     final s = _ratingSummary;
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), boxShadow: const [
-        BoxShadow(color: Color(0x11000000), blurRadius: 8, offset: Offset(0, 2)),
-      ]),
-      child: Row(
-        children: [
-          Text(
-            s.isNew ? '🆕' : (s.avg >= 4.5 ? '😍' : s.avg >= 3.5 ? '🙂' : s.avg >= 2.5 ? '😐' : '🙁'),
-            style: const TextStyle(fontSize: 32),
+    return Material(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(16),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: () => Navigator.of(context).push(MaterialPageRoute(
+          builder: (_) => RatingsListScreen(
+            title: '🌟 تقييمات العملاء',
+            summary: s,
+            reviews: _reviews,
+            countLabel: 'تقييم من العملاء',
+            emptyMessage: 'لسه مفيش تقييمات — هتظهر هنا أول ما عميل يقيّمك بعد رحلة',
           ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  s.isNew ? 'لسه ما وصلكش تقييم' : s.avg.toStringAsFixed(1),
-                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
+        )),
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), boxShadow: const [
+            BoxShadow(color: Color(0x11000000), blurRadius: 8, offset: Offset(0, 2)),
+          ]),
+          child: Row(
+            children: [
+              Text(
+                s.isNew ? '🆕' : (s.avg >= 4.5 ? '😍' : s.avg >= 3.5 ? '🙂' : s.avg >= 2.5 ? '😐' : '🙁'),
+                style: const TextStyle(fontSize: 32),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      s.isNew ? 'لسه ما وصلكش تقييم' : s.avg.toStringAsFixed(1),
+                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
+                    ),
+                    Text(
+                      s.isNew ? 'التقييمات هتظهر هنا بعد أول رحلة' : '${s.count} تقييم من العملاء',
+                      style: const TextStyle(fontSize: 12, color: AppColors.textFaint),
+                    ),
+                  ],
                 ),
-                Text(
-                  s.isNew ? 'التقييمات هتظهر هنا بعد أول رحلة' : '${s.count} تقييم من العملاء',
-                  style: const TextStyle(fontSize: 12, color: AppColors.textFaint),
+              ),
+              if (s.isTrusted)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  decoration: BoxDecoration(color: AppColors.success.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(999)),
+                  child: const Text('✅ سائق موثوق', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w900, color: AppColors.success)),
                 ),
-              ],
-            ),
+              const SizedBox(width: 4),
+              const Icon(Icons.chevron_left, color: AppColors.textFaint),
+            ],
           ),
-          if (s.isTrusted)
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-              decoration: BoxDecoration(color: AppColors.success.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(999)),
-              child: const Text('✅ سائق موثوق', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w900, color: AppColors.success)),
-            ),
-        ],
+        ),
       ),
     );
   }
@@ -609,85 +660,6 @@ class DriverProfileScreenState extends State<DriverProfileScreen> {
         Text(label, style: const TextStyle(fontSize: 12, color: AppColors.textFaint, fontWeight: FontWeight.w700)),
         Text(value, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w900)),
       ],
-    );
-  }
-
-  Widget _buildReviewsSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Padding(
-          padding: EdgeInsets.only(bottom: 10, right: 4),
-          child: Text('🌟 تقييمات العملاء', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w900)),
-        ),
-        if (_reviews.isEmpty)
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16)),
-            child: const Center(
-              child: Text('لسه مفيش تقييمات — هتظهر هنا أول ما عميل يقيّمك بعد رحلة', style: TextStyle(color: AppColors.textFaint, fontSize: 12)),
-            ),
-          )
-        else
-          ..._reviews.map(_reviewTile),
-      ],
-    );
-  }
-
-  Widget _reviewTile(Map<String, dynamic> r) {
-    final rating = ((r['rating'] as num?) ?? 0).toInt();
-    final emoji = rating >= 1 && rating <= 5 ? ratingEmojis[rating - 1] : '⭐';
-    final comment = r['comment'] as String?;
-    final reply = r['driver_reply'] as String?;
-    final tags = (r['tags'] as List?)?.cast<String>() ?? [];
-    final serviceType = r['service_type'] as String?;
-    final typeIcon = serviceType == 'order' ? '🛍️' : serviceType == 'airport' ? '✈️' : '🚗';
-    final createdAt = DateTime.tryParse(r['created_at'] as String? ?? '');
-    return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(14)),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Text(emoji, style: const TextStyle(fontSize: 20)),
-              const SizedBox(width: 8),
-              Text(typeIcon, style: const TextStyle(fontSize: 14)),
-              const Spacer(),
-              if (createdAt != null)
-                Text('${createdAt.year}/${createdAt.month}/${createdAt.day}', style: const TextStyle(fontSize: 11, color: AppColors.textFaint)),
-            ],
-          ),
-          if (comment != null && comment.isNotEmpty) ...[
-            const SizedBox(height: 8),
-            Text('"$comment"', style: const TextStyle(fontSize: 13)),
-          ],
-          if (tags.isNotEmpty) ...[
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 6,
-              runSpacing: 6,
-              children: tags
-                  .map((t) => Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                        decoration: BoxDecoration(color: AppColors.primaryLight, borderRadius: BorderRadius.circular(999)),
-                        child: Text(t, style: const TextStyle(fontSize: 10, color: AppColors.primaryDark)),
-                      ))
-                  .toList(),
-            ),
-          ],
-          if (reply != null && reply.isNotEmpty) ...[
-            const SizedBox(height: 8),
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(color: const Color(0xFFF3F4F6), borderRadius: BorderRadius.circular(8)),
-              child: Text('ردك: $reply', style: const TextStyle(fontSize: 11, color: AppColors.textFaint)),
-            ),
-          ],
-        ],
-      ),
     );
   }
 }
