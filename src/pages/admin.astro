@@ -1327,6 +1327,9 @@
               <label style="display:flex;align-items:center;gap:.5rem;font-size:.8rem;font-weight:700;background:#F1F5F9;border-radius:8px;padding:.6rem .75rem">
                 <input type="checkbox" id="feature-dark-mode-enabled"/> 🌙 الوضع الليلي
               </label>
+              <label style="display:flex;align-items:center;gap:.5rem;font-size:.8rem;font-weight:700;background:#F1F5F9;border-radius:8px;padding:.6rem .75rem">
+                <input type="checkbox" id="feature-language-switch-enabled"/> 🌐 تبديل اللغة
+              </label>
             </div>
             <button class="btn btn--primary" onclick="saveFeatureFlags()" id="save-flags-btn" style="margin-top:1rem">💾 حفظ التحكم في الميزات</button>
             <div id="flags-msg" style="display:none;font-size:.82rem;font-weight:700;padding:.5rem .75rem;border-radius:6px;margin-top:.5rem"></div>
@@ -3950,6 +3953,7 @@ const FEATURE_FLAG_MAP = {
   feature_airport_reminders_enabled: 'feature-airport-reminders-enabled',
   feature_marketing_campaigns_enabled: 'feature-marketing-campaigns-enabled',
   feature_dark_mode_enabled: 'feature-dark-mode-enabled',
+  feature_language_switch_enabled: 'feature-language-switch-enabled',
 };
 
 async function loadFeatureFlags() {

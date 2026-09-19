@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../core/feature_flags.dart';
 import '../../core/flavor.dart';
+import '../../core/i18n.dart';
 import '../../core/session.dart';
 import '../../core/theme.dart';
 import '../../core/update_checker.dart';
@@ -79,7 +80,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('الإعدادات')),
+      appBar: AppBar(title: Text(context.tr('settings_title'))),
       body: ListView(
         children: [
           if (_session != null)
@@ -150,13 +151,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
           if (FeatureFlags.sosEnabled)
             _SettingsTile(
               icon: '🆘',
-              title: 'جهات اتصال الطوارئ',
+              title: context.tr('settings_emergency_contacts'),
               onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const EmergencyContactsScreen())),
             ),
           const Divider(height: 24),
           SwitchListTile(
             secondary: const Text('🔔', style: TextStyle(fontSize: 20)),
-            title: const Text('الإشعارات'),
+            title: Text(context.tr('settings_notifications')),
             value: _notifEnabled,
             activeThumbColor: AppColors.primary,
             onChanged: _toggleNotif,
@@ -166,14 +167,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
               valueListenable: ThemeController.mode,
               builder: (context, mode, _) => ListTile(
                 leading: const Text('🌙', style: TextStyle(fontSize: 20)),
-                title: const Text('الوضع الليلي'),
+                title: Text(context.tr('settings_dark_mode')),
                 trailing: DropdownButton<ThemeMode>(
                   value: mode,
                   underline: const SizedBox.shrink(),
-                  items: const [
-                    DropdownMenuItem(value: ThemeMode.system, child: Text('تلقائي')),
-                    DropdownMenuItem(value: ThemeMode.light, child: Text('فاتح')),
-                    DropdownMenuItem(value: ThemeMode.dark, child: Text('داكن')),
+                  items: [
+                    DropdownMenuItem(value: ThemeMode.system, child: Text(context.tr('settings_dark_mode_system'))),
+                    DropdownMenuItem(value: ThemeMode.light, child: Text(context.tr('settings_dark_mode_light'))),
+                    DropdownMenuItem(value: ThemeMode.dark, child: Text(context.tr('settings_dark_mode_dark'))),
                   ],
                   onChanged: (v) {
                     if (v != null) ThemeController.set(v);
@@ -183,24 +184,38 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
           _SettingsTile(
             icon: '🗂️',
-            title: 'سجل الإشعارات',
+            title: context.tr('settings_notifications_log'),
             onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const NotificationsScreen())),
           ),
-          const ListTile(
-            leading: Text('🌐', style: TextStyle(fontSize: 20)),
-            title: Text('اللغة'),
-            trailing: Text('العربية', style: TextStyle(color: AppColors.textFaint)),
-          ),
+          if (FeatureFlags.languageSwitchEnabled)
+            ValueListenableBuilder<Locale>(
+              valueListenable: LocaleController.locale,
+              builder: (context, locale, _) => ListTile(
+                leading: const Text('🌐', style: TextStyle(fontSize: 20)),
+                title: Text(context.tr('settings_language')),
+                trailing: DropdownButton<Locale>(
+                  value: locale,
+                  underline: const SizedBox.shrink(),
+                  items: [
+                    DropdownMenuItem(value: const Locale('ar'), child: Text(context.tr('settings_language_ar'))),
+                    DropdownMenuItem(value: const Locale('en'), child: Text(context.tr('settings_language_en'))),
+                  ],
+                  onChanged: (v) {
+                    if (v != null) LocaleController.set(v);
+                  },
+                ),
+              ),
+            ),
           _SettingsTile(
             icon: '🛟',
-            title: 'المساعدة والدعم',
+            title: context.tr('settings_support'),
             onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const SupportScreen())),
           ),
           const Divider(height: 24),
           if (_session != null)
             ListTile(
               leading: const Icon(Icons.logout, color: AppColors.error),
-              title: const Text('تسجيل الخروج', style: TextStyle(color: AppColors.error, fontWeight: FontWeight.w700)),
+              title: Text(context.tr('settings_logout'), style: const TextStyle(color: AppColors.error, fontWeight: FontWeight.w700)),
               onTap: _logout,
             ),
           const SizedBox(height: 24),

@@ -21,6 +21,7 @@ class FeatureFlags {
   static bool couponsEnabled = true;
   static bool scheduledRidesEnabled = true;
   static bool darkModeEnabled = true;
+  static bool languageSwitchEnabled = true;
 
   static bool _loaded = false;
 
@@ -45,6 +46,7 @@ class FeatureFlags {
         'feature_coupons_enabled',
         'feature_scheduled_rides_enabled',
         'feature_dark_mode_enabled',
+        'feature_language_switch_enabled',
       ]);
 
       bool? flag(String key) {
@@ -66,6 +68,7 @@ class FeatureFlags {
       couponsEnabled = flag('feature_coupons_enabled') ?? couponsEnabled;
       scheduledRidesEnabled = flag('feature_scheduled_rides_enabled') ?? scheduledRidesEnabled;
       darkModeEnabled = flag('feature_dark_mode_enabled') ?? darkModeEnabled;
+      languageSwitchEnabled = flag('feature_language_switch_enabled') ?? languageSwitchEnabled;
       _loaded = true;
     } catch (_) {
       // Network hiccup — keep whatever was already loaded (defaults true).

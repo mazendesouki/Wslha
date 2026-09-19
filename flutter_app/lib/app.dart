@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'core/feature_flags.dart';
 import 'core/flavor.dart';
+import 'core/i18n.dart';
 import 'core/notifications.dart';
 import 'core/pricing_settings.dart';
 import 'core/push.dart';
@@ -35,6 +36,7 @@ Future<void> runWslhaApp(FlavorConfig config) async {
   unawaited(PricingSettings.load());
   unawaited(FeatureFlags.load());
   await ThemeController.load();
+  await LocaleController.load();
   runApp(WslhaApp(config: config));
 }
 
@@ -47,7 +49,9 @@ class WslhaApp extends StatelessWidget {
     final modern = config.flavor == AppFlavor.customer;
     return ValueListenableBuilder<ThemeMode>(
       valueListenable: ThemeController.mode,
-      builder: (context, mode, _) => MaterialApp(
+      builder: (context, mode, _) => ValueListenableBuilder<Locale>(
+        valueListenable: LocaleController.locale,
+        builder: (context, locale, _) => MaterialApp(
       title: config.appTitle,
       debugShowCheckedModeBanner: false,
       // "modern" is trialled on the customer app only for now — see
@@ -55,7 +59,7 @@ class WslhaApp extends StatelessWidget {
       theme: buildAppTheme(modern: modern),
       darkTheme: buildAppTheme(modern: modern, dark: true),
       themeMode: mode,
-      locale: const Locale('ar'),
+      locale: locale,
       // DefaultMaterialLocalizations/DefaultWidgetsLocalizations only ever
       // support English — that's the "no real localization" fallback, not
       // an Arabic implementation. Using them with locale('ar') left every
@@ -69,11 +73,21 @@ class WslhaApp extends StatelessWidget {
         GlobalCupertinoLocalizations.delegate,
       ],
       supportedLocales: const [Locale('ar'), Locale('en')],
-      builder: (context, child) => Directionality(textDirection: TextDirection.rtl, child: child!),
+      // Most of the app's own text is still hardcoded Arabic regardless of
+      // locale (see core/i18n.dart's doc comment) — this direction switch
+      // only really pays off once more screens are wired to context.tr().
+      // English content sitting inside an RTL shell (or vice versa) reads
+      // wrong, so direction follows locale from day one even though only
+      // part of the text follows it yet.
+      builder: (context, child) => Directionality(
+        textDirection: locale.languageCode == 'en' ? TextDirection.ltr : TextDirection.rtl,
+        child: child!,
+      ),
       home: _SessionGate(config: config),
       routes: {
         '/home': (_) => _SessionGate(config: config),
       },
+        ),
       ),
     );
   }
