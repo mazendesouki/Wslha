@@ -1183,6 +1183,9 @@
               <label style="display:flex;align-items:center;gap:.5rem;font-size:.8rem;font-weight:700;background:#F1F5F9;border-radius:8px;padding:.6rem .75rem">
                 <input type="checkbox" id="feature-support-chat-enabled"/> 🎧 شات مباشر مع الدعم الفني
               </label>
+              <label style="display:flex;align-items:center;gap:.5rem;font-size:.8rem;font-weight:700;background:#F1F5F9;border-radius:8px;padding:.6rem .75rem">
+                <input type="checkbox" id="feature-ai-bot-enabled"/> 🤖 الرد الآلي بالذكاء الاصطناعي
+              </label>
             </div>
             <button class="btn btn--primary" onclick="saveFeatureFlags()" id="save-flags-btn" style="margin-top:1rem">💾 حفظ التحكم في الميزات</button>
             <div id="flags-msg" style="display:none;font-size:.82rem;font-weight:700;padding:.5rem .75rem;border-radius:6px;margin-top:.5rem"></div>
@@ -3430,10 +3433,13 @@ async function refreshSupportThread() {
   if (rows === null) return;
   const thread = document.getElementById('support-thread');
   if (!thread) return;
+  const roleColor = { support: '#0E4B49', ai: '#7C3AED', user: '#334155' };
+  const roleLabel = { support: '', ai: '🤖 رد آلي', user: '' };
   thread.innerHTML = rows.map(m => `
-    <div style="align-self:${m.sender_role === 'support' ? 'flex-end' : 'flex-start'};max-width:80%">
-      <div style="background:${m.sender_role === 'support' ? '#0E4B49' : '#334155'};color:#f1f5f9;padding:.5rem .75rem;border-radius:10px;font-size:.85rem;line-height:1.6">${escapeHtml(m.body)}</div>
-      <div style="font-size:.68rem;color:#64748B;margin-top:2px;${m.sender_role === 'support' ? 'text-align:left' : ''}">${new Date(m.created_at).toLocaleTimeString('ar-EG')}</div>
+    <div style="align-self:${m.sender_role === 'user' ? 'flex-start' : 'flex-end'};max-width:80%">
+      ${roleLabel[m.sender_role] ? `<div style="font-size:.68rem;color:${roleColor[m.sender_role]};font-weight:800;margin-bottom:2px;text-align:left">${roleLabel[m.sender_role]}</div>` : ''}
+      <div style="background:${roleColor[m.sender_role] || '#334155'};color:#f1f5f9;padding:.5rem .75rem;border-radius:10px;font-size:.85rem;line-height:1.6">${escapeHtml(m.body)}</div>
+      <div style="font-size:.68rem;color:#64748B;margin-top:2px;${m.sender_role !== 'user' ? 'text-align:left' : ''}">${new Date(m.created_at).toLocaleTimeString('ar-EG')}</div>
     </div>`).join('') || '<div style="color:#64748B;font-size:.82rem;text-align:center">لسه مفيش رسائل</div>';
   thread.scrollTop = thread.scrollHeight;
 }
@@ -3650,6 +3656,7 @@ const FEATURE_FLAG_MAP = {
   feature_daily_goal_enabled: 'feature-daily-goal-enabled',
   feature_ride_share_enabled: 'feature-ride-share-enabled',
   feature_support_chat_enabled: 'feature-support-chat-enabled',
+  feature_ai_bot_enabled: 'feature-ai-bot-enabled',
 };
 
 async function loadFeatureFlags() {

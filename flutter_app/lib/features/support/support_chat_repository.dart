@@ -48,4 +48,20 @@ class SupportChatRepository {
       'p_body': body,
     });
   }
+
+  /// Fires the Claude-powered auto-reply (supabase/functions/ai-support-reply).
+  /// The function itself no-ops once a human admin has taken the
+  /// conversation over (support_conversations.ai_enabled) or the
+  /// feature_ai_bot_enabled flag is off — so it's safe to call
+  /// unconditionally after every user message. Errors are swallowed: the
+  /// worst case is just no auto-reply, same as a human support agent not
+  /// answering instantly.
+  Future<void> triggerAiReply({required String conversationId, required String phone}) async {
+    try {
+      await sb.functions.invoke('ai-support-reply', body: {
+        'conversation_id': conversationId,
+        'phone': phone,
+      });
+    } catch (_) {}
+  }
 }

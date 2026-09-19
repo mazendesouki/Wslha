@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../../core/feature_flags.dart';
 import '../../core/theme.dart';
 import 'support_chat_repository.dart';
 
@@ -82,6 +83,11 @@ class _SupportChatScreenState extends State<SupportChatScreen> {
       _conversationId = id;
       await _repo.send(conversationId: id, phone: widget.myPhone, body: body);
       await _refresh();
+      if (FeatureFlags.aiBotEnabled) {
+        // Fire-and-forget: refresh again once the bot (if it answers)
+        // has had time to reply, without blocking the send button.
+        unawaited(_repo.triggerAiReply(conversationId: id, phone: widget.myPhone).then((_) => _refresh()));
+      }
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تعذّر إرسال الرسالة، حاول تاني')));
@@ -134,9 +140,12 @@ class _SupportChatScreenState extends State<SupportChatScreen> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   if (!isMine)
-                                    const Padding(
-                                      padding: EdgeInsets.only(bottom: 4),
-                                      child: Text('🎧 الدعم الفني', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: AppColors.primary)),
+                                    Padding(
+                                      padding: const EdgeInsets.only(bottom: 4),
+                                      child: Text(
+                                        m.senderRole == 'ai' ? '🤖 مساعد آلي' : '🎧 الدعم الفني',
+                                        style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: AppColors.primary),
+                                      ),
                                     ),
                                   Text(m.body, style: TextStyle(color: isMine ? Colors.white : Colors.black87, fontSize: 14)),
                                   const SizedBox(height: 4),
