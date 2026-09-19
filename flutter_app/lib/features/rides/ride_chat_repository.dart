@@ -48,6 +48,21 @@ class RideChatRepository {
         .stream(primaryKey: ['id'])
         .eq('ride_id', rideId)
         .order('created_at')
-        .map((rows) => rows.map(RideMessage.fromRow).toList());
+        .map((rows) {
+          // supabase_flutter's realtime stream can emit a transient snapshot
+          // where the same row appears twice right after an insert (the
+          // initial REST snapshot and the just-arrived realtime event
+          // briefly overlap before the internal cache reconciles) — seen as
+          // a message flashing doubled for a moment then collapsing back to
+          // one. Deduping by id here makes that never visible at all,
+          // regardless of the exact timing on the stream's side.
+          final seen = <String>{};
+          final deduped = <RideMessage>[];
+          for (final row in rows) {
+            final msg = RideMessage.fromRow(row);
+            if (seen.add(msg.id)) deduped.add(msg);
+          }
+          return deduped;
+        });
   }
 }
