@@ -141,7 +141,7 @@ class _EmergencyContactsScreenState extends State<EmergencyContactsScreen> {
                   Container(
                     padding: const EdgeInsets.all(24),
                     decoration: BoxDecoration(color: context.surfaceColor, borderRadius: BorderRadius.circular(16)),
-                    child: const Center(
+                    child: Center(
                       child: Text(context.tr('emergency_empty'), style: const TextStyle(color: AppColors.textFaint)),
                     ),
                   )
