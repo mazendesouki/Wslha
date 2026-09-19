@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/date_format_ar.dart';
+import '../../core/i18n.dart';
 import '../../core/session.dart';
 import '../../core/theme.dart';
 import '../airport/airport_fare.dart' show categoryLabels, qualityLabels;
@@ -37,10 +38,10 @@ class _AirportRideDetailScreenState extends State<AirportRideDetailScreen> {
         setState(() => _busy = false);
         _showError(
           result == 'vehicle_category_mismatch'
-              ? 'نوع سيارتك لا يطابق نوع السيارة المطلوب لرحلة المطار دي'
+              ? context.tr('airport_ride_detail_err_category_mismatch')
               : result == 'quality_tier_mismatch'
-                  ? 'سيارتك المسجّلة لا تطابق مستوى الخدمة اللي طلبه العميل (مكيّفة/نظيفة/موديل حديث)'
-                  : 'الرحلة دي اتقبلت من سائق تاني قبلك',
+                  ? context.tr('airport_ride_detail_err_quality_mismatch')
+                  : context.tr('airport_ride_detail_err_already_taken'),
         );
         return;
       }
@@ -56,7 +57,7 @@ class _AirportRideDetailScreenState extends State<AirportRideDetailScreen> {
     } catch (e) {
       if (!mounted) return;
       setState(() => _busy = false);
-      _showError('تعذّر قبول الرحلة، حاول تاني');
+      _showError(context.tr('airport_ride_detail_err_accept_failed'));
     }
   }
 
@@ -72,7 +73,7 @@ class _AirportRideDetailScreenState extends State<AirportRideDetailScreen> {
     } catch (e) {
       if (!mounted) return;
       setState(() => _busy = false);
-      _showError('تعذّر رفض الرحلة، حاول تاني');
+      _showError(context.tr('airport_ride_detail_err_reject_failed'));
     }
   }
 
@@ -94,7 +95,7 @@ class _AirportRideDetailScreenState extends State<AirportRideDetailScreen> {
 
     return Scaffold(
       backgroundColor: context.mutedSurface,
-      appBar: AppBar(title: const Text('تفاصيل رحلة المطار')),
+      appBar: AppBar(title: Text(context.tr('airport_ride_detail_appbar_title'))),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
         children: [
@@ -108,12 +109,12 @@ class _AirportRideDetailScreenState extends State<AirportRideDetailScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  direction == 'departure' ? '🛫 توصيل من العميل إلى المطار (مغادرة)' : '🛬 توصيل من المطار إلى العميل (وصول)',
+                  direction == 'departure' ? context.tr('airport_ride_detail_banner_departure') : context.tr('airport_ride_detail_banner_arrival'),
                   style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 14),
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  tripType == 'international' ? 'رحلة دولية' : 'رحلة محلية',
+                  tripType == 'international' ? context.tr('airport_ride_detail_trip_international') : context.tr('airport_ride_detail_trip_domestic'),
                   style: const TextStyle(color: Colors.white70, fontSize: 12),
                 ),
                 const SizedBox(height: 10),
@@ -123,29 +124,29 @@ class _AirportRideDetailScreenState extends State<AirportRideDetailScreen> {
             ),
           ),
           const SizedBox(height: 16),
-          _sectionCard('👤 بيانات المسافر', [
-            _row('الاسم', '${ride['customer_name'] ?? '—'}'),
-            _row('رقم الجوال', '${ride['customer_phone'] ?? '—'}'),
-            _row('عدد المسافرين', '${ride['passengers'] ?? 1}'),
+          _sectionCard(context.tr('airport_ride_detail_section_passenger'), [
+            _row(context.tr('airport_ride_detail_row_name'), '${ride['customer_name'] ?? '—'}'),
+            _row(context.tr('airport_ride_detail_row_phone'), '${ride['customer_phone'] ?? '—'}'),
+            _row(context.tr('airport_ride_detail_row_passengers'), '${ride['passengers'] ?? 1}'),
           ]),
           const SizedBox(height: 12),
-          _sectionCard('📍 بيانات المسافة', [
-            if (ride['distance_km'] != null) _row('المسافة', '${(ride['distance_km'] as num).toStringAsFixed(1)} كم'),
-            if (ride['eta_minutes'] != null) _row('الوقت المتوقع للطريق', '${ride['eta_minutes']} دقيقة'),
+          _sectionCard(context.tr('airport_ride_detail_section_distance'), [
+            if (ride['distance_km'] != null) _row(context.tr('airport_ride_detail_row_distance'), '${(ride['distance_km'] as num).toStringAsFixed(1)} كم'),
+            if (ride['eta_minutes'] != null) _row(context.tr('airport_ride_detail_row_eta'), '${ride['eta_minutes']} دقيقة'),
           ]),
           const SizedBox(height: 12),
           if (flightTime != null)
-            _sectionCard('🕐 المواعيد والتواريخ', [
-              _row(direction == 'departure' ? 'موعد الإقلاع' : 'موعد الهبوط', arDateTime(flightTime), bold: true),
+            _sectionCard(context.tr('airport_ride_detail_section_datetime'), [
+              _row(direction == 'departure' ? context.tr('airport_ride_detail_row_departure_time') : context.tr('airport_ride_detail_row_arrival_time'), arDateTime(flightTime), bold: true),
             ]),
           const SizedBox(height: 12),
-          _sectionCard('🚗 السيارة والخدمة المطلوبة', [
-            if (category != null) _row('نوع السيارة', categoryLabels[category] ?? category),
-            _row('مستوى الخدمة', qualityLabels[qualityTier ?? 'regular'] ?? 'عادية'),
+          _sectionCard(context.tr('airport_ride_detail_section_vehicle'), [
+            if (category != null) _row(context.tr('airport_ride_detail_row_vehicle_type'), categoryLabels[category] ?? category),
+            _row(context.tr('airport_ride_detail_row_service_level'), qualityLabels[qualityTier ?? 'regular'] ?? context.tr('airport_ride_detail_quality_regular')),
           ]),
           if (lines.isNotEmpty) ...[
             const SizedBox(height: 12),
-            _sectionCard('📋 تفاصيل إضافية', [
+            _sectionCard(context.tr('airport_ride_detail_section_extra'), [
               for (final l in lines)
                 Padding(
                   padding: const EdgeInsets.only(bottom: 4),
@@ -154,8 +155,8 @@ class _AirportRideDetailScreenState extends State<AirportRideDetailScreen> {
             ]),
           ],
           const SizedBox(height: 12),
-          _sectionCard('💳 تفاصيل السعر', [
-            _row('إجمالي الرحلة', '${ride['fare'] ?? 0} ج.م', bold: true),
+          _sectionCard(context.tr('airport_ride_detail_section_price'), [
+            _row(context.tr('airport_ride_detail_row_total'), '${ride['fare'] ?? 0} ج.م', bold: true),
           ]),
         ],
       ),
@@ -172,7 +173,7 @@ class _AirportRideDetailScreenState extends State<AirportRideDetailScreen> {
                     side: const BorderSide(color: AppColors.error),
                     foregroundColor: AppColors.error,
                   ),
-                  child: const Text('رفض'),
+                  child: Text(context.tr('airport_ride_detail_btn_reject')),
                 ),
               ),
               const SizedBox(width: 12),
@@ -183,7 +184,7 @@ class _AirportRideDetailScreenState extends State<AirportRideDetailScreen> {
                   style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 14)),
                   child: _busy
                       ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                      : const Text('قبول الرحلة'),
+                      : Text(context.tr('airport_ride_detail_btn_accept')),
                 ),
               ),
             ],

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/feature_flags.dart';
+import '../../core/i18n.dart';
 import '../../core/session.dart';
 import '../../core/theme.dart';
 import 'favorites_repository.dart';
@@ -62,7 +63,7 @@ class _FavoriteDriverButtonState extends State<FavoriteDriverButton> {
         isFavorite ? Icons.favorite : Icons.favorite_border,
         color: isFavorite ? AppColors.error : AppColors.textFaint,
       ),
-      tooltip: isFavorite ? 'إزالة من المفضّلين' : 'إضافة للسائقين المفضّلين',
+      tooltip: isFavorite ? context.tr('favorite_driver_remove_tooltip') : context.tr('favorite_driver_add_tooltip'),
     );
   }
 }

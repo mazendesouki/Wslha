@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../core/i18n.dart';
 import '../../core/theme.dart';
 import 'coupon_repository.dart';
 
@@ -41,7 +42,7 @@ class _CouponFieldState extends State<CouponField> {
       widget.onChanged(code, result.valid ? result : null);
     } catch (_) {
       if (!mounted) return;
-      setState(() => _result = const CouponCheck(valid: false, discountAmount: 0, message: 'تعذّر التحقق من الكود، حاول تاني'));
+      setState(() => _result = CouponCheck(valid: false, discountAmount: 0, message: context.tr('coupon_field_check_failed')));
       widget.onChanged(code, null);
     } finally {
       if (mounted) setState(() => _checking = false);
@@ -60,7 +61,7 @@ class _CouponFieldState extends State<CouponField> {
                 controller: _ctrl,
                 textCapitalization: TextCapitalization.characters,
                 decoration: InputDecoration(
-                  hintText: '🎟️ عندك كود خصم؟',
+                  hintText: context.tr('coupon_field_hint'),
                   isDense: true,
                   contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
@@ -72,7 +73,7 @@ class _CouponFieldState extends State<CouponField> {
               onPressed: _checking ? null : _check,
               child: _checking
                   ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
-                  : const Text('تطبيق'),
+                  : Text(context.tr('coupon_field_apply')),
             ),
           ],
         ),
@@ -80,7 +81,9 @@ class _CouponFieldState extends State<CouponField> {
           Padding(
             padding: const EdgeInsets.only(top: 6),
             child: Text(
-              _result!.valid ? '✅ هترجعلك ${_result!.discountAmount.toStringAsFixed(0)} ج.م في محفظتك بعد التأكيد' : '❌ ${_result!.message}',
+              _result!.valid
+                  ? '✅ ${context.tr('coupon_field_success').replaceAll('AMOUNT', _result!.discountAmount.toStringAsFixed(0))}'
+                  : '❌ ${_result!.message}',
               style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: _result!.valid ? AppColors.primaryDark : AppColors.error),
             ),
           ),

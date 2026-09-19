@@ -151,20 +151,18 @@ class _PendingApprovalScreen extends StatelessWidget {
                 Text(rejected ? '❌' : '⏳', style: const TextStyle(fontSize: 48)),
                 const SizedBox(height: 16),
                 Text(
-                  rejected ? 'تم رفض طلب انضمامك' : 'حسابك قيد المراجعة',
+                  rejected ? context.tr('driver_shell_rejected_title') : context.tr('driver_shell_pending_title'),
                   style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  rejected
-                      ? 'تواصل مع الدعم لمعرفة السبب أو لإعادة التقديم.'
-                      : 'لسه ما اتراجعش طلبك من الإدارة — مش هتقدر تستقبل رحلات لحد ما يتم الاعتماد.',
+                  rejected ? context.tr('driver_shell_rejected_body') : context.tr('driver_shell_pending_body'),
                   textAlign: TextAlign.center,
                   style: const TextStyle(color: AppColors.textFaint),
                 ),
                 const SizedBox(height: 24),
-                ElevatedButton(onPressed: onRefresh, child: const Text('🔄 تحديث الحالة')),
+                ElevatedButton(onPressed: onRefresh, child: Text(context.tr('driver_shell_refresh_status'))),
               ],
             ),
           ),

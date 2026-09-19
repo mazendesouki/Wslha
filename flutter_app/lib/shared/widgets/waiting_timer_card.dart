@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import '../../core/i18n.dart';
 import '../../core/pricing_settings.dart';
 
 /// Live ticking card shown to BOTH the customer and driver once the driver
@@ -72,8 +73,8 @@ class _WaitingTimerCardState extends State<WaitingTimerCard> {
             Expanded(
               child: Text(
                 widget.isCustomerView
-                    ? 'السائق وصل — عندك ${_fmt(remaining)} قبل ما يبدأ خصم $feePerMinute ج.م عن كل دقيقة تأخير'
-                    : 'في انتظار العميل — ${_fmt(remaining)} متبقية بدون خصم عليه',
+                    ? context.tr('waiting_timer_customer_grace').replaceAll('REMAINING', _fmt(remaining)).replaceAll('FEE', '$feePerMinute')
+                    : context.tr('waiting_timer_driver_grace').replaceAll('REMAINING', _fmt(remaining)),
                 style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w900, color: Color(0xFF92400E)),
               ),
             ),
@@ -98,8 +99,8 @@ class _WaitingTimerCardState extends State<WaitingTimerCard> {
           Expanded(
             child: Text(
               widget.isCustomerView
-                  ? 'اتأخرت $overMinutes د — هيتخصم منك ${estimatedFee.toStringAsFixed(0)} ج.م لو الرحلة بدأت دلوقتي'
-                  : 'العميل اتأخر $overMinutes د — هيتخصم منه ${estimatedFee.toStringAsFixed(0)} ج.م لو الرحلة بدأت دلوقتي',
+                  ? context.tr('waiting_timer_customer_over').replaceAll('MINUTES', '$overMinutes').replaceAll('FEE', estimatedFee.toStringAsFixed(0))
+                  : context.tr('waiting_timer_driver_over').replaceAll('MINUTES', '$overMinutes').replaceAll('FEE', estimatedFee.toStringAsFixed(0)),
               style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w900, color: Color(0xFF991B1B)),
             ),
           ),

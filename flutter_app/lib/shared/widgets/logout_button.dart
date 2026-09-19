@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/i18n.dart';
 import '../../core/session.dart';
 
 /// Clears the session and re-enters the flavor's _SessionGate at '/home',
@@ -10,7 +11,7 @@ class LogoutButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return IconButton(
       icon: const Icon(Icons.logout),
-      tooltip: 'تسجيل الخروج',
+      tooltip: context.tr('logout_tooltip'),
       onPressed: () async {
         await SessionStore.clear();
         if (context.mounted) {

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../core/i18n.dart';
 import '../../core/theme.dart';
 import '../../features/rides/fare_calculator.dart' show haversineKm;
 import '../../features/rides/ride_repository.dart';
@@ -54,7 +55,9 @@ class FinishRideButton extends StatelessWidget {
               child: busy
                   ? const SizedBox(height: 18, width: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                   : Text(
-                      arrived ? '✓ وصلنا للوجهة — إنهاء الرحلة' : '📍 لسه ما وصلتش${distanceLabel != null ? ' ($distanceLabel متبقية)' : ''}',
+                      arrived
+                          ? context.tr('finish_ride_arrived_button')
+                          : '${context.tr('finish_ride_not_arrived_button')}${distanceLabel != null ? ' ($distanceLabel ${context.tr('finish_ride_remaining_suffix')})' : ''}',
                       style: const TextStyle(fontWeight: FontWeight.w900),
                       textAlign: TextAlign.center,
                     ),
@@ -63,7 +66,7 @@ class FinishRideButton extends StatelessWidget {
               const SizedBox(height: 8),
               TextButton(
                 onPressed: busy ? null : () => _confirmManually(context),
-                child: const Text('وصلت فعليًا؟ اضغط هنا للتأكيد يدويًا', style: TextStyle(fontWeight: FontWeight.w700)),
+                child: Text(context.tr('finish_ride_manual_confirm_link'), style: const TextStyle(fontWeight: FontWeight.w700)),
               ),
             ],
           ],
@@ -76,16 +79,16 @@ class FinishRideButton extends StatelessWidget {
     showDialog<void>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('تأكيد الوصول يدويًا'),
-        content: const Text('الموقع الحالي لسه بعيد عن نقطة النهاية حسب الـ GPS. متأكد إنك وصلت فعلاً وعايز تنهي الرحلة؟'),
+        title: Text(context.tr('finish_ride_manual_dialog_title')),
+        content: Text(context.tr('finish_ride_manual_dialog_body')),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('تراجع')),
+          TextButton(onPressed: () => Navigator.pop(dialogContext), child: Text(context.tr('finish_ride_manual_dialog_cancel'))),
           ElevatedButton(
             onPressed: () {
               Navigator.pop(dialogContext);
               onTap();
             },
-            child: const Text('تأكيد الإنهاء'),
+            child: Text(context.tr('finish_ride_manual_dialog_confirm')),
           ),
         ],
       ),

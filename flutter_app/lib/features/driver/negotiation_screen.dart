@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/i18n.dart';
 import '../../core/session.dart';
 import '../../core/theme.dart';
 import '../airport/airport_fare.dart' show qualityLabels;
@@ -23,7 +24,7 @@ class _NegotiationScreenState extends State<NegotiationScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: context.mutedSurface,
-      appBar: AppBar(title: const Text('🤝 طلبات تفاوض قريبة')),
+      appBar: AppBar(title: Text(context.tr('negotiation_appbar_title'))),
       body: StreamBuilder<List<Map<String, dynamic>>>(
         stream: _repo.watchOpenNegotiableRides(),
         builder: (context, snapshot) {
@@ -35,13 +36,13 @@ class _NegotiationScreenState extends State<NegotiationScreen> {
               .toList();
 
           if (rides.isEmpty) {
-            return const Center(
+            return Center(
               child: Padding(
-                padding: EdgeInsets.all(24),
+                padding: const EdgeInsets.all(24),
                 child: Text(
-                  'مفيش طلبات تفاوضية مفتوحة دلوقتي — هتظهر هنا أول ما عميل يطلب بسعر تفاوضي',
+                  context.tr('negotiation_empty'),
                   textAlign: TextAlign.center,
-                  style: TextStyle(color: AppColors.textFaint, fontWeight: FontWeight.w700),
+                  style: const TextStyle(color: AppColors.textFaint, fontWeight: FontWeight.w700),
                 ),
               ),
             );
@@ -82,7 +83,7 @@ class _NegotiableRideCardState extends State<_NegotiableRideCard> {
   Future<void> _submit() async {
     final price = num.tryParse(_priceCtrl.text.trim());
     if (price == null || price <= 0) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('اكتب سعر صحيح')));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.tr('negotiation_err_invalid_price'))));
       return;
     }
     setState(() => _submitting = true);
@@ -95,7 +96,7 @@ class _NegotiableRideCardState extends State<_NegotiableRideCard> {
     if (!mounted) return;
     setState(() => _submitting = false);
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(error ?? '✅ اتبعت عرضك، هيوصل للعميل فورًا')),
+      SnackBar(content: Text(error ?? context.tr('negotiation_offer_sent'))),
     );
   }
 
@@ -142,11 +143,11 @@ class _NegotiableRideCardState extends State<_NegotiableRideCard> {
             children: [
               if (distanceKm != null) _chip('📏 $distanceKm كم'),
               if (etaMinutes != null) _chip('🕐 $etaMinutes د'),
-              if (refFare != null) _chip('💡 سعر تقديري: $refFare ج.م'),
+              if (refFare != null) _chip('${context.tr('negotiation_estimated_price_prefix')}$refFare ج.م'),
               // Only submit a bid on this if your car actually matches — the
               // customer picked and paid for this tier specifically.
               if (qualityTier != null && qualityTier != 'regular')
-                _chip('${qualityLabels[qualityTier] ?? qualityTier} مطلوبة', warn: true),
+                _chip('${qualityLabels[qualityTier] ?? qualityTier}${context.tr('negotiation_required_suffix')}', warn: true),
             ],
           ),
           const SizedBox(height: 12),
@@ -167,7 +168,7 @@ class _NegotiableRideCardState extends State<_NegotiableRideCard> {
                       keyboardType: TextInputType.number,
                       decoration: InputDecoration(
                         isDense: true,
-                        hintText: myPrice != null ? 'عرضك الحالي: $myPrice ج.م' : 'سعرك (ج.م)',
+                        hintText: myPrice != null ? '${context.tr('negotiation_current_offer_prefix')}$myPrice ج.م' : '${context.tr('negotiation_price_hint_label')} (ج.م)',
                         suffixText: 'ج.م',
                         border: const OutlineInputBorder(),
                       ),
@@ -178,7 +179,7 @@ class _NegotiableRideCardState extends State<_NegotiableRideCard> {
                     onPressed: _submitting ? null : _submit,
                     child: _submitting
                         ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                        : Text(myPrice != null ? 'عدّل' : 'قدّم عرضي'),
+                        : Text(myPrice != null ? context.tr('negotiation_btn_edit') : context.tr('negotiation_btn_submit')),
                   ),
                 ],
               );

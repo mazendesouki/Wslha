@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
+import '../../core/i18n.dart';
 import '../../core/theme.dart';
 import 'places_service.dart';
 
@@ -76,14 +77,14 @@ class _AddressFieldState extends State<AddressField> {
       if (permission == LocationPermission.denied || permission == LocationPermission.deniedForever) {
         setState(() {
           _locLoading = false;
-          _locError = 'محتاجين إذن الموقع عشان نحدد نقطة انطلاقك';
+          _locError = context.tr('address_field_location_permission_needed');
         });
         return;
       }
       if (!await Geolocator.isLocationServiceEnabled()) {
         setState(() {
           _locLoading = false;
-          _locError = 'خدمة تحديد الموقع (GPS) مقفولة على جهازك';
+          _locError = context.tr('address_field_location_service_disabled');
         });
         return;
       }
@@ -97,7 +98,7 @@ class _AddressFieldState extends State<AddressField> {
       if (!mounted) return;
       setState(() {
         _locLoading = false;
-        _locError = 'تعذّر تحديد موقعك، حاول تاني';
+        _locError = context.tr('address_field_location_failed');
       });
     }
   }
@@ -136,7 +137,7 @@ class _AddressFieldState extends State<AddressField> {
                 : widget.showLocationButton
                     ? IconButton(
                         icon: const Icon(Icons.my_location, color: AppColors.primary),
-                        tooltip: 'استخدم موقعي الحالي',
+                        tooltip: context.tr('address_field_use_current_location'),
                         onPressed: _useMyLocation,
                       )
                     : null,

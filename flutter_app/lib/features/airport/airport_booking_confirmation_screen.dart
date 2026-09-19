@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../../core/date_format_ar.dart';
+import '../../core/i18n.dart';
 import '../../core/notifications.dart';
 import '../../core/theme.dart';
 import '../rides/ride_tracking_screen.dart';
@@ -101,25 +102,25 @@ class _AirportBookingConfirmationScreenState extends State<AirportBookingConfirm
     final idBase = widget.rideId.hashCode;
     AppNotifications.instance.scheduleAt(
       idBase,
-      widget.direction == 'departure' ? '🚗 السائق في الطريق إليك' : '🚗 السائق في طريقه للمطار',
-      'موعد ${pickupStep.label} قرّب — راجع تفاصيل حجز المطار',
+      widget.direction == 'departure' ? context.tr('airport_confirm_notif_driver_enroute_pickup') : context.tr('airport_confirm_notif_driver_enroute_airport'),
+      '${context.tr('airport_confirm_notif_body_prefix')}${pickupStep.label}${context.tr('airport_confirm_notif_body_suffix')}',
       pickupStep.time.subtract(const Duration(minutes: 15)),
     );
     AppNotifications.instance.scheduleAt(
       idBase + 1,
-      '✈️ رحلتك قرّبت',
-      widget.direction == 'departure' ? 'موعد إقلاع طائرتك بعد شوية — يلا اتجهّز' : 'موعد هبوط طائرتك قرّب',
+      context.tr('airport_confirm_notif_flight_soon_title'),
+      widget.direction == 'departure' ? context.tr('airport_confirm_notif_flight_soon_departure') : context.tr('airport_confirm_notif_flight_soon_arrival'),
       widget.flightTime.subtract(const Duration(minutes: 45)),
     );
   }
 
   String _fmtDuration(Duration d) {
-    if (d.isNegative) return 'حان الموعد';
+    if (d.isNegative) return context.tr('airport_confirm_time_arrived');
     final days = d.inDays;
     final hours = d.inHours % 24;
     final minutes = d.inMinutes % 60;
-    if (days > 0) return '$days يوم و$hours ساعة';
-    if (hours > 0) return '$hours ساعة و$minutes دقيقة';
+    if (days > 0) return '$days${context.tr('airport_confirm_days_and_hours')}$hours${context.tr('airport_confirm_hours_unit')}';
+    if (hours > 0) return '$hours${context.tr('airport_confirm_hours_and_minutes')}$minutes دقيقة';
     return '$minutes دقيقة';
   }
 
@@ -127,7 +128,7 @@ class _AirportBookingConfirmationScreenState extends State<AirportBookingConfirm
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: context.mutedSurface,
-      appBar: AppBar(title: const Text('تفاصيل حجزك')),
+      appBar: AppBar(title: Text(context.tr('airport_confirm_appbar_title'))),
       body: Column(
         children: [
           Expanded(child: _content()),
@@ -154,11 +155,11 @@ class _AirportBookingConfirmationScreenState extends State<AirportBookingConfirm
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('✅ تم تأكيد حجز توصيل المطار', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 15)),
+                Text(context.tr('airport_confirm_banner_title'), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 15)),
                 const SizedBox(height: 10),
                 Text('${widget.fromName} ← ${widget.airportName}', style: const TextStyle(color: Colors.white70, fontSize: 12), maxLines: 1, overflow: TextOverflow.ellipsis),
                 const SizedBox(height: 14),
-                _CountdownTile(label: 'الوقت المتبقي على ${widget.direction == 'departure' ? 'الإقلاع' : 'الهبوط'}', value: _fmtDuration(flightRemaining)),
+                _CountdownTile(label: '${context.tr('airport_confirm_time_remaining_prefix')}${widget.direction == 'departure' ? context.tr('airport_confirm_word_departure') : context.tr('airport_confirm_word_arrival')}', value: _fmtDuration(flightRemaining)),
                 const SizedBox(height: 8),
                 _CountdownTile(label: nextStep.label, value: _fmtDuration(nextStep.time.difference(now))),
               ],
@@ -166,47 +167,47 @@ class _AirportBookingConfirmationScreenState extends State<AirportBookingConfirm
           ),
           const SizedBox(height: 16),
           _sectionCard(
-            title: '📋 تفاصيل الرحلة',
+            title: context.tr('airport_confirm_section_trip_details'),
             children: [
-              _row('الاتجاه', widget.direction == 'departure' ? 'مغادر من مصر' : 'قادم إلى مصر'),
-              _row('نوع الرحلة', widget.tripType == 'international' ? 'دولية' : 'محلية'),
+              _row(context.tr('airport_confirm_row_direction'), widget.direction == 'departure' ? context.tr('airport_confirm_direction_departing') : context.tr('airport_confirm_direction_arriving')),
+              _row(context.tr('airport_confirm_row_trip_type'), widget.tripType == 'international' ? context.tr('airport_confirm_trip_international') : context.tr('airport_confirm_trip_domestic')),
               _row(
-                widget.direction == 'departure' ? 'تاريخ ووقت الإقلاع' : 'تاريخ ووقت الهبوط',
+                widget.direction == 'departure' ? context.tr('airport_confirm_row_datetime_departure') : context.tr('airport_confirm_row_datetime_arrival'),
                 arDateTime(widget.flightTime),
                 bold: true,
               ),
-              _row('السيارة', widget.vehicleLabel),
-              if (widget.qualityLabel.isNotEmpty) _row('مستوى الخدمة', widget.qualityLabel),
-              _row('عدد المسافرين', '${widget.passengers}'),
-              if (widget.companions > 0) _row('مرافقين رايح جاي', '${widget.companions}'),
-              if (widget.bags > 0) _row('الشنط', '${widget.bags}'),
-              if (widget.address.isNotEmpty) _row('عنوان الاستلام', widget.address),
-              if (widget.airline.isNotEmpty) _row('شركة الطيران', widget.airline),
-              if (widget.flightNo.isNotEmpty) _row('رقم الرحلة', widget.flightNo),
-              if (widget.terminal.isNotEmpty) _row('الصالة', widget.terminal),
-              if (widget.flightCountry.isNotEmpty) _row(widget.direction == 'departure' ? 'مسافر إلى' : 'قادم من', widget.flightCountry),
+              _row(context.tr('airport_confirm_row_vehicle'), widget.vehicleLabel),
+              if (widget.qualityLabel.isNotEmpty) _row(context.tr('airport_confirm_row_service_level'), widget.qualityLabel),
+              _row(context.tr('airport_confirm_row_passengers'), '${widget.passengers}'),
+              if (widget.companions > 0) _row(context.tr('airport_confirm_row_companions'), '${widget.companions}'),
+              if (widget.bags > 0) _row(context.tr('airport_confirm_row_bags'), '${widget.bags}'),
+              if (widget.address.isNotEmpty) _row(context.tr('airport_confirm_row_pickup_address'), widget.address),
+              if (widget.airline.isNotEmpty) _row(context.tr('airport_confirm_row_airline'), widget.airline),
+              if (widget.flightNo.isNotEmpty) _row(context.tr('airport_confirm_row_flight_no'), widget.flightNo),
+              if (widget.terminal.isNotEmpty) _row(context.tr('airport_confirm_row_terminal'), widget.terminal),
+              if (widget.flightCountry.isNotEmpty) _row(widget.direction == 'departure' ? context.tr('airport_confirm_row_traveling_to') : context.tr('airport_confirm_row_coming_from'), widget.flightCountry),
             ],
           ),
           const SizedBox(height: 16),
           _sectionCard(
-            title: '🕐 الجدول الزمني',
+            title: context.tr('airport_confirm_section_timeline'),
             children: [
               for (final step in _steps) _timelineRow(step, isNext: step == nextStep),
             ],
           ),
           const SizedBox(height: 16),
           _sectionCard(
-            title: '💳 تفاصيل الدفع',
+            title: context.tr('airport_confirm_section_payment'),
             children: [
-              _row('سعر المسافة', '${widget.baseFare} ج.م'),
-              if (widget.extraBagsFee > 0) _row('شنط إضافية', '${widget.extraBagsFee} ج.م'),
-              if (widget.companionsFee > 0) _row('مرافق رايح جاي', '${widget.companionsFee} ج.م'),
-              if (widget.waitPickupFee > 0) _row('انتظار عند الاستلام', '${widget.waitPickupFee} ج.م'),
-              if (widget.waitAirportFee > 0) _row('انتظار في ساحة المطار', '${widget.waitAirportFee} ج.م'),
+              _row(context.tr('airport_confirm_row_distance_fare'), '${widget.baseFare} ج.م'),
+              if (widget.extraBagsFee > 0) _row(context.tr('airport_confirm_row_extra_bags_fee'), '${widget.extraBagsFee} ج.م'),
+              if (widget.companionsFee > 0) _row(context.tr('airport_confirm_row_companion_fee'), '${widget.companionsFee} ج.م'),
+              if (widget.waitPickupFee > 0) _row(context.tr('airport_confirm_row_wait_pickup_fee'), '${widget.waitPickupFee} ج.م'),
+              if (widget.waitAirportFee > 0) _row(context.tr('airport_confirm_row_wait_airport_fee'), '${widget.waitAirportFee} ج.م'),
               const Divider(height: 20),
-              _row('الإجمالي', '${widget.total} ج.م', bold: true),
+              _row(context.tr('airport_confirm_row_total'), '${widget.total} ج.م', bold: true),
               const SizedBox(height: 4),
-              const Text('الدفع نقدًا عند الوصول', style: TextStyle(fontSize: 11, color: AppColors.textFaint)),
+              Text(context.tr('airport_confirm_payment_cash_note'), style: const TextStyle(fontSize: 11, color: AppColors.textFaint)),
             ],
           ),
         ],
@@ -225,7 +226,7 @@ class _AirportBookingConfirmationScreenState extends State<AirportBookingConfirm
               child: OutlinedButton(
                 onPressed: () => Navigator.of(context).popUntil((r) => r.isFirst),
                 style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 14)),
-                child: const Text('العودة للرئيسية'),
+                child: Text(context.tr('airport_confirm_btn_home')),
               ),
             ),
             const SizedBox(width: 10),
@@ -236,7 +237,7 @@ class _AirportBookingConfirmationScreenState extends State<AirportBookingConfirm
                   MaterialPageRoute(builder: (_) => RideTrackingScreen(rideId: widget.rideId)),
                 ),
                 style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 14)),
-                child: const Text('تتبع حالة الحجز مباشرة'),
+                child: Text(context.tr('airport_confirm_btn_track')),
               ),
             ),
           ],

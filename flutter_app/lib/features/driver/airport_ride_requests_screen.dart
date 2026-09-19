@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/date_format_ar.dart';
+import '../../core/i18n.dart';
 import '../../core/session.dart';
 import '../../core/theme.dart';
 import '../airport/airport_fare.dart' show qualityLabels;
@@ -37,7 +38,7 @@ class _AirportRideRequestsScreenState extends State<AirportRideRequestsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: context.mutedSurface,
-      appBar: AppBar(title: const Text('✈️ طلبات توصيل المطار')),
+      appBar: AppBar(title: Text(context.tr('airport_ride_requests_appbar_title'))),
       body: StreamBuilder<List<Map<String, dynamic>>>(
         stream: _repo.watchOpenAirportRides(),
         builder: (context, snapshot) {
@@ -52,13 +53,13 @@ class _AirportRideRequestsScreenState extends State<AirportRideRequestsScreen> {
               .toList();
 
           if (rides.isEmpty) {
-            return const Center(
+            return Center(
               child: Padding(
-                padding: EdgeInsets.all(24),
+                padding: const EdgeInsets.all(24),
                 child: Text(
-                  'مفيش طلبات توصيل مطار مفتوحة دلوقتي — هتظهر هنا أول ما عميل يحجز',
+                  context.tr('airport_ride_requests_empty'),
                   textAlign: TextAlign.center,
-                  style: TextStyle(color: AppColors.textFaint, fontWeight: FontWeight.w700),
+                  style: const TextStyle(color: AppColors.textFaint, fontWeight: FontWeight.w700),
                 ),
               ),
             );
@@ -146,13 +147,13 @@ class _AirportRideCard extends StatelessWidget {
                   if (distanceKm != null) _chip('📏 $distanceKm كم'),
                   if (etaMinutes != null) _chip('🕐 $etaMinutes د'),
                   if (qualityTier != null && qualityTier != 'regular')
-                    _chip('${qualityLabels[qualityTier] ?? qualityTier} مطلوبة', warn: true),
+                    _chip('${qualityLabels[qualityTier] ?? qualityTier}${context.tr('airport_ride_requests_required_suffix')}', warn: true),
                 ],
               ),
               const SizedBox(height: 4),
-              const Align(
+              Align(
                 alignment: Alignment.centerLeft,
-                child: Text('اضغط لعرض كل تفاصيل الرحلة', style: TextStyle(fontSize: 11, color: AppColors.primary, fontWeight: FontWeight.w700)),
+                child: Text(context.tr('airport_ride_requests_tap_hint'), style: const TextStyle(fontSize: 11, color: AppColors.primary, fontWeight: FontWeight.w700)),
               ),
             ],
           ),

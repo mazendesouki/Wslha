@@ -15,12 +15,24 @@ import '../referrals/referral_screen.dart';
 import 'account_repository.dart';
 import 'invoices_screen.dart';
 
-const Map<String, String> _roleAr = {
-  'customer': 'عميل',
-  'driver': 'سائق',
-  'merchant': 'تاجر',
-  'admin': 'أدمن',
-};
+// Was a top-level const Map<String,String> keyed by role, but its values
+// need translation — there's no BuildContext at const-init time, so this
+// helper resolves the text at the point of use instead (same pattern as
+// _paymentLabel in ride_tracking_screen.dart).
+String _roleLabel(BuildContext context, String role) {
+  switch (role) {
+    case 'customer':
+      return context.tr('account_role_customer');
+    case 'driver':
+      return context.tr('account_role_driver');
+    case 'merchant':
+      return context.tr('account_role_merchant');
+    case 'admin':
+      return context.tr('account_role_admin');
+    default:
+      return role;
+  }
+}
 
 class AccountScreen extends StatefulWidget {
   const AccountScreen({super.key});
@@ -395,7 +407,7 @@ class AccountScreenState extends State<AccountScreen> {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                     decoration: BoxDecoration(color: Colors.white24, borderRadius: BorderRadius.circular(999)),
-                    child: Text(_roleAr[role] ?? role, style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w900)),
+                    child: Text(_roleLabel(context, role), style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w900)),
                   ),
                 ],
               ),

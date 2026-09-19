@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../../core/feature_flags.dart';
+import '../../core/i18n.dart';
 import '../../core/session.dart';
 import '../../core/sos_service.dart';
 import '../../core/theme.dart';
@@ -32,16 +33,16 @@ class SosButton extends StatelessWidget {
 
     if (!result.hadContacts) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: const Text('اتسجل تنبيه الطوارئ — بس لسه معندكش جهات اتصال طوارئ محفوظة عشان نبعتلهم'),
+        content: Text(context.tr('sos_alert_no_contacts')),
         action: SnackBarAction(
-          label: 'إضافة',
+          label: context.tr('sos_add_contacts_action'),
           onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const EmergencyContactsScreen())),
         ),
       ));
       return;
     }
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(result.smsOpened ? '🆘 اتسجل التنبيه — فتحنالك رسالة جاهزة، اضغط إرسال' : '🆘 اتسجل تنبيه الطوارئ'),
+      content: Text(result.smsOpened ? context.tr('sos_alert_sms_opened') : context.tr('sos_alert_logged')),
     ));
   }
 
@@ -56,12 +57,12 @@ class SosButton extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
           decoration: BoxDecoration(color: AppColors.error, borderRadius: BorderRadius.circular(999)),
-          child: const Row(
+          child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.sos, color: Colors.white, size: 18),
-              SizedBox(width: 6),
-              Text('طوارئ', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 13)),
+              const Icon(Icons.sos, color: Colors.white, size: 18),
+              const SizedBox(width: 6),
+              Text(context.tr('sos_button_label'), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 13)),
             ],
           ),
         ),
@@ -101,15 +102,15 @@ class _SosCountdownDialogState extends State<_SosCountdownDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('🆘 تفعيل تنبيه الطوارئ'),
-      content: Text('هيتبعت تنبيه فيه موقعك لجهات الطوارئ خلال $_secondsLeft ثانية — اضغط إلغاء لو دوست بالغلط.'),
+      title: Text(context.tr('sos_countdown_title')),
+      content: Text(context.tr('sos_countdown_body').replaceAll('SECONDS', '$_secondsLeft')),
       actions: [
         TextButton(
           onPressed: () {
             _timer?.cancel();
             Navigator.of(context).pop(false);
           },
-          child: const Text('إلغاء'),
+          child: Text(context.tr('sos_countdown_cancel')),
         ),
       ],
     );

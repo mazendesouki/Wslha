@@ -118,15 +118,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text('نسخة جديدة متاحة', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 13)),
-                          Text('الإصدار ${_updateInfo!.versionName}', style: const TextStyle(fontSize: 11, color: AppColors.textFaint)),
+                          Text(context.tr('settings_new_version_title'), style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 13)),
+                          Text(context.tr('settings_new_version_body').replaceAll('VERSION', _updateInfo!.versionName), style: const TextStyle(fontSize: 11, color: AppColors.textFaint)),
                         ],
                       ),
                     ),
                     ElevatedButton(
                       onPressed: _openUpdateLink,
                       style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10)),
-                      child: const Text('تحديث الآن'),
+                      child: Text(context.tr('settings_update_now')),
                     ),
                   ],
                 ),
@@ -135,17 +135,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
           const SizedBox(height: 8),
           _SettingsTile(
             icon: '👤',
-            title: 'حسابي',
+            title: context.tr('settings_tile_account'),
             onTap: () => widget.onNavigateTab?.call(2),
           ),
           _SettingsTile(
             icon: '💳',
-            title: 'المحفظة',
+            title: context.tr('settings_tile_wallet'),
             onTap: () => widget.onNavigateTab?.call(1),
           ),
           _SettingsTile(
             icon: '📦',
-            title: 'طلباتي ومشاويري',
+            title: context.tr('settings_tile_orders'),
             onTap: () => widget.onNavigateTab?.call(3),
           ),
           if (FeatureFlags.sosEnabled)
@@ -221,7 +221,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           const SizedBox(height: 24),
           Center(
             child: Text(
-              'وصّلها — الإصدار ${_versionLabel ?? '...'}',
+              context.tr('settings_app_version_label').replaceAll('VERSION', _versionLabel ?? '...'),
               style: const TextStyle(fontSize: 11, color: AppColors.textFaint),
             ),
           ),

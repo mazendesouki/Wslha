@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/i18n.dart';
 import '../../core/theme.dart';
 
 /// Explicit "coming soon" screen for the features not built in this pass
@@ -26,9 +27,9 @@ class PlaceholderScreen extends StatelessWidget {
               style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
             ),
             const SizedBox(height: 8),
-            const Text(
-              'قريباً في المرحلة القادمة',
-              style: TextStyle(color: AppColors.textFaint),
+            Text(
+              context.tr('placeholder_coming_soon'),
+              style: const TextStyle(color: AppColors.textFaint),
             ),
           ],
         ),
