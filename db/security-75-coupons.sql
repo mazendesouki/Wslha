@@ -93,12 +93,12 @@ begin
     return query select false, v_c.id, 0::numeric, 'الحد الأدنى للطلب ' || v_c.min_amount || ' ج.م'; return;
   end if;
 
-  select count(*) into v_uses from public.coupon_redemptions where coupon_id = v_c.id;
+  select count(*) into v_uses from public.coupon_redemptions r where r.coupon_id = v_c.id;
   if v_c.usage_limit is not null and v_uses >= v_c.usage_limit then
     return query select false, v_c.id, 0::numeric, 'الكود خلص من الاستخدام'; return;
   end if;
 
-  select count(*) into v_user_uses from public.coupon_redemptions where coupon_id = v_c.id and phone = p_phone;
+  select count(*) into v_user_uses from public.coupon_redemptions r where r.coupon_id = v_c.id and r.phone = p_phone;
   if v_user_uses >= v_c.per_user_limit then
     return query select false, v_c.id, 0::numeric, 'استخدمت الكود ده قبل كده'; return;
   end if;
