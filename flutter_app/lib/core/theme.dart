@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 /// Brand palette lifted directly from the web app's public/global.css
 /// (--color-primary / --color-primary-dark / --color-primary-light /
@@ -29,20 +30,37 @@ class AppColors {
 const _modernSurfaceTint = Color(0xFFF7FAF9);
 const _modernBorder = Color(0xFFE5E7EB);
 
+// Dark-mode surfaces — a near-black teal tint (not flat grey) so the brand
+// color still reads as "the same app", just inverted, matching the
+// established pattern of keeping AppColors.primary constant across variants
+// rather than defining a whole second brand palette.
+const _darkScaffoldBg = Color(0xFF0E1513);
+const _darkSurface = Color(0xFF16211E);
+
 /// [modern] is a safe, screen-layout-untouched visual refresh (rounder
 /// corners, softer surface tint, bolder type) — trialled on the customer
 /// app only (see app.dart) before considering it for driver/merchant, so it
 /// stays an opt-in flag rather than replacing the existing theme outright.
-ThemeData buildAppTheme({bool modern = false}) {
+///
+/// [dark] drives Scaffold/AppBar/inputs/cards/dialogs/nav bars — every
+/// Material-theme-driven surface. It does NOT retint screens that paint
+/// their own hardcoded `Colors.white`/hex containers directly instead of
+/// reading Theme.of(context) (a lot of this app's custom cards do) — those
+/// stay light until each screen is individually converted in a follow-up
+/// pass. ThemeController below is what actually switches this on.
+ThemeData buildAppTheme({bool modern = false, bool dark = false}) {
   final base = ThemeData(
     useMaterial3: true,
+    brightness: dark ? Brightness.dark : Brightness.light,
     colorScheme: ColorScheme.fromSeed(
       seedColor: AppColors.primary,
+      brightness: dark ? Brightness.dark : Brightness.light,
       primary: AppColors.primary,
       secondary: AppColors.accent,
       error: AppColors.error,
+      surface: dark ? _darkSurface : Colors.white,
     ),
-    scaffoldBackgroundColor: modern ? _modernSurfaceTint : Colors.white,
+    scaffoldBackgroundColor: dark ? _darkScaffoldBg : (modern ? _modernSurfaceTint : Colors.white),
   );
 
   // Cairo matches the web app's Arabic display font (see global.css
@@ -66,16 +84,16 @@ ThemeData buildAppTheme({bool modern = false}) {
       // A colored app bar is the single most visible "this looks different"
       // cue on nearly every screen — the earlier off-white-vs-white tint
       // was too close to read as a real change at a glance.
-      backgroundColor: modern ? AppColors.primary : Colors.white,
-      foregroundColor: modern ? Colors.white : Colors.black,
+      backgroundColor: dark ? _darkSurface : (modern ? AppColors.primary : Colors.white),
+      foregroundColor: dark || modern ? Colors.white : Colors.black,
       elevation: 0,
       surfaceTintColor: Colors.transparent,
       titleTextStyle: textTheme.titleLarge?.copyWith(
         fontWeight: FontWeight.w900,
-        color: modern ? Colors.white : null,
+        color: dark || modern ? Colors.white : null,
       ),
-      iconTheme: IconThemeData(color: modern ? Colors.white : Colors.black),
-      actionsIconTheme: IconThemeData(color: modern ? Colors.white : Colors.black),
+      iconTheme: IconThemeData(color: dark || modern ? Colors.white : Colors.black),
+      actionsIconTheme: IconThemeData(color: dark || modern ? Colors.white : Colors.black),
     ),
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(
@@ -97,19 +115,19 @@ ThemeData buildAppTheme({bool modern = false}) {
             ),
           )
         : null,
-    cardTheme: modern
+    cardTheme: modern || dark
         ? CardThemeData(
             elevation: 0,
-            color: Colors.white,
+            color: dark ? _darkSurface : Colors.white,
             surfaceTintColor: Colors.transparent,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(cardRadius)),
+            shape: modern ? RoundedRectangleBorder(borderRadius: BorderRadius.circular(cardRadius)) : null,
             margin: EdgeInsets.zero,
           )
         : null,
     chipTheme: modern
         ? ChipThemeData(
-            backgroundColor: AppColors.primaryLight,
-            labelStyle: textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w800, color: AppColors.primaryDark),
+            backgroundColor: dark ? AppColors.primary.withValues(alpha: 0.25) : AppColors.primaryLight,
+            labelStyle: textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w800, color: dark ? Colors.white : AppColors.primaryDark),
             side: BorderSide.none,
             shape: const StadiumBorder(),
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -124,15 +142,15 @@ ThemeData buildAppTheme({bool modern = false}) {
     dialogTheme: modern ? DialogThemeData(shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20))) : null,
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
-      fillColor: modern ? _modernSurfaceTint : Colors.white,
+      fillColor: dark ? _darkSurface : (modern ? _modernSurfaceTint : Colors.white),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(fieldRadius),
-        borderSide: modern ? BorderSide.none : const BorderSide(color: _modernBorder, width: 1.5),
+        borderSide: modern || dark ? BorderSide.none : const BorderSide(color: _modernBorder, width: 1.5),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(fieldRadius),
-        borderSide: modern ? BorderSide.none : const BorderSide(color: _modernBorder, width: 1.5),
+        borderSide: modern || dark ? BorderSide.none : const BorderSide(color: _modernBorder, width: 1.5),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(fieldRadius),
@@ -149,7 +167,7 @@ ThemeData buildAppTheme({bool modern = false}) {
       floatingLabelStyle: modern ? const TextStyle(color: AppColors.primaryDark) : null,
     ),
     bottomNavigationBarTheme: BottomNavigationBarThemeData(
-      backgroundColor: Colors.white,
+      backgroundColor: dark ? _darkSurface : Colors.white,
       selectedItemColor: AppColors.primary,
       unselectedItemColor: AppColors.textFaint,
       type: BottomNavigationBarType.fixed,
@@ -161,19 +179,61 @@ ThemeData buildAppTheme({bool modern = false}) {
     // a much more recognizable "modern" cue than a themed classic bar.
     navigationBarTheme: modern
         ? NavigationBarThemeData(
-            backgroundColor: Colors.white,
+            backgroundColor: dark ? _darkSurface : Colors.white,
             elevation: 8,
-            indicatorColor: AppColors.primaryLight,
+            indicatorColor: dark ? AppColors.primary.withValues(alpha: 0.35) : AppColors.primaryLight,
             indicatorShape: const StadiumBorder(),
             labelTextStyle: WidgetStateProperty.resolveWith((states) {
               final selected = states.contains(WidgetState.selected);
               return TextStyle(
                 fontSize: 11,
                 fontWeight: selected ? FontWeight.w900 : FontWeight.w700,
-                color: selected ? AppColors.primaryDark : AppColors.textFaint,
+                color: selected ? (dark ? Colors.white : AppColors.primaryDark) : AppColors.textFaint,
               );
             }),
           )
         : null,
   );
+}
+
+/// Persists and broadcasts the user's dark-mode choice (light/dark/system)
+/// — a plain ValueNotifier<ThemeMode> app.dart's MaterialApp listens to via
+/// ValueListenableBuilder, same shared_preferences-backed pattern
+/// settings_screen.dart already uses for the notifications toggle. Whether
+/// the toggle even shows is separately gated by
+/// FeatureFlags.darkModeEnabled (admin-controlled); this class only tracks
+/// the user's own choice once it's available.
+class ThemeController {
+  ThemeController._();
+  static const _key = 'wslha_theme_mode';
+
+  static final ValueNotifier<ThemeMode> mode = ValueNotifier(ThemeMode.system);
+  static bool _loaded = false;
+
+  static Future<void> load() async {
+    if (_loaded) return;
+    _loaded = true;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final saved = prefs.getString(_key);
+      mode.value = switch (saved) {
+        'dark' => ThemeMode.dark,
+        'light' => ThemeMode.light,
+        _ => ThemeMode.system,
+      };
+    } catch (_) {
+      // Keep the ThemeMode.system default on any prefs failure.
+    }
+  }
+
+  static Future<void> set(ThemeMode value) async {
+    mode.value = value;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_key, value.name);
+    } catch (_) {
+      // The in-memory value is already updated — a failed persist just
+      // means the choice won't survive a cold restart, not a crash.
+    }
+  }
 }

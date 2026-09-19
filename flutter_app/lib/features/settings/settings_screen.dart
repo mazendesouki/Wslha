@@ -161,6 +161,26 @@ class _SettingsScreenState extends State<SettingsScreen> {
             activeThumbColor: AppColors.primary,
             onChanged: _toggleNotif,
           ),
+          if (FeatureFlags.darkModeEnabled)
+            ValueListenableBuilder<ThemeMode>(
+              valueListenable: ThemeController.mode,
+              builder: (context, mode, _) => ListTile(
+                leading: const Text('🌙', style: TextStyle(fontSize: 20)),
+                title: const Text('الوضع الليلي'),
+                trailing: DropdownButton<ThemeMode>(
+                  value: mode,
+                  underline: const SizedBox.shrink(),
+                  items: const [
+                    DropdownMenuItem(value: ThemeMode.system, child: Text('تلقائي')),
+                    DropdownMenuItem(value: ThemeMode.light, child: Text('فاتح')),
+                    DropdownMenuItem(value: ThemeMode.dark, child: Text('داكن')),
+                  ],
+                  onChanged: (v) {
+                    if (v != null) ThemeController.set(v);
+                  },
+                ),
+              ),
+            ),
           _SettingsTile(
             icon: '🗂️',
             title: 'سجل الإشعارات',

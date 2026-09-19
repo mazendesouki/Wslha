@@ -34,6 +34,7 @@ Future<void> runWslhaApp(FlavorConfig config) async {
   // defaults rather than blocking startup on a network call.
   unawaited(PricingSettings.load());
   unawaited(FeatureFlags.load());
+  await ThemeController.load();
   runApp(WslhaApp(config: config));
 }
 
@@ -43,12 +44,17 @@ class WslhaApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    final modern = config.flavor == AppFlavor.customer;
+    return ValueListenableBuilder<ThemeMode>(
+      valueListenable: ThemeController.mode,
+      builder: (context, mode, _) => MaterialApp(
       title: config.appTitle,
       debugShowCheckedModeBanner: false,
       // "modern" is trialled on the customer app only for now — see
       // core/theme.dart's buildAppTheme() doc comment.
-      theme: buildAppTheme(modern: config.flavor == AppFlavor.customer),
+      theme: buildAppTheme(modern: modern),
+      darkTheme: buildAppTheme(modern: modern, dark: true),
+      themeMode: mode,
       locale: const Locale('ar'),
       // DefaultMaterialLocalizations/DefaultWidgetsLocalizations only ever
       // support English — that's the "no real localization" fallback, not
@@ -68,6 +74,7 @@ class WslhaApp extends StatelessWidget {
       routes: {
         '/home': (_) => _SessionGate(config: config),
       },
+      ),
     );
   }
 }
