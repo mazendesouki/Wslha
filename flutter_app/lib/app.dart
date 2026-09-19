@@ -83,14 +83,15 @@ class _SessionGate extends StatelessWidget {
   final FlavorConfig config;
   const _SessionGate({required this.config});
 
-  /// The splash's own entrance animation is ~900ms — waiting on this
-  /// alongside the real session fetch keeps a fast load from cutting it
-  /// off mid-animation, without adding a fixed delay when the session
-  /// fetch is the slower of the two.
+  /// Keeps the splash on screen long enough to actually read the tagline
+  /// (its own entrance animation is ~1100ms, but that just finishes the
+  /// fade-in — it doesn't mean 1100ms is enough time to look at it). Waiting
+  /// on this alongside the real session fetch means a slow session fetch
+  /// still isn't cut short by this floor, only a fast one gets held here.
   static Future<UserSession?> _loadWithMinimumSplash() async {
     final results = await Future.wait([
       SessionStore.load(),
-      Future.delayed(const Duration(milliseconds: 1100)),
+      Future.delayed(const Duration(milliseconds: 2600)),
     ]);
     return results[0] as UserSession?;
   }
