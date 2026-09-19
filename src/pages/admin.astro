@@ -310,6 +310,10 @@
       <span class="nav-item__icon">✉️</span> الرسائل
       <span class="nav-item__badge hidden" id="badge-messages">0</span>
     </button>
+    <button class="nav-item" data-section="support">
+      <span class="nav-item__icon">🎧</span> الدعم الفني
+      <span class="nav-item__badge hidden" id="badge-support">0</span>
+    </button>
     <div class="nav-divider"></div>
     <button class="nav-item" data-section="corporate">
       <span class="nav-item__icon">🏢</span> عقود الشركات
@@ -824,6 +828,37 @@
       </div>
     </div>
 
+    <!-- ═══════════════════ SUPPORT CHAT ════════════════════ -->
+    <div class="section" id="sec-support">
+      <div class="card">
+        <div class="card__head" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.5rem">
+          <span class="card__title">🎧 شات الدعم الفني</span>
+          <button class="btn btn--ghost btn--sm" onclick="loadSupportChats()">🔄 تحديث</button>
+        </div>
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr><th>الجوال</th><th>آخر رسالة</th><th>الحالة</th><th>آخر تحديث</th><th>إجراء</th></tr></thead>
+            <tbody id="support-tbody"><tr><td colspan="5" style="text-align:center;color:#94A3B8;padding:2rem">جاري التحميل…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Conversation thread modal -->
+      <div id="support-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:1000;align-items:center;justify-content:center;padding:1rem">
+        <div style="background:#1E293B;border-radius:12px;padding:1.5rem;max-width:560px;width:100%;border:1px solid #334155;max-height:85vh;display:flex;flex-direction:column">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+            <h3 style="font-size:1rem;font-weight:800;color:#f1f5f9" id="support-modal-phone">—</h3>
+            <button onclick="closeSupportModal()" style="background:none;border:none;color:#94A3B8;font-size:1.2rem;cursor:pointer">✕</button>
+          </div>
+          <div id="support-thread" style="flex:1;overflow-y:auto;background:#0F172A;border-radius:8px;padding:.75rem;margin-bottom:1rem;min-height:200px;display:flex;flex-direction:column;gap:.5rem"></div>
+          <div style="display:flex;gap:.5rem">
+            <input class="search-input" id="support-reply-input" type="text" placeholder="اكتب ردك هنا..." style="flex:1" onkeydown="if(event.key==='Enter')sendSupportReply()"/>
+            <button class="btn btn--primary" onclick="sendSupportReply()" id="support-reply-btn">إرسال</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- ═══════════════════ CORPORATE CONTRACTS ═════════════ -->
     <div class="section" id="sec-corporate">
       <div class="filters-bar">
@@ -1144,6 +1179,9 @@
               </label>
               <label style="display:flex;align-items:center;gap:.5rem;font-size:.8rem;font-weight:700;background:#F1F5F9;border-radius:8px;padding:.6rem .75rem">
                 <input type="checkbox" id="feature-ride-share-enabled"/> 📡 مشاركة الرحلة مع العائلة
+              </label>
+              <label style="display:flex;align-items:center;gap:.5rem;font-size:.8rem;font-weight:700;background:#F1F5F9;border-radius:8px;padding:.6rem .75rem">
+                <input type="checkbox" id="feature-support-chat-enabled"/> 🎧 شات مباشر مع الدعم الفني
               </label>
             </div>
             <button class="btn btn--primary" onclick="saveFeatureFlags()" id="save-flags-btn" style="margin-top:1rem">💾 حفظ التحكم في الميزات</button>
@@ -1617,7 +1655,7 @@ const sectionTitles = {
   dash:'لوحة التحكم', users:'إدارة المستخدمين', drivers:'إدارة السائقين',
   merchants:'إدارة التجار', orders:'إدارة الطلبات', rides:'إدارة الرحلات',
   stores:'إدارة المتاجر', courier:'الطرود والمستندات', 'merchant-delivery':'توصيل التجار', 'general-delivery':'خدمة دليفري', marketplace:'سوق المستعمل',
-  corporate:'عقود الشركات',
+  corporate:'عقود الشركات', support:'الدعم الفني',
   finance:'التقارير المالية', wallets:'إدارة المحافظ', settings:'الإعدادات'
 };
 let currentSection = 'dash';
@@ -1634,7 +1672,7 @@ function loadMerchantsSection() {
 const loaders = { dash:loadDash, users:loadUsers, drivers:loadDriversSection,
   merchants:loadMerchantsSection, orders:loadOrders, rides:loadRides, stores:loadStores,
   courier:loadCourierOrders, 'merchant-delivery':loadMerchantDeliveries, 'general-delivery':loadGeneralDeliveries, marketplace:loadMarketplaceSection, corporate:loadCorporateContracts,
-  messages:loadMessages, finance:loadFinance, wallets:loadWalletsSection, settings:loadSettingsSection };
+  messages:loadMessages, support:loadSupportChats, finance:loadFinance, wallets:loadWalletsSection, settings:loadSettingsSection };
 
 document.querySelectorAll('.nav-item').forEach(btn => {
   btn.addEventListener('click', () => {
@@ -3326,6 +3364,100 @@ if (msgModalEl) msgModalEl.addEventListener('click', (e) => {
   if (e.target === msgModalEl) msgModalEl.style.display = 'none';
 });
 
+/* ═══════════════════ SUPPORT CHAT ═══════════════════════════ */
+// support_conversations/support_messages carry no direct SELECT grant
+// (db/security-73 — same reasoning as accounts/wallets: support chats can
+// hold personal complaints across every user, so a blanket RLS would leak
+// everyone's conversation to anyone with the anon key). Every read/write
+// here goes through the password-verified admin_* RPCs, same pattern as
+// adminListAccounts/admin_list_wallets.
+let allSupportConvs = [];
+let currentSupportConv = null;
+let _supportPollTimer = null;
+
+async function loadSupportChats() {
+  const pass = getAdminPass();
+  if (!pass) return;
+  const rows = await sbRpcRows('admin_list_support_conversations', { p_admin_phone: ADMIN.phone, p_admin_password: pass });
+  if (rows === null) { clearAdminPass(); return; }
+  allSupportConvs = rows;
+  const tbody = document.getElementById('support-tbody');
+  if (!tbody) return;
+  if (!rows.length) { tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#94A3B8;padding:2rem">لا توجد محادثات دعم بعد</td></tr>'; return; }
+
+  const totalUnread = rows.reduce((s, r) => s + Number(r.unread_count || 0), 0);
+  const badge = document.getElementById('badge-support');
+  if (badge) {
+    if (totalUnread > 0) { badge.textContent = String(totalUnread); badge.classList.remove('hidden'); }
+    else badge.classList.add('hidden');
+  }
+
+  tbody.innerHTML = rows.map(c => `
+    <tr style="${Number(c.unread_count) > 0 ? 'background:rgba(245,158,11,.07)' : ''}">
+      <td style="font-weight:700" dir="ltr">${escapeHtml(c.user_phone)}</td>
+      <td style="max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(c.last_message) || '—'}</td>
+      <td>${Number(c.unread_count) > 0 ? `<span style="padding:2px 8px;border-radius:99px;font-size:.75rem;font-weight:700;background:#F59E0B22;color:#F59E0B">${c.unread_count} جديد</span>` : '<span style="color:#64748B;font-size:.78rem">—</span>'}</td>
+      <td style="font-size:.78rem;color:#64748B">${new Date(c.updated_at).toLocaleString('ar-EG')}</td>
+      <td><button onclick="openSupportConv('${c.conversation_id}')" style="padding:.3rem .7rem;background:#0E4B49;color:#fff;border:none;border-radius:5px;font-size:.78rem;cursor:pointer">فتح المحادثة</button></td>
+    </tr>`).join('');
+}
+
+async function openSupportConv(id) {
+  const c = allSupportConvs.find(x => x.conversation_id === id);
+  if (!c) return;
+  currentSupportConv = c;
+  document.getElementById('support-modal-phone').textContent = c.user_phone;
+  document.getElementById('support-modal').style.display = 'flex';
+  await refreshSupportThread();
+  clearInterval(_supportPollTimer);
+  _supportPollTimer = setInterval(refreshSupportThread, 5000);
+}
+
+function closeSupportModal() {
+  document.getElementById('support-modal').style.display = 'none';
+  clearInterval(_supportPollTimer);
+  currentSupportConv = null;
+  loadSupportChats();
+}
+
+async function refreshSupportThread() {
+  if (!currentSupportConv) return;
+  const pass = getAdminPass();
+  if (!pass) return;
+  const rows = await sbRpcRows('admin_get_support_messages', {
+    p_admin_phone: ADMIN.phone, p_admin_password: pass, p_conversation_id: currentSupportConv.conversation_id,
+  });
+  if (rows === null) return;
+  const thread = document.getElementById('support-thread');
+  if (!thread) return;
+  thread.innerHTML = rows.map(m => `
+    <div style="align-self:${m.sender_role === 'support' ? 'flex-end' : 'flex-start'};max-width:80%">
+      <div style="background:${m.sender_role === 'support' ? '#0E4B49' : '#334155'};color:#f1f5f9;padding:.5rem .75rem;border-radius:10px;font-size:.85rem;line-height:1.6">${escapeHtml(m.body)}</div>
+      <div style="font-size:.68rem;color:#64748B;margin-top:2px;${m.sender_role === 'support' ? 'text-align:left' : ''}">${new Date(m.created_at).toLocaleTimeString('ar-EG')}</div>
+    </div>`).join('') || '<div style="color:#64748B;font-size:.82rem;text-align:center">لسه مفيش رسائل</div>';
+  thread.scrollTop = thread.scrollHeight;
+}
+
+async function sendSupportReply() {
+  if (!currentSupportConv) return;
+  const input = document.getElementById('support-reply-input');
+  const body = (input.value || '').trim();
+  if (!body) return;
+  const pass = getAdminPass();
+  if (!pass) return;
+  const btn = document.getElementById('support-reply-btn');
+  btn.disabled = true;
+  const ok = await sbRpc('admin_send_support_reply', {
+    p_admin_phone: ADMIN.phone, p_admin_password: pass, p_conversation_id: currentSupportConv.conversation_id, p_body: body,
+  });
+  btn.disabled = false;
+  if (ok) { input.value = ''; await refreshSupportThread(); }
+  else { clearAdminPass(); showToast('❌ فشل الإرسال — تحقق من كلمة مرور المشرف', '#DC2626'); }
+}
+
+const supportModalEl = document.getElementById('support-modal');
+if (supportModalEl) supportModalEl.addEventListener('click', (e) => { if (e.target === supportModalEl) closeSupportModal(); });
+
 /* ═══════════════════ FINANCE ═══════════════════════════════ */
 async function loadFinance() {
   const [orders, rides, commissions] = await Promise.all([
@@ -3517,6 +3649,7 @@ const FEATURE_FLAG_MAP = {
   feature_multistop_enabled: 'feature-multistop-enabled',
   feature_daily_goal_enabled: 'feature-daily-goal-enabled',
   feature_ride_share_enabled: 'feature-ride-share-enabled',
+  feature_support_chat_enabled: 'feature-support-chat-enabled',
 };
 
 async function loadFeatureFlags() {

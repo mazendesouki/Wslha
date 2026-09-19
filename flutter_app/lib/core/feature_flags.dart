@@ -16,6 +16,7 @@ class FeatureFlags {
   static bool multistopEnabled = true;
   static bool dailyGoalEnabled = true;
   static bool rideShareEnabled = true;
+  static bool supportChatEnabled = true;
 
   static bool _loaded = false;
 
@@ -35,6 +36,7 @@ class FeatureFlags {
         'feature_multistop_enabled',
         'feature_daily_goal_enabled',
         'feature_ride_share_enabled',
+        'feature_support_chat_enabled',
       ]);
 
       bool? flag(String key) {
@@ -51,6 +53,7 @@ class FeatureFlags {
       multistopEnabled = flag('feature_multistop_enabled') ?? multistopEnabled;
       dailyGoalEnabled = flag('feature_daily_goal_enabled') ?? dailyGoalEnabled;
       rideShareEnabled = flag('feature_ride_share_enabled') ?? rideShareEnabled;
+      supportChatEnabled = flag('feature_support_chat_enabled') ?? supportChatEnabled;
       _loaded = true;
     } catch (_) {
       // Network hiccup — keep whatever was already loaded (defaults true).

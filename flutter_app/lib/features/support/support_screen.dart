@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/contact_launcher.dart';
+import '../../core/feature_flags.dart';
+import '../../core/session.dart';
 import '../../core/theme.dart';
+import 'support_chat_screen.dart';
 
 // Same numbers/address contact.astro shows on the website — reusing them
 // here instead of inventing separate app-only contact info.
@@ -21,6 +24,12 @@ const List<(String, String)> _faq = [
 class SupportScreen extends StatelessWidget {
   const SupportScreen({super.key});
 
+  Future<void> _openChat(BuildContext context) async {
+    final session = await SessionStore.load();
+    if (session == null || !context.mounted) return;
+    Navigator.of(context).push(MaterialPageRoute(builder: (_) => SupportChatScreen(myPhone: session.phone)));
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -29,6 +38,13 @@ class SupportScreen extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: 12),
         children: [
           const _SectionHeader('تواصل معنا'),
+          if (FeatureFlags.supportChatEnabled)
+            _ContactTile(
+              icon: '🎧',
+              title: 'شات مباشر مع الدعم الفني',
+              subtitle: 'رد سريع من فريقنا داخل التطبيق',
+              onTap: () => _openChat(context),
+            ),
           _ContactTile(
             icon: '📞',
             title: 'اتصل بنا',
