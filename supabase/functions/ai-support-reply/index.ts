@@ -96,6 +96,26 @@ Deno.serve(async (req) => {
     });
     await admin.from('support_conversations').update({ updated_at: new Date().toISOString() }).eq('id', conversation_id);
 
+    // Best-effort — the customer is usually already looking at the chat
+    // screen when the bot answers (it fires right after they send a
+    // message), but push still matters if they've since backgrounded the
+    // app while waiting. Mirrors admin_send_support_reply's push exactly.
+    await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/send-push`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-push-secret': Deno.env.get('PUSH_TRIGGER_SECRET') ?? '',
+        apikey: 'sb_publishable_PLSnpvCT-sAyUMtymNgTwA_QmL2suw4',
+      },
+      body: JSON.stringify({
+        phone,
+        title: '🤖 رد المساعد الآلي',
+        body: reply,
+        url: '/support',
+        tag: `wslha-support-reply-${conversation_id}`,
+      }),
+    }).catch(() => {});
+
     return json({ ok: true, reply });
   } catch (e) {
     console.error(e);

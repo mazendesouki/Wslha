@@ -3525,6 +3525,13 @@ let _supportPollTimer = null;
 async function loadSupportChats() {
   const pass = getAdminPass();
   if (!pass) return;
+  // Part of a click handler chain (nav-item click → loadSupportChats), so
+  // browsers treat this as a genuine user gesture and won't silently block
+  // the permission prompt the way they do for a request fired from a
+  // background timer on page load.
+  if (typeof Notification !== 'undefined' && Notification.permission === 'default') {
+    Notification.requestPermission().catch(() => {});
+  }
   const rows = await sbRpcRows('admin_list_support_conversations', { p_admin_phone: ADMIN.phone, p_admin_password: pass });
   if (rows === null) { clearAdminPass(); return; }
   allSupportConvs = rows;
@@ -4672,6 +4679,27 @@ setInterval(() => {
   if (currentSection === 'rides')  loadRides();
   if (currentSection === 'orders') loadOrders();
 }, 1000);
+
+/* ── تنبيه لوحة التحكم برسائل الدعم الفني الجديدة (يشتغل حتى لو
+   المشرف مش واقف في تبويب "الدعم الفني" نفسه، طول ما دخل باسورد
+   مرة واحدة في الجلسة دي بالفعل — مفيش prompt من الخلفية) ────── */
+let _lastSupportUnread = 0;
+async function pollSupportUnread() {
+  if (!_adminPass || document.hidden) return;
+  const rows = await sbRpcRows('admin_list_support_conversations', { p_admin_phone: ADMIN.phone, p_admin_password: _adminPass });
+  if (rows === null) return;
+  const total = rows.reduce((s, r) => s + Number(r.unread_count || 0), 0);
+  const badge = document.getElementById('badge-support');
+  if (badge) {
+    if (total > 0) { badge.textContent = String(total); badge.classList.remove('hidden'); }
+    else badge.classList.add('hidden');
+  }
+  if (total > _lastSupportUnread && typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+    new Notification('🎧 رسالة دعم فني جديدة', { body: `عندك ${total} محادثة فيها رد لسه معلّق`, tag: 'wslha-support-admin' });
+  }
+  _lastSupportUnread = total;
+}
+setInterval(pollSupportUnread, 25000);
 
 /* ── Init ───────────────────────────────────────────────────── */
 loadDash();
