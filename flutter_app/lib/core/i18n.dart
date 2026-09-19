@@ -47,10 +47,11 @@ class LocaleController {
 const Map<String, Map<String, String>> _strings = {
   // Bottom navigation / shells
   'nav_home': {'ar': 'الرئيسية', 'en': 'Home'},
-  'nav_orders': {'ar': 'طلباتي', 'en': 'Orders'},
+  'nav_orders': {'ar': 'الطلبات', 'en': 'Orders'},
   'nav_wallet': {'ar': 'المحفظة', 'en': 'Wallet'},
   'nav_settings': {'ar': 'الإعدادات', 'en': 'Settings'},
   'nav_account': {'ar': 'حسابي', 'en': 'Account'},
+  'nav_rides': {'ar': 'رحلات', 'en': 'Rides'},
 
   // Settings screen
   'settings_title': {'ar': 'الإعدادات', 'en': 'Settings'},

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/flavor.dart';
+import '../../core/i18n.dart';
 import '../../core/session.dart';
 import '../../core/theme.dart';
 import '../../core/update_checker.dart';
@@ -115,15 +116,15 @@ class _DriverHomeShellState extends State<DriverHomeShell> {
         onTap: _goToTab,
         type: BottomNavigationBarType.fixed,
         items: [
-          const BottomNavigationBarItem(icon: Text('🚗', style: TextStyle(fontSize: 20)), label: 'الرئيسية'),
-          const BottomNavigationBarItem(icon: Text('💳', style: TextStyle(fontSize: 20)), label: 'المحفظة'),
-          const BottomNavigationBarItem(icon: Text('👤', style: TextStyle(fontSize: 20)), label: 'حسابي'),
-          const BottomNavigationBarItem(icon: Text('📦', style: TextStyle(fontSize: 20)), label: 'الطلبات'),
+          BottomNavigationBarItem(icon: const Text('🚗', style: TextStyle(fontSize: 20)), label: context.tr('nav_home')),
+          BottomNavigationBarItem(icon: const Text('💳', style: TextStyle(fontSize: 20)), label: context.tr('nav_wallet')),
+          BottomNavigationBarItem(icon: const Text('👤', style: TextStyle(fontSize: 20)), label: context.tr('nav_account')),
+          BottomNavigationBarItem(icon: const Text('📦', style: TextStyle(fontSize: 20)), label: context.tr('nav_orders')),
           BottomNavigationBarItem(
             icon: _updateAvailable
                 ? const Badge(smallSize: 8, child: Text('⚙️', style: TextStyle(fontSize: 20)))
                 : const Text('⚙️', style: TextStyle(fontSize: 20)),
-            label: 'الإعدادات',
+            label: context.tr('nav_settings'),
           ),
         ],
       ),

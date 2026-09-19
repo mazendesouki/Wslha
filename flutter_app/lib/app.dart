@@ -93,10 +93,15 @@ class WslhaApp extends StatelessWidget {
   }
 }
 
-class _SessionGate extends StatelessWidget {
+class _SessionGate extends StatefulWidget {
   final FlavorConfig config;
   const _SessionGate({required this.config});
 
+  @override
+  State<_SessionGate> createState() => _SessionGateState();
+}
+
+class _SessionGateState extends State<_SessionGate> {
   /// Keeps the splash on screen long enough to actually read the tagline
   /// (its own entrance animation is ~1100ms, but that just finishes the
   /// fade-in — it doesn't mean 1100ms is enough time to look at it). Waiting
@@ -110,10 +115,20 @@ class _SessionGate extends StatelessWidget {
     return results[0] as UserSession?;
   }
 
+  // Computed once per State instance (not per build) — WslhaApp's build()
+  // recreates this widget on every theme/locale change (both are plain
+  // ValueListenableBuilders wrapping the whole MaterialApp), and a plain
+  // `future: _loadWithMinimumSplash()` call inside build() would hand
+  // FutureBuilder a brand new Future object each time, resetting it to
+  // "loading" and flashing the splash screen back up just from toggling
+  // dark mode or language in settings.
+  late final Future<UserSession?> _sessionFuture = _loadWithMinimumSplash();
+
   @override
   Widget build(BuildContext context) {
+    final config = widget.config;
     return FutureBuilder<UserSession?>(
-      future: _loadWithMinimumSplash(),
+      future: _sessionFuture,
       builder: (context, snapshot) {
         if (snapshot.connectionState != ConnectionState.done) {
           return AnimatedSplash(appTitle: config.appTitle, serviceIcon: config.splashIcon);

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/flavor.dart';
+import '../../core/i18n.dart';
 import '../../core/session.dart';
 import '../../core/update_checker.dart';
 import '../account/account_screen.dart';
@@ -61,16 +62,16 @@ class _HomeShellState extends State<HomeShell> {
         selectedIndex: _index,
         onDestinationSelected: _goToTab,
         destinations: [
-          const NavigationDestination(icon: Text('🏠', style: TextStyle(fontSize: 20)), label: 'الرئيسية'),
-          const NavigationDestination(icon: Text('💳', style: TextStyle(fontSize: 20)), label: 'المحفظة'),
-          const NavigationDestination(icon: Text('👤', style: TextStyle(fontSize: 20)), label: 'حسابي'),
-          const NavigationDestination(icon: Text('📦', style: TextStyle(fontSize: 20)), label: 'الطلبات'),
-          const NavigationDestination(icon: Text('🚖', style: TextStyle(fontSize: 20)), label: 'رحلات'),
+          NavigationDestination(icon: const Text('🏠', style: TextStyle(fontSize: 20)), label: context.tr('nav_home')),
+          NavigationDestination(icon: const Text('💳', style: TextStyle(fontSize: 20)), label: context.tr('nav_wallet')),
+          NavigationDestination(icon: const Text('👤', style: TextStyle(fontSize: 20)), label: context.tr('nav_account')),
+          NavigationDestination(icon: const Text('📦', style: TextStyle(fontSize: 20)), label: context.tr('nav_orders')),
+          NavigationDestination(icon: const Text('🚖', style: TextStyle(fontSize: 20)), label: context.tr('nav_rides')),
           NavigationDestination(
             icon: _updateAvailable
                 ? const Badge(smallSize: 8, child: Text('⚙️', style: TextStyle(fontSize: 20)))
                 : const Text('⚙️', style: TextStyle(fontSize: 20)),
-            label: 'الإعدادات',
+            label: context.tr('nav_settings'),
           ),
         ],
       ),
