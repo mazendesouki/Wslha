@@ -38,11 +38,18 @@ class SupportScreen extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: 12),
         children: [
           const _SectionHeader('تواصل معنا'),
+          if (FeatureFlags.supportChatEnabled && FeatureFlags.aiBotEnabled)
+            _ContactTile(
+              icon: '🤖',
+              title: 'اسأل المساعد الآلي',
+              subtitle: 'رد فوري بالذكاء الاصطناعي، ٢٤ ساعة',
+              onTap: () => _openChat(context),
+            ),
           if (FeatureFlags.supportChatEnabled)
             _ContactTile(
               icon: '🎧',
               title: 'شات مباشر مع الدعم الفني',
-              subtitle: 'رد سريع من فريقنا داخل التطبيق',
+              subtitle: 'تواصل مع فريقنا داخل التطبيق',
               onTap: () => _openChat(context),
             ),
           _ContactTile(
