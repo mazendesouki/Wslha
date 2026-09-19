@@ -314,6 +314,9 @@
       <span class="nav-item__icon">🎧</span> الدعم الفني
       <span class="nav-item__badge hidden" id="badge-support">0</span>
     </button>
+    <button class="nav-item" data-section="coupons">
+      <span class="nav-item__icon">🎟️</span> الكوبونات
+    </button>
     <div class="nav-divider"></div>
     <button class="nav-item" data-section="corporate">
       <span class="nav-item__icon">🏢</span> عقود الشركات
@@ -859,6 +862,74 @@
       </div>
     </div>
 
+    <!-- ═══════════════════ COUPONS ═════════════════════════ -->
+    <div class="section" id="sec-coupons">
+      <div class="card">
+        <div class="card__head"><span class="card__title">🎟️ إنشاء كود خصم جديد</span></div>
+        <div class="card__body">
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:.75rem">
+            <div>
+              <label style="font-size:.75rem;color:#64748B;display:block;margin-bottom:.3rem">الكود</label>
+              <input class="search-input" id="cpn-code" type="text" placeholder="WELCOME10" style="text-transform:uppercase" dir="ltr"/>
+            </div>
+            <div>
+              <label style="font-size:.75rem;color:#64748B;display:block;margin-bottom:.3rem">نوع الخصم</label>
+              <select class="filter-select" id="cpn-type" style="width:100%">
+                <option value="percent">نسبة %</option>
+                <option value="fixed">مبلغ ثابت (ج.م)</option>
+              </select>
+            </div>
+            <div>
+              <label style="font-size:.75rem;color:#64748B;display:block;margin-bottom:.3rem">قيمة الخصم</label>
+              <input class="search-input" id="cpn-value" type="number" min="0" step="1"/>
+            </div>
+            <div>
+              <label style="font-size:.75rem;color:#64748B;display:block;margin-bottom:.3rem">سقف الخصم (للنسبة فقط، اختياري)</label>
+              <input class="search-input" id="cpn-max" type="number" min="0" step="1"/>
+            </div>
+            <div>
+              <label style="font-size:.75rem;color:#64748B;display:block;margin-bottom:.3rem">أقل قيمة طلب/رحلة</label>
+              <input class="search-input" id="cpn-min" type="number" min="0" step="1" value="0"/>
+            </div>
+            <div>
+              <label style="font-size:.75rem;color:#64748B;display:block;margin-bottom:.3rem">الخدمة</label>
+              <select class="filter-select" id="cpn-applies" style="width:100%">
+                <option value="all">كل الخدمات</option>
+                <option value="ride">مشاوير بس</option>
+                <option value="delivery">توصيل بس</option>
+              </select>
+            </div>
+            <div>
+              <label style="font-size:.75rem;color:#64748B;display:block;margin-bottom:.3rem">أقصى عدد استخدام كلي (اختياري)</label>
+              <input class="search-input" id="cpn-usage-limit" type="number" min="1" step="1"/>
+            </div>
+            <div>
+              <label style="font-size:.75rem;color:#64748B;display:block;margin-bottom:.3rem">مرات الاستخدام للمستخدم الواحد</label>
+              <input class="search-input" id="cpn-per-user" type="number" min="1" step="1" value="1"/>
+            </div>
+            <div>
+              <label style="font-size:.75rem;color:#64748B;display:block;margin-bottom:.3rem">تاريخ الانتهاء (اختياري)</label>
+              <input class="search-input" id="cpn-expires" type="date"/>
+            </div>
+          </div>
+          <button class="btn btn--primary" onclick="createCoupon()" id="cpn-create-btn" style="margin-top:1rem">➕ إنشاء الكود</button>
+          <div id="cpn-msg" style="display:none;font-size:.82rem;font-weight:700;padding:.5rem .75rem;border-radius:6px;margin-top:.5rem"></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card__head" style="display:flex;align-items:center;justify-content:space-between">
+          <span class="card__title">📋 كل الأكواد</span>
+          <button class="btn btn--ghost btn--sm" onclick="loadCoupons()">🔄 تحديث</button>
+        </div>
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr><th>الكود</th><th>الخصم</th><th>الخدمة</th><th>الاستخدام</th><th>الانتهاء</th><th>الحالة</th><th>إجراء</th></tr></thead>
+            <tbody id="coupons-tbody"><tr><td colspan="7" style="text-align:center;color:#94A3B8;padding:2rem">جاري التحميل…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
     <!-- ═══════════════════ CORPORATE CONTRACTS ═════════════ -->
     <div class="section" id="sec-corporate">
       <div class="filters-bar">
@@ -1185,6 +1256,9 @@
               </label>
               <label style="display:flex;align-items:center;gap:.5rem;font-size:.8rem;font-weight:700;background:#F1F5F9;border-radius:8px;padding:.6rem .75rem">
                 <input type="checkbox" id="feature-ai-bot-enabled"/> 🤖 الرد الآلي بالذكاء الاصطناعي
+              </label>
+              <label style="display:flex;align-items:center;gap:.5rem;font-size:.8rem;font-weight:700;background:#F1F5F9;border-radius:8px;padding:.6rem .75rem">
+                <input type="checkbox" id="feature-coupons-enabled"/> 🎟️ أكواد الخصم
               </label>
             </div>
             <button class="btn btn--primary" onclick="saveFeatureFlags()" id="save-flags-btn" style="margin-top:1rem">💾 حفظ التحكم في الميزات</button>
@@ -1658,7 +1732,7 @@ const sectionTitles = {
   dash:'لوحة التحكم', users:'إدارة المستخدمين', drivers:'إدارة السائقين',
   merchants:'إدارة التجار', orders:'إدارة الطلبات', rides:'إدارة الرحلات',
   stores:'إدارة المتاجر', courier:'الطرود والمستندات', 'merchant-delivery':'توصيل التجار', 'general-delivery':'خدمة دليفري', marketplace:'سوق المستعمل',
-  corporate:'عقود الشركات', support:'الدعم الفني',
+  corporate:'عقود الشركات', support:'الدعم الفني', coupons:'الكوبونات',
   finance:'التقارير المالية', wallets:'إدارة المحافظ', settings:'الإعدادات'
 };
 let currentSection = 'dash';
@@ -1675,7 +1749,7 @@ function loadMerchantsSection() {
 const loaders = { dash:loadDash, users:loadUsers, drivers:loadDriversSection,
   merchants:loadMerchantsSection, orders:loadOrders, rides:loadRides, stores:loadStores,
   courier:loadCourierOrders, 'merchant-delivery':loadMerchantDeliveries, 'general-delivery':loadGeneralDeliveries, marketplace:loadMarketplaceSection, corporate:loadCorporateContracts,
-  messages:loadMessages, support:loadSupportChats, finance:loadFinance, wallets:loadWalletsSection, settings:loadSettingsSection };
+  messages:loadMessages, support:loadSupportChats, coupons:loadCoupons, finance:loadFinance, wallets:loadWalletsSection, settings:loadSettingsSection };
 
 document.querySelectorAll('.nav-item').forEach(btn => {
   btn.addEventListener('click', () => {
@@ -3464,6 +3538,84 @@ async function sendSupportReply() {
 const supportModalEl = document.getElementById('support-modal');
 if (supportModalEl) supportModalEl.addEventListener('click', (e) => { if (e.target === supportModalEl) closeSupportModal(); });
 
+/* ═══════════════════ COUPONS ═════════════════════════════════ */
+// coupons/coupon_redemptions carry no direct grants either (db/security-75)
+// — same reasoning as everywhere else with PII/business-sensitive rows:
+// every read/write here goes through the password-verified admin_* RPCs.
+let allCoupons = [];
+
+async function loadCoupons() {
+  const pass = getAdminPass();
+  if (!pass) return;
+  const rows = await sbRpcRows('admin_list_coupons', { p_admin_phone: ADMIN.phone, p_admin_password: pass });
+  if (rows === null) { clearAdminPass(); return; }
+  allCoupons = rows;
+  const tbody = document.getElementById('coupons-tbody');
+  if (!tbody) return;
+  if (!rows.length) { tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#94A3B8;padding:2rem">لسه مفيش أكواد خصم</td></tr>'; return; }
+
+  const svcLabel = { ride: 'مشاوير', delivery: 'توصيل', all: 'الكل' };
+  tbody.innerHTML = rows.map(c => `
+    <tr>
+      <td style="font-weight:800" dir="ltr">${escapeHtml(c.code)}</td>
+      <td>${c.discount_type === 'percent' ? c.discount_value + '%' + (c.max_discount ? ' (حد أقصى ' + c.max_discount + ' ج.م)' : '') : c.discount_value + ' ج.م'}</td>
+      <td>${svcLabel[c.applies_to] || c.applies_to}</td>
+      <td style="font-size:.78rem;color:#64748B">${c.times_used}${c.usage_limit ? ' / ' + c.usage_limit : ''} استخدام</td>
+      <td style="font-size:.78rem;color:#64748B">${c.expires_at ? new Date(c.expires_at).toLocaleDateString('ar-EG') : 'بلا انتهاء'}</td>
+      <td>${c.active ? '<span style="padding:2px 8px;border-radius:99px;font-size:.75rem;font-weight:700;background:#16A34A22;color:#16A34A">شغال</span>' : '<span style="padding:2px 8px;border-radius:99px;font-size:.75rem;font-weight:700;background:#DC262622;color:#DC2626">متوقف</span>'}</td>
+      <td><button onclick="toggleCoupon('${c.id}', ${!c.active})" style="padding:.3rem .7rem;background:${c.active ? '#DC2626' : '#16A34A'};color:#fff;border:none;border-radius:5px;font-size:.78rem;cursor:pointer">${c.active ? 'إيقاف' : 'تفعيل'}</button></td>
+    </tr>`).join('');
+}
+
+async function createCoupon() {
+  const pass = getAdminPass();
+  if (!pass) return;
+  const code = (document.getElementById('cpn-code').value || '').trim();
+  const value = Number(document.getElementById('cpn-value').value);
+  if (!code || !value) { showToast('❌ لازم كود وقيمة خصم', '#DC2626'); return; }
+
+  const btn = document.getElementById('cpn-create-btn');
+  const msg = document.getElementById('cpn-msg');
+  btn.disabled = true; btn.textContent = 'جاري الإنشاء...';
+
+  const expiresRaw = document.getElementById('cpn-expires').value;
+  const ok = await sbRpc('admin_create_coupon', {
+    p_admin_phone: ADMIN.phone, p_admin_password: pass, p_code: code,
+    p_discount_type: document.getElementById('cpn-type').value,
+    p_discount_value: value,
+    p_max_discount: document.getElementById('cpn-max').value ? Number(document.getElementById('cpn-max').value) : null,
+    p_min_amount: Number(document.getElementById('cpn-min').value || 0),
+    p_usage_limit: document.getElementById('cpn-usage-limit').value ? Number(document.getElementById('cpn-usage-limit').value) : null,
+    p_per_user_limit: Number(document.getElementById('cpn-per-user').value || 1),
+    p_applies_to: document.getElementById('cpn-applies').value,
+    p_expires_at: expiresRaw ? new Date(expiresRaw + 'T23:59:59').toISOString() : null,
+  });
+
+  btn.disabled = false; btn.textContent = '➕ إنشاء الكود';
+  if (ok) {
+    msg.textContent = '✅ تم إنشاء الكود';
+    msg.style.cssText = 'display:block;background:#DCFCE7;color:#14532D;font-size:.82rem;font-weight:700;padding:.5rem .75rem;border-radius:6px;margin-top:.5rem';
+    document.getElementById('cpn-code').value = '';
+    document.getElementById('cpn-value').value = '';
+    document.getElementById('cpn-max').value = '';
+    document.getElementById('cpn-usage-limit').value = '';
+    document.getElementById('cpn-expires').value = '';
+    loadCoupons();
+  } else {
+    msg.textContent = '❌ فشل — الكود موجود بالفعل أو كلمة مرور المشرف غلط';
+    msg.style.cssText = 'display:block;background:#FEE2E2;color:#991B1B;font-size:.82rem;font-weight:700;padding:.5rem .75rem;border-radius:6px;margin-top:.5rem';
+  }
+  setTimeout(() => { msg.style.display = 'none'; }, 4000);
+}
+
+async function toggleCoupon(id, active) {
+  const pass = getAdminPass();
+  if (!pass) return;
+  const ok = await sbRpc('admin_set_coupon_active', { p_admin_phone: ADMIN.phone, p_admin_password: pass, p_coupon_id: id, p_active: active });
+  if (ok) { showToast(active ? '✅ تم تفعيل الكود' : '✅ تم إيقاف الكود', '#16A34A'); loadCoupons(); }
+  else { clearAdminPass(); showToast('❌ فشل — تحقق من كلمة مرور المشرف', '#DC2626'); }
+}
+
 /* ═══════════════════ FINANCE ═══════════════════════════════ */
 async function loadFinance() {
   const [orders, rides, commissions] = await Promise.all([
@@ -3657,6 +3809,7 @@ const FEATURE_FLAG_MAP = {
   feature_ride_share_enabled: 'feature-ride-share-enabled',
   feature_support_chat_enabled: 'feature-support-chat-enabled',
   feature_ai_bot_enabled: 'feature-ai-bot-enabled',
+  feature_coupons_enabled: 'feature-coupons-enabled',
 };
 
 async function loadFeatureFlags() {

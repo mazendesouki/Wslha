@@ -4,6 +4,8 @@ import '../../core/session.dart';
 import '../../core/theme.dart';
 import '../../shared/widgets/selectable_pill.dart';
 import '../airport/airport_fare.dart' show qualityLabels, qualityMultiplier;
+import '../coupons/coupon_field.dart';
+import '../coupons/coupon_repository.dart';
 import 'address_field.dart';
 import 'fare_calculator.dart' as fare_calc;
 import 'places_service.dart';
@@ -36,6 +38,8 @@ class _RidesScreenState extends State<RidesScreen> {
   String _qualityTier = 'regular';
   bool _negotiable = false;
   bool _submitting = false;
+  final _couponRepo = CouponRepository();
+  String? _appliedCouponCode;
   UserSession? _session;
   double _surgeMult = 1.0;
   String? _surgeFetchedFor;
@@ -150,6 +154,24 @@ class _RidesScreenState extends State<RidesScreen> {
       return;
     }
 
+    final couponCode = _appliedCouponCode;
+    if (couponCode != null) {
+      // Best-effort: the ride is already booked either way — a coupon
+      // failure here (already used, race with another device) shouldn't
+      // block the ride the customer just paid full price to secure.
+      try {
+        final credited = await _couponRepo.redeem(
+          code: couponCode, phone: _session!.phone, amount: _fare.toDouble(), serviceType: 'ride', referenceId: rideId,
+        );
+        if (mounted && credited > 0) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('🎟️ اتضاف ${credited.toStringAsFixed(0)} ج.م لمحفظتك من كود الخصم')),
+          );
+        }
+      } catch (_) {}
+    }
+
+    if (!mounted) return;
     Navigator.of(context).push(
       MaterialPageRoute(builder: (_) => RideTrackingScreen(rideId: rideId)),
     );
@@ -381,6 +403,15 @@ class _RidesScreenState extends State<RidesScreen> {
                       ),
                     ],
                   ),
+                ),
+              ],
+              if (FeatureFlags.couponsEnabled && _fare > 0 && _session != null) ...[
+                const SizedBox(height: 12),
+                CouponField(
+                  phone: _session!.phone,
+                  amount: _fare.toDouble(),
+                  serviceType: 'ride',
+                  onChanged: (code, check) => setState(() => _appliedCouponCode = check != null ? code : null),
                 ),
               ],
               const SizedBox(height: 12),
