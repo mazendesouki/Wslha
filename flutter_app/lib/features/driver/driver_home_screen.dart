@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/contact_launcher.dart';
+import '../../core/i18n.dart';
 import '../../core/date_format_ar.dart';
 import '../../core/feature_flags.dart';
 import '../../core/maps_launcher.dart';
@@ -212,7 +213,7 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
       final ok = await _repo.goOnline(widget.session.phone, widget.session.name);
       if (!ok && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('محتاجين إذن الموقع عشان تظهر للطلبات القريبة')),
+          SnackBar(content: Text(context.tr('driver_home_location_permission_needed'))),
         );
       }
       setState(() {
@@ -248,7 +249,7 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
   void _showError(Object e) {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('خطأ: $e'), backgroundColor: AppColors.error, duration: const Duration(seconds: 6)),
+      SnackBar(content: Text('${context.tr('driver_home_error_prefix')} $e'), backgroundColor: AppColors.error, duration: const Duration(seconds: 6)),
     );
   }
 
@@ -270,12 +271,12 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
       if (!ok) {
         _showError(
           result == 'vehicle_category_mismatch'
-              ? 'نوع سيارتك لا يطابق نوع السيارة المطلوب لرحلة المطار دي'
+              ? context.tr('driver_home_accept_error_vehicle_mismatch')
               : result == 'quality_tier_mismatch'
-                  ? 'سيارتك المسجّلة لا تطابق مستوى الخدمة اللي طلبه العميل (مكيّفة/نظيفة/موديل حديث)'
+                  ? context.tr('driver_home_accept_error_quality_mismatch')
                   : result == 'driver_not_approved'
-                      ? 'حسابك لسه قيد المراجعة من الإدارة — مينفعش تقبل رحلات لحد ما يتم اعتماد طلبك'
-                      : 'السائق لم يستطع قبول الطلب (اتقبل من غيرك أو انتهت صلاحيته)',
+                      ? context.tr('driver_home_accept_error_not_approved')
+                      : context.tr('driver_home_accept_error_generic'),
         );
       }
       setState(() {
@@ -327,8 +328,8 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
     if (rideId == null) return;
     AppNotifications.instance.scheduleAt(
       rideId.hashCode,
-      '✈️ تذكير رحلة مطار',
-      'موعدك مع العميل قرّب — راجع تفاصيل الرحلة',
+      context.tr('driver_home_airport_reminder_title'),
+      context.tr('driver_home_airport_reminder_body'),
       pickupTime.subtract(const Duration(minutes: 15)),
     );
   }
@@ -370,7 +371,7 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
           if (feeApplied && mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text('⚠️ اتأخرت $lateMinutes دقيقة عن العميل — اتخصم ${PricingSettings.driverLateFee.toStringAsFixed(0)} ج.م تلقائيًا من محفظتك'),
+                content: Text('${context.tr('driver_home_late_fee_warning_prefix')} $lateMinutes ${context.tr('driver_home_late_fee_warning_mid')} ${PricingSettings.driverLateFee.toStringAsFixed(0)} ${context.tr('driver_home_late_fee_warning_suffix')}'),
                 backgroundColor: AppColors.error,
                 duration: const Duration(seconds: 6),
               ),
@@ -415,7 +416,7 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
       if (!mounted) return;
       _jobs.clearActive();
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text('تم إلغاء الرحلة — استنيت $waited دقيقة، اتضاف ${fee.toStringAsFixed(0)} ج.م لمحفظتك تعويض'),
+        content: Text('${context.tr('driver_home_noshow_success_prefix')} $waited ${context.tr('driver_home_noshow_success_mid')} ${fee.toStringAsFixed(0)} ${context.tr('driver_home_noshow_success_suffix')}'),
       ));
     } catch (e) {
       _showError(e);
@@ -430,8 +431,8 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
     if (customerPhone == null || customerPhone.isEmpty || !mounted) return;
     final result = await RateSheet.show(
       context,
-      title: 'قيّم العميل',
-      subtitle: 'تقييمك يساعد السائقين التانيين',
+      title: context.tr('driver_home_rate_customer_title'),
+      subtitle: context.tr('driver_home_rate_customer_subtitle'),
       positiveTags: positiveCustomerTags,
       negativeTags: negativeCustomerTags,
     );
@@ -446,7 +447,7 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
         comment: result.comment,
       );
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('✅ تم إرسال تقييمك للعميل')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.tr('driver_home_rate_customer_success'))));
       }
     } catch (e) {
       // Same silent-failure pattern as the other two rating flows — the
@@ -454,7 +455,7 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
       // driver, etc.) and nothing said so before this fix.
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('تعذّر إرسال التقييم: $e'), backgroundColor: AppColors.error, duration: const Duration(seconds: 6)),
+          SnackBar(content: Text('${context.tr('driver_home_rate_customer_error_prefix')} $e'), backgroundColor: AppColors.error, duration: const Duration(seconds: 6)),
         );
       }
     }
@@ -488,7 +489,7 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
       if (!mounted) return;
       if (!ok) {
         setState(() => _busy = false);
-        _showError('كود التسليم غير صحيح');
+        _showError(context.tr('driver_home_otp_prompt_error'));
         return;
       }
       _jobs.clearActive();
@@ -506,24 +507,24 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
     return showDialog<String>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('كود التسليم'),
+        title: Text(context.tr('driver_home_otp_dialog_title')),
         content: TextField(
           controller: controller,
           autofocus: true,
           keyboardType: TextInputType.number,
           maxLength: 4,
-          decoration: const InputDecoration(
-            hintText: 'اطلب من العميل الكود المعروض في صفحة تتبّع الطلب',
+          decoration: InputDecoration(
+            hintText: context.tr('driver_home_otp_dialog_hint'),
           ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(),
-            child: const Text('إلغاء'),
+            child: Text(context.tr('action_cancel')),
           ),
           FilledButton(
             onPressed: () => Navigator.of(dialogContext).pop(controller.text.trim()),
-            child: const Text('تأكيد'),
+            child: Text(context.tr('action_confirm')),
           ),
         ],
       ),
@@ -535,7 +536,7 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
     return Scaffold(
       backgroundColor: context.mutedSurface,
       appBar: AppBar(
-        title: const Text('وصّلها سائق'),
+        title: Text(context.tr('driver_home_title')),
         actions: [
           if (_vehicleCategory != 'motorcycle' && _vehicleCategory != 'cargo')
             // A driver previously had to remember to open this screen and
@@ -555,7 +556,7 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
                   clipBehavior: Clip.none,
                   children: [
                     IconButton(
-                      tooltip: 'طلبات تفاوض قريبة',
+                      tooltip: context.tr('driver_home_negotiation_tooltip'),
                       icon: const Text('🤝', style: TextStyle(fontSize: 20)),
                       onPressed: () => Navigator.of(context).push(
                         MaterialPageRoute(builder: (_) => NegotiationScreen(session: widget.session)),
@@ -592,7 +593,7 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
                   clipBehavior: Clip.none,
                   children: [
                     IconButton(
-                      tooltip: 'طلبات توصيل المطار',
+                      tooltip: context.tr('driver_home_airport_requests_tooltip'),
                       icon: const Text('✈️', style: TextStyle(fontSize: 20)),
                       onPressed: () => Navigator.of(context).push(
                         MaterialPageRoute(builder: (_) => AirportRideRequestsScreen(session: widget.session)),
@@ -684,9 +685,9 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const Padding(
-            padding: EdgeInsets.only(bottom: 4),
-            child: Text('🗂️ عندك طلبات جاهزة — اختار واحد وابدأ فورًا', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 14)),
+          Padding(
+            padding: const EdgeInsets.only(bottom: 4),
+            child: Text(context.tr('driver_home_queue_ready_banner'), style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 14)),
           ),
           const SizedBox(height: 10),
           _QueueList(jobs: _jobs.queue, onTap: _jobs.switchToQueued),
@@ -723,7 +724,7 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
                     const SizedBox(width: 72),
                     Expanded(
                       child: Text(
-                        isOrder ? '📦 طلب قيد التنفيذ' : '🚖 مشوار قيد التنفيذ',
+                        isOrder ? context.tr('driver_home_active_order_title') : context.tr('driver_home_active_ride_title'),
                         textAlign: TextAlign.center,
                         style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16),
                       ),
@@ -754,7 +755,7 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
                   if (PricingSettings.driverLateFeeEnabled) ...[
                     const SizedBox(height: 8),
                     Text(
-                      'لو اتأخرت عن العميل أكتر من ${PricingSettings.driverLateGraceMinutes} دقايق من وقت قبولك، هيتخصم ${PricingSettings.driverLateFee.toStringAsFixed(0)} ج.م من رصيدك تلقائيًا.',
+                      '${context.tr('driver_home_late_grace_warning_prefix')} ${PricingSettings.driverLateGraceMinutes} ${context.tr('driver_home_late_grace_warning_mid')} ${PricingSettings.driverLateFee.toStringAsFixed(0)} ${context.tr('driver_home_late_grace_warning_suffix')}',
                       style: const TextStyle(fontSize: 10.5, color: AppColors.textFaint, fontWeight: FontWeight.w700, height: 1.4),
                       textAlign: TextAlign.center,
                     ),
@@ -775,7 +776,7 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                   decoration: BoxDecoration(color: const Color(0xFFDCFCE7), borderRadius: BorderRadius.circular(999)),
-                  child: Text('$fare ج.م', style: const TextStyle(fontWeight: FontWeight.w900, color: AppColors.success)),
+                  child: Text('$fare ${context.tr('driver_home_currency')}', style: const TextStyle(fontWeight: FontWeight.w900, color: AppColors.success)),
                 ),
               ],
             ),
@@ -792,7 +793,7 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
             const SizedBox(height: 16),
             Align(
               alignment: AlignmentDirectional.centerStart,
-              child: Text('🗂️ قدامك ${_jobs.queue.length} طلب جاهز — دوس عشان تبدأه دلوقتي', style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 12, color: AppColors.textFaint)),
+              child: Text('${context.tr('driver_home_queue_next_banner_prefix')} ${_jobs.queue.length} ${context.tr('driver_home_queue_next_banner_suffix')}', style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 12, color: AppColors.textFaint)),
             ),
             const SizedBox(height: 8),
             _QueueList(jobs: _jobs.queue, onTap: _jobs.switchToQueued),
@@ -805,7 +806,7 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
                 backgroundColor: _jobs.pickedUp ? AppColors.success : AppColors.primary,
                 padding: const EdgeInsets.symmetric(vertical: 16),
               ),
-              child: Text(_jobs.pickedUp ? '✓ تم التسليم' : '📦 التقطت الطلب من المتجر'),
+              child: Text(_jobs.pickedUp ? context.tr('driver_home_order_delivered') : context.tr('driver_home_order_picked_up_action')),
             )
           else
             _RideStepButtons(
@@ -865,7 +866,7 @@ class _StatusCard extends StatelessWidget {
                 activeTrackColor: AppColors.success,
               ),
               Text(
-                online ? 'متصل' : 'غير متصل',
+                online ? context.tr('driver_home_status_online') : context.tr('driver_home_status_offline'),
                 style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: online ? AppColors.success : AppColors.textFaint),
               ),
             ],
@@ -896,15 +897,15 @@ class _IdleViewState extends State<_IdleView> with SingleTickerProviderStateMixi
   @override
   Widget build(BuildContext context) {
     if (!widget.online) {
-      return const Center(
+      return Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text('🔴', style: TextStyle(fontSize: 40)),
-            SizedBox(height: 12),
-            Text('أنت غير متصل', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 15)),
-            SizedBox(height: 4),
-            Text('اضغط "متصل" عشان تبدأ تستقبل طلبات', style: TextStyle(color: AppColors.textFaint, fontSize: 12)),
+            const Text('🔴', style: TextStyle(fontSize: 40)),
+            const SizedBox(height: 12),
+            Text(context.tr('driver_home_idle_offline_title'), style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 15)),
+            const SizedBox(height: 4),
+            Text(context.tr('driver_home_idle_offline_subtitle'), style: const TextStyle(color: AppColors.textFaint, fontSize: 12)),
           ],
         ),
       );
@@ -937,7 +938,7 @@ class _IdleViewState extends State<_IdleView> with SingleTickerProviderStateMixi
             ),
           ),
           const SizedBox(height: 16),
-          const Text('جاري الانتظار على طلبات...', style: TextStyle(color: AppColors.textFaint, fontSize: 13, fontWeight: FontWeight.w700)),
+          Text(context.tr('driver_home_idle_waiting'), style: const TextStyle(color: AppColors.textFaint, fontSize: 13, fontWeight: FontWeight.w700)),
         ],
       ),
     );
@@ -1012,7 +1013,7 @@ class _QueueTile extends StatelessWidget {
                   children: [
                     Text('$from ← $to', style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 12), maxLines: 1, overflow: TextOverflow.ellipsis),
                     const SizedBox(height: 2),
-                    Text('$fare ج.م', style: const TextStyle(fontSize: 11, color: AppColors.success, fontWeight: FontWeight.w700)),
+                    Text('$fare ${context.tr('driver_home_currency')}', style: const TextStyle(fontSize: 11, color: AppColors.success, fontWeight: FontWeight.w700)),
                   ],
                 ),
               ),
@@ -1050,7 +1051,7 @@ class _OffersListPanel extends StatelessWidget {
             const Text('🔔', style: TextStyle(fontSize: 22)),
             const SizedBox(width: 8),
             Text(
-              offers.length == 1 ? 'عندك عرض جديد' : 'عندك ${offers.length} عروض جديدة',
+              offers.length == 1 ? context.tr('driver_home_offer_singular') : '${context.tr('driver_home_offer_plural_prefix')} ${offers.length} ${context.tr('driver_home_offer_plural_suffix')}',
               style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 15),
             ),
           ],
@@ -1127,7 +1128,7 @@ class _OfferCard extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                       decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.55), borderRadius: BorderRadius.circular(999)),
                       child: Text(
-                        isOrder ? '📦 دليفري' : '🚖 رحلة',
+                        isOrder ? context.tr('driver_home_offer_type_order') : context.tr('driver_home_offer_type_ride'),
                         style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 11),
                       ),
                     ),
@@ -1164,7 +1165,7 @@ class _OfferCard extends StatelessWidget {
                     alignment: AlignmentDirectional.centerStart,
                     child: TrustBadge(
                       future: RatingsRepository().customerReliability(data['customer_phone'] as String),
-                      trustedLabel: 'عميل موثوق',
+                      trustedLabel: context.tr('driver_home_trusted_customer'),
                     ),
                   ),
                 ],
@@ -1172,12 +1173,12 @@ class _OfferCard extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    if (data['distance_km'] != null) _metaChip('${(data['distance_km'] as num).toStringAsFixed(1)} كم'),
-                    if (data['eta_minutes'] != null) _metaChip('${data['eta_minutes']} د'),
+                    if (data['distance_km'] != null) _metaChip('${(data['distance_km'] as num).toStringAsFixed(1)} ${context.tr('driver_home_unit_km')}'),
+                    if (data['eta_minutes'] != null) _metaChip('${data['eta_minutes']} ${context.tr('driver_home_unit_min')}'),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                       decoration: BoxDecoration(color: const Color(0xFFDCFCE7), borderRadius: BorderRadius.circular(10)),
-                      child: Text('$fare ج.م', style: const TextStyle(fontWeight: FontWeight.w900, color: AppColors.success)),
+                      child: Text('$fare ${context.tr('driver_home_currency')}', style: const TextStyle(fontWeight: FontWeight.w900, color: AppColors.success)),
                     ),
                   ],
                 ),
@@ -1188,7 +1189,7 @@ class _OfferCard extends StatelessWidget {
                       child: OutlinedButton(
                         onPressed: busy ? null : onReject,
                         style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 12)),
-                        child: const Text('رفض'),
+                        child: Text(context.tr('driver_home_reject')),
                       ),
                     ),
                     const SizedBox(width: 10),
@@ -1198,7 +1199,7 @@ class _OfferCard extends StatelessWidget {
                         style: ElevatedButton.styleFrom(backgroundColor: AppColors.success, padding: const EdgeInsets.symmetric(vertical: 12)),
                         child: busy
                             ? const SizedBox(height: 16, width: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                            : const Text('قبول'),
+                            : Text(context.tr('driver_home_accept')),
                       ),
                     ),
                   ],
@@ -1260,13 +1261,13 @@ class _NoShowButtonState extends State<_NoShowButton> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text('العميل لم يحضر؟'),
-        content: const Text('هيتم إلغاء الرحلة فورًا — العميل هيتخصم منه رسوم عدم حضور، وانت هتاخد تعويض انتظار في محفظتك.'),
+        title: Text(context.tr('driver_home_noshow_dialog_title')),
+        content: Text(context.tr('driver_home_noshow_dialog_body')),
         actions: [
-          TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('تراجع')),
+          TextButton(onPressed: () => Navigator.of(context).pop(false), child: Text(context.tr('driver_home_noshow_dialog_cancel'))),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('تأكيد الإلغاء', style: TextStyle(color: AppColors.error)),
+            child: Text(context.tr('driver_home_noshow_dialog_confirm'), style: const TextStyle(color: AppColors.error)),
           ),
         ],
       ),
@@ -1285,7 +1286,7 @@ class _NoShowButtonState extends State<_NoShowButton> {
       child: OutlinedButton.icon(
         onPressed: _busy ? null : _confirm,
         icon: const Icon(Icons.person_off_outlined, color: AppColors.error),
-        label: const Text('العميل لم يحضر — إلغاء الرحلة', style: TextStyle(color: AppColors.error)),
+        label: Text(context.tr('driver_home_noshow_button_label'), style: const TextStyle(color: AppColors.error)),
         style: OutlinedButton.styleFrom(
           side: const BorderSide(color: AppColors.error),
           padding: const EdgeInsets.symmetric(vertical: 12),
@@ -1315,7 +1316,7 @@ class _CustomerContactRow extends StatelessWidget {
         children: [
           Expanded(
             child: Text(
-              (name != null && name!.isNotEmpty) ? name! : 'العميل',
+              (name != null && name!.isNotEmpty) ? name! : context.tr('driver_home_customer_fallback_name'),
               style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
               overflow: TextOverflow.ellipsis,
             ),
@@ -1323,13 +1324,13 @@ class _CustomerContactRow extends StatelessWidget {
           IconButton(
             onPressed: () => callPhone(phone),
             icon: const Icon(Icons.call, color: AppColors.success),
-            tooltip: 'اتصل بالعميل',
+            tooltip: context.tr('driver_home_call_customer_tooltip'),
             visualDensity: VisualDensity.compact,
           ),
           IconButton(
             onPressed: () => openWhatsApp(phone),
             icon: const Icon(Icons.chat, color: Color(0xFF25D366)),
-            tooltip: 'تواصل عبر واتساب',
+            tooltip: context.tr('driver_home_whatsapp_customer_tooltip'),
             visualDensity: VisualDensity.compact,
           ),
         ],
@@ -1358,10 +1359,10 @@ class _RouteMapCard extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.fromLTRB(14, 10, 14, 6),
             child: Row(
-              children: const [
-                Text('🗺️', style: TextStyle(fontSize: 14)),
-                SizedBox(width: 6),
-                Text('خريطة المسار', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 12)),
+              children: [
+                const Text('🗺️', style: TextStyle(fontSize: 14)),
+                const SizedBox(width: 6),
+                Text(context.tr('driver_home_route_map_title'), style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 12)),
               ],
             ),
           ),
@@ -1373,7 +1374,7 @@ class _RouteMapCard extends StatelessWidget {
               errorBuilder: (context, error, stackTrace) => Container(
                 color: const Color(0xFFF3F4F6),
                 alignment: Alignment.center,
-                child: const Text('تعذّر تحميل معاينة الخريطة', style: TextStyle(fontSize: 11, color: AppColors.textFaint)),
+                child: Text(context.tr('driver_home_route_map_error'), style: const TextStyle(fontSize: 11, color: AppColors.textFaint)),
               ),
               loadingBuilder: (context, child, progress) =>
                   progress == null ? child : const Center(child: CircularProgressIndicator(strokeWidth: 2)),
@@ -1386,7 +1387,7 @@ class _RouteMapCard extends StatelessWidget {
               child: ElevatedButton.icon(
                 onPressed: () => openMapsNavigation(destination.$1, destination.$2),
                 icon: const Icon(Icons.navigation_outlined),
-                label: const Text('افتح Google Maps للملاحة'),
+                label: Text(context.tr('driver_home_open_maps_button')),
                 style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, padding: const EdgeInsets.symmetric(vertical: 12)),
               ),
             ),
@@ -1481,7 +1482,7 @@ class _ArrivalDeadlineChip extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(color: const Color(0xFFFEF3C7), borderRadius: BorderRadius.circular(999)),
       child: Text(
-        '🕐 لازم توصل عند العميل الساعة ${arTime(deadline)} بدون تأخير',
+        '${context.tr('driver_home_arrival_deadline_prefix')} ${arTime(deadline)} ${context.tr('driver_home_arrival_deadline_suffix')}',
         style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: Color(0xFF92400E)),
       ),
     );
@@ -1520,10 +1521,10 @@ class _DriverDistanceReadout extends StatelessWidget {
         final distanceKm = haversineKm(lat, lng, targetLat, targetLng);
         final distanceM = distanceKm * 1000;
         final etaMin = (distanceKm / 25 * 60).ceil().clamp(1, 999); // ~25 km/h city average
-        final distanceLabel = distanceM < 1000 ? '${distanceM.round()} م' : '${distanceKm.toStringAsFixed(1)} كم';
+        final distanceLabel = distanceM < 1000 ? '${distanceM.round()} ${context.tr('driver_home_unit_meter')}' : '${distanceKm.toStringAsFixed(1)} ${context.tr('driver_home_unit_km')}';
         final text = headingToPickup
-            ? '📍 المسافة للعميل: $distanceLabel — وصول متوقع خلال ~$etaMin دقيقة'
-            : '📍 المسافة للوجهة: $distanceLabel — وصول متوقع خلال ~$etaMin دقيقة';
+            ? '${context.tr('driver_home_distance_to_customer_prefix')} $distanceLabel ${context.tr('driver_home_distance_eta_suffix')}$etaMin ${context.tr('driver_home_eta_minutes_suffix')}'
+            : '${context.tr('driver_home_distance_to_destination_prefix')} $distanceLabel ${context.tr('driver_home_distance_eta_suffix')}$etaMin ${context.tr('driver_home_eta_minutes_suffix')}';
 
         return Padding(
           padding: const EdgeInsets.only(top: 6),
@@ -1544,7 +1545,7 @@ class _AirportFlightChip extends StatelessWidget {
     final flightTime = raw == null ? null : DateTime.tryParse(raw.toString())?.toLocal();
     if (flightTime == null) return const SizedBox.shrink();
     final direction = data['airport_direction'] as String? ?? 'departure';
-    final label = direction == 'departure' ? 'إقلاع' : 'هبوط';
+    final label = direction == 'departure' ? context.tr('driver_home_flight_departure_short') : context.tr('driver_home_flight_arrival_short');
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(color: const Color(0xFFEFF6FF), borderRadius: BorderRadius.circular(999)),
@@ -1569,7 +1570,7 @@ class _AirportDetailsCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final direction = data['airport_direction'] as String? ?? 'departure';
-    final directionLabel = direction == 'departure' ? '🛫 توصيل من العميل إلى المطار (مغادرة)' : '🛬 توصيل من المطار إلى العميل (وصول)';
+    final directionLabel = direction == 'departure' ? context.tr('driver_home_airport_direction_departure') : context.tr('driver_home_airport_direction_arrival');
     final rawFlightTime = data['flight_time'];
     final flightTime = rawFlightTime == null ? null : DateTime.tryParse(rawFlightTime.toString())?.toLocal();
     final notes = (data['notes'] as String?) ?? '';
@@ -1590,7 +1591,7 @@ class _AirportDetailsCard extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
               decoration: BoxDecoration(color: const Color(0xFFEFF6FF), borderRadius: BorderRadius.circular(8)),
               child: Text(
-                '🕐 ${direction == "departure" ? "موعد الإقلاع" : "موعد الهبوط"}: ${arDateTime(flightTime)}',
+                '🕐 ${direction == "departure" ? context.tr('driver_home_flight_departure_time_label') : context.tr('driver_home_flight_arrival_time_label')}: ${arDateTime(flightTime)}',
                 style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w900, color: Color(0xFF1D4ED8)),
               ),
             ),
@@ -1604,8 +1605,8 @@ class _AirportDetailsCard extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text('إجمالي الرحلة', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 13)),
-              Text('$fare ج.م', style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 15, color: AppColors.success)),
+              Text(context.tr('driver_home_airport_total_label'), style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 13)),
+              Text('$fare ${context.tr('driver_home_currency')}', style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 15, color: AppColors.success)),
             ],
           ),
         ],
@@ -1619,8 +1620,6 @@ class _ReceiptDialog extends StatelessWidget {
   final String rideId;
   final String driverPhone;
   const _ReceiptDialog({required this.settlement, required this.rideId, required this.driverPhone});
-
-  String _egp(double v) => '${v.toStringAsFixed(0)} ج.م';
 
   @override
   Widget build(BuildContext context) {
@@ -1648,28 +1647,30 @@ class _ReceiptDialog extends StatelessWidget {
                 .where((p) => p['phone'] == driverPhone && (p['note'] as String? ?? '').contains('تأخير وصول'))
                 .fold<double>(0, (sum, p) => sum + ((p['amount'] as num).abs()));
 
+            final currency = context.tr('driver_home_currency');
+            String egp(double v) => '${v.toStringAsFixed(0)} $currency';
             return Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 const Text('✅', style: TextStyle(fontSize: 40)),
                 const SizedBox(height: 8),
-                const Text('فاتورة الرحلة', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w900)),
+                Text(context.tr('driver_home_receipt_title'), style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w900)),
                 const SizedBox(height: 20),
-                _row('المبلغ الأصلي (الأجرة)', _egp(s.fare)),
+                _row(context.tr('driver_home_receipt_fare_label'), egp(s.fare)),
                 const Divider(height: 24),
-                _row('رسوم التطبيق (${s.rate.toStringAsFixed(0)}%)', '- ${_egp(s.commission)}', color: AppColors.error),
+                _row('${context.tr('driver_home_receipt_commission_prefix')}${s.rate.toStringAsFixed(0)}${context.tr('driver_home_receipt_commission_suffix')}', '- ${egp(s.commission)}', color: AppColors.error),
                 const Divider(height: 24),
-                _row('الإجمالي المستحق لك', _egp(s.driverEarn), bold: true, color: AppColors.success),
+                _row(context.tr('driver_home_receipt_total_earned'), egp(s.driverEarn), bold: true, color: AppColors.success),
                 if (lateFee > 0) ...[
                   const Divider(height: 24),
-                  _row('⚠️ خصم تأخيرك عن الوصول', '- ${_egp(lateFee)}', color: AppColors.error),
+                  _row(context.tr('driver_home_receipt_late_fee_label'), '- ${egp(lateFee)}', color: AppColors.error),
                 ],
                 const SizedBox(height: 24),
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
                     onPressed: () => Navigator.of(context).pop(),
-                    child: const Text('تمام'),
+                    child: Text(context.tr('driver_home_receipt_ok_button')),
                   ),
                 ),
               ],
@@ -1728,9 +1729,9 @@ class _RideStepButtons extends StatelessWidget {
       );
     }
     final (label, color) = switch (step) {
-      'accepted' => ('📍 وصلت لنقطة الانطلاق', AppColors.primaryLight),
-      'arrived' => ('✓ الراكب صعد، ابدأ الرحلة', AppColors.primary),
-      _ => ('✓ وصلنا للوجهة — إنهاء الرحلة', AppColors.success),
+      'accepted' => (context.tr('driver_home_ride_step_arrived'), AppColors.primaryLight),
+      'arrived' => (context.tr('driver_home_ride_step_start'), AppColors.primary),
+      _ => (context.tr('driver_home_ride_step_finish'), AppColors.success),
     };
     final isLight = step == 'accepted';
     return ElevatedButton(

@@ -5,6 +5,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import '../../core/contact_launcher.dart';
 import '../../core/date_format_ar.dart';
 import '../../core/feature_flags.dart';
+import '../../core/i18n.dart';
 import '../../core/location_share.dart';
 import '../../core/maps_launcher.dart';
 import '../../core/notifications.dart';
@@ -32,13 +33,10 @@ const Set<String> _liveTrackStatuses = {'accepted', 'arrived', 'in_progress'};
 // themselves) and shows the customer's contact info instead.
 
 /// Same status → message mapping as track.astro's notifyStatusChange().
-const Map<String, String> _statusNotif = {
-  'accepted': '🚗 قبِل السائق طلبك وهو في طريقه إليك',
-  'arrived': '📍 السائق وصل لنقطة الانطلاق',
-  'in_progress': '🛣️ رحلتك بدأت الآن',
-  'completed': '✅ وصلت رحلتك بسلام، شكرًا لاستخدامك وصّلها',
-  'cancelled': '❌ تم إلغاء الرحلة',
-};
+/// Kept as a set (not a Map<String,String>) since the actual text is now
+/// looked up via context.tr('ride_tracking_notif_<status>') at the point of
+/// use — this top-level const has no BuildContext to translate with.
+const Set<String> _statusNotifKeys = {'accepted', 'arrived', 'in_progress', 'completed', 'cancelled'};
 
 /// Ordered ride statuses (rides.astro / driver-dashboard.astro write these
 /// same values to rides.status), mirrored on the icon timeline below —
@@ -46,19 +44,23 @@ const Map<String, String> _statusNotif = {
 /// timeline (icon steps + progress bar + ETA card), just without the live
 /// map/rating modules, which are a bigger Phase-2 scope.
 const List<_Step> _steps = [
-  _Step('pending', '📋', 'تم استلام الطلب'),
-  _Step('accepted', '🚗', 'تم قبول الطلب'),
-  _Step('arrived', '📍', 'السائق وصل'),
-  _Step('in_progress', '🛣️', 'في الطريق'),
-  _Step('completed', '✅', 'اكتملت الرحلة'),
+  _Step('pending', '📋'),
+  _Step('accepted', '🚗'),
+  _Step('arrived', '📍'),
+  _Step('in_progress', '🛣️'),
+  _Step('completed', '✅'),
 ];
 
 class _Step {
   final String key;
   final String icon;
-  final String label;
-  const _Step(this.key, this.icon, this.label);
+  const _Step(this.key, this.icon);
 }
+
+// step.label was a hardcoded Arabic string on the const above; there is no
+// BuildContext at const-init time, so the label is now resolved here from
+// context.tr('ride_tracking_step_<key>') wherever a step is displayed.
+String _stepLabel(BuildContext context, String key) => context.tr('ride_tracking_step_$key');
 
 class RideTrackingScreen extends StatefulWidget {
   final String rideId;
@@ -118,8 +120,8 @@ class _RideTrackingScreenState extends State<RideTrackingScreen> {
     if (already || !mounted) return;
     final result = await RateSheet.show(
       context,
-      title: 'قيّم رحلتك مع السائق',
-      subtitle: 'رأيك بيساعدنا نحسّن الخدمة',
+      title: context.tr('ride_tracking_rate_title'),
+      subtitle: context.tr('ride_tracking_rate_subtitle'),
       positiveTags: positiveDriverTags,
       negativeTags: negativeDriverTags,
     );
@@ -133,7 +135,7 @@ class _RideTrackingScreenState extends State<RideTrackingScreen> {
         comment: result.comment,
       );
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('✅ شكرًا على تقييمك')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.tr('ride_tracking_rating_thanks'))));
       }
     } catch (e) {
       // Submission can fail server-side (RPC rejects an already-rated or
@@ -141,7 +143,7 @@ class _RideTrackingScreenState extends State<RideTrackingScreen> {
       // which looked like the rating just vanished with no feedback.
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('تعذّر إرسال التقييم: $e'), backgroundColor: AppColors.error, duration: const Duration(seconds: 6)),
+          SnackBar(content: Text('${context.tr('ride_tracking_rating_failed_prefix')} $e'), backgroundColor: AppColors.error, duration: const Duration(seconds: 6)),
         );
       }
     }
@@ -165,7 +167,7 @@ class _RideTrackingScreenState extends State<RideTrackingScreen> {
           if (feeApplied && mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text('⚠️ اتأخرت $lateMinutes دقيقة عن العميل — اتخصم 20 ج.م تلقائيًا من محفظتك'),
+                content: Text('${context.tr('ride_tracking_late_fee_prefix')} $lateMinutes ${context.tr('ride_tracking_late_fee_suffix')}'),
                 backgroundColor: AppColors.error,
                 duration: const Duration(seconds: 6),
               ),
@@ -180,7 +182,7 @@ class _RideTrackingScreenState extends State<RideTrackingScreen> {
           if (!mounted) return;
           if (settlement != null) {
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('✅ تم إنهاء الرحلة — أرباحك: ${settlement.driverEarn.toStringAsFixed(0)} ج.م'), duration: const Duration(seconds: 4)),
+              SnackBar(content: Text('${context.tr('ride_tracking_earnings_prefix')} ${settlement.driverEarn.toStringAsFixed(0)} ج.م'), duration: const Duration(seconds: 4)),
             );
           }
           widget.onFinished?.call();
@@ -188,7 +190,7 @@ class _RideTrackingScreenState extends State<RideTrackingScreen> {
           return;
       }
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('خطأ: $e'), backgroundColor: AppColors.error));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${context.tr('ride_tracking_error_prefix')} $e'), backgroundColor: AppColors.error));
     } finally {
       if (mounted) setState(() => _advancing = false);
     }
@@ -217,7 +219,7 @@ class _RideTrackingScreenState extends State<RideTrackingScreen> {
           if (!widget.isDriverView &&
               _lastNotifiedStatus != null &&
               _lastNotifiedStatus != status &&
-              _statusNotif.containsKey(status)) {
+              _statusNotifKeys.contains(status)) {
             // accept_dispatch_offer() already refused this driver server-side
             // if their car didn't match the requested tier — so an
             // "accepted" ride here always genuinely has it. Naming that
@@ -225,9 +227,9 @@ class _RideTrackingScreenState extends State<RideTrackingScreen> {
             // was asked for: the customer should see confirmation the
             // service they picked and paid extra for is actually coming.
             final msg = (status == 'accepted' && qualityTier != null && qualityTier != 'regular')
-                ? '🚗 قبِل السائق طلبك، وخدمة "${qualityLabels[qualityTier] ?? qualityTier}" اللي اخترتها متوفرة معاه ✅'
-                : _statusNotif[status]!;
-            AppNotifications.instance.show('وصّلها — تحديث رحلتك', msg);
+                ? '${context.tr('ride_tracking_tier_confirmed_notif_prefix')} "${qualityLabels[qualityTier] ?? qualityTier}" ${context.tr('ride_tracking_tier_confirmed_notif_suffix')}'
+                : context.tr('ride_tracking_notif_$status');
+            AppNotifications.instance.show('وصّلها — ${context.tr('ride_tracking_notif_title_suffix')}', msg);
           }
           _lastNotifiedStatus = status;
 
@@ -263,7 +265,7 @@ class _RideTrackingScreenState extends State<RideTrackingScreen> {
                 pinned: true,
                 backgroundColor: isCancelled ? AppColors.error : AppColors.primary,
                 foregroundColor: Colors.white,
-                title: Text(widget.isDriverView ? 'تفاصيل الرحلة' : 'تتبّع الرحلة'),
+                title: Text(widget.isDriverView ? context.tr('ride_tracking_title_driver') : context.tr('ride_tracking_title_customer')),
                 actions: [
                   if (FeatureFlags.chatEnabled && !isCancelled && status != 'completed' && driverPhone != null && driverPhone.isNotEmpty)
                     IconButton(
@@ -275,12 +277,14 @@ class _RideTrackingScreenState extends State<RideTrackingScreen> {
                             rideId: widget.rideId,
                             myPhone: myPhone,
                             myRole: widget.isDriverView ? 'driver' : 'customer',
-                            otherPartyName: widget.isDriverView ? (customerName ?? 'العميل') : (driverName ?? 'السائق'),
+                            otherPartyName: widget.isDriverView
+                                ? (customerName ?? context.tr('ride_tracking_default_customer_name'))
+                                : (driverName ?? context.tr('ride_tracking_default_driver_name')),
                           ),
                         ));
                       },
                       icon: const Icon(Icons.chat_bubble_outline),
-                      tooltip: 'محادثة',
+                      tooltip: context.tr('ride_tracking_chat_tooltip'),
                     ),
                   if (!isCancelled && status != 'completed' && status != 'pending')
                     Padding(
@@ -305,10 +309,10 @@ class _RideTrackingScreenState extends State<RideTrackingScreen> {
                         ),
                         child: isCancelled
                             ? Column(
-                                children: const [
-                                  Text('❌', style: TextStyle(fontSize: 32)),
-                                  SizedBox(height: 8),
-                                  Text('الرحلة ملغاة', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: AppColors.error)),
+                                children: [
+                                  const Text('❌', style: TextStyle(fontSize: 32)),
+                                  const SizedBox(height: 8),
+                                  Text(context.tr('ride_tracking_cancelled_title'), style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: AppColors.error)),
                                 ],
                               )
                             : _Timeline(curIdx: curIdx),
@@ -413,22 +417,22 @@ class _RideTrackingScreenState extends State<RideTrackingScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            _infoRow('من', '${ride['from_area'] ?? '—'}'),
+                            _infoRow(context.tr('ride_tracking_from_label'), '${ride['from_area'] ?? '—'}'),
                             if ((ride['stops'] as List?)?.isNotEmpty == true) ...[
                               const Divider(height: 20),
                               _infoRow(
-                                '🛑 توقف عند',
+                                context.tr('ride_tracking_stop_at_label'),
                                 (ride['stops'] as List)
                                     .map((s) => (s as Map?)?['name'] as String? ?? '—')
                                     .join(' ← '),
                               ),
                             ],
                             const Divider(height: 20),
-                            _infoRow('إلى', '${ride['to_area'] ?? '—'}'),
+                            _infoRow(context.tr('ride_tracking_to_label'), '${ride['to_area'] ?? '—'}'),
                             const Divider(height: 20),
-                            _infoRow('السائق', driverName?.isNotEmpty == true ? driverName! : 'جارٍ التعيين…'),
+                            _infoRow(context.tr('ride_tracking_driver_label'), driverName?.isNotEmpty == true ? driverName! : context.tr('ride_tracking_assigning_driver')),
                             const Divider(height: 20),
-                            _infoRow('الأجرة', '${ride['fare'] ?? 0} ج.م', highlight: true),
+                            _infoRow(context.tr('ride_tracking_fare_label'), '${ride['fare'] ?? 0} ج.م', highlight: true),
                           ],
                         ),
                       ),
@@ -442,7 +446,7 @@ class _RideTrackingScreenState extends State<RideTrackingScreen> {
                             driverName: driverName,
                           ),
                           icon: const Icon(Icons.family_restroom),
-                          label: const Text('مشاركة الرحلة مع أهلي (أمان)'),
+                          label: Text(context.tr('ride_tracking_share_with_family')),
                           style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 14)),
                         ),
                         const SizedBox(height: 10),
@@ -458,13 +462,13 @@ class _RideTrackingScreenState extends State<RideTrackingScreen> {
                             final confirmed = await showDialog<bool>(
                               context: context,
                               builder: (_) => AlertDialog(
-                                title: const Text('إلغاء الرحلة؟'),
-                                content: const Text('هل أنت متأكد إنك عايز تلغي الرحلة دي؟'),
+                                title: Text(context.tr('ride_tracking_cancel_confirm_title')),
+                                content: Text(context.tr('ride_tracking_cancel_confirm_body')),
                                 actions: [
-                                  TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('تراجع')),
+                                  TextButton(onPressed: () => Navigator.of(context).pop(false), child: Text(context.tr('ride_tracking_cancel_back'))),
                                   TextButton(
                                     onPressed: () => Navigator.of(context).pop(true),
-                                    child: const Text('إلغاء الرحلة', style: TextStyle(color: AppColors.error)),
+                                    child: Text(context.tr('ride_tracking_cancel_confirm_action'), style: const TextStyle(color: AppColors.error)),
                                   ),
                                 ],
                               ),
@@ -479,7 +483,7 @@ class _RideTrackingScreenState extends State<RideTrackingScreen> {
                             }
                             Navigator.of(context).pop();
                           },
-                          child: const Text('إلغاء الرحلة'),
+                          child: Text(context.tr('ride_tracking_cancel_button')),
                         ),
                       if (widget.isDriverView && !isCancelled && status != 'completed' && status != 'pending')
                         _DriverStepButton(
@@ -550,9 +554,9 @@ class _DriverStepButton extends StatelessWidget {
       );
     }
     final (label, color) = switch (status) {
-      'accepted' => ('📍 وصلت لنقطة الانطلاق', AppColors.primaryLight),
-      'arrived' => ('✓ الراكب صعد، ابدأ الرحلة', AppColors.primary),
-      _ => ('✓ وصلنا للوجهة — إنهاء الرحلة', AppColors.success),
+      'accepted' => (context.tr('ride_tracking_driver_step_arrived'), AppColors.primaryLight),
+      'arrived' => (context.tr('ride_tracking_driver_step_start'), AppColors.primary),
+      _ => (context.tr('ride_tracking_driver_step_finish'), AppColors.success),
     };
     final isLight = status == 'accepted';
     return ElevatedButton(
@@ -627,8 +631,8 @@ class _LiveMapSectionState extends State<_LiveMapSection> {
           final etaMin = (distanceKm / 25 * 60).ceil().clamp(1, 999); // ~25 km/h city average
           final distanceLabel = distanceM < 1000 ? '${distanceM.round()} م' : '${distanceKm.toStringAsFixed(1)} كم';
           readout = headingToPickup
-              ? '🚗 السائق على بعد $distanceLabel منك — وصول متوقع خلال ~$etaMin دقيقة'
-              : '🚖 باقي $distanceLabel على وجهتك — حوالي ~$etaMin دقيقة';
+              ? '${context.tr('ride_tracking_driver_near_pickup_prefix')} $distanceLabel ${context.tr('ride_tracking_driver_near_pickup_suffix')}$etaMin ${context.tr('ride_tracking_minutes_unit')}'
+              : '${context.tr('ride_tracking_driver_near_dest_prefix')} $distanceLabel ${context.tr('ride_tracking_driver_near_dest_suffix')}$etaMin ${context.tr('ride_tracking_minutes_unit')}';
 
           // TEMPORARY test threshold — the tester's phone GPS is ~1,646 km
           // from the pickup coordinates used in test rides, so the real
@@ -638,7 +642,7 @@ class _LiveMapSectionState extends State<_LiveMapSection> {
           if (headingToPickup && distanceM < 2000000 && !_nearAlertSent) {
             _nearAlertSent = true;
             WidgetsBinding.instance.addPostFrameCallback((_) {
-              AppNotifications.instance.show('وصّلها', '🚗 السائق قرّب منك أوي — استعد للنزول', channelId: 'wslha_proximity_v3');
+              AppNotifications.instance.show('وصّلها', context.tr('ride_tracking_driver_getting_close'), channelId: 'wslha_proximity_v3');
             });
           }
         }
@@ -664,7 +668,7 @@ class _LiveMapSectionState extends State<_LiveMapSection> {
                         const SizedBox(width: 6),
                         Expanded(
                           child: Text(
-                            readout ?? 'السائق على الخريطة الآن',
+                            readout ?? context.tr('ride_tracking_driver_on_map'),
                             style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 12),
                           ),
                         ),
@@ -685,7 +689,7 @@ class _LiveMapSectionState extends State<_LiveMapSection> {
                       driverPos?.longitude ?? destination.longitude,
                     ),
                     icon: const Icon(Icons.map_outlined),
-                    label: const Text('افتح في Google Maps'),
+                    label: Text(context.tr('ride_tracking_open_google_maps')),
                     style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
                   ),
                 ),
@@ -694,7 +698,7 @@ class _LiveMapSectionState extends State<_LiveMapSection> {
                   child: OutlinedButton.icon(
                     onPressed: () => shareLocationOnWhatsApp(),
                     icon: const Icon(Icons.share_location_outlined),
-                    label: const Text('شارك موقعك'),
+                    label: Text(context.tr('ride_tracking_share_location')),
                   ),
                 ),
               ],
@@ -746,7 +750,7 @@ class _Timeline extends StatelessWidget {
             SizedBox(
               width: 56,
               child: Text(
-                step.label,
+                _stepLabel(context, step.key),
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 9.5,
@@ -781,7 +785,11 @@ class _DriverCard extends StatelessWidget {
     final hasAc = profile['has_ac'] == true;
     final isClean = profile['is_clean'] == true;
 
-    const categoryLabels = {'sedan': 'سيدان', 'suv': 'SUV / كروز', 'van': 'ميكروباص'};
+    final categoryLabels = {
+      'sedan': context.tr('ride_tracking_vehicle_category_sedan'),
+      'suv': context.tr('ride_tracking_vehicle_category_suv'),
+      'van': context.tr('ride_tracking_vehicle_category_van'),
+    };
     final carLine = [
       categoryLabels[vehicleCategory] ?? vehicleCategory,
       vehicleColor,
@@ -816,7 +824,7 @@ class _DriverCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      (name != null && name.isNotEmpty) ? name : (fallbackName ?? 'السائق'),
+                      (name != null && name.isNotEmpty) ? name : (fallbackName ?? context.tr('ride_tracking_default_driver_name')),
                       style: TextStyle(fontSize: 15, fontWeight: FontWeight.w900, color: context.bodyText),
                     ),
                     if (carLine.isNotEmpty) ...[
@@ -825,7 +833,7 @@ class _DriverCard extends StatelessWidget {
                     ],
                     const SizedBox(height: 2),
                     Text(
-                      (regNumber != null && regNumber.isNotEmpty) ? '🚘 $regNumber' : '🚘 رقم اللوحة غير مسجّل',
+                      (regNumber != null && regNumber.isNotEmpty) ? '🚘 $regNumber' : context.tr('ride_tracking_reg_number_missing'),
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w700,
@@ -841,7 +849,7 @@ class _DriverCard extends StatelessWidget {
                         children: [
                           TrustBadge(
                             future: RatingsRepository().driverTrustBadge(driverPhone!),
-                            trustedLabel: 'سائق موثوق',
+                            trustedLabel: context.tr('ride_tracking_trusted_driver'),
                           ),
                           _DriverLevelBadge(driverPhone: driverPhone!),
                           _DriverTripCountBadge(driverPhone: driverPhone!),
@@ -859,7 +867,7 @@ class _DriverCard extends StatelessWidget {
                   child: IconButton(
                     onPressed: () => callPhone(driverPhone!),
                     icon: const Icon(Icons.call, color: AppColors.success),
-                    tooltip: 'اتصل بالسائق',
+                    tooltip: context.tr('ride_tracking_call_driver_tooltip'),
                   ),
                 ),
               ],
@@ -870,8 +878,8 @@ class _DriverCard extends StatelessWidget {
             Wrap(
               spacing: 6,
               children: [
-                if (hasAc) _badge('❄️ مكيّفة'),
-                if (isClean) _badge('🧼 نظيفة'),
+                if (hasAc) _badge(context.tr('ride_tracking_ac_badge')),
+                if (isClean) _badge(context.tr('ride_tracking_clean_badge')),
               ],
             ),
           ],
@@ -954,7 +962,7 @@ class _DriverTripCountBadge extends StatelessWidget {
         return Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
           decoration: BoxDecoration(color: const Color(0xFFF3F4F6), borderRadius: BorderRadius.circular(999)),
-          child: Text('🚗 $trips رحلة', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: Colors.black87)),
+          child: Text('🚗 $trips ${context.tr('ride_tracking_trip_count_suffix')}', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: Colors.black87)),
         );
       },
     );
@@ -993,7 +1001,7 @@ class _CustomerCard extends StatelessWidget {
           const SizedBox(width: 12),
           Expanded(
             child: Text(
-              (name != null && name!.isNotEmpty) ? name! : 'العميل',
+              (name != null && name!.isNotEmpty) ? name! : context.tr('ride_tracking_default_customer_fallback'),
               style: TextStyle(fontSize: 15, fontWeight: FontWeight.w900, color: context.bodyText),
             ),
           ),
@@ -1003,7 +1011,7 @@ class _CustomerCard extends StatelessWidget {
             child: IconButton(
               onPressed: () => callPhone(phone),
               icon: const Icon(Icons.call, color: AppColors.success),
-              tooltip: 'اتصل بالعميل',
+              tooltip: context.tr('ride_tracking_call_customer_tooltip'),
             ),
           ),
           Container(
@@ -1011,7 +1019,7 @@ class _CustomerCard extends StatelessWidget {
             child: IconButton(
               onPressed: () => openWhatsApp(phone),
               icon: const Icon(Icons.chat, color: AppColors.success),
-              tooltip: 'واتساب',
+              tooltip: context.tr('ride_tracking_whatsapp_tooltip'),
             ),
           ),
         ],
@@ -1057,7 +1065,7 @@ class _OffersPanelState extends State<_OffersPanel> {
     setState(() => _busyOfferId = null);
     if (!ok) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('تعذّر رفض العرض، حاول تاني')),
+        SnackBar(content: Text(context.tr('ride_tracking_offer_reject_failed'))),
       );
     }
   }
@@ -1087,8 +1095,8 @@ class _OffersPanelState extends State<_OffersPanel> {
                 children: [
                   const Text('🤝', style: TextStyle(fontSize: 16)),
                   const SizedBox(width: 6),
-                  const Expanded(
-                    child: Text('عروض أسعار السائقين', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 13)),
+                  Expanded(
+                    child: Text(context.tr('ride_tracking_offers_title'), style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 13)),
                   ),
                   if (offers.isNotEmpty)
                     Container(
@@ -1100,11 +1108,11 @@ class _OffersPanelState extends State<_OffersPanel> {
               ),
               const SizedBox(height: 10),
               if (offers.isEmpty)
-                const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 10),
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 10),
                   child: Text(
-                    'بنستنى سائقين يقدّموا أسعارهم… هتظهر هنا أول ما توصل',
-                    style: TextStyle(fontSize: 12, color: AppColors.textFaint),
+                    context.tr('ride_tracking_offers_waiting'),
+                    style: const TextStyle(fontSize: 12, color: AppColors.textFaint),
                     textAlign: TextAlign.center,
                   ),
                 )
@@ -1135,7 +1143,7 @@ class _OffersPanelState extends State<_OffersPanel> {
                             const SizedBox(width: 10),
                             Expanded(
                               child: Text(
-                                (name != null && name.isNotEmpty) ? name : 'سائق',
+                                (name != null && name.isNotEmpty) ? name : context.tr('ride_tracking_offer_driver_fallback'),
                                 style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
                               ),
                             ),
@@ -1155,7 +1163,7 @@ class _OffersPanelState extends State<_OffersPanel> {
                                 ),
                                 child: (isBusy && _busyIsReject)
                                     ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.error))
-                                    : const Text('رفض', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w900)),
+                                    : Text(context.tr('ride_tracking_offer_reject'), style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w900)),
                               ),
                             ),
                             const SizedBox(width: 8),
@@ -1168,7 +1176,7 @@ class _OffersPanelState extends State<_OffersPanel> {
                                 ),
                                 child: (isBusy && !_busyIsReject)
                                     ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                                    : const Text('قبول', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w900)),
+                                    : Text(context.tr('ride_tracking_offer_accept'), style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w900)),
                               ),
                             ),
                           ],
@@ -1220,7 +1228,7 @@ class _ArrivalDeadlineCard extends StatelessWidget {
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  'السائق متوقع يوصل الساعة ${arTime(deadline)} (خلال حوالي ${etaMinutes!.round()} دقيقة)',
+                  '${context.tr('ride_tracking_expected_arrival_prefix')} ${arTime(deadline)} ${context.tr('ride_tracking_expected_arrival_mid')} ${etaMinutes!.round()} ${context.tr('ride_tracking_minutes_unit')})',
                   style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w900, color: Colors.black87),
                 ),
               ),
@@ -1229,8 +1237,8 @@ class _ArrivalDeadlineCard extends StatelessWidget {
           const SizedBox(height: 6),
           Text(
             PricingSettings.driverLateFeeEnabled
-                ? 'يرجى التواجد عند نقطة الانطلاق في الموعد — تأخير السائق أكتر من ${PricingSettings.driverLateGraceMinutes} دقايق بيحمّله غرامة ${PricingSettings.driverLateFee.toStringAsFixed(0)} ج.م، فبلاش نتأخر عليه 🙏'
-                : 'يرجى التواجد عند نقطة الانطلاق في الموعد 🙏',
+                ? '${context.tr('ride_tracking_be_ready_fee_prefix')} ${PricingSettings.driverLateGraceMinutes} ${context.tr('ride_tracking_be_ready_fee_mid')} ${PricingSettings.driverLateFee.toStringAsFixed(0)} ${context.tr('ride_tracking_be_ready_fee_suffix')}'
+                : context.tr('ride_tracking_be_ready_plain'),
             style: const TextStyle(fontSize: 11, color: AppColors.textFaint, height: 1.4),
           ),
         ],
@@ -1256,8 +1264,8 @@ class _WaitingRulesNoticeCard extends StatelessWidget {
       return const SizedBox.shrink();
     }
     final text = isDriverView
-        ? 'لو اتأخرت عن العميل أكتر من ${PricingSettings.driverLateGraceMinutes} دقايق من وقت قبولك للرحلة، هيتم خصم ${PricingSettings.driverLateFee.toStringAsFixed(0)} ج.م من رصيدك تلقائيًا.'
-        : 'لما السائق يوصل، هيكون عندك ${PricingSettings.customerLateGraceMinutes} دقايق تركب فيها من غير أي خصم — لو اتأخرت أكتر من كده، هيتم خصم ${PricingSettings.customerLateFeePerMinute.toStringAsFixed(0)} ج.م عن كل دقيقة تأخير إضافية.';
+        ? '${context.tr('ride_tracking_driver_late_rule_prefix')} ${PricingSettings.driverLateGraceMinutes} ${context.tr('ride_tracking_driver_late_rule_mid')} ${PricingSettings.driverLateFee.toStringAsFixed(0)} ${context.tr('ride_tracking_driver_late_rule_suffix')}'
+        : '${context.tr('ride_tracking_customer_late_rule_prefix')} ${PricingSettings.customerLateGraceMinutes} ${context.tr('ride_tracking_customer_late_rule_mid')} ${PricingSettings.customerLateFeePerMinute.toStringAsFixed(0)} ${context.tr('ride_tracking_customer_late_rule_suffix')}';
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(color: const Color(0xFFF1F5F9), borderRadius: BorderRadius.circular(12)),
@@ -1298,7 +1306,7 @@ class _TierConfirmedCard extends StatelessWidget {
           const SizedBox(width: 8),
           Expanded(
             child: Text(
-              'خدمة "$tierLabel" اللي اخترتها متوفرة مع السائق ده',
+              '${context.tr('ride_tracking_tier_confirmed_card_prefix')} "$tierLabel" ${context.tr('ride_tracking_tier_confirmed_card_suffix')}',
               style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w900, color: Color(0xFF065F46)),
             ),
           ),
@@ -1308,7 +1316,14 @@ class _TierConfirmedCard extends StatelessWidget {
   }
 }
 
-const Map<String, String> _paymentLabels = {'cash': '💵 كاش عند الاستلام', 'wallet': '📱 محفظة إلكترونية'};
+// Was a top-level const Map<String,String> keyed by payment method, but its
+// values need translation — there's no BuildContext at const-init time, so
+// this helper resolves the text at the point of use instead.
+String? _paymentLabel(BuildContext context, String? key) {
+  if (key == 'cash') return context.tr('ride_tracking_payment_cash');
+  if (key == 'wallet') return context.tr('ride_tracking_payment_wallet');
+  return null;
+}
 
 /// Customer's own copy of the "فاتورة الرحلة" the driver already gets on
 /// completion (driver_home_screen.dart's _ReceiptDialog) — same event,
@@ -1355,41 +1370,41 @@ class _CustomerInvoiceDialog extends StatelessWidget {
               children: [
                 const Center(child: Text('✅', style: TextStyle(fontSize: 40))),
                 const SizedBox(height: 8),
-                const Center(child: Text('فاتورة الرحلة', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w900))),
+                Center(child: Text(context.tr('ride_tracking_invoice_title'), style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w900))),
                 const SizedBox(height: 20),
-                _row('من', '${ride['from_area'] ?? '—'}'),
+                _row(context.tr('ride_tracking_from_label'), '${ride['from_area'] ?? '—'}'),
                 const Divider(height: 22),
-                _row('إلى', '${ride['to_area'] ?? '—'}'),
+                _row(context.tr('ride_tracking_to_label'), '${ride['to_area'] ?? '—'}'),
                 if (distanceKm != null) ...[
                   const Divider(height: 22),
-                  _row('المسافة', '$distanceKm كم'),
+                  _row(context.tr('ride_tracking_invoice_distance'), '$distanceKm كم'),
                 ],
                 if (completedAt != null) ...[
                   const Divider(height: 22),
-                  _row('التاريخ والوقت', arDateTime(completedAt)),
+                  _row(context.tr('ride_tracking_invoice_datetime'), arDateTime(completedAt)),
                 ],
                 if (tier != null && tier != 'regular') ...[
                   const Divider(height: 22),
-                  _row('الخدمة المختارة', qualityLabels[tier] ?? tier),
+                  _row(context.tr('ride_tracking_invoice_service'), qualityLabels[tier] ?? tier),
                 ],
                 const Divider(height: 22),
-                _row('أجرة الرحلة', '${fare.toStringAsFixed(0)} ج.م'),
+                _row(context.tr('ride_tracking_invoice_fare'), '${fare.toStringAsFixed(0)} ج.م'),
                 if (lateFee > 0) ...[
                   const Divider(height: 22),
-                  _row('رسوم تأخير الركوب', '+ ${lateFee.toStringAsFixed(0)} ج.م', color: AppColors.error),
+                  _row(context.tr('ride_tracking_invoice_boarding_delay_fee'), '+ ${lateFee.toStringAsFixed(0)} ج.م', color: AppColors.error),
                 ],
                 if (payment != null) ...[
                   const Divider(height: 22),
-                  _row('طريقة الدفع', _paymentLabels[payment] ?? payment),
+                  _row(context.tr('ride_tracking_invoice_payment_method'), _paymentLabel(context, payment) ?? payment),
                 ],
                 const Divider(height: 22),
-                _row('الإجمالي المستحق', '${total.toStringAsFixed(0)} ج.م', bold: true, color: AppColors.success),
+                _row(context.tr('ride_tracking_invoice_total_due'), '${total.toStringAsFixed(0)} ج.م', bold: true, color: AppColors.success),
                 const SizedBox(height: 24),
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
                     onPressed: () => Navigator.of(context).pop(),
-                    child: const Text('تمام'),
+                    child: Text(context.tr('ride_tracking_invoice_ok')),
                   ),
                 ),
               ],
@@ -1474,7 +1489,7 @@ class _SearchingForDriverCardState extends State<_SearchingForDriverCard> {
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
-                  longWait ? 'لسه بندوّر على سائق قريب — استغرق الأمر وقت أطول من المعتاد' : 'جارٍ البحث عن أقرب سائق متاح…',
+                  longWait ? context.tr('ride_tracking_searching_long') : context.tr('ride_tracking_searching'),
                   style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w900, color: longWait ? Colors.black87 : context.bodyText),
                 ),
               ),
@@ -1484,9 +1499,9 @@ class _SearchingForDriverCardState extends State<_SearchingForDriverCard> {
           ),
           if (longWait) ...[
             const SizedBox(height: 6),
-            const Text(
-              'محدش من السواقين القريبين قبل الطلب لحد دلوقتي. تقدر تستنى شوية، أو تلغي الطلب من تحت.',
-              style: TextStyle(fontSize: 11, color: AppColors.textFaint, height: 1.4),
+            Text(
+              context.tr('ride_tracking_searching_long_hint'),
+              style: const TextStyle(fontSize: 11, color: AppColors.textFaint, height: 1.4),
             ),
           ],
         ],
@@ -1502,11 +1517,11 @@ class _EtaCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final (label, badge, badgeColor) = switch (status) {
-      'completed' => ('وصل طلبك بنجاح', '🎉 مكتمل', AppColors.success),
-      'in_progress' => ('السائق في الطريق إليك', '🛣️ في الطريق', AppColors.primary),
-      'arrived' => ('السائق بانتظارك في نقطة الانطلاق', '📍 وصل', AppColors.primary),
-      'accepted' => ('السائق في طريقه لاستلامك', '🚗 مقبولة', AppColors.primary),
-      _ => ('بانتظار سائق يقبل الرحلة', '📋 جديدة', AppColors.textFaint),
+      'completed' => (context.tr('ride_tracking_eta_completed_label'), context.tr('ride_tracking_eta_completed_badge'), AppColors.success),
+      'in_progress' => (context.tr('ride_tracking_eta_in_progress_label'), context.tr('ride_tracking_eta_in_progress_badge'), AppColors.primary),
+      'arrived' => (context.tr('ride_tracking_eta_arrived_label'), context.tr('ride_tracking_eta_arrived_badge'), AppColors.primary),
+      'accepted' => (context.tr('ride_tracking_eta_accepted_label'), context.tr('ride_tracking_eta_accepted_badge'), AppColors.primary),
+      _ => (context.tr('ride_tracking_eta_pending_label'), context.tr('ride_tracking_eta_pending_badge'), AppColors.textFaint),
     };
     return Container(
       padding: const EdgeInsets.all(16),

@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../core/feature_flags.dart';
+import '../../core/i18n.dart';
 import '../../core/phone_utils.dart';
 import '../../core/pricing_settings.dart';
 import '../../core/session.dart';
@@ -141,12 +142,12 @@ class DriverProfileScreenState extends State<DriverProfileScreen> {
           children: [
             ListTile(
               leading: const Icon(Icons.camera_alt_outlined),
-              title: const Text('التقاط صورة بالكاميرا'),
+              title: Text(context.tr('driver_profile_pick_camera')),
               onTap: () => Navigator.pop(sheetContext, ImageSource.camera),
             ),
             ListTile(
               leading: const Icon(Icons.photo_library_outlined),
-              title: const Text('اختيار من معرض الصور'),
+              title: Text(context.tr('driver_profile_pick_gallery')),
               onTap: () => Navigator.pop(sheetContext, ImageSource.gallery),
             ),
           ],
@@ -167,7 +168,7 @@ class DriverProfileScreenState extends State<DriverProfileScreen> {
       final url = await _accountRepo.uploadAvatar(widget.session.phone, bytes, ext.isEmpty ? 'jpg' : ext);
       if (!mounted) return;
       if (url == null) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تعذّر رفع الصورة، حاول تاني')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.tr('driver_profile_avatar_upload_failed'))));
         return;
       }
       await _load();
@@ -177,7 +178,7 @@ class DriverProfileScreenState extends State<DriverProfileScreen> {
       // forever — an endless spinner with no error shown, since nothing
       // downstream of the throw point ever ran.
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('تعذّر التقاط/رفع الصورة: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${context.tr('driver_profile_avatar_capture_error_prefix')} $e')));
     } finally {
       if (mounted) setState(() => _uploadingAvatar = false);
     }
@@ -205,17 +206,17 @@ class DriverProfileScreenState extends State<DriverProfileScreen> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const Text('تعديل بياناتي', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w900)),
+              Text(context.tr('driver_profile_edit_title'), style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w900)),
               const SizedBox(height: 16),
-              TextField(controller: nameCtrl, decoration: const InputDecoration(labelText: 'الاسم')),
+              TextField(controller: nameCtrl, decoration: InputDecoration(labelText: context.tr('driver_profile_edit_name_label'))),
               const SizedBox(height: 12),
-              TextField(controller: cityCtrl, decoration: const InputDecoration(labelText: 'المدينة')),
+              TextField(controller: cityCtrl, decoration: InputDecoration(labelText: context.tr('driver_profile_edit_city_label'))),
               const SizedBox(height: 12),
               TextField(
                 controller: emailCtrl,
                 keyboardType: TextInputType.emailAddress,
                 textDirection: TextDirection.ltr,
-                decoration: const InputDecoration(labelText: 'البريد الإلكتروني'),
+                decoration: InputDecoration(labelText: context.tr('driver_profile_edit_email_label')),
                 onChanged: (_) => setSheetState(() {}),
               ),
               // Changing the email needs a password check (update_account_email,
@@ -226,11 +227,11 @@ class DriverProfileScreenState extends State<DriverProfileScreen> {
                 TextField(
                   controller: passwordCtrl,
                   obscureText: true,
-                  decoration: const InputDecoration(labelText: 'كلمة مرور حسابك (لتأكيد تغيير البريد)'),
+                  decoration: InputDecoration(labelText: context.tr('driver_profile_edit_password_confirm_label')),
                 ),
               ],
               const SizedBox(height: 20),
-              ElevatedButton(onPressed: () => Navigator.of(sheetContext).pop(true), child: const Text('حفظ')),
+              ElevatedButton(onPressed: () => Navigator.of(sheetContext).pop(true), child: Text(context.tr('driver_profile_edit_save'))),
             ],
           ),
         ),
@@ -242,13 +243,13 @@ class DriverProfileScreenState extends State<DriverProfileScreen> {
     if (newEmail.toLowerCase() != originalEmail.trim().toLowerCase()) {
       if (passwordCtrl.text.isEmpty) {
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('أدخل كلمة مرور حسابك لتأكيد تغيير البريد الإلكتروني')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.tr('driver_profile_edit_password_required'))));
         return;
       }
       final ok = await _accountRepo.updateEmail(widget.session.phone, passwordCtrl.text, newEmail);
       if (!ok) {
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('كلمة المرور غير صحيحة — لم يتم تغيير البريد الإلكتروني')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.tr('driver_profile_edit_wrong_password'))));
         return;
       }
     }
@@ -259,7 +260,7 @@ class DriverProfileScreenState extends State<DriverProfileScreen> {
     );
     await _load();
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم حفظ التعديلات')));
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.tr('driver_profile_edit_saved'))));
   }
 
   Future<void> _logout() async {
@@ -291,7 +292,7 @@ class DriverProfileScreenState extends State<DriverProfileScreen> {
     final next = nextLevelFor(_ratingSummary.count);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('ملفي الشخصي')),
+      appBar: AppBar(title: Text(context.tr('driver_profile_title'))),
       body: RefreshIndicator(
         onRefresh: _load,
         child: ListView(
@@ -316,7 +317,7 @@ class DriverProfileScreenState extends State<DriverProfileScreen> {
             OutlinedButton.icon(
               onPressed: _editProfile,
               icon: const Icon(Icons.edit_outlined),
-              label: const Text('تعديل بياناتي'),
+              label: Text(context.tr('driver_profile_edit_button')),
               style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 14)),
             ),
             if (FeatureFlags.referralEnabled) ...[
@@ -324,7 +325,7 @@ class DriverProfileScreenState extends State<DriverProfileScreen> {
               OutlinedButton.icon(
                 onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const ReferralScreen())),
                 icon: const Icon(Icons.card_giftcard_outlined),
-                label: const Text('كود الدعوة'),
+                label: Text(context.tr('driver_profile_referral_button')),
                 style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 14)),
               ),
             ],
@@ -332,7 +333,7 @@ class DriverProfileScreenState extends State<DriverProfileScreen> {
             OutlinedButton.icon(
               onPressed: _logout,
               icon: const Icon(Icons.logout, color: AppColors.error),
-              label: const Text('تسجيل الخروج', style: TextStyle(color: AppColors.error)),
+              label: Text(context.tr('driver_profile_logout'), style: const TextStyle(color: AppColors.error)),
               style: OutlinedButton.styleFrom(
                 side: const BorderSide(color: AppColors.error),
                 padding: const EdgeInsets.symmetric(vertical: 14),
@@ -403,7 +404,7 @@ class DriverProfileScreenState extends State<DriverProfileScreen> {
           if (next != null) ...[
             const SizedBox(height: 8),
             Text(
-              'باقي ${next.minCount - _ratingSummary.count} تقييم للوصول لمستوى ${next.emoji} ${next.label}',
+              '${context.tr('driver_profile_next_level_prefix')} ${next.minCount - _ratingSummary.count} ${context.tr('driver_profile_next_level_mid')} ${next.emoji} ${next.label}',
               style: const TextStyle(color: Colors.white60, fontSize: 11),
               textAlign: TextAlign.center,
             ),
@@ -422,11 +423,11 @@ class DriverProfileScreenState extends State<DriverProfileScreen> {
         borderRadius: BorderRadius.circular(16),
         onTap: () => Navigator.of(context).push(MaterialPageRoute(
           builder: (_) => RatingsListScreen(
-            title: '🌟 تقييمات العملاء',
+            title: context.tr('driver_profile_ratings_title'),
             summary: s,
             reviews: _reviews,
-            countLabel: 'تقييم من العملاء',
-            emptyMessage: 'لسه مفيش تقييمات — هتظهر هنا أول ما عميل يقيّمك بعد رحلة',
+            countLabel: context.tr('driver_profile_ratings_count_label'),
+            emptyMessage: context.tr('driver_profile_ratings_empty'),
           ),
         )),
         child: Container(
@@ -446,11 +447,11 @@ class DriverProfileScreenState extends State<DriverProfileScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      s.isNew ? 'لسه ما وصلكش تقييم' : s.avg.toStringAsFixed(1),
+                      s.isNew ? context.tr('driver_profile_ratings_none_yet') : s.avg.toStringAsFixed(1),
                       style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
                     ),
                     Text(
-                      s.isNew ? 'التقييمات هتظهر هنا بعد أول رحلة' : '${s.count} تقييم من العملاء',
+                      s.isNew ? context.tr('driver_profile_ratings_none_yet_subtitle') : '${s.count} ${context.tr('driver_profile_ratings_count_suffix')}',
                       style: const TextStyle(fontSize: 12, color: AppColors.textFaint),
                     ),
                   ],
@@ -460,7 +461,7 @@ class DriverProfileScreenState extends State<DriverProfileScreen> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                   decoration: BoxDecoration(color: AppColors.success.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(999)),
-                  child: const Text('✅ سائق موثوق', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w900, color: AppColors.success)),
+                  child: Text(context.tr('driver_profile_trusted_driver'), style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w900, color: AppColors.success)),
                 ),
               const SizedBox(width: 4),
               const Icon(Icons.chevron_left, color: AppColors.textFaint),
@@ -483,11 +484,11 @@ class DriverProfileScreenState extends State<DriverProfileScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('🎯 هدفك', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 14)),
+          Text(context.tr('driver_profile_goal_title'), style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 14)),
           const SizedBox(height: 12),
-          _goalRow('اليوم', today, dailyGoal),
+          _goalRow(context.tr('driver_profile_goal_today'), today, dailyGoal),
           const SizedBox(height: 12),
-          _goalRow('الأسبوع', week, weeklyGoal),
+          _goalRow(context.tr('driver_profile_goal_week'), week, weeklyGoal),
         ],
       ),
     );
@@ -504,7 +505,7 @@ class DriverProfileScreenState extends State<DriverProfileScreen> {
           children: [
             Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.textFaint)),
             Text(
-              reached ? '🎉 وصلت للهدف!' : '$done / $goal رحلة',
+              reached ? context.tr('driver_profile_goal_reached') : '$done / $goal ${context.tr('driver_profile_goal_progress_suffix')}',
               style: TextStyle(fontSize: 12, fontWeight: FontWeight.w900, color: reached ? AppColors.success : AppColors.primary),
             ),
           ],
@@ -527,10 +528,10 @@ class DriverProfileScreenState extends State<DriverProfileScreen> {
     final overall = (_stats['overall'] as Map?) ?? {};
     final totalTrips = ((overall['trips'] as num?) ?? 0).toInt();
     final tiles = [
-      ('🏙️', 'داخل المدينة', _typeTrips('local')),
-      ('🛣️', 'خارج المحافظة', _typeTrips('external')),
-      ('✈️', 'رحلات مطار', _typeTrips('airport')),
-      ('🛍️', 'طلبات متاجر', _storeOrderTrips),
+      ('🏙️', context.tr('driver_profile_trips_local'), _typeTrips('local')),
+      ('🛣️', context.tr('driver_profile_trips_external'), _typeTrips('external')),
+      ('✈️', context.tr('driver_profile_trips_airport'), _typeTrips('airport')),
+      ('🛍️', context.tr('driver_profile_trips_store_orders'), _storeOrderTrips),
     ];
     return Container(
       padding: const EdgeInsets.all(16),
@@ -543,7 +544,7 @@ class DriverProfileScreenState extends State<DriverProfileScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text('إجمالي رحلاتي', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w900)),
+              Text(context.tr('driver_profile_total_trips'), style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w900)),
               Text('${totalTrips + _storeOrderTrips}', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w900, color: AppColors.primary)),
             ],
           ),
@@ -626,16 +627,16 @@ class DriverProfileScreenState extends State<DriverProfileScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('السيارة', style: TextStyle(fontSize: 12, color: AppColors.textFaint, fontWeight: FontWeight.w700)),
+                    Text(context.tr('driver_profile_vehicle_label'), style: const TextStyle(fontSize: 12, color: AppColors.textFaint, fontWeight: FontWeight.w700)),
                     const SizedBox(height: 4),
                     Text(
                       [model, color].where((e) => e != null && e.isNotEmpty).join(' — '),
                       style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w900),
                     ),
                     if (regNumber != null && regNumber.isNotEmpty)
-                      Text('لوحة: $regNumber', style: const TextStyle(fontSize: 12, color: AppColors.textFaint)),
+                      Text('${context.tr('driver_profile_vehicle_plate_prefix')} $regNumber', style: const TextStyle(fontSize: 12, color: AppColors.textFaint)),
                     if (year != null && year.isNotEmpty)
-                      Text('موديل: $year', style: const TextStyle(fontSize: 12, color: AppColors.textFaint)),
+                      Text('${context.tr('driver_profile_vehicle_model_year_prefix')} $year', style: const TextStyle(fontSize: 12, color: AppColors.textFaint)),
                   ],
                 ),
               ),
@@ -646,24 +647,24 @@ class DriverProfileScreenState extends State<DriverProfileScreen> {
             v: v,
             column: 'has_ac',
             value: hasAc,
-            label: '❄️ عربيتي مكيّفة',
-            hint: 'فعّلها لو عربيتك بتكييف — كده هتوصلك طلبات "عربية مكيّفة" اللي العميل بيدفع فيها سعر أعلى.',
+            label: context.tr('driver_profile_ac_label'),
+            hint: context.tr('driver_profile_ac_hint'),
           ),
           const SizedBox(height: 14),
           _qualityToggle(
             v: v,
             column: 'is_clean',
             value: v['is_clean'] == true,
-            label: '🧼 عربيتي نظيفة',
-            hint: 'فعّلها لو عربيتك دايمًا نظيفة من جوه وبره — كده هتوصلك طلبات "عربية نظيفة" اللي العميل بيدفع فيها سعر أعلى.',
+            label: context.tr('driver_profile_clean_label'),
+            hint: context.tr('driver_profile_clean_hint'),
           ),
           const SizedBox(height: 14),
           _qualityToggle(
             v: v,
             column: 'is_modern',
             value: v['is_modern'] == true,
-            label: '✨ عربيتي موديل حديث',
-            hint: 'فعّلها لو عربيتك موديل حديث فعلًا — كده هتوصلك طلبات "موديل حديث" اللي العميل بيدفع فيها سعر أعلى.',
+            label: context.tr('driver_profile_modern_label'),
+            hint: context.tr('driver_profile_modern_hint'),
           ),
         ],
       ),
@@ -701,7 +702,7 @@ class DriverProfileScreenState extends State<DriverProfileScreen> {
                 } catch (_) {
                   if (!mounted) return;
                   setState(() => _vehicle = {...v, column: value});
-                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تعذّر الحفظ، حاول تاني')));
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.tr('driver_profile_quality_toggle_save_failed'))));
                 }
               },
             ),
@@ -709,9 +710,9 @@ class DriverProfileScreenState extends State<DriverProfileScreen> {
         ),
         Text(hint, style: const TextStyle(fontSize: 11, color: AppColors.textFaint)),
         const SizedBox(height: 4),
-        const Text(
-          '⚠️ تفعيل الخدمة دي من غير ما تكون العربية فعلًا مطابقة يُعد مخالفة أخلاقية وعدم مصداقية في تقديم الخدمة — من فضلك التزم بالمصداقية حفاظًا على مستوى الخدمة.',
-          style: TextStyle(fontSize: 10.5, color: Colors.red, fontWeight: FontWeight.w700),
+        Text(
+          context.tr('driver_profile_quality_toggle_warning'),
+          style: const TextStyle(fontSize: 10.5, color: Colors.red, fontWeight: FontWeight.w700),
         ),
       ],
     );
@@ -726,9 +727,9 @@ class DriverProfileScreenState extends State<DriverProfileScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          _infoRow('المدينة', (city?.isNotEmpty == true) ? city! : '—'),
+          _infoRow(context.tr('driver_profile_info_city'), (city?.isNotEmpty == true) ? city! : context.tr('driver_profile_info_empty')),
           const Divider(height: 20),
-          _infoRow('البريد الإلكتروني', (email?.isNotEmpty == true) ? email! : '—'),
+          _infoRow(context.tr('driver_profile_info_email'), (email?.isNotEmpty == true) ? email! : context.tr('driver_profile_info_empty')),
         ],
       ),
     );

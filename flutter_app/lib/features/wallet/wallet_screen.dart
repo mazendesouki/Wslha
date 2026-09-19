@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../core/session.dart';
 import '../../core/theme.dart';
 import '../../shared/widgets/selectable_pill.dart';
+import '../../core/i18n.dart';
 import 'wallet_repository.dart';
 
 // Same Arabic labels as wallet.astro's `labels` map.
@@ -99,12 +100,12 @@ class _WalletScreenState extends State<WalletScreen> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const Text('⬆️ إيداع رصيد', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900)),
+              Text(context.tr('wallet_deposit_sheet_title'), style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900)),
               const SizedBox(height: 16),
               TextField(
                 controller: amountController,
                 keyboardType: TextInputType.number,
-                decoration: const InputDecoration(labelText: 'المبلغ (جنيه)'),
+                decoration: InputDecoration(labelText: context.tr('wallet_amount_label')),
               ),
               const SizedBox(height: 12),
               Wrap(
@@ -121,14 +122,14 @@ class _WalletScreenState extends State<WalletScreen> {
                     : () async {
                         final amount = double.tryParse(amountController.text) ?? 0;
                         if (amount < 10) {
-                          _showToast('أدخل مبلغاً لا يقل عن 10 جنيه', ok: false);
+                          _showToast(context.tr('wallet_min_amount_error'), ok: false);
                           return;
                         }
                         setSheetState(() => busy = true);
                         try {
-                          await _walletRepo.requestDeposit(_session!.phone, amount, method, 'طلب إيداع عبر $method');
+                          await _walletRepo.requestDeposit(_session!.phone, amount, method, '${context.tr('wallet_deposit_request_note')} $method');
                           if (ctx.mounted) Navigator.pop(ctx);
-                          _showToast('✅ تم استلام طلب الإيداع — سيُضاف الرصيد بعد تأكيد التحويل');
+                          _showToast(context.tr('wallet_deposit_success'));
                           _load();
                         } catch (e) {
                           _showToast(walletErrorMessage(e), ok: false);
@@ -137,7 +138,7 @@ class _WalletScreenState extends State<WalletScreen> {
                       },
                 child: busy
                     ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                    : const Text('إيداع الرصيد'),
+                    : Text(context.tr('wallet_deposit_button')),
               ),
             ],
           ),
@@ -164,20 +165,20 @@ class _WalletScreenState extends State<WalletScreen> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const Text('⬇️ سحب الرصيد', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900)),
+              Text(context.tr('wallet_withdraw_sheet_title'), style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900)),
               const SizedBox(height: 4),
-              Text('رصيدك المتاح: ${_balance.toStringAsFixed(0)} ج.م', textAlign: TextAlign.center),
+              Text('${context.tr('wallet_available_balance_label')}: ${_balance.toStringAsFixed(0)} ج.م', textAlign: TextAlign.center),
               const SizedBox(height: 16),
               TextField(
                 controller: amountController,
                 keyboardType: TextInputType.number,
-                decoration: const InputDecoration(labelText: 'المبلغ (جنيه)'),
+                decoration: InputDecoration(labelText: context.tr('wallet_amount_label')),
               ),
               const SizedBox(height: 12),
               TextField(
                 controller: destController,
                 keyboardType: TextInputType.phone,
-                decoration: const InputDecoration(labelText: 'رقم فودافون كاش / إنستاباي'),
+                decoration: InputDecoration(labelText: context.tr('wallet_dest_phone_label')),
               ),
               const SizedBox(height: 12),
               ElevatedButton(
@@ -186,18 +187,18 @@ class _WalletScreenState extends State<WalletScreen> {
                     : () async {
                         final amount = double.tryParse(amountController.text) ?? 0;
                         if (amount < 10) {
-                          _showToast('أدخل مبلغاً لا يقل عن 10 جنيه', ok: false);
+                          _showToast(context.tr('wallet_min_amount_error'), ok: false);
                           return;
                         }
                         if (destController.text.trim().isEmpty) {
-                          _showToast('أدخل رقم فودافون كاش أو إنستاباي', ok: false);
+                          _showToast(context.tr('wallet_dest_required_error'), ok: false);
                           return;
                         }
                         setSheetState(() => busy = true);
                         try {
                           await _walletRepo.requestWithdrawal(_session!.phone, amount, destController.text.trim(), null);
                           if (ctx.mounted) Navigator.pop(ctx);
-                          _showToast('✅ تم طلب سحب $amount ج.م — قيد المراجعة');
+                          _showToast('${context.tr('wallet_withdraw_requested_prefix')} $amount ج.م ${context.tr('wallet_withdraw_requested_suffix')}');
                           _load();
                         } catch (e) {
                           _showToast(walletErrorMessage(e), ok: false);
@@ -206,7 +207,7 @@ class _WalletScreenState extends State<WalletScreen> {
                       },
                 child: busy
                     ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                    : const Text('طلب سحب'),
+                    : Text(context.tr('wallet_withdraw_button')),
               ),
             ],
           ),
@@ -236,12 +237,12 @@ class _WalletScreenState extends State<WalletScreen> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const Text('↔️ تحويل لمستخدم', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900)),
+              Text(context.tr('wallet_transfer_sheet_title'), style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900)),
               const SizedBox(height: 16),
               TextField(
                 controller: phoneController,
                 keyboardType: TextInputType.phone,
-                decoration: const InputDecoration(labelText: 'رقم جوال المستلم'),
+                decoration: InputDecoration(labelText: context.tr('wallet_recipient_phone_label')),
                 onChanged: (v) {
                   debounce?.cancel();
                   debounce = Timer(const Duration(milliseconds: 600), () async {
@@ -260,7 +261,7 @@ class _WalletScreenState extends State<WalletScreen> {
                     children: [
                       const Text('👤', style: TextStyle(fontSize: 20)),
                       const SizedBox(width: 8),
-                      Text(recipient!['name'] as String? ?? 'مستخدم', style: const TextStyle(fontWeight: FontWeight.w800)),
+                      Text(recipient!['name'] as String? ?? context.tr('wallet_unknown_user'), style: const TextStyle(fontWeight: FontWeight.w800)),
                     ],
                   ),
                 ),
@@ -269,13 +270,13 @@ class _WalletScreenState extends State<WalletScreen> {
               TextField(
                 controller: amountController,
                 keyboardType: TextInputType.number,
-                decoration: const InputDecoration(labelText: 'المبلغ (جنيه)'),
+                decoration: InputDecoration(labelText: context.tr('wallet_amount_label')),
               ),
               const SizedBox(height: 12),
               TextField(
                 controller: passwordController,
                 obscureText: true,
-                decoration: const InputDecoration(labelText: 'كلمة مرور حسابك (للتأكيد)'),
+                decoration: InputDecoration(labelText: context.tr('wallet_password_confirm_label')),
               ),
               const SizedBox(height: 12),
               ElevatedButton(
@@ -284,27 +285,27 @@ class _WalletScreenState extends State<WalletScreen> {
                     : () async {
                         final amount = double.tryParse(amountController.text) ?? 0;
                         if (recipient == null) {
-                          _showToast('لم يُعثر على هذا المستخدم', ok: false);
+                          _showToast(context.tr('wallet_recipient_not_found'), ok: false);
                           return;
                         }
                         final recipientPhone = recipient!['phone'] as String;
                         if (recipientPhone == _session!.phone) {
-                          _showToast('لا يمكن التحويل لنفس الحساب', ok: false);
+                          _showToast(context.tr('wallet_same_account_error'), ok: false);
                           return;
                         }
                         if (amount < 1) {
-                          _showToast('أدخل مبلغاً صحيحاً', ok: false);
+                          _showToast(context.tr('wallet_invalid_amount_error'), ok: false);
                           return;
                         }
                         if (passwordController.text.isEmpty) {
-                          _showToast('أدخل كلمة مرور حسابك لتأكيد التحويل', ok: false);
+                          _showToast(context.tr('wallet_password_required_error'), ok: false);
                           return;
                         }
                         setSheetState(() => busy = true);
                         try {
                           await _walletRepo.transfer(_session!.phone, passwordController.text, recipientPhone, amount, null);
                           if (ctx.mounted) Navigator.pop(ctx);
-                          _showToast('✅ تم تحويل $amount ج.م بنجاح!');
+                          _showToast('${context.tr('wallet_transfer_success_prefix')} $amount ج.م ${context.tr('wallet_transfer_success_suffix')}');
                           _load();
                         } catch (e) {
                           _showToast(walletErrorMessage(e), ok: false);
@@ -313,7 +314,7 @@ class _WalletScreenState extends State<WalletScreen> {
                       },
                 child: busy
                     ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                    : const Text('تحويل الآن'),
+                    : Text(context.tr('wallet_transfer_button')),
               ),
             ],
           ),
@@ -329,7 +330,7 @@ class _WalletScreenState extends State<WalletScreen> {
     }
     if (_error != null) {
       return Scaffold(
-        appBar: AppBar(title: const Text('محفظتي')),
+        appBar: AppBar(title: Text(context.tr('wallet_title'))),
         body: Center(
           child: Padding(
             padding: const EdgeInsets.all(24),
@@ -338,7 +339,7 @@ class _WalletScreenState extends State<WalletScreen> {
               children: [
                 Text(_error!, textAlign: TextAlign.center),
                 const SizedBox(height: 16),
-                ElevatedButton(onPressed: _load, child: const Text('إعادة المحاولة')),
+                ElevatedButton(onPressed: _load, child: Text(context.tr('wallet_retry'))),
               ],
             ),
           ),
@@ -346,11 +347,11 @@ class _WalletScreenState extends State<WalletScreen> {
       );
     }
     if (_session == null) {
-      return const Scaffold(body: Center(child: Text('يرجى تسجيل الدخول')));
+      return Scaffold(body: Center(child: Text(context.tr('wallet_please_login'))));
     }
 
     return Scaffold(
-      appBar: AppBar(title: const Text('محفظتي')),
+      appBar: AppBar(title: Text(context.tr('wallet_title'))),
       body: RefreshIndicator(
         onRefresh: _load,
         child: ListView(
@@ -370,7 +371,7 @@ class _WalletScreenState extends State<WalletScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('رصيدك الآن', style: TextStyle(color: Colors.white70, fontSize: 12)),
+                  Text(context.tr('wallet_balance_now'), style: const TextStyle(color: Colors.white70, fontSize: 12)),
                   const SizedBox(height: 4),
                   Text(
                     '${_balance.toStringAsFixed(0)} ج.م',
@@ -379,23 +380,23 @@ class _WalletScreenState extends State<WalletScreen> {
                   const SizedBox(height: 16),
                   Row(
                     children: [
-                      Expanded(child: _WalletPillButton(label: 'إيداع', onPressed: _openDepositSheet)),
+                      Expanded(child: _WalletPillButton(label: context.tr('wallet_deposit_pill'), onPressed: _openDepositSheet)),
                       const SizedBox(width: 8),
-                      Expanded(child: _WalletPillButton(label: 'سحب', onPressed: _openWithdrawSheet)),
+                      Expanded(child: _WalletPillButton(label: context.tr('wallet_withdraw_pill'), onPressed: _openWithdrawSheet)),
                       const SizedBox(width: 8),
-                      Expanded(child: _WalletPillButton(label: 'تحويل', onPressed: _openTransferSheet)),
+                      Expanded(child: _WalletPillButton(label: context.tr('wallet_transfer_pill'), onPressed: _openTransferSheet)),
                     ],
                   ),
                 ],
               ),
             ),
             const SizedBox(height: 20),
-            const Text('المعاملات', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 15)),
+            Text(context.tr('wallet_transactions_title'), style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 15)),
             const SizedBox(height: 8),
             if (_transactions.isEmpty)
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: 32),
-                child: Center(child: Text('لا توجد معاملات بعد', style: TextStyle(color: AppColors.textFaint))),
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 32),
+                child: Center(child: Text(context.tr('wallet_no_transactions'), style: const TextStyle(color: AppColors.textFaint))),
               )
             else
               ..._transactions.map((t) {

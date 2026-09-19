@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/i18n.dart';
 import '../../core/session.dart';
 import '../../core/theme.dart';
 import '../rides/ride_tracking_screen.dart';
@@ -237,7 +238,7 @@ class _OrdersScreenState extends State<OrdersScreen> with SingleTickerProviderSt
 
     return Scaffold(
       backgroundColor: context.mutedSurface,
-      appBar: AppBar(title: const Text('طلباتي ومشاويري')),
+      appBar: AppBar(title: Text(context.tr('orders_title'))),
       body: Column(
         children: [
           Container(
@@ -252,10 +253,10 @@ class _OrdersScreenState extends State<OrdersScreen> with SingleTickerProviderSt
               indicatorSize: TabBarIndicatorSize.tab,
               dividerColor: Colors.transparent,
               padding: const EdgeInsets.all(4),
-              tabs: const [
-                Tab(text: '📋 الكل'),
-                Tab(text: '🚗 رحلات'),
-                Tab(text: '🛵 توصيل'),
+              tabs: [
+                Tab(text: context.tr('orders_tab_all')),
+                Tab(text: context.tr('orders_tab_rides')),
+                Tab(text: context.tr('orders_tab_delivery')),
               ],
             ),
           ),
@@ -265,10 +266,10 @@ class _OrdersScreenState extends State<OrdersScreen> with SingleTickerProviderSt
               spacing: 8,
               runSpacing: 8,
               children: [
-                _chip('today', '📅 اليوم', _periodFilter, (v) => setState(() => _periodFilter = v)),
-                _chip('week', '🗓️ الأسبوع', _periodFilter, (v) => setState(() => _periodFilter = v)),
-                _chip('month', '📆 الشهر', _periodFilter, (v) => setState(() => _periodFilter = v)),
-                _chip('all', '⏳ كل الوقت', _periodFilter, (v) => setState(() => _periodFilter = v)),
+                _chip('today', context.tr('orders_period_today'), _periodFilter, (v) => setState(() => _periodFilter = v)),
+                _chip('week', context.tr('orders_period_week'), _periodFilter, (v) => setState(() => _periodFilter = v)),
+                _chip('month', context.tr('orders_period_month'), _periodFilter, (v) => setState(() => _periodFilter = v)),
+                _chip('all', context.tr('orders_period_all'), _periodFilter, (v) => setState(() => _periodFilter = v)),
               ],
             ),
           ),
@@ -298,11 +299,11 @@ class _OrdersScreenState extends State<OrdersScreen> with SingleTickerProviderSt
                             Expanded(
                               child: Row(
                                 children: [
-                                  _summaryStat('$monthCount', 'رحلة/طلب هذا الشهر'),
+                                  _summaryStat('$monthCount', context.tr('orders_month_count_label')),
                                   const SizedBox(width: 18),
                                   Container(width: 1, height: 26, color: Colors.white24),
                                   const SizedBox(width: 18),
-                                  _summaryStat('${monthTotal.toStringAsFixed(0)} ج.م', 'تكلفة الشهر'),
+                                  _summaryStat('${monthTotal.toStringAsFixed(0)} ج.م', context.tr('orders_month_cost_label')),
                                 ],
                               ),
                             ),
@@ -317,17 +318,17 @@ class _OrdersScreenState extends State<OrdersScreen> with SingleTickerProviderSt
                     Row(
                       children: [
                         Expanded(
-                          child: _statusTile('✅', 'مكتملة', completedCount, totalSpent, AppColors.success,
+                          child: _statusTile('✅', context.tr('orders_status_completed'), completedCount, totalSpent, AppColors.success,
                               selected: _statusFilter == 'completed', onTap: () => _toggleStatusFilter('completed')),
                         ),
                         const SizedBox(width: 8),
                         Expanded(
-                          child: _statusTile('❌', 'ملغاة', cancelledCount, cancelledTotal, AppColors.error,
+                          child: _statusTile('❌', context.tr('orders_status_cancelled'), cancelledCount, cancelledTotal, AppColors.error,
                               selected: _statusFilter == 'cancelled', onTap: () => _toggleStatusFilter('cancelled')),
                         ),
                         const SizedBox(width: 8),
                         Expanded(
-                          child: _statusTile('⏳', 'قيد التنفيذ', activeCount, activeTotal, AppColors.accent,
+                          child: _statusTile('⏳', context.tr('orders_status_active'), activeCount, activeTotal, AppColors.accent,
                               selected: _statusFilter == 'active', onTap: () => _toggleStatusFilter('active')),
                         ),
                       ],
@@ -335,13 +336,13 @@ class _OrdersScreenState extends State<OrdersScreen> with SingleTickerProviderSt
                     const SizedBox(height: 8),
                     Row(
                       children: [
-                        Expanded(child: _typeTile('🛵', 'توصيل', deliveryCount, selected: _typeFilter == 'order', onTap: () => _toggleTypeFilter('order'))),
+                        Expanded(child: _typeTile('🛵', context.tr('orders_type_delivery'), deliveryCount, selected: _typeFilter == 'order', onTap: () => _toggleTypeFilter('order'))),
                         const SizedBox(width: 8),
-                        Expanded(child: _typeTile('🚗', 'داخلي', localCount, selected: _typeFilter == 'local', onTap: () => _toggleTypeFilter('local'))),
+                        Expanded(child: _typeTile('🚗', context.tr('orders_type_local'), localCount, selected: _typeFilter == 'local', onTap: () => _toggleTypeFilter('local'))),
                         const SizedBox(width: 8),
-                        Expanded(child: _typeTile('🛣️', 'خارجي', externalCount, selected: _typeFilter == 'external', onTap: () => _toggleTypeFilter('external'))),
+                        Expanded(child: _typeTile('🛣️', context.tr('orders_type_external'), externalCount, selected: _typeFilter == 'external', onTap: () => _toggleTypeFilter('external'))),
                         const SizedBox(width: 8),
-                        Expanded(child: _typeTile('✈️', 'مطار', airportCount, selected: _typeFilter == 'airport', onTap: () => _toggleTypeFilter('airport'))),
+                        Expanded(child: _typeTile('✈️', context.tr('orders_type_airport'), airportCount, selected: _typeFilter == 'airport', onTap: () => _toggleTypeFilter('airport'))),
                       ],
                     ),
                     if (weekKeys.isNotEmpty) ...[
@@ -352,11 +353,11 @@ class _OrdersScreenState extends State<OrdersScreen> with SingleTickerProviderSt
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text('📅 تقسيم أسبوعي (الشهر الحالي)', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 12)),
+                            Text(context.tr('orders_weekly_breakdown_title'), style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 12)),
                             const SizedBox(height: 6),
                             for (final w in weekKeys)
                               _weekRow(
-                                'الأسبوع $w (${(w - 1) * 7 + 1}–${w * 7})',
+                                '${context.tr('orders_week_label_prefix')} $w (${(w - 1) * 7 + 1}–${w * 7})',
                                 byWeek[w]!.length,
                                 byWeek[w]!.where((it) => _completedStatuses.contains(it.status)).fold<num>(0, (sum, it) => sum + it.total),
                               ),
@@ -374,7 +375,7 @@ class _OrdersScreenState extends State<OrdersScreen> with SingleTickerProviderSt
             child: TextField(
               controller: _searchCtrl,
               decoration: InputDecoration(
-                hintText: 'ابحث برقم الفاتورة أو الاسم...',
+                hintText: context.tr('orders_search_hint'),
                 prefixIcon: const Icon(Icons.search, size: 20),
                 suffixIcon: _search.isNotEmpty ? IconButton(icon: const Icon(Icons.close, size: 18), onPressed: _searchCtrl.clear) : null,
                 isDense: true,
@@ -400,7 +401,7 @@ class _OrdersScreenState extends State<OrdersScreen> with SingleTickerProviderSt
                               const SizedBox(height: 12),
                               Text(_error!, style: const TextStyle(fontSize: 11, color: AppColors.error), textAlign: TextAlign.center),
                               const SizedBox(height: 16),
-                              OutlinedButton(onPressed: _load, child: const Text('إعادة المحاولة')),
+                              OutlinedButton(onPressed: _load, child: Text(context.tr('orders_retry'))),
                             ],
                           ),
                         ),
@@ -414,14 +415,14 @@ class _OrdersScreenState extends State<OrdersScreen> with SingleTickerProviderSt
                                 const SizedBox(height: 12),
                                 Text(
                                   _search.isNotEmpty
-                                      ? 'مفيش نتائج تطابق البحث "${_searchCtrl.text}"'
+                                      ? '${context.tr('orders_no_search_results_prefix')} "${_searchCtrl.text}"'
                                       : _statusFilter != 'all' || _typeFilter != 'all'
-                                          ? 'مفيش نتائج للتصنيف المحدد — جرّب تشيل الفلتر'
+                                          ? context.tr('orders_no_filter_results')
                                           : _kindFilter == 'all'
-                                              ? 'لا يوجد طلبات أو مشاوير سابقة بعد'
+                                              ? context.tr('orders_no_history')
                                               : _kindFilter == 'ride'
-                                                  ? 'لسه مفيش رحلات في الفترة دي'
-                                                  : 'لسه مفيش توصيل في الفترة دي',
+                                                  ? context.tr('orders_no_rides_period')
+                                                  : context.tr('orders_no_delivery_period'),
                                   style: const TextStyle(color: AppColors.textFaint),
                                   textAlign: TextAlign.center,
                                 ),
@@ -526,7 +527,7 @@ class _OrdersScreenState extends State<OrdersScreen> with SingleTickerProviderSt
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(label, style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700, color: AppColors.textFaint)),
-          Text('$count رحلة/طلب — ${total.toStringAsFixed(0)} ج.م', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w800, color: context.bodyText)),
+          Text('$count ${context.tr('orders_trip_or_order_count_label')} — ${total.toStringAsFixed(0)} ج.م', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w800, color: context.bodyText)),
         ],
       ),
     );

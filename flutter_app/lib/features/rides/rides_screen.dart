@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/feature_flags.dart';
+import '../../core/i18n.dart';
 import '../../core/session.dart';
 import '../../core/theme.dart';
 import '../../shared/widgets/selectable_pill.dart';
@@ -141,7 +142,7 @@ class _RidesScreenState extends State<RidesScreen> {
       if (!mounted) return;
       setState(() => _submitting = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('تعذّر إرسال الطلب: $e'), backgroundColor: AppColors.error, duration: const Duration(seconds: 6)),
+        SnackBar(content: Text('${context.tr('rides_submit_failed_prefix')} $e'), backgroundColor: AppColors.error, duration: const Duration(seconds: 6)),
       );
       return;
     }
@@ -152,7 +153,7 @@ class _RidesScreenState extends State<RidesScreen> {
     final rideId = ride?['id']?.toString();
     if (rideId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('تعذّر إرسال الطلب، حاول مجدداً')),
+        SnackBar(content: Text(context.tr('rides_submit_failed_generic'))),
       );
       return;
     }
@@ -168,7 +169,7 @@ class _RidesScreenState extends State<RidesScreen> {
         );
         if (mounted && credited > 0) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('🎟️ اتضاف ${credited.toStringAsFixed(0)} ج.م لمحفظتك من كود الخصم')),
+            SnackBar(content: Text('${context.tr('rides_coupon_credited_prefix')} ${credited.toStringAsFixed(0)} ${context.tr('rides_coupon_credited_suffix')}')),
           );
         }
       } catch (_) {}
@@ -186,7 +187,7 @@ class _RidesScreenState extends State<RidesScreen> {
       final at = _scheduledAt!;
       setState(() => _scheduledAt = null);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('✅ اتحجزت رحلتك ليوم ${at.day}/${at.month} الساعة ${at.hour.toString().padLeft(2, '0')}:${at.minute.toString().padLeft(2, '0')}')),
+        SnackBar(content: Text('${context.tr('rides_scheduled_confirmation_prefix')} ${at.day}/${at.month} ${context.tr('rides_scheduled_confirmation_at')} ${at.hour.toString().padLeft(2, '0')}:${at.minute.toString().padLeft(2, '0')}')),
       );
       Navigator.of(context).push(
         MaterialPageRoute(builder: (_) => ScheduledRidesScreen(phone: _session!.phone)),
@@ -216,7 +217,7 @@ class _RidesScreenState extends State<RidesScreen> {
     final picked = DateTime(date.year, date.month, date.day, time.hour, time.minute);
     if (picked.isBefore(now.add(const Duration(minutes: 30)))) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('لازم الميعاد يكون بعد نص ساعة على الأقل من دلوقتي')),
+        SnackBar(content: Text(context.tr('rides_schedule_too_soon'))),
       );
       return;
     }
@@ -235,8 +236,10 @@ class _RidesScreenState extends State<RidesScreen> {
   String _stopLabel(int index) {
     // Only the last stop field reads as "الوجهة" — earlier ones are
     // waypoints the driver stops at along the way.
-    if (index == _stops.length - 1) return _stops.length > 1 ? 'الوجهة النهائية' : 'إلى';
-    return 'نقطة توقف ${index + 1}';
+    if (index == _stops.length - 1) {
+      return _stops.length > 1 ? context.tr('rides_stop_final_destination') : context.tr('rides_stop_to');
+    }
+    return '${context.tr('rides_stop_label_prefix')} ${index + 1}';
   }
 
   @override
@@ -246,11 +249,11 @@ class _RidesScreenState extends State<RidesScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('مشاوير دمياط'),
+        title: Text(context.tr('rides_app_bar_title')),
         actions: [
           if (FeatureFlags.scheduledRidesEnabled && _session != null)
             IconButton(
-              tooltip: 'رحلاتي المجدولة',
+              tooltip: context.tr('rides_my_scheduled_rides'),
               icon: const Icon(Icons.event_available),
               onPressed: () => Navigator.of(context).push(
                 MaterialPageRoute(builder: (_) => ScheduledRidesScreen(phone: _session!.phone)),
@@ -264,7 +267,7 @@ class _RidesScreenState extends State<RidesScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              _sectionLabel('📍 نقطة الانطلاق والوجهة'),
+              _sectionLabel(context.tr('rides_section_from_to')),
               Container(
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
@@ -276,8 +279,8 @@ class _RidesScreenState extends State<RidesScreen> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     AddressField(
-                      label: 'من',
-                      hint: 'نقطة الانطلاق',
+                      label: context.tr('rides_from_label'),
+                      hint: context.tr('rides_from_hint'),
                       showLocationButton: true,
                       prefixIcon: Icons.trip_origin,
                       onSelected: (r) => setState(() => _from = r),
@@ -291,7 +294,7 @@ class _RidesScreenState extends State<RidesScreen> {
                             child: AddressField(
                               key: ValueKey('stop-$i-${_stops.length}'),
                               label: _stopLabel(i),
-                              hint: i == _stops.length - 1 ? 'الوجهة' : 'وين تحب تقف؟',
+                              hint: i == _stops.length - 1 ? context.tr('rides_stop_hint_final') : context.tr('rides_stop_hint_waypoint'),
                               prefixIcon: i == _stops.length - 1 ? Icons.flag_outlined : Icons.location_on_outlined,
                               onSelected: (r) => setState(() => _stops[i] = r),
                             ),
@@ -300,7 +303,7 @@ class _RidesScreenState extends State<RidesScreen> {
                             IconButton(
                               icon: const Icon(Icons.close, color: AppColors.textFaint),
                               onPressed: () => _removeStop(i),
-                              tooltip: 'حذف نقطة التوقف',
+                              tooltip: context.tr('rides_remove_stop_tooltip'),
                             ),
                         ],
                       ),
@@ -313,7 +316,7 @@ class _RidesScreenState extends State<RidesScreen> {
                           onPressed: _addStop,
                           style: TextButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4), visualDensity: VisualDensity.compact),
                           icon: const Icon(Icons.add_location_alt_outlined, size: 18),
-                          label: const Text('إضافة نقطة توقف (مشوار متعدد)', style: TextStyle(fontSize: 12)),
+                          label: Text(context.tr('rides_add_stop'), style: const TextStyle(fontSize: 12)),
                         ),
                       ),
                     const Divider(height: 20),
@@ -321,7 +324,7 @@ class _RidesScreenState extends State<RidesScreen> {
                       children: [
                         const Icon(Icons.people_outline, size: 20, color: AppColors.textFaint),
                         const SizedBox(width: 8),
-                        const Text('عدد الركاب', style: TextStyle(fontWeight: FontWeight.w700)),
+                        Text(context.tr('rides_passenger_count'), style: const TextStyle(fontWeight: FontWeight.w700)),
                         const Spacer(),
                         IconButton(
                           visualDensity: VisualDensity.compact,
@@ -340,7 +343,7 @@ class _RidesScreenState extends State<RidesScreen> {
                 ),
               ),
               const SizedBox(height: 12),
-              _sectionLabel('⭐ نوع الخدمة والدفع'),
+              _sectionLabel(context.tr('rides_section_service_payment')),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
                 decoration: BoxDecoration(
@@ -367,11 +370,11 @@ class _RidesScreenState extends State<RidesScreen> {
                         ],
                       ),
                     ),
-                    const Padding(
-                      padding: EdgeInsets.fromLTRB(4, 0, 4, 8),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(4, 0, 4, 8),
                       child: Text(
-                        'تغيير نوع الخدمة بعد بدء الرحلة يُعد مخالفة — الشركة والكابتن غير مسؤولين عن هذا الاختيار.',
-                        style: TextStyle(fontSize: 9.5, color: AppColors.textFaint, height: 1.3),
+                        context.tr('rides_tier_change_warning'),
+                        style: const TextStyle(fontSize: 9.5, color: AppColors.textFaint, height: 1.3),
                       ),
                     ),
                     const Divider(height: 1),
@@ -381,8 +384,8 @@ class _RidesScreenState extends State<RidesScreen> {
                         spacing: 6,
                         runSpacing: 6,
                         children: [
-                          SelectablePill(label: '💵 كاش عند الاستلام', selected: _payment == 'cash', onTap: () => setState(() => _payment = 'cash')),
-                          SelectablePill(label: '📱 فودافون كاش / إنستاباي', selected: _payment == 'wallet', onTap: () => setState(() => _payment = 'wallet')),
+                          SelectablePill(label: context.tr('rides_payment_cash'), selected: _payment == 'cash', onTap: () => setState(() => _payment = 'cash')),
+                          SelectablePill(label: context.tr('rides_payment_wallet'), selected: _payment == 'wallet', onTap: () => setState(() => _payment = 'wallet')),
                         ],
                       ),
                     ),
@@ -394,10 +397,10 @@ class _RidesScreenState extends State<RidesScreen> {
                       dense: true,
                       visualDensity: VisualDensity.compact,
                       activeThumbColor: AppColors.primary,
-                      title: const Text('🤝 اطلب بسعر تفاوضي', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
-                      subtitle: const Text(
-                        'السائقين يقدّموا أسعارهم وانت تختار',
-                        style: TextStyle(fontSize: 10.5, color: AppColors.primaryDark, fontWeight: FontWeight.w600),
+                      title: Text(context.tr('rides_negotiable_title'), style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
+                      subtitle: Text(
+                        context.tr('rides_negotiable_subtitle'),
+                        style: const TextStyle(fontSize: 10.5, color: AppColors.primaryDark, fontWeight: FontWeight.w600),
                       ),
                     ),
                   ],
@@ -405,7 +408,7 @@ class _RidesScreenState extends State<RidesScreen> {
               ),
               const SizedBox(height: 12),
               if (_straightKm > 0) ...[
-                _sectionLabel('💰 ملخص الأجرة'),
+                _sectionLabel(context.tr('rides_section_fare_summary')),
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
@@ -416,20 +419,20 @@ class _RidesScreenState extends State<RidesScreen> {
                   child: Column(
                     children: [
                       if (_negotiable)
-                        const Padding(
-                          padding: EdgeInsets.only(bottom: 10),
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 10),
                           child: Text(
-                            '🤝 وضع تفاوضي — الرقم اللي تحت ده تقديري بس، السعر النهائي هيكون حسب عرض السائق اللي هتختاره',
-                            style: TextStyle(fontSize: 11, color: AppColors.primaryDark, fontWeight: FontWeight.w700),
+                            context.tr('rides_negotiable_notice'),
+                            style: const TextStyle(fontSize: 11, color: AppColors.primaryDark, fontWeight: FontWeight.w700),
                             textAlign: TextAlign.center,
                           ),
                         ),
                       if (_isExternal)
-                        const Padding(
-                          padding: EdgeInsets.only(bottom: 10),
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 10),
                           child: Text(
-                            '🛣️ رحلة خارج محافظة دمياط — سعر مختلف عن المشاوير الداخلية',
-                            style: TextStyle(fontSize: 11, color: AppColors.primaryDark, fontWeight: FontWeight.w700),
+                            context.tr('rides_external_notice'),
+                            style: const TextStyle(fontSize: 11, color: AppColors.primaryDark, fontWeight: FontWeight.w700),
                             textAlign: TextAlign.center,
                           ),
                         ),
@@ -437,7 +440,7 @@ class _RidesScreenState extends State<RidesScreen> {
                         Padding(
                           padding: const EdgeInsets.only(bottom: 10),
                           child: Text(
-                            '🔥 الطلب مرتفع دلوقتي — السعر شمل زيادة مؤقتة ×${_surgeMult.toStringAsFixed(2)}',
+                            '${context.tr('rides_surge_notice_prefix')}${_surgeMult.toStringAsFixed(2)}',
                             style: const TextStyle(fontSize: 11, color: AppColors.error, fontWeight: FontWeight.w800),
                             textAlign: TextAlign.center,
                           ),
@@ -446,7 +449,7 @@ class _RidesScreenState extends State<RidesScreen> {
                         Padding(
                           padding: const EdgeInsets.only(bottom: 10),
                           child: Text(
-                            '🛑 مشوار متعدد النقاط (${_filledPoints.length - 1} محطة) — الأجرة إجمالي كل المراحل',
+                            '${context.tr('rides_multistop_notice_prefix')} (${_filledPoints.length - 1} ${context.tr('rides_multistop_notice_stop_unit')}) — ${context.tr('rides_multistop_notice_suffix')}',
                             style: const TextStyle(fontSize: 11, color: AppColors.primaryDark, fontWeight: FontWeight.w700),
                             textAlign: TextAlign.center,
                           ),
@@ -454,9 +457,9 @@ class _RidesScreenState extends State<RidesScreen> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceAround,
                         children: [
-                          _statColumn('${(_roadKm).toStringAsFixed(1)} كم', 'المسافة'),
-                          _statColumn('$_eta دقيقة', 'الوقت المتوقع'),
-                          _statColumn('$_fare ج.م', 'الأجرة'),
+                          _statColumn('${(_roadKm).toStringAsFixed(1)} كم', context.tr('rides_stat_distance')),
+                          _statColumn('$_eta دقيقة', context.tr('rides_stat_eta')),
+                          _statColumn('$_fare ج.م', context.tr('rides_stat_fare')),
                         ],
                       ),
                     ],
@@ -482,8 +485,8 @@ class _RidesScreenState extends State<RidesScreen> {
                         Expanded(
                           child: Text(
                             _scheduledAt == null
-                                ? '🗓️ جدولة الرحلة لميعاد لاحق (اختياري)'
-                                : 'مجدولة: ${_scheduledAt!.day}/${_scheduledAt!.month} — ${_scheduledAt!.hour.toString().padLeft(2, '0')}:${_scheduledAt!.minute.toString().padLeft(2, '0')}',
+                                ? context.tr('rides_schedule_later')
+                                : '${context.tr('rides_scheduled_for_prefix')} ${_scheduledAt!.day}/${_scheduledAt!.month} — ${_scheduledAt!.hour.toString().padLeft(2, '0')}:${_scheduledAt!.minute.toString().padLeft(2, '0')}',
                             style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
                           ),
                         ),
@@ -516,8 +519,8 @@ class _RidesScreenState extends State<RidesScreen> {
                         child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                       )
                     : Text(_scheduledAt != null
-                        ? '🗓️ جدولة المشوار'
-                        : (_negotiable ? '🤝 اطلب عروض أسعار من السائقين' : '🚖 اطلب مشوارك الآن')),
+                        ? context.tr('rides_submit_schedule')
+                        : (_negotiable ? context.tr('rides_submit_negotiable') : context.tr('rides_submit_now'))),
               ),
             ],
           ),

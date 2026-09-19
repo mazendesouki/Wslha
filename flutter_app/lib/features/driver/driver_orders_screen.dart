@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/i18n.dart';
 import '../../core/session.dart';
 import '../../core/supabase_client.dart';
 import '../../core/theme.dart';
@@ -277,7 +278,7 @@ class _DriverOrdersScreenState extends State<DriverOrdersScreen> with SingleTick
 
     return Scaffold(
       backgroundColor: context.mutedSurface,
-      appBar: AppBar(title: const Text('طلباتي ورحلاتي')),
+      appBar: AppBar(title: Text(context.tr('driver_orders_title'))),
       body: Column(
         children: [
           Container(
@@ -292,10 +293,10 @@ class _DriverOrdersScreenState extends State<DriverOrdersScreen> with SingleTick
               indicatorSize: TabBarIndicatorSize.tab,
               dividerColor: Colors.transparent,
               padding: const EdgeInsets.all(4),
-              tabs: const [
-                Tab(text: '📋 الكل'),
-                Tab(text: '🚗 رحلات'),
-                Tab(text: '🛵 توصيل'),
+              tabs: [
+                Tab(text: context.tr('driver_orders_tab_all')),
+                Tab(text: context.tr('driver_orders_tab_rides')),
+                Tab(text: context.tr('driver_orders_tab_delivery')),
               ],
             ),
           ),
@@ -305,10 +306,10 @@ class _DriverOrdersScreenState extends State<DriverOrdersScreen> with SingleTick
               spacing: 8,
               runSpacing: 8,
               children: [
-                _chip('today', '📅 اليوم', _periodFilter, (v) => setState(() => _periodFilter = v)),
-                _chip('week', '🗓️ الأسبوع', _periodFilter, (v) => setState(() => _periodFilter = v)),
-                _chip('month', '📆 الشهر', _periodFilter, (v) => setState(() => _periodFilter = v)),
-                _chip('all', '⏳ كل الوقت', _periodFilter, (v) => setState(() => _periodFilter = v)),
+                _chip('today', context.tr('driver_orders_period_today'), _periodFilter, (v) => setState(() => _periodFilter = v)),
+                _chip('week', context.tr('driver_orders_period_week'), _periodFilter, (v) => setState(() => _periodFilter = v)),
+                _chip('month', context.tr('driver_orders_period_month'), _periodFilter, (v) => setState(() => _periodFilter = v)),
+                _chip('all', context.tr('driver_orders_period_all'), _periodFilter, (v) => setState(() => _periodFilter = v)),
               ],
             ),
           ),
@@ -338,11 +339,11 @@ class _DriverOrdersScreenState extends State<DriverOrdersScreen> with SingleTick
                             Expanded(
                               child: Row(
                                 children: [
-                                  _summaryStat('$monthCount', 'رحلة/طلب هذا الشهر'),
+                                  _summaryStat('$monthCount', context.tr('driver_orders_month_count_label')),
                                   const SizedBox(width: 18),
                                   Container(width: 1, height: 26, color: Colors.white24),
                                   const SizedBox(width: 18),
-                                  _summaryStat('${monthTotal.toStringAsFixed(0)} ج.م', 'أرباح الشهر'),
+                                  _summaryStat('${monthTotal.toStringAsFixed(0)} ${context.tr('driver_orders_currency')}', context.tr('driver_orders_month_earnings_label')),
                                 ],
                               ),
                             ),
@@ -357,17 +358,17 @@ class _DriverOrdersScreenState extends State<DriverOrdersScreen> with SingleTick
                     Row(
                       children: [
                         Expanded(
-                          child: _statusTile('✅', 'مكتملة', completedCount, totalEarn, AppColors.success,
+                          child: _statusTile('✅', context.tr('driver_orders_status_completed'), completedCount, totalEarn, AppColors.success,
                               selected: _statusFilter == 'completed', onTap: () => _toggleStatusFilter('completed')),
                         ),
                         const SizedBox(width: 8),
                         Expanded(
-                          child: _statusTile('❌', 'ملغاة', cancelledCount, cancelledTotal, AppColors.error,
+                          child: _statusTile('❌', context.tr('driver_orders_status_cancelled'), cancelledCount, cancelledTotal, AppColors.error,
                               selected: _statusFilter == 'cancelled', onTap: () => _toggleStatusFilter('cancelled')),
                         ),
                         const SizedBox(width: 8),
                         Expanded(
-                          child: _statusTile('⏳', 'قيد التنفيذ', activeCount, activeTotal, AppColors.accent,
+                          child: _statusTile('⏳', context.tr('driver_orders_status_active'), activeCount, activeTotal, AppColors.accent,
                               selected: _statusFilter == 'active', onTap: () => _toggleStatusFilter('active')),
                         ),
                       ],
@@ -375,13 +376,13 @@ class _DriverOrdersScreenState extends State<DriverOrdersScreen> with SingleTick
                     const SizedBox(height: 8),
                     Row(
                       children: [
-                        Expanded(child: _typeTile('🛵', 'توصيل', deliveryCount, selected: _typeFilter == 'order', onTap: () => _toggleTypeFilter('order'))),
+                        Expanded(child: _typeTile('🛵', context.tr('driver_orders_type_delivery'), deliveryCount, selected: _typeFilter == 'order', onTap: () => _toggleTypeFilter('order'))),
                         const SizedBox(width: 8),
-                        Expanded(child: _typeTile('🚗', 'داخلي', localCount, selected: _typeFilter == 'local', onTap: () => _toggleTypeFilter('local'))),
+                        Expanded(child: _typeTile('🚗', context.tr('driver_orders_type_local'), localCount, selected: _typeFilter == 'local', onTap: () => _toggleTypeFilter('local'))),
                         const SizedBox(width: 8),
-                        Expanded(child: _typeTile('🛣️', 'خارجي', externalCount, selected: _typeFilter == 'external', onTap: () => _toggleTypeFilter('external'))),
+                        Expanded(child: _typeTile('🛣️', context.tr('driver_orders_type_external'), externalCount, selected: _typeFilter == 'external', onTap: () => _toggleTypeFilter('external'))),
                         const SizedBox(width: 8),
-                        Expanded(child: _typeTile('✈️', 'مطار', airportCount, selected: _typeFilter == 'airport', onTap: () => _toggleTypeFilter('airport'))),
+                        Expanded(child: _typeTile('✈️', context.tr('driver_orders_type_airport'), airportCount, selected: _typeFilter == 'airport', onTap: () => _toggleTypeFilter('airport'))),
                       ],
                     ),
                     if (weekKeys.isNotEmpty) ...[
@@ -392,11 +393,11 @@ class _DriverOrdersScreenState extends State<DriverOrdersScreen> with SingleTick
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text('📅 تقسيم أسبوعي (الشهر الحالي)', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 12)),
+                            Text(context.tr('driver_orders_weekly_breakdown_title'), style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 12)),
                             const SizedBox(height: 6),
                             for (final w in weekKeys)
                               _weekRow(
-                                'الأسبوع $w (${(w - 1) * 7 + 1}–${w * 7})',
+                                '${context.tr('driver_orders_week_label_prefix')} $w (${(w - 1) * 7 + 1}–${w * 7})',
                                 byWeek[w]!.length,
                                 byWeek[w]!.where((it) => _completedStatuses.contains(it.status)).fold<num>(0, (sum, it) => sum + it.total),
                               ),
@@ -414,7 +415,7 @@ class _DriverOrdersScreenState extends State<DriverOrdersScreen> with SingleTick
             child: TextField(
               controller: _searchCtrl,
               decoration: InputDecoration(
-                hintText: 'ابحث برقم الفاتورة أو الاسم...',
+                hintText: context.tr('driver_orders_search_hint'),
                 prefixIcon: const Icon(Icons.search, size: 20),
                 suffixIcon: _search.isNotEmpty ? IconButton(icon: const Icon(Icons.close, size: 18), onPressed: _searchCtrl.clear) : null,
                 isDense: true,
@@ -440,7 +441,7 @@ class _DriverOrdersScreenState extends State<DriverOrdersScreen> with SingleTick
                               const SizedBox(height: 12),
                               Text(_error!, style: const TextStyle(fontSize: 11, color: AppColors.error), textAlign: TextAlign.center),
                               const SizedBox(height: 16),
-                              OutlinedButton(onPressed: _load, child: const Text('إعادة المحاولة')),
+                              OutlinedButton(onPressed: _load, child: Text(context.tr('driver_orders_retry'))),
                             ],
                           ),
                         ),
@@ -454,14 +455,14 @@ class _DriverOrdersScreenState extends State<DriverOrdersScreen> with SingleTick
                                 const SizedBox(height: 12),
                                 Text(
                                   _search.isNotEmpty
-                                      ? 'مفيش نتائج تطابق البحث "${_searchCtrl.text}"'
+                                      ? '${context.tr('driver_orders_empty_search_prefix')} "${_searchCtrl.text}"'
                                       : _statusFilter != 'all' || _typeFilter != 'all'
-                                          ? 'مفيش نتائج للتصنيف المحدد — جرّب تشيل الفلتر'
+                                          ? context.tr('driver_orders_empty_filtered')
                                           : _kindFilter == 'all'
-                                              ? 'لسه مفيش طلبات أو رحلات في الفترة دي'
+                                              ? context.tr('driver_orders_empty_all')
                                               : _kindFilter == 'ride'
-                                                  ? 'لسه مفيش رحلات في الفترة دي'
-                                                  : 'لسه مفيش توصيل في الفترة دي',
+                                                  ? context.tr('driver_orders_empty_rides')
+                                                  : context.tr('driver_orders_empty_delivery'),
                                   style: const TextStyle(color: AppColors.textFaint),
                                   textAlign: TextAlign.center,
                                 ),
@@ -501,7 +502,7 @@ class _DriverOrdersScreenState extends State<DriverOrdersScreen> with SingleTick
                                               ],
                                             ),
                                           ),
-                                          Text('${item.total} ج.م', style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 14, color: AppColors.primary)),
+                                          Text('${item.total} ${context.tr('driver_orders_currency')}', style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 14, color: AppColors.primary)),
                                           const SizedBox(width: 4),
                                           const Icon(Icons.chevron_left, color: AppColors.textFaint, size: 18),
                                         ],
@@ -535,7 +536,7 @@ class _DriverOrdersScreenState extends State<DriverOrdersScreen> with SingleTick
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(label, style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700, color: AppColors.textFaint)),
-          Text('$count رحلة/طلب — ${total.toStringAsFixed(0)} ج.م', style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w800, color: Colors.black87)),
+          Text('$count ${context.tr('driver_orders_week_row_suffix')} ${total.toStringAsFixed(0)} ${context.tr('driver_orders_currency')}', style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w800, color: Colors.black87)),
         ],
       ),
     );
@@ -560,7 +561,7 @@ class _DriverOrdersScreenState extends State<DriverOrdersScreen> with SingleTick
               Text('$emoji $count', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 19, color: color)),
               const SizedBox(height: 2),
               Text(label, style: const TextStyle(fontSize: 10, color: AppColors.textFaint, fontWeight: FontWeight.w700)),
-              Text('${total.toStringAsFixed(0)} ج.م', style: TextStyle(fontSize: 10, color: color, fontWeight: FontWeight.w700)),
+              Text('${total.toStringAsFixed(0)} ${context.tr('driver_orders_currency')}', style: TextStyle(fontSize: 10, color: color, fontWeight: FontWeight.w700)),
             ],
           ),
         ),

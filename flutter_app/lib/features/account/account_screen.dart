@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../core/feature_flags.dart';
+import '../../core/i18n.dart';
 import '../../core/session.dart';
 import '../../core/theme.dart';
 import '../favorites/favorite_drivers_screen.dart';
@@ -104,12 +105,12 @@ class AccountScreenState extends State<AccountScreen> {
           children: [
             ListTile(
               leading: const Icon(Icons.camera_alt_outlined),
-              title: const Text('التقاط صورة بالكاميرا'),
+              title: Text(context.tr('account_camera_capture')),
               onTap: () => Navigator.pop(sheetContext, ImageSource.camera),
             ),
             ListTile(
               leading: const Icon(Icons.photo_library_outlined),
-              title: const Text('اختيار من معرض الصور'),
+              title: Text(context.tr('account_choose_gallery')),
               onTap: () => Navigator.pop(sheetContext, ImageSource.gallery),
             ),
           ],
@@ -131,7 +132,7 @@ class AccountScreenState extends State<AccountScreen> {
       final url = await _repo.uploadAvatar(_session!.phone, bytes, ext.isEmpty ? 'jpg' : ext);
       if (!mounted) return;
       if (url == null) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تعذّر رفع الصورة، حاول تاني')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.tr('account_avatar_upload_failed'))));
         return;
       }
       await _load();
@@ -141,7 +142,7 @@ class AccountScreenState extends State<AccountScreen> {
       // forever — an endless spinner with no error shown, since nothing
       // downstream of the throw point ever ran.
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('تعذّر التقاط/رفع الصورة: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${context.tr('account_avatar_capture_failed_prefix')} $e')));
     } finally {
       if (mounted) setState(() => _uploadingAvatar = false);
     }
@@ -170,17 +171,17 @@ class AccountScreenState extends State<AccountScreen> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const Text('تعديل بياناتي', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w900)),
+              Text(context.tr('account_edit_data_title'), style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w900)),
               const SizedBox(height: 16),
-              TextField(controller: nameCtrl, decoration: const InputDecoration(labelText: 'الاسم')),
+              TextField(controller: nameCtrl, decoration: InputDecoration(labelText: context.tr('account_name_label'))),
               const SizedBox(height: 12),
-              TextField(controller: cityCtrl, decoration: const InputDecoration(labelText: 'المدينة')),
+              TextField(controller: cityCtrl, decoration: InputDecoration(labelText: context.tr('account_city_label'))),
               const SizedBox(height: 12),
               TextField(
                 controller: emailCtrl,
                 keyboardType: TextInputType.emailAddress,
                 textDirection: TextDirection.ltr,
-                decoration: const InputDecoration(labelText: 'البريد الإلكتروني'),
+                decoration: InputDecoration(labelText: context.tr('account_email_label')),
                 onChanged: (_) => setSheetState(() {}),
               ),
               // Changing the email needs a password check (update_account_email,
@@ -191,13 +192,13 @@ class AccountScreenState extends State<AccountScreen> {
                 TextField(
                   controller: passwordCtrl,
                   obscureText: true,
-                  decoration: const InputDecoration(labelText: 'كلمة مرور حسابك (لتأكيد تغيير البريد)'),
+                  decoration: InputDecoration(labelText: context.tr('account_password_confirm_email_label')),
                 ),
               ],
               const SizedBox(height: 20),
               ElevatedButton(
                 onPressed: () => Navigator.of(sheetContext).pop(true),
-                child: const Text('حفظ'),
+                child: Text(context.tr('account_save')),
               ),
             ],
           ),
@@ -210,13 +211,13 @@ class AccountScreenState extends State<AccountScreen> {
     if (newEmail.toLowerCase() != originalEmail.trim().toLowerCase()) {
       if (passwordCtrl.text.isEmpty) {
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('أدخل كلمة مرور حسابك لتأكيد تغيير البريد الإلكتروني')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.tr('account_password_required_email_change'))));
         return;
       }
       final ok = await _repo.updateEmail(_session!.phone, passwordCtrl.text, newEmail);
       if (!ok) {
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('كلمة المرور غير صحيحة — لم يتم تغيير البريد الإلكتروني')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.tr('account_wrong_password_email'))));
         return;
       }
     }
@@ -227,7 +228,7 @@ class AccountScreenState extends State<AccountScreen> {
     );
     await _load();
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم حفظ التعديلات')));
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.tr('account_changes_saved'))));
   }
 
   Future<void> _addOrEditAddress({Map<String, dynamic>? existing}) async {
@@ -252,19 +253,19 @@ class AccountScreenState extends State<AccountScreen> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text(existing == null ? 'إضافة عنوان' : 'تعديل العنوان', style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w900)),
+              Text(existing == null ? context.tr('account_add_address_title') : context.tr('account_edit_address_title'), style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w900)),
               const SizedBox(height: 16),
-              TextField(controller: labelCtrl, decoration: const InputDecoration(labelText: 'اسم العنوان (المنزل، الشغل...)')),
+              TextField(controller: labelCtrl, decoration: InputDecoration(labelText: context.tr('account_address_label_label'))),
               const SizedBox(height: 12),
-              TextField(controller: areaCtrl, decoration: const InputDecoration(labelText: 'المنطقة')),
+              TextField(controller: areaCtrl, decoration: InputDecoration(labelText: context.tr('account_area_label'))),
               const SizedBox(height: 12),
-              TextField(controller: addressCtrl, maxLines: 2, decoration: const InputDecoration(labelText: 'العنوان بالتفصيل')),
+              TextField(controller: addressCtrl, maxLines: 2, decoration: InputDecoration(labelText: context.tr('account_address_detail_label'))),
               if (existing == null) ...[
                 const SizedBox(height: 8),
                 Row(
                   children: [
                     Switch(value: makeDefault, onChanged: (v) => setSheetState(() => makeDefault = v)),
-                    const Text('اجعله العنوان الافتراضي', style: TextStyle(fontSize: 13)),
+                    Text(context.tr('account_make_default_address'), style: const TextStyle(fontSize: 13)),
                   ],
                 ),
               ],
@@ -272,12 +273,12 @@ class AccountScreenState extends State<AccountScreen> {
               ElevatedButton(
                 onPressed: () {
                   if (labelCtrl.text.trim().isEmpty || addressCtrl.text.trim().length < 5) {
-                    ScaffoldMessenger.of(sheetContext).showSnackBar(const SnackBar(content: Text('اكتب اسم العنوان والتفاصيل كاملة')));
+                    ScaffoldMessenger.of(sheetContext).showSnackBar(SnackBar(content: Text(context.tr('account_address_incomplete_error'))));
                     return;
                   }
                   Navigator.of(sheetContext).pop(true);
                 },
-                child: const Text('حفظ'),
+                child: Text(context.tr('account_save')),
               ),
             ],
           ),
@@ -309,10 +310,10 @@ class AccountScreenState extends State<AccountScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dCtx) => AlertDialog(
-        title: const Text('حذف العنوان؟'),
+        title: Text(context.tr('account_delete_address_title')),
         actions: [
-          TextButton(onPressed: () => Navigator.of(dCtx).pop(false), child: const Text('إلغاء')),
-          TextButton(onPressed: () => Navigator.of(dCtx).pop(true), child: const Text('حذف', style: TextStyle(color: AppColors.error))),
+          TextButton(onPressed: () => Navigator.of(dCtx).pop(false), child: Text(context.tr('account_cancel'))),
+          TextButton(onPressed: () => Navigator.of(dCtx).pop(true), child: Text(context.tr('account_delete'), style: const TextStyle(color: AppColors.error))),
         ],
       ),
     );
@@ -327,7 +328,7 @@ class AccountScreenState extends State<AccountScreen> {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
     if (_session == null) {
-      return const Scaffold(body: Center(child: Text('يرجى تسجيل الدخول')));
+      return Scaffold(body: Center(child: Text(context.tr('account_please_login'))));
     }
     final name = _account?['name'] as String? ?? _session!.name;
     final city = _account?['city'] as String? ?? _session!.city;
@@ -336,7 +337,7 @@ class AccountScreenState extends State<AccountScreen> {
     final avatarUrl = _account?['avatar_url'] as String?;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('حسابي')),
+      appBar: AppBar(title: Text(context.tr('account_title'))),
       body: RefreshIndicator(
         onRefresh: _load,
         child: ListView(
@@ -410,7 +411,7 @@ class AccountScreenState extends State<AccountScreen> {
                   child: OutlinedButton.icon(
                     onPressed: _editProfile,
                     icon: const Icon(Icons.edit_outlined),
-                    label: const Text('تعديل بياناتي'),
+                    label: Text(context.tr('account_edit_data_title')),
                     style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 14)),
                   ),
                 ),
@@ -421,7 +422,7 @@ class AccountScreenState extends State<AccountScreen> {
                       builder: (_) => InvoicesScreen(customerPhone: _session!.phone),
                     )),
                     icon: const Icon(Icons.receipt_long_outlined),
-                    label: const Text('فواتيري'),
+                    label: Text(context.tr('account_invoices')),
                     style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 14)),
                   ),
                 ),
@@ -436,7 +437,7 @@ class AccountScreenState extends State<AccountScreen> {
                       child: OutlinedButton.icon(
                         onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const FavoriteDriversScreen())),
                         icon: const Icon(Icons.favorite_border),
-                        label: const Text('السائقين المفضّلين'),
+                        label: Text(context.tr('account_favorite_drivers')),
                         style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 14)),
                       ),
                     ),
@@ -446,7 +447,7 @@ class AccountScreenState extends State<AccountScreen> {
                       child: OutlinedButton.icon(
                         onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const ReferralScreen())),
                         icon: const Icon(Icons.card_giftcard_outlined),
-                        label: const Text('كود الدعوة'),
+                        label: Text(context.tr('account_referral_code')),
                         style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 14)),
                       ),
                     ),
@@ -466,9 +467,9 @@ class AccountScreenState extends State<AccountScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  _infoRow(Icons.location_city_outlined, 'المدينة', (city?.isNotEmpty == true) ? city! : '—'),
+                  _infoRow(Icons.location_city_outlined, context.tr('account_city_label'), (city?.isNotEmpty == true) ? city! : '—'),
                   const Divider(height: 20),
-                  _infoRow(Icons.email_outlined, 'البريد الإلكتروني', (email?.isNotEmpty == true) ? email! : '—'),
+                  _infoRow(Icons.email_outlined, context.tr('account_email_label'), (email?.isNotEmpty == true) ? email! : '—'),
                 ],
               ),
             ),
@@ -478,7 +479,7 @@ class AccountScreenState extends State<AccountScreen> {
             OutlinedButton.icon(
               onPressed: _logout,
               icon: const Icon(Icons.logout, color: AppColors.error),
-              label: const Text('تسجيل الخروج', style: TextStyle(color: AppColors.error)),
+              label: Text(context.tr('account_logout'), style: const TextStyle(color: AppColors.error)),
               style: OutlinedButton.styleFrom(
                 side: const BorderSide(color: AppColors.error),
                 padding: const EdgeInsets.symmetric(vertical: 14),
@@ -493,11 +494,11 @@ class AccountScreenState extends State<AccountScreen> {
   Widget _statsRow() {
     return Row(
       children: [
-        Expanded(child: _statTile('📦', AppColors.primary, '${_stats.totalOrders + _stats.totalRides}', 'إجمالي الطلبات')),
+        Expanded(child: _statTile('📦', AppColors.primary, '${_stats.totalOrders + _stats.totalRides}', context.tr('account_total_orders_label'))),
         const SizedBox(width: 10),
-        Expanded(child: _statTile('💰', AppColors.accent, _stats.totalSpent.toStringAsFixed(0), 'إجمالي الإنفاق (ج.م)')),
+        Expanded(child: _statTile('💰', AppColors.accent, _stats.totalSpent.toStringAsFixed(0), context.tr('account_total_spent_label'))),
         const SizedBox(width: 10),
-        Expanded(child: _statTile('🚖', AppColors.primaryDark, '${_stats.totalRides}', 'عدد الرحلات')),
+        Expanded(child: _statTile('🚖', AppColors.primaryDark, '${_stats.totalRides}', context.tr('account_rides_count_label'))),
       ],
     );
   }
@@ -535,16 +536,16 @@ class AccountScreenState extends State<AccountScreen> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text('📍 عناويني المحفوظة', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 15)),
+            Text(context.tr('account_addresses_title'), style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 15)),
             TextButton.icon(
               onPressed: () => _addOrEditAddress(),
               icon: const Icon(Icons.add, size: 18),
-              label: const Text('إضافة'),
+              label: Text(context.tr('account_add_button')),
             ),
           ],
         ),
         if (_addresses.isEmpty)
-          _emptyStateBox('مفيش عناوين محفوظة — ضيف عنوان عشان تختاره بسرعة وقت الطلب')
+          _emptyStateBox(context.tr('account_no_addresses'))
         else
           ..._addresses.map(_addressTile),
       ],
@@ -576,7 +577,7 @@ class AccountScreenState extends State<AccountScreen> {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                         decoration: BoxDecoration(color: AppColors.primaryLight, borderRadius: BorderRadius.circular(999)),
-                        child: const Text('افتراضي', style: TextStyle(fontSize: 10, color: AppColors.primary, fontWeight: FontWeight.w900)),
+                        child: Text(context.tr('account_default_badge'), style: const TextStyle(fontSize: 10, color: AppColors.primary, fontWeight: FontWeight.w900)),
                       ),
                     ],
                   ],
@@ -605,7 +606,7 @@ class AccountScreenState extends State<AccountScreen> {
                 await _load();
               },
               style: TextButton.styleFrom(padding: EdgeInsets.zero),
-              child: const Text('اجعله افتراضي', style: TextStyle(fontSize: 11)),
+              child: Text(context.tr('account_make_default_button'), style: const TextStyle(fontSize: 11)),
             ),
           ],
         ],
@@ -629,7 +630,7 @@ class AccountScreenState extends State<AccountScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('⭐ تقييماتي للسائقين', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 15)),
+        Text(context.tr('account_my_ratings_for_drivers_title'), style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 15)),
         const SizedBox(height: 10),
         Material(
           color: context.surfaceColor,
@@ -638,11 +639,11 @@ class AccountScreenState extends State<AccountScreen> {
             borderRadius: BorderRadius.circular(16),
             onTap: () => Navigator.of(context).push(MaterialPageRoute(
               builder: (_) => RatingsListScreen(
-                title: '⭐ تقييماتي للسائقين',
+                title: context.tr('account_my_ratings_for_drivers_title'),
                 summary: s,
                 reviews: _reviews,
-                countLabel: 'تقييم للسائقين',
-                emptyMessage: 'لسه ما قيّمتش أي رحلة',
+                countLabel: context.tr('account_ratings_for_drivers_count_label'),
+                emptyMessage: context.tr('account_no_ratings_given'),
               ),
             )),
             child: Container(
@@ -662,11 +663,11 @@ class AccountScreenState extends State<AccountScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          s.isNew ? 'لسه ما قيّمتش أي رحلة' : s.avg.toStringAsFixed(1),
+                          s.isNew ? context.tr('account_no_ratings_given') : s.avg.toStringAsFixed(1),
                           style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
                         ),
                         Text(
-                          s.isNew ? 'تقييماتك للسائقين هتظهر هنا' : '${s.count} تقييم للسائقين',
+                          s.isNew ? context.tr('account_ratings_will_appear') : '${s.count} ${context.tr('account_ratings_for_drivers_count_label')}',
                           style: const TextStyle(fontSize: 12, color: AppColors.textFaint),
                         ),
                       ],
@@ -687,7 +688,7 @@ class AccountScreenState extends State<AccountScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('💬 تقييمات السائقين عني', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 15)),
+        Text(context.tr('account_drivers_notes_title'), style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 15)),
         const SizedBox(height: 10),
         Material(
           color: context.surfaceColor,
@@ -696,11 +697,11 @@ class AccountScreenState extends State<AccountScreen> {
             borderRadius: BorderRadius.circular(16),
             onTap: () => Navigator.of(context).push(MaterialPageRoute(
               builder: (_) => RatingsListScreen(
-                title: '💬 تقييمات السائقين عني',
+                title: context.tr('account_drivers_notes_title'),
                 summary: s,
                 reviews: _driverNotes,
-                countLabel: 'تقييم من السائقين',
-                emptyMessage: 'لسه مفيش تقييم أو ملاحظة من سائق — بتظهر هنا فور ما رحلتك تخلص ويقيّمك السائق',
+                countLabel: context.tr('account_ratings_from_drivers_count_label'),
+                emptyMessage: context.tr('account_no_driver_notes_message'),
               ),
             )),
             child: Container(
@@ -720,11 +721,11 @@ class AccountScreenState extends State<AccountScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          s.isNew ? 'لسه ما وصلكش تقييم' : s.avg.toStringAsFixed(1),
+                          s.isNew ? context.tr('account_no_ratings_received') : s.avg.toStringAsFixed(1),
                           style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
                         ),
                         Text(
-                          s.isNew ? 'التقييمات هتظهر هنا بعد أول رحلة' : '${s.count} تقييم من السائقين',
+                          s.isNew ? context.tr('account_ratings_will_appear_after_ride') : '${s.count} ${context.tr('account_ratings_from_drivers_count_label')}',
                           style: const TextStyle(fontSize: 12, color: AppColors.textFaint),
                         ),
                       ],
@@ -734,7 +735,7 @@ class AccountScreenState extends State<AccountScreen> {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                       decoration: BoxDecoration(color: AppColors.success.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(999)),
-                      child: const Text('✅ عميل موثوق', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w900, color: AppColors.success)),
+                      child: Text(context.tr('account_trusted_customer_badge'), style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w900, color: AppColors.success)),
                     ),
                   const SizedBox(width: 4),
                   const Icon(Icons.chevron_left, color: AppColors.textFaint),

@@ -1,18 +1,19 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import '../../core/i18n.dart';
 import '../../core/notifications.dart';
 import '../../core/session.dart';
 import '../../core/theme.dart';
 import '../../shared/widgets/logout_button.dart';
 import 'merchant_repository.dart';
 
-const Map<String, String> _statusAr = {
-  'pending': 'بانتظار موافقتك',
-  'preparing': 'قيد التجهيز',
-  'on_the_way': 'في الطريق',
-  'delivered': 'تم التسليم',
-  'rejected': 'مرفوض',
+const Map<String, String> _statusKeys = {
+  'pending': 'merchant_home_status_pending',
+  'preparing': 'merchant_home_status_preparing',
+  'on_the_way': 'merchant_home_status_on_the_way',
+  'delivered': 'merchant_home_status_delivered',
+  'rejected': 'merchant_home_status_rejected',
 };
 
 const List<int> _prepMinuteChoices = [10, 15, 20, 30, 45];
@@ -77,7 +78,11 @@ class _MerchantHomeScreenState extends State<MerchantHomeScreen> {
       ..clear()
       ..addAll(pendingIds);
     if (freshlyArrived.isNotEmpty) {
-      AppNotifications.instance.show('🛎️ طلب جديد!', 'وصلك طلب جديد — افتح التطبيق للموافقة', channelId: 'wslha_orders');
+      AppNotifications.instance.show(
+        context.tr('merchant_home_new_order_notif_title'),
+        context.tr('merchant_home_new_order_notif_body'),
+        channelId: 'wslha_orders',
+      );
     }
   }
 
@@ -91,14 +96,14 @@ class _MerchantHomeScreenState extends State<MerchantHomeScreen> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Text('محتاج كام دقيقة للتجهيز؟', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900)),
+            Text(context.tr('merchant_home_prep_time_title'), style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900)),
             const SizedBox(height: 16),
             Wrap(
               spacing: 10,
               runSpacing: 10,
               children: _prepMinuteChoices
                   .map((m) => ActionChip(
-                        label: Text('$m دقيقة'),
+                        label: Text('$m ${context.tr('merchant_home_prep_minutes_suffix')}'),
                         onPressed: () => Navigator.of(sheetContext).pop(m),
                       ))
                   .toList(),
@@ -115,7 +120,7 @@ class _MerchantHomeScreenState extends State<MerchantHomeScreen> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('فشل قبول الطلب: $e'), backgroundColor: AppColors.error, duration: const Duration(seconds: 6)),
+        SnackBar(content: Text('${context.tr('merchant_home_accept_failed_prefix')} $e'), backgroundColor: AppColors.error, duration: const Duration(seconds: 6)),
       );
     }
   }
@@ -126,7 +131,7 @@ class _MerchantHomeScreenState extends State<MerchantHomeScreen> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('فشل رفض الطلب: $e'), backgroundColor: AppColors.error, duration: const Duration(seconds: 6)),
+        SnackBar(content: Text('${context.tr('merchant_home_reject_failed_prefix')} $e'), backgroundColor: AppColors.error, duration: const Duration(seconds: 6)),
       );
     }
   }
@@ -138,11 +143,11 @@ class _MerchantHomeScreenState extends State<MerchantHomeScreen> {
     }
     if (_store == null) {
       return Scaffold(
-        appBar: AppBar(title: const Text('وصّلها تاجر'), actions: const [LogoutButton()]),
-        body: const Center(
+        appBar: AppBar(title: Text(context.tr('merchant_home_title')), actions: const [LogoutButton()]),
+        body: Center(
           child: Padding(
-            padding: EdgeInsets.all(24),
-            child: Text('لا يوجد متجر مرتبط بحسابك بعد.', textAlign: TextAlign.center),
+            padding: const EdgeInsets.all(24),
+            child: Text(context.tr('merchant_home_no_store'), textAlign: TextAlign.center),
           ),
         ),
       );
@@ -152,7 +157,7 @@ class _MerchantHomeScreenState extends State<MerchantHomeScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(_store!['name'] as String? ?? 'وصّلها تاجر'),
+        title: Text(_store!['name'] as String? ?? context.tr('merchant_home_title')),
         actions: const [LogoutButton()],
       ),
       body: StreamBuilder<List<Map<String, dynamic>>>(
@@ -167,15 +172,15 @@ class _MerchantHomeScreenState extends State<MerchantHomeScreen> {
           final history = orders.where((o) => ['delivered', 'rejected'].contains(o['status'])).toList();
 
           if (orders.isEmpty) {
-            return const Center(child: Text('لا توجد طلبات بعد', style: TextStyle(color: AppColors.textFaint)));
+            return Center(child: Text(context.tr('merchant_home_no_orders'), style: const TextStyle(color: AppColors.textFaint)));
           }
 
           return ListView(
             padding: const EdgeInsets.all(16),
             children: [
-              if (pending.isNotEmpty) ..._section('🆕 طلبات جديدة', pending, showActions: true),
-              if (active.isNotEmpty) ..._section('👨‍🍳 قيد التنفيذ', active),
-              if (history.isNotEmpty) ..._section('📋 السجل', history, muted: true),
+              if (pending.isNotEmpty) ..._section(context.tr('merchant_home_section_new'), pending, showActions: true),
+              if (active.isNotEmpty) ..._section(context.tr('merchant_home_section_active'), active),
+              if (history.isNotEmpty) ..._section(context.tr('merchant_home_section_history'), history, muted: true),
             ],
           );
         },
@@ -239,7 +244,9 @@ class _OrderCard extends StatelessWidget {
         } else if (elapsed >= const Duration(minutes: 2)) {
           urgency = _Urgency.warning;
         }
-        badge = elapsed.inMinutes < 1 ? 'وصل الآن' : 'من ${elapsed.inMinutes} د';
+        badge = elapsed.inMinutes < 1
+            ? context.tr('merchant_home_order_arrived_now')
+            : '${context.tr('merchant_home_order_since_prefix')} ${elapsed.inMinutes} ${context.tr('merchant_home_order_since_suffix')}';
       }
     } else if (status == 'preparing') {
       final acceptedAt = _parse(order['accepted_at'] as String?);
@@ -249,12 +256,12 @@ class _OrderCard extends StatelessWidget {
         remaining = deadline.difference(DateTime.now());
         if (remaining.isNegative) {
           urgency = _Urgency.critical;
-          badge = '⏰ متأخر ${remaining.abs().inMinutes} د';
+          badge = '${context.tr('merchant_home_order_overdue_prefix')} ${remaining.abs().inMinutes} ${context.tr('merchant_home_order_overdue_suffix')}';
         } else if (remaining.inMinutes <= 3) {
           urgency = _Urgency.warning;
-          badge = 'باقي ${remaining.inMinutes} د';
+          badge = '${context.tr('merchant_home_order_remaining_prefix')} ${remaining.inMinutes} ${context.tr('merchant_home_order_remaining_suffix')}';
         } else {
-          badge = 'باقي ${remaining.inMinutes} د';
+          badge = '${context.tr('merchant_home_order_remaining_prefix')} ${remaining.inMinutes} ${context.tr('merchant_home_order_remaining_suffix')}';
         }
       }
     }
@@ -282,7 +289,7 @@ class _OrderCard extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Expanded(
-                child: Text(order['customer_name'] as String? ?? '—', style: const TextStyle(fontWeight: FontWeight.w800)),
+                child: Text(order['customer_name'] as String? ?? context.tr('merchant_home_order_fallback_name'), style: const TextStyle(fontWeight: FontWeight.w800)),
               ),
               if (badge != null)
                 Container(
@@ -291,20 +298,23 @@ class _OrderCard extends StatelessWidget {
                   child: Text(badge, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w900, color: palette.accent)),
                 )
               else
-                Text(_statusAr[status] ?? status ?? '', style: const TextStyle(fontSize: 12, color: AppColors.textFaint)),
+                Text(
+                  status != null && _statusKeys.containsKey(status) ? context.tr(_statusKeys[status]!) : (status ?? ''),
+                  style: const TextStyle(fontSize: 12, color: AppColors.textFaint),
+                ),
             ],
           ),
           const SizedBox(height: 4),
           Text(order['items_summary'] as String? ?? '', style: const TextStyle(fontSize: 13)),
           const SizedBox(height: 6),
-          Text('${order['total'] ?? ''} ج.م', style: const TextStyle(fontWeight: FontWeight.w900, color: AppColors.primary)),
+          Text('${order['total'] ?? ''} ${context.tr('merchant_home_currency')}', style: const TextStyle(fontWeight: FontWeight.w900, color: AppColors.primary)),
           if (showActions) ...[
             const SizedBox(height: 10),
             Row(
               children: [
-                Expanded(child: OutlinedButton(onPressed: onReject, child: const Text('رفض'))),
+                Expanded(child: OutlinedButton(onPressed: onReject, child: Text(context.tr('merchant_home_reject')))),
                 const SizedBox(width: 8),
-                Expanded(child: ElevatedButton(onPressed: onAccept, child: const Text('قبول'))),
+                Expanded(child: ElevatedButton(onPressed: onAccept, child: Text(context.tr('merchant_home_accept')))),
               ],
             ),
           ],

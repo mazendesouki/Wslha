@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/date_format_ar.dart';
+import '../../core/i18n.dart';
 import '../../core/phone_utils.dart';
 import '../../core/pricing_settings.dart';
 import '../../core/session.dart';
@@ -31,7 +32,17 @@ class _AirportScreenState extends State<AirportScreen> {
   // Wizard steps instead of one long scroll — same fields/validation as
   // before, just shown one group at a time with a progress bar and
   // رجوع/التالي buttons, per the reference mockup's multi-page flow.
-  static const _stepTitles = ['نوع الرحلة', 'اختيار السيارة', 'نقطة الانطلاق والوصول', 'الركاب والانتظار', 'بيانات الرحلة', 'تأكيد الحجز'];
+  // Holds i18n keys, not display text — there's no BuildContext at
+  // static-init time, so each title is resolved via context.tr() at the
+  // point of use (see _stepProgressBar()).
+  static const _stepTitleKeys = [
+    'airport_step_trip_type',
+    'airport_step_vehicle',
+    'airport_step_route',
+    'airport_step_passengers_wait',
+    'airport_step_trip_info',
+    'airport_step_confirm',
+  ];
   int _currentStep = 0;
   final _scrollController = ScrollController();
 
@@ -106,12 +117,14 @@ class _AirportScreenState extends State<AirportScreen> {
   /// already enforced, just surfaced earlier instead of only at the end.
   String? _stepValidationError(int step) {
     if (step == 2) {
-      if (_from == null) return _direction == 'departure' ? 'يرجى اختيار نقطة الانطلاق.' : 'يرجى اختيار وجهتك.';
-      if (_airport == null) return 'يرجى اختيار المطار.';
-      if (_flightTime == null) return 'يرجى تحديد تاريخ ووقت الرحلة.';
+      if (_from == null) {
+        return _direction == 'departure' ? context.tr('airport_error_pick_origin') : context.tr('airport_error_pick_destination');
+      }
+      if (_airport == null) return context.tr('airport_error_pick_airport');
+      if (_flightTime == null) return context.tr('airport_error_pick_flight_time');
     }
     if (step == 4) {
-      if (_nameCtrl.text.trim().length < 2) return 'يرجى إدخال اسم المسافر.';
+      if (_nameCtrl.text.trim().length < 2) return context.tr('airport_error_traveler_name');
       if (!isEgyptianMobile(normalizeEgyptianPhone(_phoneCtrl.text.trim()))) return egPhoneError;
     }
     return null;
@@ -131,7 +144,7 @@ class _AirportScreenState extends State<AirportScreen> {
       setState(() => _error = err);
       return;
     }
-    if (_currentStep < _stepTitles.length - 1) _goToStep(_currentStep + 1);
+    if (_currentStep < _stepTitleKeys.length - 1) _goToStep(_currentStep + 1);
   }
 
   void _prevStep() {
@@ -226,7 +239,7 @@ class _AirportScreenState extends State<AirportScreen> {
     final name = _nameCtrl.text.trim();
     final phone = normalizeEgyptianPhone(_phoneCtrl.text.trim());
     if (name.length < 2) {
-      setState(() => _error = 'يرجى إدخال اسم المسافر.');
+      setState(() => _error = context.tr('airport_error_traveler_name'));
       return;
     }
     if (!isEgyptianMobile(phone)) {
@@ -234,38 +247,38 @@ class _AirportScreenState extends State<AirportScreen> {
       return;
     }
     if (_from == null) {
-      setState(() => _error = _direction == 'departure' ? 'يرجى اختيار نقطة الانطلاق.' : 'يرجى اختيار وجهتك.');
+      setState(() => _error = _direction == 'departure' ? context.tr('airport_error_pick_origin') : context.tr('airport_error_pick_destination'));
       return;
     }
     if (_airport == null) {
-      setState(() => _error = 'يرجى اختيار المطار.');
+      setState(() => _error = context.tr('airport_error_pick_airport'));
       return;
     }
     if (_flightTime == null) {
-      setState(() => _error = 'يرجى تحديد تاريخ ووقت الرحلة.');
+      setState(() => _error = context.tr('airport_error_pick_flight_time'));
       return;
     }
     if (_selectedVehicle == null) {
-      setState(() => _error = 'لا توجد سيارات مسجّلة متاحة حاليًا.');
+      setState(() => _error = context.tr('airport_error_no_vehicles'));
       return;
     }
 
     setState(() => _submitting = true);
     try {
-      final directionLabel = _direction == 'departure' ? 'مغادر من مصر' : 'قادم إلى مصر';
-      final tripLabel = _tripType == 'international' ? 'دولية' : 'محلية';
+      final directionLabel = _direction == 'departure' ? context.tr('airport_note_direction_departure') : context.tr('airport_note_direction_arrival');
+      final tripLabel = _tripType == 'international' ? context.tr('airport_note_trip_international') : context.tr('airport_note_trip_domestic');
       final notes = [
-        '🛫 توصيل مطار — $directionLabel ($tripLabel)',
+        '${context.tr('airport_note_delivery_prefix')} — $directionLabel ($tripLabel)',
         '🚘 ${fare.categoryLabels[_category]} ${_selectedVehicle!.name} $_selectedYear',
-        if (_quality != 'regular') '⭐ الخدمة المطلوبة: ${fare.qualityLabels[_quality]}',
-        if (_companions > 0) '👥 مرافقين رايح جاي: $_companions',
-        if (_bags > 0) '🧳 شنط: $_bags',
-        if (_airlineCtrl.text.trim().isNotEmpty) '✈️ شركة الطيران: ${_airlineCtrl.text.trim()}',
-        if (_flightNoCtrl.text.trim().isNotEmpty) '🎫 رقم الرحلة: ${_flightNoCtrl.text.trim()}',
-        if (_terminalCtrl.text.trim().isNotEmpty) '🏁 الصالة: ${_terminalCtrl.text.trim()}',
-        if (_flightCountryCtrl.text.trim().isNotEmpty) '🌍 الدولة: ${_flightCountryCtrl.text.trim()}',
-        if (_addressCtrl.text.trim().isNotEmpty) '📍 العنوان بالتفصيل: ${_addressCtrl.text.trim()}',
-        '🕐 وقت ${_direction == "departure" ? "الإقلاع" : "الهبوط"}: ${arDateTime(_flightTime!)}',
+        if (_quality != 'regular') '${context.tr('airport_note_requested_service')} ${fare.qualityLabels[_quality]}',
+        if (_companions > 0) '${context.tr('airport_note_companions')} $_companions',
+        if (_bags > 0) '${context.tr('airport_note_bags')} $_bags',
+        if (_airlineCtrl.text.trim().isNotEmpty) '${context.tr('airport_note_airline')} ${_airlineCtrl.text.trim()}',
+        if (_flightNoCtrl.text.trim().isNotEmpty) '${context.tr('airport_note_flight_no')} ${_flightNoCtrl.text.trim()}',
+        if (_terminalCtrl.text.trim().isNotEmpty) '${context.tr('airport_note_terminal')} ${_terminalCtrl.text.trim()}',
+        if (_flightCountryCtrl.text.trim().isNotEmpty) '${context.tr('airport_note_country')} ${_flightCountryCtrl.text.trim()}',
+        if (_addressCtrl.text.trim().isNotEmpty) '${context.tr('airport_note_address_detail')} ${_addressCtrl.text.trim()}',
+        '${context.tr('airport_note_time_prefix')} ${_direction == "departure" ? context.tr('airport_note_departure_time') : context.tr('airport_note_arrival_time')}: ${arDateTime(_flightTime!)}',
       ].join(' — ');
 
       final ride = await _repo.createAirportRide(
@@ -294,7 +307,7 @@ class _AirportScreenState extends State<AirportScreen> {
       if (ride == null || ride['id'] == null) {
         setState(() {
           _submitting = false;
-          _error = 'تعذّر إرسال الطلب، حاول مرة أخرى.';
+          _error = context.tr('airport_error_submit_failed');
         });
         return;
       }
@@ -329,7 +342,7 @@ class _AirportScreenState extends State<AirportScreen> {
       if (!mounted) return;
       setState(() {
         _submitting = false;
-        _error = 'تعذّر إرسال الطلب: $e';
+        _error = '${context.tr('airport_error_submit_failed_prefix')} $e';
       });
     }
   }
@@ -337,7 +350,7 @@ class _AirportScreenState extends State<AirportScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('توصيل المطار')),
+      appBar: AppBar(title: Text(context.tr('airport_app_bar_title'))),
       body: Column(
         children: [
           _stepProgressBar(),
@@ -363,7 +376,7 @@ class _AirportScreenState extends State<AirportScreen> {
       decoration: BoxDecoration(color: context.surfaceColor, border: Border(bottom: BorderSide(color: context.borderColor))),
       child: Row(
         children: [
-          for (var i = 0; i < _stepTitles.length; i++) ...[
+          for (var i = 0; i < _stepTitleKeys.length; i++) ...[
             Expanded(
               child: GestureDetector(
                 onTap: i < _currentStep ? () => _goToStep(i) : null,
@@ -384,7 +397,7 @@ class _AirportScreenState extends State<AirportScreen> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      _stepTitles[i],
+                      context.tr(_stepTitleKeys[i]),
                       textAlign: TextAlign.center,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -394,7 +407,7 @@ class _AirportScreenState extends State<AirportScreen> {
                 ),
               ),
             ),
-            if (i < _stepTitles.length - 1)
+            if (i < _stepTitleKeys.length - 1)
               Padding(
                 padding: const EdgeInsets.only(bottom: 16),
                 child: Container(width: 12, height: 1.6, color: i < _currentStep ? AppColors.primary : context.borderColor),
@@ -406,7 +419,7 @@ class _AirportScreenState extends State<AirportScreen> {
   }
 
   Widget _stepNavBar() {
-    final isLast = _currentStep == _stepTitles.length - 1;
+    final isLast = _currentStep == _stepTitleKeys.length - 1;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(color: context.surfaceColor, border: Border(top: BorderSide(color: context.borderColor))),
@@ -431,7 +444,7 @@ class _AirportScreenState extends State<AirportScreen> {
                     child: OutlinedButton(
                       onPressed: _submitting ? null : _prevStep,
                       style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 14)),
-                      child: const Text('→ رجوع'),
+                      child: Text(context.tr('airport_nav_back')),
                     ),
                   ),
                 if (_currentStep > 0) const SizedBox(width: 10),
@@ -445,7 +458,7 @@ class _AirportScreenState extends State<AirportScreen> {
                     ),
                     child: _submitting
                         ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                        : Text(isLast ? 'تأكيد الحجز ←' : 'التالي ←'),
+                        : Text(isLast ? context.tr('airport_nav_confirm') : context.tr('airport_nav_next')),
                   ),
                 ),
               ],
@@ -466,24 +479,24 @@ class _AirportScreenState extends State<AirportScreen> {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            _sectionTitle('1', 'اتجاه الرحلة'),
+            _sectionTitle('1', context.tr('airport_section_trip_direction')),
             _sectionCard([
-              _radioRow('اتجاه الرحلة', _direction, {
-                'departure': '🛫 مغادر من مصر',
-                'arrival': '🛬 قادم إلى مصر',
+              _radioRow(context.tr('airport_section_trip_direction'), _direction, {
+                'departure': context.tr('airport_direction_departure'),
+                'arrival': context.tr('airport_direction_arrival'),
               }, (v) => setState(() => _direction = v)),
             ]),
             const SizedBox(height: 10),
             _sectionCard([
-              _radioRow('نوع الرحلة', _tripType, {
-                'international': '✈️ دولية (3 ساعات)',
-                'domestic': '🛫 محلية (ساعتان)',
+              _radioRow(context.tr('airport_trip_type_label'), _tripType, {
+                'international': context.tr('airport_trip_type_international'),
+                'domestic': context.tr('airport_trip_type_domestic'),
               }, (v) => setState(() => _tripType = v)),
               const SizedBox(height: 8),
               Text(
                 _tripType == 'international'
-                    ? 'ℹ️ دولية: للرحلات خارج مصر — بيحسب وصولك المطار قبل الإقلاع بـ 3 ساعات (وقت تسجيل وجوازات أطول)، وبعد الهبوط بيدي 45 دقيقة لإجراءات الجوازات والجمارك.'
-                    : 'ℹ️ محلية: لرحلات داخل مصر — بيحسب وصولك المطار قبل الإقلاع بساعتين بس، وبعد الهبوط 20 دقيقة فقط (من غير جوازات/جمارك).',
+                    ? context.tr('airport_trip_type_info_international')
+                    : context.tr('airport_trip_type_info_domestic'),
                 style: const TextStyle(fontSize: 11, color: AppColors.primaryDark, fontWeight: FontWeight.w600),
               ),
             ]),
@@ -494,14 +507,14 @@ class _AirportScreenState extends State<AirportScreen> {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            _sectionTitle('2', 'اختيار السيارة'),
+            _sectionTitle('2', context.tr('airport_section_vehicle')),
             _sectionCard([
               if (_loadingVehicles)
                 const Center(child: Padding(padding: EdgeInsets.all(12), child: CircularProgressIndicator()))
               else if (_vehicles.isEmpty)
-                const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 8),
-                  child: Text('لا توجد سيارات مسجّلة متاحة حاليًا.', style: TextStyle(color: AppColors.error, fontSize: 12)),
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  child: Text(context.tr('airport_no_vehicles'), style: const TextStyle(color: AppColors.error, fontSize: 12)),
                 )
               else ...[
                 for (final cat in fare.vehicleCategoryInfo.keys.where((cat) => _vehicles.any((v) => v.category == cat)))
@@ -521,7 +534,7 @@ class _AirportScreenState extends State<AirportScreen> {
                 const SizedBox(height: 10),
                 DropdownButtonFormField<fare.RegisteredVehicle>(
                   initialValue: _selectedVehicle,
-                  decoration: const InputDecoration(labelText: 'الماركة والموديل', prefixIcon: Icon(Icons.directions_car_outlined)),
+                  decoration: InputDecoration(labelText: context.tr('airport_make_model_label'), prefixIcon: const Icon(Icons.directions_car_outlined)),
                   items: _vehicles
                       .where((v) => v.category == _category)
                       .map((v) => DropdownMenuItem(value: v, child: Text(v.name)))
@@ -538,14 +551,14 @@ class _AirportScreenState extends State<AirportScreen> {
                 if (_selectedVehicle != null)
                   DropdownButtonFormField<int>(
                     initialValue: _selectedYear,
-                    decoration: const InputDecoration(labelText: 'سنة الصنع', prefixIcon: Icon(Icons.calendar_today_outlined)),
+                    decoration: InputDecoration(labelText: context.tr('airport_year_label'), prefixIcon: const Icon(Icons.calendar_today_outlined)),
                     items: [for (var y = _selectedVehicle!.yearTo; y >= _selectedVehicle!.yearFrom; y--) y]
                         .map((y) => DropdownMenuItem(value: y, child: Text('$y')))
                         .toList(),
                     onChanged: (y) => setState(() => _selectedYear = y ?? _selectedYear),
                   ),
                 const SizedBox(height: 14),
-                const Text('مستوى الخدمة المطلوب', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13)),
+                Text(context.tr('airport_service_level_label'), style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13)),
                 const SizedBox(height: 8),
                 Wrap(
                   spacing: 8,
@@ -568,23 +581,23 @@ class _AirportScreenState extends State<AirportScreen> {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            _sectionTitle('3', 'نقطة البداية والوصول'),
+            _sectionTitle('3', context.tr('airport_section_route')),
             if (_airport != null) ...[
               _AirportBanner(airportName: _airport!.name),
               const SizedBox(height: 12),
             ],
             _sectionCard([
               AddressField(
-                label: _direction == 'departure' ? 'نقطة البداية (منطقتك)' : 'وجهتك (منطقتك)',
-                hint: 'اكتب منطقتك أو حيّك في دمياط...',
+                label: _direction == 'departure' ? context.tr('airport_origin_label_departure') : context.tr('airport_origin_label_arrival'),
+                hint: context.tr('airport_origin_hint'),
                 showLocationButton: true,
                 prefixIcon: Icons.trip_origin,
                 onSelected: (r) => setState(() => _from = r),
               ),
               const SizedBox(height: 12),
               AddressField(
-                label: _direction == 'departure' ? 'المطار (نقطة النهاية)' : 'المطار (نقطة البداية)',
-                hint: 'ابحث باسم المطار: مطار القاهرة، مطار شرم الشيخ...',
+                label: _direction == 'departure' ? context.tr('airport_airport_label_departure') : context.tr('airport_airport_label_arrival'),
+                hint: context.tr('airport_airport_hint'),
                 placesTypes: 'airport',
                 prefixIcon: Icons.flight_takeoff,
                 onSelected: (r) => setState(() => _airport = r),
@@ -593,10 +606,10 @@ class _AirportScreenState extends State<AirportScreen> {
               TextField(
                 controller: _addressCtrl,
                 maxLines: 2,
-                decoration: const InputDecoration(
-                  labelText: 'عنوان الاستلام بالتفصيل (اختياري)',
-                  hintText: 'الحي، الشارع، رقم المبنى، علامة مميزة...',
-                  prefixIcon: Icon(Icons.home_outlined),
+                decoration: InputDecoration(
+                  labelText: context.tr('airport_pickup_address_label'),
+                  hintText: context.tr('airport_pickup_address_hint'),
+                  prefixIcon: const Icon(Icons.home_outlined),
                 ),
               ),
               const SizedBox(height: 12),
@@ -604,11 +617,11 @@ class _AirportScreenState extends State<AirportScreen> {
                 onTap: _pickFlightTime,
                 child: InputDecorator(
                   decoration: InputDecoration(
-                    labelText: _direction == 'departure' ? 'تاريخ ووقت إقلاع الطائرة' : 'تاريخ ووقت هبوط الطائرة',
+                    labelText: _direction == 'departure' ? context.tr('airport_flight_datetime_departure') : context.tr('airport_flight_datetime_arrival'),
                     prefixIcon: const Icon(Icons.event_outlined),
                   ),
                   child: Text(
-                    _flightTime == null ? 'اختر التاريخ والوقت' : arDateTime(_flightTime!),
+                    _flightTime == null ? context.tr('airport_choose_datetime') : arDateTime(_flightTime!),
                     style: TextStyle(color: _flightTime == null ? AppColors.textFaint : Colors.black87),
                   ),
                 ),
@@ -621,10 +634,10 @@ class _AirportScreenState extends State<AirportScreen> {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            _sectionTitle('4', 'الركاب والأمتعة'),
+            _sectionTitle('4', context.tr('airport_section_passengers_bags')),
             _StepperCard(
               icon: Icons.person_outline,
-              label: 'عدد المسافرين',
+              label: context.tr('airport_passenger_count_label'),
               value: _passengers,
               min: 1,
               max: maxTravelers,
@@ -633,8 +646,8 @@ class _AirportScreenState extends State<AirportScreen> {
             const SizedBox(height: 10),
             _StepperCard(
               icon: Icons.group_outlined,
-              label: 'مرافق رايح جاي',
-              sublabel: '${fare.companionFee} ج.م/فرد',
+              label: context.tr('airport_companion_label'),
+              sublabel: '${fare.companionFee} ${context.tr('airport_companion_fee_suffix')}',
               value: _companions,
               min: 0,
               max: 9,
@@ -643,25 +656,25 @@ class _AirportScreenState extends State<AirportScreen> {
             const SizedBox(height: 10),
             _StepperCard(
               icon: Icons.luggage_outlined,
-              label: 'شنط كبيرة',
-              sublabel: 'تُسجَّل في الطائرة',
+              label: context.tr('airport_bags_label'),
+              sublabel: context.tr('airport_bags_sublabel'),
               value: _bags,
               min: 0,
               max: maxBags,
               onChanged: (v) => setState(() => _bags = v),
             ),
             const SizedBox(height: 18),
-            _sectionTitle('5', 'أوقات الانتظار'),
+            _sectionTitle('5', context.tr('airport_section_wait_times')),
             _sectionCard([
               DropdownButtonFormField<int>(
                 initialValue: _waitPickupMin,
-                decoration: const InputDecoration(labelText: 'انتظار السائق عند الاستلام', prefixIcon: Icon(Icons.hourglass_empty)),
-                items: const [
-                  DropdownMenuItem(value: 0, child: Text('بدون انتظار')),
-                  DropdownMenuItem(value: 15, child: Text('15 دقيقة مجانًا')),
-                  DropdownMenuItem(value: 30, child: Text('30 دقيقة (+30 ج.م)')),
-                  DropdownMenuItem(value: 45, child: Text('45 دقيقة (+60 ج.م)')),
-                  DropdownMenuItem(value: 60, child: Text('ساعة كاملة (+90 ج.م)')),
+                decoration: InputDecoration(labelText: context.tr('airport_wait_pickup_label'), prefixIcon: const Icon(Icons.hourglass_empty)),
+                items: [
+                  DropdownMenuItem(value: 0, child: Text(context.tr('airport_wait_none'))),
+                  DropdownMenuItem(value: 15, child: Text(context.tr('airport_wait_15_free'))),
+                  DropdownMenuItem(value: 30, child: Text(context.tr('airport_wait_30_fee'))),
+                  DropdownMenuItem(value: 45, child: Text(context.tr('airport_wait_45_fee'))),
+                  DropdownMenuItem(value: 60, child: Text(context.tr('airport_wait_60_fee'))),
                 ],
                 onChanged: (v) => setState(() => _waitPickupMin = v ?? 0),
               ),
@@ -669,12 +682,12 @@ class _AirportScreenState extends State<AirportScreen> {
                 const SizedBox(height: 10),
                 DropdownButtonFormField<int>(
                   initialValue: _waitAirportMin,
-                  decoration: const InputDecoration(labelText: 'انتظار السائق في ساحة المطار', prefixIcon: Icon(Icons.timer_outlined)),
-                  items: const [
-                    DropdownMenuItem(value: 0, child: Text('بدون انتظار')),
-                    DropdownMenuItem(value: 30, child: Text('30 دقيقة مجانًا')),
-                    DropdownMenuItem(value: 60, child: Text('ساعة (+40 ج.م)')),
-                    DropdownMenuItem(value: 90, child: Text('ساعة ونص (+80 ج.م)')),
+                  decoration: InputDecoration(labelText: context.tr('airport_wait_airport_label'), prefixIcon: const Icon(Icons.timer_outlined)),
+                  items: [
+                    DropdownMenuItem(value: 0, child: Text(context.tr('airport_wait_none'))),
+                    DropdownMenuItem(value: 30, child: Text(context.tr('airport_wait_30_free'))),
+                    DropdownMenuItem(value: 60, child: Text(context.tr('airport_wait_60_fee_airport'))),
+                    DropdownMenuItem(value: 90, child: Text(context.tr('airport_wait_90_fee'))),
                   ],
                   onChanged: (v) => setState(() => _waitAirportMin = v ?? 0),
                 ),
@@ -687,33 +700,33 @@ class _AirportScreenState extends State<AirportScreen> {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            _sectionTitle('6', 'بيانات الطيران (اختياري)'),
+            _sectionTitle('6', context.tr('airport_section_flight_info')),
             _sectionCard([
-              TextField(controller: _airlineCtrl, decoration: const InputDecoration(labelText: 'شركة الطيران', hintText: 'مثال: مصر للطيران', prefixIcon: Icon(Icons.airlines_outlined))),
+              TextField(controller: _airlineCtrl, decoration: InputDecoration(labelText: context.tr('airport_airline_label'), hintText: context.tr('airport_airline_hint'), prefixIcon: const Icon(Icons.airlines_outlined))),
               const SizedBox(height: 10),
-              TextField(controller: _flightNoCtrl, decoration: const InputDecoration(labelText: 'رقم الرحلة', hintText: 'MS 712', prefixIcon: Icon(Icons.confirmation_number_outlined))),
+              TextField(controller: _flightNoCtrl, decoration: InputDecoration(labelText: context.tr('airport_flight_no_label'), hintText: 'MS 712', prefixIcon: const Icon(Icons.confirmation_number_outlined))),
               const SizedBox(height: 10),
-              TextField(controller: _terminalCtrl, decoration: const InputDecoration(labelText: 'رقم الصالة / المبنى', hintText: 'مثال: مبنى 2', prefixIcon: Icon(Icons.holiday_village_outlined))),
+              TextField(controller: _terminalCtrl, decoration: InputDecoration(labelText: context.tr('airport_terminal_label'), hintText: context.tr('airport_terminal_hint'), prefixIcon: const Icon(Icons.holiday_village_outlined))),
               const SizedBox(height: 10),
               TextField(
                 controller: _flightCountryCtrl,
                 decoration: InputDecoration(
-                  labelText: _direction == 'departure' ? 'مسافر إلى (الدولة)' : 'قادم من (الدولة)',
-                  hintText: 'مثال: السعودية',
+                  labelText: _direction == 'departure' ? context.tr('airport_country_label_departure') : context.tr('airport_country_label_arrival'),
+                  hintText: context.tr('airport_country_hint'),
                   prefixIcon: const Icon(Icons.public_outlined),
                 ),
               ),
             ]),
             const SizedBox(height: 18),
-            _sectionTitle('7', 'بيانات المسافر'),
+            _sectionTitle('7', context.tr('airport_section_traveler_info')),
             _sectionCard([
-              TextField(controller: _nameCtrl, decoration: const InputDecoration(labelText: 'اسم المسافر', prefixIcon: Icon(Icons.person_outline))),
+              TextField(controller: _nameCtrl, decoration: InputDecoration(labelText: context.tr('airport_traveler_name_label'), prefixIcon: const Icon(Icons.person_outline))),
               const SizedBox(height: 10),
               TextField(
                 controller: _phoneCtrl,
                 keyboardType: TextInputType.phone,
                 textDirection: TextDirection.ltr,
-                decoration: const InputDecoration(labelText: 'رقم الجوال', hintText: '01xxxxxxxxx', prefixIcon: Icon(Icons.phone_outlined)),
+                decoration: InputDecoration(labelText: context.tr('airport_phone_label'), hintText: '01xxxxxxxxx', prefixIcon: const Icon(Icons.phone_outlined)),
               ),
             ]),
           ],
@@ -723,11 +736,11 @@ class _AirportScreenState extends State<AirportScreen> {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            _sectionTitle('8', 'تأكيد الحجز'),
+            _sectionTitle('8', context.tr('airport_section_confirm')),
             if (_roadKm > 0 && _flightTime != null)
               _tripSummaryCard()
             else
-              const Text('كمّل خطوة المطار وتاريخ الرحلة عشان يظهر الجدول الزمني والسعر', style: TextStyle(fontSize: 11, color: AppColors.textFaint), textAlign: TextAlign.center),
+              Text(context.tr('airport_confirm_step_missing'), style: const TextStyle(fontSize: 11, color: AppColors.textFaint), textAlign: TextAlign.center),
           ],
         );
     }
@@ -764,7 +777,7 @@ class _AirportScreenState extends State<AirportScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('رحلتك', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 14)),
+                Text(context.tr('airport_trip_summary_title'), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 14)),
                 const SizedBox(height: 3),
                 Text(
                   '${_from?.name ?? "—"} ← ${_airport?.name ?? "—"}',
@@ -782,14 +795,14 @@ class _AirportScreenState extends State<AirportScreen> {
               children: [
                 for (var i = 0; i < steps.length; i++) _timelineRow(steps[i], isLast: i == steps.length - 1),
                 const Divider(height: 16),
-                _fareLine('المسافة', '${_roadKm.toStringAsFixed(0)} كم', isText: true),
-                _fareLine('السيارة', vehicleLabel, isText: true),
-                if (_extraBagsFee > 0) _fareLine('شنط إضافية', '$_extraBagsFee ج.م', isText: true),
-                if (_companionsFee > 0) _fareLine('مرافق رايح جاي', '$_companionsFee ج.م', isText: true),
-                if (_waitPickupFee > 0) _fareLine('انتظار عند الاستلام', '$_waitPickupFee ج.م', isText: true),
-                if (_waitAirportFee > 0) _fareLine('انتظار في ساحة المطار', '$_waitAirportFee ج.م', isText: true),
+                _fareLine(context.tr('airport_fare_distance'), '${_roadKm.toStringAsFixed(0)} كم', isText: true),
+                _fareLine(context.tr('airport_fare_vehicle'), vehicleLabel, isText: true),
+                if (_extraBagsFee > 0) _fareLine(context.tr('airport_fare_extra_bags'), '$_extraBagsFee ج.م', isText: true),
+                if (_companionsFee > 0) _fareLine(context.tr('airport_fare_companions'), '$_companionsFee ج.م', isText: true),
+                if (_waitPickupFee > 0) _fareLine(context.tr('airport_fare_wait_pickup'), '$_waitPickupFee ج.م', isText: true),
+                if (_waitAirportFee > 0) _fareLine(context.tr('airport_fare_wait_airport'), '$_waitAirportFee ج.م', isText: true),
                 const Divider(height: 16),
-                _fareLine('الإجمالي', '$_total ج.م', bold: true),
+                _fareLine(context.tr('airport_fare_total'), '$_total ج.م', bold: true),
               ],
             ),
           ),
@@ -825,7 +838,7 @@ class _AirportScreenState extends State<AirportScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(step.label, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 12)),
-                  Text('$dateStr في $timeStr', style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 13, color: AppColors.primary)),
+                  Text('$dateStr ${context.tr('airport_timeline_at')} $timeStr', style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 13, color: AppColors.primary)),
                   if (step.sub.isNotEmpty)
                     Text(step.sub, style: const TextStyle(fontSize: 10, color: AppColors.textFaint)),
                 ],
@@ -837,11 +850,17 @@ class _AirportScreenState extends State<AirportScreen> {
     );
   }
 
-  String _weekday(int w) => const ['الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت', 'الأحد'][w - 1];
-  String _month(int m) => const [
-        'يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو',
-        'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر',
-      ][m - 1];
+  static const _weekdayKeys = [
+    'airport_weekday_mon', 'airport_weekday_tue', 'airport_weekday_wed', 'airport_weekday_thu',
+    'airport_weekday_fri', 'airport_weekday_sat', 'airport_weekday_sun',
+  ];
+  static const _monthKeys = [
+    'airport_month_jan', 'airport_month_feb', 'airport_month_mar', 'airport_month_apr',
+    'airport_month_may', 'airport_month_jun', 'airport_month_jul', 'airport_month_aug',
+    'airport_month_sep', 'airport_month_oct', 'airport_month_nov', 'airport_month_dec',
+  ];
+  String _weekday(int w) => context.tr(_weekdayKeys[w - 1]);
+  String _month(int m) => context.tr(_monthKeys[m - 1]);
 
   Widget _fareLine(String label, String value, {bool bold = false, bool isText = false}) {
     return Padding(
@@ -939,7 +958,7 @@ class _AirportBanner extends StatelessWidget {
               children: [
                 Text(airportName, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 15), maxLines: 1, overflow: TextOverflow.ellipsis),
                 const SizedBox(height: 2),
-                const Text('اختر تفاصيل رحلتك بالأسفل', style: TextStyle(color: Colors.white70, fontSize: 11.5)),
+                Text(context.tr('airport_banner_choose_details'), style: const TextStyle(color: Colors.white70, fontSize: 11.5)),
               ],
             ),
           ),
@@ -1070,7 +1089,7 @@ class _VehicleCategoryCard extends StatelessWidget {
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
                             decoration: BoxDecoration(color: AppColors.success.withValues(alpha: 0.14), borderRadius: BorderRadius.circular(20)),
-                            child: const Text('الأكثر طلبًا', style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.w800, color: AppColors.success)),
+                            child: Text(context.tr('airport_most_popular_tag'), style: const TextStyle(fontSize: 9.5, fontWeight: FontWeight.w800, color: AppColors.success)),
                           ),
                         ],
                       ],

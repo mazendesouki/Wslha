@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'i18n_batch_a.dart';
+import 'i18n_batch_b.dart';
+import 'i18n_batch_c.dart';
+
 /// Lightweight manual translation system — no codegen (`flutter gen-l10n`)
 /// since there's no Dart SDK available in this environment to verify
 /// generated code compiles. Every translatable string lives in `_strings`
@@ -145,10 +149,22 @@ const Map<String, Map<String, String>> _strings = {
   'home_trust_support': {'ar': 'دعم 24 ساعة', 'en': '24/7 support'},
 };
 
+// Merged once here rather than inline in _strings — batch_a/b/c were each
+// authored by a separate agent working in parallel on different screens, so
+// keeping them as their own files avoided every agent editing this same
+// map concurrently (a guaranteed Edit-tool collision). Verified no key
+// collisions across all four maps before merging.
+final Map<String, Map<String, String>> _allStrings = {
+  ..._strings,
+  ...batchAStrings,
+  ...batchBStrings,
+  ...batchCStrings,
+};
+
 extension AppLocalizationsX on BuildContext {
   String tr(String key) {
     final code = LocaleController.locale.value.languageCode;
-    final entry = _strings[key];
+    final entry = _allStrings[key];
     if (entry == null) return key;
     return entry[code] ?? entry['ar'] ?? key;
   }
