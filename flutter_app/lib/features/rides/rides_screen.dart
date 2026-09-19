@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/feature_flags.dart';
 import '../../core/session.dart';
 import '../../core/theme.dart';
 import '../../shared/widgets/selectable_pill.dart';
@@ -225,7 +226,7 @@ class _RidesScreenState extends State<RidesScreen> {
                       ),
                       if (i < _stops.length - 1) const SizedBox(height: 12),
                     ],
-                    if (_stops.length < _maxStops)
+                    if (FeatureFlags.multistopEnabled && _stops.length < _maxStops)
                       Align(
                         alignment: Alignment.centerRight,
                         child: TextButton.icon(

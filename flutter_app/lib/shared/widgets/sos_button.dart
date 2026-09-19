@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../../core/feature_flags.dart';
 import '../../core/session.dart';
 import '../../core/sos_service.dart';
 import '../../core/theme.dart';
@@ -46,6 +47,7 @@ class SosButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (!FeatureFlags.sosEnabled) return const SizedBox.shrink();
     return Material(
       color: Colors.transparent,
       child: InkWell(

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import '../../core/contact_launcher.dart';
 import '../../core/date_format_ar.dart';
+import '../../core/feature_flags.dart';
 import '../../core/location_share.dart';
 import '../../core/maps_launcher.dart';
 import '../../core/notifications.dart';
@@ -264,7 +265,7 @@ class _RideTrackingScreenState extends State<RideTrackingScreen> {
                 foregroundColor: Colors.white,
                 title: Text(widget.isDriverView ? 'تفاصيل الرحلة' : 'تتبّع الرحلة'),
                 actions: [
-                  if (!isCancelled && status != 'completed' && driverPhone != null && driverPhone.isNotEmpty)
+                  if (FeatureFlags.chatEnabled && !isCancelled && status != 'completed' && driverPhone != null && driverPhone.isNotEmpty)
                     IconButton(
                       onPressed: () {
                         final myPhone = widget.isDriverView ? driverPhone : customerPhone;
@@ -432,7 +433,7 @@ class _RideTrackingScreenState extends State<RideTrackingScreen> {
                         ),
                       ),
                       const SizedBox(height: 20),
-                      if (!widget.isDriverView && !isCancelled && status != 'completed') ...[
+                      if (FeatureFlags.rideShareEnabled && !widget.isDriverView && !isCancelled && status != 'completed') ...[
                         OutlinedButton.icon(
                           onPressed: () => shareRideTracking(
                             rideId: widget.rideId,

@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/contact_launcher.dart';
 import '../../core/date_format_ar.dart';
+import '../../core/feature_flags.dart';
 import '../../core/maps_launcher.dart';
 import '../../core/notifications.dart';
 import '../../core/pricing_settings.dart';
@@ -1278,7 +1279,7 @@ class _NoShowButtonState extends State<_NoShowButton> {
 
   @override
   Widget build(BuildContext context) {
-    if (!_ready) return const SizedBox.shrink();
+    if (!FeatureFlags.noShowEnabled || !_ready) return const SizedBox.shrink();
     return Padding(
       padding: const EdgeInsets.only(top: 8),
       child: OutlinedButton.icon(

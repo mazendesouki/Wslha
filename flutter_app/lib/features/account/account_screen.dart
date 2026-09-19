@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
+import '../../core/feature_flags.dart';
 import '../../core/session.dart';
 import '../../core/theme.dart';
 import '../favorites/favorite_drivers_screen.dart';
@@ -426,28 +427,32 @@ class AccountScreenState extends State<AccountScreen> {
                 ),
               ],
             ),
-            const SizedBox(height: 10),
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const FavoriteDriversScreen())),
-                    icon: const Icon(Icons.favorite_border),
-                    label: const Text('السائقين المفضّلين'),
-                    style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 14)),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const ReferralScreen())),
-                    icon: const Icon(Icons.card_giftcard_outlined),
-                    label: const Text('كود الدعوة'),
-                    style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 14)),
-                  ),
-                ),
-              ],
-            ),
+            if (FeatureFlags.favoritesEnabled || FeatureFlags.referralEnabled) ...[
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  if (FeatureFlags.favoritesEnabled)
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const FavoriteDriversScreen())),
+                        icon: const Icon(Icons.favorite_border),
+                        label: const Text('السائقين المفضّلين'),
+                        style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 14)),
+                      ),
+                    ),
+                  if (FeatureFlags.favoritesEnabled && FeatureFlags.referralEnabled) const SizedBox(width: 10),
+                  if (FeatureFlags.referralEnabled)
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const ReferralScreen())),
+                        icon: const Icon(Icons.card_giftcard_outlined),
+                        label: const Text('كود الدعوة'),
+                        style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 14)),
+                      ),
+                    ),
+                ],
+              ),
+            ],
             const SizedBox(height: 16),
             _statsRow(),
             const SizedBox(height: 16),

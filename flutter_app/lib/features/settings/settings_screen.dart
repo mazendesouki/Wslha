@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../core/feature_flags.dart';
 import '../../core/flavor.dart';
 import '../../core/session.dart';
 import '../../core/theme.dart';
@@ -146,11 +147,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
             title: 'طلباتي ومشاويري',
             onTap: () => widget.onNavigateTab?.call(3),
           ),
-          _SettingsTile(
-            icon: '🆘',
-            title: 'جهات اتصال الطوارئ',
-            onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const EmergencyContactsScreen())),
-          ),
+          if (FeatureFlags.sosEnabled)
+            _SettingsTile(
+              icon: '🆘',
+              title: 'جهات اتصال الطوارئ',
+              onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const EmergencyContactsScreen())),
+            ),
           const Divider(height: 24),
           SwitchListTile(
             secondary: const Text('🔔', style: TextStyle(fontSize: 20)),

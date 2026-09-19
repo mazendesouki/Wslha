@@ -1113,6 +1113,43 @@
             <div id="pricing-msg" style="display:none;font-size:.82rem;font-weight:700;padding:.5rem .75rem;border-radius:6px;margin-top:.5rem"></div>
           </div>
         </div>
+        <!-- Feature flags — every optional feature the apps ship gets an
+             on/off switch here (db/security-72), so it can be turned off
+             from here without a new app release. -->
+        <div class="card">
+          <div class="card__head"><span class="card__title">🚩 التحكم في الميزات</span></div>
+          <div class="card__body">
+            <div style="font-size:.78rem;color:#64748B;margin-bottom:.85rem">قفل أي ميزة هنا يخفيها فورًا من التطبيقات (عميل/سائق) من غير ما تحتاج تحديث نسخة جديدة.</div>
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:.6rem">
+              <label style="display:flex;align-items:center;gap:.5rem;font-size:.8rem;font-weight:700;background:#F1F5F9;border-radius:8px;padding:.6rem .75rem">
+                <input type="checkbox" id="feature-sos-enabled"/> 🆘 زر الطوارئ (SOS)
+              </label>
+              <label style="display:flex;align-items:center;gap:.5rem;font-size:.8rem;font-weight:700;background:#F1F5F9;border-radius:8px;padding:.6rem .75rem">
+                <input type="checkbox" id="feature-favorites-enabled"/> ⭐ السائقين المفضّلين
+              </label>
+              <label style="display:flex;align-items:center;gap:.5rem;font-size:.8rem;font-weight:700;background:#F1F5F9;border-radius:8px;padding:.6rem .75rem">
+                <input type="checkbox" id="feature-referral-enabled"/> 🎁 كود الدعوة
+              </label>
+              <label style="display:flex;align-items:center;gap:.5rem;font-size:.8rem;font-weight:700;background:#F1F5F9;border-radius:8px;padding:.6rem .75rem">
+                <input type="checkbox" id="feature-chat-enabled"/> 💬 دردشة الرحلة
+              </label>
+              <label style="display:flex;align-items:center;gap:.5rem;font-size:.8rem;font-weight:700;background:#F1F5F9;border-radius:8px;padding:.6rem .75rem">
+                <input type="checkbox" id="feature-no-show-enabled"/> 🚫 بلاغ عدم حضور العميل
+              </label>
+              <label style="display:flex;align-items:center;gap:.5rem;font-size:.8rem;font-weight:700;background:#F1F5F9;border-radius:8px;padding:.6rem .75rem">
+                <input type="checkbox" id="feature-multistop-enabled"/> 🛑 رحلات بنقاط توقف متعددة
+              </label>
+              <label style="display:flex;align-items:center;gap:.5rem;font-size:.8rem;font-weight:700;background:#F1F5F9;border-radius:8px;padding:.6rem .75rem">
+                <input type="checkbox" id="feature-daily-goal-enabled"/> 🎯 هدف السائق اليومي/الأسبوعي
+              </label>
+              <label style="display:flex;align-items:center;gap:.5rem;font-size:.8rem;font-weight:700;background:#F1F5F9;border-radius:8px;padding:.6rem .75rem">
+                <input type="checkbox" id="feature-ride-share-enabled"/> 📡 مشاركة الرحلة مع العائلة
+              </label>
+            </div>
+            <button class="btn btn--primary" onclick="saveFeatureFlags()" id="save-flags-btn" style="margin-top:1rem">💾 حفظ التحكم في الميزات</button>
+            <div id="flags-msg" style="display:none;font-size:.82rem;font-weight:700;padding:.5rem .75rem;border-radius:6px;margin-top:.5rem"></div>
+          </div>
+        </div>
         <!-- Merchant-delivery flat service fee -->
         <div class="card">
           <div class="card__head"><span class="card__title">🛵 رسوم توصيل التجار</span></div>
@@ -3471,6 +3508,56 @@ async function saveTripPricing() {
   setTimeout(() => { msg.style.display = 'none'; }, 4000);
 }
 
+const FEATURE_FLAG_MAP = {
+  feature_sos_enabled: 'feature-sos-enabled',
+  feature_favorites_enabled: 'feature-favorites-enabled',
+  feature_referral_enabled: 'feature-referral-enabled',
+  feature_chat_enabled: 'feature-chat-enabled',
+  feature_no_show_enabled: 'feature-no-show-enabled',
+  feature_multistop_enabled: 'feature-multistop-enabled',
+  feature_daily_goal_enabled: 'feature-daily-goal-enabled',
+  feature_ride_share_enabled: 'feature-ride-share-enabled',
+};
+
+async function loadFeatureFlags() {
+  try {
+    const rows = await sbGet(`app_settings?key=in.(${Object.keys(FEATURE_FLAG_MAP).join(',')})&select=key,value`);
+    (rows||[]).forEach(r => {
+      const elId = FEATURE_FLAG_MAP[r.key];
+      const el = elId && document.getElementById(elId);
+      if (el) el.checked = r.value === 'true';
+    });
+  } catch {}
+}
+
+async function saveFeatureFlags() {
+  const btn = document.getElementById('save-flags-btn');
+  const msg = document.getElementById('flags-msg');
+  const pass = getAdminPass();
+  if (!pass) { msg.textContent='مطلوب كلمة مرور المشرف'; msg.style.cssText='display:block;background:#FEE2E2;color:#991B1B;font-size:.82rem;font-weight:700;padding:.5rem .75rem;border-radius:6px'; return; }
+  btn.disabled = true; btn.textContent = 'جاري الحفظ...';
+  const pairs = Object.entries(FEATURE_FLAG_MAP).map(([key, elId]) => ({ key, value: document.getElementById(elId).checked ? 'true' : 'false' }));
+  try {
+    const results = await Promise.all(pairs.map(p =>
+      sbRpc('admin_set_setting', { p_admin_phone: ADMIN.phone, p_admin_password: pass, p_key: p.key, p_value: p.value })
+    ));
+    if (results.every(Boolean)) {
+      msg.textContent = '✅ تم حفظ التحكم في الميزات — التطبيقات هتاخد التحديث في أول فتح جديد';
+      msg.style.cssText = 'display:block;background:#DCFCE7;color:#14532D;font-size:.82rem;font-weight:700;padding:.5rem .75rem;border-radius:6px';
+      showToast('✅ تم حفظ التحكم في الميزات', '#16A34A');
+    } else {
+      clearAdminPass();
+      msg.textContent = '❌ فشل — تحقق من كلمة مرور المشرف';
+      msg.style.cssText = 'display:block;background:#FEE2E2;color:#991B1B;font-size:.82rem;font-weight:700;padding:.5rem .75rem;border-radius:6px';
+    }
+  } catch {
+    msg.textContent = 'حدث خطأ، حاول مرة أخرى';
+    msg.style.cssText = 'display:block;background:#FEE2E2;color:#991B1B;font-size:.82rem;font-weight:700;padding:.5rem .75rem;border-radius:6px';
+  }
+  btn.disabled = false; btn.textContent = '💾 حفظ التحكم في الميزات';
+  setTimeout(() => { msg.style.display = 'none'; }, 4000);
+}
+
 async function saveMerchantDeliveryFee() {
   const btn = document.getElementById('save-mdlv-fee-btn');
   const msg = document.getElementById('mdlv-fee-msg');
@@ -3549,6 +3636,7 @@ async function saveMarketplaceListingFee() {
 async function loadSettingsSection() {
   await loadCommissionRates();
   await loadTripPricing();
+  await loadFeatureFlags();
 }
 
 /* ═══════════════════ WALLETS ═══════════════════════════════ */

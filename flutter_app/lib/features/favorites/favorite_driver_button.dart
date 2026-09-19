@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../core/feature_flags.dart';
 import '../../core/session.dart';
 import '../../core/theme.dart';
 import 'favorites_repository.dart';
@@ -53,6 +54,7 @@ class _FavoriteDriverButtonState extends State<FavoriteDriverButton> {
 
   @override
   Widget build(BuildContext context) {
+    if (!FeatureFlags.favoritesEnabled) return const SizedBox.shrink();
     final isFavorite = _isFavorite ?? false;
     return IconButton(
       onPressed: _phone == null ? null : _toggle,

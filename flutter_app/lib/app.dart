@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'core/feature_flags.dart';
 import 'core/flavor.dart';
 import 'core/notifications.dart';
 import 'core/pricing_settings.dart';
@@ -32,6 +33,7 @@ Future<void> runWslhaApp(FlavorConfig config) async {
   // fetch just means the first quote after launch uses the hardcoded
   // defaults rather than blocking startup on a network call.
   unawaited(PricingSettings.load());
+  unawaited(FeatureFlags.load());
   runApp(WslhaApp(config: config));
 }
 

@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
+import '../../core/feature_flags.dart';
 import '../../core/phone_utils.dart';
 import '../../core/pricing_settings.dart';
 import '../../core/session.dart';
@@ -297,8 +298,10 @@ class DriverProfileScreenState extends State<DriverProfileScreen> {
           padding: const EdgeInsets.all(16),
           children: [
             _buildHeader(name, avatarUrl, level, next),
-            const SizedBox(height: 16),
-            _buildGoalCard(),
+            if (FeatureFlags.dailyGoalEnabled) ...[
+              const SizedBox(height: 16),
+              _buildGoalCard(),
+            ],
             const SizedBox(height: 16),
             _buildRatingCard(),
             const SizedBox(height: 16),
@@ -316,13 +319,15 @@ class DriverProfileScreenState extends State<DriverProfileScreen> {
               label: const Text('تعديل بياناتي'),
               style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 14)),
             ),
-            const SizedBox(height: 10),
-            OutlinedButton.icon(
-              onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const ReferralScreen())),
-              icon: const Icon(Icons.card_giftcard_outlined),
-              label: const Text('كود الدعوة'),
-              style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 14)),
-            ),
+            if (FeatureFlags.referralEnabled) ...[
+              const SizedBox(height: 10),
+              OutlinedButton.icon(
+                onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const ReferralScreen())),
+                icon: const Icon(Icons.card_giftcard_outlined),
+                label: const Text('كود الدعوة'),
+                style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 14)),
+              ),
+            ],
             const SizedBox(height: 16),
             OutlinedButton.icon(
               onPressed: _logout,
