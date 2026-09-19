@@ -59,21 +59,35 @@ class _AnimatedSplashState extends State<AnimatedSplash> with SingleTickerProvid
       body: Container(
         width: double.infinity,
         height: double.infinity,
+        // Wider spread than primary→primaryDark (those two are close enough
+        // in value to read as flat) — anchors on near-black so the top-to-
+        // bottom shift is actually visible, not just a hue in theory.
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [AppColors.primary, AppColors.primaryDark],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [AppColors.primary, AppColors.primaryDark, Color(0xFF040A09)],
+            stops: [0.0, 0.55, 1.0],
           ),
         ),
-        child: SafeArea(
-          child: Center(
-            child: AnimatedBuilder(
-              animation: _controller,
-              builder: (context, child) {
-                return Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
+        child: Stack(
+          children: [
+            // Faint background pattern of service icons (ride/delivery/store)
+            // — the "خدمات البرنامج" cue the background is meant to carry,
+            // separate from the single flavor-specific icon shown above the
+            // logo. Low opacity + oversized so they read as texture, not UI.
+            Positioned(top: -30, right: -20, child: _bgIcon(Icons.local_taxi_outlined)),
+            Positioned(top: 140, left: -40, child: _bgIcon(Icons.inventory_2_outlined)),
+            Positioned(bottom: 90, right: -30, child: _bgIcon(Icons.storefront_outlined)),
+            Positioned(bottom: -20, left: -10, child: _bgIcon(Icons.flight_takeoff)),
+            SafeArea(
+              child: Center(
+                child: AnimatedBuilder(
+                  animation: _controller,
+                  builder: (context, child) {
+                    return Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
                     Opacity(
                       opacity: _iconOpacity.value,
                       child: Container(
@@ -127,12 +141,16 @@ class _AnimatedSplashState extends State<AnimatedSplash> with SingleTickerProvid
                       ),
                     ),
                   ],
-                );
-              },
+                    );
+                  },
+                ),
+              ),
             ),
-          ),
+          ],
         ),
       ),
     );
   }
+
+  Widget _bgIcon(IconData icon) => Icon(icon, size: 90, color: Colors.white.withValues(alpha: 0.06));
 }

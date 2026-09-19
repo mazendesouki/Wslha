@@ -91,7 +91,7 @@ class _SessionGate extends StatelessWidget {
   static Future<UserSession?> _loadWithMinimumSplash() async {
     final results = await Future.wait([
       SessionStore.load(),
-      Future.delayed(const Duration(milliseconds: 2600)),
+      Future.delayed(const Duration(milliseconds: 3500)),
     ]);
     return results[0] as UserSession?;
   }
