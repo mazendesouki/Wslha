@@ -101,7 +101,7 @@ class _SessionGate extends StatelessWidget {
       future: _loadWithMinimumSplash(),
       builder: (context, snapshot) {
         if (snapshot.connectionState != ConnectionState.done) {
-          return AnimatedSplash(appTitle: config.appTitle);
+          return AnimatedSplash(appTitle: config.appTitle, serviceIcon: config.splashIcon);
         }
         final session = snapshot.data;
         if (session == null) return LoginScreen(config: config);
