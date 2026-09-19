@@ -123,8 +123,8 @@ class DriverProfileScreenState extends State<DriverProfileScreen> {
     ]);
     if (!mounted) return;
     setState(() {
-      _account = results[0];
-      _vehicle = results[1];
+      _account = results[0] as Map<String, dynamic>?;
+      _vehicle = results[1] as Map<String, dynamic>?;
       _stats = results[2] as Map<String, dynamic>;
       _progress = results[3] as (int, int);
       _loading = false;
