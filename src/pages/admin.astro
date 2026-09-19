@@ -317,6 +317,9 @@
     <button class="nav-item" data-section="coupons">
       <span class="nav-item__icon">🎟️</span> الكوبونات
     </button>
+    <button class="nav-item" data-section="campaigns">
+      <span class="nav-item__icon">📣</span> إشعارات ترويجية
+    </button>
     <div class="nav-divider"></div>
     <button class="nav-item" data-section="corporate">
       <span class="nav-item__icon">🏢</span> عقود الشركات
@@ -930,6 +933,58 @@
       </div>
     </div>
 
+    <!-- ═══════════════════ MARKETING CAMPAIGNS ═════════════ -->
+    <div class="section" id="sec-campaigns">
+      <div class="card">
+        <div class="card__head"><span class="card__title">📣 إشعار ترويجي جديد</span></div>
+        <div class="card__body">
+          <div style="display:flex;flex-direction:column;gap:.85rem">
+            <div>
+              <label style="font-size:.78rem;font-weight:700;color:#64748B;display:block;margin-bottom:.3rem">العنوان</label>
+              <input class="search-input" id="cmp-title" type="text" placeholder="🎉 عرض خاص من وصّلها" style="width:100%"/>
+            </div>
+            <div>
+              <label style="font-size:.78rem;font-weight:700;color:#64748B;display:block;margin-bottom:.3rem">نص الإشعار</label>
+              <textarea id="cmp-body" rows="3" placeholder="اكتب نص الإشعار هنا..." style="width:100%;padding:.6rem .75rem;border-radius:8px;border:1px solid #CBD5E1;font-family:inherit;font-size:.85rem;resize:vertical"></textarea>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:.75rem">
+              <div>
+                <label style="font-size:.75rem;color:#64748B;display:block;margin-bottom:.3rem">الفئة المستهدفة</label>
+                <select class="filter-select" id="cmp-target" style="width:100%">
+                  <option value="all">الكل</option>
+                  <option value="customer">العملاء فقط</option>
+                  <option value="driver">السائقين فقط</option>
+                  <option value="merchant">التجار فقط</option>
+                </select>
+              </div>
+              <div>
+                <label style="font-size:.75rem;color:#64748B;display:block;margin-bottom:.3rem">رابط عند الضغط (اختياري)</label>
+                <input class="search-input" id="cmp-url" type="text" placeholder="/" dir="ltr" style="width:100%"/>
+              </div>
+              <div>
+                <label style="font-size:.75rem;color:#64748B;display:block;margin-bottom:.3rem">ميعاد الإرسال (فاضي = فورًا)</label>
+                <input class="search-input" id="cmp-send-at" type="datetime-local" style="width:100%"/>
+              </div>
+            </div>
+          </div>
+          <button class="btn btn--primary" onclick="createCampaign()" id="cmp-create-btn" style="margin-top:1rem">📣 إنشاء الإشعار</button>
+          <div id="cmp-msg" style="display:none;font-size:.82rem;font-weight:700;padding:.5rem .75rem;border-radius:6px;margin-top:.5rem"></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card__head" style="display:flex;align-items:center;justify-content:space-between">
+          <span class="card__title">📋 كل الإشعارات</span>
+          <button class="btn btn--ghost btn--sm" onclick="loadCampaigns()">🔄 تحديث</button>
+        </div>
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr><th>العنوان</th><th>الفئة</th><th>ميعاد الإرسال</th><th>الحالة</th><th>إجراء</th></tr></thead>
+            <tbody id="campaigns-tbody"><tr><td colspan="5" style="text-align:center;color:#94A3B8;padding:2rem">جاري التحميل…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
     <!-- ═══════════════════ CORPORATE CONTRACTS ═════════════ -->
     <div class="section" id="sec-corporate">
       <div class="filters-bar">
@@ -1265,6 +1320,9 @@
               </label>
               <label style="display:flex;align-items:center;gap:.5rem;font-size:.8rem;font-weight:700;background:#F1F5F9;border-radius:8px;padding:.6rem .75rem">
                 <input type="checkbox" id="feature-airport-reminders-enabled"/> 🛫 تذكير رحلات المطار
+              </label>
+              <label style="display:flex;align-items:center;gap:.5rem;font-size:.8rem;font-weight:700;background:#F1F5F9;border-radius:8px;padding:.6rem .75rem">
+                <input type="checkbox" id="feature-marketing-campaigns-enabled"/> 📣 الإشعارات الترويجية
               </label>
             </div>
             <button class="btn btn--primary" onclick="saveFeatureFlags()" id="save-flags-btn" style="margin-top:1rem">💾 حفظ التحكم في الميزات</button>
@@ -1738,7 +1796,7 @@ const sectionTitles = {
   dash:'لوحة التحكم', users:'إدارة المستخدمين', drivers:'إدارة السائقين',
   merchants:'إدارة التجار', orders:'إدارة الطلبات', rides:'إدارة الرحلات',
   stores:'إدارة المتاجر', courier:'الطرود والمستندات', 'merchant-delivery':'توصيل التجار', 'general-delivery':'خدمة دليفري', marketplace:'سوق المستعمل',
-  corporate:'عقود الشركات', support:'الدعم الفني', coupons:'الكوبونات',
+  corporate:'عقود الشركات', support:'الدعم الفني', coupons:'الكوبونات', campaigns:'إشعارات ترويجية',
   finance:'التقارير المالية', wallets:'إدارة المحافظ', settings:'الإعدادات'
 };
 let currentSection = 'dash';
@@ -1755,7 +1813,7 @@ function loadMerchantsSection() {
 const loaders = { dash:loadDash, users:loadUsers, drivers:loadDriversSection,
   merchants:loadMerchantsSection, orders:loadOrders, rides:loadRides, stores:loadStores,
   courier:loadCourierOrders, 'merchant-delivery':loadMerchantDeliveries, 'general-delivery':loadGeneralDeliveries, marketplace:loadMarketplaceSection, corporate:loadCorporateContracts,
-  messages:loadMessages, support:loadSupportChats, coupons:loadCoupons, finance:loadFinance, wallets:loadWalletsSection, settings:loadSettingsSection };
+  messages:loadMessages, support:loadSupportChats, coupons:loadCoupons, campaigns:loadCampaigns, finance:loadFinance, wallets:loadWalletsSection, settings:loadSettingsSection };
 
 document.querySelectorAll('.nav-item').forEach(btn => {
   btn.addEventListener('click', () => {
@@ -3622,6 +3680,75 @@ async function toggleCoupon(id, active) {
   else { clearAdminPass(); showToast('❌ فشل — تحقق من كلمة مرور المشرف', '#DC2626'); }
 }
 
+/* ═══════════════════ MARKETING CAMPAIGNS ═══════════════════ */
+// marketing_campaigns carries no direct grants either (db/security-79) —
+// every read/write goes through the password-verified admin_* RPCs.
+async function loadCampaigns() {
+  const pass = getAdminPass();
+  if (!pass) return;
+  const rows = await sbRpcRows('admin_list_campaigns', { p_admin_phone: ADMIN.phone, p_admin_password: pass });
+  if (rows === null) { clearAdminPass(); return; }
+  const tbody = document.getElementById('campaigns-tbody');
+  if (!tbody) return;
+  if (!rows.length) { tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#94A3B8;padding:2rem">لسه مفيش إشعارات ترويجية</td></tr>'; return; }
+
+  const targetLabel = { all: 'الكل', customer: 'العملاء', driver: 'السائقين', merchant: 'التجار' };
+  const statusLabel = { scheduled: 'مجدول', sent: 'اتبعت', cancelled: 'ملغي' };
+  const statusColor = { scheduled: '#F59E0B', sent: '#16A34A', cancelled: '#94A3B8' };
+
+  tbody.innerHTML = rows.map(c => `
+    <tr>
+      <td style="font-weight:700">${escapeHtml(c.title)}</td>
+      <td>${targetLabel[c.target_role] || c.target_role}</td>
+      <td style="font-size:.78rem;color:#64748B">${new Date(c.send_at).toLocaleString('ar-EG')}</td>
+      <td><span style="padding:2px 8px;border-radius:99px;font-size:.75rem;font-weight:700;background:${statusColor[c.status]}22;color:${statusColor[c.status]}">${statusLabel[c.status] || c.status}</span></td>
+      <td>${c.status === 'scheduled' ? `<button onclick="cancelCampaign('${c.id}')" style="padding:.3rem .7rem;background:#DC2626;color:#fff;border:none;border-radius:5px;font-size:.78rem;cursor:pointer">إلغاء</button>` : '—'}</td>
+    </tr>`).join('');
+}
+
+async function createCampaign() {
+  const pass = getAdminPass();
+  if (!pass) return;
+  const title = (document.getElementById('cmp-title').value || '').trim();
+  const body = (document.getElementById('cmp-body').value || '').trim();
+  if (!title || !body) { showToast('❌ لازم عنوان ونص للإشعار', '#DC2626'); return; }
+
+  const btn = document.getElementById('cmp-create-btn');
+  const msg = document.getElementById('cmp-msg');
+  btn.disabled = true; btn.textContent = 'جاري الإنشاء...';
+
+  const sendAtRaw = document.getElementById('cmp-send-at').value;
+  const ok = await sbRpc('admin_create_campaign', {
+    p_admin_phone: ADMIN.phone, p_admin_password: pass, p_title: title, p_body: body,
+    p_target_role: document.getElementById('cmp-target').value,
+    p_url: document.getElementById('cmp-url').value || '/',
+    p_send_at: sendAtRaw ? new Date(sendAtRaw).toISOString() : null,
+  });
+
+  btn.disabled = false; btn.textContent = '📣 إنشاء الإشعار';
+  if (ok) {
+    msg.textContent = sendAtRaw ? '✅ اتجدول الإشعار' : '✅ هيتبعت الإشعار خلال دقيقة';
+    msg.style.cssText = 'display:block;background:#DCFCE7;color:#14532D;font-size:.82rem;font-weight:700;padding:.5rem .75rem;border-radius:6px;margin-top:.5rem';
+    document.getElementById('cmp-title').value = '';
+    document.getElementById('cmp-body').value = '';
+    document.getElementById('cmp-url').value = '';
+    document.getElementById('cmp-send-at').value = '';
+    loadCampaigns();
+  } else {
+    msg.textContent = '❌ فشل — تحقق من كلمة مرور المشرف';
+    msg.style.cssText = 'display:block;background:#FEE2E2;color:#991B1B;font-size:.82rem;font-weight:700;padding:.5rem .75rem;border-radius:6px;margin-top:.5rem';
+  }
+  setTimeout(() => { msg.style.display = 'none'; }, 4000);
+}
+
+async function cancelCampaign(id) {
+  const pass = getAdminPass();
+  if (!pass) return;
+  const ok = await sbRpc('admin_cancel_campaign', { p_admin_phone: ADMIN.phone, p_admin_password: pass, p_campaign_id: id });
+  if (ok) { showToast('✅ تم إلغاء الإشعار', '#16A34A'); loadCampaigns(); }
+  else { clearAdminPass(); showToast('❌ فشل — تحقق من كلمة مرور المشرف', '#DC2626'); }
+}
+
 /* ═══════════════════ FINANCE ═══════════════════════════════ */
 async function loadFinance() {
   const [orders, rides, commissions] = await Promise.all([
@@ -3818,6 +3945,7 @@ const FEATURE_FLAG_MAP = {
   feature_coupons_enabled: 'feature-coupons-enabled',
   feature_scheduled_rides_enabled: 'feature-scheduled-rides-enabled',
   feature_airport_reminders_enabled: 'feature-airport-reminders-enabled',
+  feature_marketing_campaigns_enabled: 'feature-marketing-campaigns-enabled',
 };
 
 async function loadFeatureFlags() {
