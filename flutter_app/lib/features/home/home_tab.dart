@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/i18n.dart';
 import '../../core/session.dart';
 import '../../core/theme.dart';
 import '../../shared/widgets/logout_button.dart';
@@ -18,26 +19,26 @@ class HomeTab extends StatelessWidget {
     // they're the first thing tapped, instead of competing on equal footing
     // with parcels/stores in one undifferentiated 2x2 grid.
     final primary = <_ServiceCard>[
-      _ServiceCard('🚖', 'مشاوير', 'احجز مشوارك دلوقتي', AppColors.primary, (ctx) => const RidesScreen()),
-      _ServiceCard('🛫', 'توصيل المطار', 'من دمياط إلى كل مطارات مصر', AppColors.accent, (ctx) => const AirportScreen()),
+      _ServiceCard('🚖', context.tr('home_service_rides_title'), context.tr('home_service_rides_subtitle'), AppColors.primary, (ctx) => const RidesScreen()),
+      _ServiceCard('🛫', context.tr('home_service_airport_title'), context.tr('home_service_airport_subtitle'), AppColors.accent, (ctx) => const AirportScreen()),
     ];
     final secondary = <_ServiceCard>[
-      _ServiceCard('📦', 'طرود ومستندات', 'مندوب مخصص لشحنتك', AppColors.primaryDark, (ctx) => const PlaceholderScreen(title: 'توصيل طرود', emoji: '📦')),
-      _ServiceCard('🛍️', 'خدمة دليفري', 'اطلب من أي متجر قريب منك', AppColors.primary, (ctx) => const StoresListScreen()),
+      _ServiceCard('📦', context.tr('home_service_parcels_title'), context.tr('home_service_parcels_subtitle'), AppColors.primaryDark, (ctx) => PlaceholderScreen(title: context.tr('home_service_parcels_title'), emoji: '📦')),
+      _ServiceCard('🛍️', context.tr('home_service_delivery_title'), context.tr('home_service_delivery_subtitle'), AppColors.primary, (ctx) => const StoresListScreen()),
     ];
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('مرحباً، ${session.name.isNotEmpty ? session.name : 'بك'} 👋'),
+        title: Text('${context.tr('home_greeting_prefix')} ${session.name.isNotEmpty ? session.name : context.tr('home_greeting_default_name')} 👋'),
         actions: const [LogoutButton()],
       ),
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            const Text(
-              'إيه محتاج تعمله النهاردة؟',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900),
+            Text(
+              context.tr('home_what_today'),
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900),
             ),
             const SizedBox(height: 14),
             Row(
@@ -49,9 +50,9 @@ class HomeTab extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 20),
-            const Text(
-              'خدمات إضافية',
-              style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: AppColors.textFaint),
+            Text(
+              context.tr('home_more_services'),
+              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: AppColors.textFaint),
             ),
             const SizedBox(height: 10),
             Row(
@@ -77,18 +78,17 @@ class HomeTab extends StatelessWidget {
 class _TrustBadgesStrip extends StatelessWidget {
   const _TrustBadgesStrip();
 
-  static const _items = [
-    ('🛡️', 'أمان وسلامة'),
-    ('💰', 'أسعار واضحة'),
-    ('💳', 'دفع مرن'),
-    ('🎧', 'دعم 24 ساعة'),
-  ];
-
   @override
   Widget build(BuildContext context) {
+    final items = [
+      ('🛡️', context.tr('home_trust_safety')),
+      ('💰', context.tr('home_trust_pricing')),
+      ('💳', context.tr('home_trust_payment')),
+      ('🎧', context.tr('home_trust_support')),
+    ];
     return Row(
       children: [
-        for (final item in _items) ...[
+        for (final item in items) ...[
           Expanded(
             child: Column(
               children: [

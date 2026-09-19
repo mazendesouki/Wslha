@@ -125,6 +125,24 @@ const Map<String, Map<String, String>> _strings = {
   'register_pw_rule_lower': {'ar': 'حرف صغير (a-z)', 'en': 'One lowercase letter (a-z)'},
   'register_pw_rule_number': {'ar': 'رقم واحد', 'en': 'One number'},
   'register_pw_rule_no_symbols': {'ar': 'بدون رموز أو مسافات', 'en': 'No symbols or spaces'},
+
+  // Home tab (customer)
+  'home_greeting_prefix': {'ar': 'مرحباً،', 'en': 'Hi'},
+  'home_greeting_default_name': {'ar': 'بك', 'en': 'there'},
+  'home_what_today': {'ar': 'إيه محتاج تعمله النهاردة؟', 'en': 'What do you need today?'},
+  'home_more_services': {'ar': 'خدمات إضافية', 'en': 'More services'},
+  'home_service_rides_title': {'ar': 'مشاوير', 'en': 'Rides'},
+  'home_service_rides_subtitle': {'ar': 'احجز مشوارك دلوقتي', 'en': 'Book your ride now'},
+  'home_service_airport_title': {'ar': 'توصيل المطار', 'en': 'Airport transfer'},
+  'home_service_airport_subtitle': {'ar': 'من دمياط إلى كل مطارات مصر', 'en': 'From Damietta to every airport in Egypt'},
+  'home_service_parcels_title': {'ar': 'طرود ومستندات', 'en': 'Parcels & documents'},
+  'home_service_parcels_subtitle': {'ar': 'مندوب مخصص لشحنتك', 'en': 'A dedicated courier for your shipment'},
+  'home_service_delivery_title': {'ar': 'خدمة دليفري', 'en': 'Delivery service'},
+  'home_service_delivery_subtitle': {'ar': 'اطلب من أي متجر قريب منك', 'en': 'Order from any nearby store'},
+  'home_trust_safety': {'ar': 'أمان وسلامة', 'en': 'Safety'},
+  'home_trust_pricing': {'ar': 'أسعار واضحة', 'en': 'Clear pricing'},
+  'home_trust_payment': {'ar': 'دفع مرن', 'en': 'Flexible payment'},
+  'home_trust_support': {'ar': 'دعم 24 ساعة', 'en': '24/7 support'},
 };
 
 extension AppLocalizationsX on BuildContext {
