@@ -1263,6 +1263,9 @@
               <label style="display:flex;align-items:center;gap:.5rem;font-size:.8rem;font-weight:700;background:#F1F5F9;border-radius:8px;padding:.6rem .75rem">
                 <input type="checkbox" id="feature-scheduled-rides-enabled"/> 🗓️ جدولة رحلة مسبقًا
               </label>
+              <label style="display:flex;align-items:center;gap:.5rem;font-size:.8rem;font-weight:700;background:#F1F5F9;border-radius:8px;padding:.6rem .75rem">
+                <input type="checkbox" id="feature-airport-reminders-enabled"/> 🛫 تذكير رحلات المطار
+              </label>
             </div>
             <button class="btn btn--primary" onclick="saveFeatureFlags()" id="save-flags-btn" style="margin-top:1rem">💾 حفظ التحكم في الميزات</button>
             <div id="flags-msg" style="display:none;font-size:.82rem;font-weight:700;padding:.5rem .75rem;border-radius:6px;margin-top:.5rem"></div>
@@ -3814,6 +3817,7 @@ const FEATURE_FLAG_MAP = {
   feature_ai_bot_enabled: 'feature-ai-bot-enabled',
   feature_coupons_enabled: 'feature-coupons-enabled',
   feature_scheduled_rides_enabled: 'feature-scheduled-rides-enabled',
+  feature_airport_reminders_enabled: 'feature-airport-reminders-enabled',
 };
 
 async function loadFeatureFlags() {
