@@ -19,6 +19,7 @@ class FeatureFlags {
   static bool supportChatEnabled = true;
   static bool aiBotEnabled = true;
   static bool couponsEnabled = true;
+  static bool scheduledRidesEnabled = true;
 
   static bool _loaded = false;
 
@@ -41,6 +42,7 @@ class FeatureFlags {
         'feature_support_chat_enabled',
         'feature_ai_bot_enabled',
         'feature_coupons_enabled',
+        'feature_scheduled_rides_enabled',
       ]);
 
       bool? flag(String key) {
@@ -60,6 +62,7 @@ class FeatureFlags {
       supportChatEnabled = flag('feature_support_chat_enabled') ?? supportChatEnabled;
       aiBotEnabled = flag('feature_ai_bot_enabled') ?? aiBotEnabled;
       couponsEnabled = flag('feature_coupons_enabled') ?? couponsEnabled;
+      scheduledRidesEnabled = flag('feature_scheduled_rides_enabled') ?? scheduledRidesEnabled;
       _loaded = true;
     } catch (_) {
       // Network hiccup — keep whatever was already loaded (defaults true).

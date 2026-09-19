@@ -11,6 +11,7 @@ import 'fare_calculator.dart' as fare_calc;
 import 'places_service.dart';
 import 'ride_repository.dart';
 import 'ride_tracking_screen.dart';
+import 'scheduled_rides_screen.dart';
 
 const int _maxStops = 3;
 
@@ -40,6 +41,7 @@ class _RidesScreenState extends State<RidesScreen> {
   bool _submitting = false;
   final _couponRepo = CouponRepository();
   String? _appliedCouponCode;
+  DateTime? _scheduledAt;
   UserSession? _session;
   double _surgeMult = 1.0;
   String? _surgeFetchedFor;
@@ -128,6 +130,7 @@ class _RidesScreenState extends State<RidesScreen> {
         stops: waypoints.map((p) => {'name': p.name, 'lat': p.lat, 'lng': p.lng}).toList(),
         isNegotiable: _negotiable,
         qualityTier: _qualityTier,
+        scheduledAt: _scheduledAt,
       );
     } catch (e) {
       // createRide() throws straight from the Supabase insert on failure
@@ -172,9 +175,52 @@ class _RidesScreenState extends State<RidesScreen> {
     }
 
     if (!mounted) return;
+
+    if (_scheduledAt != null) {
+      // A scheduled ride has no driver/dispatch yet (status stays
+      // 'scheduled' until pg_cron activates it near the pickup time — see
+      // ride_repository.dart's createRide doc) so RideTrackingScreen would
+      // just show an empty "waiting for a driver" state with nothing to
+      // actually track. Confirm and send them to the scheduled-rides list
+      // instead, where they can review/cancel it.
+      final at = _scheduledAt!;
+      setState(() => _scheduledAt = null);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('✅ اتحجزت رحلتك ليوم ${at.day}/${at.month} الساعة ${at.hour.toString().padLeft(2, '0')}:${at.minute.toString().padLeft(2, '0')}')),
+      );
+      Navigator.of(context).push(
+        MaterialPageRoute(builder: (_) => ScheduledRidesScreen(phone: _session!.phone)),
+      );
+      return;
+    }
+
     Navigator.of(context).push(
       MaterialPageRoute(builder: (_) => RideTrackingScreen(rideId: rideId)),
     );
+  }
+
+  Future<void> _pickScheduleTime() async {
+    final now = DateTime.now();
+    final date = await showDatePicker(
+      context: context,
+      initialDate: now.add(const Duration(hours: 1)),
+      firstDate: now,
+      lastDate: now.add(const Duration(days: 14)),
+    );
+    if (date == null || !mounted) return;
+    final time = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.fromDateTime(now.add(const Duration(hours: 1))),
+    );
+    if (time == null || !mounted) return;
+    final picked = DateTime(date.year, date.month, date.day, time.hour, time.minute);
+    if (picked.isBefore(now.add(const Duration(minutes: 30)))) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('لازم الميعاد يكون بعد نص ساعة على الأقل من دلوقتي')),
+      );
+      return;
+    }
+    setState(() => _scheduledAt = picked);
   }
 
   void _addStop() {
@@ -199,7 +245,19 @@ class _RidesScreenState extends State<RidesScreen> {
     final ready = _filledPoints.length >= 2 && _session != null && !_submitting;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('مشاوير دمياط')),
+      appBar: AppBar(
+        title: const Text('مشاوير دمياط'),
+        actions: [
+          if (FeatureFlags.scheduledRidesEnabled && _session != null)
+            IconButton(
+              tooltip: 'رحلاتي المجدولة',
+              icon: const Icon(Icons.event_available),
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => ScheduledRidesScreen(phone: _session!.phone)),
+              ),
+            ),
+        ],
+      ),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(14),
@@ -405,6 +463,40 @@ class _RidesScreenState extends State<RidesScreen> {
                   ),
                 ),
               ],
+              if (FeatureFlags.scheduledRidesEnabled && !_negotiable) ...[
+                const SizedBox(height: 12),
+                InkWell(
+                  onTap: _pickScheduleTime,
+                  borderRadius: BorderRadius.circular(10),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: _scheduledAt != null ? AppColors.primary.withValues(alpha: 0.08) : Colors.white,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: _scheduledAt != null ? AppColors.primary : const Color(0xFFE9ECEB)),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.event_available, size: 18, color: AppColors.primaryDark),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            _scheduledAt == null
+                                ? '🗓️ جدولة الرحلة لميعاد لاحق (اختياري)'
+                                : 'مجدولة: ${_scheduledAt!.day}/${_scheduledAt!.month} — ${_scheduledAt!.hour.toString().padLeft(2, '0')}:${_scheduledAt!.minute.toString().padLeft(2, '0')}',
+                            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
+                          ),
+                        ),
+                        if (_scheduledAt != null)
+                          IconButton(
+                            icon: const Icon(Icons.close, size: 18),
+                            onPressed: () => setState(() => _scheduledAt = null),
+                          ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
               if (FeatureFlags.couponsEnabled && _fare > 0 && _session != null) ...[
                 const SizedBox(height: 12),
                 CouponField(
@@ -423,7 +515,9 @@ class _RidesScreenState extends State<RidesScreen> {
                         height: 20,
                         child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                       )
-                    : Text(_negotiable ? '🤝 اطلب عروض أسعار من السائقين' : '🚖 اطلب مشوارك الآن'),
+                    : Text(_scheduledAt != null
+                        ? '🗓️ جدولة المشوار'
+                        : (_negotiable ? '🤝 اطلب عروض أسعار من السائقين' : '🚖 اطلب مشوارك الآن')),
               ),
             ],
           ),

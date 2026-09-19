@@ -74,6 +74,14 @@ class RideRepository {
     // one — see db/security-55-local-ride-ac-tier.sql. Null/omitted means
     // no preference (back-compat with rides booked before this existed).
     String? qualityTier,
+    // Booking for later instead of now (db/security-76) — the ride is
+    // inserted with status 'scheduled' instead of 'pending', which the
+    // existing dispatch/push triggers both explicitly skip (they only
+    // fire on status = 'pending'), so no driver sees or is notified about
+    // it yet. A pg_cron job flips it to 'pending' (and fires the same
+    // dispatch/push calls those triggers would have) once scheduledAt
+    // gets within the admin-configured lead window.
+    DateTime? scheduledAt,
   }) async {
     final row = await sb.from('rides').insert({
       'customer_phone': customerPhone,
@@ -89,13 +97,32 @@ class RideRepository {
       'eta_minutes': etaMinutes,
       'passengers': passengers,
       'payment': payment,
-      'status': 'pending',
+      'status': scheduledAt != null ? 'scheduled' : 'pending',
       'ride_type': rideType,
       'is_negotiable': isNegotiable,
       if (stops != null && stops.isNotEmpty) 'stops': stops,
       if (qualityTier != null && qualityTier != 'regular') 'airport_quality_tier': qualityTier,
+      if (scheduledAt != null) 'scheduled_at': scheduledAt.toUtc().toIso8601String(),
     }).select().single();
     return row;
+  }
+
+  /// Upcoming scheduled rides this customer hasn't cancelled yet — shown on
+  /// a dedicated "رحلاتي المجدولة" list so they can review/cancel before
+  /// a driver ever sees the request (see createRide's scheduledAt doc).
+  Future<List<Map<String, dynamic>>> fetchScheduledRides(String phone) async {
+    final rows = await sb
+        .from('rides')
+        .select()
+        .eq('customer_phone', phone)
+        .eq('status', 'scheduled')
+        .order('scheduled_at');
+    return List<Map<String, dynamic>>.from(rows);
+  }
+
+  Future<bool> cancelScheduledRide(String rideId, String phone) async {
+    final result = await sb.rpc('cancel_scheduled_ride', params: {'p_ride_id': rideId, 'p_customer_phone': phone});
+    return result == true;
   }
 
   /// Live list of price offers submitted by drivers on a negotiable ride —
