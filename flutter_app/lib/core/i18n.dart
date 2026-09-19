@@ -80,11 +80,19 @@ const Map<String, Map<String, String>> _strings = {
 
   // Login screen
   'login_title': {'ar': 'تسجيل الدخول', 'en': 'Log in'},
-  'login_phone_hint': {'ar': 'رقم الموبايل', 'en': 'Phone number'},
-  'login_password_hint': {'ar': 'كلمة المرور', 'en': 'Password'},
+  'login_phone_label': {'ar': 'رقم الجوال', 'en': 'Phone number'},
+  'login_phone_hint': {'ar': '01xxxxxxxxx', 'en': '01xxxxxxxxx'},
+  'login_phone_required': {'ar': 'أدخل رقم الجوال', 'en': 'Enter your phone number'},
+  'login_password_label': {'ar': 'كلمة المرور', 'en': 'Password'},
+  'login_password_required': {'ar': 'أدخل كلمة المرور', 'en': 'Enter your password'},
+  'login_remember_me': {'ar': 'تذكرني', 'en': 'Remember me'},
   'login_submit': {'ar': 'دخول', 'en': 'Log in'},
-  'login_no_account': {'ar': 'معندكش حساب؟', 'en': "Don't have an account?"},
-  'login_register': {'ar': 'سجّل دلوقتي', 'en': 'Register now'},
+  'login_no_account': {'ar': 'ليس لديك حساب؟ سجّل الآن', 'en': "Don't have an account? Register now"},
+  'login_register_driver': {'ar': '📝 سجّل كسائق الآن', 'en': '📝 Register as a driver now'},
+  'login_register_merchant': {'ar': '📝 سجّل كتاجر الآن', 'en': '📝 Register as a merchant now'},
+  'login_error_not_found': {'ar': 'لا يوجد حساب بهذا الرقم.', 'en': 'No account found with this number.'},
+  'login_error_bad_password': {'ar': 'كلمة المرور غير صحيحة.', 'en': 'Incorrect password.'},
+  'login_error_generic': {'ar': 'تعذّر الاتصال، تحقق من الإنترنت وحاول مجدداً.', 'en': "Couldn't connect — check your internet and try again."},
 };
 
 extension AppLocalizationsX on BuildContext {

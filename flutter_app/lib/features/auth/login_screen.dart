@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import '../../core/flavor.dart';
+import '../../core/i18n.dart';
 import '../../core/push.dart';
 import '../../core/session.dart';
 import '../../core/theme.dart';
@@ -55,9 +56,9 @@ class _LoginScreenState extends State<LoginScreen> {
       case LoginFailure(:final reason):
         setState(() {
           _error = switch (reason) {
-            'not_found' => 'لا يوجد حساب بهذا الرقم.',
-            'bad_password' => 'كلمة المرور غير صحيحة.',
-            _ => 'تعذّر الاتصال، تحقق من الإنترنت وحاول مجدداً.',
+            'not_found' => context.tr('login_error_not_found'),
+            'bad_password' => context.tr('login_error_bad_password'),
+            _ => context.tr('login_error_generic'),
           };
         });
     }
@@ -107,10 +108,10 @@ class _LoginScreenState extends State<LoginScreen> {
                       style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w900, color: Colors.white),
                     ),
                     const SizedBox(height: 4),
-                    const Text(
-                      'تسجيل الدخول',
+                    Text(
+                      context.tr('login_title'),
                       textAlign: TextAlign.center,
-                      style: TextStyle(fontSize: 14, color: Colors.white70, fontWeight: FontWeight.w700),
+                      style: const TextStyle(fontSize: 14, color: Colors.white70, fontWeight: FontWeight.w700),
                     ),
                   ],
                 ),
@@ -138,21 +139,21 @@ class _LoginScreenState extends State<LoginScreen> {
                     controller: _phoneController,
                     keyboardType: TextInputType.phone,
                     textDirection: TextDirection.ltr,
-                    decoration: const InputDecoration(labelText: 'رقم الجوال', hintText: '01xxxxxxxxx'),
-                    validator: (v) => (v == null || v.trim().isEmpty) ? 'أدخل رقم الجوال' : null,
+                    decoration: InputDecoration(labelText: context.tr('login_phone_label'), hintText: context.tr('login_phone_hint')),
+                    validator: (v) => (v == null || v.trim().isEmpty) ? context.tr('login_phone_required') : null,
                   ),
                   const SizedBox(height: 16),
                   TextFormField(
                     controller: _passwordController,
                     obscureText: _obscurePassword,
                     decoration: InputDecoration(
-                      labelText: 'كلمة المرور',
+                      labelText: context.tr('login_password_label'),
                       suffixIcon: IconButton(
                         icon: Icon(_obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined),
                         onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
                       ),
                     ),
-                    validator: (v) => (v == null || v.isEmpty) ? 'أدخل كلمة المرور' : null,
+                    validator: (v) => (v == null || v.isEmpty) ? context.tr('login_password_required') : null,
                   ),
                   Row(
                     children: [
@@ -162,7 +163,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       GestureDetector(
                         onTap: () => setState(() => _rememberMe = !_rememberMe),
-                        child: const Text('تذكرني', style: TextStyle(fontWeight: FontWeight.w700)),
+                        child: Text(context.tr('login_remember_me'), style: const TextStyle(fontWeight: FontWeight.w700)),
                       ),
                     ],
                   ),
@@ -175,7 +176,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             height: 20,
                             child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                           )
-                        : const Text('دخول'),
+                        : Text(context.tr('login_submit')),
                   ),
                   const SizedBox(height: 16),
                   if (isCustomerApp)
@@ -183,7 +184,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       onPressed: () => Navigator.of(context).push(
                         MaterialPageRoute(builder: (_) => const RegisterScreen()),
                       ),
-                      child: const Text('ليس لديك حساب؟ سجّل الآن'),
+                      child: Text(context.tr('login_no_account')),
                     )
                   else
                     // Account creation (name/phone/password/city, +
@@ -202,8 +203,8 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                         child: Text(
                           widget.config.flavor == AppFlavor.driver
-                              ? '📝 سجّل كسائق الآن'
-                              : '📝 سجّل كتاجر الآن',
+                              ? context.tr('login_register_driver')
+                              : context.tr('login_register_merchant'),
                         ),
                       ),
                     ),
