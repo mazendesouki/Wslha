@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../core/i18n.dart';
 import '../../core/theme.dart';
 import 'ratings_repository.dart';
 
@@ -32,7 +33,7 @@ class RatingsListScreen extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          _summaryCard(),
+          _summaryCard(context),
           const SizedBox(height: 16),
           if (reviews.isEmpty)
             Container(
@@ -43,13 +44,13 @@ class RatingsListScreen extends StatelessWidget {
               ),
             )
           else
-            ...reviews.map(_reviewTile),
+            ...reviews.map((r) => _reviewTile(context, r)),
         ],
       ),
     );
   }
 
-  Widget _summaryCard() {
+  Widget _summaryCard(BuildContext context) {
     final s = summary;
     return Container(
       padding: const EdgeInsets.all(16),
@@ -67,7 +68,7 @@ class RatingsListScreen extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(s.isNew ? 'لسه ما وصلش تقييم' : s.avg.toStringAsFixed(1), style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900)),
+                Text(s.isNew ? context.tr('ratings_list_no_ratings_yet') : s.avg.toStringAsFixed(1), style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900)),
                 Text(s.isNew ? emptyMessage : '${s.count} $countLabel', style: const TextStyle(fontSize: 12, color: AppColors.textFaint)),
               ],
             ),
@@ -76,14 +77,14 @@ class RatingsListScreen extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
               decoration: BoxDecoration(color: AppColors.success.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(999)),
-              child: const Text('✅ موثوق', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w900, color: AppColors.success)),
+              child: Text(context.tr('ratings_list_trusted_badge'), style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w900, color: AppColors.success)),
             ),
         ],
       ),
     );
   }
 
-  Widget _reviewTile(Map<String, dynamic> r) {
+  Widget _reviewTile(BuildContext context, Map<String, dynamic> r) {
     final rating = ((r['rating'] as num?) ?? 0).toInt();
     final emoji = rating >= 1 && rating <= 5 ? ratingEmojis[rating - 1] : '⭐';
     final comment = r['comment'] as String?;
@@ -132,7 +133,7 @@ class RatingsListScreen extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(color: const Color(0xFFF3F4F6), borderRadius: BorderRadius.circular(8)),
-              child: Text('ردك: $reply', style: const TextStyle(fontSize: 11, color: AppColors.textFaint)),
+              child: Text('${context.tr('ratings_list_your_reply_prefix')} $reply', style: const TextStyle(fontSize: 11, color: AppColors.textFaint)),
             ),
           ],
         ],

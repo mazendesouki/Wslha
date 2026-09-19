@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../core/i18n.dart';
 import '../../core/theme.dart';
 import 'ride_chat_repository.dart';
 
@@ -42,7 +43,7 @@ class _RideChatScreenState extends State<RideChatScreen> {
       await _repo.send(rideId: widget.rideId, senderPhone: widget.myPhone, senderRole: widget.myRole, body: body);
     } catch (_) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تعذّر إرسال الرسالة، حاول تاني')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.tr('ride_chat_send_failed'))));
       }
     } finally {
       if (mounted) setState(() => _sending = false);
@@ -65,8 +66,8 @@ class _RideChatScreenState extends State<RideChatScreen> {
                 }
                 final messages = snapshot.data!;
                 if (messages.isEmpty) {
-                  return const Center(
-                    child: Text('ابدأ المحادثة — الرسايل هنا بس بين انت والطرف التاني في الرحلة دي', style: TextStyle(color: AppColors.textFaint)),
+                  return Center(
+                    child: Text(context.tr('ride_chat_empty'), style: const TextStyle(color: AppColors.textFaint)),
                   );
                 }
                 WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -123,7 +124,7 @@ class _RideChatScreenState extends State<RideChatScreen> {
                       textInputAction: TextInputAction.send,
                       onSubmitted: (_) => _send(),
                       decoration: InputDecoration(
-                        hintText: 'اكتب رسالة...',
+                        hintText: context.tr('ride_chat_hint'),
                         filled: true,
                         fillColor: context.mutedSurface,
                         contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),

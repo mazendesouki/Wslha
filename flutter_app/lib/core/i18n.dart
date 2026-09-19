@@ -4,6 +4,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'i18n_batch_a.dart';
 import 'i18n_batch_b.dart';
 import 'i18n_batch_c.dart';
+import 'i18n_batch_d.dart';
+import 'i18n_batch_e.dart';
+import 'i18n_batch_f.dart';
 
 /// Lightweight manual translation system — no codegen (`flutter gen-l10n`)
 /// since there's no Dart SDK available in this environment to verify
@@ -159,6 +162,9 @@ final Map<String, Map<String, String>> _allStrings = {
   ...batchAStrings,
   ...batchBStrings,
   ...batchCStrings,
+  ...batchDStrings,
+  ...batchEStrings,
+  ...batchFStrings,
 };
 
 extension AppLocalizationsX on BuildContext {

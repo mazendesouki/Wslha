@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../core/flavor.dart';
+import '../../core/i18n.dart';
 import '../../core/password_utils.dart';
 import '../../core/phone_utils.dart';
 import '../../core/theme.dart';
@@ -61,11 +62,11 @@ class _DriverMerchantRegisterScreenState extends State<DriverMerchantRegisterScr
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
     if (_passwordController.text != _confirmController.text) {
-      setState(() => _error = 'كلمتا المرور غير متطابقتين.');
+      setState(() => _error = context.tr('driver_reg_err_password_mismatch'));
       return;
     }
     if (_isDriver && _photo == null) {
-      setState(() => _error = 'التقط صورتك الشخصية أولاً.');
+      setState(() => _error = context.tr('driver_reg_err_photo_required'));
       return;
     }
 
@@ -87,14 +88,14 @@ class _DriverMerchantRegisterScreenState extends State<DriverMerchantRegisterScr
     if (result.alreadyRegistered) {
       setState(() {
         _loading = false;
-        _error = 'الحساب ده مسجّل بالفعل — سجّل الدخول من الشاشة الرئيسية بدل التسجيل من جديد.';
+        _error = context.tr('driver_reg_err_already_registered');
       });
       return;
     }
     if (result.error) {
       setState(() {
         _loading = false;
-        _error = 'تعذّر إنشاء الحساب.${result.debugDetail != null ? '\n${result.debugDetail}' : ''}';
+        _error = '${context.tr('driver_reg_err_create_failed')}${result.debugDetail != null ? '\n${result.debugDetail}' : ''}';
       });
       return;
     }
@@ -127,7 +128,7 @@ class _DriverMerchantRegisterScreenState extends State<DriverMerchantRegisterScr
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(_isDriver ? 'تسجيل سائق جديد' : 'تسجيل تاجر جديد')),
+      appBar: AppBar(title: Text(_isDriver ? context.tr('driver_reg_title_driver') : context.tr('driver_reg_title_merchant'))),
       body: SafeArea(
         child: _successPhone != null ? _buildSuccess() : _buildForm(),
       ),
@@ -143,28 +144,28 @@ class _DriverMerchantRegisterScreenState extends State<DriverMerchantRegisterScr
           children: [
             const Text('✅', style: TextStyle(fontSize: 48)),
             const SizedBox(height: 16),
-            const Text(
-              'تم إنشاء الحساب بنجاح',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
+            Text(
+              context.tr('driver_reg_success_title'),
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 8),
             Text(
               _isDriver
-                  ? 'باقي عليك رقم البطاقة، صور الوثائق، وبيانات السيارة عشان يتراجع طلبك ويتفعّل حسابك.'
-                  : 'باقي عليك بيانات النشاط التجاري والوثائق عشان يتراجع طلبك ويتفعّل حسابك.',
+                  ? context.tr('driver_reg_success_body_driver')
+                  : context.tr('driver_reg_success_body_merchant'),
               textAlign: TextAlign.center,
               style: const TextStyle(color: AppColors.textFaint),
             ),
             const SizedBox(height: 24),
             ElevatedButton(
               onPressed: _continueOnWeb,
-              child: const Text('📝 كمّل باقي البيانات'),
+              child: Text(context.tr('driver_reg_continue_web')),
             ),
             const SizedBox(height: 12),
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: const Text('رجوع لتسجيل الدخول'),
+              child: Text(context.tr('driver_reg_back_to_login')),
             ),
           ],
         ),
@@ -201,12 +202,12 @@ class _DriverMerchantRegisterScreenState extends State<DriverMerchantRegisterScr
                     backgroundColor: AppColors.primaryLight,
                     backgroundImage: _photo != null ? FileImage(File(_photo!.path)) : null,
                     child: _photo == null
-                        ? const Column(
+                        ? Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Icon(Icons.camera_alt, size: 28, color: AppColors.primary),
-                              SizedBox(height: 4),
-                              Text('صورة شخصية', style: TextStyle(fontSize: 11, color: AppColors.primary)),
+                              const Icon(Icons.camera_alt, size: 28, color: AppColors.primary),
+                              const SizedBox(height: 4),
+                              Text(context.tr('driver_reg_photo_placeholder'), style: const TextStyle(fontSize: 11, color: AppColors.primary)),
                             ],
                           )
                         : null,
@@ -217,42 +218,42 @@ class _DriverMerchantRegisterScreenState extends State<DriverMerchantRegisterScr
               Center(
                 child: TextButton(
                   onPressed: _capturePhoto,
-                  child: Text(_photo == null ? '📷 التقط صورتك الشخصية' : '📷 إعادة التقاط الصورة'),
+                  child: Text(_photo == null ? context.tr('driver_reg_capture_photo') : context.tr('driver_reg_retake_photo')),
                 ),
               ),
               const SizedBox(height: 8),
             ],
             TextFormField(
               controller: _nameController,
-              decoration: const InputDecoration(labelText: 'الاسم الكامل'),
-              validator: (v) => (v == null || v.trim().isEmpty) ? 'أدخل اسمك' : null,
+              decoration: InputDecoration(labelText: context.tr('driver_reg_label_name')),
+              validator: (v) => (v == null || v.trim().isEmpty) ? context.tr('driver_reg_err_name_required') : null,
             ),
             const SizedBox(height: 16),
             TextFormField(
               controller: _phoneController,
               keyboardType: TextInputType.phone,
               textDirection: TextDirection.ltr,
-              decoration: const InputDecoration(labelText: 'رقم الجوال', hintText: '01xxxxxxxxx'),
+              decoration: InputDecoration(labelText: context.tr('driver_reg_label_phone'), hintText: '01xxxxxxxxx'),
               validator: (v) => isEgyptianMobile(v ?? '') ? null : egPhoneError,
             ),
             const SizedBox(height: 16),
             TextFormField(
               controller: _passwordController,
               obscureText: true,
-              decoration: const InputDecoration(labelText: 'كلمة المرور', helperText: passwordHint, helperMaxLines: 3),
+              decoration: InputDecoration(labelText: context.tr('driver_reg_label_password'), helperText: passwordHint, helperMaxLines: 3),
               validator: (v) => validatePassword(v ?? ''),
             ),
             const SizedBox(height: 16),
             TextFormField(
               controller: _confirmController,
               obscureText: true,
-              decoration: const InputDecoration(labelText: 'تأكيد كلمة المرور'),
-              validator: (v) => (v == null || v.isEmpty) ? 'أكّد كلمة المرور' : null,
+              decoration: InputDecoration(labelText: context.tr('driver_reg_label_confirm_password')),
+              validator: (v) => (v == null || v.isEmpty) ? context.tr('driver_reg_err_confirm_required') : null,
             ),
             const SizedBox(height: 16),
             DropdownButtonFormField<String>(
               initialValue: _city,
-              decoration: const InputDecoration(labelText: 'المدينة'),
+              decoration: InputDecoration(labelText: context.tr('driver_reg_label_city')),
               items: _cities.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
               onChanged: (v) => setState(() => _city = v ?? _city),
             ),
@@ -265,7 +266,7 @@ class _DriverMerchantRegisterScreenState extends State<DriverMerchantRegisterScr
                       height: 20,
                       child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                     )
-                  : const Text('التالي'),
+                  : Text(context.tr('driver_reg_next')),
             ),
           ],
         ),

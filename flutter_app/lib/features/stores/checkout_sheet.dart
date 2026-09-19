@@ -1,5 +1,6 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
+import '../../core/i18n.dart';
 import '../../core/phone_utils.dart';
 import '../../core/session.dart';
 import '../../core/supabase_client.dart';
@@ -62,9 +63,9 @@ class _CheckoutSheetState extends State<CheckoutSheet> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Padding(
-              padding: EdgeInsets.fromLTRB(20, 20, 20, 8),
-              child: Text('عناويني المحفوظة', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900)),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
+              child: Text(context.tr('checkout_saved_addresses_title'), style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900)),
             ),
             ..._savedAddresses.map((a) => ListTile(
                   leading: const Icon(Icons.location_on_outlined, color: AppColors.primary),
@@ -100,7 +101,7 @@ class _CheckoutSheetState extends State<CheckoutSheet> {
     final address = _addressCtrl.text.trim();
 
     if (name.length < 2) {
-      setState(() => _error = 'يرجى إدخال اسم المستلم.');
+      setState(() => _error = context.tr('checkout_error_name'));
       return;
     }
     if (!isEgyptianMobile(phone)) {
@@ -108,11 +109,11 @@ class _CheckoutSheetState extends State<CheckoutSheet> {
       return;
     }
     if (address.length < 5) {
-      setState(() => _error = 'يرجى إدخال العنوان بالتفصيل.');
+      setState(() => _error = context.tr('checkout_error_address'));
       return;
     }
     if (_cart.subtotal < _cart.minOrder) {
-      setState(() => _error = 'الحد الأدنى للطلب ${_cart.minOrder.toStringAsFixed(0)} ج.م.');
+      setState(() => _error = '${context.tr('checkout_error_min_order')} ${_cart.minOrder.toStringAsFixed(0)} ج.م.');
       return;
     }
 
@@ -157,7 +158,7 @@ class _CheckoutSheetState extends State<CheckoutSheet> {
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _error = 'حصل خطأ في إرسال الطلب — حاول تاني.';
+        _error = context.tr('checkout_error_submit');
         _submitting = false;
       });
     }
@@ -167,15 +168,15 @@ class _CheckoutSheetState extends State<CheckoutSheet> {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (_) => AlertDialog(
-        title: const Text('✅ تم إرسال طلبك'),
-        content: Text('رقم الطلب: $code\nهيوصلك تحديث لحظة ما المتجر يقبل طلبك.'),
+      builder: (dialogContext) => AlertDialog(
+        title: Text(context.tr('checkout_success_title')),
+        content: Text('${context.tr('checkout_success_order_number_label')}: $code\n${context.tr('checkout_success_update_note')}'),
         actions: [
           FilledButton(
             onPressed: () {
-              Navigator.of(context).popUntil((r) => r.isFirst);
+              Navigator.of(dialogContext).popUntil((r) => r.isFirst);
             },
-            child: const Text('تمام'),
+            child: Text(context.tr('checkout_ok_button')),
           ),
         ],
       ),
@@ -186,7 +187,7 @@ class _CheckoutSheetState extends State<CheckoutSheet> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: context.mutedSurface,
-      appBar: AppBar(title: const Text('إتمام الطلب')),
+      appBar: AppBar(title: Text(context.tr('checkout_appbar_title'))),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
@@ -207,17 +208,17 @@ class _CheckoutSheetState extends State<CheckoutSheet> {
                       ),
                     )),
                 const Divider(height: 20),
-                _summaryRow('المجموع الفرعي', '${_cart.subtotal.toStringAsFixed(0)} ج.م'),
-                _summaryRow('رسوم التوصيل', '${_cart.deliveryFee.toStringAsFixed(0)} ج.م'),
+                _summaryRow(context.tr('checkout_subtotal_label'), '${_cart.subtotal.toStringAsFixed(0)} ج.م'),
+                _summaryRow(context.tr('checkout_delivery_fee_label'), '${_cart.deliveryFee.toStringAsFixed(0)} ج.م'),
                 const SizedBox(height: 4),
-                _summaryRow('الإجمالي', '${_cart.total.toStringAsFixed(0)} ج.م', bold: true),
+                _summaryRow(context.tr('checkout_total_label'), '${_cart.total.toStringAsFixed(0)} ج.م', bold: true),
               ],
             ),
           ),
           const SizedBox(height: 16),
-          TextField(controller: _nameCtrl, decoration: const InputDecoration(labelText: 'اسم المستلم')),
+          TextField(controller: _nameCtrl, decoration: InputDecoration(labelText: context.tr('checkout_name_label'))),
           const SizedBox(height: 10),
-          TextField(controller: _phoneCtrl, keyboardType: TextInputType.phone, decoration: const InputDecoration(labelText: 'رقم الجوال')),
+          TextField(controller: _phoneCtrl, keyboardType: TextInputType.phone, decoration: InputDecoration(labelText: context.tr('checkout_phone_label'))),
           const SizedBox(height: 10),
           if (_savedAddresses.isNotEmpty) ...[
             Align(
@@ -225,22 +226,24 @@ class _CheckoutSheetState extends State<CheckoutSheet> {
               child: TextButton.icon(
                 onPressed: _pickSavedAddress,
                 icon: const Icon(Icons.location_on_outlined, size: 18),
-                label: const Text('اختر من عناويني المحفوظة'),
+                label: Text(context.tr('checkout_pick_saved_address')),
               ),
             ),
           ],
-          TextField(controller: _areaCtrl, decoration: const InputDecoration(labelText: 'المنطقة')),
+          TextField(controller: _areaCtrl, decoration: InputDecoration(labelText: context.tr('checkout_area_label'))),
           const SizedBox(height: 10),
-          TextField(controller: _addressCtrl, maxLines: 2, decoration: const InputDecoration(labelText: 'العنوان بالتفصيل')),
+          TextField(controller: _addressCtrl, maxLines: 2, decoration: InputDecoration(labelText: context.tr('checkout_address_label'))),
           const SizedBox(height: 14),
-          const Text('طريقة الدفع', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13)),
+          Text(context.tr('checkout_payment_method_label'), style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13)),
           const SizedBox(height: 8),
           Wrap(
             spacing: 8,
+            // Internal values kept as-is (not translated): they're persisted
+            // verbatim into orders.payment, same shape the web checkout uses.
             children: ['كاش', 'تحويل بنكي', 'محفظة'].map((p) {
               final selected = _payment == p;
               return ChoiceChip(
-                label: Text(p, style: TextStyle(color: selected ? Colors.white : AppColors.textFaint, fontWeight: FontWeight.w800, fontSize: 12)),
+                label: Text(_paymentLabel(context, p), style: TextStyle(color: selected ? Colors.white : AppColors.textFaint, fontWeight: FontWeight.w800, fontSize: 12)),
                 selected: selected,
                 selectedColor: AppColors.primary,
                 backgroundColor: context.surfaceColor,
@@ -257,11 +260,24 @@ class _CheckoutSheetState extends State<CheckoutSheet> {
             onPressed: _submitting ? null : _submit,
             child: _submitting
                 ? const SizedBox(height: 18, width: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                : Text('تأكيد الطلب — ${_cart.total.toStringAsFixed(0)} ج.م'),
+                : Text('${context.tr('checkout_confirm_order_button')} — ${_cart.total.toStringAsFixed(0)} ج.م'),
           ),
         ],
       ),
     );
+  }
+
+  String _paymentLabel(BuildContext context, String code) {
+    switch (code) {
+      case 'كاش':
+        return context.tr('checkout_payment_cash');
+      case 'تحويل بنكي':
+        return context.tr('checkout_payment_bank_transfer');
+      case 'محفظة':
+        return context.tr('checkout_payment_wallet');
+      default:
+        return code;
+    }
   }
 
   Widget _summaryRow(String label, String value, {bool bold = false}) => Padding(

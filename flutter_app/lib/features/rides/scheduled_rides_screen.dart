@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../core/i18n.dart';
 import '../../core/theme.dart';
 import 'ride_repository.dart';
 
@@ -32,11 +33,11 @@ class _ScheduledRidesScreenState extends State<ScheduledRidesScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text('إلغاء الرحلة المجدولة؟'),
-        content: const Text('هيتم إلغاء الحجز نهائيًا.'),
+        title: Text(context.tr('scheduled_rides_cancel_confirm_title')),
+        content: Text(context.tr('scheduled_rides_cancel_confirm_body')),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('تراجع')),
-          TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('إلغاء الرحلة')),
+          TextButton(onPressed: () => Navigator.pop(context, false), child: Text(context.tr('scheduled_rides_cancel_back'))),
+          TextButton(onPressed: () => Navigator.pop(context, true), child: Text(context.tr('scheduled_rides_cancel_confirm_action'))),
         ],
       ),
     );
@@ -44,7 +45,7 @@ class _ScheduledRidesScreenState extends State<ScheduledRidesScreen> {
     final ok = await _repo.cancelScheduledRide(rideId, widget.phone);
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(ok ? '✅ تم إلغاء الرحلة' : '❌ تعذّر الإلغاء')),
+      SnackBar(content: Text(ok ? context.tr('scheduled_rides_cancel_success') : context.tr('scheduled_rides_cancel_failed'))),
     );
     if (ok) _refresh();
   }
@@ -52,7 +53,7 @@ class _ScheduledRidesScreenState extends State<ScheduledRidesScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('🗓️ رحلاتي المجدولة')),
+      appBar: AppBar(title: Text('🗓️ ${context.tr('scheduled_rides_appbar_title')}')),
       body: RefreshIndicator(
         onRefresh: () async => _refresh(),
         child: FutureBuilder<List<Map<String, dynamic>>>(
@@ -62,9 +63,9 @@ class _ScheduledRidesScreenState extends State<ScheduledRidesScreen> {
             final rides = snapshot.data!;
             if (rides.isEmpty) {
               return ListView(
-                children: const [
-                  SizedBox(height: 120),
-                  Center(child: Text('مفيش رحلات مجدولة حاليًا', style: TextStyle(color: AppColors.textFaint))),
+                children: [
+                  const SizedBox(height: 120),
+                  Center(child: Text(context.tr('scheduled_rides_empty'), style: const TextStyle(color: AppColors.textFaint))),
                 ],
               );
             }
@@ -99,7 +100,7 @@ class _ScheduledRidesScreenState extends State<ScheduledRidesScreen> {
                           Text('${r['fare']} ج.م', style: const TextStyle(fontWeight: FontWeight.w900, color: AppColors.primaryDark)),
                           TextButton(
                             onPressed: () => _cancel(r['id'] as String),
-                            child: const Text('إلغاء', style: TextStyle(color: AppColors.error)),
+                            child: Text(context.tr('scheduled_rides_cancel_button'), style: const TextStyle(color: AppColors.error)),
                           ),
                         ],
                       ),

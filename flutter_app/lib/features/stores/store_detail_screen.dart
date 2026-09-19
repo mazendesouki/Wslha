@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/i18n.dart';
 import '../../core/theme.dart';
 import '../ratings/ratings_repository.dart';
 import 'cart_store.dart';
@@ -71,18 +72,20 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
     if (_cart.storeId != null && _cart.storeId != widget.store.id && _cart.count > 0) {
       showDialog(
         context: context,
-        builder: (_) => AlertDialog(
-          title: const Text('سلة من متجر تاني'),
-          content: Text('عندك عناصر في سلتك من "${_cart.storeName}" — لو أضفت من هنا هتتفضّى السلة القديمة. تكمل؟'),
+        builder: (dialogContext) => AlertDialog(
+          title: Text(context.tr('store_detail_cart_from_other_store_title')),
+          content: Text(
+            '${context.tr('store_detail_cart_conflict_prefix')} "${_cart.storeName}" ${context.tr('store_detail_cart_conflict_suffix')}',
+          ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(context), child: const Text('إلغاء')),
+            TextButton(onPressed: () => Navigator.pop(dialogContext), child: Text(context.tr('store_detail_cancel'))),
             FilledButton(
               onPressed: () {
-                Navigator.pop(context);
+                Navigator.pop(dialogContext);
                 _cart.clear();
                 _cart.setQty(widget.store, p, qty);
               },
-              child: const Text('استبدال السلة'),
+              child: Text(context.tr('store_detail_replace_cart')),
             ),
           ],
         ),
@@ -110,7 +113,7 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
                         const SizedBox(height: 12),
                         Text(_error!, style: const TextStyle(fontSize: 11, color: AppColors.error), textAlign: TextAlign.center),
                         const SizedBox(height: 16),
-                        OutlinedButton(onPressed: _load, child: const Text('إعادة المحاولة')),
+                        OutlinedButton(onPressed: _load, child: Text(context.tr('store_detail_retry'))),
                       ],
                     ),
                   ),
@@ -127,10 +130,10 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
       return Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
-          children: const [
-            Text('🍽️', style: TextStyle(fontSize: 48)),
-            SizedBox(height: 12),
-            Text('لسه مفيش منتجات في المتجر ده', style: TextStyle(color: AppColors.textFaint)),
+          children: [
+            const Text('🍽️', style: TextStyle(fontSize: 48)),
+            const SizedBox(height: 12),
+            Text(context.tr('store_detail_no_products'), style: const TextStyle(color: AppColors.textFaint)),
           ],
         ),
       );
@@ -179,12 +182,12 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
                 const SizedBox(width: 4),
                 Text(widget.store.deliveryTime, style: const TextStyle(fontSize: 12, color: AppColors.textFaint)),
                 const Spacer(),
-                Text('رسوم التوصيل ${widget.store.deliveryFee.toStringAsFixed(0)} ج.م', style: const TextStyle(fontSize: 11, color: AppColors.textFaint)),
+                Text('${context.tr('store_detail_delivery_fee_label')} ${widget.store.deliveryFee.toStringAsFixed(0)} ج.م', style: const TextStyle(fontSize: 11, color: AppColors.textFaint)),
               ],
             ),
           ),
           for (final s in orderedSections) ..._sectionBlock(s.name, bySection[s.id]!),
-          for (final k in orphanKeys) ..._sectionBlock('أصناف أخرى', bySection[k]!),
+          for (final k in orphanKeys) ..._sectionBlock(context.tr('store_detail_other_items_section'), bySection[k]!),
         ],
       ),
     );
@@ -221,8 +224,8 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text('🛒 ${_cart.count} عناصر', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 14)),
-                  Text('السلة — ${_cart.total.toStringAsFixed(0)} ج.م', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 14)),
+                  Text('🛒 ${_cart.count} ${context.tr('store_detail_cart_items_suffix')}', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 14)),
+                  Text('${context.tr('store_detail_cart_label')} — ${_cart.total.toStringAsFixed(0)} ج.م', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 14)),
                 ],
               ),
             ),
@@ -270,7 +273,7 @@ class _ProductTile extends StatelessWidget {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(color: const Color(0xFFFEF3C7), borderRadius: BorderRadius.circular(999)),
-                        child: const Text('🏆 الأكثر تفضيلاً', style: TextStyle(fontSize: 9, fontWeight: FontWeight.w900, color: Color(0xFF92400E))),
+                        child: Text(context.tr('store_detail_top_rated_badge'), style: const TextStyle(fontSize: 9, fontWeight: FontWeight.w900, color: Color(0xFF92400E))),
                       ),
                     ],
                   ],
@@ -297,7 +300,7 @@ class _ProductTile extends StatelessWidget {
           ),
           const SizedBox(width: 8),
           qty == 0
-              ? OutlinedButton(onPressed: () => onQtyChanged(1), child: const Text('+ أضف'))
+              ? OutlinedButton(onPressed: () => onQtyChanged(1), child: Text(context.tr('store_detail_add_button')))
               : Row(
                   children: [
                     IconButton(onPressed: () => onQtyChanged(qty - 1), icon: const Icon(Icons.remove_circle_outline, color: AppColors.primary)),

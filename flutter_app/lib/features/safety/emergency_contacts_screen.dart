@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../core/i18n.dart';
 import '../../core/phone_utils.dart';
 import '../../core/session.dart';
 import '../../core/theme.dart';
@@ -56,15 +57,15 @@ class _EmergencyContactsScreenState extends State<EmergencyContactsScreen> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Text('إضافة جهة اتصال طوارئ', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16)),
+            Text(context.tr('emergency_add_title'), style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16)),
             const SizedBox(height: 16),
-            TextField(controller: nameCtrl, decoration: const InputDecoration(labelText: 'الاسم', prefixIcon: Icon(Icons.person_outline))),
+            TextField(controller: nameCtrl, decoration: InputDecoration(labelText: context.tr('emergency_name_label'), prefixIcon: const Icon(Icons.person_outline))),
             const SizedBox(height: 10),
             TextField(
               controller: phoneCtrl,
               keyboardType: TextInputType.phone,
               textDirection: TextDirection.ltr,
-              decoration: const InputDecoration(labelText: 'رقم الموبايل', hintText: '01xxxxxxxxx', prefixIcon: Icon(Icons.phone_outlined)),
+              decoration: InputDecoration(labelText: context.tr('emergency_phone_label'), hintText: '01xxxxxxxxx', prefixIcon: const Icon(Icons.phone_outlined)),
             ),
             const SizedBox(height: 16),
             ElevatedButton(
@@ -73,13 +74,13 @@ class _EmergencyContactsScreenState extends State<EmergencyContactsScreen> {
                 final rawPhone = phoneCtrl.text.trim();
                 if (name.isEmpty || !isEgyptianMobile(rawPhone)) {
                   ScaffoldMessenger.of(sheetContext).showSnackBar(
-                    const SnackBar(content: Text('اكتب الاسم ورقم موبايل مصري صحيح')),
+                    SnackBar(content: Text(context.tr('emergency_validation_error'))),
                   );
                   return;
                 }
                 Navigator.of(sheetContext).pop(true);
               },
-              child: const Text('حفظ'),
+              child: Text(context.tr('emergency_save')),
             ),
           ],
         ),
@@ -92,7 +93,7 @@ class _EmergencyContactsScreenState extends State<EmergencyContactsScreen> {
     if (!mounted) return;
     setState(() => _saving = false);
     if (!ok) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('أقصى عدد جهات اتصال طوارئ هو 3')));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.tr('emergency_max_contacts'))));
       return;
     }
     await _load();
@@ -103,11 +104,11 @@ class _EmergencyContactsScreenState extends State<EmergencyContactsScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text('حذف جهة الاتصال؟'),
-        content: Text('هتحذف "${c.name}" من قائمة الطوارئ.'),
+        title: Text(context.tr('emergency_delete_title')),
+        content: Text('${context.tr('emergency_delete_body_prefix')} "${c.name}" ${context.tr('emergency_delete_body_suffix')}'),
         actions: [
-          TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('تراجع')),
-          TextButton(onPressed: () => Navigator.of(context).pop(true), child: const Text('حذف', style: TextStyle(color: AppColors.error))),
+          TextButton(onPressed: () => Navigator.of(context).pop(false), child: Text(context.tr('emergency_cancel'))),
+          TextButton(onPressed: () => Navigator.of(context).pop(true), child: Text(context.tr('emergency_delete'), style: const TextStyle(color: AppColors.error))),
         ],
       ),
     );
@@ -121,7 +122,7 @@ class _EmergencyContactsScreenState extends State<EmergencyContactsScreen> {
     final contacts = _contacts;
     return Scaffold(
       backgroundColor: context.mutedSurface,
-      appBar: AppBar(title: const Text('🆘 جهات اتصال الطوارئ')),
+      appBar: AppBar(title: Text('🆘 ${context.tr('emergency_appbar_title')}')),
       body: contacts == null
           ? const Center(child: CircularProgressIndicator())
           : ListView(
@@ -130,9 +131,9 @@ class _EmergencyContactsScreenState extends State<EmergencyContactsScreen> {
                 Container(
                   padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(color: const Color(0xFFFEF2F2), borderRadius: BorderRadius.circular(14), border: Border.all(color: const Color(0xFFFCA5A5))),
-                  child: const Text(
-                    'لو ضغطت زرار الطوارئ أثناء الرحلة، هيتفتح تطبيق الرسائل جاهز برسالة فيها موقعك الحالي ورابط متابعة الرحلة، مرسلة لكل الأشخاص دول مرة واحدة — أنت بس اللي تضغط إرسال.',
-                    style: TextStyle(fontSize: 12, color: Color(0xFF7F1D1D), height: 1.5),
+                  child: Text(
+                    context.tr('emergency_safety_notice'),
+                    style: const TextStyle(fontSize: 12, color: Color(0xFF7F1D1D), height: 1.5),
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -141,7 +142,7 @@ class _EmergencyContactsScreenState extends State<EmergencyContactsScreen> {
                     padding: const EdgeInsets.all(24),
                     decoration: BoxDecoration(color: context.surfaceColor, borderRadius: BorderRadius.circular(16)),
                     child: const Center(
-                      child: Text('لسه مفيش جهات اتصال طوارئ محفوظة', style: TextStyle(color: AppColors.textFaint)),
+                      child: Text(context.tr('emergency_empty'), style: const TextStyle(color: AppColors.textFaint)),
                     ),
                   )
                 else
@@ -174,7 +175,7 @@ class _EmergencyContactsScreenState extends State<EmergencyContactsScreen> {
                   OutlinedButton.icon(
                     onPressed: _saving ? null : _addContact,
                     icon: const Icon(Icons.add),
-                    label: const Text('إضافة جهة اتصال'),
+                    label: Text(context.tr('emergency_add_button')),
                     style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 14)),
                   ),
               ],

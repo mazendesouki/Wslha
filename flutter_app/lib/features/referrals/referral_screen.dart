@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../core/i18n.dart';
 import '../../core/session.dart';
 import '../../core/theme.dart';
 import 'referral_repository.dart';
@@ -47,7 +48,7 @@ class _ReferralScreenState extends State<ReferralScreen> {
 
   Future<void> _shareCode() async {
     if (_myCode == null) return;
-    final text = Uri.encodeComponent('انزل تطبيق وصّلها واستخدم كود الدعوة بتاعي "$_myCode" — كل واحد فينا ياخد رصيد 20 ج.م في المحفظة 🎁');
+    final text = Uri.encodeComponent('${context.tr('referral_share_prefix')} "$_myCode" — ${context.tr('referral_share_suffix')}');
     await launchUrl(Uri.parse('https://wa.me/?text=$text'), mode: LaunchMode.externalApplication);
   }
 
@@ -55,7 +56,7 @@ class _ReferralScreenState extends State<ReferralScreen> {
     if (_myCode == null) return;
     await Clipboard.setData(ClipboardData(text: _myCode!));
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم نسخ الكود')));
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.tr('referral_code_copied'))));
   }
 
   Future<void> _redeem() async {
@@ -71,7 +72,7 @@ class _ReferralScreenState extends State<ReferralScreen> {
     setState(() {
       _redeeming = false;
       _resultOk = ok;
-      _resultMessage = ok ? '🎉 تم! اتضاف 20 ج.م لمحفظتك' : 'الكود غير صحيح أو مستخدم قبل كده';
+      _resultMessage = ok ? context.tr('referral_redeem_success') : context.tr('referral_redeem_error');
     });
   }
 
@@ -79,7 +80,7 @@ class _ReferralScreenState extends State<ReferralScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: context.mutedSurface,
-      appBar: AppBar(title: const Text('🎁 كود الدعوة')),
+      appBar: AppBar(title: Text('🎁 ${context.tr('referral_appbar_title')}')),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
@@ -91,7 +92,7 @@ class _ReferralScreenState extends State<ReferralScreen> {
             ),
             child: Column(
               children: [
-                const Text('كود الدعوة بتاعك', style: TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.w700)),
+                Text(context.tr('referral_my_code_label'), style: const TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.w700)),
                 const SizedBox(height: 8),
                 Text(
                   _myCode ?? '...',
@@ -104,14 +105,14 @@ class _ReferralScreenState extends State<ReferralScreen> {
                     OutlinedButton.icon(
                       onPressed: _myCode == null ? null : _copyCode,
                       icon: const Icon(Icons.copy, color: Colors.white, size: 16),
-                      label: const Text('نسخ', style: TextStyle(color: Colors.white)),
+                      label: Text(context.tr('referral_copy'), style: const TextStyle(color: Colors.white)),
                       style: OutlinedButton.styleFrom(side: const BorderSide(color: Colors.white70)),
                     ),
                     const SizedBox(width: 10),
                     ElevatedButton.icon(
                       onPressed: _myCode == null ? null : _shareCode,
                       icon: const Icon(Icons.share, size: 16),
-                      label: const Text('مشاركة'),
+                      label: Text(context.tr('referral_share')),
                       style: ElevatedButton.styleFrom(backgroundColor: Colors.white, foregroundColor: AppColors.primary),
                     ),
                   ],
@@ -120,13 +121,13 @@ class _ReferralScreenState extends State<ReferralScreen> {
             ),
           ),
           const SizedBox(height: 10),
-          const Text(
-            'ادعُ صحابك — كل واحد يستخدم كودك ياخد 20 ج.م رصيد في محفظته، وانت كمان تاخد 20 ج.م.',
-            style: TextStyle(fontSize: 12, color: AppColors.textFaint, height: 1.6),
+          Text(
+            context.tr('referral_invite_explainer'),
+            style: const TextStyle(fontSize: 12, color: AppColors.textFaint, height: 1.6),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 24),
-          const Text('عندك كود من صاحبك؟', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 14)),
+          Text(context.tr('referral_have_code_question'), style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 14)),
           const SizedBox(height: 10),
           Row(
             children: [
@@ -134,7 +135,7 @@ class _ReferralScreenState extends State<ReferralScreen> {
                 child: TextField(
                   controller: _codeCtrl,
                   textCapitalization: TextCapitalization.characters,
-                  decoration: const InputDecoration(hintText: 'اكتب الكود هنا', prefixIcon: Icon(Icons.card_giftcard_outlined)),
+                  decoration: InputDecoration(hintText: context.tr('referral_code_hint'), prefixIcon: const Icon(Icons.card_giftcard_outlined)),
                 ),
               ),
               const SizedBox(width: 10),
@@ -142,7 +143,7 @@ class _ReferralScreenState extends State<ReferralScreen> {
                 onPressed: _redeeming ? null : _redeem,
                 child: _redeeming
                     ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                    : const Text('استخدام'),
+                    : Text(context.tr('referral_use_button')),
               ),
             ],
           ),

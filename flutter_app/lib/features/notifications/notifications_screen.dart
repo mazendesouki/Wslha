@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/date_format_ar.dart';
+import '../../core/i18n.dart';
 import '../../core/notifications.dart';
 import '../../core/theme.dart';
 
@@ -34,14 +35,14 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   Future<void> _clear() async {
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('مسح الإشعارات'),
-        content: const Text('هيتم حذف كل الإشعارات القديمة من على الجهاز ده. متأكد؟'),
+      builder: (dialogContext) => AlertDialog(
+        title: Text(dialogContext.tr('notif_list_clear_title')),
+        content: Text(dialogContext.tr('notif_list_clear_body')),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('إلغاء')),
+          TextButton(onPressed: () => Navigator.pop(dialogContext, false), child: Text(dialogContext.tr('notif_list_cancel'))),
           TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('مسح', style: TextStyle(color: AppColors.error)),
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: Text(dialogContext.tr('notif_list_clear_confirm'), style: const TextStyle(color: AppColors.error)),
           ),
         ],
       ),
@@ -56,10 +57,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     final items = _items;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('الإشعارات'),
+        title: Text(context.tr('notif_list_title')),
         actions: [
           if (items != null && items.isNotEmpty)
-            IconButton(onPressed: _clear, icon: const Icon(Icons.delete_outline), tooltip: 'مسح الكل'),
+            IconButton(onPressed: _clear, icon: const Icon(Icons.delete_outline), tooltip: context.tr('notif_list_clear_tooltip')),
         ],
       ),
       body: items == null
@@ -89,10 +90,10 @@ class _EmptyState extends StatelessWidget {
           children: [
             const Text('🔔', style: TextStyle(fontSize: 48)),
             const SizedBox(height: 12),
-            const Text('مفيش إشعارات لسه', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 15)),
+            Text(context.tr('notif_list_empty_title'), style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15)),
             const SizedBox(height: 4),
             Text(
-              'إشعارات مشاويرك وطلباتك هتظهر هنا أول ما توصلك.',
+              context.tr('notif_list_empty_body'),
               textAlign: TextAlign.center,
               style: const TextStyle(color: AppColors.textFaint, fontSize: 13),
             ),

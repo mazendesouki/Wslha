@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/contact_launcher.dart';
+import '../../core/i18n.dart';
 import '../../core/session.dart';
 import '../../core/theme.dart';
 import 'favorites_repository.dart';
@@ -45,17 +46,17 @@ class _FavoriteDriversScreenState extends State<FavoriteDriversScreen> {
     final drivers = _drivers;
     return Scaffold(
       backgroundColor: context.mutedSurface,
-      appBar: AppBar(title: const Text('⭐ السائقين المفضّلين')),
+      appBar: AppBar(title: Text('⭐ ${context.tr('favorites_appbar_title')}')),
       body: drivers == null
           ? const Center(child: CircularProgressIndicator())
           : drivers.isEmpty
-              ? const Center(
+              ? Center(
                   child: Padding(
-                    padding: EdgeInsets.all(24),
+                    padding: const EdgeInsets.all(24),
                     child: Text(
-                      'لسه مفيش سائقين مفضّلين — دوس على أيقونة ❤️ في تفاصيل السائق أثناء أي رحلة عشان تضيفه هنا',
+                      context.tr('favorites_empty'),
                       textAlign: TextAlign.center,
-                      style: TextStyle(color: AppColors.textFaint),
+                      style: const TextStyle(color: AppColors.textFaint),
                     ),
                   ),
                 )
@@ -74,7 +75,7 @@ class _FavoriteDriversScreenState extends State<FavoriteDriversScreen> {
                           const SizedBox(width: 12),
                           Expanded(
                             child: Text(
-                              d.name.isNotEmpty ? d.name : 'سائق',
+                              d.name.isNotEmpty ? d.name : context.tr('favorites_driver_fallback'),
                               style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 14),
                             ),
                           ),

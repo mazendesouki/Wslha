@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../core/contact_launcher.dart';
 import '../../core/date_format_ar.dart';
+import '../../core/i18n.dart';
 import '../../core/invoice_pdf.dart';
 import '../../core/invoice_text.dart';
 import '../../core/supabase_client.dart';
@@ -42,7 +43,7 @@ class _OrderInvoiceScreenState extends State<OrderInvoiceScreen> {
     _ratingPrompted = true;
     final already = await _ratingsRepo.hasRatedOrder(code);
     if (already || !mounted) return;
-    final storeName = (o['store_name'] as String?) ?? 'المتجر';
+    final storeName = (o['store_name'] as String?) ?? context.tr('order_invoice_default_store');
     final driverPhone = o['driver_phone'] as String?;
     final result = await OrderRatingSheet.show(context, storeName: storeName, hasDriver: driverPhone != null && driverPhone.isNotEmpty);
     if (result == null || !mounted) return;
@@ -54,14 +55,14 @@ class _OrderInvoiceScreenState extends State<OrderInvoiceScreen> {
         tags: result.tags,
         comment: result.comment,
       );
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('✅ شكرًا على تقييمك')));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.tr('order_invoice_thanks_rating'))));
     } catch (e) {
       // Submission can fail server-side (RPC rejects an already-rated or
       // not-yet-delivered order) — surface it instead of staying silent,
       // which looked like the rating just vanished with no feedback.
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('تعذّر إرسال التقييم: $e'), backgroundColor: AppColors.error, duration: const Duration(seconds: 6)),
+          SnackBar(content: Text('${context.tr('order_invoice_rating_failed')} $e'), backgroundColor: AppColors.error, duration: const Duration(seconds: 6)),
         );
       }
     }
@@ -98,7 +99,7 @@ class _OrderInvoiceScreenState extends State<OrderInvoiceScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: context.mutedSurface,
-      appBar: AppBar(title: const Text('فاتورة الطلب')),
+      appBar: AppBar(title: Text(context.tr('order_invoice_title'))),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _error != null
@@ -112,7 +113,7 @@ class _OrderInvoiceScreenState extends State<OrderInvoiceScreen> {
                         const SizedBox(height: 12),
                         Text(_error!, style: const TextStyle(fontSize: 11, color: AppColors.error), textAlign: TextAlign.center),
                         const SizedBox(height: 16),
-                        OutlinedButton(onPressed: _load, child: const Text('إعادة المحاولة')),
+                        OutlinedButton(onPressed: _load, child: Text(context.tr('order_invoice_retry'))),
                       ],
                     ),
                   ),
@@ -149,10 +150,10 @@ class _OrderInvoiceScreenState extends State<OrderInvoiceScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('🧾 وصّلها', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 13, letterSpacing: 0.5)),
+                Text(context.tr('order_invoice_brand'), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 13, letterSpacing: 0.5)),
                 const SizedBox(height: 8),
                 Text(
-                  '📦 طلب من ${o['store_name'] ?? 'المتجر'}',
+                  '${context.tr('order_invoice_order_from_prefix')} ${o['store_name'] ?? context.tr('order_invoice_default_store')}',
                   style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 16),
                 ),
                 const SizedBox(height: 4),
@@ -184,9 +185,9 @@ class _OrderInvoiceScreenState extends State<OrderInvoiceScreen> {
               ),
               child: Column(
                 children: [
-                  const Text(
-                    '🔑 كود التسليم — اديه للمندوب لما يوصلّك الطلب',
-                    style: TextStyle(fontSize: 12, color: Color(0xFF166534), fontWeight: FontWeight.w800),
+                  Text(
+                    context.tr('order_invoice_otp_label'),
+                    style: const TextStyle(fontSize: 12, color: Color(0xFF166534), fontWeight: FontWeight.w800),
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 6),
@@ -200,7 +201,7 @@ class _OrderInvoiceScreenState extends State<OrderInvoiceScreen> {
           ],
           const SizedBox(height: 16),
           if (_items.isNotEmpty) ...[
-            _sectionTitle('🧾 الأصناف'),
+            _sectionTitle(context.tr('order_invoice_items_title')),
             Container(
               padding: const EdgeInsets.all(4),
               decoration: BoxDecoration(color: context.surfaceColor, borderRadius: BorderRadius.circular(14), border: Border.all(color: context.borderColor)),
@@ -224,7 +225,7 @@ class _OrderInvoiceScreenState extends State<OrderInvoiceScreen> {
             ),
             const SizedBox(height: 16),
           ] else if ((o['items_summary'] as String?)?.isNotEmpty == true) ...[
-            _sectionTitle('🧾 الأصناف'),
+            _sectionTitle(context.tr('order_invoice_items_title')),
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(14),
@@ -233,23 +234,23 @@ class _OrderInvoiceScreenState extends State<OrderInvoiceScreen> {
             ),
             const SizedBox(height: 16),
           ],
-          _sectionTitle('💰 تفاصيل الفاتورة'),
+          _sectionTitle(context.tr('order_invoice_details_title')),
           Container(
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(color: context.surfaceColor, borderRadius: BorderRadius.circular(14), border: Border.all(color: context.borderColor)),
             child: Column(
               children: [
-                _row('المجموع الفرعي', '${subtotal.toStringAsFixed(0)} ج.م'),
-                _row('رسوم التوصيل', '${deliveryFee.toStringAsFixed(0)} ج.م'),
+                _row(context.tr('order_invoice_subtotal'), '${subtotal.toStringAsFixed(0)} ج.م'),
+                _row(context.tr('order_invoice_delivery_fee'), '${deliveryFee.toStringAsFixed(0)} ج.م'),
                 const Divider(height: 20),
-                _row('الإجمالي', '${total.toStringAsFixed(0)} ج.م', bold: true),
+                _row(context.tr('order_invoice_total'), '${total.toStringAsFixed(0)} ج.م', bold: true),
                 const SizedBox(height: 6),
-                _row('طريقة الدفع', (o['payment'] as String?) ?? 'كاش'),
+                _row(context.tr('order_invoice_payment_method'), (o['payment'] as String?) ?? context.tr('order_invoice_cash')),
               ],
             ),
           ),
           const SizedBox(height: 16),
-          _sectionTitle('📍 التوصيل'),
+          _sectionTitle(context.tr('order_invoice_delivery_title')),
           Container(
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(color: context.surfaceColor, borderRadius: BorderRadius.circular(14), border: Border.all(color: context.borderColor)),
@@ -257,11 +258,11 @@ class _OrderInvoiceScreenState extends State<OrderInvoiceScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 if ((o['customer_name'] as String?)?.isNotEmpty == true) ...[
-                  Text('العميل: ${o['customer_name']}', style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13)),
+                  Text('${context.tr('order_invoice_customer_label')} ${o['customer_name']}', style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13)),
                   const SizedBox(height: 4),
                 ],
                 if ((o['customer_phone'] as String?)?.isNotEmpty == true) ...[
-                  Text('الهاتف: ${o['customer_phone']}', style: const TextStyle(fontSize: 12, color: AppColors.textFaint)),
+                  Text('${context.tr('order_invoice_phone_label')} ${o['customer_phone']}', style: const TextStyle(fontSize: 12, color: AppColors.textFaint)),
                   const SizedBox(height: 4),
                 ],
                 Text(
@@ -278,7 +279,7 @@ class _OrderInvoiceScreenState extends State<OrderInvoiceScreen> {
                 child: OutlinedButton.icon(
                   onPressed: () => shareTextViaWhatsApp(buildOrderInvoiceText(o)),
                   icon: const Icon(Icons.chat_bubble_outline, size: 18, color: Color(0xFF25D366)),
-                  label: const Text('نص واتساب'),
+                  label: Text(context.tr('order_invoice_whatsapp_text')),
                 ),
               ),
               const SizedBox(width: 10),
@@ -286,7 +287,7 @@ class _OrderInvoiceScreenState extends State<OrderInvoiceScreen> {
                 child: OutlinedButton.icon(
                   onPressed: () => printInvoice(buildOrderInvoiceData(o)),
                   icon: const Icon(Icons.print_outlined, size: 18),
-                  label: const Text('طباعة'),
+                  label: Text(context.tr('order_invoice_print')),
                 ),
               ),
             ],
@@ -298,7 +299,7 @@ class _OrderInvoiceScreenState extends State<OrderInvoiceScreen> {
                 child: OutlinedButton.icon(
                   onPressed: () => downloadInvoicePdf(buildOrderInvoiceData(o)),
                   icon: const Icon(Icons.download_outlined, size: 18),
-                  label: const Text('تحميل PDF'),
+                  label: Text(context.tr('order_invoice_download_pdf')),
                 ),
               ),
               const SizedBox(width: 10),
@@ -306,7 +307,7 @@ class _OrderInvoiceScreenState extends State<OrderInvoiceScreen> {
                 child: OutlinedButton.icon(
                   onPressed: () => shareInvoicePdfViaWhatsApp(buildOrderInvoiceData(o)),
                   icon: const Icon(Icons.picture_as_pdf_outlined, size: 18, color: Color(0xFF25D366)),
-                  label: const Text('PDF واتساب'),
+                  label: Text(context.tr('order_invoice_whatsapp_pdf')),
                 ),
               ),
             ],

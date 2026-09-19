@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/i18n.dart';
 import '../../core/theme.dart';
 import 'ratings_repository.dart';
 
@@ -92,7 +93,7 @@ class _OrderRatingSheetState extends State<OrderRatingSheet> {
             children: [
               Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: const Color(0xFFE5E7EB), borderRadius: BorderRadius.circular(99)))),
               const SizedBox(height: 16),
-              const Text('قيّم طلبك', textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.w900, fontSize: 17)),
+              Text(context.tr('order_rating_title'), textAlign: TextAlign.center, style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 17)),
               const SizedBox(height: 18),
               _moodRow('${widget.storeName} 🏪', _storeMood, (i) => setState(() {
                     _storeMood = i;
@@ -100,7 +101,7 @@ class _OrderRatingSheetState extends State<OrderRatingSheet> {
                   })),
               if (widget.hasDriver) ...[
                 const SizedBox(height: 18),
-                _moodRow('السائق 🚖', _driverMood, (i) => setState(() => _driverMood = i)),
+                _moodRow(context.tr('order_rating_driver_label'), _driverMood, (i) => setState(() => _driverMood = i)),
               ],
               if (_activeTags.isNotEmpty) ...[
                 const SizedBox(height: 18),
@@ -120,11 +121,11 @@ class _OrderRatingSheetState extends State<OrderRatingSheet> {
                 ),
               ],
               const SizedBox(height: 14),
-              TextField(controller: _commentCtrl, maxLines: 2, decoration: const InputDecoration(hintText: 'تعليق (اختياري)')),
+              TextField(controller: _commentCtrl, maxLines: 2, decoration: InputDecoration(hintText: context.tr('order_rating_comment_hint'))),
               const SizedBox(height: 18),
               Row(
                 children: [
-                  Expanded(child: OutlinedButton(onPressed: () => Navigator.of(context).pop(), child: const Text('تخطي'))),
+                  Expanded(child: OutlinedButton(onPressed: () => Navigator.of(context).pop(), child: Text(context.tr('order_rating_skip')))),
                   const SizedBox(width: 10),
                   Expanded(
                     flex: 2,
@@ -137,7 +138,7 @@ class _OrderRatingSheetState extends State<OrderRatingSheet> {
                                 tags: _tags.toList(),
                                 comment: _commentCtrl.text.trim().isEmpty ? null : _commentCtrl.text.trim(),
                               )),
-                      child: const Text('إرسال التقييم'),
+                      child: Text(context.tr('order_rating_submit')),
                     ),
                   ),
                 ],

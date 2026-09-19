@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../../core/feature_flags.dart';
+import '../../core/i18n.dart';
 import '../../core/theme.dart';
 import 'support_chat_repository.dart';
 
@@ -90,7 +91,7 @@ class _SupportChatScreenState extends State<SupportChatScreen> {
       }
     } catch (_) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تعذّر إرسال الرسالة، حاول تاني')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.tr('support_chat_send_error'))));
       }
     } finally {
       if (mounted) setState(() => _sending = false);
@@ -101,20 +102,20 @@ class _SupportChatScreenState extends State<SupportChatScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: context.mutedSurface,
-      appBar: AppBar(title: const Text('💬 شات مباشر مع الدعم الفني')),
+      appBar: AppBar(title: Text(context.tr('support_chat_appbar_title'))),
       body: Column(
         children: [
           Expanded(
             child: _loading
                 ? const Center(child: CircularProgressIndicator())
                 : _messages.isEmpty
-                    ? const Center(
+                    ? Center(
                         child: Padding(
-                          padding: EdgeInsets.all(24),
+                          padding: const EdgeInsets.all(24),
                           child: Text(
-                            'اكتب رسالتك وفريق الدعم هيرد عليك من هنا',
+                            context.tr('support_chat_empty_state'),
                             textAlign: TextAlign.center,
-                            style: TextStyle(color: AppColors.textFaint),
+                            style: const TextStyle(color: AppColors.textFaint),
                           ),
                         ),
                       )
@@ -143,7 +144,7 @@ class _SupportChatScreenState extends State<SupportChatScreen> {
                                     Padding(
                                       padding: const EdgeInsets.only(bottom: 4),
                                       child: Text(
-                                        m.senderRole == 'ai' ? '🤖 مساعد آلي' : '🎧 الدعم الفني',
+                                        m.senderRole == 'ai' ? context.tr('support_chat_ai_label') : context.tr('support_chat_support_label'),
                                         style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: AppColors.primary),
                                       ),
                                     ),
@@ -173,7 +174,7 @@ class _SupportChatScreenState extends State<SupportChatScreen> {
                       textInputAction: TextInputAction.send,
                       onSubmitted: (_) => _send(),
                       decoration: InputDecoration(
-                        hintText: 'اكتب رسالتك للدعم الفني...',
+                        hintText: context.tr('support_chat_input_hint'),
                         filled: true,
                         fillColor: context.mutedSurface,
                         contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),

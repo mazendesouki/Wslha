@@ -3,6 +3,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/contact_launcher.dart';
 import '../../core/feature_flags.dart';
+import '../../core/i18n.dart';
 import '../../core/session.dart';
 import '../../core/theme.dart';
 import 'support_chat_screen.dart';
@@ -12,14 +13,16 @@ import 'support_chat_screen.dart';
 const _supportPhone = '+201102667324';
 const _supportEmail = 'info@wslha.co';
 
-const List<(String, String)> _faq = [
-  ('إزاي ألغي مشوار بعد ما أحجزه؟', 'من شاشة تتبّع المشوار فيه زرار "إلغاء" متاح طول ما السائق لسه ما بدأش الرحلة الفعلية.'),
-  ('السائق اتأخر، هل هيتحاسب؟', 'أيوه، لو السائق اتأخر عن الميعاد بيتحصّل عليه خصم تلقائي عن كل دقيقة تأخير زيادة عن فترة السماح.'),
-  ('إزاي أضيف رصيد للمحفظة؟', 'من شاشة "المحفظة" اختار "إضافة رصيد" واختار طريقة الدفع اللي تناسبك (فودافون كاش / إنستاباي / تحويل بنكي).'),
-  ('نسيت حاجة في العربية، أعمل إيه؟', 'تواصل مع السائق مباشرة من شاشة تفاصيل المشوار (اتصال/واتساب)، أو كلّمنا على الدعم وهنساعدك توصله.'),
-  ('إزاي أبقى سائق أو تاجر على وصّلها؟', 'من شاشة التسجيل اختار "سائق" أو "تاجر" بدل "عميل"، واملأ البيانات المطلوبة — طلبك بيتراجع خلال 24-48 ساعة.'),
-  ('السعر اللي ظهرلي مختلف عن اللي اتحصّل فعليًا، ليه؟', 'السعر المبدئي تقديري حسب المسافة؛ ممكن يتغيّر لو فيه انتظار زيادة عن المسموح أو توقف إضافي أثناء الرحلة — التفاصيل موجودة في فاتورة المشوار.'),
-];
+// Resolved per-locale at point of use (no BuildContext available at the
+// top-level const declaration this list used to be).
+List<(String, String)> _faq(BuildContext context) => [
+      (context.tr('support_faq_cancel_ride_q'), context.tr('support_faq_cancel_ride_a')),
+      (context.tr('support_faq_driver_late_q'), context.tr('support_faq_driver_late_a')),
+      (context.tr('support_faq_wallet_topup_q'), context.tr('support_faq_wallet_topup_a')),
+      (context.tr('support_faq_forgot_item_q'), context.tr('support_faq_forgot_item_a')),
+      (context.tr('support_faq_become_driver_merchant_q'), context.tr('support_faq_become_driver_merchant_a')),
+      (context.tr('support_faq_price_difference_q'), context.tr('support_faq_price_difference_a')),
+    ];
 
 class SupportScreen extends StatelessWidget {
   const SupportScreen({super.key});
@@ -33,56 +36,56 @@ class SupportScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('المساعدة والدعم')),
+      appBar: AppBar(title: Text(context.tr('support_appbar_title'))),
       body: ListView(
         padding: const EdgeInsets.symmetric(vertical: 12),
         children: [
-          const _SectionHeader('تواصل معنا'),
+          _SectionHeader(context.tr('support_section_contact_us')),
           if (FeatureFlags.supportChatEnabled && FeatureFlags.aiBotEnabled)
             _ContactTile(
               icon: '🤖',
-              title: 'اسأل المساعد الآلي',
-              subtitle: 'رد فوري بالذكاء الاصطناعي، ٢٤ ساعة',
+              title: context.tr('support_ai_assistant_title'),
+              subtitle: context.tr('support_ai_assistant_subtitle'),
               onTap: () => _openChat(context),
             ),
           if (FeatureFlags.supportChatEnabled)
             _ContactTile(
               icon: '🎧',
-              title: 'شات مباشر مع الدعم الفني',
-              subtitle: 'تواصل مع فريقنا داخل التطبيق',
+              title: context.tr('support_live_chat_title'),
+              subtitle: context.tr('support_live_chat_subtitle'),
               onTap: () => _openChat(context),
             ),
           _ContactTile(
             icon: '📞',
-            title: 'اتصل بنا',
+            title: context.tr('support_call_us_title'),
             subtitle: _supportPhone,
             onTap: () => callPhone(_supportPhone),
           ),
           _ContactTile(
             icon: '💬',
-            title: 'واتساب',
-            subtitle: 'راسلنا على واتساب',
+            title: context.tr('support_whatsapp_title'),
+            subtitle: context.tr('support_whatsapp_subtitle'),
             onTap: () => openWhatsApp(_supportPhone),
           ),
           _ContactTile(
             icon: '✉️',
-            title: 'إيميل',
+            title: context.tr('support_email_title'),
             subtitle: _supportEmail,
             onTap: () => launchUrl(Uri.parse('mailto:$_supportEmail')),
           ),
           const Divider(height: 24),
-          const _SectionHeader('أسئلة شائعة'),
-          ..._faq.map((qa) => _FaqTile(question: qa.$1, answer: qa.$2)),
+          _SectionHeader(context.tr('support_section_faq')),
+          ..._faq(context).map((qa) => _FaqTile(question: qa.$1, answer: qa.$2)),
           const Divider(height: 24),
-          const _SectionHeader('روابط قانونية'),
+          _SectionHeader(context.tr('support_section_legal_links')),
           _ContactTile(
             icon: '📄',
-            title: 'الشروط والأحكام',
+            title: context.tr('support_terms_title'),
             onTap: () => launchUrl(Uri.parse('https://wslha.co/terms'), mode: LaunchMode.externalApplication),
           ),
           _ContactTile(
             icon: '🔒',
-            title: 'سياسة الخصوصية',
+            title: context.tr('support_privacy_title'),
             onTap: () => launchUrl(Uri.parse('https://wslha.co/privacy'), mode: LaunchMode.externalApplication),
           ),
           const SizedBox(height: 24),

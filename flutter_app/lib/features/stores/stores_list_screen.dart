@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/i18n.dart';
 import '../../core/theme.dart';
 import 'store_detail_screen.dart';
 import 'stores_models.dart';
@@ -57,16 +58,16 @@ class _StoresListScreenState extends State<StoresListScreen> {
 
     return Scaffold(
       backgroundColor: context.mutedSurface,
-      appBar: AppBar(title: const Text('🛍️ خدمة دليفري')),
+      appBar: AppBar(title: Text(context.tr('stores_list_appbar_title'))),
       body: Column(
         children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
             child: TextField(
               onChanged: (v) => setState(() => _query = v),
-              decoration: const InputDecoration(
-                hintText: 'دوّر على متجر أو قسم...',
-                prefixIcon: Icon(Icons.search),
+              decoration: InputDecoration(
+                hintText: context.tr('stores_list_search_hint'),
+                prefixIcon: const Icon(Icons.search),
               ),
             ),
           ),
@@ -84,7 +85,7 @@ class _StoresListScreenState extends State<StoresListScreen> {
                               const SizedBox(height: 12),
                               Text(_error!, style: const TextStyle(fontSize: 11, color: AppColors.error), textAlign: TextAlign.center),
                               const SizedBox(height: 16),
-                              OutlinedButton(onPressed: _load, child: const Text('إعادة المحاولة')),
+                              OutlinedButton(onPressed: _load, child: Text(context.tr('stores_list_retry'))),
                             ],
                           ),
                         ),
@@ -97,7 +98,7 @@ class _StoresListScreenState extends State<StoresListScreen> {
                                 const Text('🏪', style: TextStyle(fontSize: 48)),
                                 const SizedBox(height: 12),
                                 Text(
-                                  _query.isEmpty ? 'لا يوجد متاجر متاحة الآن' : 'لا يوجد نتائج بحث',
+                                  _query.isEmpty ? context.tr('stores_list_empty_no_stores') : context.tr('stores_list_empty_no_results'),
                                   style: const TextStyle(color: AppColors.textFaint),
                                 ),
                               ],
@@ -162,7 +163,7 @@ class _StoreCard extends StatelessWidget {
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                             decoration: BoxDecoration(color: AppColors.error.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(99)),
-                            child: const Text('مغلق', style: TextStyle(fontSize: 10, color: AppColors.error, fontWeight: FontWeight.w800)),
+                            child: Text(context.tr('stores_list_closed_badge'), style: const TextStyle(fontSize: 10, color: AppColors.error, fontWeight: FontWeight.w800)),
                           ),
                       ],
                     ),

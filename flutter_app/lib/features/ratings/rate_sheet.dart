@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/i18n.dart';
 import '../../core/theme.dart';
 import 'ratings_repository.dart';
 
@@ -124,7 +125,7 @@ class _RateSheetState extends State<RateSheet> {
                 const SizedBox(height: 20),
                 Align(
                   alignment: AlignmentDirectional.centerStart,
-                  child: Text('إيه اللي حصل بالظبط؟ (اختياري)', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: context.bodyText)),
+                  child: Text(context.tr('rate_sheet_what_happened'), style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: context.bodyText)),
                 ),
                 const SizedBox(height: 10),
                 Wrap(
@@ -147,7 +148,7 @@ class _RateSheetState extends State<RateSheet> {
                 TextField(
                   controller: _commentCtrl,
                   maxLines: 2,
-                  decoration: const InputDecoration(hintText: 'تفاصيل إضافية (اختياري)'),
+                  decoration: InputDecoration(hintText: context.tr('rate_sheet_extra_details_hint')),
                 ),
                 const SizedBox(height: 18),
                 Row(
@@ -155,7 +156,7 @@ class _RateSheetState extends State<RateSheet> {
                     Expanded(
                       child: OutlinedButton(
                         onPressed: _submitting ? null : () => Navigator.of(context).pop(),
-                        child: const Text('تخطي'),
+                        child: Text(context.tr('rate_sheet_skip')),
                       ),
                     ),
                     const SizedBox(width: 10),
@@ -170,14 +171,14 @@ class _RateSheetState extends State<RateSheet> {
                             comment: _commentCtrl.text.trim().isEmpty ? null : _commentCtrl.text.trim(),
                           ));
                         },
-                        child: const Text('إرسال التقييم'),
+                        child: Text(context.tr('rate_sheet_submit')),
                       ),
                     ),
                   ],
                 ),
               ] else ...[
                 const SizedBox(height: 20),
-                TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('تخطي دلوقتي')),
+                TextButton(onPressed: () => Navigator.of(context).pop(), child: Text(context.tr('rate_sheet_skip_now'))),
               ],
             ],
           ),

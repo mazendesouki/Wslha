@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../core/contact_launcher.dart';
 import '../../core/date_format_ar.dart';
+import '../../core/i18n.dart';
 import '../../core/invoice_pdf.dart';
 import '../../core/invoice_text.dart';
 import '../../core/supabase_client.dart';
@@ -55,7 +56,7 @@ class _RideInvoiceScreenState extends State<RideInvoiceScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: context.mutedSurface,
-      appBar: AppBar(title: const Text('فاتورة الرحلة')),
+      appBar: AppBar(title: Text(context.tr('ride_invoice_title'))),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _error != null
@@ -69,7 +70,7 @@ class _RideInvoiceScreenState extends State<RideInvoiceScreen> {
                         const SizedBox(height: 12),
                         Text(_error!, style: const TextStyle(fontSize: 11, color: AppColors.error), textAlign: TextAlign.center),
                         const SizedBox(height: 16),
-                        OutlinedButton(onPressed: _load, child: const Text('إعادة المحاولة')),
+                        OutlinedButton(onPressed: _load, child: Text(context.tr('ride_invoice_retry'))),
                       ],
                     ),
                   ),
@@ -106,10 +107,10 @@ class _RideInvoiceScreenState extends State<RideInvoiceScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('🧾 وصّلها', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 13, letterSpacing: 0.5)),
+                Text(context.tr('ride_invoice_brand'), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 13, letterSpacing: 0.5)),
                 const SizedBox(height: 8),
                 Text(
-                  isAirport ? '✈️ توصيل مطار' : '🚖 رحلة',
+                  isAirport ? context.tr('ride_invoice_type_airport') : context.tr('ride_invoice_type_ride'),
                   style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 16),
                 ),
                 const SizedBox(height: 12),
@@ -125,42 +126,42 @@ class _RideInvoiceScreenState extends State<RideInvoiceScreen> {
             ),
           ),
           const SizedBox(height: 16),
-          _sectionTitle('📍 الرحلة'),
+          _sectionTitle(context.tr('ride_invoice_route_title')),
           Container(
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(color: context.surfaceColor, borderRadius: BorderRadius.circular(14), border: Border.all(color: context.borderColor)),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _row('من', '${r['from_area'] ?? '—'}'),
+                _row(context.tr('ride_invoice_from'), '${r['from_area'] ?? '—'}'),
                 const Divider(height: 20),
-                _row('إلى', '${r['to_area'] ?? '—'}'),
+                _row(context.tr('ride_invoice_to'), '${r['to_area'] ?? '—'}'),
                 if ((r['driver_name'] as String?)?.isNotEmpty == true) ...[
                   const Divider(height: 20),
-                  _row('السائق', '${r['driver_name']}'),
+                  _row(context.tr('ride_invoice_driver'), '${r['driver_name']}'),
                 ],
                 if (isAirport && flightTime != null) ...[
                   const Divider(height: 20),
-                  _row(direction == 'departure' ? 'موعد الإقلاع' : 'موعد الهبوط', arDateTime(flightTime)),
+                  _row(direction == 'departure' ? context.tr('ride_invoice_departure_time') : context.tr('ride_invoice_arrival_time'), arDateTime(flightTime)),
                 ],
               ],
             ),
           ),
           const SizedBox(height: 16),
-          _sectionTitle('💰 تفاصيل الفاتورة'),
+          _sectionTitle(context.tr('ride_invoice_details_title')),
           Container(
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(color: context.surfaceColor, borderRadius: BorderRadius.circular(14), border: Border.all(color: context.borderColor)),
             child: Column(
               children: [
-                _row('طريقة الدفع', (r['payment'] as String?) ?? 'كاش'),
+                _row(context.tr('ride_invoice_payment_method'), (r['payment'] as String?) ?? context.tr('ride_invoice_cash')),
                 const Divider(height: 20),
-                _row('الإجمالي', '$fare ج.م', bold: true),
+                _row(context.tr('ride_invoice_total'), '$fare ج.م', bold: true),
               ],
             ),
           ),
           const SizedBox(height: 16),
-          _sectionTitle('👤 العميل'),
+          _sectionTitle(context.tr('ride_invoice_customer_title')),
           Container(
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(color: context.surfaceColor, borderRadius: BorderRadius.circular(14), border: Border.all(color: context.borderColor)),
@@ -183,7 +184,7 @@ class _RideInvoiceScreenState extends State<RideInvoiceScreen> {
                 child: OutlinedButton.icon(
                   onPressed: () => shareTextViaWhatsApp(buildRideInvoiceText(r)),
                   icon: const Icon(Icons.chat_bubble_outline, size: 18, color: Color(0xFF25D366)),
-                  label: const Text('نص واتساب'),
+                  label: Text(context.tr('ride_invoice_whatsapp_text')),
                 ),
               ),
               const SizedBox(width: 10),
@@ -191,7 +192,7 @@ class _RideInvoiceScreenState extends State<RideInvoiceScreen> {
                 child: OutlinedButton.icon(
                   onPressed: () => printInvoice(buildRideInvoiceData(r)),
                   icon: const Icon(Icons.print_outlined, size: 18),
-                  label: const Text('طباعة'),
+                  label: Text(context.tr('ride_invoice_print')),
                 ),
               ),
             ],
@@ -203,7 +204,7 @@ class _RideInvoiceScreenState extends State<RideInvoiceScreen> {
                 child: OutlinedButton.icon(
                   onPressed: () => downloadInvoicePdf(buildRideInvoiceData(r)),
                   icon: const Icon(Icons.download_outlined, size: 18),
-                  label: const Text('تحميل PDF'),
+                  label: Text(context.tr('ride_invoice_download_pdf')),
                 ),
               ),
               const SizedBox(width: 10),
@@ -211,7 +212,7 @@ class _RideInvoiceScreenState extends State<RideInvoiceScreen> {
                 child: OutlinedButton.icon(
                   onPressed: () => shareInvoicePdfViaWhatsApp(buildRideInvoiceData(r)),
                   icon: const Icon(Icons.picture_as_pdf_outlined, size: 18, color: Color(0xFF25D366)),
-                  label: const Text('PDF واتساب'),
+                  label: Text(context.tr('ride_invoice_whatsapp_pdf')),
                 ),
               ),
             ],

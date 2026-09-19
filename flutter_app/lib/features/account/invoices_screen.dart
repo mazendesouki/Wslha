@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../../core/date_format_ar.dart';
+import '../../core/i18n.dart';
 import '../../core/phone_utils.dart';
 import '../../core/supabase_client.dart';
 import '../../core/theme.dart';
@@ -134,7 +135,7 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
         kind: 'order',
         id: '${o['id']}',
         status: o['status'] as String? ?? 'pending',
-        title: '📦 طلب من ${o['store_name'] ?? 'المتجر'}',
+        title: '${context.tr('invoices_order_prefix')} ${o['store_name'] ?? context.tr('invoices_default_store')}',
         subtitle: statusAr[o['status']] ?? '${o['status']}',
         total: (o['total'] as num?) ?? 0,
         createdAt: DateTime.tryParse(o['created_at'] as String? ?? ''),
@@ -147,7 +148,7 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
         kind: isAirport ? 'airport' : 'ride',
         id: '${r['id']}',
         status: r['status'] as String? ?? 'pending',
-        title: isAirport ? '✈️ توصيل مطار — ${r['to_area'] ?? ''}' : '🚖 ${r['from_area'] ?? ''} ← ${r['to_area'] ?? ''}',
+        title: isAirport ? '${context.tr('invoices_airport_prefix')} ${r['to_area'] ?? ''}' : '🚖 ${r['from_area'] ?? ''} ← ${r['to_area'] ?? ''}',
         subtitle: statusAr[r['status']] ?? '${r['status']}',
         total: (r['fare'] as num?) ?? 0,
         createdAt: DateTime.tryParse(r['created_at'] as String? ?? ''),
@@ -169,7 +170,7 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
     final rows = _rows;
     return Scaffold(
       backgroundColor: context.mutedSurface,
-      appBar: AppBar(title: const Text('🧾 فواتيري')),
+      appBar: AppBar(title: Text(context.tr('invoices_title'))),
       body: Column(
         children: [
           Padding(
@@ -178,10 +179,10 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
               spacing: 8,
               runSpacing: 8,
               children: [
-                _chip('all', 'الكل', _category, (v) => setState(() => _category = v)),
-                _chip('ride', '🚖 رحلات', _category, (v) => setState(() => _category = v)),
-                _chip('airport', '✈️ مطار', _category, (v) => setState(() => _category = v)),
-                _chip('order', '📦 توصيل', _category, (v) => setState(() => _category = v)),
+                _chip('all', context.tr('invoices_filter_all'), _category, (v) => setState(() => _category = v)),
+                _chip('ride', context.tr('invoices_filter_rides'), _category, (v) => setState(() => _category = v)),
+                _chip('airport', context.tr('invoices_filter_airport'), _category, (v) => setState(() => _category = v)),
+                _chip('order', context.tr('invoices_filter_delivery'), _category, (v) => setState(() => _category = v)),
               ],
             ),
           ),
@@ -191,16 +192,16 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
               spacing: 8,
               runSpacing: 8,
               children: [
-                _periodChip('all', '⏳ كل الوقت'),
-                _periodChip('today', '📅 اليوم'),
-                _periodChip('week', '🗓️ الأسبوع'),
-                _periodChip('month', '📆 الشهر'),
+                _periodChip('all', context.tr('invoices_period_all')),
+                _periodChip('today', context.tr('invoices_period_today')),
+                _periodChip('week', context.tr('invoices_period_week')),
+                _periodChip('month', context.tr('invoices_period_month')),
               ],
             ),
           ),
           Expanded(
             child: rows.isEmpty
-                ? const Center(child: Text('مفيش فواتير في الفترة دي', style: TextStyle(color: AppColors.textFaint)))
+                ? Center(child: Text(context.tr('invoices_empty'), style: const TextStyle(color: AppColors.textFaint)))
                 : ListView.separated(
                     padding: const EdgeInsets.fromLTRB(12, 0, 12, 16),
                     itemCount: rows.length,
