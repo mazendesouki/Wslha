@@ -76,10 +76,10 @@ class _AnimatedSplashState extends State<AnimatedSplash> with SingleTickerProvid
             // — the "خدمات البرنامج" cue the background is meant to carry,
             // separate from the single flavor-specific icon shown above the
             // logo. Low opacity + oversized so they read as texture, not UI.
-            Positioned(top: -30, right: -20, child: _bgIcon(Icons.local_taxi_outlined)),
-            Positioned(top: 140, left: -40, child: _bgIcon(Icons.inventory_2_outlined)),
-            Positioned(bottom: 90, right: -30, child: _bgIcon(Icons.storefront_outlined)),
-            Positioned(bottom: -20, left: -10, child: _bgIcon(Icons.flight_takeoff)),
+            Positioned(top: 60, right: 10, child: _bgIcon(Icons.local_taxi_outlined)),
+            Positioned(top: 210, left: -10, child: _bgIcon(Icons.inventory_2_outlined)),
+            Positioned(bottom: 200, right: -10, child: _bgIcon(Icons.storefront_outlined)),
+            Positioned(bottom: 60, left: 10, child: _bgIcon(Icons.flight_takeoff)),
             SafeArea(
               child: Center(
                 child: AnimatedBuilder(
