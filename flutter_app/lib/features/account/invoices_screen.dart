@@ -168,7 +168,7 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
   Widget build(BuildContext context) {
     final rows = _rows;
     return Scaffold(
-      backgroundColor: const Color(0xFFF7FAF9),
+      backgroundColor: context.mutedSurface,
       appBar: AppBar(title: const Text('🧾 فواتيري')),
       body: Column(
         children: [
@@ -219,8 +219,8 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
       label: Text(label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: selected ? Colors.white : AppColors.textFaint)),
       selected: selected,
       selectedColor: AppColors.primary,
-      backgroundColor: Colors.white,
-      side: BorderSide(color: selected ? AppColors.primary : const Color(0xFFE9ECEB)),
+      backgroundColor: context.surfaceColor,
+      side: BorderSide(color: selected ? AppColors.primary : context.borderColor),
       onSelected: (_) => onChanged(value),
     );
   }
@@ -230,14 +230,14 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
   Widget _invoiceTile(_InvoiceRow row) {
     final color = _statusColor[row.status] ?? AppColors.textFaint;
     return Material(
-      color: Colors.white,
+      color: context.surfaceColor,
       borderRadius: BorderRadius.circular(14),
       child: InkWell(
         borderRadius: BorderRadius.circular(14),
         onTap: () => _openInvoice(row),
         child: Container(
           padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(borderRadius: BorderRadius.circular(14), border: Border.all(color: const Color(0xFFE9ECEB))),
+          decoration: BoxDecoration(borderRadius: BorderRadius.circular(14), border: Border.all(color: context.borderColor)),
           child: Row(
             children: [
               Expanded(

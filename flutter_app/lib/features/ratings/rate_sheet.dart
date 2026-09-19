@@ -70,9 +70,9 @@ class _RateSheetState extends State<RateSheet> {
     return Padding(
       padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
       child: Container(
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        decoration: BoxDecoration(
+          color: context.surfaceColor,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
         ),
         padding: const EdgeInsets.fromLTRB(20, 14, 20, 20),
         child: SingleChildScrollView(
@@ -124,7 +124,7 @@ class _RateSheetState extends State<RateSheet> {
                 const SizedBox(height: 20),
                 Align(
                   alignment: AlignmentDirectional.centerStart,
-                  child: Text('إيه اللي حصل بالظبط؟ (اختياري)', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: Colors.black87)),
+                  child: Text('إيه اللي حصل بالظبط؟ (اختياري)', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: context.bodyText)),
                 ),
                 const SizedBox(height: 10),
                 Wrap(

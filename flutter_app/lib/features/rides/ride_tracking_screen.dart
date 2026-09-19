@@ -197,7 +197,7 @@ class _RideTrackingScreenState extends State<RideTrackingScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF7FAF9),
+      backgroundColor: context.mutedSurface,
       body: StreamBuilder<List<Map<String, dynamic>>>(
         stream: _rideRepo.watchRide(widget.rideId),
         builder: (context, snapshot) {
@@ -298,9 +298,9 @@ class _RideTrackingScreenState extends State<RideTrackingScreen> {
                       Container(
                         padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
                         decoration: BoxDecoration(
-                          color: Colors.white,
+                          color: context.surfaceColor,
                           borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: const Color(0xFFE9ECEB)),
+                          border: Border.all(color: context.borderColor),
                           boxShadow: const [BoxShadow(color: Color(0x14000000), blurRadius: 12, offset: Offset(0, 4))],
                         ),
                         child: isCancelled
@@ -406,9 +406,9 @@ class _RideTrackingScreenState extends State<RideTrackingScreen> {
                       Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: Colors.white,
+                          color: context.surfaceColor,
                           borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: const Color(0xFFE9ECEB)),
+                          border: Border.all(color: context.borderColor),
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -511,7 +511,7 @@ class _RideTrackingScreenState extends State<RideTrackingScreen> {
           style: TextStyle(
             fontSize: highlight ? 16 : 13,
             fontWeight: FontWeight.w900,
-            color: highlight ? AppColors.success : Colors.black87,
+            color: highlight ? AppColors.success : context.bodyText,
           ),
         ),
       ],
@@ -648,9 +648,9 @@ class _LiveMapSectionState extends State<_LiveMapSection> {
           children: [
             Container(
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: context.surfaceColor,
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: const Color(0xFFE9ECEB)),
+                border: Border.all(color: context.borderColor),
                 boxShadow: const [BoxShadow(color: Color(0x14000000), blurRadius: 12, offset: Offset(0, 4))],
               ),
               clipBehavior: Clip.antiAlias,
@@ -724,7 +724,7 @@ class _Timeline extends StatelessWidget {
         final step = _steps[idx];
         final done = idx < curIdx;
         final active = idx == curIdx;
-        final bg = done || active ? AppColors.primary : Colors.white;
+        final bg = done || active ? AppColors.primary : context.surfaceColor;
         return Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -751,7 +751,7 @@ class _Timeline extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 9.5,
                   fontWeight: FontWeight.w700,
-                  color: done || active ? Colors.black87 : AppColors.textFaint,
+                  color: done || active ? context.bodyText : AppColors.textFaint,
                 ),
               ),
             ),
@@ -792,9 +792,9 @@ class _DriverCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.surfaceColor,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE9ECEB)),
+        border: Border.all(color: context.borderColor),
         boxShadow: const [BoxShadow(color: Color(0x14000000), blurRadius: 12, offset: Offset(0, 4))],
       ),
       child: Column(
@@ -817,7 +817,7 @@ class _DriverCard extends StatelessWidget {
                   children: [
                     Text(
                       (name != null && name.isNotEmpty) ? name : (fallbackName ?? 'السائق'),
-                      style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w900, color: Colors.black87),
+                      style: TextStyle(fontSize: 15, fontWeight: FontWeight.w900, color: context.bodyText),
                     ),
                     if (carLine.isNotEmpty) ...[
                       const SizedBox(height: 2),
@@ -829,7 +829,7 @@ class _DriverCard extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w700,
-                        color: (regNumber != null && regNumber.isNotEmpty) ? Colors.black87 : AppColors.textFaint,
+                        color: (regNumber != null && regNumber.isNotEmpty) ? context.bodyText : AppColors.textFaint,
                       ),
                     ),
                     if (driverPhone != null && driverPhone!.isNotEmpty) ...[
@@ -971,9 +971,9 @@ class _CustomerCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.surfaceColor,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE9ECEB)),
+        border: Border.all(color: context.borderColor),
         boxShadow: const [BoxShadow(color: Color(0x14000000), blurRadius: 12, offset: Offset(0, 4))],
       ),
       child: Row(
@@ -994,7 +994,7 @@ class _CustomerCard extends StatelessWidget {
           Expanded(
             child: Text(
               (name != null && name!.isNotEmpty) ? name! : 'العميل',
-              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w900, color: Colors.black87),
+              style: TextStyle(fontSize: 15, fontWeight: FontWeight.w900, color: context.bodyText),
             ),
           ),
           Container(
@@ -1075,9 +1075,9 @@ class _OffersPanelState extends State<_OffersPanel> {
         return Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: context.surfaceColor,
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: const Color(0xFFE9ECEB)),
+            border: Border.all(color: context.borderColor),
             boxShadow: const [BoxShadow(color: Color(0x14000000), blurRadius: 12, offset: Offset(0, 4))],
           ),
           child: Column(
@@ -1119,7 +1119,7 @@ class _OffersPanelState extends State<_OffersPanel> {
                     margin: const EdgeInsets.only(bottom: 8),
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFF7FAF9),
+                      color: context.mutedSurface,
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Column(
@@ -1461,8 +1461,8 @@ class _SearchingForDriverCardState extends State<_SearchingForDriverCard> {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: longWait ? const Color(0xFFFFFBEB) : Colors.white,
-        border: Border.all(color: longWait ? const Color(0xFFFDE68A) : const Color(0xFFE9ECEB), width: longWait ? 1.5 : 1),
+        color: longWait ? const Color(0xFFFFFBEB) : context.surfaceColor,
+        border: Border.all(color: longWait ? const Color(0xFFFDE68A) : context.borderColor, width: longWait ? 1.5 : 1),
         borderRadius: BorderRadius.circular(14),
       ),
       child: Column(
@@ -1475,7 +1475,7 @@ class _SearchingForDriverCardState extends State<_SearchingForDriverCard> {
               Expanded(
                 child: Text(
                   longWait ? 'لسه بندوّر على سائق قريب — استغرق الأمر وقت أطول من المعتاد' : 'جارٍ البحث عن أقرب سائق متاح…',
-                  style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w900, color: Colors.black87),
+                  style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w900, color: longWait ? Colors.black87 : context.bodyText),
                 ),
               ),
               const SizedBox(width: 8),

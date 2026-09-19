@@ -78,7 +78,7 @@ class _ReferralScreenState extends State<ReferralScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF7FAF9),
+      backgroundColor: context.mutedSurface,
       appBar: AppBar(title: const Text('🎁 كود الدعوة')),
       body: ListView(
         padding: const EdgeInsets.all(16),

@@ -140,11 +140,11 @@ class _OrdersScreenState extends State<OrdersScreen> with SingleTickerProviderSt
   Widget _chip(String value, String label, String groupValue, ValueChanged<String> onSelect) {
     final selected = value == groupValue;
     return ChoiceChip(
-      label: Text(label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: selected ? Colors.white : Colors.black87)),
+      label: Text(label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: selected ? Colors.white : context.bodyText)),
       selected: selected,
       selectedColor: AppColors.primary,
-      backgroundColor: Colors.white,
-      side: BorderSide(color: selected ? AppColors.primary : const Color(0xFFE9ECEB)),
+      backgroundColor: context.surfaceColor,
+      side: BorderSide(color: selected ? AppColors.primary : context.borderColor),
       onSelected: (_) => onSelect(value),
     );
   }
@@ -236,13 +236,13 @@ class _OrdersScreenState extends State<OrdersScreen> with SingleTickerProviderSt
     }
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF7FAF9),
+      backgroundColor: context.mutedSurface,
       appBar: AppBar(title: const Text('طلباتي ومشاويري')),
       body: Column(
         children: [
           Container(
             margin: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), border: Border.all(color: const Color(0xFFE9ECEB))),
+            decoration: BoxDecoration(color: context.surfaceColor, borderRadius: BorderRadius.circular(12), border: Border.all(color: context.borderColor)),
             child: TabBar(
               controller: _tabController,
               labelColor: Colors.white,
@@ -348,7 +348,7 @@ class _OrdersScreenState extends State<OrdersScreen> with SingleTickerProviderSt
                       const SizedBox(height: 8),
                       Container(
                         padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), border: Border.all(color: const Color(0xFFE9ECEB))),
+                        decoration: BoxDecoration(color: context.surfaceColor, borderRadius: BorderRadius.circular(12), border: Border.all(color: context.borderColor)),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -379,10 +379,10 @@ class _OrdersScreenState extends State<OrdersScreen> with SingleTickerProviderSt
                 suffixIcon: _search.isNotEmpty ? IconButton(icon: const Icon(Icons.close, size: 18), onPressed: _searchCtrl.clear) : null,
                 isDense: true,
                 filled: true,
-                fillColor: Colors.white,
+                fillColor: context.surfaceColor,
                 contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFE9ECEB))),
-                enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFE9ECEB))),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: context.borderColor)),
+                enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: context.borderColor)),
               ),
             ),
           ),
@@ -439,7 +439,7 @@ class _OrdersScreenState extends State<OrdersScreen> with SingleTickerProviderSt
                                 final color = _statusColor[item.status] ?? AppColors.textFaint;
                                 final isRide = item.kind == 'ride';
                                 return Material(
-                                  color: Colors.white,
+                                  color: context.surfaceColor,
                                   borderRadius: BorderRadius.circular(16),
                                   child: InkWell(
                                     borderRadius: BorderRadius.circular(16),
@@ -454,7 +454,7 @@ class _OrdersScreenState extends State<OrdersScreen> with SingleTickerProviderSt
                                       padding: const EdgeInsets.all(14),
                                       decoration: BoxDecoration(
                                         borderRadius: BorderRadius.circular(16),
-                                        border: Border.all(color: const Color(0xFFE9ECEB)),
+                                        border: Border.all(color: context.borderColor),
                                       ),
                                       child: Row(
                                         children: [
@@ -526,7 +526,7 @@ class _OrdersScreenState extends State<OrdersScreen> with SingleTickerProviderSt
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(label, style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700, color: AppColors.textFaint)),
-          Text('$count رحلة/طلب — ${total.toStringAsFixed(0)} ج.م', style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w800, color: Colors.black87)),
+          Text('$count رحلة/طلب — ${total.toStringAsFixed(0)} ج.م', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w800, color: context.bodyText)),
         ],
       ),
     );
@@ -542,9 +542,9 @@ class _OrdersScreenState extends State<OrdersScreen> with SingleTickerProviderSt
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
           decoration: BoxDecoration(
-            color: selected ? color.withValues(alpha: 0.12) : Colors.white,
+            color: selected ? color.withValues(alpha: 0.12) : context.surfaceColor,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: selected ? color : const Color(0xFFE9ECEB), width: selected ? 1.6 : 1),
+            border: Border.all(color: selected ? color : context.borderColor, width: selected ? 1.6 : 1),
           ),
           child: Column(
             children: [
@@ -568,9 +568,9 @@ class _OrdersScreenState extends State<OrdersScreen> with SingleTickerProviderSt
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 6),
           decoration: BoxDecoration(
-            color: selected ? AppColors.primary.withValues(alpha: 0.1) : Colors.white,
+            color: selected ? AppColors.primary.withValues(alpha: 0.1) : context.surfaceColor,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: selected ? AppColors.primary : const Color(0xFFE9ECEB), width: selected ? 1.6 : 1),
+            border: Border.all(color: selected ? AppColors.primary : context.borderColor, width: selected ? 1.6 : 1),
           ),
           child: Column(
             children: [
@@ -578,7 +578,7 @@ class _OrdersScreenState extends State<OrdersScreen> with SingleTickerProviderSt
               const SizedBox(height: 3),
               Text(
                 '$count',
-                style: TextStyle(fontWeight: FontWeight.w900, fontSize: 18, color: selected ? AppColors.primary : Colors.black87),
+                style: TextStyle(fontWeight: FontWeight.w900, fontSize: 18, color: selected ? AppColors.primary : context.bodyText),
               ),
               const SizedBox(height: 2),
               Text(

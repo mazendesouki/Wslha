@@ -68,7 +68,7 @@ class _LoginScreenState extends State<LoginScreen> {
     final isCustomerApp = widget.config.flavor == AppFlavor.customer;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF7FAF9),
+      backgroundColor: context.mutedSurface,
       body: SafeArea(
         child: SingleChildScrollView(
           child: Column(

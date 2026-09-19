@@ -276,13 +276,13 @@ class _DriverOrdersScreenState extends State<DriverOrdersScreen> with SingleTick
     }
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF7FAF9),
+      backgroundColor: context.mutedSurface,
       appBar: AppBar(title: const Text('طلباتي ورحلاتي')),
       body: Column(
         children: [
           Container(
             margin: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), border: Border.all(color: const Color(0xFFE9ECEB))),
+            decoration: BoxDecoration(color: context.surfaceColor, borderRadius: BorderRadius.circular(12), border: Border.all(color: context.borderColor)),
             child: TabBar(
               controller: _tabController,
               labelColor: Colors.white,
@@ -388,7 +388,7 @@ class _DriverOrdersScreenState extends State<DriverOrdersScreen> with SingleTick
                       const SizedBox(height: 8),
                       Container(
                         padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), border: Border.all(color: const Color(0xFFE9ECEB))),
+                        decoration: BoxDecoration(color: context.surfaceColor, borderRadius: BorderRadius.circular(12), border: Border.all(color: context.borderColor)),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -419,10 +419,10 @@ class _DriverOrdersScreenState extends State<DriverOrdersScreen> with SingleTick
                 suffixIcon: _search.isNotEmpty ? IconButton(icon: const Icon(Icons.close, size: 18), onPressed: _searchCtrl.clear) : null,
                 isDense: true,
                 filled: true,
-                fillColor: Colors.white,
+                fillColor: context.surfaceColor,
                 contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFE9ECEB))),
-                enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFE9ECEB))),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: context.borderColor)),
+                enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: context.borderColor)),
               ),
             ),
           ),
@@ -478,7 +478,7 @@ class _DriverOrdersScreenState extends State<DriverOrdersScreen> with SingleTick
                                 final item = filtered[i];
                                 final color = _statusColor[item.status] ?? AppColors.textFaint;
                                 return Material(
-                                  color: Colors.white,
+                                  color: context.surfaceColor,
                                   borderRadius: BorderRadius.circular(14),
                                   child: InkWell(
                                     borderRadius: BorderRadius.circular(14),

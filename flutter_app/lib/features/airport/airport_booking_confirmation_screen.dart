@@ -126,7 +126,7 @@ class _AirportBookingConfirmationScreenState extends State<AirportBookingConfirm
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF7FAF9),
+      backgroundColor: context.mutedSurface,
       appBar: AppBar(title: const Text('تفاصيل حجزك')),
       body: Column(
         children: [
@@ -216,7 +216,7 @@ class _AirportBookingConfirmationScreenState extends State<AirportBookingConfirm
   Widget _bottomBar(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: const BoxDecoration(color: Colors.white, border: Border(top: BorderSide(color: Color(0xFFE9ECEB)))),
+      decoration: BoxDecoration(color: context.surfaceColor, border: Border(top: BorderSide(color: context.borderColor))),
       child: SafeArea(
         top: false,
         child: Row(
@@ -249,9 +249,9 @@ class _AirportBookingConfirmationScreenState extends State<AirportBookingConfirm
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.surfaceColor,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE9ECEB)),
+        border: Border.all(color: context.borderColor),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

@@ -36,7 +36,7 @@ class _AirportRideRequestsScreenState extends State<AirportRideRequestsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF7FAF9),
+      backgroundColor: context.mutedSurface,
       appBar: AppBar(title: const Text('✈️ طلبات توصيل المطار')),
       body: StreamBuilder<List<Map<String, dynamic>>>(
         stream: _repo.watchOpenAirportRides(),
@@ -97,7 +97,7 @@ class _AirportRideCard extends StatelessWidget {
     final qualityTier = ride['airport_quality_tier'] as String?;
 
     return Material(
-      color: Colors.white,
+      color: context.surfaceColor,
       borderRadius: BorderRadius.circular(16),
       child: InkWell(
         borderRadius: BorderRadius.circular(16),
@@ -108,7 +108,7 @@ class _AirportRideCard extends StatelessWidget {
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: const Color(0xFFE9ECEB)),
+            border: Border.all(color: context.borderColor),
             boxShadow: const [BoxShadow(color: Color(0x0F000000), blurRadius: 8, offset: Offset(0, 2))],
           ),
           child: Column(

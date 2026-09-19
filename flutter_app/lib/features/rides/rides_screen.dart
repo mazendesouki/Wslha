@@ -268,9 +268,9 @@ class _RidesScreenState extends State<RidesScreen> {
               Container(
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: context.surfaceColor,
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: const Color(0xFFE9ECEB)),
+                  border: Border.all(color: context.borderColor),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -344,9 +344,9 @@ class _RidesScreenState extends State<RidesScreen> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: context.surfaceColor,
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: const Color(0xFFE9ECEB)),
+                  border: Border.all(color: context.borderColor),
                 ),
                 child: Column(
                   children: [
@@ -409,9 +409,9 @@ class _RidesScreenState extends State<RidesScreen> {
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: context.surfaceColor,
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: const Color(0xFFE9ECEB)),
+                    border: Border.all(color: context.borderColor),
                   ),
                   child: Column(
                     children: [
@@ -471,9 +471,9 @@ class _RidesScreenState extends State<RidesScreen> {
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                     decoration: BoxDecoration(
-                      color: _scheduledAt != null ? AppColors.primary.withValues(alpha: 0.08) : Colors.white,
+                      color: _scheduledAt != null ? AppColors.primary.withValues(alpha: 0.08) : context.surfaceColor,
                       borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: _scheduledAt != null ? AppColors.primary : const Color(0xFFE9ECEB)),
+                      border: Border.all(color: _scheduledAt != null ? AppColors.primary : context.borderColor),
                     ),
                     child: Row(
                       children: [

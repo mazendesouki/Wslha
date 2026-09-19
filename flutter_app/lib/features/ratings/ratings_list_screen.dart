@@ -27,7 +27,7 @@ class RatingsListScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF7FAF9),
+      backgroundColor: context.mutedSurface,
       appBar: AppBar(title: Text(title)),
       body: ListView(
         padding: const EdgeInsets.all(16),
@@ -37,7 +37,7 @@ class RatingsListScreen extends StatelessWidget {
           if (reviews.isEmpty)
             Container(
               padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16)),
+              decoration: BoxDecoration(color: context.surfaceColor, borderRadius: BorderRadius.circular(16)),
               child: Center(
                 child: Text(emptyMessage, style: const TextStyle(color: AppColors.textFaint, fontSize: 12), textAlign: TextAlign.center),
               ),

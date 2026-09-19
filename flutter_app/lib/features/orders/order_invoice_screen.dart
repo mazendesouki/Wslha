@@ -97,7 +97,7 @@ class _OrderInvoiceScreenState extends State<OrderInvoiceScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF7FAF9),
+      backgroundColor: context.mutedSurface,
       appBar: AppBar(title: const Text('فاتورة الطلب')),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
@@ -203,7 +203,7 @@ class _OrderInvoiceScreenState extends State<OrderInvoiceScreen> {
             _sectionTitle('🧾 الأصناف'),
             Container(
               padding: const EdgeInsets.all(4),
-              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(14), border: Border.all(color: const Color(0xFFE9ECEB))),
+              decoration: BoxDecoration(color: context.surfaceColor, borderRadius: BorderRadius.circular(14), border: Border.all(color: context.borderColor)),
               child: Column(
                 children: _items.map((it) {
                   final qty = it['qty'] ?? 1;
@@ -228,7 +228,7 @@ class _OrderInvoiceScreenState extends State<OrderInvoiceScreen> {
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(14), border: Border.all(color: const Color(0xFFE9ECEB))),
+              decoration: BoxDecoration(color: context.surfaceColor, borderRadius: BorderRadius.circular(14), border: Border.all(color: context.borderColor)),
               child: Text(o['items_summary'] as String, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
             ),
             const SizedBox(height: 16),
@@ -236,7 +236,7 @@ class _OrderInvoiceScreenState extends State<OrderInvoiceScreen> {
           _sectionTitle('💰 تفاصيل الفاتورة'),
           Container(
             padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(14), border: Border.all(color: const Color(0xFFE9ECEB))),
+            decoration: BoxDecoration(color: context.surfaceColor, borderRadius: BorderRadius.circular(14), border: Border.all(color: context.borderColor)),
             child: Column(
               children: [
                 _row('المجموع الفرعي', '${subtotal.toStringAsFixed(0)} ج.م'),
@@ -252,7 +252,7 @@ class _OrderInvoiceScreenState extends State<OrderInvoiceScreen> {
           _sectionTitle('📍 التوصيل'),
           Container(
             padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(14), border: Border.all(color: const Color(0xFFE9ECEB))),
+            decoration: BoxDecoration(color: context.surfaceColor, borderRadius: BorderRadius.circular(14), border: Border.all(color: context.borderColor)),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -326,8 +326,8 @@ class _OrderInvoiceScreenState extends State<OrderInvoiceScreen> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(label, style: TextStyle(fontSize: bold ? 14 : 12, color: bold ? Colors.black : AppColors.textFaint, fontWeight: bold ? FontWeight.w900 : FontWeight.w600)),
-            Text(value, style: TextStyle(fontSize: bold ? 14 : 12, color: bold ? AppColors.primary : Colors.black87, fontWeight: FontWeight.w800)),
+            Text(label, style: TextStyle(fontSize: bold ? 14 : 12, color: bold ? context.bodyText : AppColors.textFaint, fontWeight: bold ? FontWeight.w900 : FontWeight.w600)),
+            Text(value, style: TextStyle(fontSize: bold ? 14 : 12, color: bold ? AppColors.primary : context.bodyText, fontWeight: FontWeight.w800)),
           ],
         ),
       );

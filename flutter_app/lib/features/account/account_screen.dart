@@ -459,9 +459,9 @@ class AccountScreenState extends State<AccountScreen> {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: context.surfaceColor,
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: const Color(0xFFE9ECEB)),
+                border: Border.all(color: context.borderColor),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -506,9 +506,9 @@ class AccountScreenState extends State<AccountScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.surfaceColor,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE9ECEB)),
+        border: Border.all(color: context.borderColor),
       ),
       child: Column(
         children: [
@@ -558,9 +558,9 @@ class AccountScreenState extends State<AccountScreen> {
       margin: const EdgeInsets.only(top: 10),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.surfaceColor,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: isDefault ? AppColors.primary : const Color(0xFFE9ECEB), width: isDefault ? 1.6 : 1),
+        border: Border.all(color: isDefault ? AppColors.primary : context.borderColor, width: isDefault ? 1.6 : 1),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -632,7 +632,7 @@ class AccountScreenState extends State<AccountScreen> {
         const Text('⭐ تقييماتي للسائقين', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 15)),
         const SizedBox(height: 10),
         Material(
-          color: Colors.white,
+          color: context.surfaceColor,
           borderRadius: BorderRadius.circular(16),
           child: InkWell(
             borderRadius: BorderRadius.circular(16),
@@ -647,7 +647,7 @@ class AccountScreenState extends State<AccountScreen> {
             )),
             child: Container(
               padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), boxShadow: const [
+              decoration: BoxDecoration(color: context.surfaceColor, borderRadius: BorderRadius.circular(16), boxShadow: const [
                 BoxShadow(color: Color(0x11000000), blurRadius: 8, offset: Offset(0, 2)),
               ]),
               child: Row(
@@ -690,7 +690,7 @@ class AccountScreenState extends State<AccountScreen> {
         const Text('💬 تقييمات السائقين عني', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 15)),
         const SizedBox(height: 10),
         Material(
-          color: Colors.white,
+          color: context.surfaceColor,
           borderRadius: BorderRadius.circular(16),
           child: InkWell(
             borderRadius: BorderRadius.circular(16),
@@ -705,7 +705,7 @@ class AccountScreenState extends State<AccountScreen> {
             )),
             child: Container(
               padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), boxShadow: const [
+              decoration: BoxDecoration(color: context.surfaceColor, borderRadius: BorderRadius.circular(16), boxShadow: const [
                 BoxShadow(color: Color(0x11000000), blurRadius: 8, offset: Offset(0, 2)),
               ]),
               child: Row(
@@ -766,9 +766,9 @@ class AccountScreenState extends State<AccountScreen> {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.surfaceColor,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE9ECEB)),
+        border: Border.all(color: context.borderColor),
       ),
       child: Center(
         child: Text(message, textAlign: TextAlign.center, style: const TextStyle(color: AppColors.textFaint, fontSize: 12)),

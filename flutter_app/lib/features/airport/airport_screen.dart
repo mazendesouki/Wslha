@@ -360,7 +360,7 @@ class _AirportScreenState extends State<AirportScreen> {
   Widget _stepProgressBar() {
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
-      decoration: const BoxDecoration(color: Colors.white, border: Border(bottom: BorderSide(color: Color(0xFFE9ECEB)))),
+      decoration: BoxDecoration(color: context.surfaceColor, border: Border(bottom: BorderSide(color: context.borderColor))),
       child: Row(
         children: [
           for (var i = 0; i < _stepTitles.length; i++) ...[
@@ -375,7 +375,7 @@ class _AirportScreenState extends State<AirportScreen> {
                       alignment: Alignment.center,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: i <= _currentStep ? AppColors.primary : Colors.white,
+                        color: i <= _currentStep ? AppColors.primary : context.surfaceColor,
                         border: Border.all(color: i <= _currentStep ? AppColors.primary : const Color(0xFFCBD5D3), width: 1.6),
                       ),
                       child: i < _currentStep
@@ -397,7 +397,7 @@ class _AirportScreenState extends State<AirportScreen> {
             if (i < _stepTitles.length - 1)
               Padding(
                 padding: const EdgeInsets.only(bottom: 16),
-                child: Container(width: 12, height: 1.6, color: i < _currentStep ? AppColors.primary : const Color(0xFFE9ECEB)),
+                child: Container(width: 12, height: 1.6, color: i < _currentStep ? AppColors.primary : context.borderColor),
               ),
           ],
         ],
@@ -409,7 +409,7 @@ class _AirportScreenState extends State<AirportScreen> {
     final isLast = _currentStep == _stepTitles.length - 1;
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: const BoxDecoration(color: Colors.white, border: Border(top: BorderSide(color: Color(0xFFE9ECEB)))),
+      decoration: BoxDecoration(color: context.surfaceColor, border: Border(top: BorderSide(color: context.borderColor))),
       child: SafeArea(
         top: false,
         child: Column(
@@ -750,9 +750,9 @@ class _AirportScreenState extends State<AirportScreen> {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.surfaceColor,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE9ECEB)),
+        border: Border.all(color: context.borderColor),
       ),
       clipBehavior: Clip.antiAlias,
       child: Column(
@@ -867,9 +867,9 @@ class _AirportScreenState extends State<AirportScreen> {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.surfaceColor,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE9ECEB)),
+        border: Border.all(color: context.borderColor),
       ),
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: children),
     );
@@ -975,9 +975,9 @@ class _StepperCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.surfaceColor,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE9ECEB)),
+        border: Border.all(color: context.borderColor),
       ),
       child: Row(
         children: [
@@ -1030,7 +1030,7 @@ class _VehicleCategoryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: Colors.white,
+      color: context.surfaceColor,
       borderRadius: BorderRadius.circular(18),
       child: InkWell(
         borderRadius: BorderRadius.circular(18),
@@ -1039,7 +1039,7 @@ class _VehicleCategoryCard extends StatelessWidget {
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: selected ? AppColors.primary : const Color(0xFFE9ECEB), width: selected ? 2 : 1),
+            border: Border.all(color: selected ? AppColors.primary : context.borderColor, width: selected ? 2 : 1),
             boxShadow: selected
                 ? [BoxShadow(color: AppColors.primary.withValues(alpha: 0.14), blurRadius: 14, offset: const Offset(0, 4))]
                 : null,

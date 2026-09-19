@@ -22,7 +22,7 @@ class _NegotiationScreenState extends State<NegotiationScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF7FAF9),
+      backgroundColor: context.mutedSurface,
       appBar: AppBar(title: const Text('🤝 طلبات تفاوض قريبة')),
       body: StreamBuilder<List<Map<String, dynamic>>>(
         stream: _repo.watchOpenNegotiableRides(),
@@ -110,7 +110,7 @@ class _NegotiableRideCardState extends State<_NegotiableRideCard> {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.surfaceColor,
         borderRadius: BorderRadius.circular(14),
         boxShadow: const [BoxShadow(color: Color(0x14000000), blurRadius: 10, offset: Offset(0, 3))],
       ),

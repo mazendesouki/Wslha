@@ -95,7 +95,7 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF7FAF9),
+      backgroundColor: context.mutedSurface,
       appBar: AppBar(title: Text(widget.store.name)),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
@@ -153,7 +153,7 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
           Container(
             padding: const EdgeInsets.all(14),
             margin: const EdgeInsets.only(bottom: 16),
-            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16)),
+            decoration: BoxDecoration(color: context.surfaceColor, borderRadius: BorderRadius.circular(16)),
             child: Row(
               children: [
                 FutureBuilder<RatingSummary>(
@@ -246,7 +246,7 @@ class _ProductTile extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(14)),
+      decoration: BoxDecoration(color: context.surfaceColor, borderRadius: BorderRadius.circular(14)),
       child: Row(
         children: [
           if (product.imageUrl != null && product.imageUrl!.isNotEmpty)

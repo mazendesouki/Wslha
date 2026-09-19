@@ -93,7 +93,7 @@ class _AirportRideDetailScreenState extends State<AirportRideDetailScreen> {
     final lines = notes.split(' — ').where((l) => l.trim().isNotEmpty).toList();
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF7FAF9),
+      backgroundColor: context.mutedSurface,
       appBar: AppBar(title: const Text('تفاصيل رحلة المطار')),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),

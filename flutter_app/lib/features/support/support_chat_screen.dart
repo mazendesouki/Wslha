@@ -100,7 +100,7 @@ class _SupportChatScreenState extends State<SupportChatScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF7FAF9),
+      backgroundColor: context.mutedSurface,
       appBar: AppBar(title: const Text('💬 شات مباشر مع الدعم الفني')),
       body: Column(
         children: [
@@ -132,9 +132,9 @@ class _SupportChatScreenState extends State<SupportChatScreen> {
                               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                               constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.72),
                               decoration: BoxDecoration(
-                                color: isMine ? AppColors.primary : Colors.white,
+                                color: isMine ? AppColors.primary : context.surfaceColor,
                                 borderRadius: BorderRadius.circular(14),
-                                border: isMine ? null : Border.all(color: const Color(0xFFE9ECEB)),
+                                border: isMine ? null : Border.all(color: context.borderColor),
                               ),
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -147,7 +147,7 @@ class _SupportChatScreenState extends State<SupportChatScreen> {
                                         style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: AppColors.primary),
                                       ),
                                     ),
-                                  Text(m.body, style: TextStyle(color: isMine ? Colors.white : Colors.black87, fontSize: 14)),
+                                  Text(m.body, style: TextStyle(color: isMine ? Colors.white : context.bodyText, fontSize: 14)),
                                   const SizedBox(height: 4),
                                   Text(
                                     '${m.createdAt.hour.toString().padLeft(2, '0')}:${m.createdAt.minute.toString().padLeft(2, '0')}',
@@ -164,7 +164,7 @@ class _SupportChatScreenState extends State<SupportChatScreen> {
             top: false,
             child: Container(
               padding: const EdgeInsets.all(12),
-              decoration: const BoxDecoration(color: Colors.white, border: Border(top: BorderSide(color: Color(0xFFE9ECEB)))),
+              decoration: BoxDecoration(color: context.surfaceColor, border: Border(top: BorderSide(color: context.borderColor))),
               child: Row(
                 children: [
                   Expanded(
@@ -175,7 +175,7 @@ class _SupportChatScreenState extends State<SupportChatScreen> {
                       decoration: InputDecoration(
                         hintText: 'اكتب رسالتك للدعم الفني...',
                         filled: true,
-                        fillColor: const Color(0xFFF7FAF9),
+                        fillColor: context.mutedSurface,
                         contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(999), borderSide: BorderSide.none),
                       ),

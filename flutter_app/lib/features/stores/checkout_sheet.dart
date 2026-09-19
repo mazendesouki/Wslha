@@ -185,14 +185,14 @@ class _CheckoutSheetState extends State<CheckoutSheet> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF7FAF9),
+      backgroundColor: context.mutedSurface,
       appBar: AppBar(title: const Text('إتمام الطلب')),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
           Container(
             padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(14)),
+            decoration: BoxDecoration(color: context.surfaceColor, borderRadius: BorderRadius.circular(14)),
             child: Column(
               children: [
                 ..._cart.lines.map((l) => Padding(
@@ -243,7 +243,7 @@ class _CheckoutSheetState extends State<CheckoutSheet> {
                 label: Text(p, style: TextStyle(color: selected ? Colors.white : AppColors.textFaint, fontWeight: FontWeight.w800, fontSize: 12)),
                 selected: selected,
                 selectedColor: AppColors.primary,
-                backgroundColor: Colors.white,
+                backgroundColor: context.surfaceColor,
                 onSelected: (_) => setState(() => _payment = p),
               );
             }).toList(),
@@ -269,8 +269,8 @@ class _CheckoutSheetState extends State<CheckoutSheet> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(label, style: TextStyle(fontSize: bold ? 14 : 12, fontWeight: bold ? FontWeight.w900 : FontWeight.w600, color: bold ? Colors.black : AppColors.textFaint)),
-            Text(value, style: TextStyle(fontSize: bold ? 14 : 12, fontWeight: FontWeight.w800, color: bold ? AppColors.primary : Colors.black87)),
+            Text(label, style: TextStyle(fontSize: bold ? 14 : 12, fontWeight: bold ? FontWeight.w900 : FontWeight.w600, color: bold ? context.bodyText : AppColors.textFaint)),
+            Text(value, style: TextStyle(fontSize: bold ? 14 : 12, fontWeight: FontWeight.w800, color: bold ? AppColors.primary : context.bodyText)),
           ],
         ),
       );

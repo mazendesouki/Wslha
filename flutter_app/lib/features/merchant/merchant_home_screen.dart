@@ -260,7 +260,7 @@ class _OrderCard extends StatelessWidget {
     }
 
     final palette = muted
-        ? const _Palette(bg: Colors.white, border: Color(0xFFE5E7EB), accent: AppColors.textFaint)
+        ? _Palette(bg: context.surfaceColor, border: const Color(0xFFE5E7EB), accent: AppColors.textFaint)
         : switch (urgency) {
             _Urgency.calm => const _Palette(bg: Color(0xFFF0FDF4), border: Color(0xFFBBF7D0), accent: AppColors.success),
             _Urgency.warning => const _Palette(bg: Color(0xFFFFFBEB), border: Color(0xFFFDE68A), accent: Color(0xFFB45309)),

@@ -533,7 +533,7 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF7FAF9),
+      backgroundColor: context.mutedSurface,
       appBar: AppBar(
         title: const Text('وصّلها سائق'),
         actions: [
@@ -841,7 +841,7 @@ class _StatusCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: online ? const Color(0xFFF0FDF4) : Colors.white,
+        color: online ? const Color(0xFFF0FDF4) : context.surfaceColor,
         border: Border.all(color: online ? const Color(0xFF16A34A).withValues(alpha: 0.3) : const Color(0xFFE5E7EB)),
         borderRadius: BorderRadius.circular(16),
       ),
@@ -991,7 +991,7 @@ class _QueueTile extends StatelessWidget {
     final fare = data['fare'] ?? data['total'] ?? data['delivery_fee'] ?? 0;
 
     return Material(
-      color: Colors.white,
+      color: context.surfaceColor,
       borderRadius: BorderRadius.circular(14),
       child: InkWell(
         borderRadius: BorderRadius.circular(14),
@@ -1101,7 +1101,7 @@ class _OfferCard extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.surfaceColor,
         borderRadius: BorderRadius.circular(18),
         boxShadow: const [BoxShadow(color: Color(0x22000000), blurRadius: 16, offset: Offset(0, 6))],
       ),
@@ -1310,7 +1310,7 @@ class _CustomerContactRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(color: const Color(0xFFF7FAF9), borderRadius: BorderRadius.circular(12)),
+      decoration: BoxDecoration(color: context.mutedSurface, borderRadius: BorderRadius.circular(12)),
       child: Row(
         children: [
           Expanded(
@@ -1348,7 +1348,7 @@ class _RouteMapCard extends StatelessWidget {
     final o = origin ?? destination;
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.surfaceColor,
         borderRadius: BorderRadius.circular(16),
         boxShadow: const [BoxShadow(color: Color(0x14000000), blurRadius: 12, offset: Offset(0, 4))],
       ),
@@ -1577,7 +1577,7 @@ class _AirportDetailsCard extends StatelessWidget {
 
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), boxShadow: const [
+      decoration: BoxDecoration(color: context.surfaceColor, borderRadius: BorderRadius.circular(16), boxShadow: const [
         BoxShadow(color: Color(0x14000000), blurRadius: 12, offset: Offset(0, 4)),
       ]),
       child: Column(

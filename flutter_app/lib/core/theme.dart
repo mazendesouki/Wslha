@@ -196,6 +196,30 @@ ThemeData buildAppTheme({bool modern = false, bool dark = false}) {
   );
 }
 
+/// Screens across this app mostly paint their own cards/borders with
+/// hardcoded `Colors.white`/hex literals instead of reading Theme.of —
+/// buildAppTheme()'s `dark` flag alone doesn't reach any of that. This
+/// extension is the per-screen retrofit vocabulary: swap a hardcoded
+/// `Colors.white` card fill for `context.surfaceColor`, a hardcoded
+/// `Color(0xFFE9ECEB)` border for `context.borderColor`, etc., screen by
+/// screen. Not every screen has been converted yet — this only helps once a
+/// screen actually uses it.
+extension AppThemeX on BuildContext {
+  bool get isDark => Theme.of(this).brightness == Brightness.dark;
+
+  /// Card/sheet/dialog fill — was `Colors.white` almost everywhere.
+  Color get surfaceColor => isDark ? _darkSurface : Colors.white;
+
+  /// Thin 1-1.5px hairline borders — was `Color(0xFFE9ECEB)` almost everywhere.
+  Color get borderColor => isDark ? const Color(0xFF2A3532) : const Color(0xFFE9ECEB);
+
+  /// Soft tinted page background — was `Color(0xFFF7FAF9)` almost everywhere.
+  Color get mutedSurface => isDark ? _darkScaffoldBg : const Color(0xFFF7FAF9);
+
+  /// Primary body text — was implicit black/`Colors.black87` almost everywhere.
+  Color get bodyText => isDark ? Colors.white : Colors.black87;
+}
+
 /// Persists and broadcasts the user's dark-mode choice (light/dark/system)
 /// — a plain ValueNotifier<ThemeMode> app.dart's MaterialApp listens to via
 /// ValueListenableBuilder, same shared_preferences-backed pattern

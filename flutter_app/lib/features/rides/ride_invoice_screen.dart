@@ -54,7 +54,7 @@ class _RideInvoiceScreenState extends State<RideInvoiceScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF7FAF9),
+      backgroundColor: context.mutedSurface,
       appBar: AppBar(title: const Text('فاتورة الرحلة')),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
@@ -128,7 +128,7 @@ class _RideInvoiceScreenState extends State<RideInvoiceScreen> {
           _sectionTitle('📍 الرحلة'),
           Container(
             padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(14), border: Border.all(color: const Color(0xFFE9ECEB))),
+            decoration: BoxDecoration(color: context.surfaceColor, borderRadius: BorderRadius.circular(14), border: Border.all(color: context.borderColor)),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -150,7 +150,7 @@ class _RideInvoiceScreenState extends State<RideInvoiceScreen> {
           _sectionTitle('💰 تفاصيل الفاتورة'),
           Container(
             padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(14), border: Border.all(color: const Color(0xFFE9ECEB))),
+            decoration: BoxDecoration(color: context.surfaceColor, borderRadius: BorderRadius.circular(14), border: Border.all(color: context.borderColor)),
             child: Column(
               children: [
                 _row('طريقة الدفع', (r['payment'] as String?) ?? 'كاش'),
@@ -163,7 +163,7 @@ class _RideInvoiceScreenState extends State<RideInvoiceScreen> {
           _sectionTitle('👤 العميل'),
           Container(
             padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(14), border: Border.all(color: const Color(0xFFE9ECEB))),
+            decoration: BoxDecoration(color: context.surfaceColor, borderRadius: BorderRadius.circular(14), border: Border.all(color: context.borderColor)),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -229,8 +229,8 @@ class _RideInvoiceScreenState extends State<RideInvoiceScreen> {
   Widget _row(String label, String value, {bool bold = false}) => Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: TextStyle(fontSize: bold ? 14 : 12, color: bold ? Colors.black : AppColors.textFaint, fontWeight: bold ? FontWeight.w900 : FontWeight.w600)),
-          Text(value, style: TextStyle(fontSize: bold ? 14 : 12, color: bold ? AppColors.primary : Colors.black87, fontWeight: FontWeight.w800)),
+          Text(label, style: TextStyle(fontSize: bold ? 14 : 12, color: bold ? context.bodyText : AppColors.textFaint, fontWeight: bold ? FontWeight.w900 : FontWeight.w600)),
+          Text(value, style: TextStyle(fontSize: bold ? 14 : 12, color: bold ? AppColors.primary : context.bodyText, fontWeight: FontWeight.w800)),
         ],
       );
 }

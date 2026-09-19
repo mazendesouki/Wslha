@@ -44,7 +44,7 @@ class _FavoriteDriversScreenState extends State<FavoriteDriversScreen> {
   Widget build(BuildContext context) {
     final drivers = _drivers;
     return Scaffold(
-      backgroundColor: const Color(0xFFF7FAF9),
+      backgroundColor: context.mutedSurface,
       appBar: AppBar(title: const Text('⭐ السائقين المفضّلين')),
       body: drivers == null
           ? const Center(child: CircularProgressIndicator())
@@ -67,7 +67,7 @@ class _FavoriteDriversScreenState extends State<FavoriteDriversScreen> {
                     final d = drivers[i];
                     return Container(
                       padding: const EdgeInsets.all(14),
-                      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(14), border: Border.all(color: const Color(0xFFE9ECEB))),
+                      decoration: BoxDecoration(color: context.surfaceColor, borderRadius: BorderRadius.circular(14), border: Border.all(color: context.borderColor)),
                       child: Row(
                         children: [
                           const CircleAvatar(backgroundColor: AppColors.primaryLight, child: Text('🚖')),

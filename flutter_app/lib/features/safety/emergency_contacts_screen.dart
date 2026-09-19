@@ -120,7 +120,7 @@ class _EmergencyContactsScreenState extends State<EmergencyContactsScreen> {
   Widget build(BuildContext context) {
     final contacts = _contacts;
     return Scaffold(
-      backgroundColor: const Color(0xFFF7FAF9),
+      backgroundColor: context.mutedSurface,
       appBar: AppBar(title: const Text('🆘 جهات اتصال الطوارئ')),
       body: contacts == null
           ? const Center(child: CircularProgressIndicator())
@@ -139,7 +139,7 @@ class _EmergencyContactsScreenState extends State<EmergencyContactsScreen> {
                 if (contacts.isEmpty)
                   Container(
                     padding: const EdgeInsets.all(24),
-                    decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16)),
+                    decoration: BoxDecoration(color: context.surfaceColor, borderRadius: BorderRadius.circular(16)),
                     child: const Center(
                       child: Text('لسه مفيش جهات اتصال طوارئ محفوظة', style: TextStyle(color: AppColors.textFaint)),
                     ),
@@ -148,7 +148,7 @@ class _EmergencyContactsScreenState extends State<EmergencyContactsScreen> {
                   ...contacts.map((c) => Container(
                         margin: const EdgeInsets.only(bottom: 10),
                         padding: const EdgeInsets.all(14),
-                        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(14), border: Border.all(color: const Color(0xFFE9ECEB))),
+                        decoration: BoxDecoration(color: context.surfaceColor, borderRadius: BorderRadius.circular(14), border: Border.all(color: context.borderColor)),
                         child: Row(
                           children: [
                             const CircleAvatar(backgroundColor: AppColors.primaryLight, child: Icon(Icons.person, color: AppColors.primary)),

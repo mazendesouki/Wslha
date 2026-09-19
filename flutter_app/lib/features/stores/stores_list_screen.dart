@@ -56,7 +56,7 @@ class _StoresListScreenState extends State<StoresListScreen> {
     }).toList();
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF7FAF9),
+      backgroundColor: context.mutedSurface,
       appBar: AppBar(title: const Text('🛍️ خدمة دليفري')),
       body: Column(
         children: [
@@ -126,7 +126,7 @@ class _StoreCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: Colors.white,
+      color: context.surfaceColor,
       borderRadius: BorderRadius.circular(16),
       child: InkWell(
         borderRadius: BorderRadius.circular(16),
