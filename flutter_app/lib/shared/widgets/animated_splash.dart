@@ -152,5 +152,5 @@ class _AnimatedSplashState extends State<AnimatedSplash> with SingleTickerProvid
     );
   }
 
-  Widget _bgIcon(IconData icon) => Icon(icon, size: 90, color: Colors.white.withValues(alpha: 0.06));
+  Widget _bgIcon(IconData icon) => Icon(icon, size: 100, color: Colors.white.withValues(alpha: 0.16));
 }
