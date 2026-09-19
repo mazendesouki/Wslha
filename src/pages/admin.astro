@@ -3640,7 +3640,10 @@ async function loadCoupons() {
 async function createCoupon() {
   const pass = getAdminPass();
   if (!pass) return;
-  const code = (document.getElementById('cpn-code').value || '').trim();
+  // Strips spaces too, not just leading/trailing — a code typed as "WELCOME 10"
+  // (space in the middle) used to save with the space baked in, so a customer
+  // typing "WELCOME10" without it never matched (db/security-82).
+  const code = (document.getElementById('cpn-code').value || '').replace(/\s+/g, '').trim();
   const value = Number(document.getElementById('cpn-value').value);
   if (!code || !value) { showToast('❌ لازم كود وقيمة خصم', '#DC2626'); return; }
 

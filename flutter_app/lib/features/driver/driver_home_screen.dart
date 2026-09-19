@@ -22,6 +22,7 @@ import '../ratings/rate_sheet.dart';
 import '../ratings/ratings_repository.dart';
 import '../ratings/trust_badge.dart';
 import '../rides/fare_calculator.dart' show haversineKm;
+import '../rides/ride_chat_screen.dart';
 import '../rides/ride_repository.dart';
 import 'active_job_store.dart';
 import 'airport_ride_requests_screen.dart';
@@ -734,7 +735,16 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
                 ),
                 if (customerPhone != null && customerPhone.isNotEmpty) ...[
                   const SizedBox(height: 12),
-                  _CustomerContactRow(name: customerName, phone: customerPhone),
+                  _CustomerContactRow(
+                    name: customerName,
+                    phone: customerPhone,
+                    // Ride chat only — orders don't have a ride_id to scope
+                    // ride_messages to (matches the customer-side gate in
+                    // ride_tracking_screen.dart: driverPhone != null there
+                    // plays the same role isOrder here does).
+                    rideId: (!isOrder && FeatureFlags.chatEnabled) ? job['id'] as String? : null,
+                    myPhone: widget.session.phone,
+                  ),
                 ],
                 const SizedBox(height: 14),
                 _RouteRow(from: from, to: to, stops: isOrder ? const [] : _stopNames(job)),
@@ -1305,7 +1315,14 @@ class _NoShowButtonState extends State<_NoShowButton> {
 class _CustomerContactRow extends StatelessWidget {
   final String? name;
   final String phone;
-  const _CustomerContactRow({required this.name, required this.phone});
+  // Both null/empty unless this is a ride (not an order) with chat enabled
+  // — see the call site in _buildActiveJob(). Driver's own active-job card
+  // never had an in-app-chat entry point before; only RideTrackingScreen
+  // (the customer-facing shared screen) did, since the driver flavor uses
+  // its own native active-job UI instead of pushing RideTrackingScreen.
+  final String? rideId;
+  final String? myPhone;
+  const _CustomerContactRow({required this.name, required this.phone, this.rideId, this.myPhone});
 
   @override
   Widget build(BuildContext context) {
@@ -1321,6 +1338,20 @@ class _CustomerContactRow extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
             ),
           ),
+          if (rideId != null && rideId!.isNotEmpty && myPhone != null && myPhone!.isNotEmpty)
+            IconButton(
+              onPressed: () => Navigator.of(context).push(MaterialPageRoute(
+                builder: (_) => RideChatScreen(
+                  rideId: rideId!,
+                  myPhone: myPhone!,
+                  myRole: 'driver',
+                  otherPartyName: (name != null && name!.isNotEmpty) ? name! : context.tr('driver_home_customer_fallback_name'),
+                ),
+              )),
+              icon: const Icon(Icons.chat_bubble_outline, color: AppColors.primary),
+              tooltip: context.tr('ride_tracking_chat_tooltip'),
+              visualDensity: VisualDensity.compact,
+            ),
           IconButton(
             onPressed: () => callPhone(phone),
             icon: const Icon(Icons.call, color: AppColors.success),
