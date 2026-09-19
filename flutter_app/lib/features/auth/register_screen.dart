@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../../core/i18n.dart';
 import '../../core/password_utils.dart';
 import '../../core/phone_utils.dart';
 import '../../core/registration_validation.dart';
@@ -280,7 +281,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('حساب جديد — الخطوة $_step من $_totalSteps')),
+      appBar: AppBar(
+        title: Text('${context.tr('register_new_account')} — ${context.tr('register_step_word')} $_step ${context.tr('register_of_word')} $_totalSteps'),
+      ),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
@@ -315,19 +318,19 @@ class _RegisterScreenState extends State<RegisterScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const Text('الخطوة ١ — هويتك', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 13, color: AppColors.primary)),
+        Text(context.tr('register_step1_title'), style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 13, color: AppColors.primary)),
         const SizedBox(height: 4),
-        const Text('عرّفنا بنفسك واختر اسم مستخدم مميّز', style: TextStyle(fontSize: 12, color: AppColors.textFaint)),
+        Text(context.tr('register_step1_subtitle'), style: const TextStyle(fontSize: 12, color: AppColors.textFaint)),
         const SizedBox(height: 16),
-        TextField(controller: _nameCtrl, decoration: const InputDecoration(labelText: 'الاسم بالكامل')),
+        TextField(controller: _nameCtrl, decoration: InputDecoration(labelText: context.tr('register_full_name'))),
         const SizedBox(height: 16),
         TextField(
           controller: _usernameCtrl,
           textDirection: TextDirection.ltr,
           onChanged: (_) => _checkUsername(),
           decoration: InputDecoration(
-            labelText: 'اسم المستخدم',
-            helperText: 'أحرف إنجليزية وأرقام و _ . فقط (3-20 حرف)',
+            labelText: context.tr('register_username'),
+            helperText: context.tr('register_username_helper'),
             suffixIcon: _availIcon(_usernameAvail),
           ),
         ),
@@ -337,7 +340,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
           keyboardType: TextInputType.phone,
           textDirection: TextDirection.ltr,
           onChanged: (_) => _checkPhone(),
-          decoration: InputDecoration(labelText: 'رقم الجوال', hintText: '01xxxxxxxxx', suffixIcon: _availIcon(_phoneAvail)),
+          decoration: InputDecoration(labelText: context.tr('login_phone_label'), hintText: context.tr('login_phone_hint'), suffixIcon: _availIcon(_phoneAvail)),
         ),
         const SizedBox(height: 16),
         TextField(
@@ -347,8 +350,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
           maxLength: 14,
           onChanged: (_) => _checkNationalId(),
           decoration: InputDecoration(
-            labelText: 'الرقم القومي',
-            helperText: '14 رقم ويبدأ بـ 2 أو 3',
+            labelText: context.tr('register_national_id'),
+            helperText: context.tr('register_national_id_helper'),
             suffixIcon: _availIcon(_nationalIdAvail),
           ),
         ),
@@ -356,15 +359,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
         InkWell(
           onTap: _pickNationalIdExpiry,
           child: InputDecorator(
-            decoration: const InputDecoration(labelText: 'تاريخ انتهاء البطاقة'),
+            decoration: InputDecoration(labelText: context.tr('register_national_id_expiry')),
             child: Text(
-              _nationalIdExpiry == null ? 'اختر التاريخ' : _nationalIdExpiry!.toIso8601String().substring(0, 10),
-              style: TextStyle(color: _nationalIdExpiry == null ? AppColors.textFaint : Colors.black87),
+              _nationalIdExpiry == null ? context.tr('register_pick_date') : _nationalIdExpiry!.toIso8601String().substring(0, 10),
+              style: TextStyle(color: _nationalIdExpiry == null ? AppColors.textFaint : context.bodyText),
             ),
           ),
         ),
         const SizedBox(height: 24),
-        ElevatedButton(onPressed: _goNext, child: const Text('التالي ←')),
+        ElevatedButton(onPressed: _goNext, child: Text(context.tr('register_next'))),
       ],
     );
   }
@@ -373,30 +376,30 @@ class _RegisterScreenState extends State<RegisterScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const Text('الخطوة ٢ — بيانات التواصل', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 13, color: AppColors.primary)),
+        Text(context.tr('register_step2_title'), style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 13, color: AppColors.primary)),
         const SizedBox(height: 4),
-        const Text('بريدك ومدينتك لخدمة توصيل أدق', style: TextStyle(fontSize: 12, color: AppColors.textFaint)),
+        Text(context.tr('register_step2_subtitle'), style: const TextStyle(fontSize: 12, color: AppColors.textFaint)),
         const SizedBox(height: 16),
         TextField(
           controller: _emailCtrl,
           keyboardType: TextInputType.emailAddress,
           textDirection: TextDirection.ltr,
           onChanged: (_) => _checkEmail(),
-          decoration: InputDecoration(labelText: 'البريد الإلكتروني', hintText: 'example@gmail.com', suffixIcon: _availIcon(_emailAvail)),
+          decoration: InputDecoration(labelText: context.tr('register_email'), hintText: 'example@gmail.com', suffixIcon: _availIcon(_emailAvail)),
         ),
         const SizedBox(height: 16),
         DropdownButtonFormField<String>(
           initialValue: _city,
-          decoration: const InputDecoration(labelText: 'المدينة'),
+          decoration: InputDecoration(labelText: context.tr('register_city')),
           items: egyptianCities.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
           onChanged: (v) => setState(() => _city = v),
         ),
         const SizedBox(height: 24),
         Row(
           children: [
-            Expanded(child: OutlinedButton(onPressed: _goBack, child: const Text('→ السابق'))),
+            Expanded(child: OutlinedButton(onPressed: _goBack, child: Text(context.tr('register_back')))),
             const SizedBox(width: 12),
-            Expanded(child: ElevatedButton(onPressed: _goNext, child: const Text('التالي ←'))),
+            Expanded(child: ElevatedButton(onPressed: _goNext, child: Text(context.tr('register_next')))),
           ],
         ),
       ],
@@ -407,15 +410,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const Text('الخطوة ٣ — الأمان', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 13, color: AppColors.primary)),
+        Text(context.tr('register_step3_title'), style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 13, color: AppColors.primary)),
         const SizedBox(height: 4),
-        const Text('اختر كلمة مرور قوية لحماية حسابك', style: TextStyle(fontSize: 12, color: AppColors.textFaint)),
+        Text(context.tr('register_step3_subtitle'), style: const TextStyle(fontSize: 12, color: AppColors.textFaint)),
         const SizedBox(height: 16),
         TextField(
           controller: _passwordCtrl,
           obscureText: true,
           onChanged: (_) => setState(() {}),
-          decoration: const InputDecoration(labelText: 'كلمة المرور'),
+          decoration: InputDecoration(labelText: context.tr('register_password')),
         ),
         const SizedBox(height: 8),
         _PasswordRules(password: _passwordCtrl.text),
@@ -424,26 +427,26 @@ class _RegisterScreenState extends State<RegisterScreen> {
           controller: _confirmCtrl,
           obscureText: true,
           onChanged: (_) => setState(() {}),
-          decoration: const InputDecoration(labelText: 'تأكيد كلمة المرور'),
+          decoration: InputDecoration(labelText: context.tr('register_confirm_password')),
         ),
         if (_confirmCtrl.text.isNotEmpty) ...[
           const SizedBox(height: 6),
           Text(
-            _confirmCtrl.text == _passwordCtrl.text ? '✓ كلمتا المرور متطابقتان' : '✗ كلمتا المرور غير متطابقتين',
+            _confirmCtrl.text == _passwordCtrl.text ? context.tr('register_passwords_match') : context.tr('register_passwords_mismatch'),
             style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: _confirmCtrl.text == _passwordCtrl.text ? AppColors.success : AppColors.error),
           ),
         ],
         const SizedBox(height: 24),
         Row(
           children: [
-            Expanded(child: OutlinedButton(onPressed: _goBack, child: const Text('→ السابق'))),
+            Expanded(child: OutlinedButton(onPressed: _goBack, child: Text(context.tr('register_back')))),
             const SizedBox(width: 12),
             Expanded(
               child: ElevatedButton(
                 onPressed: _loading ? null : _submit,
                 child: _loading
                     ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                    : const Text('إنشاء الحساب ✓'),
+                    : Text(context.tr('register_submit')),
               ),
             ),
           ],
@@ -501,11 +504,11 @@ class _PasswordRules extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final rules = [
-      ('8 أحرف على الأقل', password.length >= 8),
-      ('حرف كبير (A-Z)', RegExp(r'[A-Z]').hasMatch(password)),
-      ('حرف صغير (a-z)', RegExp(r'[a-z]').hasMatch(password)),
-      ('رقم واحد', RegExp(r'[0-9]').hasMatch(password)),
-      ('بدون رموز أو مسافات', password.isNotEmpty && RegExp(r'^[A-Za-z0-9]+$').hasMatch(password)),
+      (context.tr('register_pw_rule_length'), password.length >= 8),
+      (context.tr('register_pw_rule_upper'), RegExp(r'[A-Z]').hasMatch(password)),
+      (context.tr('register_pw_rule_lower'), RegExp(r'[a-z]').hasMatch(password)),
+      (context.tr('register_pw_rule_number'), RegExp(r'[0-9]').hasMatch(password)),
+      (context.tr('register_pw_rule_no_symbols'), password.isNotEmpty && RegExp(r'^[A-Za-z0-9]+$').hasMatch(password)),
     ];
     return Wrap(
       spacing: 12,
