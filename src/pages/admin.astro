@@ -223,6 +223,21 @@
     .confirm-gate__cancel{flex:1;background:var(--card-2);color:var(--tx3);border:none;border-radius:var(--radius);padding:.65rem;font-weight:700;font-size:.9rem;cursor:pointer}
     .confirm-gate__cancel:hover{background:var(--bdr)}
 
+    /* Free-text input — replaces window.prompt() for non-password entry
+       (reject reason, withdrawal amount, an optional note). Same family
+       as #confirm-gate (dimmed backdrop, branded card) plus an input. */
+    .text-gate{position:fixed;inset:0;z-index:99999;display:none;align-items:center;justify-content:center;padding:1rem;background:rgba(8,23,22,.6)}
+    .text-gate__box{background:var(--card);border-radius:var(--radius-lg);max-width:380px;width:100%;padding:1.75rem;text-align:center;box-shadow:0 30px 70px rgba(0,0,0,.35)}
+    .text-gate__icon{width:52px;height:52px;border-radius:50%;margin:0 auto .9rem;background:var(--pr-l);display:flex;align-items:center;justify-content:center;font-size:1.4rem}
+    .text-gate__title{font-size:.95rem;font-weight:800;color:#10201E;margin-bottom:.9rem;white-space:pre-line}
+    .text-gate__input{width:100%;border:1.5px solid var(--bdr);border-radius:var(--radius);padding:.7rem .9rem;font-size:.95rem;text-align:center}
+    .text-gate__input:focus{outline:none;border-color:var(--pr3)}
+    .text-gate__actions{display:flex;gap:.6rem;margin-top:1.1rem}
+    .text-gate__ok{flex:1;background:var(--pr);color:#fff;border:none;border-radius:var(--radius);padding:.65rem;font-weight:800;font-size:.9rem;cursor:pointer}
+    .text-gate__ok:hover{background:var(--pr2)}
+    .text-gate__cancel{flex:1;background:var(--card-2);color:var(--tx3);border:none;border-radius:var(--radius);padding:.65rem;font-weight:700;font-size:.9rem;cursor:pointer}
+    .text-gate__cancel:hover{background:var(--bdr)}
+
     /* Doc viewer */
     .doc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:1rem;margin-bottom:1.5rem}
     .doc-card{border:1px solid var(--bdr);border-radius:var(--radius);overflow:hidden}
@@ -310,6 +325,19 @@
     <div class="confirm-gate__actions">
       <button type="button" class="confirm-gate__cancel" id="confirm-gate-cancel">إلغاء</button>
       <button type="button" class="confirm-gate__ok" id="confirm-gate-ok">تأكيد</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Free-text input gate — replaces window.prompt() ────────── -->
+<div class="text-gate" id="text-gate">
+  <div class="text-gate__box">
+    <div class="text-gate__icon">✏️</div>
+    <div class="text-gate__title" id="text-gate-title"></div>
+    <input type="text" class="text-gate__input" id="text-gate-input" />
+    <div class="text-gate__actions">
+      <button type="button" class="text-gate__cancel" id="text-gate-cancel">إلغاء</button>
+      <button type="button" class="text-gate__ok" id="text-gate-ok">تأكيد</button>
     </div>
   </div>
 </div>
@@ -1883,6 +1911,41 @@ function showConfirmGate(message, { danger = false, icon } = {}) {
   });
 }
 
+// Promise-based replacement for window.prompt() (free text, not a
+// password) — resolves with the trimmed input on confirm (possibly an
+// empty string, same as prompt() confirmed empty) or null on cancel, so
+// every call site's existing `|| ''`/`|| null` fallback keeps working.
+function showTextGate(title, { defaultValue = '', placeholder = '' } = {}) {
+  return new Promise((resolve) => {
+    const gate = document.getElementById('text-gate');
+    const input = document.getElementById('text-gate-input');
+    const okBtn = document.getElementById('text-gate-ok');
+    const cancelBtn = document.getElementById('text-gate-cancel');
+    document.getElementById('text-gate-title').textContent = title;
+    input.value = defaultValue;
+    input.placeholder = placeholder;
+    gate.style.display = 'flex';
+    setTimeout(() => { input.focus(); input.select(); }, 50);
+
+    function cleanup(result) {
+      gate.style.display = 'none';
+      okBtn.removeEventListener('click', onOk);
+      cancelBtn.removeEventListener('click', onCancel);
+      input.removeEventListener('keydown', onKey);
+      resolve(result);
+    }
+    function onOk() { cleanup((input.value || '').trim()); }
+    function onCancel() { cleanup(null); }
+    function onKey(e) {
+      if (e.key === 'Enter') onOk();
+      else if (e.key === 'Escape') onCancel();
+    }
+    okBtn.addEventListener('click', onOk);
+    cancelBtn.addEventListener('click', onCancel);
+    input.addEventListener('keydown', onKey);
+  });
+}
+
 async function sbRpc(fn, body) {
   try {
     const r = await fetch(`${SB_URL}/rest/v1/rpc/${fn}`, {
@@ -3348,7 +3411,7 @@ async function corporateApprove() {
   else showToast('❌ حدث خطأ', '#DC2626');
 }
 async function corporateReject() {
-  const reason = prompt('سبب رفض هذا الطلب؟') || '';
+  const reason = (await showTextGate('سبب رفض هذا الطلب؟')) || '';
   if (!reason.trim()) return;
   const ok = await sbPatch(`corporate_contracts?id=eq.${encodeURIComponent(currentContractId)}`, {
     status: 'rejected', rejection_reason: reason.trim(), reviewed_at: new Date().toISOString(),
@@ -4572,13 +4635,13 @@ async function adminSettlePlatform() {
   const bal = parseFloat(balText) || 0;
   if (bal <= 0) { showToast('لا يوجد صافي ربح متاح للسحب', '#D97706'); return; }
 
-  const amountStr = prompt(`الرصيد المتاح: ${bal.toFixed(2)} ج.م\nأدخل المبلغ المطلوب سحبه:`, bal.toFixed(2));
+  const amountStr = await showTextGate(`الرصيد المتاح: ${bal.toFixed(2)} ج.م\nأدخل المبلغ المطلوب سحبه:`, { defaultValue: bal.toFixed(2) });
   if (!amountStr) return;
   const amount = parseFloat(amountStr);
   if (!amount || amount <= 0) { showToast('مبلغ غير صالح', '#DC2626'); return; }
   if (amount > bal) { showToast('المبلغ أكبر من الرصيد المتاح', '#DC2626'); return; }
 
-  const note = prompt('ملاحظة (اختياري):', '') || null;
+  const note = (await showTextGate('ملاحظة (اختياري):')) || null;
   const pass = await getAdminPass();
   if (!pass) return;
   const key = await getActionKey();
