@@ -188,6 +188,25 @@
     .modal__body{padding:1.5rem}
     .modal__foot{padding:1rem 1.5rem;border-top:1px solid var(--bdr);display:flex;gap:.75rem;justify-content:flex-end;background:var(--card);position:sticky;bottom:0}
 
+    /* Admin password / security-key confirmation — replaces the native
+       browser prompt() with an opaque full-screen gate so the dashboard
+       behind it is fully hidden (not just dimmed) until confirmed or
+       cancelled, for both the per-tab admin password (getAdminPass) and
+       the never-cached sensitive-action key (getActionKey). */
+    .pass-gate{position:fixed;inset:0;z-index:99999;display:none;align-items:center;justify-content:center;padding:1rem;
+      background:radial-gradient(circle at 50% 0%,var(--pr3) 0%,var(--pr) 45%,var(--pr2) 100%)}
+    .pass-gate__box{background:var(--card);border-radius:var(--radius-lg);max-width:360px;width:100%;padding:2rem 1.75rem 1.75rem;text-align:center;box-shadow:0 30px 70px rgba(0,0,0,.35)}
+    .pass-gate__logo{width:58px;height:58px;border-radius:14px;margin:0 auto .9rem;background:linear-gradient(135deg,var(--pr3),var(--pr));display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:1.6rem;box-shadow:0 10px 24px -8px rgba(63,167,154,.6)}
+    .pass-gate__title{font-size:1.05rem;font-weight:900;color:#10201E}
+    .pass-gate__subtitle{font-size:.8rem;color:var(--tx3);margin-top:.3rem;margin-bottom:1.25rem}
+    .pass-gate__input{width:100%;border:1.5px solid var(--bdr);border-radius:var(--radius);padding:.7rem .9rem;font-size:.95rem;text-align:center;letter-spacing:1px}
+    .pass-gate__input:focus{outline:none;border-color:var(--pr3)}
+    .pass-gate__actions{display:flex;gap:.6rem;margin-top:1.1rem}
+    .pass-gate__ok{flex:1;background:var(--pr);color:#fff;border:none;border-radius:var(--radius);padding:.65rem;font-weight:800;font-size:.9rem;cursor:pointer}
+    .pass-gate__ok:hover{background:var(--pr2)}
+    .pass-gate__cancel{flex:1;background:var(--card-2);color:var(--tx3);border:none;border-radius:var(--radius);padding:.65rem;font-weight:700;font-size:.9rem;cursor:pointer}
+    .pass-gate__cancel:hover{background:var(--bdr)}
+
     /* Doc viewer */
     .doc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:1rem;margin-bottom:1.5rem}
     .doc-card{border:1px solid var(--bdr);border-radius:var(--radius);overflow:hidden}
@@ -248,6 +267,24 @@
   </style>
 </head>
 <body>
+
+<!-- ── Password / security-key confirmation gate ─────────────────
+     Replaces window.prompt() for getAdminPass()/getActionKey() —
+     an opaque full-screen overlay (not a dismissible dialog) so the
+     dashboard behind it is completely hidden until confirmed or
+     cancelled. Reused for both: text/subtitle are set per call. -->
+<div class="pass-gate" id="pass-gate">
+  <div class="pass-gate__box">
+    <div class="pass-gate__logo">و</div>
+    <div class="pass-gate__title" id="pass-gate-title">لوحة تحكم المشرفين</div>
+    <div class="pass-gate__subtitle" id="pass-gate-subtitle">رمز الأمان لتأكيد الدخول</div>
+    <input type="password" class="pass-gate__input" id="pass-gate-input" autocomplete="off" />
+    <div class="pass-gate__actions">
+      <button type="button" class="pass-gate__cancel" id="pass-gate-cancel">إلغاء</button>
+      <button type="button" class="pass-gate__ok" id="pass-gate-ok">تأكيد</button>
+    </div>
+  </div>
+</div>
 
 <div class="sidebar-overlay" id="overlay"></div>
 
@@ -1732,9 +1769,46 @@ async function sbDelete(path) {
 // than that) or on a wrong-password failure / explicit logout.
 let _adminPass = null;
 try { _adminPass = sessionStorage.getItem('wslha_admin_pass') || null; } catch {}
-function getAdminPass() {
+
+// Promise-based replacement for window.prompt() — shows #pass-gate (an
+// opaque full-screen overlay, not a dismissible browser dialog) and
+// resolves with the trimmed input, or null on cancel/empty. Only one can
+// be open at a time, which matches every call site (each awaits before
+// doing anything else).
+function showPassGate(title, subtitle) {
+  return new Promise((resolve) => {
+    const gate = document.getElementById('pass-gate');
+    const input = document.getElementById('pass-gate-input');
+    const okBtn = document.getElementById('pass-gate-ok');
+    const cancelBtn = document.getElementById('pass-gate-cancel');
+    document.getElementById('pass-gate-title').textContent = title;
+    document.getElementById('pass-gate-subtitle').textContent = subtitle;
+    input.value = '';
+    gate.style.display = 'flex';
+    setTimeout(() => input.focus(), 50);
+
+    function cleanup(result) {
+      gate.style.display = 'none';
+      okBtn.removeEventListener('click', onOk);
+      cancelBtn.removeEventListener('click', onCancel);
+      input.removeEventListener('keydown', onKey);
+      resolve(result);
+    }
+    function onOk() { cleanup((input.value || '').trim() || null); }
+    function onCancel() { cleanup(null); }
+    function onKey(e) {
+      if (e.key === 'Enter') onOk();
+      else if (e.key === 'Escape') onCancel();
+    }
+    okBtn.addEventListener('click', onOk);
+    cancelBtn.addEventListener('click', onCancel);
+    input.addEventListener('keydown', onKey);
+  });
+}
+
+async function getAdminPass() {
   if (!_adminPass) {
-    _adminPass = (prompt('للأمان، أدخل كلمة مرور المشرف لتأكيد العملية:') || '').trim() || null;
+    _adminPass = await showPassGate('لوحة تحكم المشرفين', 'رمز الأمان لتأكيد الدخول');
     if (_adminPass) { try { sessionStorage.setItem('wslha_admin_pass', _adminPass); } catch {} }
   }
   return _adminPass;
@@ -1745,8 +1819,8 @@ function clearAdminPass() {
 }
 // مفتاح أمان ثانٍ منفصل تمامًا عن كلمة مرور تسجيل الدخول — يُطلب في كل مرة
 // (بلا تخزين مؤقت) لأي إجراء خطر: حذف حساب، ترقية/إنشاء أدمن.
-function getActionKey() {
-  return (prompt('🔒 إجراء حسّاس — أدخل مفتاح الأمان للتأكيد:') || '').trim() || null;
+async function getActionKey() {
+  return await showPassGate('🔒 إجراء حسّاس', 'أدخل مفتاح الأمان للتأكيد');
 }
 async function sbRpc(fn, body) {
   try {
@@ -1790,7 +1864,7 @@ async function sbRpcJson(fn, body) {
 // password was wrong we just return an empty list until the admin retries
 // via a manual "🔄 تحديث" click (which re-prompts once).
 async function adminListAccounts(roleFilter) {
-  const pass = getAdminPass();
+  const pass = await getAdminPass();
   if (!pass) return [];
   const rows = await sbRpcRows('admin_list_accounts', { p_admin_phone: ADMIN.phone, p_admin_password: pass, p_role: roleFilter || null });
   if (rows === null) { clearAdminPass(); return []; }
@@ -2193,16 +2267,16 @@ document.getElementById('users-status-filter').addEventListener('change', render
 
 async function changeUserStatus(phone, status) {
   if (!status) return;
-  const pass = getAdminPass(); if (!pass) return;
+  const pass = await getAdminPass(); if (!pass) return;
   const ok = await sbRpc('admin_set_user_status', { p_admin_phone: ADMIN.phone, p_admin_password: pass, p_target_phone: phone, p_status: status });
   if (ok) { showToast(`✅ تم تغيير الحالة إلى "${STATUS_AR[status]||status}"`, '#16A34A'); loadUsers(); }
   else { clearAdminPass(); showToast('❌ حدث خطأ', '#DC2626'); }
 }
 async function makeAdmin(phone) {
   if (!confirm('منح صلاحيات المشرف لهذا المستخدم؟')) return;
-  const pass = getAdminPass();
+  const pass = await getAdminPass();
   if (!pass) return;
-  const key = getActionKey();
+  const key = await getActionKey();
   if (!key) return;
   const ok = await sbRpc('grant_admin', { p_admin_phone: ADMIN.phone, p_admin_password: pass, p_target_phone: phone, p_action_key: key });
   if (ok) { showToast('✅ تم منح صلاحيات المشرف', '#16A34A'); loadUsers(); }
@@ -2212,9 +2286,9 @@ async function deleteUser(phone) {
   const user = allUsers.find(u => u.phone === phone);
   const roleAr = { driver:'سائق', merchant:'تاجر', customer:'عميل', admin:'مشرف' }[user?.role] || user?.role || '';
   if (!confirm(`⚠️ حذف حساب ${roleAr} "${user?.name || phone}"؟\nسيتم حذف جميع بياناته المرتبطة. هذا الإجراء لا يمكن التراجع عنه.`)) return;
-  const pass = getAdminPass();
+  const pass = await getAdminPass();
   if (!pass) return;
-  const key = getActionKey();
+  const key = await getActionKey();
   if (!key) return;
   // حذف الحساب بالكامل (وكل بياناته المرتبطة) يمر عبر دالة موثّقة تتحقق من
   // كلمة مرور المشرف ومفتاح الأمان الإضافي على الخادم — نفس نمط
@@ -2230,7 +2304,7 @@ async function changeUserRole(phone, role) {
   if (!confirm(`تغيير دور هذا المستخدم إلى "${{driver:'سائق',merchant:'تاجر',customer:'عميل'}[role]||role}"؟`)) {
     renderUsers(); return;
   }
-  const pass = getAdminPass(); if (!pass) return;
+  const pass = await getAdminPass(); if (!pass) return;
   const ok = await sbRpc('admin_set_user_role', { p_admin_phone: ADMIN.phone, p_admin_password: pass, p_target_phone: phone, p_role: role });
   if (ok) { showToast('✅ تم تغيير الدور', '#16A34A'); loadUsers(); }
   else { clearAdminPass(); showToast('❌ حدث خطأ', '#DC2626'); }
@@ -2281,7 +2355,7 @@ async function openUserProfile(phone) {
   document.getElementById('up-ratings').innerHTML = '<p style="color:#94A3B8;font-size:.875rem">جاري التحميل…</p>';
   document.getElementById('up-activity-tbody').innerHTML = '<tr><td colspan="5" style="text-align:center;color:#94A3B8;padding:2rem">جاري التحميل…</td></tr>';
 
-  const pass = getAdminPass();
+  const pass = await getAdminPass();
   if (!pass) { closeUserProfile(); return; }
   const rows = await sbRpcRows('admin_get_account_detail', { p_admin_phone: ADMIN.phone, p_admin_password: pass, p_target_phone: phone });
   if (rows === null) { clearAdminPass(); showToast('❌ فشل التحقق — أعد المحاولة', '#DC2626'); closeUserProfile(); return; }
@@ -2830,7 +2904,7 @@ function toggleReject(type) {
 async function confirmApprove(type) {
   const phone = type === 'driver' ? currentDriverPhone : currentMerchantPhone;
   if (!confirm(`اعتماد هذا الطلب؟`)) return;
-  const pass = getAdminPass();
+  const pass = await getAdminPass();
   if (!pass) return;
   const ok = await sbRpc('admin_review_application', {
     p_admin_phone: ADMIN.phone, p_admin_password: pass,
@@ -2849,7 +2923,7 @@ async function confirmReject(type) {
   const reason = document.getElementById(`${type}-reject-reason`).value.trim();
   if (!reason) { showToast('⚠️ أدخل سبب الرفض', '#D97706'); return; }
   if (!confirm('رفض هذا الطلب؟')) return;
-  const pass = getAdminPass();
+  const pass = await getAdminPass();
   if (!pass) return;
   const ok = await sbRpc('admin_review_application', {
     p_admin_phone: ADMIN.phone, p_admin_password: pass,
@@ -2933,7 +3007,7 @@ document.getElementById('courier-search').addEventListener('input', renderCourie
 document.getElementById('courier-status-filter').addEventListener('change', renderCourierOrders);
 
 async function courierAccept(id) {
-  const pass = getAdminPass(); if (!pass) return;
+  const pass = await getAdminPass(); if (!pass) return;
   // 'preparing' is what trg_dispatch_new_order actually watches for — this
   // is the moment the shipment goes out to the nearest available driver,
   // same as a merchant accepting a store order. Routed through
@@ -2945,7 +3019,7 @@ async function courierAccept(id) {
 }
 async function courierReject(id) {
   if (!confirm('رفض هذه الشحنة؟')) return;
-  const pass = getAdminPass(); if (!pass) return;
+  const pass = await getAdminPass(); if (!pass) return;
   const ok = await sbRpc('admin_set_order_status', { p_admin_phone: ADMIN.phone, p_admin_password: pass, p_order_id: id, p_status: 'rejected' });
   if (ok) { showToast('تم رفض الشحنة', '#DC2626'); loadCourierOrders(); }
   else { clearAdminPass(); showToast('❌ حدث خطأ', '#DC2626'); }
@@ -2993,7 +3067,7 @@ document.getElementById('mdlv-search').addEventListener('input', renderMerchantD
 document.getElementById('mdlv-status-filter').addEventListener('change', renderMerchantDeliveries);
 
 async function merchantDeliveryAccept(id) {
-  const pass = getAdminPass(); if (!pass) return;
+  const pass = await getAdminPass(); if (!pass) return;
   // Same 'preparing' flip trg_dispatch_new_order watches for — see
   // courierAccept() above, identical dispatch trigger point.
   const ok = await sbRpc('admin_set_order_status', { p_admin_phone: ADMIN.phone, p_admin_password: pass, p_order_id: id, p_status: 'preparing' });
@@ -3002,7 +3076,7 @@ async function merchantDeliveryAccept(id) {
 }
 async function merchantDeliveryReject(id) {
   if (!confirm('رفض هذا الطلب؟')) return;
-  const pass = getAdminPass(); if (!pass) return;
+  const pass = await getAdminPass(); if (!pass) return;
   const ok = await sbRpc('admin_set_order_status', { p_admin_phone: ADMIN.phone, p_admin_password: pass, p_order_id: id, p_status: 'rejected' });
   if (ok) { showToast('تم رفض الطلب', '#DC2626'); loadMerchantDeliveries(); }
   else { clearAdminPass(); showToast('❌ حدث خطأ', '#DC2626'); }
@@ -3075,14 +3149,14 @@ document.getElementById('gdlv-search').addEventListener('input', renderGeneralDe
 document.getElementById('gdlv-status-filter').addEventListener('change', renderGeneralDeliveries);
 
 async function generalDeliveryAccept(id) {
-  const pass = getAdminPass(); if (!pass) return;
+  const pass = await getAdminPass(); if (!pass) return;
   const ok = await sbRpc('admin_set_order_status', { p_admin_phone: ADMIN.phone, p_admin_password: pass, p_order_id: id, p_status: 'preparing' });
   if (ok) { showToast('✅ تم قبول الطلب — جارٍ البحث عن سائق', '#16A34A'); loadGeneralDeliveries(); }
   else { clearAdminPass(); showToast('❌ حدث خطأ', '#DC2626'); }
 }
 async function generalDeliveryReject(id) {
   if (!confirm('رفض هذا الطلب؟')) return;
-  const pass = getAdminPass(); if (!pass) return;
+  const pass = await getAdminPass(); if (!pass) return;
   const ok = await sbRpc('admin_set_order_status', { p_admin_phone: ADMIN.phone, p_admin_password: pass, p_order_id: id, p_status: 'rejected' });
   if (ok) { showToast('تم رفض الطلب', '#DC2626'); loadGeneralDeliveries(); }
   else { clearAdminPass(); showToast('❌ حدث خطأ', '#DC2626'); }
@@ -3252,7 +3326,7 @@ function openOrderModal(id) {
 }
 async function saveOrderStatus() {
   const status = document.getElementById('order-status-select').value;
-  const pass = getAdminPass(); if (!pass) return;
+  const pass = await getAdminPass(); if (!pass) return;
   const ok = await sbRpc('admin_set_order_status', { p_admin_phone: ADMIN.phone, p_admin_password: pass, p_order_id: currentOrderId, p_status: status });
   if (ok) {
     showToast('✅ تم تحديث حالة الطلب', '#16A34A');
@@ -3262,7 +3336,7 @@ async function saveOrderStatus() {
 }
 async function deleteCurrentOrder() {
   if (!confirm('حذف هذا الطلب نهائياً؟')) return;
-  const pass = getAdminPass(); if (!pass) return;
+  const pass = await getAdminPass(); if (!pass) return;
   const ok = await sbRpc('admin_delete_order', { p_admin_phone: ADMIN.phone, p_admin_password: pass, p_order_id: currentOrderId });
   if (ok) { showToast('✅ تم الحذف', '#16A34A'); closeModal('order-modal'); loadOrders(); }
   else { clearAdminPass(); showToast('❌ حدث خطأ', '#DC2626'); }
@@ -3317,7 +3391,7 @@ document.getElementById('rides-search').addEventListener('input', renderRides);
 document.getElementById('rides-status-filter').addEventListener('change', renderRides);
 async function updateRideStatus(id, status) {
   if (!status) return;
-  const pass = getAdminPass(); if (!pass) return;
+  const pass = await getAdminPass(); if (!pass) return;
   const ok = await sbRpc('admin_set_ride_status', { p_admin_phone: ADMIN.phone, p_admin_password: pass, p_ride_id: id, p_status: status });
   if (ok) { showToast('✅ تم التحديث', '#16A34A'); loadRides(); }
   else { clearAdminPass(); showToast('❌ حدث خطأ', '#DC2626'); }
@@ -3411,7 +3485,7 @@ document.getElementById('mkt-admin-status').addEventListener('change', renderMar
 async function marketplaceModerate(itemId, action) {
   const msg = action === 'approve' ? 'اعتماد هذا الإعلان وإرجاعه للعرض العام؟' : 'حذف هذا الإعلان نهائياً؟';
   if (!confirm(msg)) return;
-  const pass = getAdminPass();
+  const pass = await getAdminPass();
   if (!pass) return;
   const ok = await sbRpc('admin_moderate_item', { p_admin_phone: ADMIN.phone, p_admin_password: pass, p_item_id: itemId, p_action: action });
   if (ok) { showToast(action === 'approve' ? '✅ تم الاعتماد' : '✅ تم الحذف', '#16A34A'); loadMarketplaceSection(); }
@@ -3523,7 +3597,7 @@ let currentSupportConv = null;
 let _supportPollTimer = null;
 
 async function loadSupportChats() {
-  const pass = getAdminPass();
+  const pass = await getAdminPass();
   if (!pass) return;
   // Part of a click handler chain (nav-item click → loadSupportChats), so
   // browsers treat this as a genuine user gesture and won't silently block
@@ -3576,7 +3650,7 @@ function closeSupportModal() {
 
 async function refreshSupportThread() {
   if (!currentSupportConv) return;
-  const pass = getAdminPass();
+  const pass = await getAdminPass();
   if (!pass) return;
   const rows = await sbRpcRows('admin_get_support_messages', {
     p_admin_phone: ADMIN.phone, p_admin_password: pass, p_conversation_id: currentSupportConv.conversation_id,
@@ -3600,7 +3674,7 @@ async function sendSupportReply() {
   const input = document.getElementById('support-reply-input');
   const body = (input.value || '').trim();
   if (!body) return;
-  const pass = getAdminPass();
+  const pass = await getAdminPass();
   if (!pass) return;
   const btn = document.getElementById('support-reply-btn');
   btn.disabled = true;
@@ -3622,7 +3696,7 @@ if (supportModalEl) supportModalEl.addEventListener('click', (e) => { if (e.targ
 let allCoupons = [];
 
 async function loadCoupons() {
-  const pass = getAdminPass();
+  const pass = await getAdminPass();
   if (!pass) return;
   const rows = await sbRpcRows('admin_list_coupons', { p_admin_phone: ADMIN.phone, p_admin_password: pass });
   if (rows === null) { clearAdminPass(); return; }
@@ -3645,7 +3719,7 @@ async function loadCoupons() {
 }
 
 async function createCoupon() {
-  const pass = getAdminPass();
+  const pass = await getAdminPass();
   if (!pass) return;
   // Strips spaces too, not just leading/trailing — a code typed as "WELCOME 10"
   // (space in the middle) used to save with the space baked in, so a customer
@@ -3689,7 +3763,7 @@ async function createCoupon() {
 }
 
 async function toggleCoupon(id, active) {
-  const pass = getAdminPass();
+  const pass = await getAdminPass();
   if (!pass) return;
   const ok = await sbRpc('admin_set_coupon_active', { p_admin_phone: ADMIN.phone, p_admin_password: pass, p_coupon_id: id, p_active: active });
   if (ok) { showToast(active ? '✅ تم تفعيل الكود' : '✅ تم إيقاف الكود', '#16A34A'); loadCoupons(); }
@@ -3700,7 +3774,7 @@ async function toggleCoupon(id, active) {
 // marketing_campaigns carries no direct grants either (db/security-79) —
 // every read/write goes through the password-verified admin_* RPCs.
 async function loadCampaigns() {
-  const pass = getAdminPass();
+  const pass = await getAdminPass();
   if (!pass) return;
   const rows = await sbRpcRows('admin_list_campaigns', { p_admin_phone: ADMIN.phone, p_admin_password: pass });
   if (rows === null) { clearAdminPass(); return; }
@@ -3723,7 +3797,7 @@ async function loadCampaigns() {
 }
 
 async function createCampaign() {
-  const pass = getAdminPass();
+  const pass = await getAdminPass();
   if (!pass) return;
   const title = (document.getElementById('cmp-title').value || '').trim();
   const body = (document.getElementById('cmp-body').value || '').trim();
@@ -3758,7 +3832,7 @@ async function createCampaign() {
 }
 
 async function cancelCampaign(id) {
-  const pass = getAdminPass();
+  const pass = await getAdminPass();
   if (!pass) return;
   const ok = await sbRpc('admin_cancel_campaign', { p_admin_phone: ADMIN.phone, p_admin_password: pass, p_campaign_id: id });
   if (ok) { showToast('✅ تم إلغاء الإشعار', '#16A34A'); loadCampaigns(); }
@@ -3855,7 +3929,7 @@ async function loadCommissionRates() {
 async function saveCommissionRates() {
   const btn = document.getElementById('save-rates-btn');
   const msg = document.getElementById('rates-msg');
-  const pass = getAdminPass();
+  const pass = await getAdminPass();
   if (!pass) { msg.textContent='مطلوب كلمة مرور المشرف'; msg.style.cssText='display:block;background:#FEE2E2;color:#991B1B;font-size:.82rem;font-weight:700;padding:.5rem .75rem;border-radius:6px'; return; }
   btn.disabled = true; btn.textContent = 'جاري الحفظ...';
   const pairs = [
@@ -3918,7 +3992,7 @@ async function loadTripPricing() {
 async function saveTripPricing() {
   const btn = document.getElementById('save-pricing-btn');
   const msg = document.getElementById('pricing-msg');
-  const pass = getAdminPass();
+  const pass = await getAdminPass();
   if (!pass) { msg.textContent='مطلوب كلمة مرور المشرف'; msg.style.cssText='display:block;background:#FEE2E2;color:#991B1B;font-size:.82rem;font-weight:700;padding:.5rem .75rem;border-radius:6px'; return; }
   btn.disabled = true; btn.textContent = 'جاري الحفظ...';
   const pairs = Object.entries(PRICING_FIELD_MAP).map(([key, elId]) => ({ key, value: document.getElementById(elId).value }));
@@ -3980,7 +4054,7 @@ async function loadFeatureFlags() {
 async function saveFeatureFlags() {
   const btn = document.getElementById('save-flags-btn');
   const msg = document.getElementById('flags-msg');
-  const pass = getAdminPass();
+  const pass = await getAdminPass();
   if (!pass) { msg.textContent='مطلوب كلمة مرور المشرف'; msg.style.cssText='display:block;background:#FEE2E2;color:#991B1B;font-size:.82rem;font-weight:700;padding:.5rem .75rem;border-radius:6px'; return; }
   btn.disabled = true; btn.textContent = 'جاري الحفظ...';
   const pairs = Object.entries(FEATURE_FLAG_MAP).map(([key, elId]) => ({ key, value: document.getElementById(elId).checked ? 'true' : 'false' }));
@@ -4008,7 +4082,7 @@ async function saveFeatureFlags() {
 async function saveMerchantDeliveryFee() {
   const btn = document.getElementById('save-mdlv-fee-btn');
   const msg = document.getElementById('mdlv-fee-msg');
-  const pass = getAdminPass();
+  const pass = await getAdminPass();
   if (!pass) { msg.textContent='مطلوب كلمة مرور المشرف'; msg.style.cssText='display:block;background:#FEE2E2;color:#991B1B;font-size:.82rem;font-weight:700;padding:.5rem .75rem;border-radius:6px'; return; }
   btn.disabled = true; btn.textContent = 'جاري الحفظ...';
   try {
@@ -4033,7 +4107,7 @@ async function saveMerchantDeliveryFee() {
 async function saveGeneralDeliveryFee() {
   const btn = document.getElementById('save-gdlv-fee-btn');
   const msg = document.getElementById('gdlv-fee-msg');
-  const pass = getAdminPass();
+  const pass = await getAdminPass();
   if (!pass) { msg.textContent='مطلوب كلمة مرور المشرف'; msg.style.cssText='display:block;background:#FEE2E2;color:#991B1B;font-size:.82rem;font-weight:700;padding:.5rem .75rem;border-radius:6px'; return; }
   btn.disabled = true; btn.textContent = 'جاري الحفظ...';
   try {
@@ -4058,7 +4132,7 @@ async function saveGeneralDeliveryFee() {
 async function saveMarketplaceListingFee() {
   const btn = document.getElementById('save-mkt-fee-btn');
   const msg = document.getElementById('mkt-fee-msg');
-  const pass = getAdminPass();
+  const pass = await getAdminPass();
   if (!pass) { msg.textContent='مطلوب كلمة مرور المشرف'; msg.style.cssText='display:block;background:#FEE2E2;color:#991B1B;font-size:.82rem;font-weight:700;padding:.5rem .75rem;border-radius:6px'; return; }
   btn.disabled = true; btn.textContent = 'جاري الحفظ...';
   try {
@@ -4093,7 +4167,7 @@ async function loadWalletsSection() {
   document.getElementById('wallets-tbody').innerHTML = '<tr><td colspan="5" style="text-align:center;color:#94A3B8;padding:2rem">جاري التحميل…</td></tr>';
   document.getElementById('all-tx-tbody').innerHTML  = '<tr><td colspan="6" style="text-align:center;color:#94A3B8;padding:2rem">جاري التحميل…</td></tr>';
 
-  const pass = getAdminPass();
+  const pass = await getAdminPass();
   const [wallets, accounts, txData] = await Promise.all([
     pass ? sbRpcRows('admin_list_wallets', { p_admin_phone: ADMIN.phone, p_admin_password: pass }) : Promise.resolve([]),
     adminListAccounts(),
@@ -4298,7 +4372,7 @@ async function execAdminWalletOp() {
   const fullNote = note + adminTag;
   const amt  = _walletOpType === 'credit' ? amtRaw : -amtRaw;
   const type = _walletOpType === 'credit' ? 'admin_credit' : 'admin_debit';
-  const pass = getAdminPass();
+  const pass = await getAdminPass();
   if (!pass) return;
   const btn  = document.getElementById('wallet-op-confirm-btn');
   btn.textContent = 'جاري التنفيذ…'; btn.disabled = true;
@@ -4444,9 +4518,9 @@ async function adminSettlePlatform() {
   if (amount > bal) { showToast('المبلغ أكبر من الرصيد المتاح', '#DC2626'); return; }
 
   const note = prompt('ملاحظة (اختياري):', '') || null;
-  const pass = getAdminPass();
+  const pass = await getAdminPass();
   if (!pass) return;
-  const key = getActionKey();
+  const key = await getActionKey();
   if (!key) return;
 
   if (!confirm(`تأكيد سحب ${amount.toFixed(2)} ج.م من أرباح المنصة؟`)) return;
@@ -4576,9 +4650,9 @@ document.getElementById('create-admin-form').addEventListener('submit', async e 
   const pass  = document.getElementById('new-admin-pass').value;
   const msg   = document.getElementById('admin-create-msg');
   if (!name || !phone || !pass) { msg.textContent='أكمل جميع الحقول'; msg.style.cssText='display:block;background:#FEE2E2;color:#DC2626'; return; }
-  const adminPass = getAdminPass();
+  const adminPass = await getAdminPass();
   if (!adminPass) { msg.textContent='مطلوب كلمة مرور المشرف'; msg.style.cssText='display:block;background:#FEE2E2;color:#DC2626'; return; }
-  const actionKey = getActionKey();
+  const actionKey = await getActionKey();
   if (!actionKey) { msg.textContent='مطلوب مفتاح الأمان'; msg.style.cssText='display:block;background:#FEE2E2;color:#DC2626'; return; }
   const ok = await sbRpc('create_admin', {
     p_admin_phone: ADMIN.phone, p_admin_password: adminPass,
