@@ -7,6 +7,7 @@ import '../../core/session.dart';
 import '../../core/theme.dart';
 import '../../shared/widgets/selectable_pill.dart';
 import '../rides/address_field.dart';
+import '../rides/directions_service.dart';
 import '../rides/fare_calculator.dart' as fare_calc;
 import '../rides/places_service.dart';
 import 'airport_booking_confirmation_screen.dart';
@@ -17,8 +18,9 @@ import 'airport_repository.dart';
 /// (db/rides-vehicle-pricing.sql / src/data/airports.ts), same real-driver
 /// vehicle catalog, and the same "رحلتك" trip-summary card (route + live
 /// timeline + price breakdown) shown before booking. Distance/drive-time
-/// are estimated via haversine × road factor (same fallback
-/// rides_screen.dart uses) instead of a live Distance Matrix call.
+/// prefer a real Directions API route (directions_service.dart) once it
+/// comes back; falls back to haversine × road factor (same fallback
+/// rides_screen.dart uses) while it's in flight or if it fails.
 class AirportScreen extends StatefulWidget {
   const AirportScreen({super.key});
 
@@ -78,6 +80,10 @@ class _AirportScreenState extends State<AirportScreen> {
 
   bool _submitting = false;
   String? _error;
+
+  final _directionsService = DirectionsService();
+  RoadRoute? _routedRoute;
+  String? _routeFetchedFor;
 
   @override
   void initState() {
@@ -174,7 +180,23 @@ class _AirportScreenState extends State<AirportScreen> {
     return fare_calc.haversineKm(_from!.lat, _from!.lng, _airport!.lat, _airport!.lng);
   }
 
-  double get _roadKm => _straightKm * fare_calc.roadFactor;
+  // Real routed road distance once the Directions API call comes back for
+  // the current from/airport pair (_maybeRefreshRoute below); falls back to
+  // the straightKm × roadFactor estimate exactly as before otherwise.
+  double get _roadKm => _routedRoute?.km ?? (_straightKm * fare_calc.roadFactor);
+
+  /// Same debounce-by-key pattern as rides_screen.dart's _maybeRefreshRoute.
+  void _maybeRefreshRoute() {
+    if (_from == null || _airport == null) return;
+    final key = '${_from!.lat},${_from!.lng}|${_airport!.lat},${_airport!.lng}';
+    if (_routeFetchedFor == key) return;
+    _routeFetchedFor = key;
+    _routedRoute = null;
+    _directionsService.fetchRoadRoute([_from!, _airport!]).then((route) {
+      if (!mounted || _routeFetchedFor != key) return;
+      setState(() => _routedRoute = route);
+    });
+  }
 
   // etaMinutes() assumes a flat 40km/h city-traffic average, which is
   // realistic for a short in-town trip but wildly pessimistic once the
@@ -186,6 +208,7 @@ class _AirportScreenState extends State<AirportScreen> {
   int get _driveMinutes {
     final known = fare.matchKnownAirport(_airport?.name);
     if (known != null) return known.driveMinutes;
+    if (_routedRoute != null) return _routedRoute!.minutes;
     return _straightKm > 0 ? fare_calc.etaMinutes(_straightKm) : 0;
   }
 
@@ -349,6 +372,7 @@ class _AirportScreenState extends State<AirportScreen> {
 
   @override
   Widget build(BuildContext context) {
+    if (_from != null && _airport != null) _maybeRefreshRoute();
     return Scaffold(
       appBar: AppBar(title: Text(context.tr('airport_app_bar_title'))),
       body: Column(

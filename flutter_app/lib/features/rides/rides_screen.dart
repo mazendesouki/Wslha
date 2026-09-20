@@ -8,6 +8,7 @@ import '../airport/airport_fare.dart' show qualityLabels, qualityMultiplier;
 import '../coupons/coupon_field.dart';
 import '../coupons/coupon_repository.dart';
 import 'address_field.dart';
+import 'directions_service.dart';
 import 'fare_calculator.dart' as fare_calc;
 import 'places_service.dart';
 import 'ride_repository.dart';
@@ -46,6 +47,9 @@ class _RidesScreenState extends State<RidesScreen> {
   UserSession? _session;
   double _surgeMult = 1.0;
   String? _surgeFetchedFor;
+  final _directionsService = DirectionsService();
+  RoadRoute? _routedRoute;
+  String? _routeFetchedFor;
 
   /// Every leg's PlaceResult in order, stopping at the first unfilled one —
   /// so a driver can fill stop 1 and leave stop 2/3 empty without breaking
@@ -70,16 +74,44 @@ class _RidesScreenState extends State<RidesScreen> {
     return total;
   }
 
-  double get _roadKm => _straightKm * fare_calc.roadFactor;
+  // Real routed road distance when the Directions API call has come back for
+  // the currently-filled points (_maybeRefreshRoute below); otherwise falls
+  // back to the straightKm × roadFactor estimate exactly as before, so the
+  // fare/ETA preview is never blocked on a network call.
+  double get _roadKm => _routedRoute?.km ?? (_straightKm * fare_calc.roadFactor);
   bool get _isExternal => _roadKm > 0 && fare_calc.isExternalTrip(_roadKm);
   int get _fare {
     if (_straightKm <= 0) return 0;
+    // fareForDistance() re-derives roadKm internally as straightKm ×
+    // roadFactor — when a real routed distance came back, feed it that
+    // straightKm-equivalent (_roadKm ÷ roadFactor) so its internal
+    // multiplication reproduces the real _roadKm instead of the estimate,
+    // without touching that function's contract (guard_ride_fare() server
+    // side trusts distance_km as sent, so this is what actually gets billed).
+    final fareInputKm = _routedRoute != null ? (_roadKm / fare_calc.roadFactor) : _straightKm;
     return _isExternal
         ? fare_calc.externalFareForDistance(_roadKm, qualityTier: _qualityTier, surgeMultiplier: _surgeMult)
-        : fare_calc.fareForDistance(_straightKm, toArea: _filledPoints.last.name, qualityTier: _qualityTier, surgeMultiplier: _surgeMult);
+        : fare_calc.fareForDistance(fareInputKm, toArea: _filledPoints.last.name, qualityTier: _qualityTier, surgeMultiplier: _surgeMult);
   }
 
-  int get _eta => _straightKm > 0 ? fare_calc.etaMinutes(_straightKm) : 0;
+  int get _eta => _routedRoute?.minutes ?? (_straightKm > 0 ? fare_calc.etaMinutes(_straightKm) : 0);
+
+  /// Fetches the real road route once per distinct set of filled points —
+  /// same debounce-by-key pattern as _maybeRefreshSurge. Clears the previous
+  /// routed result immediately on a point change so the preview never shows
+  /// a stale route for different points while the new one is in flight.
+  void _maybeRefreshRoute() {
+    final points = _filledPoints;
+    if (points.length < 2) return;
+    final key = points.map((p) => '${p.lat},${p.lng}').join('|');
+    if (_routeFetchedFor == key) return;
+    _routeFetchedFor = key;
+    _routedRoute = null;
+    _directionsService.fetchRoadRoute(points).then((route) {
+      if (!mounted || _routeFetchedFor != key) return;
+      setState(() => _routedRoute = route);
+    });
+  }
 
   bool get _hasMultiStop => _filledPoints.length > 2;
 
@@ -244,7 +276,10 @@ class _RidesScreenState extends State<RidesScreen> {
 
   @override
   Widget build(BuildContext context) {
-    if (_filledPoints.length >= 2) _maybeRefreshSurge();
+    if (_filledPoints.length >= 2) {
+      _maybeRefreshSurge();
+      _maybeRefreshRoute();
+    }
     final ready = _filledPoints.length >= 2 && _session != null && !_submitting;
 
     return Scaffold(
