@@ -21,7 +21,9 @@ import '../orders/orders_repository.dart';
 import '../ratings/rate_sheet.dart';
 import '../ratings/ratings_repository.dart';
 import '../ratings/trust_badge.dart';
-import '../rides/fare_calculator.dart' show haversineKm;
+import '../rides/directions_service.dart';
+import '../rides/fare_calculator.dart' show haversineKm, roadFactor;
+import '../rides/places_service.dart' show PlaceResult;
 import '../rides/ride_chat_screen.dart';
 import '../rides/ride_repository.dart';
 import 'active_job_store.dart';
@@ -1527,7 +1529,21 @@ class _ArrivalDeadlineChip extends StatelessWidget {
 /// customer-facing widget instead of sharing one, since the two screens
 /// differ enough (layout, "you"/"them" wording) that factoring it out
 /// wasn't worth the indirection for ~15 lines of logic.
-class _DriverDistanceReadout extends StatelessWidget {
+///
+/// Prefers a real Directions API route (directions_service.dart) over the
+/// raw haversine straight-line this used to show unconditionally — that was
+/// the actual bug behind a driver testing remotely (real GPS in a different
+/// country from the ride's pickup/dropoff) seeing a huge, inconsistent
+/// number here with no road-distance correction at all, unlike every other
+/// distance shown in the app. Stateful so the fetched route survives across
+/// the location stream's frequent pings; a live GPS ping stream can fire
+/// every few seconds and calling Directions API that often would burn
+/// quota/latency for no benefit (the road route barely changes that fast),
+/// so a fetch only happens when the driver has moved >300m from the last
+/// fetched position or 30s have passed — the haversine × roadFactor
+/// estimate (same correction every other screen uses) covers the gap
+/// in between and while the very first fetch is in flight.
+class _DriverDistanceReadout extends StatefulWidget {
   final String driverPhone;
   final double targetLat;
   final double targetLng;
@@ -1540,20 +1556,46 @@ class _DriverDistanceReadout extends StatelessWidget {
   });
 
   @override
+  State<_DriverDistanceReadout> createState() => _DriverDistanceReadoutState();
+}
+
+class _DriverDistanceReadoutState extends State<_DriverDistanceReadout> {
+  final _directionsService = DirectionsService();
+  RoadRoute? _routedRoute;
+  double? _routedForLat;
+  double? _routedForLng;
+  DateTime? _routedAt;
+
+  void _maybeFetchRoute(double lat, double lng) {
+    final movedFar = _routedForLat == null || haversineKm(lat, lng, _routedForLat!, _routedForLng!) > 0.3;
+    final stale = _routedAt == null || DateTime.now().difference(_routedAt!) > const Duration(seconds: 30);
+    if (!movedFar && !stale) return;
+    _routedForLat = lat;
+    _routedForLng = lng;
+    _routedAt = DateTime.now();
+    _directionsService.fetchRoadRoute([PlaceResult('', lat, lng), PlaceResult('', widget.targetLat, widget.targetLng)]).then((route) {
+      if (!mounted || route == null) return;
+      setState(() => _routedRoute = route);
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     return StreamBuilder<List<Map<String, dynamic>>>(
-      stream: RideRepository().watchDriverLocation(driverPhone),
+      stream: RideRepository().watchDriverLocation(widget.driverPhone),
       builder: (context, snap) {
         final loc = (snap.data != null && snap.data!.isNotEmpty) ? snap.data!.first : null;
         final lat = (loc?['lat'] as num?)?.toDouble();
         final lng = (loc?['lng'] as num?)?.toDouble();
         if (lat == null || lng == null) return const SizedBox.shrink();
 
-        final distanceKm = haversineKm(lat, lng, targetLat, targetLng);
+        WidgetsBinding.instance.addPostFrameCallback((_) => _maybeFetchRoute(lat, lng));
+
+        final distanceKm = _routedRoute?.km ?? (haversineKm(lat, lng, widget.targetLat, widget.targetLng) * roadFactor);
         final distanceM = distanceKm * 1000;
-        final etaMin = (distanceKm / 25 * 60).ceil().clamp(1, 999); // ~25 km/h city average
+        final etaMin = _routedRoute?.minutes ?? (distanceKm / 25 * 60).ceil().clamp(1, 999); // ~25 km/h city average fallback
         final distanceLabel = distanceM < 1000 ? '${distanceM.round()} ${context.tr('driver_home_unit_meter')}' : '${distanceKm.toStringAsFixed(1)} ${context.tr('driver_home_unit_km')}';
-        final text = headingToPickup
+        final text = widget.headingToPickup
             ? '${context.tr('driver_home_distance_to_customer_prefix')} $distanceLabel ${context.tr('driver_home_distance_eta_suffix')}$etaMin ${context.tr('driver_home_eta_minutes_suffix')}'
             : '${context.tr('driver_home_distance_to_destination_prefix')} $distanceLabel ${context.tr('driver_home_distance_eta_suffix')}$etaMin ${context.tr('driver_home_eta_minutes_suffix')}';
 

@@ -22,7 +22,9 @@ import '../favorites/favorite_driver_button.dart';
 import '../ratings/rate_sheet.dart';
 import '../ratings/ratings_repository.dart';
 import '../ratings/trust_badge.dart';
-import 'fare_calculator.dart' show haversineKm;
+import 'directions_service.dart';
+import 'fare_calculator.dart' show haversineKm, roadFactor;
+import 'places_service.dart' show PlaceResult;
 import 'ride_chat_screen.dart';
 import 'ride_repository.dart';
 
@@ -596,7 +598,34 @@ class _LiveMapSection extends StatefulWidget {
 class _LiveMapSectionState extends State<_LiveMapSection> {
   bool _nearAlertSent = false;
 
+  // Same real-routing preference + debounce pattern as driver_home_screen.
+  // dart's _DriverDistanceReadout (see that widget's doc comment) — the
+  // driver's live GPS ping stream can fire every few seconds, so a real
+  // Directions API fetch only happens after a >300m move or 30s, falling
+  // back to haversine × roadFactor in between and before the first result.
+  final _directionsService = DirectionsService();
+  RoadRoute? _routedRoute;
+  double? _routedForLat;
+  double? _routedForLng;
+  LatLng? _routedForTarget;
+  DateTime? _routedAt;
+
   double? _num(dynamic v) => v == null ? null : (v as num).toDouble();
+
+  void _maybeFetchRoute(double lat, double lng, LatLng target) {
+    final targetChanged = _routedForTarget != target;
+    final movedFar = targetChanged || _routedForLat == null || haversineKm(lat, lng, _routedForLat!, _routedForLng!) > 0.3;
+    final stale = _routedAt == null || DateTime.now().difference(_routedAt!) > const Duration(seconds: 30);
+    if (!movedFar && !stale) return;
+    _routedForLat = lat;
+    _routedForLng = lng;
+    _routedForTarget = target;
+    _routedAt = DateTime.now();
+    _directionsService.fetchRoadRoute([PlaceResult('', lat, lng), PlaceResult('', target.latitude, target.longitude)]).then((route) {
+      if (!mounted || route == null) return;
+      setState(() => _routedRoute = route);
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -626,9 +655,11 @@ class _LiveMapSectionState extends State<_LiveMapSection> {
 
         String? readout;
         if (driverPos != null && status != 'arrived') {
-          final distanceKm = haversineKm(driverPos.latitude, driverPos.longitude, target.latitude, target.longitude);
+          WidgetsBinding.instance.addPostFrameCallback((_) => _maybeFetchRoute(driverPos.latitude, driverPos.longitude, target));
+          final routed = _routedForTarget == target ? _routedRoute : null;
+          final distanceKm = routed?.km ?? (haversineKm(driverPos.latitude, driverPos.longitude, target.latitude, target.longitude) * roadFactor);
           final distanceM = distanceKm * 1000;
-          final etaMin = (distanceKm / 25 * 60).ceil().clamp(1, 999); // ~25 km/h city average
+          final etaMin = routed?.minutes ?? (distanceKm / 25 * 60).ceil().clamp(1, 999); // ~25 km/h city average fallback
           final distanceLabel = distanceM < 1000 ? '${distanceM.round()} م' : '${distanceKm.toStringAsFixed(1)} كم';
           readout = headingToPickup
               ? '${context.tr('ride_tracking_driver_near_pickup_prefix')} $distanceLabel ${context.tr('ride_tracking_driver_near_pickup_suffix')}$etaMin ${context.tr('ride_tracking_minutes_unit')}'
