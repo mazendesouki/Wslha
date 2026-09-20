@@ -140,6 +140,23 @@ class _RidesScreenState extends State<RidesScreen> {
     if (points.length < 2 || _session == null) return;
     setState(() => _submitting = true);
 
+    // The background fetch from _maybeRefreshRoute() (driven by build())
+    // may not have come back yet if the customer filled the form and
+    // tapped submit quickly — that would otherwise silently book this one
+    // ride on the haversine × roadFactor estimate even though the fare
+    // preview and every other screen end up using the real route once it
+    // arrives. Wait for it here so what actually gets booked always
+    // matches what was shown.
+    if (_routedRoute == null) {
+      final route = await _directionsService.fetchRoadRoute(points);
+      if (mounted && route != null) {
+        setState(() {
+          _routedRoute = route;
+          _routeFetchedFor = points.map((p) => '${p.lat},${p.lng}').join('|');
+        });
+      }
+    }
+
     final destination = points.last;
     final waypoints = points.sublist(1, points.length - 1); // between origin and final destination
 

@@ -287,6 +287,23 @@ class _AirportScreenState extends State<AirportScreen> {
     }
 
     setState(() => _submitting = true);
+
+    // Same race as rides_screen.dart's _submit(): the background fetch
+    // from _maybeRefreshRoute() (driven by build()) may not have come back
+    // yet if the traveler filled the wizard quickly — wait for it here so
+    // the distance/fare actually booked always matches the real route,
+    // not the haversine × roadFactor estimate shown only while it's in
+    // flight.
+    if (_routedRoute == null) {
+      final route = await _directionsService.fetchRoadRoute([_from!, _airport!]);
+      if (mounted && route != null) {
+        setState(() {
+          _routedRoute = route;
+          _routeFetchedFor = '${_from!.lat},${_from!.lng}|${_airport!.lat},${_airport!.lng}';
+        });
+      }
+    }
+
     try {
       final directionLabel = _direction == 'departure' ? context.tr('airport_note_direction_departure') : context.tr('airport_note_direction_arrival');
       final tripLabel = _tripType == 'international' ? context.tr('airport_note_trip_international') : context.tr('airport_note_trip_domestic');
