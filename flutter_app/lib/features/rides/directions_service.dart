@@ -41,6 +41,12 @@ class DirectionsService {
       'destination': '${destination.lat},${destination.lng}',
       'mode': 'driving',
       'language': 'ar',
+      // Live-traffic-aware routing — same routing engine behavior the
+      // Google Maps app itself uses when you open it "right now", instead
+      // of the traffic-agnostic default route. Narrows (not eliminates) the
+      // small residual gap against what a driver sees opening Maps at the
+      // same moment.
+      'departure_time': 'now',
       'key': _gmapsKey,
     };
     if (waypoints.isNotEmpty) {
@@ -62,7 +68,11 @@ class DirectionsService {
       int seconds = 0;
       for (final leg in legs) {
         meters += ((leg['distance']?['value'] as num?) ?? 0).toDouble();
-        seconds += ((leg['duration']?['value'] as num?) ?? 0).toInt();
+        // duration_in_traffic only comes back with departure_time set, and
+        // reflects live conditions — prefer it over the traffic-agnostic
+        // duration when present.
+        final legSeconds = (leg['duration_in_traffic']?['value'] as num?) ?? (leg['duration']?['value'] as num?) ?? 0;
+        seconds += legSeconds.toInt();
       }
       if (meters <= 0) return null;
       return RoadRoute(meters / 1000.0, (seconds / 60).ceil());
