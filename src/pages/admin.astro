@@ -182,7 +182,12 @@
     .modal-bg{position:fixed;inset:0;background:rgba(8,23,22,.55);z-index:1000;display:flex;align-items:center;justify-content:center;padding:1rem}
     .modal{background:var(--card);border-radius:var(--radius-lg);max-width:820px;width:100%;max-height:92vh;overflow-y:auto;box-shadow:0 25px 60px rgba(9,30,27,.3)}
     .modal__head{padding:1.25rem 1.5rem;border-bottom:1px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--card);z-index:2}
-    .modal__title{font-size:1rem;font-weight:800;color:#10201E}
+    .modal__title{font-size:1rem;font-weight:800;color:#10201E;display:inline-flex;align-items:center;gap:.5rem}
+    /* Small app mark on every modal header — same brand treatment as the
+       password/confirm/text gates, applied once here so it shows up on
+       every modal that uses .modal__title (driver/customer/merchant
+       review, order/store details, etc.) without touching each one. */
+    .modal__title::before{content:'و';width:22px;height:22px;border-radius:6px;flex-shrink:0;background:linear-gradient(135deg,var(--pr3),var(--pr));color:#fff;font-weight:800;font-size:.75rem;display:flex;align-items:center;justify-content:center}
     .modal__close{background:none;border:none;font-size:1.3rem;color:var(--tx3);cursor:pointer;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center}
     .modal__close:hover{background:var(--card-2)}
     .modal__body{padding:1.5rem}
