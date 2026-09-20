@@ -2,7 +2,14 @@ import 'package:flutter/material.dart';
 import '../../core/i18n.dart';
 import '../../core/session.dart';
 import '../../core/theme.dart';
+import '../airport/airport_screen.dart';
+import '../rides/places_service.dart' show PlaceResult;
 import '../rides/ride_tracking_screen.dart';
+import '../rides/rides_screen.dart';
+import '../stores/cart_store.dart';
+import '../stores/store_detail_screen.dart';
+import '../stores/stores_models.dart';
+import '../stores/stores_repository.dart';
 import 'order_invoice_screen.dart';
 import 'orders_repository.dart';
 
@@ -96,6 +103,87 @@ class _OrdersScreenState extends State<OrdersScreen> with SingleTickerProviderSt
         _loading = false;
       });
     }
+  }
+
+  /// "احجز تاني"/"اطلب تاني" — same rebook flow as invoices_screen.dart's
+  /// فواتيري list, added here too since this "الطلبات" tab (bottom nav) is
+  /// the ride/order history screen customers actually use day to day.
+  /// Distance/fare (rides) and prices/availability (delivery) are always
+  /// recomputed fresh on the booking/store screen — never copied from the
+  /// old item.
+  void _rebook(HistoryItem item) {
+    if (item.kind == 'order') {
+      _reorderDelivery(item);
+      return;
+    }
+    if (item.fromLat == null || item.fromLng == null || item.toLat == null || item.toLng == null) return;
+    final from = PlaceResult(item.fromArea ?? '', item.fromLat!, item.fromLng!);
+    final to = PlaceResult(item.toArea ?? '', item.toLat!, item.toLng!);
+    Navigator.of(context).push(MaterialPageRoute(
+      builder: (_) => item.rideType == 'airport' ? AirportScreen(initialFrom: from, initialAirport: to) : RidesScreen(initialFrom: from, initialTo: to),
+    ));
+  }
+
+  Future<void> _reorderDelivery(HistoryItem item) async {
+    final storeId = item.storeId;
+    final items = item.items;
+    if (storeId == null || items == null || items.isEmpty) return;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(child: CircularProgressIndicator()),
+    );
+
+    final repo = StoresRepository();
+    StoreRow? store;
+    List<ProductRow> products = [];
+    try {
+      store = await repo.fetchStore(storeId);
+      if (store != null) {
+        products = (await repo.fetchProducts(storeId)).where((p) => p.isAvailable).toList();
+      }
+    } catch (_) {
+      store = null;
+    }
+
+    if (!mounted) return;
+    Navigator.of(context).pop();
+
+    if (store == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.tr('invoices_reorder_store_unavailable'))),
+      );
+      return;
+    }
+
+    final cart = CartStore.instance;
+    if (cart.storeId != null && cart.storeId != store.id) cart.clear();
+    var missing = 0;
+    for (final it in items) {
+      final productId = it['id'] as String?;
+      final qty = (it['qty'] as num?)?.toInt() ?? 1;
+      ProductRow? product;
+      for (final p in products) {
+        if (p.id == productId) {
+          product = p;
+          break;
+        }
+      }
+      if (product == null) {
+        missing++;
+        continue;
+      }
+      cart.setQty(store, product, qty);
+    }
+
+    if (!mounted) return;
+    if (missing > 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('${context.tr('invoices_reorder_some_unavailable_prefix')} $missing ${context.tr('invoices_reorder_some_unavailable_suffix')}')),
+      );
+    }
+    Navigator.of(context).push(MaterialPageRoute(builder: (_) => StoreDetailScreen(store: store!)));
   }
 
   bool _withinPeriod(DateTime? date) {
@@ -439,11 +527,16 @@ class _OrdersScreenState extends State<OrdersScreen> with SingleTickerProviderSt
                                 final item = filtered[i];
                                 final color = _statusColor[item.status] ?? AppColors.textFaint;
                                 final isRide = item.kind == 'ride';
+                                final canRebook = isRide
+                                    ? (item.fromLat != null && item.fromLng != null && item.toLat != null && item.toLng != null)
+                                    : (item.storeId != null && item.items != null && item.items!.isNotEmpty);
                                 return Material(
                                   color: context.surfaceColor,
                                   borderRadius: BorderRadius.circular(16),
-                                  child: InkWell(
-                                    borderRadius: BorderRadius.circular(16),
+                                  child: Column(
+                                    children: [
+                                  InkWell(
+                                    borderRadius: canRebook ? const BorderRadius.vertical(top: Radius.circular(16)) : BorderRadius.circular(16),
                                     onTap: () => Navigator.of(context).push(
                                       MaterialPageRoute(
                                         builder: (_) => isRide
@@ -454,7 +547,7 @@ class _OrdersScreenState extends State<OrdersScreen> with SingleTickerProviderSt
                                     child: Container(
                                       padding: const EdgeInsets.all(14),
                                       decoration: BoxDecoration(
-                                        borderRadius: BorderRadius.circular(16),
+                                        borderRadius: canRebook ? const BorderRadius.vertical(top: Radius.circular(16)) : BorderRadius.circular(16),
                                         border: Border.all(color: context.borderColor),
                                       ),
                                       child: Row(
@@ -499,6 +592,27 @@ class _OrdersScreenState extends State<OrdersScreen> with SingleTickerProviderSt
                                         ],
                                       ),
                                     ),
+                                  ),
+                                  if (canRebook)
+                                    InkWell(
+                                      borderRadius: const BorderRadius.vertical(bottom: Radius.circular(16)),
+                                      onTap: () => _rebook(item),
+                                      child: Container(
+                                        width: double.infinity,
+                                        padding: const EdgeInsets.symmetric(vertical: 8),
+                                        decoration: BoxDecoration(
+                                          borderRadius: const BorderRadius.vertical(bottom: Radius.circular(16)),
+                                          border: Border.all(color: context.borderColor),
+                                          color: AppColors.primary.withValues(alpha: 0.06),
+                                        ),
+                                        child: Text(
+                                          '🔁 ${isRide ? context.tr('invoices_rebook') : context.tr('invoices_reorder')}',
+                                          textAlign: TextAlign.center,
+                                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: AppColors.primary),
+                                        ),
+                                      ),
+                                    ),
+                                    ],
                                   ),
                                 );
                               },

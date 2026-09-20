@@ -16,6 +16,18 @@ class HistoryItem {
   /// rides only: 'local' | 'external' | 'airport' (null for orders, or a
   /// ride row saved before ride_type existed — treated as 'local').
   final String? rideType;
+  // Rides only — raw pickup/dropoff addresses+coordinates, needed to
+  // prefill "احجز تاني" (see orders_screen.dart's rebook button).
+  final String? fromArea;
+  final double? fromLat;
+  final double? fromLng;
+  final String? toArea;
+  final double? toLat;
+  final double? toLng;
+  // Orders only — needed for "اطلب تاني" (reopen the store with the same
+  // items re-added to the cart).
+  final String? storeId;
+  final List<Map<String, dynamic>>? items;
 
   HistoryItem({
     required this.kind,
@@ -26,6 +38,14 @@ class HistoryItem {
     required this.total,
     required this.createdAt,
     this.rideType,
+    this.fromArea,
+    this.fromLat,
+    this.fromLng,
+    this.toArea,
+    this.toLat,
+    this.toLng,
+    this.storeId,
+    this.items,
   });
 }
 
@@ -136,13 +156,15 @@ class OrdersRepository {
           .from('orders')
           // 'source' and 'icon' were guessed wrong (confirmed via direct
           // REST probing — neither exists on this table) and removed.
-          .select('id,status,store_name,total,created_at')
+          // store_id/items added for "اطلب تاني" (see orders_screen.dart).
+          .select('id,status,store_name,total,created_at,store_id,items')
           .or(filter)
           .order('created_at', ascending: false)
           .limit(50),
       sb
           .from('rides')
-          .select('id,status,from_area,to_area,fare,driver_name,ride_type,created_at')
+          // from_lat/from_lng/to_lat/to_lng added for "احجز تاني".
+          .select('id,status,from_area,to_area,fare,driver_name,ride_type,created_at,from_lat,from_lng,to_lat,to_lng')
           .or(filter)
           .order('created_at', ascending: false)
           .limit(50),
@@ -150,6 +172,7 @@ class OrdersRepository {
 
     final orders = (results[0] as List).map((o) {
       final title = '📦 طلب من ${o['store_name'] ?? 'المتجر'}';
+      final rawItems = o['items'];
       return HistoryItem(
         kind: 'order',
         id: '${o['id']}',
@@ -158,6 +181,8 @@ class OrdersRepository {
         subtitle: statusAr[o['status']] ?? '${o['status']}',
         total: (o['total'] as num?) ?? 0,
         createdAt: DateTime.tryParse(o['created_at'] as String? ?? ''),
+        storeId: o['store_id'] as String?,
+        items: rawItems is List ? rawItems.whereType<Map<String, dynamic>>().toList() : null,
       );
     });
 
@@ -173,6 +198,12 @@ class OrdersRepository {
         total: (r['fare'] as num?) ?? 0,
         createdAt: DateTime.tryParse(r['created_at'] as String? ?? ''),
         rideType: (r['ride_type'] as String?) ?? 'local',
+        fromArea: r['from_area'] as String?,
+        fromLat: (r['from_lat'] as num?)?.toDouble(),
+        fromLng: (r['from_lng'] as num?)?.toDouble(),
+        toArea: r['to_area'] as String?,
+        toLat: (r['to_lat'] as num?)?.toDouble(),
+        toLng: (r['to_lng'] as num?)?.toDouble(),
       );
     });
 
