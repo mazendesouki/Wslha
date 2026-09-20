@@ -2873,7 +2873,7 @@ async function openDriverModal(phone) {
     ])}
 
     ${a.rejection_reason ? `<div style="background:#FEE2E2;border:1px solid #FECACA;border-radius:8px;padding:.75rem 1rem;margin-top:1rem"><span style="font-size:.8rem;font-weight:700;color:#DC2626">سبب الرفض السابق:</span> <span style="font-size:.85rem;color:#DC2626">${a.rejection_reason}</span></div>` : ''}
-    ${a.status !== 'pending' ? `<div style="background:#F8FAFC;border-radius:8px;padding:.75rem 1rem;margin-top:.75rem;font-size:.82rem;color:#64748B">تمت المراجعة بواسطة: ${a.reviewed_by||'—'} — ${fmtDate(a.reviewed_at)}</div>` : ''}
+    ${a.status !== 'pending' ? `<div style="background:#F8FAFC;border-radius:8px;padding:.75rem 1rem;margin-top:.75rem;font-size:.82rem;color:#64748B">تمت المراجعة بواسطة إدارة وصّلها — ${fmtDate(a.reviewed_at)}</div>` : ''}
   `;
   // Hide approve/reject if already decided
   const aBtn = document.getElementById('driver-approve-btn');
@@ -3013,7 +3013,7 @@ async function openMerchantModal(phone) {
       ${docItem('رخصة العمل', a.work_permit_url)}
     </div>
     ${a.rejection_reason ? `<div style="background:#FEE2E2;border:1px solid #FECACA;border-radius:8px;padding:.75rem 1rem;margin-top:1rem"><span style="font-size:.8rem;font-weight:700;color:#DC2626">سبب الرفض السابق:</span> <span style="font-size:.85rem;color:#DC2626">${a.rejection_reason}</span></div>` : ''}
-    ${a.status !== 'pending' ? `<div style="background:#F8FAFC;border-radius:8px;padding:.75rem 1rem;margin-top:.75rem;font-size:.82rem;color:#64748B">تمت المراجعة بواسطة: ${a.reviewed_by||'—'} — ${fmtDate(a.reviewed_at)}</div>` : ''}
+    ${a.status !== 'pending' ? `<div style="background:#F8FAFC;border-radius:8px;padding:.75rem 1rem;margin-top:.75rem;font-size:.82rem;color:#64748B">تمت المراجعة بواسطة إدارة وصّلها — ${fmtDate(a.reviewed_at)}</div>` : ''}
   `;
   const hide = a.status !== 'pending';
   document.getElementById('merchant-approve-btn').classList.toggle('hidden', hide);
