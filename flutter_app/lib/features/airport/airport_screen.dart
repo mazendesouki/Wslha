@@ -22,7 +22,12 @@ import 'airport_repository.dart';
 /// comes back; falls back to haversine × road factor (same fallback
 /// rides_screen.dart uses) while it's in flight or if it fails.
 class AirportScreen extends StatefulWidget {
-  const AirportScreen({super.key});
+  // Prefills the pickup/airport fields — used by "احجز تاني" (rebook) on
+  // invoices_screen.dart's ride history. Left null for a normal fresh
+  // booking.
+  final PlaceResult? initialFrom;
+  final PlaceResult? initialAirport;
+  const AirportScreen({super.key, this.initialFrom, this.initialAirport});
 
   @override
   State<AirportScreen> createState() => _AirportScreenState();
@@ -88,6 +93,8 @@ class _AirportScreenState extends State<AirportScreen> {
   @override
   void initState() {
     super.initState();
+    _from = widget.initialFrom;
+    _airport = widget.initialAirport;
     SessionStore.load().then((s) {
       if (!mounted || s == null) return;
       setState(() {
@@ -633,6 +640,7 @@ class _AirportScreenState extends State<AirportScreen> {
                 hint: context.tr('airport_origin_hint'),
                 showLocationButton: true,
                 prefixIcon: Icons.trip_origin,
+                initialValue: widget.initialFrom,
                 onSelected: (r) => setState(() => _from = r),
               ),
               const SizedBox(height: 12),
@@ -641,6 +649,7 @@ class _AirportScreenState extends State<AirportScreen> {
                 hint: context.tr('airport_airport_hint'),
                 placesTypes: 'airport',
                 prefixIcon: Icons.flight_takeoff,
+                initialValue: widget.initialAirport,
                 onSelected: (r) => setState(() => _airport = r),
               ),
               const SizedBox(height: 12),

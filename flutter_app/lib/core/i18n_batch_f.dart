@@ -49,6 +49,7 @@ const Map<String, Map<String, String>> batchFStrings = {
   'invoices_order_prefix': {'ar': '📦 طلب من', 'en': '📦 Order from'},
   'invoices_default_store': {'ar': 'المتجر', 'en': 'the store'},
   'invoices_airport_prefix': {'ar': '✈️ توصيل مطار —', 'en': '✈️ Airport transfer —'},
+  'invoices_rebook': {'ar': 'احجز تاني', 'en': 'Book again'},
 
   // order_invoice_screen.dart
   'order_invoice_default_store': {'ar': 'المتجر', 'en': 'the store'},

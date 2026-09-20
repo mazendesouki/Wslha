@@ -7,9 +7,12 @@ import '../../core/i18n.dart';
 import '../../core/phone_utils.dart';
 import '../../core/supabase_client.dart';
 import '../../core/theme.dart';
+import '../airport/airport_screen.dart';
 import '../orders/order_invoice_screen.dart';
 import '../orders/orders_repository.dart' show statusAr;
+import '../rides/places_service.dart' show PlaceResult;
 import '../rides/ride_invoice_screen.dart';
+import '../rides/rides_screen.dart';
 
 const Map<String, Color> _statusColor = {
   'delivered': AppColors.success,
@@ -32,6 +35,11 @@ class _InvoiceRow {
   final String subtitle;
   final num total;
   final DateTime? createdAt;
+  // Only set for kind == 'ride'/'airport' — the raw addresses/coordinates
+  // needed to prefill a rebooking (see "احجز تاني" below). Null for 'order'
+  // rows, which have no equivalent rebook flow.
+  final PlaceResult? rebookFrom;
+  final PlaceResult? rebookTo;
   const _InvoiceRow({
     required this.kind,
     required this.id,
@@ -40,6 +48,8 @@ class _InvoiceRow {
     required this.subtitle,
     required this.total,
     required this.createdAt,
+    this.rebookFrom,
+    this.rebookTo,
   });
 }
 
@@ -144,6 +154,10 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
     for (final r in ridesById.values) {
       final rideType = (r['ride_type'] as String?) ?? 'local';
       final isAirport = rideType == 'airport';
+      final fromLat = (r['from_lat'] as num?)?.toDouble();
+      final fromLng = (r['from_lng'] as num?)?.toDouble();
+      final toLat = (r['to_lat'] as num?)?.toDouble();
+      final toLng = (r['to_lng'] as num?)?.toDouble();
       rows.add(_InvoiceRow(
         kind: isAirport ? 'airport' : 'ride',
         id: '${r['id']}',
@@ -152,6 +166,8 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
         subtitle: statusAr[r['status']] ?? '${r['status']}',
         total: (r['fare'] as num?) ?? 0,
         createdAt: DateTime.tryParse(r['created_at'] as String? ?? ''),
+        rebookFrom: fromLat != null && fromLng != null ? PlaceResult(r['from_area'] as String? ?? '', fromLat, fromLng) : null,
+        rebookTo: toLat != null && toLng != null ? PlaceResult(r['to_area'] as String? ?? '', toLat, toLng) : null,
       ));
     }
 
@@ -162,6 +178,20 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
   void _openInvoice(_InvoiceRow row) {
     Navigator.of(context).push(MaterialPageRoute(
       builder: (_) => row.kind == 'order' ? OrderInvoiceScreen(orderId: row.id) : RideInvoiceScreen(rideId: row.id),
+    ));
+  }
+
+  /// "احجز تاني" — reopens the booking screen with this past trip's
+  /// addresses prefilled, so the customer doesn't have to retype them.
+  /// Distance/fare are always recomputed fresh on the booking screen
+  /// itself (never copied from the old invoice), so any pricing or traffic
+  /// change since the original trip is reflected correctly.
+  void _rebook(_InvoiceRow row) {
+    if (row.rebookFrom == null || row.rebookTo == null) return;
+    Navigator.of(context).push(MaterialPageRoute(
+      builder: (_) => row.kind == 'airport'
+          ? AirportScreen(initialFrom: row.rebookFrom, initialAirport: row.rebookTo)
+          : RidesScreen(initialFrom: row.rebookFrom, initialTo: row.rebookTo),
     ));
   }
 
@@ -230,44 +260,76 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
 
   Widget _invoiceTile(_InvoiceRow row) {
     final color = _statusColor[row.status] ?? AppColors.textFaint;
+    final canRebook = row.rebookFrom != null && row.rebookTo != null;
     return Material(
       color: context.surfaceColor,
       borderRadius: BorderRadius.circular(14),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(14),
-        onTap: () => _openInvoice(row),
-        child: Container(
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(borderRadius: BorderRadius.circular(14), border: Border.all(color: context.borderColor)),
-          child: Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(row.title, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13), maxLines: 1, overflow: TextOverflow.ellipsis),
-                    const SizedBox(height: 4),
-                    Row(
+      child: Column(
+        children: [
+          InkWell(
+            borderRadius: BorderRadius.circular(14),
+            onTap: () => _openInvoice(row),
+            child: Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                borderRadius: canRebook ? const BorderRadius.vertical(top: Radius.circular(14)) : BorderRadius.circular(14),
+                border: Border.all(color: context.borderColor),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                          decoration: BoxDecoration(color: color.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(999)),
-                          child: Text(row.subtitle, style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: color)),
+                        Text(row.title, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13), maxLines: 1, overflow: TextOverflow.ellipsis),
+                        const SizedBox(height: 4),
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                              decoration: BoxDecoration(color: color.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(999)),
+                              child: Text(row.subtitle, style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: color)),
+                            ),
+                            const SizedBox(width: 8),
+                            if (row.createdAt != null)
+                              Text(arDateTime(row.createdAt!), style: const TextStyle(fontSize: 10, color: AppColors.textFaint)),
+                          ],
                         ),
-                        const SizedBox(width: 8),
-                        if (row.createdAt != null)
-                          Text(arDateTime(row.createdAt!), style: const TextStyle(fontSize: 10, color: AppColors.textFaint)),
                       ],
                     ),
-                  ],
+                  ),
+                  const SizedBox(width: 8),
+                  Text('${row.total} ج.م', style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 13, color: AppColors.success)),
+                  const Icon(Icons.chevron_left, color: AppColors.textFaint),
+                ],
+              ),
+            ),
+          ),
+          if (canRebook)
+            InkWell(
+              borderRadius: const BorderRadius.vertical(bottom: Radius.circular(14)),
+              onTap: () => _rebook(row),
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                decoration: BoxDecoration(
+                  borderRadius: const BorderRadius.vertical(bottom: Radius.circular(14)),
+                  border: Border(
+                    left: BorderSide(color: context.borderColor),
+                    right: BorderSide(color: context.borderColor),
+                    bottom: BorderSide(color: context.borderColor),
+                    top: BorderSide(color: context.borderColor),
+                  ),
+                  color: AppColors.primary.withValues(alpha: 0.06),
+                ),
+                child: Text(
+                  '🔁 ${context.tr('invoices_rebook')}',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: AppColors.primary),
                 ),
               ),
-              const SizedBox(width: 8),
-              Text('${row.total} ج.م', style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 13, color: AppColors.success)),
-              const Icon(Icons.chevron_left, color: AppColors.textFaint),
-            ],
-          ),
-        ),
+            ),
+        ],
       ),
     );
   }

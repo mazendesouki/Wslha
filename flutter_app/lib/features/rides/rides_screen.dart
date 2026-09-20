@@ -18,7 +18,13 @@ import 'scheduled_rides_screen.dart';
 const int _maxStops = 3;
 
 class RidesScreen extends StatefulWidget {
-  const RidesScreen({super.key});
+  // Prefills the from/destination fields — used by "احجز تاني" (rebook)
+  // on invoices_screen.dart's ride history, so a customer can reuse a past
+  // trip's addresses instead of typing them again. Left null for a normal
+  // fresh booking.
+  final PlaceResult? initialFrom;
+  final PlaceResult? initialTo;
+  const RidesScreen({super.key, this.initialFrom, this.initialTo});
 
   @override
   State<RidesScreen> createState() => _RidesScreenState();
@@ -31,7 +37,7 @@ class _RidesScreenState extends State<RidesScreen> {
   // Sequential stops — the last non-null one is the ride's real
   // destination; any before it are intermediate waypoints (e.g. an errand
   // stop) passed to createRide as `stops`.
-  final List<PlaceResult?> _stops = [null];
+  late List<PlaceResult?> _stops;
   int _passengers = 1;
   String _payment = 'cash';
   // 'regular' | 'ac' — same tier system airport rides already use (see
@@ -118,6 +124,8 @@ class _RidesScreenState extends State<RidesScreen> {
   @override
   void initState() {
     super.initState();
+    _from = widget.initialFrom;
+    _stops = [widget.initialTo];
     SessionStore.load().then((s) => setState(() => _session = s));
   }
 
@@ -335,6 +343,7 @@ class _RidesScreenState extends State<RidesScreen> {
                       hint: context.tr('rides_from_hint'),
                       showLocationButton: true,
                       prefixIcon: Icons.trip_origin,
+                      initialValue: widget.initialFrom,
                       onSelected: (r) => setState(() => _from = r),
                     ),
                     const SizedBox(height: 12),
@@ -348,6 +357,7 @@ class _RidesScreenState extends State<RidesScreen> {
                               label: _stopLabel(i),
                               hint: i == _stops.length - 1 ? context.tr('rides_stop_hint_final') : context.tr('rides_stop_hint_waypoint'),
                               prefixIcon: i == _stops.length - 1 ? Icons.flag_outlined : Icons.location_on_outlined,
+                              initialValue: _stops[i],
                               onSelected: (r) => setState(() => _stops[i] = r),
                             ),
                           ),

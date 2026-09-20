@@ -20,6 +20,10 @@ class AddressField extends StatefulWidget {
   /// vs. a flag for the destination) — optional so callers that don't set
   /// one keep the plain look.
   final IconData? prefixIcon;
+  /// Pre-fills both the text field and the value reported via onSelected —
+  /// used by "احجز تاني" (rebook) so a reused past trip's address shows up
+  /// immediately instead of an empty field the customer has to retype.
+  final PlaceResult? initialValue;
 
   const AddressField({
     super.key,
@@ -29,6 +33,7 @@ class AddressField extends StatefulWidget {
     this.showLocationButton = false,
     this.placesTypes,
     this.prefixIcon,
+    this.initialValue,
   });
 
   @override
@@ -36,7 +41,7 @@ class AddressField extends StatefulWidget {
 }
 
 class _AddressFieldState extends State<AddressField> {
-  final _controller = TextEditingController();
+  late final _controller = TextEditingController(text: widget.initialValue?.name ?? '');
   final _places = PlacesService();
   Timer? _debounce;
   List<PlaceSuggestion> _suggestions = [];
