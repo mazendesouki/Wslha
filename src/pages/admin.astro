@@ -207,6 +207,22 @@
     .pass-gate__cancel{flex:1;background:var(--card-2);color:var(--tx3);border:none;border-radius:var(--radius);padding:.65rem;font-weight:700;font-size:.9rem;cursor:pointer}
     .pass-gate__cancel:hover{background:var(--bdr)}
 
+    /* Yes/no confirmation — replaces the native browser confirm() the same
+       way #pass-gate replaces prompt(). A dimmed backdrop (not an opaque
+       full takeover — this is a quick decision, not an identity gate) with
+       a branded card instead of the "site says" dialog. */
+    .confirm-gate{position:fixed;inset:0;z-index:99999;display:none;align-items:center;justify-content:center;padding:1rem;background:rgba(8,23,22,.6)}
+    .confirm-gate__box{background:var(--card);border-radius:var(--radius-lg);max-width:380px;width:100%;padding:1.75rem;text-align:center;box-shadow:0 30px 70px rgba(0,0,0,.35)}
+    .confirm-gate__icon{width:52px;height:52px;border-radius:50%;margin:0 auto .9rem;background:var(--pr-l);display:flex;align-items:center;justify-content:center;font-size:1.5rem}
+    .confirm-gate__msg{font-size:.92rem;font-weight:700;color:#10201E;line-height:1.6;white-space:pre-line}
+    .confirm-gate__actions{display:flex;gap:.6rem;margin-top:1.4rem}
+    .confirm-gate__ok{flex:1;background:var(--pr);color:#fff;border:none;border-radius:var(--radius);padding:.65rem;font-weight:800;font-size:.9rem;cursor:pointer}
+    .confirm-gate__ok:hover{background:var(--pr2)}
+    .confirm-gate__ok.danger{background:var(--red,#C2362A)}
+    .confirm-gate__ok.danger:hover{background:#9E2B21}
+    .confirm-gate__cancel{flex:1;background:var(--card-2);color:var(--tx3);border:none;border-radius:var(--radius);padding:.65rem;font-weight:700;font-size:.9rem;cursor:pointer}
+    .confirm-gate__cancel:hover{background:var(--bdr)}
+
     /* Doc viewer */
     .doc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:1rem;margin-bottom:1.5rem}
     .doc-card{border:1px solid var(--bdr);border-radius:var(--radius);overflow:hidden}
@@ -282,6 +298,18 @@
     <div class="pass-gate__actions">
       <button type="button" class="pass-gate__cancel" id="pass-gate-cancel">إلغاء</button>
       <button type="button" class="pass-gate__ok" id="pass-gate-ok">تأكيد</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Yes/no confirmation gate — replaces window.confirm() ──── -->
+<div class="confirm-gate" id="confirm-gate">
+  <div class="confirm-gate__box">
+    <div class="confirm-gate__icon" id="confirm-gate-icon">⚠️</div>
+    <div class="confirm-gate__msg" id="confirm-gate-msg"></div>
+    <div class="confirm-gate__actions">
+      <button type="button" class="confirm-gate__cancel" id="confirm-gate-cancel">إلغاء</button>
+      <button type="button" class="confirm-gate__ok" id="confirm-gate-ok">تأكيد</button>
     </div>
   </div>
 </div>
@@ -1822,6 +1850,39 @@ function clearAdminPass() {
 async function getActionKey() {
   return await showPassGate('🔒 إجراء حسّاس', 'أدخل مفتاح الأمان للتأكيد');
 }
+
+// Promise-based replacement for window.confirm() — same pattern as
+// showPassGate(). `danger` reddens the confirm button for destructive
+// actions (delete/reject) instead of the neutral brand color.
+function showConfirmGate(message, { danger = false, icon } = {}) {
+  return new Promise((resolve) => {
+    const gate = document.getElementById('confirm-gate');
+    const okBtn = document.getElementById('confirm-gate-ok');
+    const cancelBtn = document.getElementById('confirm-gate-cancel');
+    document.getElementById('confirm-gate-msg').textContent = message;
+    document.getElementById('confirm-gate-icon').textContent = icon || (danger ? '🗑️' : '⚠️');
+    okBtn.classList.toggle('danger', danger);
+    gate.style.display = 'flex';
+
+    function cleanup(result) {
+      gate.style.display = 'none';
+      okBtn.removeEventListener('click', onOk);
+      cancelBtn.removeEventListener('click', onCancel);
+      document.removeEventListener('keydown', onKey);
+      resolve(result);
+    }
+    function onOk() { cleanup(true); }
+    function onCancel() { cleanup(false); }
+    function onKey(e) {
+      if (e.key === 'Enter') onOk();
+      else if (e.key === 'Escape') onCancel();
+    }
+    okBtn.addEventListener('click', onOk);
+    cancelBtn.addEventListener('click', onCancel);
+    document.addEventListener('keydown', onKey);
+  });
+}
+
 async function sbRpc(fn, body) {
   try {
     const r = await fetch(`${SB_URL}/rest/v1/rpc/${fn}`, {
@@ -2273,7 +2334,7 @@ async function changeUserStatus(phone, status) {
   else { clearAdminPass(); showToast('❌ حدث خطأ', '#DC2626'); }
 }
 async function makeAdmin(phone) {
-  if (!confirm('منح صلاحيات المشرف لهذا المستخدم؟')) return;
+  if (!(await showConfirmGate('منح صلاحيات المشرف لهذا المستخدم؟'))) return;
   const pass = await getAdminPass();
   if (!pass) return;
   const key = await getActionKey();
@@ -2285,7 +2346,7 @@ async function makeAdmin(phone) {
 async function deleteUser(phone) {
   const user = allUsers.find(u => u.phone === phone);
   const roleAr = { driver:'سائق', merchant:'تاجر', customer:'عميل', admin:'مشرف' }[user?.role] || user?.role || '';
-  if (!confirm(`⚠️ حذف حساب ${roleAr} "${user?.name || phone}"؟\nسيتم حذف جميع بياناته المرتبطة. هذا الإجراء لا يمكن التراجع عنه.`)) return;
+  if (!(await showConfirmGate(`حذف حساب ${roleAr} "${user?.name || phone}"؟\nسيتم حذف جميع بياناته المرتبطة. هذا الإجراء لا يمكن التراجع عنه.`, { danger: true }))) return;
   const pass = await getAdminPass();
   if (!pass) return;
   const key = await getActionKey();
@@ -2301,7 +2362,7 @@ async function changeUserRole(phone, role) {
   if (!role) return;
   // الترقية لمشرف مش من هنا — لها زرّها الخاص (makeAdmin) بتأكيد كلمة مرور
   // ومفتاح أمان، عشان متحصلش بالغلط من ضغطة في قائمة عادية.
-  if (!confirm(`تغيير دور هذا المستخدم إلى "${{driver:'سائق',merchant:'تاجر',customer:'عميل'}[role]||role}"؟`)) {
+  if (!(await showConfirmGate(`تغيير دور هذا المستخدم إلى "${{driver:'سائق',merchant:'تاجر',customer:'عميل'}[role]||role}"؟`))) {
     renderUsers(); return;
   }
   const pass = await getAdminPass(); if (!pass) return;
@@ -2903,7 +2964,7 @@ function toggleReject(type) {
 
 async function confirmApprove(type) {
   const phone = type === 'driver' ? currentDriverPhone : currentMerchantPhone;
-  if (!confirm(`اعتماد هذا الطلب؟`)) return;
+  if (!(await showConfirmGate(`اعتماد هذا الطلب؟`))) return;
   const pass = await getAdminPass();
   if (!pass) return;
   const ok = await sbRpc('admin_review_application', {
@@ -2922,7 +2983,7 @@ async function confirmReject(type) {
   const phone  = type === 'driver' ? currentDriverPhone : currentMerchantPhone;
   const reason = document.getElementById(`${type}-reject-reason`).value.trim();
   if (!reason) { showToast('⚠️ أدخل سبب الرفض', '#D97706'); return; }
-  if (!confirm('رفض هذا الطلب؟')) return;
+  if (!(await showConfirmGate('رفض هذا الطلب؟', { danger: true }))) return;
   const pass = await getAdminPass();
   if (!pass) return;
   const ok = await sbRpc('admin_review_application', {
@@ -3018,7 +3079,7 @@ async function courierAccept(id) {
   else { clearAdminPass(); showToast('❌ حدث خطأ', '#DC2626'); }
 }
 async function courierReject(id) {
-  if (!confirm('رفض هذه الشحنة؟')) return;
+  if (!(await showConfirmGate('رفض هذه الشحنة؟', { danger: true }))) return;
   const pass = await getAdminPass(); if (!pass) return;
   const ok = await sbRpc('admin_set_order_status', { p_admin_phone: ADMIN.phone, p_admin_password: pass, p_order_id: id, p_status: 'rejected' });
   if (ok) { showToast('تم رفض الشحنة', '#DC2626'); loadCourierOrders(); }
@@ -3075,7 +3136,7 @@ async function merchantDeliveryAccept(id) {
   else { clearAdminPass(); showToast('❌ حدث خطأ', '#DC2626'); }
 }
 async function merchantDeliveryReject(id) {
-  if (!confirm('رفض هذا الطلب؟')) return;
+  if (!(await showConfirmGate('رفض هذا الطلب؟', { danger: true }))) return;
   const pass = await getAdminPass(); if (!pass) return;
   const ok = await sbRpc('admin_set_order_status', { p_admin_phone: ADMIN.phone, p_admin_password: pass, p_order_id: id, p_status: 'rejected' });
   if (ok) { showToast('تم رفض الطلب', '#DC2626'); loadMerchantDeliveries(); }
@@ -3155,7 +3216,7 @@ async function generalDeliveryAccept(id) {
   else { clearAdminPass(); showToast('❌ حدث خطأ', '#DC2626'); }
 }
 async function generalDeliveryReject(id) {
-  if (!confirm('رفض هذا الطلب؟')) return;
+  if (!(await showConfirmGate('رفض هذا الطلب؟', { danger: true }))) return;
   const pass = await getAdminPass(); if (!pass) return;
   const ok = await sbRpc('admin_set_order_status', { p_admin_phone: ADMIN.phone, p_admin_password: pass, p_order_id: id, p_status: 'rejected' });
   if (ok) { showToast('تم رفض الطلب', '#DC2626'); loadGeneralDeliveries(); }
@@ -3335,7 +3396,7 @@ async function saveOrderStatus() {
   } else { clearAdminPass(); showToast('❌ حدث خطأ', '#DC2626'); }
 }
 async function deleteCurrentOrder() {
-  if (!confirm('حذف هذا الطلب نهائياً؟')) return;
+  if (!(await showConfirmGate('حذف هذا الطلب نهائياً؟', { danger: true }))) return;
   const pass = await getAdminPass(); if (!pass) return;
   const ok = await sbRpc('admin_delete_order', { p_admin_phone: ADMIN.phone, p_admin_password: pass, p_order_id: currentOrderId });
   if (ok) { showToast('✅ تم الحذف', '#16A34A'); closeModal('order-modal'); loadOrders(); }
@@ -3436,7 +3497,7 @@ async function toggleStore(id, is_active) {
   else { showToast('❌ حدث خطأ', '#DC2626'); loadStores(); }
 }
 async function deleteStore(id) {
-  if (!confirm('حذف هذا المتجر نهائياً؟')) return;
+  if (!(await showConfirmGate('حذف هذا المتجر نهائياً؟', { danger: true }))) return;
   const ok = await sbDelete(`stores?id=eq.${encodeURIComponent(id)}`);
   if (ok) { showToast('✅ تم الحذف', '#16A34A'); loadStores(); }
   else showToast('❌ حدث خطأ', '#DC2626');
@@ -3484,7 +3545,7 @@ document.getElementById('mkt-admin-status').addEventListener('change', renderMar
 
 async function marketplaceModerate(itemId, action) {
   const msg = action === 'approve' ? 'اعتماد هذا الإعلان وإرجاعه للعرض العام؟' : 'حذف هذا الإعلان نهائياً؟';
-  if (!confirm(msg)) return;
+  if (!(await showConfirmGate(msg, { danger: action !== 'approve' }))) return;
   const pass = await getAdminPass();
   if (!pass) return;
   const ok = await sbRpc('admin_moderate_item', { p_admin_phone: ADMIN.phone, p_admin_password: pass, p_item_id: itemId, p_action: action });
@@ -4523,7 +4584,7 @@ async function adminSettlePlatform() {
   const key = await getActionKey();
   if (!key) return;
 
-  if (!confirm(`تأكيد سحب ${amount.toFixed(2)} ج.م من أرباح المنصة؟`)) return;
+  if (!(await showConfirmGate(`تأكيد سحب ${amount.toFixed(2)} ج.م من أرباح المنصة؟`))) return;
 
   try {
     const result = await sbRpcJson('admin_withdraw_platform_profit', {
