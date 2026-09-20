@@ -8,35 +8,33 @@
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap');
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-    body{font-family:'Cairo',system-ui,sans-serif;background:#0F172A;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:1rem}
-    .card{background:#1E293B;border:1px solid #334155;border-radius:16px;padding:2.5rem;width:100%;max-width:420px;box-shadow:0 25px 50px rgba(0,0,0,0.5)}
-    .logo{text-align:center;margin-bottom:2rem}
-    .logo-name{font-size:2.2rem;font-weight:900;background:linear-gradient(135deg,#0E4B49,#3FA79A);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-    .logo-sub{font-size:.8rem;color:#64748B;margin-top:.25rem}
-    h1{font-size:1.3rem;font-weight:700;color:#F1F5F9;text-align:center;margin-bottom:.5rem}
-    .subtitle{font-size:.85rem;color:#64748B;text-align:center;margin-bottom:2rem}
-    .field{margin-bottom:1.2rem}
-    label{display:block;font-size:.8rem;font-weight:700;color:#94A3B8;margin-bottom:.5rem;text-transform:uppercase;letter-spacing:.05em}
-    input{width:100%;padding:.75rem 1rem;background:#0F172A;border:1.5px solid #334155;border-radius:8px;color:#F1F5F9;font-family:inherit;font-size:1rem;transition:border-color .2s}
-    input:focus{outline:none;border-color:#0E4B49}
-    input::placeholder{color:#475569}
-    .btn{width:100%;padding:.9rem;background:#0E4B49;color:#fff;border:none;border-radius:8px;font-family:inherit;font-size:1rem;font-weight:700;cursor:pointer;transition:background .2s,transform .2s;margin-top:.5rem}
-    .btn:hover{background:#082F2E;transform:translateY(-1px)}
-    .btn:disabled{opacity:.6;cursor:not-allowed;transform:none}
-    .error{background:#FEE2E2;color:#DC2626;padding:.75rem 1rem;border-radius:8px;font-size:.875rem;font-weight:600;margin-bottom:1rem;display:none}
-    .back{display:block;text-align:center;margin-top:1.5rem;font-size:.85rem;color:#64748B;text-decoration:none}
-    .back:hover{color:#94A3B8}
-    .shield{font-size:2.5rem;text-align:center;margin-bottom:1rem}
+    :root{--pr:#0E4B49;--pr2:#082F2E;--pr3:#3FA79A;--tx3:#5C716D;--bdr:#DCE6E3;--card-2:#EAF0EE}
+    /* Same identity as admin.astro's password/confirm gates — a centered
+       white card with the app's gradient mark, on the green brand
+       background, instead of the old dark navy "generic SaaS login" card. */
+    body{font-family:'Cairo',system-ui,sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:1rem;
+      background:radial-gradient(circle at 50% 0%,var(--pr3) 0%,var(--pr) 45%,var(--pr2) 100%)}
+    .card{background:#fff;border-radius:16px;padding:2rem 1.75rem 1.75rem;width:100%;max-width:380px;box-shadow:0 30px 70px rgba(0,0,0,.35);text-align:center}
+    .logo-mark{width:58px;height:58px;border-radius:14px;margin:0 auto .9rem;background:linear-gradient(135deg,var(--pr3),var(--pr));display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:1.6rem;box-shadow:0 10px 24px -8px rgba(63,167,154,.6)}
+    h1{font-size:1.05rem;font-weight:900;color:#10201E}
+    .subtitle{font-size:.8rem;color:var(--tx3);margin-top:.3rem;margin-bottom:1.5rem}
+    .field{margin-bottom:1.1rem;text-align:right}
+    label{display:block;font-size:.78rem;font-weight:700;color:var(--tx3);margin-bottom:.4rem}
+    input{width:100%;padding:.7rem .9rem;background:#fff;border:1.5px solid var(--bdr);border-radius:9px;color:#10201E;font-family:inherit;font-size:.95rem;transition:border-color .2s}
+    input:focus{outline:none;border-color:var(--pr3)}
+    input::placeholder{color:#9DB3AF}
+    .btn{width:100%;padding:.75rem;background:var(--pr);color:#fff;border:none;border-radius:9px;font-family:inherit;font-size:.95rem;font-weight:800;cursor:pointer;transition:background .2s;margin-top:.6rem}
+    .btn:hover{background:var(--pr2)}
+    .btn:disabled{opacity:.6;cursor:not-allowed}
+    .error{background:#FEE2E2;color:#DC2626;padding:.7rem .9rem;border-radius:9px;font-size:.82rem;font-weight:700;margin-bottom:1rem;display:none;text-align:center}
+    .back{display:block;text-align:center;margin-top:1.3rem;font-size:.8rem;color:var(--tx3);text-decoration:none}
+    .back:hover{color:var(--pr)}
   </style>
 </head>
 <body>
   <div class="card">
-    <div class="logo">
-      <div class="logo-name">وصّلها</div>
-      <div class="logo-sub">لوحة التحكم الإدارية</div>
-    </div>
-    <div class="shield">🛡️</div>
-    <h1>دخول المشرفين</h1>
+    <div class="logo-mark">و</div>
+    <h1>لوحة تحكم المشرفين</h1>
     <p class="subtitle">هذه المنطقة مخصصة للمشرفين المخوّلين فقط</p>
     <div class="error" id="err"></div>
     <form id="admin-login-form" novalidate>
