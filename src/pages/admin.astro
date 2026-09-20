@@ -907,26 +907,26 @@
       </div>
 
       <!-- Message detail modal -->
-      <div id="msg-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:1000;align-items:center;justify-content:center;padding:1rem">
-        <div style="background:#1E293B;border-radius:12px;padding:1.5rem;max-width:580px;width:100%;border:1px solid #334155;max-height:90vh;overflow-y:auto">
+      <div id="msg-modal" style="display:none;position:fixed;inset:0;background:rgba(8,23,22,.6);z-index:1000;align-items:center;justify-content:center;padding:1rem">
+        <div style="background:#fff;border-radius:14px;padding:1.5rem;max-width:580px;width:100%;box-shadow:0 30px 70px rgba(0,0,0,.35);max-height:90vh;overflow-y:auto">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
-            <h3 style="font-size:1rem;font-weight:800;color:#f1f5f9" id="msg-modal-subject">—</h3>
-            <button onclick="document.getElementById('msg-modal').style.display='none'" style="background:none;border:none;color:#94A3B8;font-size:1.2rem;cursor:pointer">✕</button>
+            <h3 style="font-size:1rem;font-weight:800;color:#10201E;display:inline-flex;align-items:center;gap:.5rem"><span style="width:22px;height:22px;border-radius:6px;flex-shrink:0;background:linear-gradient(135deg,#3FA79A,#0E4B49);color:#fff;font-weight:800;font-size:.75rem;display:flex;align-items:center;justify-content:center">و</span><span id="msg-modal-subject">—</span></h3>
+            <button onclick="document.getElementById('msg-modal').style.display='none'" style="background:none;border:none;color:#5C716D;font-size:1.2rem;cursor:pointer">✕</button>
           </div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-bottom:1rem">
-            <div><div style="font-size:.7rem;color:#64748B;margin-bottom:2px">الاسم</div><div style="font-size:.875rem;color:#f1f5f9;font-weight:700" id="msg-modal-name">—</div></div>
-            <div><div style="font-size:.7rem;color:#64748B;margin-bottom:2px">الجوال</div><div style="font-size:.875rem;color:#f1f5f9;font-weight:700" id="msg-modal-phone">—</div></div>
-            <div><div style="font-size:.7rem;color:#64748B;margin-bottom:2px">البريد</div><div style="font-size:.875rem;color:#3B82F6" id="msg-modal-email">—</div></div>
-            <div><div style="font-size:.7rem;color:#64748B;margin-bottom:2px">التاريخ</div><div style="font-size:.875rem;color:#f1f5f9" id="msg-modal-date">—</div></div>
+            <div><div style="font-size:.7rem;color:#5C716D;margin-bottom:2px">الاسم</div><div style="font-size:.875rem;color:#10201E;font-weight:700" id="msg-modal-name">—</div></div>
+            <div><div style="font-size:.7rem;color:#5C716D;margin-bottom:2px">الجوال</div><div style="font-size:.875rem;color:#10201E;font-weight:700" id="msg-modal-phone">—</div></div>
+            <div><div style="font-size:.7rem;color:#5C716D;margin-bottom:2px">البريد</div><div style="font-size:.875rem;color:#0E4B49" id="msg-modal-email">—</div></div>
+            <div><div style="font-size:.7rem;color:#5C716D;margin-bottom:2px">التاريخ</div><div style="font-size:.875rem;color:#10201E" id="msg-modal-date">—</div></div>
           </div>
-          <div style="background:#0F172A;border-radius:8px;padding:1rem;margin-bottom:1rem">
-            <div style="font-size:.7rem;color:#64748B;margin-bottom:.5rem">الرسالة</div>
-            <p style="font-size:.875rem;color:#e2e8f0;line-height:1.7;white-space:pre-wrap" id="msg-modal-body">—</p>
+          <div style="background:#EAF0EE;border-radius:8px;padding:1rem;margin-bottom:1rem">
+            <div style="font-size:.7rem;color:#5C716D;margin-bottom:.5rem">الرسالة</div>
+            <p style="font-size:.875rem;color:#10201E;line-height:1.7;white-space:pre-wrap" id="msg-modal-body">—</p>
           </div>
           <div style="display:flex;gap:.75rem;flex-wrap:wrap">
-            <button id="msg-mark-read" style="padding:.5rem 1rem;background:#3B82F6;color:#fff;border:none;border-radius:6px;font-size:.8rem;font-weight:700;cursor:pointer">✓ تحديد كمقروء</button>
+            <button id="msg-mark-read" style="padding:.5rem 1rem;background:#0E4B49;color:#fff;border:none;border-radius:6px;font-size:.8rem;font-weight:700;cursor:pointer">✓ تحديد كمقروء</button>
             <button id="msg-mark-replied" style="padding:.5rem 1rem;background:#16A34A;color:#fff;border:none;border-radius:6px;font-size:.8rem;font-weight:700;cursor:pointer">↩ تم الرد</button>
-            <button id="msg-reply-email" style="padding:.5rem 1rem;background:#F59E0B;color:#fff;border:none;border-radius:6px;font-size:.8rem;font-weight:700;cursor:pointer">✉ رد بالبريد</button>
+            <button id="msg-reply-email" style="padding:.5rem 1rem;background:#D97706;color:#fff;border:none;border-radius:6px;font-size:.8rem;font-weight:700;cursor:pointer">✉ رد بالبريد</button>
           </div>
         </div>
       </div>
@@ -948,13 +948,13 @@
       </div>
 
       <!-- Conversation thread modal -->
-      <div id="support-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:1000;align-items:center;justify-content:center;padding:1rem">
-        <div style="background:#1E293B;border-radius:12px;padding:1.5rem;max-width:560px;width:100%;border:1px solid #334155;max-height:85vh;display:flex;flex-direction:column">
+      <div id="support-modal" style="display:none;position:fixed;inset:0;background:rgba(8,23,22,.6);z-index:1000;align-items:center;justify-content:center;padding:1rem">
+        <div style="background:#fff;border-radius:14px;padding:1.5rem;max-width:560px;width:100%;box-shadow:0 30px 70px rgba(0,0,0,.35);max-height:85vh;display:flex;flex-direction:column">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
-            <h3 style="font-size:1rem;font-weight:800;color:#f1f5f9" id="support-modal-phone">—</h3>
-            <button onclick="closeSupportModal()" style="background:none;border:none;color:#94A3B8;font-size:1.2rem;cursor:pointer">✕</button>
+            <h3 style="font-size:1rem;font-weight:800;color:#10201E;display:inline-flex;align-items:center;gap:.5rem"><span style="width:22px;height:22px;border-radius:6px;flex-shrink:0;background:linear-gradient(135deg,#3FA79A,#0E4B49);color:#fff;font-weight:800;font-size:.75rem;display:flex;align-items:center;justify-content:center">و</span><span id="support-modal-phone">—</span></h3>
+            <button onclick="closeSupportModal()" style="background:none;border:none;color:#5C716D;font-size:1.2rem;cursor:pointer">✕</button>
           </div>
-          <div id="support-thread" style="flex:1;overflow-y:auto;background:#0F172A;border-radius:8px;padding:.75rem;margin-bottom:1rem;min-height:200px;display:flex;flex-direction:column;gap:.5rem"></div>
+          <div id="support-thread" style="flex:1;overflow-y:auto;background:#EAF0EE;border-radius:8px;padding:.75rem;margin-bottom:1rem;min-height:200px;display:flex;flex-direction:column;gap:.5rem"></div>
           <div style="display:flex;gap:.5rem">
             <input class="search-input" id="support-reply-input" type="text" placeholder="اكتب ردك هنا..." style="flex:1" onkeydown="if(event.key==='Enter')sendSupportReply()"/>
             <button class="btn btn--primary" onclick="sendSupportReply()" id="support-reply-btn">إرسال</button>
