@@ -56,6 +56,7 @@ const Map<String, Map<String, String>> batchHStrings = {
   'address_field_location_permission_needed': {'ar': 'محتاجين إذن الموقع عشان نحدد نقطة انطلاقك', 'en': 'We need location permission to determine your starting point'},
   'address_field_location_service_disabled': {'ar': 'خدمة تحديد الموقع (GPS) مقفولة على جهازك', 'en': 'Location services (GPS) are turned off on your device'},
   'address_field_location_failed': {'ar': 'تعذّر تحديد موقعك، حاول تاني', 'en': 'Could not determine your location, try again'},
+  'address_field_location_timeout': {'ar': 'الموقع بياخد وقت طويل، اكتب العنوان يدويًا أو حاول تاني', 'en': 'Location is taking too long — type the address manually or try again'},
   'address_field_use_current_location': {'ar': 'استخدم موقعي الحالي', 'en': 'Use my current location'},
 
   // features/coupons/coupon_field.dart

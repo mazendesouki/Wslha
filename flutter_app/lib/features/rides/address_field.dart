@@ -93,12 +93,23 @@ class _AddressFieldState extends State<AddressField> {
         });
         return;
       }
-      final pos = await Geolocator.getCurrentPosition();
+      // Reported bug: the spinner span forever with no way out — a GPS fix
+      // can simply never arrive (weak signal, indoors, a device/emulator
+      // with no real GPS) and getCurrentPosition() has no timeout of its
+      // own, so it just hangs. A bounded wait here means _locLoading always
+      // gets reset one way or another.
+      final pos = await Geolocator.getCurrentPosition().timeout(const Duration(seconds: 15));
       final name = await _places.reverseGeocode(pos.latitude, pos.longitude);
       if (!mounted) return;
       _controller.text = name;
       widget.onSelected(PlaceResult(name, pos.latitude, pos.longitude));
       setState(() => _locLoading = false);
+    } on TimeoutException {
+      if (!mounted) return;
+      setState(() {
+        _locLoading = false;
+        _locError = context.tr('address_field_location_timeout');
+      });
     } catch (e) {
       if (!mounted) return;
       setState(() {
