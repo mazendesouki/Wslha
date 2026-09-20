@@ -1,0 +1,45 @@
+// Marketplace (سوق المستعمل) browse/detail/delivery-request screens —
+// kept as its own file per the established parallel-batch pattern (see
+// i18n.dart's merge comment) even though authored solo, to avoid touching
+// the shared i18n.dart map directly.
+const Map<String, Map<String, String>> batchIStrings = {
+  // home_tab.dart
+  'home_service_marketplace_title': {'ar': 'سوق المستعمل', 'en': 'Used market'},
+  'home_service_marketplace_subtitle': {'ar': 'بيع واشتري بسهولة', 'en': 'Buy & sell with ease'},
+
+  // marketplace_list_screen.dart
+  'marketplace_list_title': {'ar': '🛍️ سوق المستعمل', 'en': '🛍️ Used market'},
+  'marketplace_list_search_hint': {'ar': 'دوّر على منتج...', 'en': 'Search for an item...'},
+  'marketplace_list_retry': {'ar': 'حاول تاني', 'en': 'Retry'},
+  'marketplace_list_empty': {'ar': 'مفيش إعلانات دلوقتي', 'en': 'No listings right now'},
+  'marketplace_list_no_results': {'ar': 'مفيش نتائج لبحثك', 'en': 'No results for your search'},
+  'marketplace_category_all': {'ar': 'الكل', 'en': 'All'},
+
+  // marketplace_item_screen.dart
+  'marketplace_item_title': {'ar': 'تفاصيل الإعلان', 'en': 'Listing details'},
+  'marketplace_item_not_found': {'ar': 'هذا الإعلان غير موجود أو تم حذفه.', 'en': 'This listing no longer exists.'},
+  'marketplace_item_merchant_seller': {'ar': 'بائع تاجر', 'en': 'Merchant seller'},
+  'marketplace_item_sold_badge': {'ar': 'تم البيع', 'en': 'Sold'},
+  'marketplace_item_default_city': {'ar': 'دمياط الجديدة', 'en': 'New Damietta'},
+  'marketplace_item_views_suffix': {'ar': 'مشاهدة', 'en': 'views'},
+  'marketplace_item_no_description': {'ar': 'لا يوجد وصف إضافي.', 'en': 'No additional description.'},
+  'marketplace_item_contact_seller_title': {'ar': 'تواصل مع البائع مباشرة', 'en': 'Contact the seller directly'},
+  'marketplace_item_contact_seller_subtitle': {'ar': 'اتصال أو واتساب فوري', 'en': 'Call or WhatsApp instantly'},
+  'marketplace_item_call_button': {'ar': 'اتصال', 'en': 'Call'},
+  'marketplace_item_whatsapp_button': {'ar': 'واتساب', 'en': 'WhatsApp'},
+  'marketplace_item_delivery_title': {'ar': 'تفضّل التوصيل بدل الذهاب بنفسك؟', 'en': 'Prefer delivery instead of going yourself?'},
+  'marketplace_item_delivery_subtitle': {'ar': 'عبر شبكة سائقي وصّلها', 'en': 'Via Wslha\'s driver network'},
+  'marketplace_item_delivery_button': {'ar': '🚚 اطلب توصيل عبر وصّلها', 'en': '🚚 Request delivery via Wslha'},
+
+  // Delivery request bottom sheet
+  'marketplace_delivery_sheet_title': {'ar': 'طلب توصيل المنتج', 'en': 'Request item delivery'},
+  'marketplace_delivery_fee_prefix': {'ar': 'رسوم التوصيل', 'en': 'Delivery fee'},
+  'marketplace_delivery_fee_suffix': {'ar': 'ج.م تُضاف على سعر المنتج', 'en': 'EGP added on top of the item price'},
+  'marketplace_delivery_name_label': {'ar': 'اسمك الكامل', 'en': 'Full name'},
+  'marketplace_delivery_phone_label': {'ar': 'رقم جوالك', 'en': 'Phone number'},
+  'marketplace_delivery_address_label': {'ar': 'عنوانك بالتفصيل', 'en': 'Your address in detail'},
+  'marketplace_delivery_error_name': {'ar': 'أدخل اسمك', 'en': 'Enter your name'},
+  'marketplace_delivery_error_address': {'ar': 'أدخل عنوانك بالتفصيل', 'en': 'Enter your full address'},
+  'marketplace_delivery_error_generic': {'ar': 'حدث خطأ، حاول مرة أخرى', 'en': 'Something went wrong, try again'},
+  'marketplace_delivery_success': {'ar': '✅ تم إرسال طلب التوصيل — سيتواصل معك فريقنا لتأكيد السائق', 'en': '✅ Delivery request sent — our team will contact you to confirm a driver'},
+};

@@ -5,6 +5,7 @@ import '../../core/theme.dart';
 import '../../shared/widgets/logout_button.dart';
 import '../../shared/widgets/placeholder_screen.dart';
 import '../airport/airport_screen.dart';
+import '../marketplace/marketplace_list_screen.dart';
 import '../rides/rides_screen.dart';
 import '../stores/stores_list_screen.dart';
 
@@ -25,6 +26,7 @@ class HomeTab extends StatelessWidget {
     final secondary = <_ServiceCard>[
       _ServiceCard('📦', context.tr('home_service_parcels_title'), context.tr('home_service_parcels_subtitle'), AppColors.primaryDark, (ctx) => PlaceholderScreen(title: context.tr('home_service_parcels_title'), emoji: '📦')),
       _ServiceCard('🛍️', context.tr('home_service_delivery_title'), context.tr('home_service_delivery_subtitle'), AppColors.primary, (ctx) => const StoresListScreen()),
+      _ServiceCard('🏷️', context.tr('home_service_marketplace_title'), context.tr('home_service_marketplace_subtitle'), AppColors.accent, (ctx) => const MarketplaceListScreen()),
     ];
 
     return Scaffold(
