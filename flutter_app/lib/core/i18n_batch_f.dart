@@ -50,6 +50,10 @@ const Map<String, Map<String, String>> batchFStrings = {
   'invoices_default_store': {'ar': 'المتجر', 'en': 'the store'},
   'invoices_airport_prefix': {'ar': '✈️ توصيل مطار —', 'en': '✈️ Airport transfer —'},
   'invoices_rebook': {'ar': 'احجز تاني', 'en': 'Book again'},
+  'invoices_reorder': {'ar': 'اطلب تاني', 'en': 'Order again'},
+  'invoices_reorder_store_unavailable': {'ar': 'المتجر مش متاح دلوقتي', 'en': 'This store is currently unavailable'},
+  'invoices_reorder_some_unavailable_prefix': {'ar': '⚠️', 'en': '⚠️'},
+  'invoices_reorder_some_unavailable_suffix': {'ar': 'صنف من الطلب القديم مش متاح دلوقتي واتشال', 'en': 'item(s) from the old order are no longer available and were skipped'},
 
   // order_invoice_screen.dart
   'order_invoice_default_store': {'ar': 'المتجر', 'en': 'the store'},

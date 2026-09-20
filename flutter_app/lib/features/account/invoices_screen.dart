@@ -13,6 +13,10 @@ import '../orders/orders_repository.dart' show statusAr;
 import '../rides/places_service.dart' show PlaceResult;
 import '../rides/ride_invoice_screen.dart';
 import '../rides/rides_screen.dart';
+import '../stores/cart_store.dart';
+import '../stores/store_detail_screen.dart';
+import '../stores/stores_models.dart';
+import '../stores/stores_repository.dart';
 
 const Map<String, Color> _statusColor = {
   'delivered': AppColors.success,
@@ -36,10 +40,13 @@ class _InvoiceRow {
   final num total;
   final DateTime? createdAt;
   // Only set for kind == 'ride'/'airport' — the raw addresses/coordinates
-  // needed to prefill a rebooking (see "احجز تاني" below). Null for 'order'
-  // rows, which have no equivalent rebook flow.
+  // needed to prefill a rebooking (see "احجز تاني" below).
   final PlaceResult? rebookFrom;
   final PlaceResult? rebookTo;
+  // Only set for kind == 'order' — the store + past item quantities needed
+  // to reopen that store's menu with the same items pre-added to the cart.
+  final String? orderStoreId;
+  final List<Map<String, dynamic>>? orderItems;
   const _InvoiceRow({
     required this.kind,
     required this.id,
@@ -50,6 +57,8 @@ class _InvoiceRow {
     required this.createdAt,
     this.rebookFrom,
     this.rebookTo,
+    this.orderStoreId,
+    this.orderItems,
   });
 }
 
@@ -141,6 +150,7 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
 
     final rows = <_InvoiceRow>[];
     for (final o in byId.values) {
+      final rawItems = o['items'];
       rows.add(_InvoiceRow(
         kind: 'order',
         id: '${o['id']}',
@@ -149,6 +159,8 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
         subtitle: statusAr[o['status']] ?? '${o['status']}',
         total: (o['total'] as num?) ?? 0,
         createdAt: DateTime.tryParse(o['created_at'] as String? ?? ''),
+        orderStoreId: o['store_id'] as String?,
+        orderItems: rawItems is List ? rawItems.whereType<Map<String, dynamic>>().toList() : null,
       ));
     }
     for (final r in ridesById.values) {
@@ -187,12 +199,84 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
   /// itself (never copied from the old invoice), so any pricing or traffic
   /// change since the original trip is reflected correctly.
   void _rebook(_InvoiceRow row) {
+    if (row.kind == 'order') {
+      _reorderDelivery(row);
+      return;
+    }
     if (row.rebookFrom == null || row.rebookTo == null) return;
     Navigator.of(context).push(MaterialPageRoute(
       builder: (_) => row.kind == 'airport'
           ? AirportScreen(initialFrom: row.rebookFrom, initialAirport: row.rebookTo)
           : RidesScreen(initialFrom: row.rebookFrom, initialTo: row.rebookTo),
     ));
+  }
+
+  /// "اطلب تاني" for a delivery order — reopens the same store with the
+  /// past order's items pre-added to the cart at their old quantities.
+  /// Prices/availability always come from a fresh fetchStore()/fetchProducts()
+  /// call (never copied from the old invoice), so a discontinued item is
+  /// simply skipped and a changed price shows the current one. Matches
+  /// items by product id, not name, since a store could rename a product.
+  Future<void> _reorderDelivery(_InvoiceRow row) async {
+    final storeId = row.orderStoreId;
+    final items = row.orderItems;
+    if (storeId == null || items == null || items.isEmpty) return;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(child: CircularProgressIndicator()),
+    );
+
+    final repo = StoresRepository();
+    StoreRow? store;
+    List<ProductRow> products = [];
+    try {
+      store = await repo.fetchStore(storeId);
+      if (store != null) {
+        products = (await repo.fetchProducts(storeId)).where((p) => p.isAvailable).toList();
+      }
+    } catch (_) {
+      store = null;
+    }
+
+    if (!mounted) return;
+    Navigator.of(context).pop(); // dismiss the loading dialog
+
+    if (store == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.tr('invoices_reorder_store_unavailable'))),
+      );
+      return;
+    }
+
+    final cart = CartStore.instance;
+    if (cart.storeId != null && cart.storeId != store.id) cart.clear();
+    var missing = 0;
+    for (final it in items) {
+      final productId = it['id'] as String?;
+      final qty = (it['qty'] as num?)?.toInt() ?? 1;
+      ProductRow? product;
+      for (final p in products) {
+        if (p.id == productId) {
+          product = p;
+          break;
+        }
+      }
+      if (product == null) {
+        missing++;
+        continue;
+      }
+      cart.setQty(store, product, qty);
+    }
+
+    if (!mounted) return;
+    if (missing > 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('${context.tr('invoices_reorder_some_unavailable_prefix')} $missing ${context.tr('invoices_reorder_some_unavailable_suffix')}')),
+      );
+    }
+    Navigator.of(context).push(MaterialPageRoute(builder: (_) => StoreDetailScreen(store: store!)));
   }
 
   @override
@@ -260,7 +344,8 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
 
   Widget _invoiceTile(_InvoiceRow row) {
     final color = _statusColor[row.status] ?? AppColors.textFaint;
-    final canRebook = row.rebookFrom != null && row.rebookTo != null;
+    final canRebook = (row.rebookFrom != null && row.rebookTo != null) ||
+        (row.orderStoreId != null && row.orderItems != null && row.orderItems!.isNotEmpty);
     return Material(
       color: context.surfaceColor,
       borderRadius: BorderRadius.circular(14),
@@ -323,7 +408,7 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
                   color: AppColors.primary.withValues(alpha: 0.06),
                 ),
                 child: Text(
-                  '🔁 ${context.tr('invoices_rebook')}',
+                  '🔁 ${row.kind == 'order' ? context.tr('invoices_reorder') : context.tr('invoices_rebook')}',
                   textAlign: TextAlign.center,
                   style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: AppColors.primary),
                 ),
