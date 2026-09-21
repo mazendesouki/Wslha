@@ -31,8 +31,25 @@ class DriverRepository {
       }
     }
     if (permission == LocationPermission.deniedForever) return null;
+    // A last-known fix (instant, from the OS's cache) is good enough to go
+    // online with — _startLocationPings() (called right after a successful
+    // goOnline()) starts refreshing the real position within seconds
+    // anyway, so there's no accuracy cost to preferring the cached value
+    // here over waiting on a fresh GPS fix.
     try {
-      return await Geolocator.getCurrentPosition();
+      final cached = await Geolocator.getLastKnownPosition();
+      if (cached != null) return cached;
+    } catch (_) {
+      // fall through to a fresh fix below
+    }
+    try {
+      // Same fix as address_field.dart's "استخدم موقعي" — getCurrentPosition()
+      // has no timeout of its own and can hang indefinitely on a weak/no GPS
+      // fix, which froze the "متصل/غير متصل" switch for seconds (reported
+      // live: opening the driver app left the toggle stuck mid-tap). Bounded
+      // tighter than the address field's 15s — this only needs an
+      // approximate starting point, not a precise pickup address.
+      return await Geolocator.getCurrentPosition().timeout(const Duration(seconds: 8));
     } catch (_) {
       return null;
     }
