@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import '../../core/i18n.dart';
 import '../../core/theme.dart';
+import 'location_confirm_screen.dart';
 import 'places_service.dart';
 
 class AddressField extends StatefulWidget {
@@ -24,6 +25,14 @@ class AddressField extends StatefulWidget {
   /// used by "احجز تاني" (rebook) so a reused past trip's address shows up
   /// immediately instead of an empty field the customer has to retype.
   final PlaceResult? initialValue;
+  /// Shows LocationConfirmScreen's draggable-pin map after every
+  /// autocomplete pick, since a broad suggestion (a neighborhood/district
+  /// name) resolves to that whole area's centroid — genuinely far from the
+  /// customer's real spot, and was reported live as booking a wrong
+  /// distance/fare. Left true by default; off for the airport picker
+  /// (placesTypes: 'airport'), which already only returns precise
+  /// individual-airport points, not broad areas.
+  final bool confirmOnMap;
 
   const AddressField({
     super.key,
@@ -34,6 +43,7 @@ class AddressField extends StatefulWidget {
     this.placesTypes,
     this.prefixIcon,
     this.initialValue,
+    this.confirmOnMap = true,
   });
 
   @override
@@ -123,7 +133,20 @@ class _AddressFieldState extends State<AddressField> {
     setState(() => _suggestions = []);
     _controller.text = s.description;
     final detail = await _places.details(s.placeId);
-    if (detail != null) widget.onSelected(detail);
+    if (detail == null) return;
+    var result = detail;
+    if (widget.confirmOnMap && mounted) {
+      final confirmed = await Navigator.of(context).push<PlaceResult>(
+        MaterialPageRoute(builder: (_) => LocationConfirmScreen(initial: detail)),
+      );
+      // A null result (system back button, no explicit cancel action on
+      // that screen) falls back to the raw suggestion rather than leaving
+      // the field with nothing selected.
+      if (confirmed != null) result = confirmed;
+    }
+    if (!mounted) return;
+    _controller.text = result.name;
+    widget.onSelected(result);
   }
 
   @override

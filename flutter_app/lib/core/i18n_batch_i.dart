@@ -42,4 +42,9 @@ const Map<String, Map<String, String>> batchIStrings = {
   'marketplace_delivery_error_address': {'ar': 'أدخل عنوانك بالتفصيل', 'en': 'Enter your full address'},
   'marketplace_delivery_error_generic': {'ar': 'حدث خطأ، حاول مرة أخرى', 'en': 'Something went wrong, try again'},
   'marketplace_delivery_success': {'ar': '✅ تم إرسال طلب التوصيل — سيتواصل معك فريقنا لتأكيد السائق', 'en': '✅ Delivery request sent — our team will contact you to confirm a driver'},
+
+  // location_confirm_screen.dart
+  'location_confirm_title': {'ar': 'أكّد موقعك بالضبط', 'en': 'Confirm your exact location'},
+  'location_confirm_hint': {'ar': 'حرّك الخريطة عشان تظبّط الدبوس على مكانك بالظبط', 'en': 'Move the map to line up the pin with your exact spot'},
+  'location_confirm_button': {'ar': 'تأكيد الموقع', 'en': 'Confirm location'},
 };

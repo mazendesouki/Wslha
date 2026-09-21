@@ -648,6 +648,7 @@ class _AirportScreenState extends State<AirportScreen> {
                 label: _direction == 'departure' ? context.tr('airport_airport_label_departure') : context.tr('airport_airport_label_arrival'),
                 hint: context.tr('airport_airport_hint'),
                 placesTypes: 'airport',
+                confirmOnMap: false,
                 prefixIcon: Icons.flight_takeoff,
                 initialValue: widget.initialAirport,
                 onSelected: (r) => setState(() => _airport = r),
