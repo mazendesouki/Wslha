@@ -693,16 +693,40 @@ class _LiveMapSectionState extends State<_LiveMapSection> {
                 children: [
                   Padding(
                     padding: const EdgeInsets.fromLTRB(14, 10, 14, 6),
-                    child: Row(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text('🚖', style: TextStyle(fontSize: 14)),
-                        const SizedBox(width: 6),
-                        Expanded(
-                          child: Text(
-                            readout ?? context.tr('ride_tracking_driver_on_map'),
-                            style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 12),
-                          ),
+                        Row(
+                          children: [
+                            const Text('🚖', style: TextStyle(fontSize: 14)),
+                            const SizedBox(width: 6),
+                            Expanded(
+                              child: Text(
+                                readout ?? context.tr('ride_tracking_driver_on_map'),
+                                style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 12),
+                              ),
+                            ),
+                          ],
                         ),
+                        // `readout` above is the driver's live distance to
+                        // wherever they're currently heading (pickup or
+                        // drop-off) — it shrinks as they approach and is a
+                        // different number by design from the trip's total
+                        // booked distance. Reported as confusing when the
+                        // two didn't match (e.g. "1.5 km" at booking vs.
+                        // "61 m" once the driver is nearly there) — kept
+                        // both visible here, clearly labeled, instead of
+                        // letting the booked figure just disappear.
+                        if (ride['distance_km'] != null) ...[
+                          const SizedBox(height: 3),
+                          Padding(
+                            padding: const EdgeInsets.only(right: 20),
+                            child: Text(
+                              '${context.tr('ride_tracking_trip_distance_label')} ${(ride['distance_km'] as num).toStringAsFixed(1)} كم',
+                              style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.w700, color: AppColors.textFaint),
+                            ),
+                          ),
+                        ],
                       ],
                     ),
                   ),

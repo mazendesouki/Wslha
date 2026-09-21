@@ -107,6 +107,7 @@ const Map<String, Map<String, String>> batchBStrings = {
   'driver_home_offer_type_ride': {'ar': '🚖 رحلة', 'en': '🚖 Ride'},
   'driver_home_trusted_customer': {'ar': 'عميل موثوق', 'en': 'Trusted customer'},
   'driver_home_unit_km': {'ar': 'كم', 'en': 'km'},
+  'driver_home_trip_distance_label': {'ar': 'مسافة الرحلة:', 'en': 'Trip distance:'},
   'driver_home_unit_min': {'ar': 'د', 'en': 'min'},
   'driver_home_reject': {'ar': 'رفض', 'en': 'Reject'},
   'driver_home_accept': {'ar': 'قبول', 'en': 'Accept'},

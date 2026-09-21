@@ -99,6 +99,7 @@ const Map<String, Map<String, String>> batchCStrings = {
   'ride_tracking_minutes_unit': {'ar': 'دقيقة', 'en': 'minutes'},
   'ride_tracking_driver_getting_close': {'ar': '🚗 السائق قرّب منك أوي — استعد للنزول', 'en': '🚗 The driver is very close now — get ready to head down'},
   'ride_tracking_driver_on_map': {'ar': 'السائق على الخريطة الآن', 'en': 'The driver is on the map now'},
+  'ride_tracking_trip_distance_label': {'ar': 'مسافة الرحلة:', 'en': 'Trip distance:'},
   'ride_tracking_open_google_maps': {'ar': 'افتح في Google Maps', 'en': 'Open in Google Maps'},
   'ride_tracking_share_location': {'ar': 'شارك موقعك', 'en': 'Share your location'},
   'ride_tracking_reg_number_missing': {'ar': '🚘 رقم اللوحة غير مسجّل', 'en': '🚘 License plate not registered'},

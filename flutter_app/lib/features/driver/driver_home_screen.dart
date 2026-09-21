@@ -750,6 +750,22 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
                 ],
                 const SizedBox(height: 14),
                 _RouteRow(from: from, to: to, stops: isOrder ? const [] : _stopNames(job)),
+                // The trip's total booked distance (same figure shown on the
+                // offer card before acceptance) used to just disappear once
+                // accepted — replaced by _DriverDistanceReadout's live
+                // proximity number below, which naturally differs (and
+                // shrinks) as the driver approaches. Reported as confusing:
+                // the driver expected the two numbers to match. They
+                // describe different things by design, so instead of
+                // reconciling them, keep the booked distance visible too,
+                // clearly labeled, alongside the live one.
+                if (!isOrder && job['distance_km'] != null) ...[
+                  const SizedBox(height: 6),
+                  Text(
+                    '${context.tr('driver_home_trip_distance_label')} ${(job['distance_km'] as num).toStringAsFixed(1)} ${context.tr('driver_home_unit_km')}',
+                    style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.textFaint),
+                  ),
+                ],
                 if (!isOrder && destination != null && (job['status'] == 'accepted' || job['status'] == 'in_progress'))
                   _DriverDistanceReadout(
                     driverPhone: widget.session.phone,
