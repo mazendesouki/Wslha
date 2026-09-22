@@ -48,6 +48,18 @@
       </div>
       <button class="btn" type="submit" id="submit-btn">دخول إلى لوحة التحكم</button>
     </form>
+    <!-- خطوة ثانية: طبقة حماية إضافية (2FA) — بعد التحقق من كلمة المرور،
+         بيتبعت كود على البريد المسجّل للحساب، ولازم يتأكّد قبل ما تفتح
+         اللوحة. نفس البنية التحتية المستخدمة في "نسيت كلمة المرور". -->
+    <form id="admin-otp-form" novalidate style="display:none">
+      <p class="subtitle" id="otp-hint" style="margin-bottom:1.1rem"></p>
+      <div class="field">
+        <label for="otp-code">رمز التحقق</label>
+        <input id="otp-code" type="text" inputmode="numeric" placeholder="000000" dir="ltr" maxlength="6" autocomplete="one-time-code" required/>
+      </div>
+      <button class="btn" type="submit" id="otp-submit-btn">تأكيد ودخول اللوحة</button>
+      <button class="back" type="button" id="otp-resend-btn" style="background:none;border:none;width:100%;margin-top:.5rem;font-family:inherit;cursor:pointer">إعادة إرسال الرمز</button>
+    </form>
     <a class="back" href="/">← العودة للموقع</a>
   </div>
 
@@ -78,6 +90,22 @@
       if (p.startsWith('+20')) return '0' + p.slice(3);
       if (p.startsWith('0020')) return '0' + p.slice(4);
       return p;
+    }
+
+    let pendingAcc = null; // { phone, name } — set once password is verified, used by the OTP step
+
+    async function sendAdminOtp(phone) {
+      // Same edge function the "forgot password" flow uses — generates the
+      // code server-side and emails it to the account's registered address.
+      const r = await fetch(`${SB_URL}/functions/v1/swift-processor`, {
+        method: 'POST', headers: { ...SB_H, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone }),
+      });
+      if (!r.ok) {
+        const t = await r.text().catch(() => '');
+        if (/no_email/.test(t)) throw new Error('no_email');
+        throw new Error('send_failed');
+      }
     }
 
     document.getElementById('admin-login-form').addEventListener('submit', async e => {
@@ -111,17 +139,70 @@
         if (!acc || !acc.phone) { throw new Error('رقم الجوال أو كلمة المرور غير صحيحة'); }
         if (acc.role !== 'admin') { throw new Error('ليس لديك صلاحية الوصول لهذه المنطقة'); }
 
+        pendingAcc = acc;
+        await sendAdminOtp(acc.phone);
+
+        document.getElementById('admin-login-form').style.display = 'none';
+        document.getElementById('otp-hint').textContent = 'تم إرسال رمز التحقق إلى بريدك الإلكتروني المسجّل — أدخله لإكمال الدخول.';
+        document.getElementById('admin-otp-form').style.display = '';
+        setTimeout(() => document.getElementById('otp-code').focus(), 60);
+      } catch(ex) {
+        err.textContent = ex.message === 'no_email'
+          ? 'لا يوجد بريد إلكتروني مسجّل لحسابك — تواصل مع الدعم الفني.'
+          : (ex.message || 'حدث خطأ، حاول مجدداً');
+        err.style.display = 'block';
+      } finally {
+        btn.disabled = false; btn.textContent = 'دخول إلى لوحة التحكم';
+      }
+    });
+
+    document.getElementById('admin-otp-form').addEventListener('submit', async e => {
+      e.preventDefault();
+      const err = document.getElementById('err');
+      const btn = document.getElementById('otp-submit-btn');
+      err.style.display = 'none';
+
+      const code = document.getElementById('otp-code').value.trim();
+      if (!/^\d{6}$/.test(code)) { err.textContent = 'أدخل رمز التحقق المكوّن من 6 أرقام'; err.style.display = 'block'; return; }
+      if (!pendingAcc) { err.textContent = 'انتهت الجلسة — أعد المحاولة من البداية'; err.style.display = 'block'; return; }
+
+      btn.disabled = true; btn.textContent = 'جاري التأكيد…';
+      try {
+        const r = await fetch(`${SB_URL}/rest/v1/rpc/verify_otp_code`, {
+          method: 'POST', headers: { ...SB_H, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ p_phone: pendingAcc.phone, p_code: code }),
+        });
+        const ok = r.ok && (await r.json()) === true;
+        if (!ok) { err.textContent = 'الرمز غير صحيح أو انتهت صلاحيته'; err.style.display = 'block'; return; }
+
         localStorage.setItem('wslha_admin', JSON.stringify({
-          phone: acc.phone, name: acc.name, role: 'admin', loginAt: new Date().toISOString()
+          phone: pendingAcc.phone, name: pendingAcc.name, role: 'admin', loginAt: new Date().toISOString()
         }));
         localStorage.setItem('wslha_user', JSON.stringify({
-          phone: acc.phone, name: acc.name, role: 'admin', loginAt: new Date().toISOString()
+          phone: pendingAcc.phone, name: pendingAcc.name, role: 'admin', loginAt: new Date().toISOString()
         }));
         window.location.href = '/admin';
-      } catch(ex) {
-        err.textContent = ex.message || 'حدث خطأ، حاول مجدداً';
+      } catch {
+        err.textContent = 'حدث خطأ، حاول مجدداً';
         err.style.display = 'block';
-        btn.disabled = false; btn.textContent = 'دخول إلى لوحة التحكم';
+      } finally {
+        btn.disabled = false; btn.textContent = 'تأكيد ودخول اللوحة';
+      }
+    });
+
+    document.getElementById('otp-resend-btn').addEventListener('click', async () => {
+      const err = document.getElementById('err');
+      const resendBtn = document.getElementById('otp-resend-btn');
+      if (!pendingAcc) return;
+      resendBtn.disabled = true;
+      try {
+        await sendAdminOtp(pendingAcc.phone);
+        err.style.display = 'none';
+      } catch {
+        err.textContent = 'تعذّر إرسال الرمز، حاول لاحقاً';
+        err.style.display = 'block';
+      } finally {
+        resendBtn.disabled = false;
       }
     });
 

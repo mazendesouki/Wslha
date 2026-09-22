@@ -2000,6 +2000,31 @@ async function sbRpcJson(fn, body) {
   return await r.json();
 }
 
+// طبقة حماية إضافية (2FA تجريبي) فوق كلمة المرور/مفتاح الحماية — بترسل كود
+// 6 أرقام لبريد المشرف المسجّل (نفس آلية "نسيت كلمة المرور") وتتحقق منه قبل
+// تنفيذ الإجراء. بترجع true/false، من غير ما تعرض أي toast بنفسها — الاستدعاء
+// هو اللي يقرر رسالة الفشل المناسبة لسياقه.
+async function verifyAdminOtp() {
+  try {
+    const sendRes = await fetch(`${SB_URL}/functions/v1/swift-processor`, {
+      method: 'POST', headers: SB_H, body: JSON.stringify({ phone: ADMIN.phone }),
+    });
+    if (!sendRes.ok) {
+      const t = await sendRes.text().catch(() => '');
+      showToast(/no_email/.test(t) ? '❌ لا يوجد بريد إلكتروني مسجّل لحسابك' : '❌ تعذّر إرسال رمز التحقق', '#DC2626');
+      return false;
+    }
+  } catch {
+    showToast('❌ تعذّر إرسال رمز التحقق', '#DC2626');
+    return false;
+  }
+  const code = await showTextGate('رمز التحقق المرسل إلى بريدك الإلكتروني', { placeholder: '000000' });
+  if (!code) return false;
+  const ok = await sbRpc('verify_otp_code', { p_phone: ADMIN.phone, p_code: code.trim() });
+  if (!ok) showToast('❌ رمز التحقق غير صحيح أو انتهت صلاحيته', '#DC2626');
+  return ok;
+}
+
 // The accounts table can no longer be read directly by the anon key (closes
 // mass user-data enumeration) — every bulk listing goes through this
 // password-verified RPC instead. The admin password is asked once per
@@ -2435,6 +2460,9 @@ async function deleteUser(phone) {
   if (!pass) return;
   const key = await getActionKey();
   if (!key) return;
+  // طبقة حماية إضافية تجريبية: حذف مستخدم كامل يحتاج تأكيد OTP كمان، فوق
+  // كلمة المرور ومفتاح الأمان — أخطر إجراء في اللوحة (لا رجوع فيه).
+  if (!(await verifyAdminOtp())) return;
   // حذف الحساب بالكامل (وكل بياناته المرتبطة) يمر عبر دالة موثّقة تتحقق من
   // كلمة مرور المشرف ومفتاح الأمان الإضافي على الخادم — نفس نمط
   // grant_admin/create_admin — بدل DELETE مباشر بمفتاح anon كان مفتوحاً لأي حد.
