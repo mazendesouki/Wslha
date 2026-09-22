@@ -2363,6 +2363,7 @@ function renderUsers() {
         ` : `
         <div class="btn-row" style="flex-wrap:nowrap;align-items:center;gap:4px">
           <button class="btn btn--outline btn--sm" onclick="viewUserStats('${u.phone}','${(u.name||'').replace(/'/g,"\\'")}','${u.role}')" title="عرض إحصائيات المستخدم">📊 التفاصيل</button>
+          <button class="btn btn--outline btn--sm" onclick="changeUserPhone('${u.phone}')" title="لمن يريد تغيير رقم هاتفه بعد التواصل مع الدعم الفني">📱 تغيير الرقم</button>
           <select class="filter-select" style="font-size:.72rem;padding:.25rem .45rem;min-width:75px" onchange="changeUserStatus('${u.phone}',this.value);this.value='${u.status||'active'}'">
             <option value="active"  ${(u.status||'active')==='active'  ?'selected':''}>نشط</option>
             <option value="pending" ${(u.status||'')==='pending' ?'selected':''}>معلق</option>
@@ -2425,6 +2426,25 @@ async function deleteUser(phone) {
   const ok = await sbRpc('admin_delete_account', { p_admin_phone: ADMIN.phone, p_admin_password: pass, p_target_phone: phone, p_action_key: key });
   if (ok) { showToast('✅ تم الحذف بالكامل', '#16A34A'); loadUsers(); }
   else { clearAdminPass(); showToast('❌ فشل الحذف — تحقق من كلمة المرور ومفتاح الأمان', '#DC2626'); }
+}
+// لمن يريد تغيير رقم هاتفه — يتواصل مع الدعم الفني، والأدمن يغيّره من هنا
+// بدل ما يقدر المستخدم يغيّره بنفسه من التطبيق (مفيش تحقق حقيقي بعد من
+// صاحب الرقم الجديد في المرحلة دي). admin_change_user_phone() بتحدّث كل
+// جدول فيه عمود اسمه فيه "phone" تلقائيًا (رحلات/محفظة/تقييمات/...)
+// عشان تاريخ المستخدم القديم ميتقطعش منه — راجع db/security-89.
+async function changeUserPhone(phone) {
+  const user = allUsers.find(u => u.phone === phone);
+  const newPhone = await showTextGate(`رقم الهاتف الجديد لـ"${user?.name || phone}"`, { placeholder: '01XXXXXXXXX' });
+  if (!newPhone) return;
+  if (!/^01[0125][0-9]{8}$/.test(newPhone.trim())) { showToast('❌ رقم غير صالح — لازم يبدأ بـ 010/011/012/015 ويكون 11 رقم', '#DC2626'); return; }
+  if (!(await showConfirmGate(`تغيير رقم "${user?.name || phone}" من ${phone} إلى ${newPhone.trim()}؟\nهيتحدّث في كل الرحلات والطلبات والمحفظة المرتبطة بيه تلقائيًا.`, { danger: true }))) return;
+  const pass = await getAdminPass();
+  if (!pass) return;
+  const key = await getActionKey();
+  if (!key) return;
+  const ok = await sbRpc('admin_change_user_phone', { p_admin_phone: ADMIN.phone, p_admin_password: pass, p_target_phone: phone, p_new_phone: newPhone.trim(), p_action_key: key });
+  if (ok) { showToast('✅ تم تغيير رقم الهاتف بنجاح', '#16A34A'); loadUsers(); }
+  else { clearAdminPass(); showToast('❌ فشل — تأكد إن الرقم الجديد مش مستخدم بالفعل، أو تحقق من كلمة المرور ومفتاح الأمان', '#DC2626'); }
 }
 async function changeUserRole(phone, role) {
   if (!role) return;
