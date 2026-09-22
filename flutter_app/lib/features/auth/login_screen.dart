@@ -8,6 +8,7 @@ import '../../core/session.dart';
 import '../../core/theme.dart';
 import 'auth_repository.dart';
 import 'driver_merchant_register_screen.dart';
+import 'otp_login_screen.dart';
 import 'register_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -179,13 +180,24 @@ class _LoginScreenState extends State<LoginScreen> {
                         : Text(context.tr('login_submit')),
                   ),
                   const SizedBox(height: 16),
-                  if (isCustomerApp)
+                  if (isCustomerApp) ...[
                     TextButton(
                       onPressed: () => Navigator.of(context).push(
                         MaterialPageRoute(builder: (_) => const RegisterScreen()),
                       ),
                       child: Text(context.tr('login_no_account')),
-                    )
+                    ),
+                    // Phase 1 of the real-auth migration (db/security-88) —
+                    // real Supabase-Auth OTP login, offered alongside the
+                    // existing password flow rather than replacing it yet.
+                    TextButton.icon(
+                      onPressed: () => Navigator.of(context).push(
+                        MaterialPageRoute(builder: (_) => OtpLoginScreen(config: widget.config)),
+                      ),
+                      icon: const Icon(Icons.sms_outlined, size: 18),
+                      label: Text(context.tr('login_otp_alternative')),
+                    ),
+                  ]
                   else
                     // Account creation (name/phone/password/city, +
                     // personal photo for drivers) happens natively —
