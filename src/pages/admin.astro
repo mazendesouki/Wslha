@@ -1245,6 +1245,19 @@
     <!-- ═══════════════════ SETTINGS ════════════════════════ -->
     <div class="section" id="sec-settings">
       <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:1.25rem">
+        <!-- My own account — separate flow from "تغيير الرقم" on the users
+             table (which is for support changing ANOTHER user's number and
+             is deliberately hidden for admin rows there). This changes the
+             logged-in admin's own phone, then updates ADMIN.phone in place
+             so the rest of the session keeps working with no re-login. -->
+        <div class="card">
+          <div class="card__head"><span class="card__title">🔐 بيانات حسابي الشخصية</span></div>
+          <div class="card__body">
+            <p style="font-size:.8rem;color:#64748B;margin-bottom:.75rem">رقم هاتفك الحالي لتسجيل الدخول:</p>
+            <div style="font-weight:900;font-size:1.05rem;margin-bottom:1rem" id="my-account-phone">—</div>
+            <button class="btn btn--outline" onclick="changeMyPhone()">📱 تغيير رقم هاتفي</button>
+          </div>
+        </div>
         <!-- Commission rates -->
         <div class="card">
           <div class="card__head"><span class="card__title">⚙️ نسب عمولة التطبيق</span></div>
@@ -1734,6 +1747,8 @@ else {
   document.getElementById('admin-name').textContent = n;
   document.getElementById('admin-avatar').textContent = n[0] || 'م';
   document.getElementById('topbar-date').textContent = new Date().toLocaleDateString('ar-EG', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+  const myPhoneEl = document.getElementById('my-account-phone');
+  if (myPhoneEl) myPhoneEl.textContent = ADMIN.phone || '—';
 
   // ── Auto-logout after 5 minutes with no activity ────────────
   const IDLE_LIMIT_MS = 5 * 60 * 1000;
@@ -2445,6 +2460,38 @@ async function changeUserPhone(phone) {
   const ok = await sbRpc('admin_change_user_phone', { p_admin_phone: ADMIN.phone, p_admin_password: pass, p_target_phone: phone, p_new_phone: newPhone.trim(), p_action_key: key });
   if (ok) { showToast('✅ تم تغيير رقم الهاتف بنجاح', '#16A34A'); loadUsers(); }
   else { clearAdminPass(); showToast('❌ فشل — تأكد إن الرقم الجديد مش مستخدم بالفعل، أو تحقق من كلمة المرور ومفتاح الأمان', '#DC2626'); }
+}
+// طريقة منفصلة عن changeUserPhone — دي لتغيير رقم المشرف نفسه (اللي داخل
+// اللوحة دلوقتي)، مش رقم مستخدم تاني. بعد النجاح لازم نحدّث ADMIN.phone
+// في الذاكرة و localStorage فورًا، وإلا كل استدعاء RPC بعد كده هيبعت
+// الرقم القديم اللي بقى مش موجود في accounts خالص — يعني المشرف هيتقفل
+// بره جلسته بنفسه من غير ما يعمل تسجيل خروج.
+async function changeMyPhone() {
+  const newPhone = await showTextGate('رقم هاتفك الجديد', { placeholder: '01XXXXXXXXX' });
+  if (!newPhone) return;
+  if (!/^01[0125][0-9]{8}$/.test(newPhone.trim())) { showToast('❌ رقم غير صالح — لازم يبدأ بـ 010/011/012/015 ويكون 11 رقم', '#DC2626'); return; }
+  if (!(await showConfirmGate(`تغيير رقم هاتفك من ${ADMIN.phone} إلى ${newPhone.trim()}؟\nهتحتاج تستخدم الرقم الجديد لتسجيل الدخول المرة الجاية.`, { danger: true }))) return;
+  const pass = await getAdminPass();
+  if (!pass) return;
+  const key = await getActionKey();
+  if (!key) return;
+  const targetPhone = ADMIN.phone;
+  const ok = await sbRpc('admin_change_user_phone', { p_admin_phone: targetPhone, p_admin_password: pass, p_target_phone: targetPhone, p_new_phone: newPhone.trim(), p_action_key: key });
+  if (ok) {
+    ADMIN.phone = newPhone.trim();
+    try {
+      localStorage.setItem('wslha_admin', JSON.stringify(ADMIN));
+      // admin-login.astro also writes 'wslha_user' with the same shape —
+      // keep both in sync so nothing reads a stale phone from either key.
+      const u = JSON.parse(localStorage.getItem('wslha_user') || 'null');
+      if (u) { u.phone = ADMIN.phone; localStorage.setItem('wslha_user', JSON.stringify(u)); }
+    } catch {}
+    document.getElementById('my-account-phone').textContent = ADMIN.phone;
+    showToast('✅ تم تغيير رقم هاتفك — استخدم الرقم الجديد لتسجيل الدخول المرة الجاية', '#16A34A');
+  } else {
+    clearAdminPass();
+    showToast('❌ فشل — تأكد إن الرقم الجديد مش مستخدم بالفعل، أو تحقق من كلمة المرور ومفتاح الأمان', '#DC2626');
+  }
 }
 async function changeUserRole(phone, role) {
   if (!role) return;
