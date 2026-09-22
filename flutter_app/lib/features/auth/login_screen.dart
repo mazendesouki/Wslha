@@ -8,6 +8,7 @@ import '../../core/session.dart';
 import '../../core/theme.dart';
 import 'auth_repository.dart';
 import 'driver_merchant_register_screen.dart';
+import 'forgot_password_screen.dart';
 import 'otp_login_screen.dart';
 import 'register_screen.dart';
 
@@ -155,6 +156,18 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ),
                     validator: (v) => (v == null || v.isEmpty) ? context.tr('login_password_required') : null,
+                  ),
+                  Align(
+                    alignment: AlignmentDirectional.centerEnd,
+                    child: TextButton(
+                      onPressed: () async {
+                        final resultPhone = await Navigator.of(context).push<String>(
+                          MaterialPageRoute(builder: (_) => const ForgotPasswordScreen()),
+                        );
+                        if (resultPhone != null) _phoneController.text = resultPhone;
+                      },
+                      child: Text(context.tr('login_forgot_password')),
+                    ),
                   ),
                   Row(
                     children: [

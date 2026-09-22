@@ -66,4 +66,19 @@ const Map<String, Map<String, String>> batchIStrings = {
   'otp_login_no_email': {'ar': 'لا يوجد بريد إلكتروني مسجّل لهذا الحساب — تواصل مع الدعم الفني', 'en': 'No email registered for this account — contact support'},
   'otp_login_code_required': {'ar': 'أدخل الكود اللي وصلك', 'en': 'Enter the code you received'},
   'otp_login_verify_failed': {'ar': 'الكود غير صحيح أو انتهت صلاحيته', 'en': 'Incorrect or expired code'},
+
+  // forgot_password_screen.dart — same email-code + reset_password RPC
+  // pair login.astro's web forgot-password step already uses.
+  'login_forgot_password': {'ar': 'نسيت كلمة المرور؟', 'en': 'Forgot password?'},
+  'forgot_password_title': {'ar': 'استعادة كلمة المرور', 'en': 'Reset password'},
+  'forgot_password_new_password': {'ar': 'كلمة المرور الجديدة', 'en': 'New password'},
+  'forgot_password_confirm_password': {'ar': 'تأكيد كلمة المرور', 'en': 'Confirm password'},
+  'forgot_password_submit': {'ar': 'تعيين كلمة المرور', 'en': 'Set password'},
+  'forgot_password_mismatch': {'ar': 'كلمتا المرور غير متطابقتين', 'en': 'Passwords don\'t match'},
+  'forgot_password_bad_code': {'ar': 'الرمز غير صحيح أو انتهت صلاحيته', 'en': 'Incorrect or expired code'},
+  'forgot_password_send_failed': {'ar': 'تعذّر إرسال الرمز، حاول لاحقاً', 'en': 'Could not send the code — try again later'},
+  'forgot_password_not_found': {'ar': 'هذا الرقم غير مسجّل في النظام', 'en': 'This number isn\'t registered'},
+  'forgot_password_no_email': {'ar': 'لا يوجد بريد إلكتروني مسجّل لهذا الحساب — تواصل مع الدعم الفني', 'en': 'No email registered for this account — contact support'},
+  'forgot_password_done': {'ar': 'تم تغيير كلمة المرور بنجاح — سجّل دخولك بكلمة المرور الجديدة', 'en': 'Password changed successfully — log in with your new password'},
+  'forgot_password_back_to_login': {'ar': 'رجوع لتسجيل الدخول', 'en': 'Back to login'},
 };
