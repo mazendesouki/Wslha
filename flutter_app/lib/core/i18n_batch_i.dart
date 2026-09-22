@@ -48,18 +48,22 @@ const Map<String, Map<String, String>> batchIStrings = {
   'location_confirm_hint': {'ar': 'حرّك الخريطة عشان تظبّط الدبوس على مكانك بالظبط', 'en': 'Move the map to line up the pin with your exact spot'},
   'location_confirm_button': {'ar': 'تأكيد الموقع', 'en': 'Confirm location'},
 
-  // Phase 1 of the real-auth migration (db/security-88) — otp_login_screen.dart
-  'login_otp_alternative': {'ar': 'تسجيل الدخول برقم الموبايل (OTP)', 'en': 'Log in with phone OTP'},
+  // Phase 1 of the real-auth migration (db/security-88) — otp_login_screen.dart.
+  // Delivery moved from SMS (Twilio) to email (db/security-90's shared
+  // infrastructure) after Twilio's account was suspended over an unrelated
+  // billing issue — see otp_auth_repository.dart.
+  'login_otp_alternative': {'ar': 'تسجيل الدخول برقم الموبايل (رمز عبر البريد)', 'en': 'Log in with phone (email code)'},
   'otp_login_title': {'ar': 'تسجيل الدخول برمز التحقق', 'en': 'Log in with a verification code'},
-  'otp_login_enter_phone_subtitle': {'ar': 'هنبعتلك كود تحقق على رسالة SMS', 'en': 'We\'ll send you a verification code via SMS'},
-  'otp_login_enter_code_subtitle': {'ar': 'اكتب الكود اللي وصلك على الرقم ده', 'en': 'Enter the code sent to this number'},
+  'otp_login_enter_phone_subtitle': {'ar': 'هنبعتلك كود تحقق على بريدك الإلكتروني المسجّل', 'en': 'We\'ll send you a verification code to your registered email'},
+  'otp_login_enter_code_subtitle': {'ar': 'اكتب الكود اللي وصلك على بريدك الإلكتروني', 'en': 'Enter the code sent to your email'},
   'otp_login_phone_label': {'ar': 'رقم الجوال', 'en': 'Phone number'},
   'otp_login_send_code_button': {'ar': 'إرسال الكود', 'en': 'Send code'},
   'otp_login_code_label': {'ar': 'كود التحقق', 'en': 'Verification code'},
-  'otp_login_name_label_optional': {'ar': 'اسمك (لو أول مرة)', 'en': 'Your name (if first time)'},
   'otp_login_verify_button': {'ar': 'تأكيد ودخول', 'en': 'Verify & log in'},
   'otp_login_change_phone': {'ar': 'تغيير الرقم', 'en': 'Change number'},
   'otp_login_send_failed': {'ar': 'تعذّر إرسال الكود، تأكد من الرقم وحاول تاني', 'en': 'Could not send the code — check the number and try again'},
+  'otp_login_not_found': {'ar': 'هذا الرقم غير مسجّل — سجّل حساب جديد الأول', 'en': 'This number isn\'t registered — please sign up first'},
+  'otp_login_no_email': {'ar': 'لا يوجد بريد إلكتروني مسجّل لهذا الحساب — تواصل مع الدعم الفني', 'en': 'No email registered for this account — contact support'},
   'otp_login_code_required': {'ar': 'أدخل الكود اللي وصلك', 'en': 'Enter the code you received'},
   'otp_login_verify_failed': {'ar': 'الكود غير صحيح أو انتهت صلاحيته', 'en': 'Incorrect or expired code'},
 };

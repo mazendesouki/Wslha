@@ -9,9 +9,10 @@ import '../../core/session.dart';
 import '../../core/theme.dart';
 import 'otp_auth_repository.dart';
 
-/// Phase 1 of the real-auth migration — real OTP login via Supabase Auth
-/// (Twilio Verify), reachable as an alternative to the existing password
-/// login rather than replacing it yet (see otp_auth_repository.dart).
+/// Phase 1 of the real-auth migration — login via a code emailed to the
+/// account's registered address (see otp_auth_repository.dart for why
+/// this moved off SMS/Twilio), reachable as an alternative to the
+/// existing password login rather than replacing it yet.
 class OtpLoginScreen extends StatefulWidget {
   final FlavorConfig config;
   const OtpLoginScreen({super.key, required this.config});
@@ -24,7 +25,6 @@ class _OtpLoginScreenState extends State<OtpLoginScreen> {
   final _repo = OtpAuthRepository();
   final _phoneCtrl = TextEditingController();
   final _codeCtrl = TextEditingController();
-  final _nameCtrl = TextEditingController();
   bool _codeSent = false;
   bool _loading = false;
   String? _error;
@@ -33,7 +33,6 @@ class _OtpLoginScreenState extends State<OtpLoginScreen> {
   void dispose() {
     _phoneCtrl.dispose();
     _codeCtrl.dispose();
-    _nameCtrl.dispose();
     super.dispose();
   }
 
@@ -54,6 +53,16 @@ class _OtpLoginScreenState extends State<OtpLoginScreen> {
         _codeSent = true;
         _loading = false;
       });
+    } on OtpSendFailure catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _loading = false;
+        _error = switch (e.reason) {
+          'not_found' => context.tr('otp_login_not_found'),
+          'no_email' => context.tr('otp_login_no_email'),
+          _ => context.tr('otp_login_send_failed'),
+        };
+      });
     } catch (e) {
       if (!mounted) return;
       setState(() {
@@ -73,7 +82,7 @@ class _OtpLoginScreenState extends State<OtpLoginScreen> {
       _error = null;
     });
     try {
-      final session = await _repo.verifyCode(_phoneCtrl.text.trim(), _codeCtrl.text, name: _nameCtrl.text.trim().isEmpty ? null : _nameCtrl.text.trim());
+      final session = await _repo.verifyCode(_phoneCtrl.text.trim(), _codeCtrl.text);
       if (!mounted) return;
       if (session.role != widget.config.allowedRole) {
         setState(() {
@@ -146,11 +155,6 @@ class _OtpLoginScreenState extends State<OtpLoginScreen> {
                   textDirection: TextDirection.ltr,
                   style: const TextStyle(fontSize: 22, letterSpacing: 6, fontWeight: FontWeight.w900),
                   decoration: InputDecoration(labelText: context.tr('otp_login_code_label')),
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: _nameCtrl,
-                  decoration: InputDecoration(labelText: context.tr('otp_login_name_label_optional')),
                 ),
                 const SizedBox(height: 20),
                 ElevatedButton(
