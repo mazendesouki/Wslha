@@ -87,4 +87,9 @@ const Map<String, Map<String, String>> batchIStrings = {
   // after the fact on the post-ride settlement receipt).
   'driver_reg_commission_banner_title': {'ar': 'عمولتنا من أقل العمولات في السوق', 'en': 'One of the lowest commissions around'},
   'driver_reg_commission_banner_subtitle': {'ar': 'مش نسبة تقريبية — ده اللي بتاخده فعليًا من كل رحلة', 'en': 'Not an estimate — this is exactly what we take from every trip'},
+
+  // rides_screen.dart — live-status card (design direction ب's missing
+  // piece, db/security-91's real driver count, no fake numbers).
+  'rides_available_drivers_suffix': {'ar': 'سائق متاح بالقرب منك الآن', 'en': 'drivers available near you now'},
+  'rides_available_drivers_live_badge': {'ar': 'مباشر', 'en': 'LIVE'},
 };

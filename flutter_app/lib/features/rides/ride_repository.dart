@@ -34,6 +34,20 @@ class RideRepository {
     }
   }
 
+  /// Real, live count of drivers who are online, free (not on a ride/order)
+  /// and updated in the last 10 minutes — db/security-91's narrow RPC (never
+  /// a raw driver_locations SELECT, which would leak phone/name/lat/lng).
+  /// Powers the rides screen's live-status card; null on any failure so the
+  /// caller can just hide the card instead of showing a stale/fake number.
+  Future<int?> fetchAvailableDriversCount() async {
+    try {
+      final result = await sb.rpc('get_available_drivers_count');
+      return (result as num?)?.toInt();
+    } catch (_) {
+      return null;
+    }
+  }
+
   Future<Map<String, dynamic>?> createRide({
     required String customerPhone,
     required String customerName,

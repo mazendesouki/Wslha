@@ -56,6 +56,7 @@ class _RidesScreenState extends State<RidesScreen> {
   final _directionsService = DirectionsService();
   RoadRoute? _routedRoute;
   String? _routeFetchedFor;
+  int? _availableDrivers;
 
   /// Every leg's PlaceResult in order, stopping at the first unfilled one —
   /// so a driver can fill stop 1 and leave stop 2/3 empty without breaking
@@ -127,6 +128,9 @@ class _RidesScreenState extends State<RidesScreen> {
     _from = widget.initialFrom;
     _stops = [widget.initialTo];
     SessionStore.load().then((s) => setState(() => _session = s));
+    _rideRepo.fetchAvailableDriversCount().then((count) {
+      if (mounted) setState(() => _availableDrivers = count);
+    });
   }
 
   /// Refetches the surge multiplier only when the ride type (local ↔
@@ -319,6 +323,10 @@ class _RidesScreenState extends State<RidesScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              if (_availableDrivers != null && _availableDrivers! > 0) ...[
+                _buildAvailableDriversCard(context),
+                const SizedBox(height: 12),
+              ],
               _sectionLabel(context.tr('rides_section_from_to')),
               Container(
                 padding: const EdgeInsets.all(14),
@@ -648,6 +656,42 @@ class _RidesScreenState extends State<RidesScreen> {
                 MaterialPageRoute(builder: (_) => ScheduledRidesScreen(phone: _session!.phone)),
               ),
             ),
+        ],
+      ),
+    );
+  }
+
+  /// The design canvas's "live status card" element (design direction ب)
+  /// — a real, live number (db/security-91) rather than a fabricated one:
+  /// only renders when there's at least one genuinely available driver
+  /// right now, so it never shows a misleading "0 سائق متاح".
+  Widget _buildAvailableDriversCard(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: context.surfaceColor,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: context.borderColor),
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 12, offset: const Offset(0, 4))],
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 8,
+            height: 8,
+            decoration: const BoxDecoration(shape: BoxShape.circle, color: AppColors.success),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              '$_availableDrivers ${context.tr('rides_available_drivers_suffix')}',
+              style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700),
+            ),
+          ),
+          Text(
+            context.tr('rides_available_drivers_live_badge'),
+            style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.w900, color: AppColors.accent),
+          ),
         ],
       ),
     );
