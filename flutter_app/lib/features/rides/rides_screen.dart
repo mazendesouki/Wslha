@@ -3,6 +3,7 @@ import '../../core/feature_flags.dart';
 import '../../core/i18n.dart';
 import '../../core/session.dart';
 import '../../core/theme.dart';
+import '../../shared/widgets/branded_header.dart';
 import '../../shared/widgets/selectable_pill.dart';
 import '../airport/airport_fare.dart' show qualityLabels, qualityMultiplier;
 import '../coupons/coupon_field.dart';
@@ -617,70 +618,23 @@ class _RidesScreenState extends State<RidesScreen> {
     );
   }
 
-  /// Signature branded header (design direction "ب" — see the design
-  /// canvas shared with the user) replacing the plain AppBar: a teal
-  /// gradient band carrying the personal greeting + city, matching the
-  /// same identity established in admin.astro, instead of a generic
-  /// white title bar every ride-hailing app defaults to. Shows a back
-  /// arrow only when this screen was pushed (from HomeTab's "رحلات"
-  /// card) — not when it's sitting as a HomeShell bottom-nav tab, where
-  /// there's nothing to pop back to.
+  /// Signature branded header (design direction "ب") — BrandedHeader with
+  /// the personal greeting as title + city as subtitle, plus the
+  /// "my scheduled rides" action. See shared/widgets/branded_header.dart
+  /// for why every other screen uses the same shell.
   Widget _buildHeader(BuildContext context) {
-    final canPop = Navigator.of(context).canPop();
-    return Container(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 20),
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          colors: [AppColors.primary, AppColors.primaryDark],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.only(bottomLeft: Radius.circular(28), bottomRight: Radius.circular(28)),
-      ),
-      child: Row(
-        children: [
-          if (canPop)
-            IconButton(
-              onPressed: () => Navigator.of(context).pop(),
-              icon: const Icon(Icons.arrow_back, color: Colors.white),
-              tooltip: MaterialLocalizations.of(context).backButtonTooltip,
-            )
-          else
-            Container(
-              width: 38,
-              height: 38,
-              decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.14), borderRadius: BorderRadius.circular(11)),
-              alignment: Alignment.center,
-              child: const Text('و', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 16)),
-            ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '${context.tr('home_greeting_prefix')} ${_session?.name.isNotEmpty == true ? _session!.name : context.tr('home_greeting_default_name')} 👋',
-                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 15),
-                  overflow: TextOverflow.ellipsis,
-                ),
-                if (_session?.city?.isNotEmpty == true)
-                  Text(
-                    _session!.city!,
-                    style: TextStyle(color: Colors.white.withValues(alpha: 0.65), fontSize: 11, fontWeight: FontWeight.w700),
-                  ),
-              ],
-            ),
-          ),
-          if (FeatureFlags.scheduledRidesEnabled && _session != null)
-            IconButton(
+    return BrandedHeader(
+      title: '${context.tr('home_greeting_prefix')} ${_session?.name.isNotEmpty == true ? _session!.name : context.tr('home_greeting_default_name')} 👋',
+      subtitle: _session?.city,
+      trailing: FeatureFlags.scheduledRidesEnabled && _session != null
+          ? IconButton(
               tooltip: context.tr('rides_my_scheduled_rides'),
               icon: const Icon(Icons.event_available, color: Colors.white),
               onPressed: () => Navigator.of(context).push(
                 MaterialPageRoute(builder: (_) => ScheduledRidesScreen(phone: _session!.phone)),
               ),
-            ),
-        ],
-      ),
+            )
+          : null,
     );
   }
 

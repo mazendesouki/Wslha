@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../core/i18n.dart';
 import '../../core/session.dart';
 import '../../core/theme.dart';
+import '../../shared/widgets/branded_header.dart';
 import '../airport/airport_screen.dart';
 import '../rides/places_service.dart' show PlaceResult;
 import '../rides/ride_tracking_screen.dart';
@@ -326,8 +327,12 @@ class _OrdersScreenState extends State<OrdersScreen> with SingleTickerProviderSt
 
     return Scaffold(
       backgroundColor: context.mutedSurface,
-      appBar: AppBar(title: Text(context.tr('orders_title'))),
-      body: Column(
+      body: SafeArea(
+        child: Column(
+          children: [
+            BrandedHeader(title: context.tr('orders_title')),
+            Expanded(
+              child: Column(
         children: [
           Container(
             margin: const EdgeInsets.fromLTRB(16, 12, 16, 4),
@@ -620,6 +625,10 @@ class _OrdersScreenState extends State<OrdersScreen> with SingleTickerProviderSt
                           ),
           ),
         ],
+      ),
+            ),
+          ],
+        ),
       ),
     );
   }

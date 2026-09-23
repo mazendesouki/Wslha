@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../core/i18n.dart';
 import '../../core/theme.dart';
+import '../../shared/widgets/branded_header.dart';
 import 'store_detail_screen.dart';
 import 'stores_models.dart';
 import 'stores_repository.dart';
@@ -58,20 +59,21 @@ class _StoresListScreenState extends State<StoresListScreen> {
 
     return Scaffold(
       backgroundColor: context.mutedSurface,
-      appBar: AppBar(title: Text(context.tr('stores_list_appbar_title'))),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-            child: TextField(
-              onChanged: (v) => setState(() => _query = v),
-              decoration: InputDecoration(
-                hintText: context.tr('stores_list_search_hint'),
-                prefixIcon: const Icon(Icons.search),
+      body: SafeArea(
+        child: Column(
+          children: [
+            BrandedHeader(title: context.tr('stores_list_appbar_title')),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+              child: TextField(
+                onChanged: (v) => setState(() => _query = v),
+                decoration: InputDecoration(
+                  hintText: context.tr('stores_list_search_hint'),
+                  prefixIcon: const Icon(Icons.search),
+                ),
               ),
             ),
-          ),
-          Expanded(
+            Expanded(
             child: _loading
                 ? const Center(child: CircularProgressIndicator())
                 : _error != null
@@ -113,8 +115,9 @@ class _StoresListScreenState extends State<StoresListScreen> {
                               itemBuilder: (context, i) => _StoreCard(store: filtered[i]),
                             ),
                           ),
-          ),
-        ],
+            ),
+          ],
+        ),
       ),
     );
   }

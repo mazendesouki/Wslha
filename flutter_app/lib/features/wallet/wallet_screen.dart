@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../core/session.dart';
 import '../../core/theme.dart';
+import '../../shared/widgets/branded_header.dart';
 import '../../shared/widgets/selectable_pill.dart';
 import '../../core/i18n.dart';
 import 'wallet_repository.dart';
@@ -330,18 +331,27 @@ class _WalletScreenState extends State<WalletScreen> {
     }
     if (_error != null) {
       return Scaffold(
-        appBar: AppBar(title: Text(context.tr('wallet_title'))),
-        body: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(_error!, textAlign: TextAlign.center),
-                const SizedBox(height: 16),
-                ElevatedButton(onPressed: _load, child: Text(context.tr('wallet_retry'))),
-              ],
-            ),
+        backgroundColor: context.mutedSurface,
+        body: SafeArea(
+          child: Column(
+            children: [
+              BrandedHeader(title: context.tr('wallet_title')),
+              Expanded(
+                child: Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(_error!, textAlign: TextAlign.center),
+                        const SizedBox(height: 16),
+                        ElevatedButton(onPressed: _load, child: Text(context.tr('wallet_retry'))),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       );
@@ -351,8 +361,13 @@ class _WalletScreenState extends State<WalletScreen> {
     }
 
     return Scaffold(
-      appBar: AppBar(title: Text(context.tr('wallet_title'))),
-      body: RefreshIndicator(
+      backgroundColor: context.mutedSurface,
+      body: SafeArea(
+        child: Column(
+          children: [
+            BrandedHeader(title: context.tr('wallet_title')),
+            Expanded(
+              child: RefreshIndicator(
         onRefresh: _load,
         child: ListView(
           padding: const EdgeInsets.all(16),
@@ -446,6 +461,10 @@ class _WalletScreenState extends State<WalletScreen> {
                   ),
                 );
               }),
+          ],
+        ),
+      )
+            ),
           ],
         ),
       ),

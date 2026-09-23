@@ -7,6 +7,7 @@ import '../../core/feature_flags.dart';
 import '../../core/i18n.dart';
 import '../../core/session.dart';
 import '../../core/theme.dart';
+import '../../shared/widgets/branded_header.dart';
 import '../favorites/favorite_drivers_screen.dart';
 import '../orders/orders_repository.dart';
 import '../ratings/ratings_list_screen.dart';
@@ -349,8 +350,13 @@ class AccountScreenState extends State<AccountScreen> {
     final avatarUrl = _account?['avatar_url'] as String?;
 
     return Scaffold(
-      appBar: AppBar(title: Text(context.tr('account_title'))),
-      body: RefreshIndicator(
+      backgroundColor: context.mutedSurface,
+      body: SafeArea(
+        child: Column(
+          children: [
+            BrandedHeader(title: context.tr('account_title')),
+            Expanded(
+              child: RefreshIndicator(
         onRefresh: _load,
         child: ListView(
           padding: const EdgeInsets.all(16),
@@ -496,6 +502,10 @@ class AccountScreenState extends State<AccountScreen> {
                 side: const BorderSide(color: AppColors.error),
                 padding: const EdgeInsets.symmetric(vertical: 14),
               ),
+            ),
+          ],
+        ),
+      )
             ),
           ],
         ),

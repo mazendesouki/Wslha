@@ -5,6 +5,7 @@ import '../../core/phone_utils.dart';
 import '../../core/pricing_settings.dart';
 import '../../core/session.dart';
 import '../../core/theme.dart';
+import '../../shared/widgets/branded_header.dart';
 import '../../shared/widgets/selectable_pill.dart';
 import '../rides/address_field.dart';
 import '../rides/directions_service.dart';
@@ -398,19 +399,22 @@ class _AirportScreenState extends State<AirportScreen> {
   Widget build(BuildContext context) {
     if (_from != null && _airport != null) _maybeRefreshRoute();
     return Scaffold(
-      appBar: AppBar(title: Text(context.tr('airport_app_bar_title'))),
-      body: Column(
-        children: [
-          _stepProgressBar(),
-          Expanded(
-            child: SingleChildScrollView(
-              controller: _scrollController,
-              padding: const EdgeInsets.all(16),
-              child: _stepContent(),
+      backgroundColor: context.mutedSurface,
+      body: SafeArea(
+        child: Column(
+          children: [
+            BrandedHeader(title: context.tr('airport_app_bar_title')),
+            _stepProgressBar(),
+            Expanded(
+              child: SingleChildScrollView(
+                controller: _scrollController,
+                padding: const EdgeInsets.all(16),
+                child: _stepContent(),
+              ),
             ),
-          ),
-          _stepNavBar(),
-        ],
+            _stepNavBar(),
+          ],
+        ),
       ),
     );
   }

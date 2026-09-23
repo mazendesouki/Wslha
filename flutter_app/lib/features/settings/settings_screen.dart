@@ -8,6 +8,7 @@ import '../../core/i18n.dart';
 import '../../core/session.dart';
 import '../../core/theme.dart';
 import '../../core/update_checker.dart';
+import '../../shared/widgets/branded_header.dart';
 import '../notifications/notifications_screen.dart';
 import '../safety/emergency_contacts_screen.dart';
 import '../support/support_screen.dart';
@@ -80,8 +81,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(context.tr('settings_title'))),
-      body: ListView(
+      backgroundColor: context.mutedSurface,
+      body: SafeArea(
+        child: Column(
+          children: [
+            BrandedHeader(title: context.tr('settings_title')),
+            Expanded(
+              child: ListView(
         children: [
           if (_session != null)
             Padding(
@@ -227,6 +233,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           const SizedBox(height: 24),
         ],
+      )
+            ),
+          ],
+        ),
       ),
     );
   }
