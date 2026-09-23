@@ -325,7 +325,7 @@ class _RidesScreenState extends State<RidesScreen> {
             children: [
               if (_availableDrivers != null && _availableDrivers! > 0) ...[
                 _buildAvailableDriversCard(context),
-                const SizedBox(height: 12),
+                const SizedBox(height: 10),
               ],
               _sectionLabel(context.tr('rides_section_from_to')),
               Container(
@@ -381,30 +381,33 @@ class _RidesScreenState extends State<RidesScreen> {
                           label: Text(context.tr('rides_add_stop'), style: const TextStyle(fontSize: 12)),
                         ),
                       ),
-                    const Divider(height: 20),
+                    const Divider(height: 16),
                     Row(
                       children: [
                         const Icon(Icons.people_outline, size: 20, color: AppColors.textFaint),
                         const SizedBox(width: 8),
                         Text(context.tr('rides_passenger_count'), style: const TextStyle(fontWeight: FontWeight.w700)),
                         const Spacer(),
-                        IconButton(
-                          visualDensity: VisualDensity.compact,
+                        _CounterButton(
+                          icon: Icons.remove,
+                          filled: false,
                           onPressed: _passengers > 1 ? () => setState(() => _passengers--) : null,
-                          icon: const Icon(Icons.remove_circle_outline),
                         ),
-                        Text('$_passengers', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900)),
-                        IconButton(
-                          visualDensity: VisualDensity.compact,
+                        SizedBox(
+                          width: 28,
+                          child: Text('$_passengers', textAlign: TextAlign.center, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900)),
+                        ),
+                        _CounterButton(
+                          icon: Icons.add,
+                          filled: true,
                           onPressed: _passengers < 4 ? () => setState(() => _passengers++) : null,
-                          icon: const Icon(Icons.add_circle_outline),
                         ),
                       ],
                     ),
                   ],
                 ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 10),
               _sectionLabel(context.tr('rides_section_service_payment')),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
@@ -468,15 +471,14 @@ class _RidesScreenState extends State<RidesScreen> {
                   ],
                 ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 10),
               if (_straightKm > 0) ...[
                 _sectionLabel(context.tr('rides_section_fare_summary')),
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: context.surfaceColor,
+                    gradient: const LinearGradient(colors: [AppColors.primary, AppColors.primaryDark], begin: Alignment.topLeft, end: Alignment.bottomRight),
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: context.borderColor),
                   ),
                   child: Column(
                     children: [
@@ -485,7 +487,7 @@ class _RidesScreenState extends State<RidesScreen> {
                           padding: const EdgeInsets.only(bottom: 10),
                           child: Text(
                             context.tr('rides_negotiable_notice'),
-                            style: const TextStyle(fontSize: 11, color: AppColors.primaryDark, fontWeight: FontWeight.w700),
+                            style: const TextStyle(fontSize: 11, color: Colors.white, fontWeight: FontWeight.w700),
                             textAlign: TextAlign.center,
                           ),
                         ),
@@ -494,7 +496,7 @@ class _RidesScreenState extends State<RidesScreen> {
                           padding: const EdgeInsets.only(bottom: 10),
                           child: Text(
                             context.tr('rides_external_notice'),
-                            style: const TextStyle(fontSize: 11, color: AppColors.primaryDark, fontWeight: FontWeight.w700),
+                            style: const TextStyle(fontSize: 11, color: Colors.white, fontWeight: FontWeight.w700),
                             textAlign: TextAlign.center,
                           ),
                         ),
@@ -503,7 +505,7 @@ class _RidesScreenState extends State<RidesScreen> {
                           padding: const EdgeInsets.only(bottom: 10),
                           child: Text(
                             '${context.tr('rides_surge_notice_prefix')}${_surgeMult.toStringAsFixed(2)}',
-                            style: const TextStyle(fontSize: 11, color: AppColors.error, fontWeight: FontWeight.w800),
+                            style: const TextStyle(fontSize: 11, color: Color(0xFFFCA5A5), fontWeight: FontWeight.w800),
                             textAlign: TextAlign.center,
                           ),
                         ),
@@ -512,7 +514,7 @@ class _RidesScreenState extends State<RidesScreen> {
                           padding: const EdgeInsets.only(bottom: 10),
                           child: Text(
                             '${context.tr('rides_multistop_notice_prefix')} (${_filledPoints.length - 1} ${context.tr('rides_multistop_notice_stop_unit')}) — ${context.tr('rides_multistop_notice_suffix')}',
-                            style: const TextStyle(fontSize: 11, color: AppColors.primaryDark, fontWeight: FontWeight.w700),
+                            style: const TextStyle(fontSize: 11, color: Colors.white, fontWeight: FontWeight.w700),
                             textAlign: TextAlign.center,
                           ),
                         ),
@@ -521,7 +523,7 @@ class _RidesScreenState extends State<RidesScreen> {
                         children: [
                           _statColumn('${(_roadKm).toStringAsFixed(1)} كم', context.tr('rides_stat_distance')),
                           _statColumn('$_eta دقيقة', context.tr('rides_stat_eta')),
-                          _statColumn('$_fare ج.م', context.tr('rides_stat_fare')),
+                          _statColumn('$_fare ج.م', context.tr('rides_stat_fare'), highlighted: true),
                         ],
                       ),
                     ],
@@ -571,18 +573,39 @@ class _RidesScreenState extends State<RidesScreen> {
                   onChanged: (code, check) => setState(() => _appliedCouponCode = check != null ? code : null),
                 ),
               ],
-              const SizedBox(height: 12),
-              ElevatedButton(
-                onPressed: ready ? _submit : null,
-                child: _submitting
-                    ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                      )
-                    : Text(_scheduledAt != null
-                        ? context.tr('rides_submit_schedule')
-                        : (_negotiable ? context.tr('rides_submit_negotiable') : context.tr('rides_submit_now'))),
+              const SizedBox(height: 10),
+              // Gold gradient CTA (design canvas) — sets the primary booking
+              // action visually apart from the teal used everywhere else on
+              // the screen (header, fare summary, selected pills).
+              Container(
+                height: 52,
+                decoration: BoxDecoration(
+                  gradient: ready ? const LinearGradient(colors: [Color(0xFFD4A24C), AppColors.accent]) : null,
+                  color: ready ? null : context.borderColor,
+                  borderRadius: BorderRadius.circular(14),
+                  boxShadow: ready ? [BoxShadow(color: AppColors.accent.withValues(alpha: 0.35), blurRadius: 18, offset: const Offset(0, 8))] : null,
+                ),
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.transparent,
+                    shadowColor: Colors.transparent,
+                    disabledBackgroundColor: Colors.transparent,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  ),
+                  onPressed: ready ? _submit : null,
+                  child: _submitting
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                        )
+                      : Text(
+                          _scheduledAt != null
+                              ? context.tr('rides_submit_schedule')
+                              : (_negotiable ? context.tr('rides_submit_negotiable') : context.tr('rides_submit_now')),
+                          style: TextStyle(color: ready ? Colors.white : AppColors.textFaint, fontWeight: FontWeight.w900, fontSize: 15),
+                        ),
+                ),
               ),
             ],
           ),
@@ -697,11 +720,11 @@ class _RidesScreenState extends State<RidesScreen> {
     );
   }
 
-  Widget _statColumn(String value, String label) {
+  Widget _statColumn(String value, String label, {bool highlighted = false}) {
     return Column(
       children: [
-        Text(value, style: const TextStyle(fontWeight: FontWeight.w900, color: AppColors.primaryDark)),
-        Text(label, style: const TextStyle(fontSize: 11, color: AppColors.primaryDark, fontWeight: FontWeight.w600)),
+        Text(value, style: TextStyle(fontWeight: FontWeight.w900, fontSize: highlighted ? 18 : 15, color: highlighted ? AppColors.accent : Colors.white)),
+        Text(label, style: const TextStyle(fontSize: 10.5, color: Colors.white70, fontWeight: FontWeight.w600)),
       ],
     );
   }
@@ -710,4 +733,37 @@ class _RidesScreenState extends State<RidesScreen> {
         padding: const EdgeInsets.only(bottom: 8, right: 4),
         child: Text(text, style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 13)),
       );
+}
+
+/// Small circular +/- button for the passenger counter — a filled teal
+/// circle for "+" and a light outlined circle for "-", matching the design
+/// canvas's rounded counter treatment instead of plain Material icon
+/// buttons.
+class _CounterButton extends StatelessWidget {
+  final IconData icon;
+  final bool filled;
+  final VoidCallback? onPressed;
+  const _CounterButton({required this.icon, required this.filled, required this.onPressed});
+
+  @override
+  Widget build(BuildContext context) {
+    final enabled = onPressed != null;
+    return Semantics(
+      button: true,
+      label: icon == Icons.add ? context.tr('rides_passenger_increase') : context.tr('rides_passenger_decrease'),
+      child: Material(
+        color: filled ? (enabled ? AppColors.primary : AppColors.primary.withValues(alpha: 0.35)) : context.mutedSurface,
+        shape: const CircleBorder(),
+        child: InkWell(
+          onTap: onPressed,
+          customBorder: const CircleBorder(),
+          child: SizedBox(
+            width: 28,
+            height: 28,
+            child: Icon(icon, size: 16, color: filled ? Colors.white : (enabled ? AppColors.textFaint : AppColors.textFaint.withValues(alpha: 0.4))),
+          ),
+        ),
+      ),
+    );
+  }
 }

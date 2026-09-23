@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import '../../core/theme.dart';
 
-/// Outlined selectable pill — white/tinted with a border that turns green
-/// and grows a checkmark when selected, instead of a solid filled
-/// ChoiceChip. Shared across the airport and ride booking forms so every
-/// single-choice picker in the app reads the same way.
+/// Selectable pill — a filled teal gradient with a checkmark when selected,
+/// a plain outline otherwise. Shared across the airport and ride booking
+/// forms so every single-choice picker in the app reads the same way; the
+/// gradient fill matches the branded header/CTA treatment introduced on
+/// rides_screen.dart (design direction "ب") instead of the flatter
+/// tinted-outline look it had before.
 class SelectablePill extends StatelessWidget {
   final String label;
   final bool selected;
@@ -14,7 +16,7 @@ class SelectablePill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: selected ? AppColors.primaryLight : context.surfaceColor,
+      color: Colors.transparent,
       borderRadius: BorderRadius.circular(30),
       child: InkWell(
         borderRadius: BorderRadius.circular(30),
@@ -23,16 +25,18 @@ class SelectablePill extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(30),
-            border: Border.all(color: selected ? AppColors.primary : context.borderColor, width: selected ? 1.6 : 1),
+            gradient: selected ? const LinearGradient(colors: [AppColors.primary, AppColors.primaryDark]) : null,
+            color: selected ? null : context.surfaceColor,
+            border: selected ? null : Border.all(color: context.borderColor),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
               if (selected) ...[
-                const Icon(Icons.check, size: 15, color: AppColors.primary),
+                const Icon(Icons.check, size: 15, color: Colors.white),
                 const SizedBox(width: 5),
               ],
-              Text(label, style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: selected ? AppColors.primaryDark : context.bodyText)),
+              Text(label, style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: selected ? Colors.white : context.bodyText)),
             ],
           ),
         ),

@@ -92,4 +92,6 @@ const Map<String, Map<String, String>> batchIStrings = {
   // piece, db/security-91's real driver count, no fake numbers).
   'rides_available_drivers_suffix': {'ar': 'سائق متاح بالقرب منك الآن', 'en': 'drivers available near you now'},
   'rides_available_drivers_live_badge': {'ar': 'مباشر', 'en': 'LIVE'},
+  'rides_passenger_increase': {'ar': 'زيادة عدد الركاب', 'en': 'Increase passenger count'},
+  'rides_passenger_decrease': {'ar': 'تقليل عدد الركاب', 'en': 'Decrease passenger count'},
 };
