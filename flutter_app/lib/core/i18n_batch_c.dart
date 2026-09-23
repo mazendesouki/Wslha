@@ -47,7 +47,7 @@ const Map<String, Map<String, String>> batchCStrings = {
   'rides_scheduled_for_prefix': {'ar': 'مجدولة:', 'en': 'Scheduled:'},
   'rides_submit_schedule': {'ar': '🗓️ جدولة المشوار', 'en': '🗓️ Schedule the ride'},
   'rides_submit_negotiable': {'ar': '🤝 اطلب عروض أسعار من السائقين', 'en': '🤝 Request price offers from drivers'},
-  'rides_submit_now': {'ar': '🚖 اطلب مشوارك الآن', 'en': '🚖 Request your ride now'},
+  'rides_submit_now': {'ar': 'احجز الآن', 'en': 'Book now'},
 
   // --- ride_tracking_screen.dart ---
   'ride_tracking_notif_accepted': {'ar': '🚗 قبِل السائق طلبك وهو في طريقه إليك', 'en': '🚗 The driver accepted your request and is on the way to you'},
