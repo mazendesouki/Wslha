@@ -137,6 +137,17 @@ class _RidesScreenState extends State<RidesScreen> {
 
   bool get _hasMultiStop => _filledPoints.length > 2;
 
+  // Reported as a real confusion/dispute risk: the moment a destination is
+  // picked, _roadKm briefly falls back to the haversine × roadFactor
+  // estimate (visibly different from the real routed distance — e.g. 4.6
+  // vs. the real 2.6) until the Directions API call finishes and
+  // _maybeRefreshRoute()'s setState lands. _submit() already awaits the
+  // real route before actually booking, so the CHARGED fare was always
+  // correct — but the customer briefly SAW the wrong number, which is what
+  // was reported. True whenever there are enough points for a route but
+  // the real one hasn't come back yet.
+  bool get _routeLoading => _filledPoints.length >= 2 && _routedRoute == null;
+
   @override
   void initState() {
     super.initState();
@@ -536,14 +547,31 @@ class _RidesScreenState extends State<RidesScreen> {
                             textAlign: TextAlign.center,
                           ),
                         ),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceAround,
-                        children: [
-                          _statColumn('${(_roadKm).toStringAsFixed(1)} كم', context.tr('rides_stat_distance')),
-                          _statColumn('$_eta دقيقة', context.tr('rides_stat_eta')),
-                          _statColumn('$_fare ج.م', context.tr('rides_stat_fare'), highlighted: true),
-                        ],
-                      ),
+                      if (_routeLoading)
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                            ),
+                            const SizedBox(width: 10),
+                            Text(
+                              context.tr('rides_route_loading'),
+                              style: const TextStyle(fontSize: 12.5, color: Colors.white, fontWeight: FontWeight.w700),
+                            ),
+                          ],
+                        )
+                      else
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceAround,
+                          children: [
+                            _statColumn('${(_roadKm).toStringAsFixed(1)} كم', context.tr('rides_stat_distance')),
+                            _statColumn('$_eta دقيقة', context.tr('rides_stat_eta')),
+                            _statColumn('$_fare ج.م', context.tr('rides_stat_fare'), highlighted: true),
+                          ],
+                        ),
                     ],
                   ),
                 ),

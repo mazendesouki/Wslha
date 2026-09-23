@@ -16,4 +16,10 @@ const Map<String, Map<String, String>> batchJStrings = {
   'cash_reminder_due_prefix': {'ar': 'آخر موعد للسداد:', 'en': 'Due by:'},
   'cash_reminder_note_label': {'ar': 'ملاحظة:', 'en': 'Note:'},
   'cash_reminder_dismiss': {'ar': 'تم، هسدد', 'en': 'Got it'},
+
+  // rides_screen.dart — avoids ever showing the rough haversine estimate
+  // (which could visibly differ from the real routed distance, e.g. 4.6 vs
+  // 2.6, and confused customers/drivers) before the real Directions API
+  // route comes back.
+  'rides_route_loading': {'ar': 'جاري حساب المسافة الدقيقة...', 'en': 'Calculating the exact distance...'},
 };
