@@ -7,6 +7,7 @@ import '../../core/flavor.dart';
 import '../../core/i18n.dart';
 import '../../core/password_utils.dart';
 import '../../core/phone_utils.dart';
+import '../../core/pricing_settings.dart';
 import '../../core/theme.dart';
 import 'auth_repository.dart';
 
@@ -52,6 +53,14 @@ class _DriverMerchantRegisterScreenState extends State<DriverMerchantRegisterScr
   void initState() {
     super.initState();
     _city = _cities.first;
+    if (_isDriver) {
+      // For the commission trust banner below — app.dart already loads this
+      // at startup, but refresh() + setState picks up the latest
+      // admin-set rate in case it changed since then.
+      PricingSettings.refresh().then((_) {
+        if (mounted) setState(() {});
+      });
+    }
   }
 
   Future<void> _capturePhoto() async {
@@ -194,6 +203,49 @@ class _DriverMerchantRegisterScreenState extends State<DriverMerchantRegisterScr
               const SizedBox(height: 16),
             ],
             if (_isDriver) ...[
+              // Concrete trust signal shown BEFORE a prospective driver
+              // commits to signing up — a real, low commission number beats
+              // a vague "great support" claim, and this is the moment that
+              // actually decides whether they leave a more famous app for
+              // this one. The rate is admin-configurable (app_settings),
+              // never hardcoded, so this always reflects what's really
+              // charged.
+              Container(
+                padding: const EdgeInsets.all(14),
+                margin: const EdgeInsets.only(bottom: 16),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(colors: [AppColors.primary, AppColors.primaryDark]),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.14), borderRadius: BorderRadius.circular(12)),
+                      alignment: Alignment.center,
+                      child: Text(
+                        '${PricingSettings.commissionRide.toStringAsFixed(0)}%',
+                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 15),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(context.tr('driver_reg_commission_banner_title'), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 13.5)),
+                          const SizedBox(height: 2),
+                          Text(
+                            context.tr('driver_reg_commission_banner_subtitle'),
+                            style: TextStyle(color: Colors.white.withValues(alpha: 0.75), fontSize: 11, fontWeight: FontWeight.w600),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
               Center(
                 child: GestureDetector(
                   onTap: _capturePhoto,

@@ -81,4 +81,10 @@ const Map<String, Map<String, String>> batchIStrings = {
   'forgot_password_no_email': {'ar': 'لا يوجد بريد إلكتروني مسجّل لهذا الحساب — تواصل مع الدعم الفني', 'en': 'No email registered for this account — contact support'},
   'forgot_password_done': {'ar': 'تم تغيير كلمة المرور بنجاح — سجّل دخولك بكلمة المرور الجديدة', 'en': 'Password changed successfully — log in with your new password'},
   'forgot_password_back_to_login': {'ar': 'رجوع لتسجيل الدخول', 'en': 'Back to login'},
+
+  // driver_merchant_register_screen.dart — commission trust banner (a
+  // concrete, low number shown before signup, instead of only appearing
+  // after the fact on the post-ride settlement receipt).
+  'driver_reg_commission_banner_title': {'ar': 'عمولتنا من أقل العمولات في السوق', 'en': 'One of the lowest commissions around'},
+  'driver_reg_commission_banner_subtitle': {'ar': 'مش نسبة تقريبية — ده اللي بتاخده فعليًا من كل رحلة', 'en': 'Not an estimate — this is exactly what we take from every trip'},
 };

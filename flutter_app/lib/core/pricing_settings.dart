@@ -48,6 +48,17 @@ class PricingSettings {
   static int driverDailyGoal = 8;
   static int driverWeeklyGoal = 40;
 
+  // Platform commission rates (%) — surfaced to prospective drivers on
+  // driver_merchant_register_screen.dart as a concrete trust signal (a
+  // real, low number beats a vague "fast support" claim), instead of only
+  // showing up after the fact on the post-ride settlement receipt
+  // (driver_home_screen.dart). Defaults match the live app_settings
+  // values so the banner still reads correctly before the first fetch.
+  static double commissionRide = 5;
+  static double commissionDelivery = 5;
+  static double commissionExternal = 6;
+  static double commissionAirport = 7;
+
   static bool _loaded = false;
 
   /// Fire-and-forget is fine to call repeatedly (e.g. from each screen's
@@ -74,6 +85,7 @@ class PricingSettings {
         'customer_late_grace_minutes', 'customer_late_fee_per_minute',
         'no_show_grace_minutes', 'no_show_fee',
         'driver_daily_goal', 'driver_weekly_goal',
+        'commission_ride', 'commission_delivery', 'commission_external', 'commission_airport',
       ]);
       double? num(String key) {
         final row = (rows as List).cast<Map<String, dynamic>>().where((r) => r['key'] == key).toList();
@@ -107,6 +119,10 @@ class PricingSettings {
       noShowFee = num('no_show_fee') ?? noShowFee;
       driverDailyGoal = (num('driver_daily_goal') ?? driverDailyGoal.toDouble()).round();
       driverWeeklyGoal = (num('driver_weekly_goal') ?? driverWeeklyGoal.toDouble()).round();
+      commissionRide = num('commission_ride') ?? commissionRide;
+      commissionDelivery = num('commission_delivery') ?? commissionDelivery;
+      commissionExternal = num('commission_external') ?? commissionExternal;
+      commissionAirport = num('commission_airport') ?? commissionAirport;
       _loaded = true;
     } catch (_) {
       // Network hiccup — keep the hardcoded defaults.
