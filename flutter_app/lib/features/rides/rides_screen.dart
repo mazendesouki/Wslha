@@ -467,7 +467,7 @@ class _RidesScreenState extends State<RidesScreen> {
                         runSpacing: 6,
                         children: [
                           SelectablePill(label: context.tr('rides_payment_cash'), selected: _payment == 'cash', onTap: () => setState(() => _payment = 'cash')),
-                          SelectablePill(label: context.tr('rides_payment_wallet'), selected: _payment == 'wallet', onTap: () => setState(() => _payment = 'wallet')),
+                          SelectablePill(label: context.tr('rides_payment_wallet'), selected: false, enabled: false, onTap: () {}),
                         ],
                       ),
                     ),
