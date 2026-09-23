@@ -1258,6 +1258,16 @@
             <button class="btn btn--outline" onclick="changeMyPhone()">📱 تغيير رقم هاتفي</button>
           </div>
         </div>
+        <!-- تذكيرات سداد الكاش (db/security-92) — تسجيل مبلغ مستحق على
+             سائق بيتعمل من زرار "💰 تذكير كاش" في جدول المستخدمين نفسه؛
+             الكارت ده بس لعرض/متابعة كل التذكيرات وتسجيل السداد. -->
+        <div class="card">
+          <div class="card__head"><span class="card__title">💰 تذكيرات سداد الكاش</span></div>
+          <div class="card__body">
+            <p style="font-size:.8rem;color:#64748B;margin-bottom:.75rem">تسجيل مبلغ مستحق على سائق بيكون من زرار "💰 تذكير كاش" في صفحة المستخدمين — هنا بس لمتابعة التذكيرات وتسجيل السداد.</p>
+            <button class="btn btn--outline" onclick="openCashRemindersModal()">📋 عرض كل التذكيرات</button>
+          </div>
+        </div>
         <!-- Commission rates -->
         <div class="card">
           <div class="card__head"><span class="card__title">⚙️ نسب عمولة التطبيق</span></div>
@@ -2404,6 +2414,7 @@ function renderUsers() {
         <div class="btn-row" style="flex-wrap:nowrap;align-items:center;gap:4px">
           <button class="btn btn--outline btn--sm" onclick="viewUserStats('${u.phone}','${(u.name||'').replace(/'/g,"\\'")}','${u.role}')" title="عرض إحصائيات المستخدم">📊 التفاصيل</button>
           <button class="btn btn--outline btn--sm" onclick="changeUserPhone('${u.phone}')" title="لمن يريد تغيير رقم هاتفه بعد التواصل مع الدعم الفني">📱 تغيير الرقم</button>
+          ${u.role === 'driver' ? `<button class="btn btn--outline btn--sm" onclick="createCashReminder('${u.phone}','${(u.name||'').replace(/'/g,"\\'")}')" title="تسجيل مبلغ كاش مستحق على السائق وإرسال تذكير له">💰 تذكير كاش</button>` : ''}
           <select class="filter-select" style="font-size:.72rem;padding:.25rem .45rem;min-width:75px" onchange="changeUserStatus('${u.phone}',this.value);this.value='${u.status||'active'}'">
             <option value="active"  ${(u.status||'active')==='active'  ?'selected':''}>نشط</option>
             <option value="pending" ${(u.status||'')==='pending' ?'selected':''}>معلق</option>
@@ -2488,6 +2499,88 @@ async function changeUserPhone(phone) {
   const ok = await sbRpc('admin_change_user_phone', { p_admin_phone: ADMIN.phone, p_admin_password: pass, p_target_phone: phone, p_new_phone: newPhone.trim(), p_action_key: key });
   if (ok) { showToast('✅ تم تغيير رقم الهاتف بنجاح', '#16A34A'); loadUsers(); }
   else { clearAdminPass(); showToast('❌ فشل — تأكد إن الرقم الجديد مش مستخدم بالفعل، أو تحقق من كلمة المرور ومفتاح الأمان', '#DC2626'); }
+}
+// أداة تذكير سداد الكاش (db/security-92) — تسجّل مبلغ مستحق على سائق وتبعتله
+// إشعار Push فوري (نافذة منبثقة في تطبيقه قابلة للإغلاق بـX)، ويفضل التذكير
+// شغال في التطبيق كل ما يفتحه لحد ما أدمن يعلّمه "تم السداد" من هنا.
+async function createCashReminder(phone, name) {
+  const amountStr = await showTextGate(`المبلغ المستحق على "${name || phone}" (ج.م)`, { placeholder: '100' });
+  if (!amountStr) return;
+  const amount = Number(amountStr.trim());
+  if (!Number.isFinite(amount) || amount <= 0) { showToast('❌ مبلغ غير صالح', '#DC2626'); return; }
+  const note = await showTextGate('ملاحظة (اختياري)', { placeholder: 'مثال: كاش رحلات يوم الخميس' });
+  if (!(await showConfirmGate(`تسجيل ${amount} ج.م مستحق على "${name || phone}" وإرسال تذكير له؟\nهيفضل التذكير شغال في تطبيقه لحد ما تعلّمه "تم السداد".`))) return;
+  const pass = await getAdminPass();
+  if (!pass) return;
+  const key = await getActionKey();
+  if (!key) return;
+  try {
+    await sbRpcJson('admin_create_cash_reminder', {
+      p_admin_phone: ADMIN.phone, p_admin_password: pass, p_driver_phone: phone,
+      p_amount: amount, p_note: note?.trim() || null, p_action_key: key,
+    });
+    showToast('✅ اتسجّل التذكير واتبعت للسائق', '#16A34A');
+  } catch (e) {
+    clearAdminPass();
+    showToast(`❌ فشل — ${e.message || 'تحقق من كلمة المرور ومفتاح الأمان'}`, '#DC2626');
+  }
+}
+
+// نافذة عرض كل تذكيرات الكاش (نشطة ومسدّدة) — تفتح من زرار في قسم
+// الإعدادات، وفيها زرار "تم السداد" لكل تذكير نشط.
+async function openCashRemindersModal() {
+  const pass = await getAdminPass();
+  if (!pass) return;
+  let rows;
+  try {
+    rows = await sbRpcJson('admin_list_cash_reminders', { p_admin_phone: ADMIN.phone, p_admin_password: pass });
+  } catch (e) {
+    clearAdminPass();
+    showToast('❌ فشل تحميل التذكيرات — تحقق من كلمة المرور', '#DC2626');
+    return;
+  }
+  const bg = document.createElement('div');
+  bg.className = 'modal-bg';
+  bg.innerHTML = `
+    <div class="modal" style="max-width:640px">
+      <div class="modal__head"><span class="modal__title">💰 تذكيرات سداد الكاش</span>
+        <button class="modal__close" onclick="this.closest('.modal-bg').remove()">✕</button></div>
+      <div class="modal__body" style="max-height:60vh;overflow:auto">
+        ${(rows||[]).length === 0 ? '<p style="text-align:center;color:#94A3B8;padding:1.5rem">مفيش تذكيرات مسجّلة</p>' : `
+        <table class="data-table" style="width:100%">
+          <thead><tr><th>السائق</th><th>المبلغ</th><th>الملاحظة</th><th>آخر موعد</th><th>الحالة</th><th></th></tr></thead>
+          <tbody>
+            ${rows.map(r => `
+              <tr>
+                <td>${r.driver_name || '—'}<br><span class="num" style="font-size:.75rem;color:#94A3B8">${r.driver_phone}</span></td>
+                <td style="font-weight:800">${r.amount} ج.م</td>
+                <td style="font-size:.8rem;color:#64748B">${r.note || '—'}</td>
+                <td style="font-size:.78rem">${fmtDate(r.due_at)}</td>
+                <td>${r.settled ? '<span class="badge badge--green">تم السداد</span>' : '<span class="badge badge--orange">مستحق</span>'}</td>
+                <td>${r.settled ? '' : `<button class="btn btn--outline btn--sm" onclick="settleCashReminder('${r.id}')">✅ تم السداد</button>`}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+        `}
+      </div>
+    </div>`;
+  document.body.appendChild(bg);
+}
+
+async function settleCashReminder(id) {
+  if (!(await showConfirmGate('تأكيد إن السائق سدّد المبلغ ده بالكامل؟'))) return;
+  const pass = await getAdminPass();
+  if (!pass) return;
+  const ok = await sbRpc('admin_settle_cash_reminder', { p_admin_phone: ADMIN.phone, p_admin_password: pass, p_reminder_id: id });
+  if (ok) {
+    showToast('✅ اتسجّل السداد', '#16A34A');
+    document.querySelectorAll('.modal-bg').forEach(m => m.remove());
+    openCashRemindersModal();
+  } else {
+    clearAdminPass();
+    showToast('❌ فشل تسجيل السداد', '#DC2626');
+  }
 }
 // طريقة منفصلة عن changeUserPhone — دي لتغيير رقم المشرف نفسه (اللي داخل
 // اللوحة دلوقتي)، مش رقم مستخدم تاني. بعد النجاح لازم نحدّث ADMIN.phone

@@ -382,4 +382,70 @@ class DriverRepository {
       rate: ((row['rate'] as num?) ?? 0).toDouble(),
     );
   }
+
+  /// "سجل الرحلات" (db/security-92) — dispatch offers that expired
+  /// unanswered: most commonly a driver whose "متصل" switch was still on,
+  /// but whose device had lost internet right when an offer came in, so it
+  /// timed out before they ever saw it. Read-only, last 30 days.
+  Future<List<MissedRequest>> fetchMissedRequests(String phone) async {
+    final rows = await sb.rpc('get_driver_missed_requests', params: {'p_driver_phone': phone});
+    return (rows as List).cast<Map<String, dynamic>>().map(MissedRequest.fromRow).toList();
+  }
+
+  /// Outstanding cash-collection reminders an admin sent this driver
+  /// (db/security-92) — stays active (keeps showing) until an admin marks
+  /// it settled from the panel, not just dismissed once in the app.
+  Future<List<CashReminder>> fetchActiveCashReminders(String phone) async {
+    final rows = await sb.rpc('get_driver_active_cash_reminders', params: {'p_driver_phone': phone});
+    return (rows as List).cast<Map<String, dynamic>>().map(CashReminder.fromRow).toList();
+  }
+}
+
+class MissedRequest {
+  final String id;
+  final String targetType; // 'ride' | 'order'
+  final DateTime offeredAt;
+  final String? fromArea;
+  final String? toArea;
+  final double? fare;
+  final String? storeName;
+  final double? orderTotal;
+  MissedRequest({
+    required this.id,
+    required this.targetType,
+    required this.offeredAt,
+    this.fromArea,
+    this.toArea,
+    this.fare,
+    this.storeName,
+    this.orderTotal,
+  });
+
+  factory MissedRequest.fromRow(Map<String, dynamic> row) => MissedRequest(
+        id: row['id'] as String,
+        targetType: row['target_type'] as String? ?? 'ride',
+        offeredAt: DateTime.parse(row['offered_at'] as String),
+        fromArea: row['from_area'] as String?,
+        toArea: row['to_area'] as String?,
+        fare: (row['fare'] as num?)?.toDouble(),
+        storeName: row['store_name'] as String?,
+        orderTotal: (row['order_total'] as num?)?.toDouble(),
+      );
+}
+
+class CashReminder {
+  final String id;
+  final double amount;
+  final String? note;
+  final DateTime createdAt;
+  final DateTime dueAt;
+  CashReminder({required this.id, required this.amount, this.note, required this.createdAt, required this.dueAt});
+
+  factory CashReminder.fromRow(Map<String, dynamic> row) => CashReminder(
+        id: row['id'] as String,
+        amount: ((row['amount'] as num?) ?? 0).toDouble(),
+        note: row['note'] as String?,
+        createdAt: DateTime.parse(row['created_at'] as String),
+        dueAt: DateTime.parse(row['due_at'] as String),
+      );
 }

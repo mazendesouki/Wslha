@@ -28,8 +28,10 @@ import '../rides/ride_chat_screen.dart';
 import '../rides/ride_repository.dart';
 import 'active_job_store.dart';
 import 'airport_ride_requests_screen.dart';
+import 'cash_reminder_dialog.dart';
 import 'driver_repository.dart';
 import 'negotiation_screen.dart';
+import 'trip_log_screen.dart';
 
 /// Visual language ported from driver-dashboard.astro: teal online toggle,
 /// pulsing "radar" while idle, a list of 30s-countdown offer cards,
@@ -57,6 +59,7 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
   Timer? _countdownTimer;
   Timer? _locationTimer;
   StreamSubscription<Map<String, dynamic>>? _offersSub;
+  StreamSubscription<Map<String, dynamic>>? _cashReminderSub;
 
   bool _online = false;
   bool _busy = false;
@@ -93,6 +96,32 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
     PricingSettings.refresh().then((_) {
       if (mounted) setState(() {});
     });
+
+    // Cash-collection reminders (db/security-92) — shown regardless of the
+    // "متصل" toggle, since it's real money owed to the company, not a job
+    // dispatch. Checked once on open (in case a push arrived while the app
+    // was closed/killed) and again the instant a live reminder push comes
+    // in.
+    _checkCashReminders();
+    _cashReminderSub = PushRegistrar.onMessageData.listen((data) {
+      if (data['type'] == 'cash_reminder') _checkCashReminders();
+    });
+  }
+
+  Future<void> _checkCashReminders() async {
+    List<CashReminder> reminders;
+    try {
+      reminders = await _repo.fetchActiveCashReminders(widget.session.phone);
+    } catch (_) {
+      return;
+    }
+    if (!mounted || reminders.isEmpty) return;
+    // One at a time — showing every outstanding reminder stacked would be
+    // overwhelming; the most recent one is the most relevant to act on
+    // first, and dismissing it just closes this popup (still "settled" in
+    // the backend sense only once an admin marks it paid), so the next one
+    // shows again the next time the driver opens the app.
+    showDialog(context: context, builder: (_) => CashReminderDialog(reminder: reminders.first));
   }
 
   Future<void> _restoreActiveJob() async {
@@ -134,6 +163,7 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
     _countdownTimer?.cancel();
     _locationTimer?.cancel();
     _offersSub?.cancel();
+    _cashReminderSub?.cancel();
     _jobs.removeListener(_onJobsChanged);
     super.dispose();
   }
@@ -616,6 +646,17 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
                 );
               },
             ),
+          // "سجل الرحلات" (db/security-92) — plain icon, no live badge:
+          // unlike the negotiation/airport lists above (open offers a
+          // driver can still act on), these are already-expired offers,
+          // there's nothing actionable to flag a count for.
+          IconButton(
+            tooltip: context.tr('trip_log_appbar_title'),
+            icon: const Text('📋', style: TextStyle(fontSize: 20)),
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => TripLogScreen(driverPhone: widget.session.phone)),
+            ),
+          ),
           const LogoutButton(),
         ],
       ),
