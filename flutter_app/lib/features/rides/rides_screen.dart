@@ -596,7 +596,6 @@ class _RidesScreenState extends State<RidesScreen> {
               // action visually apart from the teal used everywhere else on
               // the screen (header, fare summary, selected pills).
               Container(
-                height: 52,
                 decoration: BoxDecoration(
                   gradient: ready ? const LinearGradient(colors: [Color(0xFFD4A24C), AppColors.accent]) : null,
                   color: ready ? null : context.borderColor,
