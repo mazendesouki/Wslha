@@ -335,6 +335,7 @@ class _RidesScreenState extends State<RidesScreen> {
                   color: context.surfaceColor,
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(color: context.borderColor),
+                  boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 12, offset: const Offset(0, 4))],
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -416,6 +417,7 @@ class _RidesScreenState extends State<RidesScreen> {
                   color: context.surfaceColor,
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(color: context.borderColor),
+                  boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 12, offset: const Offset(0, 4))],
                 ),
                 child: Column(
                   children: [
@@ -480,6 +482,7 @@ class _RidesScreenState extends State<RidesScreen> {
                   decoration: BoxDecoration(
                     gradient: const LinearGradient(colors: [AppColors.primary, AppColors.primaryDark], begin: Alignment.topLeft, end: Alignment.bottomRight),
                     borderRadius: BorderRadius.circular(16),
+                    boxShadow: [BoxShadow(color: AppColors.primary.withValues(alpha: 0.25), blurRadius: 16, offset: const Offset(0, 6))],
                   ),
                   child: Column(
                     children: [
@@ -583,7 +586,7 @@ class _RidesScreenState extends State<RidesScreen> {
                 decoration: BoxDecoration(
                   gradient: ready ? const LinearGradient(colors: [Color(0xFFD4A24C), AppColors.accent]) : null,
                   color: ready ? null : context.borderColor,
-                  borderRadius: BorderRadius.circular(14),
+                  borderRadius: BorderRadius.circular(16),
                   boxShadow: ready ? [BoxShadow(color: AppColors.accent.withValues(alpha: 0.35), blurRadius: 18, offset: const Offset(0, 8))] : null,
                 ),
                 child: ElevatedButton(
@@ -591,7 +594,7 @@ class _RidesScreenState extends State<RidesScreen> {
                     backgroundColor: Colors.transparent,
                     shadowColor: Colors.transparent,
                     disabledBackgroundColor: Colors.transparent,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                   ),
                   onPressed: ready ? _submit : null,
                   child: _submitting
