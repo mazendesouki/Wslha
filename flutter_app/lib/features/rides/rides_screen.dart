@@ -320,7 +320,7 @@ class _RidesScreenState extends State<RidesScreen> {
             _buildHeader(context),
             Expanded(
               child: SingleChildScrollView(
-          padding: const EdgeInsets.all(14),
+          padding: const EdgeInsets.fromLTRB(14, 14, 14, 28),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
