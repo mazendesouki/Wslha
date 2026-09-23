@@ -358,7 +358,9 @@ class _DeliveryRequestSheetState extends State<_DeliveryRequestSheet> {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
+    return SafeArea(
+      top: false,
+      child: Padding(
       padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
       child: Container(
         padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
@@ -402,6 +404,7 @@ class _DeliveryRequestSheetState extends State<_DeliveryRequestSheet> {
           ],
         ),
       ),
+    ),
     );
   }
 }

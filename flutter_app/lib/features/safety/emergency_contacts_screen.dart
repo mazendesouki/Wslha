@@ -46,7 +46,7 @@ class _EmergencyContactsScreenState extends State<EmergencyContactsScreen> {
       context: context,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-      builder: (sheetContext) => Padding(
+      builder: (sheetContext) => SafeArea(top: false, child: Padding(
         padding: EdgeInsets.only(
           left: 20,
           right: 20,
@@ -84,7 +84,7 @@ class _EmergencyContactsScreenState extends State<EmergencyContactsScreen> {
             ),
           ],
         ),
-      ),
+      )),
     );
     if (added != true || _session == null) return;
     final normalized = normalizeEgyptianPhone(phoneCtrl.text.trim());

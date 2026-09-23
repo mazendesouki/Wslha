@@ -91,7 +91,7 @@ class _WalletScreenState extends State<WalletScreen> {
     await showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      builder: (ctx) => Padding(
+      builder: (ctx) => SafeArea(top: false, child: Padding(
         padding: EdgeInsets.only(
           left: 20, right: 20, top: 20,
           bottom: MediaQuery.of(ctx).viewInsets.bottom + 20,
@@ -144,7 +144,7 @@ class _WalletScreenState extends State<WalletScreen> {
             ],
           ),
         ),
-      ),
+      )),
     );
   }
 
@@ -156,7 +156,7 @@ class _WalletScreenState extends State<WalletScreen> {
     await showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      builder: (ctx) => Padding(
+      builder: (ctx) => SafeArea(top: false, child: Padding(
         padding: EdgeInsets.only(
           left: 20, right: 20, top: 20,
           bottom: MediaQuery.of(ctx).viewInsets.bottom + 20,
@@ -213,7 +213,7 @@ class _WalletScreenState extends State<WalletScreen> {
             ],
           ),
         ),
-      ),
+      )),
     );
   }
 
@@ -228,7 +228,7 @@ class _WalletScreenState extends State<WalletScreen> {
     await showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      builder: (ctx) => Padding(
+      builder: (ctx) => SafeArea(top: false, child: Padding(
         padding: EdgeInsets.only(
           left: 20, right: 20, top: 20,
           bottom: MediaQuery.of(ctx).viewInsets.bottom + 20,
@@ -320,7 +320,7 @@ class _WalletScreenState extends State<WalletScreen> {
             ],
           ),
         ),
-      ),
+      )),
     );
   }
 

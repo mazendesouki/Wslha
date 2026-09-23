@@ -69,14 +69,24 @@ class _RateSheetState extends State<RateSheet> {
   @override
   Widget build(BuildContext context) {
     return Padding(
+      // Keyboard inset (when the comment field is focused) stays here,
+      // outside SafeArea — SafeArea alone doesn't account for the on-screen
+      // keyboard. Reported live: the emoji picker/buttons rendered flush
+      // against the phone's system navigation bar (overlapping its
+      // back/home/recents buttons) because nothing here accounted for the
+      // bottom system-UI inset at all — only bottom: false was ever needed
+      // to fix, since a modal bottom sheet already sits above the status
+      // bar.
       padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
-      child: Container(
-        decoration: BoxDecoration(
-          color: context.surfaceColor,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-        ),
-        padding: const EdgeInsets.fromLTRB(20, 14, 20, 20),
-        child: SingleChildScrollView(
+      child: SafeArea(
+        top: false,
+        child: Container(
+          decoration: BoxDecoration(
+            color: context.surfaceColor,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          padding: const EdgeInsets.fromLTRB(20, 14, 20, 20),
+          child: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -182,6 +192,7 @@ class _RateSheetState extends State<RateSheet> {
               ],
             ],
           ),
+        ),
         ),
       ),
     );

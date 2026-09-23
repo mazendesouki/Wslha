@@ -82,11 +82,16 @@ class _OrderRatingSheetState extends State<OrderRatingSheet> {
   @override
   Widget build(BuildContext context) {
     return Padding(
+      // Same fix as rate_sheet.dart — SafeArea(top: false) so the sheet's
+      // buttons don't render flush against the phone's system navigation
+      // bar.
       padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
-      child: Container(
-        decoration: BoxDecoration(color: context.surfaceColor, borderRadius: const BorderRadius.vertical(top: Radius.circular(24))),
-        padding: const EdgeInsets.fromLTRB(20, 14, 20, 20),
-        child: SingleChildScrollView(
+      child: SafeArea(
+        top: false,
+        child: Container(
+          decoration: BoxDecoration(color: context.surfaceColor, borderRadius: const BorderRadius.vertical(top: Radius.circular(24))),
+          padding: const EdgeInsets.fromLTRB(20, 14, 20, 20),
+          child: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -145,6 +150,7 @@ class _OrderRatingSheetState extends State<OrderRatingSheet> {
               ),
             ],
           ),
+        ),
         ),
       ),
     );
