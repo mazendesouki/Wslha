@@ -5,7 +5,7 @@ import '../../core/session.dart';
 import '../../core/theme.dart';
 import '../../shared/widgets/branded_header.dart';
 import '../../shared/widgets/selectable_pill.dart';
-import '../airport/airport_fare.dart' show qualityLabels, qualityMultiplier;
+import '../airport/airport_fare.dart' show qualityMultiplier;
 import '../coupons/coupon_field.dart';
 import '../coupons/coupon_repository.dart';
 import 'address_field.dart';
@@ -17,6 +17,20 @@ import 'ride_tracking_screen.dart';
 import 'scheduled_rides_screen.dart';
 
 const int _maxStops = 3;
+
+// Shorter pill labels for this screen only (design canvas) — the shared
+// qualityLabels map (airport_fare.dart) carries emoji + the grammatically
+// full "عادية/نظيفة/مكيّفة" forms that airport_screen.dart's own pickers
+// still use, so it's left untouched; only rides_screen.dart's display text
+// is simplified here. The real percentages (qualityMultiplier) are NOT
+// touched — they drive the actual fare calculation, so the label always
+// shows exactly what the customer is really charged.
+const Map<String, String> _tierShortLabels = {
+  'regular': 'عادي',
+  'clean': 'نظيف',
+  'ac': 'تكييف',
+  'modern': 'حديثة',
+};
 
 class RidesScreen extends StatefulWidget {
   // Prefills the from/destination fields — used by "احجز تاني" (rebook)
@@ -320,7 +334,7 @@ class _RidesScreenState extends State<RidesScreen> {
             _buildHeader(context),
             Expanded(
               child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(14, 14, 14, 28),
+          padding: const EdgeInsets.fromLTRB(14, 14, 14, 56),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -430,7 +444,7 @@ class _RidesScreenState extends State<RidesScreen> {
                         children: [
                           for (final tier in const ['regular', 'clean', 'ac', 'modern'])
                             SelectablePill(
-                              label: '${qualityLabels[tier]!}'
+                              label: '${_tierShortLabels[tier]!}'
                                   '${tier == 'regular' ? '' : ' (+${(((qualityMultiplier[tier] ?? 1) - 1) * 100).round()}%)'}',
                               selected: _qualityTier == tier,
                               onTap: () => setState(() => _qualityTier = tier),
