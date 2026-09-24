@@ -285,7 +285,9 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
     return Scaffold(
       backgroundColor: context.mutedSurface,
       appBar: AppBar(title: Text(context.tr('invoices_title'))),
-      body: Column(
+      body: SafeArea(
+        top: false,
+        child: Column(
         children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(12, 10, 12, 0),
@@ -324,6 +326,7 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
                   ),
           ),
         ],
+        ),
       ),
     );
   }

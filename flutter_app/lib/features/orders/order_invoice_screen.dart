@@ -100,7 +100,9 @@ class _OrderInvoiceScreenState extends State<OrderInvoiceScreen> {
     return Scaffold(
       backgroundColor: context.mutedSurface,
       appBar: AppBar(title: Text(context.tr('order_invoice_title'))),
-      body: _loading
+      body: SafeArea(
+        top: false,
+        child: _loading
           ? const Center(child: CircularProgressIndicator())
           : _error != null
               ? Center(
@@ -119,6 +121,7 @@ class _OrderInvoiceScreenState extends State<OrderInvoiceScreen> {
                   ),
                 )
               : _buildInvoice(_order!),
+      ),
     );
   }
 

@@ -54,7 +54,9 @@ class _ScheduledRidesScreenState extends State<ScheduledRidesScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: Text('🗓️ ${context.tr('scheduled_rides_appbar_title')}')),
-      body: RefreshIndicator(
+      body: SafeArea(
+        top: false,
+        child: RefreshIndicator(
         onRefresh: () async => _refresh(),
         child: FutureBuilder<List<Map<String, dynamic>>>(
           future: _future,
@@ -110,6 +112,7 @@ class _ScheduledRidesScreenState extends State<ScheduledRidesScreen> {
               },
             );
           },
+        ),
         ),
       ),
     );

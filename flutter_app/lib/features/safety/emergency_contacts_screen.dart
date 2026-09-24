@@ -123,7 +123,9 @@ class _EmergencyContactsScreenState extends State<EmergencyContactsScreen> {
     return Scaffold(
       backgroundColor: context.mutedSurface,
       appBar: AppBar(title: Text('🆘 ${context.tr('emergency_appbar_title')}')),
-      body: contacts == null
+      body: SafeArea(
+        top: false,
+        child: contacts == null
           ? const Center(child: CircularProgressIndicator())
           : ListView(
               padding: const EdgeInsets.all(16),
@@ -180,6 +182,7 @@ class _EmergencyContactsScreenState extends State<EmergencyContactsScreen> {
                   ),
               ],
             ),
+      ),
     );
   }
 }

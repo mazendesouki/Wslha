@@ -293,7 +293,9 @@ class DriverProfileScreenState extends State<DriverProfileScreen> {
 
     return Scaffold(
       appBar: AppBar(title: Text(context.tr('driver_profile_title'))),
-      body: RefreshIndicator(
+      body: SafeArea(
+        top: false,
+        child: RefreshIndicator(
         onRefresh: _load,
         child: ListView(
           padding: const EdgeInsets.all(16),
@@ -341,6 +343,7 @@ class DriverProfileScreenState extends State<DriverProfileScreen> {
             ),
           ],
         ),
+      ),
       ),
     );
   }

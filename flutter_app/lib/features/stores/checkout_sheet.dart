@@ -188,7 +188,9 @@ class _CheckoutSheetState extends State<CheckoutSheet> {
     return Scaffold(
       backgroundColor: context.mutedSurface,
       appBar: AppBar(title: Text(context.tr('checkout_appbar_title'))),
-      body: ListView(
+      body: SafeArea(
+        top: false,
+        child: ListView(
         padding: const EdgeInsets.all(16),
         children: [
           Container(
@@ -263,6 +265,7 @@ class _CheckoutSheetState extends State<CheckoutSheet> {
                 : Text('${context.tr('checkout_confirm_order_button')} — ${_cart.total.toStringAsFixed(0)} ج.م'),
           ),
         ],
+      ),
       ),
     );
   }

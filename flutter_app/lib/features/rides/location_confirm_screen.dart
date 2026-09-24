@@ -65,7 +65,9 @@ class _LocationConfirmScreenState extends State<LocationConfirmScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: Text(context.tr('location_confirm_title'))),
-      body: Stack(
+      body: SafeArea(
+        top: false,
+        child: Stack(
         alignment: Alignment.center,
         children: [
           GoogleMap(
@@ -149,6 +151,7 @@ class _LocationConfirmScreenState extends State<LocationConfirmScreen> {
             ),
           ),
         ],
+      ),
       ),
     );
   }

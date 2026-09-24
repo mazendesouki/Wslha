@@ -47,7 +47,9 @@ class _FavoriteDriversScreenState extends State<FavoriteDriversScreen> {
     return Scaffold(
       backgroundColor: context.mutedSurface,
       appBar: AppBar(title: Text('⭐ ${context.tr('favorites_appbar_title')}')),
-      body: drivers == null
+      body: SafeArea(
+        top: false,
+        child: drivers == null
           ? const Center(child: CircularProgressIndicator())
           : drivers.isEmpty
               ? Center(
@@ -86,6 +88,7 @@ class _FavoriteDriversScreenState extends State<FavoriteDriversScreen> {
                     );
                   },
                 ),
+      ),
     );
   }
 }

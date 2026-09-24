@@ -81,7 +81,9 @@ class _ReferralScreenState extends State<ReferralScreen> {
     return Scaffold(
       backgroundColor: context.mutedSurface,
       appBar: AppBar(title: Text('🎁 ${context.tr('referral_appbar_title')}')),
-      body: ListView(
+      body: SafeArea(
+        top: false,
+        child: ListView(
         padding: const EdgeInsets.all(16),
         children: [
           Container(
@@ -156,6 +158,7 @@ class _ReferralScreenState extends State<ReferralScreen> {
             ),
           ],
         ],
+        ),
       ),
     );
   }

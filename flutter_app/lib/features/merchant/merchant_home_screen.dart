@@ -160,7 +160,9 @@ class _MerchantHomeScreenState extends State<MerchantHomeScreen> {
         title: Text(_store!['name'] as String? ?? context.tr('merchant_home_title')),
         actions: const [LogoutButton()],
       ),
-      body: StreamBuilder<List<Map<String, dynamic>>>(
+      body: SafeArea(
+        top: false,
+        child: StreamBuilder<List<Map<String, dynamic>>>(
         stream: _repo.watchOrders(storeId),
         builder: (context, snapshot) {
           if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
@@ -184,6 +186,7 @@ class _MerchantHomeScreenState extends State<MerchantHomeScreen> {
             ],
           );
         },
+        ),
       ),
     );
   }

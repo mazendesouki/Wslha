@@ -57,7 +57,9 @@ class _RideInvoiceScreenState extends State<RideInvoiceScreen> {
     return Scaffold(
       backgroundColor: context.mutedSurface,
       appBar: AppBar(title: Text(context.tr('ride_invoice_title'))),
-      body: _loading
+      body: SafeArea(
+        top: false,
+        child: _loading
           ? const Center(child: CircularProgressIndicator())
           : _error != null
               ? Center(
@@ -76,6 +78,7 @@ class _RideInvoiceScreenState extends State<RideInvoiceScreen> {
                   ),
                 )
               : _buildInvoice(_ride!),
+      ),
     );
   }
 

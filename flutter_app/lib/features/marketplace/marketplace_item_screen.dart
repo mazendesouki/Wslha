@@ -60,7 +60,9 @@ class _MarketplaceItemScreenState extends State<MarketplaceItemScreen> {
     return Scaffold(
       backgroundColor: context.mutedSurface,
       appBar: AppBar(title: Text(context.tr('marketplace_item_title'))),
-      body: _loading
+      body: SafeArea(
+        top: false,
+        child: _loading
           ? const Center(child: CircularProgressIndicator())
           : _notFound || item == null
               ? Center(
@@ -152,6 +154,7 @@ class _MarketplaceItemScreenState extends State<MarketplaceItemScreen> {
                     ],
                   ],
                 ),
+      ),
     );
   }
 

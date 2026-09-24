@@ -52,7 +52,9 @@ class _TripLogScreenState extends State<TripLogScreen> {
       child: Scaffold(
         backgroundColor: context.mutedSurface,
         appBar: AppBar(title: Text(context.tr('trip_log_appbar_title'))),
-        body: RefreshIndicator(
+        body: SafeArea(
+          top: false,
+          child: RefreshIndicator(
           onRefresh: _refresh,
           child: FutureBuilder<List<MissedRequest>>(
             future: _future,
@@ -92,6 +94,7 @@ class _TripLogScreenState extends State<TripLogScreen> {
               );
             },
           ),
+        ),
         ),
       ),
     );

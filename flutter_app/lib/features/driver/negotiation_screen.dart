@@ -25,7 +25,9 @@ class _NegotiationScreenState extends State<NegotiationScreen> {
     return Scaffold(
       backgroundColor: context.mutedSurface,
       appBar: AppBar(title: Text(context.tr('negotiation_appbar_title'))),
-      body: StreamBuilder<List<Map<String, dynamic>>>(
+      body: SafeArea(
+        top: false,
+        child: StreamBuilder<List<Map<String, dynamic>>>(
         stream: _repo.watchOpenNegotiableRides(),
         builder: (context, snapshot) {
           if (!snapshot.hasData) {
@@ -55,6 +57,7 @@ class _NegotiationScreenState extends State<NegotiationScreen> {
             itemBuilder: (context, i) => _NegotiableRideCard(repo: _repo, ride: rides[i], session: widget.session),
           );
         },
+        ),
       ),
     );
   }
