@@ -261,7 +261,9 @@ class _RideTrackingScreenState extends State<RideTrackingScreen> {
             }
           }
 
-          return CustomScrollView(
+          return SafeArea(
+            top: false,
+            child: CustomScrollView(
             slivers: [
               SliverAppBar(
                 pinned: true,
@@ -501,6 +503,7 @@ class _RideTrackingScreenState extends State<RideTrackingScreen> {
                 ),
               ),
             ],
+          ),
           );
         },
       ),
