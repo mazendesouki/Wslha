@@ -383,13 +383,34 @@ class DriverRepository {
     );
   }
 
-  /// "سجل الرحلات" (db/security-92) — dispatch offers that expired
+  /// "سجل الرحلات" (db/security-92/93) — dispatch offers that expired
   /// unanswered: most commonly a driver whose "متصل" switch was still on,
   /// but whose device had lost internet right when an offer came in, so it
-  /// timed out before they ever saw it. Read-only, last 30 days.
+  /// timed out before they ever saw it. Last 30 days; each row's
+  /// stillAvailable says whether it can actually still be accepted.
   Future<List<MissedRequest>> fetchMissedRequests(String phone) async {
     final rows = await sb.rpc('get_driver_missed_requests', params: {'p_driver_phone': phone});
     return (rows as List).cast<Map<String, dynamic>>().map(MissedRequest.fromRow).toList();
+  }
+
+  /// Manually recovers a missed request (db/security-93) — no 30s
+  /// countdown, works even while offline (this is a deliberate manual pull,
+  /// not a live dispatch push). Returns null on success, or an error reason
+  /// string ('already_taken' | 'vehicle_category_mismatch' |
+  /// 'quality_tier_mismatch' | ...) the caller turns into a message.
+  Future<String?> acceptMissedRequest(String offerId, String driverPhone, String driverName) async {
+    final result = await sb.rpc('accept_missed_request', params: {
+      'p_offer_id': offerId,
+      'p_driver_phone': driverPhone,
+      'p_driver_name': driverName,
+    }) as Map<String, dynamic>;
+    if (result['ok'] == true) return null;
+    return result['reason'] as String? ?? 'error';
+  }
+
+  Future<bool> dismissMissedRequest(String offerId, String driverPhone) async {
+    final result = await sb.rpc('dismiss_missed_request', params: {'p_offer_id': offerId, 'p_driver_phone': driverPhone});
+    return result == true;
   }
 
   /// Outstanding cash-collection reminders an admin sent this driver
@@ -410,6 +431,10 @@ class MissedRequest {
   final double? fare;
   final String? storeName;
   final double? orderTotal;
+  // Whether the underlying ride/order is genuinely still unassigned right
+  // now (db/security-93) — the log itself is a permanent history, but only
+  // an offer that's still up for grabs can actually be accepted.
+  final bool stillAvailable;
   MissedRequest({
     required this.id,
     required this.targetType,
@@ -419,6 +444,7 @@ class MissedRequest {
     this.fare,
     this.storeName,
     this.orderTotal,
+    this.stillAvailable = false,
   });
 
   factory MissedRequest.fromRow(Map<String, dynamic> row) => MissedRequest(
@@ -430,6 +456,7 @@ class MissedRequest {
         fare: (row['fare'] as num?)?.toDouble(),
         storeName: row['store_name'] as String?,
         orderTotal: (row['order_total'] as num?)?.toDouble(),
+        stillAvailable: row['still_available'] as bool? ?? false,
       );
 }
 

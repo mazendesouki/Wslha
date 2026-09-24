@@ -8,6 +8,12 @@ const Map<String, Map<String, String>> batchJStrings = {
   // trip_log_screen.dart
   'trip_log_empty': {'ar': 'مفيش طلبات فاتتك لحد دلوقتي', 'en': "You haven't missed any requests so far"},
   'trip_log_order_fallback_title': {'ar': 'طلب توصيل', 'en': 'Delivery order'},
+  'trip_log_accept_button': {'ar': 'قبول', 'en': 'Accept'},
+  'trip_log_dismiss_button': {'ar': 'رفض', 'en': 'Reject'},
+  'trip_log_accept_success': {'ar': '✅ تم قبول الطلب', 'en': '✅ Request accepted'},
+  'trip_log_error_already_taken': {'ar': 'للأسف سائق تاني قبلها قبلك', 'en': 'Sorry — another driver already accepted this one'},
+  'trip_log_error_mismatch': {'ar': 'العربية مش مطابقة لمواصفات الرحلة دي', 'en': "Your car doesn't match this trip's requirements"},
+  'trip_log_error_generic': {'ar': '❌ تعذّر القبول، حاول تاني', 'en': '❌ Could not accept — try again'},
 
   // cash_reminder_dialog.dart
   'cash_reminder_title': {'ar': '💰 تذكير سداد رصيد كاش', 'en': '💰 Cash balance reminder'},

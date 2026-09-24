@@ -646,16 +646,21 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
                 );
               },
             ),
-          // "سجل الرحلات" (db/security-92) — plain icon, no live badge:
+          // "سجل الرحلات" (db/security-92/93) — plain icon, no live badge:
           // unlike the negotiation/airport lists above (open offers a
-          // driver can still act on), these are already-expired offers,
-          // there's nothing actionable to flag a count for.
+          // driver can still act on live), these are already-expired
+          // offers; a driver can still manually accept one that's still
+          // unassigned (no countdown), so a truthy pop result means one was
+          // accepted and this screen needs to pick it up as the active job.
           IconButton(
             tooltip: context.tr('trip_log_appbar_title'),
             icon: const Text('📋', style: TextStyle(fontSize: 20)),
-            onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => TripLogScreen(driverPhone: widget.session.phone)),
-            ),
+            onPressed: () async {
+              final accepted = await Navigator.of(context).push<bool>(
+                MaterialPageRoute(builder: (_) => TripLogScreen(driverPhone: widget.session.phone, driverName: widget.session.name)),
+              );
+              if (accepted == true) _restoreActiveJob();
+            },
           ),
           const LogoutButton(),
         ],
