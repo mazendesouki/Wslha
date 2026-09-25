@@ -161,6 +161,7 @@ class AuthRepository {
     required String role, // 'driver' | 'merchant'
     required String name,
     required String phone,
+    required String email,
     required String password,
     required String city,
   }) async {
@@ -201,6 +202,7 @@ class AuthRepository {
             'phone': normalizedPhone,
             'password': password,
             'name': name,
+            'email': email,
             'role': role,
             'status': 'pending',
             'city': city,

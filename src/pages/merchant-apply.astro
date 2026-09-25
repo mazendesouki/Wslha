@@ -138,6 +138,10 @@ import Layout from '../components/layout.astro';
               <input class="form-input" id="reg-owner-phone" type="tel" placeholder="01xxxxxxxxx" dir="ltr"/>
             </div>
             <div class="form-group">
+              <label for="reg-owner-email">البريد الإلكتروني <span class="req">*</span></label>
+              <input class="form-input" id="reg-owner-email" type="email" placeholder="example@email.com" dir="ltr"/>
+            </div>
+            <div class="form-group">
               <label for="reg-owner-password">كلمة المرور <span class="req">*</span></label>
               <input class="form-input" id="reg-owner-password" type="password" placeholder="6 أحرف على الأقل"/>
             </div>
@@ -479,6 +483,14 @@ function vPass(p) {
   if (!/[0-9]/.test(p)) return 'يجب أن تحتوي على رقم.';
   return '';
 }
+// Needed for email-based OTP login/password-reset (db/security-90), which
+// raise 'no_email' for any account without one — merchant registration
+// never asked for an email before this.
+function vEmail(e) {
+  e = (e || '').trim();
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)) return 'أدخل بريداً إلكترونياً صحيحاً.';
+  return '';
+}
 
 let currentStep = 0;
 
@@ -508,6 +520,7 @@ if (!USER?.phone) {
 async function registerMerchantAndProceed() {
   const name  = (document.getElementById('reg-owner-name').value || '').trim();
   const phone = (document.getElementById('reg-owner-phone').value || '').trim();
+  const email = (document.getElementById('reg-owner-email').value || '').trim();
   const pass  = (document.getElementById('reg-owner-password').value || '').trim();
   const passConfirm = (document.getElementById('reg-owner-password-confirm').value || '').trim();
   const city  = document.getElementById('reg-owner-city').value;
@@ -520,6 +533,8 @@ async function registerMerchantAndProceed() {
   if (!phone14) {
     err.textContent = '⚠️ رقم جوال مصري صحيح: 11 رقماً يبدأ بـ 010/011/012/015'; err.style.display = 'block'; return;
   }
+  const emailMsg = vEmail(email);
+  if (emailMsg) { err.textContent = '⚠️ ' + emailMsg; err.style.display = 'block'; return; }
   const passMsg = vPass(pass);
   if (passMsg) { err.textContent = '⚠️ ' + passMsg; err.style.display = 'block'; return; }
   if (pass !== passConfirm) { err.textContent = '⚠️ كلمة المرور غير متطابقة'; err.style.display = 'block'; return; }
@@ -562,7 +577,7 @@ async function registerMerchantAndProceed() {
       const createRes = await fetch(`${SB_URL}/rest/v1/accounts`, {
         method: 'POST',
         headers: { ...SB_H, 'Content-Type': 'application/json', Prefer: 'return=minimal' },
-        body: JSON.stringify({ phone: phone14, name, password: pass, role: 'merchant', status: 'pending', city }),
+        body: JSON.stringify({ phone: phone14, name, email, password: pass, role: 'merchant', status: 'pending', city }),
       });
       if (!createRes.ok) throw new Error('create failed');
       USER = { phone: phone14, name, role: 'merchant', status: 'pending', city };

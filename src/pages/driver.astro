@@ -368,6 +368,11 @@ label .req { color: #DC2626; }
             <span class="field-err" id="err-r-phone"></span>
           </div>
           <div class="fg">
+            <label for="r-email">البريد الإلكتروني <span class="req">*</span></label>
+            <input class="fi" id="r-email" type="email" placeholder="example@email.com" dir="ltr" autocomplete="email"/>
+            <span class="field-err" id="err-r-email"></span>
+          </div>
+          <div class="fg">
             <label for="r-pass">كلمة المرور <span class="req">*</span></label>
             <input class="fi" id="r-pass" type="password" placeholder="6 أحرف على الأقل"/>
             <span class="field-err" id="err-r-pass"></span>
@@ -1027,6 +1032,15 @@ function vName(n) {
   if (w.some(function(x){ return /^(.)\1+$/.test(x); })) return 'الاسم غير صالح، أدخل اسمك الحقيقي.';
   return '';
 }
+// Basic email format check. '' if valid — needed for email-based OTP
+// login/password-reset (db/security-90), which raise 'no_email' for any
+// account without one. Driver/merchant registration never asked for an
+// email before this, unlike customer registration.
+function vEmail(e) {
+  e = (e || '').trim();
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)) return 'أدخل بريداً إلكترونياً صحيحاً.';
+  return '';
+}
 // Strong password (8+, upper, lower, digit, alphanumeric). '' if valid.
 function vPass(p) {
   p = p || '';
@@ -1113,6 +1127,7 @@ function prefillUser() {
 window.doRegister = async function() {
   var name    = ($('r-name').value  || '').trim();
   var phone   = ($('r-phone').value || '').trim();
+  var email   = ($('r-email').value || '').trim();
   var pass    = ($('r-pass').value  || '').trim();
   var passConfirm = ($('r-pass-confirm').value || '').trim();
   var city    = $('r-city').value;
@@ -1121,6 +1136,7 @@ window.doRegister = async function() {
   var ok = true;
   clearFieldErr('err-r-name');
   clearFieldErr('err-r-phone');
+  clearFieldErr('err-r-email');
   clearFieldErr('err-r-pass');
   clearFieldErr('err-r-pass-confirm');
   showErr('err-register', '');
@@ -1131,6 +1147,8 @@ window.doRegister = async function() {
   if (!pLocal) {
     fieldErr('err-r-phone', 'رقم جوال مصري صحيح: 11 رقماً يبدأ بـ 010/011/012/015'); ok = false;
   }
+  var emailMsg = vEmail(email);
+  if (emailMsg) { fieldErr('err-r-email', emailMsg); ok = false; }
   var passMsg = vPass(pass);
   if (passMsg) { fieldErr('err-r-pass', passMsg); ok = false; }
   if (!passMsg && pass !== passConfirm) { fieldErr('err-r-pass-confirm', 'كلمة المرور غير متطابقة'); ok = false; }
@@ -1204,7 +1222,7 @@ window.doRegister = async function() {
         fetch(SB_URL + '/rest/v1/accounts', {
           method: 'POST',
           headers: Object.assign({}, SB_H, { 'Content-Type': 'application/json', Prefer: 'return=minimal' }),
-          body: JSON.stringify({ id: crypto.randomUUID(), phone: phone14, name: name, password: pass, role: 'driver', status: 'pending', city: city }),
+          body: JSON.stringify({ id: crypto.randomUUID(), phone: phone14, name: name, email: email, password: pass, role: 'driver', status: 'pending', city: city }),
         }),
         timeout(10000)
       ]);

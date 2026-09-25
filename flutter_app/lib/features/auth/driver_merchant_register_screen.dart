@@ -8,6 +8,7 @@ import '../../core/i18n.dart';
 import '../../core/password_utils.dart';
 import '../../core/phone_utils.dart';
 import '../../core/pricing_settings.dart';
+import '../../core/registration_validation.dart';
 import '../../core/theme.dart';
 import 'auth_repository.dart';
 
@@ -34,6 +35,7 @@ class _DriverMerchantRegisterScreenState extends State<DriverMerchantRegisterScr
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _phoneController = TextEditingController();
+  final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmController = TextEditingController();
   final _authRepo = AuthRepository();
@@ -88,6 +90,7 @@ class _DriverMerchantRegisterScreenState extends State<DriverMerchantRegisterScr
       role: _isDriver ? 'driver' : 'merchant',
       name: _nameController.text.trim(),
       phone: _phoneController.text,
+      email: _emailController.text.trim(),
       password: _passwordController.text,
       city: _city,
     );
@@ -287,6 +290,14 @@ class _DriverMerchantRegisterScreenState extends State<DriverMerchantRegisterScr
               textDirection: TextDirection.ltr,
               decoration: InputDecoration(labelText: context.tr('driver_reg_label_phone'), hintText: '01xxxxxxxxx'),
               validator: (v) => isEgyptianMobile(v ?? '') ? null : egPhoneError,
+            ),
+            const SizedBox(height: 16),
+            TextFormField(
+              controller: _emailController,
+              keyboardType: TextInputType.emailAddress,
+              textDirection: TextDirection.ltr,
+              decoration: InputDecoration(labelText: context.tr('driver_reg_label_email'), hintText: 'example@email.com'),
+              validator: (v) => validateEmail(v ?? '').valid ? null : validateEmail(v ?? '').message,
             ),
             const SizedBox(height: 16),
             TextFormField(
