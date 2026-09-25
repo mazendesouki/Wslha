@@ -87,7 +87,7 @@ const Map<String, String> marketplaceConditions = {
 
 /// What's being shipped on a delivery request — purely informational for
 /// the driver (see db/security-94-marketplace-shipment-type.sql), no
-/// effect on fee/vehicle-matching logic.
+/// effect on fee/dispatch-matching logic for the order itself.
 const List<({String id, String label, String emoji})> marketplaceShipmentTypes = [
   (id: 'products', label: 'منتجات', emoji: '📦'),
   (id: 'car', label: 'سيارة', emoji: '🚗'),
@@ -96,3 +96,18 @@ const List<({String id, String label, String emoji})> marketplaceShipmentTypes =
   (id: 'spare_parts', label: 'قطع غيار', emoji: '🔧'),
   (id: 'other', label: 'غير ذلك', emoji: '📋'),
 ];
+
+/// Which REGISTERED driver vehicle_category (driver_applications —
+/// sedan/suv/van/motorcycle/cargo, see driver.astro's v-cat select)
+/// backs each shipment type, for the live "متوفر الآن؟" availability
+/// check (db/security-95). 'flatbed' isn't a category any driver can
+/// currently register as, so "سيارة" (car-carrier transport) always
+/// reads unavailable until that's added.
+const Map<String, String> marketplaceShipmentVehicleCategory = {
+  'products': 'sedan',
+  'car': 'flatbed',
+  'furniture': 'cargo',
+  'home_appliances': 'cargo',
+  'spare_parts': 'motorcycle',
+  'other': 'sedan',
+};

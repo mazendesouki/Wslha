@@ -33,6 +33,21 @@ class MarketplaceRepository {
     } catch (_) {}
   }
 
+  /// True if a driver registered with this vehicle_category is online
+  /// and idle right now — see db/security-95-available-drivers-by-
+  /// vehicle-category.sql. Errors are treated as "unknown" (null) rather
+  /// than false, so a transient failure doesn't wrongly say unavailable.
+  Future<bool?> checkVehicleCategoryAvailable(String vehicleCategory) async {
+    try {
+      final count = await sb.rpc('get_available_drivers_count_by_category', params: {
+        'p_vehicle_category': vehicleCategory,
+      }) as num?;
+      return count != null && count > 0;
+    } catch (_) {
+      return null;
+    }
+  }
+
   Future<bool> requestDelivery({
     required String itemId,
     required String buyerPhone,

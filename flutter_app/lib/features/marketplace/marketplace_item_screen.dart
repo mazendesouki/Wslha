@@ -309,6 +309,8 @@ class _DeliveryRequestSheetState extends State<_DeliveryRequestSheet> {
   late final _phoneCtrl = TextEditingController(text: widget.session?.phone ?? '');
   final _addressCtrl = TextEditingController();
   String? _shipmentType;
+  bool? _shipmentAvailable;
+  bool _checkingAvailability = false;
   bool _submitting = false;
   String? _error;
 
@@ -318,6 +320,21 @@ class _DeliveryRequestSheetState extends State<_DeliveryRequestSheet> {
     _phoneCtrl.dispose();
     _addressCtrl.dispose();
     super.dispose();
+  }
+
+  Future<void> _selectShipmentType(String id) async {
+    setState(() {
+      _shipmentType = id;
+      _shipmentAvailable = null;
+      _checkingAvailability = true;
+    });
+    final category = marketplaceShipmentVehicleCategory[id];
+    final available = category == null ? null : await widget.repo.checkVehicleCategoryAvailable(category);
+    if (!mounted || _shipmentType != id) return;
+    setState(() {
+      _shipmentAvailable = available;
+      _checkingAvailability = false;
+    });
   }
 
   Future<void> _submit() async {
@@ -409,10 +426,19 @@ class _DeliveryRequestSheetState extends State<_DeliveryRequestSheet> {
                     selectedColor: AppColors.primary,
                     backgroundColor: context.mutedSurface,
                     side: BorderSide(color: _shipmentType == t.id ? AppColors.primary : context.borderColor),
-                    onSelected: (_) => setState(() => _shipmentType = t.id),
+                    onSelected: (_) => _selectShipmentType(t.id),
                   ),
               ],
             ),
+            if (_shipmentType != null) ...[
+              const SizedBox(height: 8),
+              if (_checkingAvailability)
+                const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2))
+              else if (_shipmentAvailable == true)
+                Text(context.tr('marketplace_delivery_shipment_available'), style: const TextStyle(color: AppColors.success, fontSize: 12, fontWeight: FontWeight.w800))
+              else if (_shipmentAvailable == false)
+                Text(context.tr('marketplace_delivery_shipment_unavailable'), style: const TextStyle(color: AppColors.error, fontSize: 12, fontWeight: FontWeight.w800)),
+            ],
             const SizedBox(height: 16),
             TextField(controller: _nameCtrl, decoration: InputDecoration(labelText: context.tr('marketplace_delivery_name_label'))),
             const SizedBox(height: 10),

@@ -8,4 +8,6 @@ const Map<String, Map<String, String>> batchKStrings = {
   // Delivery request bottom sheet — shipment type
   'marketplace_delivery_shipment_type_label': {'ar': 'نوع الشحنة', 'en': 'Shipment type'},
   'marketplace_delivery_error_shipment_type': {'ar': 'اختر نوع الشحنة', 'en': 'Choose the shipment type'},
+  'marketplace_delivery_shipment_available': {'ar': '✅ متوفر الآن', 'en': '✅ Available now'},
+  'marketplace_delivery_shipment_unavailable': {'ar': '⚠️ غير متوفر الآن — هنحاول نأمّن سائق يدويًا', 'en': "⚠️ Not available right now — we'll try to arrange a driver manually"},
 };
