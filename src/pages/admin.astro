@@ -167,6 +167,9 @@
     .search-input:focus{outline:none;border-color:var(--pr);background:var(--card)}
     .filter-select{padding:.5rem .8rem;border:1.5px solid var(--bdr);border-radius:var(--radius);font-family:inherit;font-size:.82rem;font-weight:600;background:var(--card-2);color:#2A3B39;cursor:pointer}
     .filter-select:focus{outline:none;border-color:var(--pr)}
+    /* عرض فقط — الفئات المؤهّلة لاستقبال هذا النوع من الطلبات، مرجع
+       للأدمن، من غير تأثير على منطق التوزيع الفعلي (server/index.js). */
+    .vehicle-hint{margin-inline-start:auto;font-size:.75rem;font-weight:700;color:#64748B;display:flex;align-items:center;gap:.35rem;white-space:nowrap}
 
     /* ── Tabs ─────────────────────────────────────────────── */
     .tab-bar{display:flex;gap:0;background:var(--card-2);border:1px solid var(--bdr);border-radius:var(--radius-lg);padding:3px;margin-bottom:1.25rem;overflow-x:auto;scrollbar-width:none}
@@ -738,6 +741,7 @@
           <option value="rejected">مرفوض</option>
         </select>
         <button class="btn btn--primary" onclick="loadOrders()">🔄 تحديث</button>
+        <span class="vehicle-hint" title="الفئات المؤهّلة لاستقبال هذا النوع">🚗 سيدان · 🏍️ دراجة نارية</span>
       </div>
       <div class="card">
         <div class="tbl-wrap">
@@ -762,6 +766,7 @@
           <option value="rejected">مرفوض</option>
         </select>
         <button class="btn btn--primary" onclick="loadCourierOrders()">🔄 تحديث</button>
+        <span class="vehicle-hint" title="الفئات المؤهّلة لاستقبال هذا النوع">📦 كارجو · 🏍️ دراجة نارية</span>
       </div>
       <div class="card">
         <div class="tbl-wrap">
@@ -786,6 +791,7 @@
           <option value="rejected">مرفوض</option>
         </select>
         <button class="btn btn--primary" onclick="loadMerchantDeliveries()">🔄 تحديث</button>
+        <span class="vehicle-hint" title="الفئات المؤهّلة لاستقبال هذا النوع">🏍️ دراجة نارية فقط</span>
       </div>
       <div class="card">
         <div class="tbl-wrap">
@@ -810,6 +816,7 @@
           <option value="rejected">مرفوض</option>
         </select>
         <button class="btn btn--primary" onclick="loadGeneralDeliveries()">🔄 تحديث</button>
+        <span class="vehicle-hint" title="الفئات المؤهّلة لاستقبال هذا النوع">🏍️ دراجة نارية · 🚗 سيدان</span>
       </div>
       <div class="card">
         <div class="tbl-wrap">
@@ -834,6 +841,7 @@
           <option value="cancelled">ملغاة</option>
         </select>
         <button class="btn btn--primary" onclick="loadRides()">🔄 تحديث</button>
+        <span class="vehicle-hint" title="الفئات المؤهّلة لاستقبال هذا النوع">🚗 سيدان · 🚙 جيب/SUV · 🚐 سيارة رحلات</span>
       </div>
       <div class="card">
         <div class="tbl-wrap">
@@ -850,6 +858,7 @@
       <div class="filters-bar">
         <input class="search-input" id="stores-search" type="search" placeholder="🔍 بحث بالاسم أو المنطقة…"/>
         <button class="btn btn--primary" onclick="loadStores()">🔄 تحديث</button>
+        <span class="vehicle-hint" title="الفئات المؤهّلة لاستقبال هذا النوع">🚗 سيدان · 🏍️ دراجة نارية</span>
       </div>
       <div class="card">
         <div class="tbl-wrap">
@@ -873,6 +882,7 @@
           <option value="removed">محذوف</option>
         </select>
         <button class="btn btn--primary" onclick="loadMarketplaceSection()">🔄 تحديث</button>
+        <span class="vehicle-hint" title="الفئات المؤهّلة لاستقبال هذا النوع">🚗 سيدان/كارجو · 🚛 نقل بصندوق مغلق · 🛻 نقل سيارات</span>
       </div>
       <div class="card">
         <div class="tbl-wrap">
