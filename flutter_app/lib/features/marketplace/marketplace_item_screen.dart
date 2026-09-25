@@ -328,8 +328,8 @@ class _DeliveryRequestSheetState extends State<_DeliveryRequestSheet> {
       _shipmentAvailable = null;
       _checkingAvailability = true;
     });
-    final category = marketplaceShipmentVehicleCategory[id];
-    final available = category == null ? null : await widget.repo.checkVehicleCategoryAvailable(category);
+    final categories = marketplaceShipmentVehicleCategories[id];
+    final available = categories == null ? null : await widget.repo.checkAnyVehicleCategoryAvailable(categories);
     if (!mounted || _shipmentType != id) return;
     setState(() {
       _shipmentAvailable = available;

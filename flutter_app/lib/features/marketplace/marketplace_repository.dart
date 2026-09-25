@@ -48,6 +48,17 @@ class MarketplaceRepository {
     }
   }
 
+  /// Same check across several categories, OR'd together — e.g. "منتجات"
+  /// is available if EITHER a sedan OR a cargo driver is online. Returns
+  /// null only if every single check errored (all unknown); a mix of
+  /// unknown + confirmed-false still reads as false, not unknown.
+  Future<bool?> checkAnyVehicleCategoryAvailable(List<String> vehicleCategories) async {
+    final results = await Future.wait(vehicleCategories.map(checkVehicleCategoryAvailable));
+    if (results.any((r) => r == true)) return true;
+    if (results.every((r) => r == null)) return null;
+    return false;
+  }
+
   Future<bool> requestDelivery({
     required String itemId,
     required String buyerPhone,

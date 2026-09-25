@@ -405,9 +405,11 @@ label .req { color: #DC2626; }
             <label class="radio-pill sel" data-v="car"><input type="radio" name="vtype" value="car" checked/> 🚗 سيارة أفراد</label>
             <label class="radio-pill" data-v="motorcycle"><input type="radio" name="vtype" value="motorcycle"/> 🏍️ دراجة نارية</label>
             <label class="radio-pill" data-v="cargo"><input type="radio" name="vtype" value="cargo"/> 📦 سيارة نقل أغراض</label>
+            <label class="radio-pill" data-v="box_truck"><input type="radio" name="vtype" value="box_truck"/> 🚛 سيارة نقل بصندوق مغلق</label>
+            <label class="radio-pill" data-v="flatbed"><input type="radio" name="vtype" value="flatbed"/> 🛻 سيارة نقالة سيارات (سطحة)</label>
           </div>
           <div style="font-size:var(--text-xs);color:var(--color-text-muted);margin-top:6px">
-            الدراجة النارية وسيارة نقل الأغراض مخصّصتين لطلبات خدمة الدليفري فقط — مش هتستقبلوا طلبات مشاوير عادية.
+            الدراجة النارية وسيارة نقل الأغراض وسيارة النقل بصندوق مغلق وسيارة النقالة مخصّصين لطلبات خدمة الدليفري فقط — مش هيستقبلوا طلبات مشاوير عادية.
           </div>
         </div>
       </div>
@@ -675,6 +677,8 @@ label .req { color: #DC2626; }
               <option value="van">🚐 ميكروباص</option>
               <option value="motorcycle" hidden>🏍️ دراجة نارية</option>
               <option value="cargo" hidden>📦 سيارة نقل بضائع</option>
+              <option value="box_truck" hidden>🚛 سيارة نقل بصندوق مغلق</option>
+              <option value="flatbed" hidden>🛻 سيارة نقالة سيارات (سطحة)</option>
             </select>
           </div>
           <div class="fg">
@@ -1496,6 +1500,26 @@ var VEHICLE_TYPE_TEXT = {
     photosTitle: '📸 صور سيارة النقل — 4 جوانب + لوحة الترقيم', reviewTitle: '📦 بيانات سيارة النقل',
     stepIcon: '📦', specTitle: '🔧 مواصفات سيارة النقل', modelLabel: 'الماركة والموديل',
     modelPlaceholder: 'مثال: تويوتا هايس', photoIcon: '📦',
+  },
+  box_truck: {
+    needTitle: 'وثائق سيارة النقل بصندوق مغلق', needDoc1: '✅ رخصة نقل + تأمين + فحص', needDoc2: '✅ صور السيارة (4 جوانب)',
+    docsTitle: '📋 وثائق سيارة النقل بصندوق مغلق',
+    vregNum: 'رقم رخصة تسجيل السيارة (الرخصة الصفراء — مش رقم اللوحة)',
+    vregExp: 'انتهاء رخصة السيارة', vregPhoto: 'صورة رخصة السيارة', uztextVreg: 'رخصة السيارة',
+    nextLabel: 'التالي — بيانات السيارة', step3Title: 'بيانات سيارة النقل بصندوق مغلق',
+    photosTitle: '📸 صور السيارة — 4 جوانب + لوحة الترقيم', reviewTitle: '🚛 بيانات سيارة النقل بصندوق مغلق',
+    stepIcon: '🚛', specTitle: '🔧 مواصفات السيارة', modelLabel: 'الماركة والموديل',
+    modelPlaceholder: 'مثال: فورد ترانزيت', photoIcon: '🚛',
+  },
+  flatbed: {
+    needTitle: 'وثائق سيارة النقالة', needDoc1: '✅ رخصة نقل + تأمين + فحص', needDoc2: '✅ صور السيارة (4 جوانب)',
+    docsTitle: '📋 وثائق سيارة النقالة',
+    vregNum: 'رقم رخصة تسجيل السيارة (الرخصة الصفراء — مش رقم اللوحة)',
+    vregExp: 'انتهاء رخصة السيارة', vregPhoto: 'صورة رخصة السيارة', uztextVreg: 'رخصة السيارة',
+    nextLabel: 'التالي — بيانات السيارة', step3Title: 'بيانات سيارة النقالة',
+    photosTitle: '📸 صور السيارة — 4 جوانب + لوحة الترقيم', reviewTitle: '🛻 بيانات سيارة النقالة',
+    stepIcon: '🛻', specTitle: '🔧 مواصفات السيارة', modelLabel: 'الماركة والموديل',
+    modelPlaceholder: 'مثال: مرسيدس أكتروس', photoIcon: '🛻',
   },
 };
 function applyVehicleType(vtype) {

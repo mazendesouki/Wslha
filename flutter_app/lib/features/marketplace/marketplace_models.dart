@@ -97,17 +97,19 @@ const List<({String id, String label, String emoji})> marketplaceShipmentTypes =
   (id: 'other', label: 'غير ذلك', emoji: '📋'),
 ];
 
-/// Which REGISTERED driver vehicle_category (driver_applications —
-/// sedan/suv/van/motorcycle/cargo, see driver.astro's v-cat select)
-/// backs each shipment type, for the live "متوفر الآن؟" availability
-/// check (db/security-95). 'flatbed' isn't a category any driver can
-/// currently register as, so "سيارة" (car-carrier transport) always
-/// reads unavailable until that's added.
-const Map<String, String> marketplaceShipmentVehicleCategory = {
-  'products': 'sedan',
-  'car': 'flatbed',
-  'furniture': 'cargo',
-  'home_appliances': 'cargo',
-  'spare_parts': 'motorcycle',
-  'other': 'sedan',
+/// Which REGISTERED driver vehicle_category/categories (driver_applications
+/// — sedan/suv/van/motorcycle/cargo/box_truck/flatbed, see driver.astro's
+/// v-cat select) back each shipment type, for the live "متوفر الآن؟"
+/// availability check (db/security-95 + db/security-96's box_truck/
+/// flatbed additions). Checked with OR — any one category having an
+/// online driver counts as available. 'flatbed' (سيارة نقالة سيارات) is
+/// a real registerable category now, same as the others — it just has no
+/// drivers on it yet, same as any other freshly-added category would.
+const Map<String, List<String>> marketplaceShipmentVehicleCategories = {
+  'products': ['sedan', 'cargo'],
+  'car': ['flatbed'],
+  'furniture': ['box_truck'],
+  'home_appliances': ['box_truck'],
+  'spare_parts': ['motorcycle'],
+  'other': ['sedan'],
 };
