@@ -38,6 +38,7 @@ class MarketplaceRepository {
     required String buyerPhone,
     required String buyerName,
     required String buyerAddress,
+    String? shipmentType,
   }) async {
     try {
       await sb.rpc('request_marketplace_delivery', params: {
@@ -45,6 +46,7 @@ class MarketplaceRepository {
         'p_buyer_phone': buyerPhone,
         'p_buyer_name': buyerName,
         'p_buyer_address': buyerAddress,
+        'p_shipment_type': shipmentType,
       });
       return true;
     } catch (_) {

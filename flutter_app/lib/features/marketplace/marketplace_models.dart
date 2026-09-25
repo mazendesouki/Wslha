@@ -84,3 +84,15 @@ const Map<String, String> marketplaceConditions = {
   'used': 'مستعمل بحالة جيدة',
   'fair': 'مستعمل - يحتاج صيانة',
 };
+
+/// What's being shipped on a delivery request — purely informational for
+/// the driver (see db/security-94-marketplace-shipment-type.sql), no
+/// effect on fee/vehicle-matching logic.
+const List<({String id, String label, String emoji})> marketplaceShipmentTypes = [
+  (id: 'products', label: 'منتجات', emoji: '📦'),
+  (id: 'car', label: 'سيارة', emoji: '🚗'),
+  (id: 'furniture', label: 'أثاث', emoji: '🛋️'),
+  (id: 'home_appliances', label: 'أجهزة منزلية', emoji: '🔌'),
+  (id: 'spare_parts', label: 'قطع غيار', emoji: '🔧'),
+  (id: 'other', label: 'غير ذلك', emoji: '📋'),
+];

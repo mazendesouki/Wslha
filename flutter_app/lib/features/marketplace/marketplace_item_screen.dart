@@ -308,6 +308,7 @@ class _DeliveryRequestSheetState extends State<_DeliveryRequestSheet> {
   late final _nameCtrl = TextEditingController(text: widget.session?.name ?? '');
   late final _phoneCtrl = TextEditingController(text: widget.session?.phone ?? '');
   final _addressCtrl = TextEditingController();
+  String? _shipmentType;
   bool _submitting = false;
   String? _error;
 
@@ -335,6 +336,10 @@ class _DeliveryRequestSheetState extends State<_DeliveryRequestSheet> {
       setState(() => _error = context.tr('marketplace_delivery_error_address'));
       return;
     }
+    if (_shipmentType == null) {
+      setState(() => _error = context.tr('marketplace_delivery_error_shipment_type'));
+      return;
+    }
     setState(() {
       _submitting = true;
       _error = null;
@@ -344,6 +349,7 @@ class _DeliveryRequestSheetState extends State<_DeliveryRequestSheet> {
       buyerPhone: phone,
       buyerName: name,
       buyerAddress: address,
+      shipmentType: _shipmentType,
     );
     if (!mounted) return;
     if (ok) {
@@ -390,6 +396,24 @@ class _DeliveryRequestSheetState extends State<_DeliveryRequestSheet> {
               ),
               const SizedBox(height: 12),
             ],
+            Text(context.tr('marketplace_delivery_shipment_type_label'), style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13)),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                for (final t in marketplaceShipmentTypes)
+                  ChoiceChip(
+                    label: Text('${t.emoji} ${t.label}', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: _shipmentType == t.id ? Colors.white : context.bodyText)),
+                    selected: _shipmentType == t.id,
+                    selectedColor: AppColors.primary,
+                    backgroundColor: context.mutedSurface,
+                    side: BorderSide(color: _shipmentType == t.id ? AppColors.primary : context.borderColor),
+                    onSelected: (_) => setState(() => _shipmentType = t.id),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 16),
             TextField(controller: _nameCtrl, decoration: InputDecoration(labelText: context.tr('marketplace_delivery_name_label'))),
             const SizedBox(height: 10),
             TextField(controller: _phoneCtrl, keyboardType: TextInputType.phone, decoration: InputDecoration(labelText: context.tr('marketplace_delivery_phone_label'))),

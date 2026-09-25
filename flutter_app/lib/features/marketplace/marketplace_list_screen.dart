@@ -1,14 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../core/i18n.dart';
 import '../../core/theme.dart';
 import 'marketplace_item_screen.dart';
 import 'marketplace_models.dart';
 import 'marketplace_repository.dart';
 
+const _marketplacePostUrl = 'https://wslha.co/marketplace/post';
+
 /// Entry point for "🛍️ سوق المستعمل" on the home tab — browse active
 /// listings and open one to view details / request delivery. Posting a new
-/// listing stays web-only for now (marketplace/post.astro); this is a
-/// browse-and-buy surface, matching src/pages/marketplace/index.astro.
+/// listing is still the web's multi-step flow (marketplace/post.astro,
+/// with image upload + the wallet listing fee) — the AppBar's "+" opens it
+/// in the system browser rather than duplicating that flow natively.
 class MarketplaceListScreen extends StatefulWidget {
   const MarketplaceListScreen({super.key});
 
@@ -62,7 +66,16 @@ class _MarketplaceListScreenState extends State<MarketplaceListScreen> {
 
     return Scaffold(
       backgroundColor: context.mutedSurface,
-      appBar: AppBar(title: Text(context.tr('marketplace_list_title'))),
+      appBar: AppBar(
+        title: Text(context.tr('marketplace_list_title')),
+        actions: [
+          IconButton(
+            tooltip: context.tr('marketplace_list_add_listing'),
+            onPressed: () => launchUrl(Uri.parse(_marketplacePostUrl), mode: LaunchMode.externalApplication),
+            icon: const Icon(Icons.add_circle_outline),
+          ),
+        ],
+      ),
       body: Column(
         children: [
           Padding(
