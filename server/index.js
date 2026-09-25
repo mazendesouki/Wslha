@@ -57,6 +57,22 @@ async function nearestAvailableDrivers(lat, lng) {
     .sort((a, b) => a.distanceKm - b.distanceKm);
 }
 
+// Orders are matched by REGISTERED vehicle_category (db/security-97) —
+// a courier/merchant-delivery/general-delivery/store/marketplace order
+// only goes to a driver whose vehicle type fits it (see
+// required_vehicle_categories_for_order in that migration). Rides don't
+// go through this — vehicle-category eligibility for rides is enforced
+// downstream in accept_dispatch_offer (security-96), not filtered here.
+async function nearestEligibleDriversForOrder(orderId, lat, lng) {
+  if (typeof lat !== 'number' || typeof lng !== 'number') return [];
+  const { data, error } = await db.rpc('get_eligible_driver_phones_for_order', { p_order_id: orderId });
+  if (error || !data) return [];
+  return data
+    .filter(d => typeof d.lat === 'number' && typeof d.lng === 'number')
+    .map(d => ({ ...d, distanceKm: haversineKm(lat, lng, d.lat, d.lng) }))
+    .sort((a, b) => a.distanceKm - b.distanceKm);
+}
+
 async function sendPushToDriver(phone, title, body, url) {
   if (!PUSH_URL || !PUSH_SECRET) return;
   try {
@@ -94,7 +110,9 @@ async function dispatchTarget(type, id, lat, lng, label) {
   inFlight.add(key);
   try {
     if (!(await isStillUnclaimed(type, id))) return;
-    const candidates = await nearestAvailableDrivers(lat, lng);
+    const candidates = type === 'order'
+      ? await nearestEligibleDriversForOrder(id, lat, lng)
+      : await nearestAvailableDrivers(lat, lng);
     if (!candidates.length) {
       console.log(`[dispatch] no available drivers for ${key} — leaving for broadcast fallback`);
       return;
