@@ -110,7 +110,12 @@ export async function createItem(payload: {
     });
     if (!res.ok) {
       const text = await res.text().catch(() => '');
-      const m = text.match(/insufficient_wallet_balance:needs=([\d.]+):has=([\d.]+)/);
+      // has= can be negative (a seller who owes the platform from elsewhere,
+      // e.g. unpaid commissions) — [\d.]+ alone can't match the minus sign,
+      // which silently dropped this into the generic "حدث خطأ" fallback
+      // below instead of the real "insufficient balance" message (reported
+      // live: a seller with balance -93.50 got the generic error).
+      const m = text.match(/insufficient_wallet_balance:needs=(-?[\d.]+):has=(-?[\d.]+)/);
       if (m) return { reason: 'insufficient_balance', needs: Number(m[1]), has: Number(m[2]) };
       return null;
     }
