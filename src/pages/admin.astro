@@ -1091,6 +1091,65 @@
           </table>
         </div>
       </div>
+
+      <!-- ── In-app popup (different from the push notification above — this
+           shows as a modal WHILE the app is open, with a banner image,
+           auto-closes after a set duration or via X). ── -->
+      <div class="card">
+        <div class="card__head"><span class="card__title">🖼️ نافذة منبثقة داخل التطبيق</span></div>
+        <div class="card__body">
+          <p style="font-size:.8rem;color:#64748B;margin-bottom:1rem">تظهر كرسالة منبثقة جوه التطبيق طول ما المستخدم فاتحه — مش إشعار نظام. تقفل تلقائيًا بعد المدة المحددة، أو يقفلها المستخدم بعلامة ✕ في أي وقت.</p>
+          <div style="display:flex;flex-direction:column;gap:.85rem">
+            <div>
+              <label style="font-size:.78rem;font-weight:700;color:#64748B;display:block;margin-bottom:.3rem">الرسالة</label>
+              <textarea id="promo-message" rows="2" placeholder="مثال: خصم 20% على كل الطلبات النهاردة!" style="width:100%;padding:.6rem .75rem;border-radius:8px;border:1px solid #CBD5E1;font-family:inherit;font-size:.85rem;resize:vertical"></textarea>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:.75rem">
+              <div>
+                <label style="font-size:.75rem;color:#64748B;display:block;margin-bottom:.3rem">إيموجي (اختياري)</label>
+                <input class="search-input" id="promo-emoji" type="text" placeholder="🎉" maxlength="8" style="width:100%"/>
+              </div>
+              <div>
+                <label style="font-size:.75rem;color:#64748B;display:block;margin-bottom:.3rem">الفئة المستهدفة</label>
+                <select class="filter-select" id="promo-target" style="width:100%">
+                  <option value="all">الكل</option>
+                  <option value="customer">العملاء فقط</option>
+                  <option value="driver">السائقين فقط</option>
+                  <option value="merchant">التجار فقط</option>
+                </select>
+              </div>
+              <div>
+                <label style="font-size:.75rem;color:#64748B;display:block;margin-bottom:.3rem">مدة العرض (ثانية)</label>
+                <input class="search-input" id="promo-seconds" type="number" min="1" value="8" style="width:100%"/>
+              </div>
+              <div>
+                <label style="font-size:.75rem;color:#64748B;display:block;margin-bottom:.3rem">ينتهي في</label>
+                <input class="search-input" id="promo-ends-at" type="datetime-local" style="width:100%"/>
+              </div>
+            </div>
+            <div>
+              <label style="font-size:.75rem;color:#64748B;display:block;margin-bottom:.3rem">صورة أفقية (اختياري — الأفضل ١٠٨٠×٥٦٦ بكسل)</label>
+              <div class="upload-zone" id="promo-upload-zone" style="border:2px dashed #CBD5E1;border-radius:10px;padding:1.25rem;text-align:center;cursor:pointer;font-size:.85rem;color:#64748B">📷 اضغط لإضافة صورة</div>
+              <input type="file" id="promo-file-input" accept="image/*" hidden/>
+              <div id="promo-thumb" style="margin-top:.6rem"></div>
+            </div>
+          </div>
+          <button class="btn btn--primary" onclick="createPromotion()" id="promo-create-btn" style="margin-top:1rem">🖼️ إرسال النافذة المنبثقة</button>
+          <div id="promo-msg" style="display:none;font-size:.82rem;font-weight:700;padding:.5rem .75rem;border-radius:6px;margin-top:.5rem"></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card__head" style="display:flex;align-items:center;justify-content:space-between">
+          <span class="card__title">📋 كل النوافذ المنبثقة</span>
+          <button class="btn btn--ghost btn--sm" onclick="loadPromotions()">🔄 تحديث</button>
+        </div>
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr><th>الرسالة</th><th>الفئة</th><th>ينتهي في</th><th>الحالة</th><th>إجراء</th></tr></thead>
+            <tbody id="promotions-tbody"><tr><td colspan="5" style="text-align:center;color:#94A3B8;padding:2rem">جاري التحميل…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
     </div>
 
     <!-- ═══════════════════ CORPORATE CONTRACTS ═════════════ -->
@@ -2079,10 +2138,11 @@ function loadMerchantsSection() {
   if (activeTab?.dataset.mmain === 'apps') loadMerchantApps();
   else loadMerchantAccounts();
 }
+function loadCampaignsSection() { loadCampaigns(); loadPromotions(); }
 const loaders = { dash:loadDash, users:loadUsers, drivers:loadDriversSection,
   merchants:loadMerchantsSection, orders:loadOrders, rides:loadRides, stores:loadStores,
   courier:loadCourierOrders, 'merchant-delivery':loadMerchantDeliveries, 'general-delivery':loadGeneralDeliveries, marketplace:loadMarketplaceSection, corporate:loadCorporateContracts,
-  messages:loadMessages, support:loadSupportChats, coupons:loadCoupons, campaigns:loadCampaigns, finance:loadFinance, wallets:loadWalletsSection, settings:loadSettingsSection };
+  messages:loadMessages, support:loadSupportChats, coupons:loadCoupons, campaigns:loadCampaignsSection, finance:loadFinance, wallets:loadWalletsSection, settings:loadSettingsSection };
 
 document.querySelectorAll('.nav-item').forEach(btn => {
   btn.addEventListener('click', () => {
@@ -4165,6 +4225,127 @@ async function cancelCampaign(id) {
   if (!pass) return;
   const ok = await sbRpc('admin_cancel_campaign', { p_admin_phone: ADMIN.phone, p_admin_password: pass, p_campaign_id: id });
   if (ok) { showToast('✅ تم إلغاء الإشعار', '#16A34A'); loadCampaigns(); }
+  else { clearAdminPass(); showToast('❌ فشل — تحقق من كلمة مرور المشرف', '#DC2626'); }
+}
+
+/* ═══════════════════ IN-APP POPUP PROMOTIONS (db/security-98) ═══ */
+// app_promotions carries no direct grants — every read/write goes through
+// the password-verified admin_* RPCs, same pattern as marketing_campaigns.
+let promoImageUrl = null;
+
+document.getElementById('promo-upload-zone')?.addEventListener('click', () => {
+  document.getElementById('promo-file-input')?.click();
+});
+document.getElementById('promo-file-input')?.addEventListener('change', async (e) => {
+  const file = e.target.files?.[0];
+  if (!file) return;
+  const zone = document.getElementById('promo-upload-zone');
+  zone.textContent = 'جاري رفع الصورة...';
+  try {
+    const path = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}-${file.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
+    const res = await fetch(`${SB_URL}/storage/v1/object/promotions/${path}`, {
+      method: 'POST',
+      headers: { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}`, 'Content-Type': file.type },
+      body: file,
+    });
+    if (res.ok) {
+      promoImageUrl = `${SB_URL}/storage/v1/object/public/promotions/${path}`;
+      document.getElementById('promo-thumb').innerHTML = `<img src="${promoImageUrl}" style="max-width:280px;border-radius:8px;display:block"/>`;
+      zone.textContent = '📷 اضغط لتغيير الصورة';
+    } else {
+      zone.textContent = '❌ فشل رفع الصورة — حاول تاني';
+    }
+  } catch {
+    zone.textContent = '❌ فشل رفع الصورة — حاول تاني';
+  }
+});
+
+async function loadPromotions() {
+  const pass = await getAdminPass();
+  if (!pass) return;
+  const rows = await sbRpcRows('admin_list_promotions', { p_admin_phone: ADMIN.phone, p_admin_password: pass });
+  if (rows === null) { clearAdminPass(); return; }
+  const tbody = document.getElementById('promotions-tbody');
+  if (!tbody) return;
+  if (!rows.length) { tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#94A3B8;padding:2rem">لسه مفيش نوافذ منبثقة</td></tr>'; return; }
+
+  const targetLabel = { all: 'الكل', customer: 'العملاء', driver: 'السائقين', merchant: 'التجار' };
+  const now = new Date();
+  tbody.innerHTML = rows.map(p => {
+    const ended = new Date(p.ends_at) < now;
+    const statusText = !p.active ? 'أُوقف يدويًا' : ended ? 'انتهى' : 'نشط الآن';
+    const statusColor = !p.active ? '#94A3B8' : ended ? '#94A3B8' : '#16A34A';
+    const live = p.active && !ended;
+    return `
+    <tr>
+      <td style="font-weight:700">${p.emoji ? p.emoji + ' ' : ''}${escapeHtml(p.message)}</td>
+      <td>${targetLabel[p.target] || p.target}</td>
+      <td style="font-size:.78rem;color:#64748B">${new Date(p.ends_at).toLocaleString('ar-EG')}</td>
+      <td><span style="padding:2px 8px;border-radius:99px;font-size:.75rem;font-weight:700;background:${statusColor}22;color:${statusColor}">${statusText}</span></td>
+      <td style="white-space:nowrap">
+        ${live ? `<button onclick="endPromotion('${p.id}')" style="padding:.3rem .7rem;background:#F59E0B;color:#fff;border:none;border-radius:5px;font-size:.78rem;cursor:pointer">إيقاف</button>` : ''}
+        <button onclick="deletePromotion('${p.id}')" style="padding:.3rem .7rem;background:#DC2626;color:#fff;border:none;border-radius:5px;font-size:.78rem;cursor:pointer">حذف</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+async function createPromotion() {
+  const pass = await getAdminPass();
+  if (!pass) return;
+  const message = (document.getElementById('promo-message').value || '').trim();
+  if (!message) { showToast('❌ لازم تكتب نص الرسالة', '#DC2626'); return; }
+  const endsAtRaw = document.getElementById('promo-ends-at').value;
+  if (!endsAtRaw) { showToast('❌ حدد ميعاد الانتهاء', '#DC2626'); return; }
+
+  const btn = document.getElementById('promo-create-btn');
+  const msg = document.getElementById('promo-msg');
+  btn.disabled = true; btn.textContent = 'جاري الإرسال...';
+
+  const ok = await sbRpc('admin_create_promotion', {
+    p_admin_phone: ADMIN.phone, p_admin_password: pass,
+    p_message: message,
+    p_emoji: document.getElementById('promo-emoji').value || null,
+    p_image_url: promoImageUrl,
+    p_target: document.getElementById('promo-target').value,
+    p_display_seconds: Number(document.getElementById('promo-seconds').value) || 8,
+    p_ends_at: new Date(endsAtRaw).toISOString(),
+  });
+
+  btn.disabled = false; btn.textContent = '🖼️ إرسال النافذة المنبثقة';
+  if (ok) {
+    msg.textContent = '✅ اترسلت النافذة المنبثقة';
+    msg.style.cssText = 'display:block;background:#DCFCE7;color:#14532D;font-size:.82rem;font-weight:700;padding:.5rem .75rem;border-radius:6px;margin-top:.5rem';
+    document.getElementById('promo-message').value = '';
+    document.getElementById('promo-emoji').value = '';
+    document.getElementById('promo-ends-at').value = '';
+    document.getElementById('promo-seconds').value = '8';
+    document.getElementById('promo-thumb').innerHTML = '';
+    document.getElementById('promo-upload-zone').textContent = '📷 اضغط لإضافة صورة';
+    promoImageUrl = null;
+    loadPromotions();
+  } else {
+    msg.textContent = '❌ فشل — تحقق من كلمة مرور المشرف';
+    msg.style.cssText = 'display:block;background:#FEE2E2;color:#991B1B;font-size:.82rem;font-weight:700;padding:.5rem .75rem;border-radius:6px;margin-top:.5rem';
+  }
+  setTimeout(() => { msg.style.display = 'none'; }, 4000);
+}
+
+async function endPromotion(id) {
+  if (!(await showConfirmGate('إيقاف هذه النافذة المنبثقة الآن؟'))) return;
+  const pass = await getAdminPass();
+  if (!pass) return;
+  const ok = await sbRpc('admin_end_promotion', { p_admin_phone: ADMIN.phone, p_admin_password: pass, p_id: id });
+  if (ok) { showToast('✅ تم الإيقاف', '#16A34A'); loadPromotions(); }
+  else { clearAdminPass(); showToast('❌ فشل — تحقق من كلمة مرور المشرف', '#DC2626'); }
+}
+
+async function deletePromotion(id) {
+  if (!(await showConfirmGate('حذف هذه النافذة المنبثقة نهائيًا؟', { danger: true }))) return;
+  const pass = await getAdminPass();
+  if (!pass) return;
+  const ok = await sbRpc('admin_delete_promotion', { p_admin_phone: ADMIN.phone, p_admin_password: pass, p_id: id });
+  if (ok) { showToast('✅ تم الحذف', '#16A34A'); loadPromotions(); }
   else { clearAdminPass(); showToast('❌ فشل — تحقق من كلمة مرور المشرف', '#DC2626'); }
 }
 

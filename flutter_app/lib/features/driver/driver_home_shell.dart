@@ -5,6 +5,7 @@ import '../../core/i18n.dart';
 import '../../core/session.dart';
 import '../../core/theme.dart';
 import '../../core/update_checker.dart';
+import '../promotions/promotion_popup.dart';
 import '../settings/settings_screen.dart';
 import '../wallet/wallet_screen.dart';
 import 'driver_home_screen.dart';
@@ -39,6 +40,9 @@ class _DriverHomeShellState extends State<DriverHomeShell> {
     _loadStatus();
     UpdateChecker().checkForUpdate(AppFlavor.driver).then((info) {
       if (mounted && info != null) setState(() => _updateAvailable = true);
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) maybeShowPromotion(context, 'driver');
     });
   }
 

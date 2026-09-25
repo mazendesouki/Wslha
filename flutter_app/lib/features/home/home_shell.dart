@@ -5,6 +5,7 @@ import '../../core/session.dart';
 import '../../core/update_checker.dart';
 import '../account/account_screen.dart';
 import '../orders/orders_screen.dart';
+import '../promotions/promotion_popup.dart';
 import '../rides/rides_screen.dart';
 import '../settings/settings_screen.dart';
 import '../wallet/wallet_screen.dart';
@@ -30,6 +31,9 @@ class _HomeShellState extends State<HomeShell> {
     super.initState();
     UpdateChecker().checkForUpdate(AppFlavor.customer).then((info) {
       if (mounted && info != null) setState(() => _updateAvailable = true);
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) maybeShowPromotion(context, 'customer');
     });
   }
 

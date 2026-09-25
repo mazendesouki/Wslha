@@ -6,6 +6,7 @@ import '../../core/notifications.dart';
 import '../../core/session.dart';
 import '../../core/theme.dart';
 import '../../shared/widgets/logout_button.dart';
+import '../promotions/promotion_popup.dart';
 import 'merchant_repository.dart';
 
 const Map<String, String> _statusKeys = {
@@ -55,6 +56,9 @@ class _MerchantHomeScreenState extends State<MerchantHomeScreen> {
     // which won't happen just because a minute passed on an unchanged order.
     _ticker = Timer.periodic(const Duration(seconds: 15), (_) {
       if (mounted) setState(() {});
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) maybeShowPromotion(context, 'merchant');
     });
   }
 
