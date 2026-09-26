@@ -35,10 +35,51 @@ function escapeHtml(s: string): string {
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+// قابلة للتعديل من لوحة الأدمن (app_settings) — بدون نشر كود جديد.
+type FooterSettings = { phoneDisplay: string; phoneTel: string; whatsapp: string; email: string };
+const FOOTER_DEFAULTS: FooterSettings = {
+  phoneDisplay: '0020 1102 667324',
+  phoneTel: '+201102667324',
+  whatsapp: '201102667324',
+  email: 'info@wslha.co',
+};
+async function loadFooterSettings(): Promise<FooterSettings> {
+  const keys = ['brand_footer_phone_display', 'brand_footer_phone_tel', 'brand_footer_whatsapp', 'brand_footer_email'];
+  const { data } = await admin.from('app_settings').select('key,value').in('key', keys);
+  const map: Record<string, string> = {};
+  (data || []).forEach((r) => { map[r.key] = r.value; });
+  return {
+    phoneDisplay: map.brand_footer_phone_display || FOOTER_DEFAULTS.phoneDisplay,
+    phoneTel: map.brand_footer_phone_tel || FOOTER_DEFAULTS.phoneTel,
+    whatsapp: map.brand_footer_whatsapp || FOOTER_DEFAULTS.whatsapp,
+    email: map.brand_footer_email || FOOTER_DEFAULTS.email,
+  };
+}
+function footerHtml(f: FooterSettings): string {
+  return `
+    <tr>
+      <td style="text-align:center;padding:22px 16px 4px">
+        <div style="margin-bottom:8px">
+          <span style="display:inline-block;width:24px;height:24px;background:#0E4B49;border-radius:7px;color:#ffffff;font-size:12px;line-height:24px;vertical-align:middle;margin-inline-end:6px">🚚</span>
+          <span style="font-size:14px;font-weight:900;color:#0E4B49;vertical-align:middle">وصّلها</span>
+        </div>
+        <p style="color:#8A9998;font-size:11px;margin:0 0 10px;line-height:1.7">خدمة توصيل سريعة وموثوقة — مشاوير، توصيل مطار، طلبات من المتاجر، وطرود.</p>
+        <p style="margin:0 0 10px;font-size:11px">
+          <a href="tel:${f.phoneTel}" style="color:#0E4B49;text-decoration:none;font-weight:700">📞 ${f.phoneDisplay}</a>
+          &nbsp;·&nbsp;
+          <a href="mailto:${f.email}" style="color:#0E4B49;text-decoration:none;font-weight:700">✉️ ${f.email}</a>
+          &nbsp;·&nbsp;
+          <a href="https://wa.me/${f.whatsapp}" style="color:#0E4B49;text-decoration:none;font-weight:700">💬 واتساب</a>
+        </p>
+        <p style="color:#B7C4C3;font-size:10px;margin:0">© 2024–2026 وصّلها · wslha.co · جميع الحقوق محفوظة</p>
+      </td>
+    </tr>`;
+}
+
 // Same teal-header/gold-accent brand shell as swift-processor's OTP
 // email (public/global.css tokens) — generic paragraph body instead of
 // a code box, plus an optional banner image right under the header.
-function brandEmailHtml(subject: string, bodyText: string, imageUrl?: string | null): string {
+function brandEmailHtml(subject: string, bodyText: string, imageUrl: string | null | undefined, footer: FooterSettings): string {
   const paragraphs = bodyText
     .split('\n')
     .filter((p) => p.trim().length > 0)
@@ -63,23 +104,7 @@ function brandEmailHtml(subject: string, bodyText: string, imageUrl?: string | n
         ${paragraphs}
       </td>
     </tr>
-    <tr>
-      <td style="text-align:center;padding:22px 16px 4px">
-        <div style="margin-bottom:8px">
-          <span style="display:inline-block;width:24px;height:24px;background:#0E4B49;border-radius:7px;color:#ffffff;font-size:12px;line-height:24px;vertical-align:middle;margin-inline-end:6px">🚚</span>
-          <span style="font-size:14px;font-weight:900;color:#0E4B49;vertical-align:middle">وصّلها</span>
-        </div>
-        <p style="color:#8A9998;font-size:11px;margin:0 0 10px;line-height:1.7">خدمة توصيل سريعة وموثوقة — مشاوير، توصيل مطار، طلبات من المتاجر، وطرود.</p>
-        <p style="margin:0 0 10px;font-size:11px">
-          <a href="tel:+201102667324" style="color:#0E4B49;text-decoration:none;font-weight:700">📞 0020 1102 667324</a>
-          &nbsp;·&nbsp;
-          <a href="mailto:info@wslha.co" style="color:#0E4B49;text-decoration:none;font-weight:700">✉️ info@wslha.co</a>
-          &nbsp;·&nbsp;
-          <a href="https://wa.me/201102667324" style="color:#0E4B49;text-decoration:none;font-weight:700">💬 واتساب</a>
-        </p>
-        <p style="color:#B7C4C3;font-size:10px;margin:0">© 2024–2026 وصّلها · wslha.co · جميع الحقوق محفوظة</p>
-      </td>
-    </tr>
+    ${footerHtml(footer)}
   </table>
 </div>`;
 }
@@ -114,7 +139,8 @@ Deno.serve(async (req) => {
   const emails = [...new Set([...roleEmails, ...extraEmails])];
   if (!emails.length) return Response.json({ sent: 0, total: 0 });
 
-  const html = brandEmailHtml(subject, bodyText, payload.image_url);
+  const footer = await loadFooterSettings();
+  const html = brandEmailHtml(subject, bodyText, payload.image_url, footer);
   let sent = 0;
 
   // Resend's batch endpoint accepts up to 100 emails per call.

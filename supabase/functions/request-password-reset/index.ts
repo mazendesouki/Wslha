@@ -39,11 +39,32 @@ function localVariants(p: string): string[] {
   return [...set];
 }
 
+// قابلة للتعديل من لوحة الأدمن (app_settings) — بدون نشر كود جديد.
+type FooterSettings = { phoneDisplay: string; phoneTel: string; whatsapp: string; email: string };
+const FOOTER_DEFAULTS: FooterSettings = {
+  phoneDisplay: '0020 1102 667324',
+  phoneTel: '+201102667324',
+  whatsapp: '201102667324',
+  email: 'info@wslha.co',
+};
+async function loadFooterSettings(admin: ReturnType<typeof createClient>): Promise<FooterSettings> {
+  const keys = ['brand_footer_phone_display', 'brand_footer_phone_tel', 'brand_footer_whatsapp', 'brand_footer_email'];
+  const { data } = await admin.from('app_settings').select('key,value').in('key', keys);
+  const map: Record<string, string> = {};
+  (data || []).forEach((r: { key: string; value: string }) => { map[r.key] = r.value; });
+  return {
+    phoneDisplay: map.brand_footer_phone_display || FOOTER_DEFAULTS.phoneDisplay,
+    phoneTel: map.brand_footer_phone_tel || FOOTER_DEFAULTS.phoneTel,
+    whatsapp: map.brand_footer_whatsapp || FOOTER_DEFAULTS.whatsapp,
+    email: map.brand_footer_email || FOOTER_DEFAULTS.email,
+  };
+}
+
 // Table-based layout with every style inlined — the only markup pattern
 // that renders consistently across Gmail/Outlook/Apple Mail (flexbox/grid
 // and <style> blocks are unreliable in email clients). Colors/radii/fonts
 // pulled straight from public/global.css's :root tokens.
-function otpEmailHtml(name: string, code: string): string {
+function otpEmailHtml(name: string, code: string, f: FooterSettings): string {
   return `
 <div style="background:#F2F7F6;padding:32px 16px;font-family:Tahoma,Arial,sans-serif">
   <table role="presentation" width="100%" style="max-width:480px;margin:0 auto;border-collapse:collapse" dir="rtl">
@@ -70,11 +91,11 @@ function otpEmailHtml(name: string, code: string): string {
         </div>
         <p style="color:#8A9998;font-size:11px;margin:0 0 10px;line-height:1.7">خدمة توصيل سريعة وموثوقة — مشاوير، توصيل مطار، طلبات من المتاجر، وطرود.</p>
         <p style="margin:0 0 10px;font-size:11px">
-          <a href="tel:+201102667324" style="color:#0E4B49;text-decoration:none;font-weight:700">📞 0020 1102 667324</a>
+          <a href="tel:${f.phoneTel}" style="color:#0E4B49;text-decoration:none;font-weight:700">📞 ${f.phoneDisplay}</a>
           &nbsp;·&nbsp;
-          <a href="mailto:info@wslha.co" style="color:#0E4B49;text-decoration:none;font-weight:700">✉️ info@wslha.co</a>
+          <a href="mailto:${f.email}" style="color:#0E4B49;text-decoration:none;font-weight:700">✉️ ${f.email}</a>
           &nbsp;·&nbsp;
-          <a href="https://wa.me/201102667324" style="color:#0E4B49;text-decoration:none;font-weight:700">💬 واتساب</a>
+          <a href="https://wa.me/${f.whatsapp}" style="color:#0E4B49;text-decoration:none;font-weight:700">💬 واتساب</a>
         </p>
         <p style="color:#B7C4C3;font-size:10px;margin:0">© 2024–2026 وصّلها · wslha.co · جميع الحقوق محفوظة</p>
       </td>
@@ -121,7 +142,7 @@ Deno.serve(async (req) => {
         from: RESEND_FROM,
         to: [acc.email],
         subject: 'رمز استعادة كلمة المرور — وصّلها',
-        html: otpEmailHtml(acc.name || '', code),
+        html: otpEmailHtml(acc.name || '', code, await loadFooterSettings(admin)),
       }),
     });
     if (!emailRes.ok) {

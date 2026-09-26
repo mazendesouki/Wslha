@@ -1640,6 +1640,33 @@
             </div>
           </div>
         </div>
+        <!-- Email footer brand contact info -->
+        <div class="card">
+          <div class="card__head"><span class="card__title">📧 بيانات فوتر البريد الإلكتروني</span></div>
+          <div class="card__body">
+            <p style="font-size:.8rem;color:#64748B;margin-bottom:1rem">بيانات التواصل الظاهرة أسفل كل رسالة بريد (رمز استعادة كلمة المرور وحملات البريد التسويقية) — أي تعديل هنا يطبّق فورًا على الرسائل القادمة من غير نشر كود.</p>
+            <div style="display:flex;flex-direction:column;gap:.85rem">
+              <div>
+                <label style="font-size:.78rem;font-weight:700;color:#64748B;display:block;margin-bottom:.3rem">📞 رقم الهاتف الظاهر في الرسالة</label>
+                <input class="search-input" id="ftr-phone-display" type="text" placeholder="0020 1102 667324" dir="ltr" style="width:100%"/>
+              </div>
+              <div>
+                <label style="font-size:.78rem;font-weight:700;color:#64748B;display:block;margin-bottom:.3rem">📞 رقم الاتصال (بصيغة دولية للرابط، مثال: +201102667324)</label>
+                <input class="search-input" id="ftr-phone-tel" type="text" placeholder="+201102667324" dir="ltr" style="width:100%"/>
+              </div>
+              <div>
+                <label style="font-size:.78rem;font-weight:700;color:#64748B;display:block;margin-bottom:.3rem">💬 رقم واتساب (أرقام فقط بدون +، مثال: 201102667324)</label>
+                <input class="search-input" id="ftr-whatsapp" type="text" placeholder="201102667324" dir="ltr" style="width:100%"/>
+              </div>
+              <div>
+                <label style="font-size:.78rem;font-weight:700;color:#64748B;display:block;margin-bottom:.3rem">✉️ البريد الإلكتروني الظاهر للتواصل</label>
+                <input class="search-input" id="ftr-email" type="email" placeholder="info@wslha.co" dir="ltr" style="width:100%"/>
+              </div>
+              <button class="btn btn--primary" onclick="saveFooterSettings()" id="save-ftr-btn">💾 حفظ بيانات الفوتر</button>
+              <div id="ftr-msg" style="display:none;font-size:.82rem;font-weight:700;padding:.5rem .75rem;border-radius:6px"></div>
+            </div>
+          </div>
+        </div>
         <!-- Create admin account -->
         <div class="card">
           <div class="card__head"><span class="card__title">➕ إنشاء حساب مشرف جديد</span></div>
@@ -4838,6 +4865,52 @@ async function loadSettingsSection() {
   await loadCommissionRates();
   await loadTripPricing();
   await loadFeatureFlags();
+  await loadFooterSettings();
+}
+
+/* ── بيانات فوتر البريد الإلكتروني (app_settings: brand_footer_*) ── */
+const FOOTER_SETTING_MAP = {
+  brand_footer_phone_display: 'ftr-phone-display',
+  brand_footer_phone_tel: 'ftr-phone-tel',
+  brand_footer_whatsapp: 'ftr-whatsapp',
+  brand_footer_email: 'ftr-email',
+};
+async function loadFooterSettings() {
+  try {
+    const rows = await sbGet(`app_settings?key=in.(${Object.keys(FOOTER_SETTING_MAP).join(',')})&select=key,value`);
+    (rows||[]).forEach(r => {
+      const elId = FOOTER_SETTING_MAP[r.key];
+      const el = elId && document.getElementById(elId);
+      if (el) el.value = r.value;
+    });
+  } catch {}
+}
+async function saveFooterSettings() {
+  const btn = document.getElementById('save-ftr-btn');
+  const msg = document.getElementById('ftr-msg');
+  const pass = await getAdminPass();
+  if (!pass) { msg.textContent='مطلوب كلمة مرور المشرف'; msg.style.cssText='display:block;background:#FEE2E2;color:#991B1B;font-size:.82rem;font-weight:700;padding:.5rem .75rem;border-radius:6px'; return; }
+  btn.disabled = true; btn.textContent = 'جاري الحفظ...';
+  const pairs = Object.entries(FOOTER_SETTING_MAP).map(([key, elId]) => ({ key, value: (document.getElementById(elId).value || '').trim() }));
+  try {
+    const results = await Promise.all(pairs.map(p =>
+      sbRpc('admin_set_setting', { p_admin_phone: ADMIN.phone, p_admin_password: pass, p_key: p.key, p_value: p.value })
+    ));
+    if (results.every(Boolean)) {
+      msg.textContent = '✅ تم حفظ بيانات الفوتر — الرسائل القادمة هتستخدم البيانات الجديدة فورًا';
+      msg.style.cssText = 'display:block;background:#DCFCE7;color:#14532D;font-size:.82rem;font-weight:700;padding:.5rem .75rem;border-radius:6px';
+      showToast('✅ تم حفظ بيانات فوتر البريد', '#16A34A');
+    } else {
+      clearAdminPass();
+      msg.textContent = '❌ فشل — تحقق من كلمة مرور المشرف';
+      msg.style.cssText = 'display:block;background:#FEE2E2;color:#991B1B;font-size:.82rem;font-weight:700;padding:.5rem .75rem;border-radius:6px';
+    }
+  } catch {
+    msg.textContent = 'حدث خطأ، حاول مرة أخرى';
+    msg.style.cssText = 'display:block;background:#FEE2E2;color:#991B1B;font-size:.82rem;font-weight:700;padding:.5rem .75rem;border-radius:6px';
+  }
+  btn.disabled = false; btn.textContent = '💾 حفظ بيانات الفوتر';
+  setTimeout(() => { msg.style.display = 'none'; }, 4000);
 }
 
 /* ═══════════════════ WALLETS ═══════════════════════════════ */
