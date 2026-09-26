@@ -15,6 +15,12 @@
 //  global.css): teal #0E4B49 header, gold #B8863B accent on the code box
 //  — previously just a generic blue box with no brand identity at all.
 //  Still overridable via the RESEND_FROM secret if that's ever set.
+//
+//  Footer (2026-09-26): real brand contact info (same numbers/links
+//  Footer.astro uses) + a CSS-only logo mark — no actual logo IMAGE,
+//  since Gmail doesn't render data: URI images and there's no hosted
+//  logo asset to link to; a colored badge with an emoji is the safest
+//  cross-client stand-in.
 // =====================================================================
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
@@ -57,7 +63,21 @@ function otpEmailHtml(name: string, code: string): string {
       </td>
     </tr>
     <tr>
-      <td style="text-align:center;padding:16px 0;color:#8A9998;font-size:11px">وصّلها — خدمة توصيل دمياط</td>
+      <td style="text-align:center;padding:22px 16px 4px">
+        <div style="margin-bottom:8px">
+          <span style="display:inline-block;width:24px;height:24px;background:#0E4B49;border-radius:7px;color:#ffffff;font-size:12px;line-height:24px;vertical-align:middle;margin-inline-end:6px">🚚</span>
+          <span style="font-size:14px;font-weight:900;color:#0E4B49;vertical-align:middle">وصّلها</span>
+        </div>
+        <p style="color:#8A9998;font-size:11px;margin:0 0 10px;line-height:1.7">خدمة توصيل سريعة وموثوقة — مشاوير، توصيل مطار، طلبات من المتاجر، وطرود.</p>
+        <p style="margin:0 0 10px;font-size:11px">
+          <a href="tel:+201102667324" style="color:#0E4B49;text-decoration:none;font-weight:700">📞 0020 1102 667324</a>
+          &nbsp;·&nbsp;
+          <a href="mailto:info@wslha.co" style="color:#0E4B49;text-decoration:none;font-weight:700">✉️ info@wslha.co</a>
+          &nbsp;·&nbsp;
+          <a href="https://wa.me/201102667324" style="color:#0E4B49;text-decoration:none;font-weight:700">💬 واتساب</a>
+        </p>
+        <p style="color:#B7C4C3;font-size:10px;margin:0">© 2024–2026 وصّلها · wslha.co · جميع الحقوق محفوظة</p>
+      </td>
     </tr>
   </table>
 </div>`;
