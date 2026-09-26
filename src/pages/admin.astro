@@ -1074,10 +1074,6 @@
                 <input class="search-input" id="cmp-send-at" type="datetime-local" style="width:100%"/>
               </div>
             </div>
-            <label style="display:flex;align-items:center;gap:.5rem;font-size:.82rem;font-weight:700;color:#334155;margin-top:.85rem;cursor:pointer">
-              <input type="checkbox" id="cmp-send-email"/> 📧 ابعت كمان بريد إلكتروني (لكل مستخدم عنده بريد مسجّل في الفئة المستهدفة)
-            </label>
-            <p style="font-size:.72rem;color:#94A3B8;margin:.35rem 0 0">⚠️ الدومين لسه جديد على Gmail (اتفعّل بالأمس) — ابدأ بفئة صغيرة وزوّد تدريجيًا بدل ما تبعت لكل المستخدمين مرة واحدة، عشان تبني سمعة إرسال سليمة.</p>
           </div>
           <button class="btn btn--primary" onclick="createCampaign()" id="cmp-create-btn" style="margin-top:1rem">📣 إنشاء الإشعار</button>
           <div id="cmp-msg" style="display:none;font-size:.82rem;font-weight:700;padding:.5rem .75rem;border-radius:6px;margin-top:.5rem"></div>
@@ -1092,6 +1088,57 @@
           <table>
             <thead><tr><th>العنوان</th><th>الفئة</th><th>ميعاد الإرسال</th><th>الحالة</th><th>إجراء</th></tr></thead>
             <tbody id="campaigns-tbody"><tr><td colspan="5" style="text-align:center;color:#94A3B8;padding:2rem">جاري التحميل…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ── Standalone email campaign tool — separate from the push
+           notification above (different channel, different timing/content
+           needs, not one campaign wearing two hats). Also helps build
+           wslha.co's brand-new sending domain reputation with Gmail
+           through legitimate, wanted correspondence. ── -->
+      <div class="card">
+        <div class="card__head"><span class="card__title">📧 حملة بريد إلكتروني جديدة</span></div>
+        <div class="card__body">
+          <p style="font-size:.72rem;color:#94A3B8;margin-bottom:.85rem">⚠️ الدومين لسه جديد على Gmail (اتفعّل بالأمس) — ابدأ بفئة صغيرة وزوّد تدريجيًا بدل ما تبعت لكل المستخدمين مرة واحدة، عشان تبني سمعة إرسال سليمة.</p>
+          <div style="display:flex;flex-direction:column;gap:.85rem">
+            <div>
+              <label style="font-size:.78rem;font-weight:700;color:#64748B;display:block;margin-bottom:.3rem">عنوان الرسالة</label>
+              <input class="search-input" id="ecmp-subject" type="text" placeholder="🎉 عرض خاص من وصّلها" style="width:100%"/>
+            </div>
+            <div>
+              <label style="font-size:.78rem;font-weight:700;color:#64748B;display:block;margin-bottom:.3rem">نص الرسالة</label>
+              <textarea id="ecmp-body" rows="4" placeholder="اكتب نص الرسالة هنا... (كل سطر بيتحول لفقرة منفصلة)" style="width:100%;padding:.6rem .75rem;border-radius:8px;border:1px solid #CBD5E1;font-family:inherit;font-size:.85rem;resize:vertical"></textarea>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:.75rem">
+              <div>
+                <label style="font-size:.75rem;color:#64748B;display:block;margin-bottom:.3rem">الفئة المستهدفة</label>
+                <select class="filter-select" id="ecmp-target" style="width:100%">
+                  <option value="all">الكل</option>
+                  <option value="customer">العملاء فقط</option>
+                  <option value="driver">السائقين فقط</option>
+                  <option value="merchant">التجار فقط</option>
+                </select>
+              </div>
+              <div>
+                <label style="font-size:.75rem;color:#64748B;display:block;margin-bottom:.3rem">ميعاد الإرسال (فاضي = فورًا)</label>
+                <input class="search-input" id="ecmp-send-at" type="datetime-local" style="width:100%"/>
+              </div>
+            </div>
+          </div>
+          <button class="btn btn--primary" onclick="createEmailCampaign()" id="ecmp-create-btn" style="margin-top:1rem">📧 إرسال الحملة</button>
+          <div id="ecmp-msg" style="display:none;font-size:.82rem;font-weight:700;padding:.5rem .75rem;border-radius:6px;margin-top:.5rem"></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card__head" style="display:flex;align-items:center;justify-content:space-between">
+          <span class="card__title">📋 كل حملات البريد</span>
+          <button class="btn btn--ghost btn--sm" onclick="loadEmailCampaigns()">🔄 تحديث</button>
+        </div>
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr><th>العنوان</th><th>الفئة</th><th>ميعاد الإرسال</th><th>الحالة</th><th>إجراء</th></tr></thead>
+            <tbody id="email-campaigns-tbody"><tr><td colspan="5" style="text-align:center;color:#94A3B8;padding:2rem">جاري التحميل…</td></tr></tbody>
           </table>
         </div>
       </div>
@@ -2142,7 +2189,7 @@ function loadMerchantsSection() {
   if (activeTab?.dataset.mmain === 'apps') loadMerchantApps();
   else loadMerchantAccounts();
 }
-function loadCampaignsSection() { loadCampaigns(); loadPromotions(); }
+function loadCampaignsSection() { loadCampaigns(); loadEmailCampaigns(); loadPromotions(); }
 const loaders = { dash:loadDash, users:loadUsers, drivers:loadDriversSection,
   merchants:loadMerchantsSection, orders:loadOrders, rides:loadRides, stores:loadStores,
   courier:loadCourierOrders, 'merchant-delivery':loadMerchantDeliveries, 'general-delivery':loadGeneralDeliveries, marketplace:loadMarketplaceSection, corporate:loadCorporateContracts,
@@ -4182,7 +4229,7 @@ async function loadCampaigns() {
   tbody.innerHTML = rows.map(c => `
     <tr>
       <td style="font-weight:700">${escapeHtml(c.title)}</td>
-      <td>${targetLabel[c.target_role] || c.target_role}${c.send_email ? ' <span title="اترسل بالبريد كمان" style="font-size:.78rem">📧</span>' : ''}</td>
+      <td>${targetLabel[c.target_role] || c.target_role}</td>
       <td style="font-size:.78rem;color:#64748B">${new Date(c.send_at).toLocaleString('ar-EG')}</td>
       <td><span style="padding:2px 8px;border-radius:99px;font-size:.75rem;font-weight:700;background:${statusColor[c.status]}22;color:${statusColor[c.status]}">${statusLabel[c.status] || c.status}</span></td>
       <td>${c.status === 'scheduled' ? `<button onclick="cancelCampaign('${c.id}')" style="padding:.3rem .7rem;background:#DC2626;color:#fff;border:none;border-radius:5px;font-size:.78rem;cursor:pointer">إلغاء</button>` : '—'}</td>
@@ -4206,7 +4253,6 @@ async function createCampaign() {
     p_target_role: document.getElementById('cmp-target').value,
     p_url: document.getElementById('cmp-url').value || '/',
     p_send_at: sendAtRaw ? new Date(sendAtRaw).toISOString() : null,
-    p_send_email: document.getElementById('cmp-send-email').checked,
   });
 
   btn.disabled = false; btn.textContent = '📣 إنشاء الإشعار';
@@ -4217,7 +4263,6 @@ async function createCampaign() {
     document.getElementById('cmp-body').value = '';
     document.getElementById('cmp-url').value = '';
     document.getElementById('cmp-send-at').value = '';
-    document.getElementById('cmp-send-email').checked = false;
     loadCampaigns();
   } else {
     msg.textContent = '❌ فشل — تحقق من كلمة مرور المشرف';
@@ -4231,6 +4276,75 @@ async function cancelCampaign(id) {
   if (!pass) return;
   const ok = await sbRpc('admin_cancel_campaign', { p_admin_phone: ADMIN.phone, p_admin_password: pass, p_campaign_id: id });
   if (ok) { showToast('✅ تم إلغاء الإشعار', '#16A34A'); loadCampaigns(); }
+  else { clearAdminPass(); showToast('❌ فشل — تحقق من كلمة مرور المشرف', '#DC2626'); }
+}
+
+/* ═══════════════════ STANDALONE EMAIL CAMPAIGNS (db/security-100) ═══ */
+// email_campaigns carries no direct grants either — same password-
+// verified admin_* RPC pattern as marketing_campaigns, but a fully
+// separate table/tool (own pg_cron job) since push and email are
+// different channels with different timing/content needs.
+async function loadEmailCampaigns() {
+  const pass = await getAdminPass();
+  if (!pass) return;
+  const rows = await sbRpcRows('admin_list_email_campaigns', { p_admin_phone: ADMIN.phone, p_admin_password: pass });
+  if (rows === null) { clearAdminPass(); return; }
+  const tbody = document.getElementById('email-campaigns-tbody');
+  if (!tbody) return;
+  if (!rows.length) { tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#94A3B8;padding:2rem">لسه مفيش حملات بريد</td></tr>'; return; }
+
+  const targetLabel = { all: 'الكل', customer: 'العملاء', driver: 'السائقين', merchant: 'التجار' };
+  const statusLabel = { scheduled: 'مجدول', sent: 'اتبعت', cancelled: 'ملغي' };
+  const statusColor = { scheduled: '#F59E0B', sent: '#16A34A', cancelled: '#94A3B8' };
+
+  tbody.innerHTML = rows.map(c => `
+    <tr>
+      <td style="font-weight:700">${escapeHtml(c.subject)}</td>
+      <td>${targetLabel[c.target_role] || c.target_role}</td>
+      <td style="font-size:.78rem;color:#64748B">${new Date(c.send_at).toLocaleString('ar-EG')}</td>
+      <td><span style="padding:2px 8px;border-radius:99px;font-size:.75rem;font-weight:700;background:${statusColor[c.status]}22;color:${statusColor[c.status]}">${statusLabel[c.status] || c.status}</span></td>
+      <td>${c.status === 'scheduled' ? `<button onclick="cancelEmailCampaign('${c.id}')" style="padding:.3rem .7rem;background:#DC2626;color:#fff;border:none;border-radius:5px;font-size:.78rem;cursor:pointer">إلغاء</button>` : '—'}</td>
+    </tr>`).join('');
+}
+
+async function createEmailCampaign() {
+  const pass = await getAdminPass();
+  if (!pass) return;
+  const subject = (document.getElementById('ecmp-subject').value || '').trim();
+  const body = (document.getElementById('ecmp-body').value || '').trim();
+  if (!subject || !body) { showToast('❌ لازم عنوان ونص للرسالة', '#DC2626'); return; }
+
+  const btn = document.getElementById('ecmp-create-btn');
+  const msg = document.getElementById('ecmp-msg');
+  btn.disabled = true; btn.textContent = 'جاري الإرسال...';
+
+  const sendAtRaw = document.getElementById('ecmp-send-at').value;
+  const ok = await sbRpc('admin_create_email_campaign', {
+    p_admin_phone: ADMIN.phone, p_admin_password: pass, p_subject: subject, p_body: body,
+    p_target_role: document.getElementById('ecmp-target').value,
+    p_send_at: sendAtRaw ? new Date(sendAtRaw).toISOString() : null,
+  });
+
+  btn.disabled = false; btn.textContent = '📧 إرسال الحملة';
+  if (ok) {
+    msg.textContent = sendAtRaw ? '✅ اتجدولت الحملة' : '✅ هتتبعت الحملة خلال دقيقة';
+    msg.style.cssText = 'display:block;background:#DCFCE7;color:#14532D;font-size:.82rem;font-weight:700;padding:.5rem .75rem;border-radius:6px;margin-top:.5rem';
+    document.getElementById('ecmp-subject').value = '';
+    document.getElementById('ecmp-body').value = '';
+    document.getElementById('ecmp-send-at').value = '';
+    loadEmailCampaigns();
+  } else {
+    msg.textContent = '❌ فشل — تحقق من كلمة مرور المشرف';
+    msg.style.cssText = 'display:block;background:#FEE2E2;color:#991B1B;font-size:.82rem;font-weight:700;padding:.5rem .75rem;border-radius:6px;margin-top:.5rem';
+  }
+  setTimeout(() => { msg.style.display = 'none'; }, 4000);
+}
+
+async function cancelEmailCampaign(id) {
+  const pass = await getAdminPass();
+  if (!pass) return;
+  const ok = await sbRpc('admin_cancel_email_campaign', { p_admin_phone: ADMIN.phone, p_admin_password: pass, p_campaign_id: id });
+  if (ok) { showToast('✅ تم إلغاء الحملة', '#16A34A'); loadEmailCampaigns(); }
   else { clearAdminPass(); showToast('❌ فشل — تحقق من كلمة مرور المشرف', '#DC2626'); }
 }
 
