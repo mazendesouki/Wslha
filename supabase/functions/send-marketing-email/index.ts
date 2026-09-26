@@ -83,7 +83,14 @@ Deno.serve(async (req) => {
   if (error) return new Response('db error: ' + error.message, { status: 500 });
 
   const roleEmails = (rows || []).map((r) => r.email as string).filter(Boolean);
-  const extraEmails = (payload.extra_emails || []).filter((e) => typeof e === 'string' && EMAIL_RE.test(e.trim())).map((e) => e.trim());
+  // Defensive: re-split each entry on whitespace too, in case the caller
+  // joined multiple addresses with a space instead of a comma/newline —
+  // that silently dropped a whole entry before (a combined "a@x.com
+  // b@y.com" string fails EMAIL_RE outright, since it isn't one address).
+  const extraEmails = (payload.extra_emails || [])
+    .flatMap((e) => (typeof e === 'string' ? e.split(/\s+/) : []))
+    .map((e) => e.trim())
+    .filter((e) => EMAIL_RE.test(e));
   const emails = [...new Set([...roleEmails, ...extraEmails])];
   if (!emails.length) return Response.json({ sent: 0, total: 0 });
 

@@ -4359,7 +4359,7 @@ async function createEmailCampaign() {
 
   const extraEmailsRaw = (document.getElementById('ecmp-extra-emails').value || '').trim();
   const extraEmails = extraEmailsRaw
-    ? extraEmailsRaw.split(/[,\n]/).map(e => e.trim()).filter(Boolean)
+    ? extraEmailsRaw.split(/[,\s]+/).map(e => e.trim()).filter(Boolean)
     : null;
 
   const sendAtRaw = document.getElementById('ecmp-send-at').value;
