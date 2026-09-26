@@ -16,7 +16,7 @@ import { FOOTER_LINKS } from '../data/nav';
         <ul class="footer__social" role="list">
           <li><a href="#" aria-label="تويتر">𝕏</a></li>
           <li><a href="#" aria-label="انستغرام">📷</a></li>
-          <li><a href="https://wa.me/201102667324" aria-label="واتساب">💬</a></li>
+          <li><a href="https://wa.me/201102667324" aria-label="واتساب" id="footer-social-whatsapp">💬</a></li>
         </ul>
       </nav>
 
@@ -71,9 +71,9 @@ import { FOOTER_LINKS } from '../data/nav';
     <div class="footer__col">
       <h2 class="footer__heading">تواصل معنا</h2>
       <ul role="list">
-        {FOOTER_LINKS.contact.map(l => (
-          <li><a href={l.href}>{l.label}</a></li>
-        ))}
+        <li><a href="tel:+201102667324" id="footer-tel-link">📞 0020 1102 667324</a></li>
+        <li><a href="mailto:info@wslha.co" id="footer-email-link">✉️ info@wslha.co</a></li>
+        <li><a href="https://wa.me/201102667324" id="footer-whatsapp-link">💬 واتساب</a></li>
       </ul>
     </div>
 
@@ -342,4 +342,37 @@ import { FOOTER_LINKS } from '../data/nav';
   btnPlay?.addEventListener('click', showToast);
   btnStore?.addEventListener('click', showToast);
   toastClose?.addEventListener('click', hideToast);
+
+  // بيانات التواصل قابلة للتعديل من لوحة الأدمن (app_settings, brand_footer_*
+  // — نفس المفاتيح اللي بتستخدمها رسائل البريد) بدون نشر نسخة جديدة من
+  // الموقع. لو الطلب فشل، بيفضل الرقم/البريد الثابت الموجود في الـ HTML.
+  const SB_URL = 'https://vtikgyiopkjnrwlqnmfx.supabase.co';
+  const SB_KEY = 'sb_publishable_PLSnpvCT-sAyUMtymNgTwA_QmL2suw4';
+  const FOOTER_KEYS = ['brand_footer_phone_display', 'brand_footer_phone_tel', 'brand_footer_whatsapp', 'brand_footer_email'];
+
+  (async () => {
+    try {
+      const res = await fetch(
+        `${SB_URL}/rest/v1/app_settings?select=key,value&key=in.(${FOOTER_KEYS.join(',')})`,
+        { headers: { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}` } },
+      );
+      if (!res.ok) return;
+      const rows: { key: string; value: string }[] = await res.json();
+      const map: Record<string, string> = {};
+      rows.forEach((r) => { map[r.key] = r.value; });
+
+      const telLink = document.getElementById('footer-tel-link') as HTMLAnchorElement | null;
+      const emailLink = document.getElementById('footer-email-link') as HTMLAnchorElement | null;
+      const waLink = document.getElementById('footer-whatsapp-link') as HTMLAnchorElement | null;
+      const waSocial = document.getElementById('footer-social-whatsapp') as HTMLAnchorElement | null;
+
+      if (map.brand_footer_phone_tel && telLink) telLink.href = `tel:${map.brand_footer_phone_tel}`;
+      if (map.brand_footer_phone_display && telLink) telLink.textContent = `📞 ${map.brand_footer_phone_display}`;
+      if (map.brand_footer_email && emailLink) { emailLink.href = `mailto:${map.brand_footer_email}`; emailLink.textContent = `✉️ ${map.brand_footer_email}`; }
+      if (map.brand_footer_whatsapp) {
+        if (waLink) waLink.href = `https://wa.me/${map.brand_footer_whatsapp}`;
+        if (waSocial) waSocial.href = `https://wa.me/${map.brand_footer_whatsapp}`;
+      }
+    } catch { /* keep the static defaults already rendered */ }
+  })();
 </script>
