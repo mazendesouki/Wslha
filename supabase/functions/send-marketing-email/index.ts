@@ -1,11 +1,15 @@
 // وصّلها — دالة إرسال الحملات التسويقية عبر البريد
-// تُستدعى من send_due_marketing_campaigns() (db/security-99) بنفس
+// تُستدعى من send_due_email_campaigns() (db/security-100/101) بنفس
 // نمط التحقق بتاع send-push بالضبط (x-push-secret) — امتداد
 // لأداة الإشعارات الترويجية الموجودة لتشمل قناة البريد كمان
 // طلب صراحة (لبناء سمعة الدومين الجديد عند Gmail بإرسال حقيقي
 // مرغوب فيه، مش بس اختبار).
 //
-// تحذير مهم: دومين جديد لسة أيام (وصّلها اتفعّل للإرسال منذ 2026-09-25)
+// image_url (security-101) — بانر إعلاني اختياري أفقي يظهر تحت الهيدر
+// التيلي مباشرة لحملات أكثر احترافية/تسويقية — نفس المقاس الموصى به (1080×566)
+// ونفس bucket 'promotions' المستخدم في أداة النوافذ المنبثقة (security-98b).
+//
+// تحذير مهم: دومين جديد لسة أيام (وصّلها اتفعّل للإرسال منذ  2026-09-25)
 // يحتاج تدرج بطيء في الحجم — إرسال دفعة واحدة لكل المستخدمين من
 // دومين عمره يوم واحد علامة مشبوهة قوية لأنظمة مكافحة Gmail، وممكن
 // يضر السمعة بدل ما يحسّنها — الأدمن يختار فئة مستهدفة أصغر
@@ -27,13 +31,16 @@ function escapeHtml(s: string): string {
 
 // Same teal-header/gold-accent brand shell as swift-processor's OTP
 // email (public/global.css tokens) — generic paragraph body instead of
-// a code box.
-function brandEmailHtml(subject: string, bodyText: string): string {
+// a code box, plus an optional banner image right under the header.
+function brandEmailHtml(subject: string, bodyText: string, imageUrl?: string | null): string {
   const paragraphs = bodyText
     .split('\n')
     .filter((p) => p.trim().length > 0)
     .map((p) => `<p style="color:#16262A;font-size:14px;margin:0 0 14px;line-height:1.8">${escapeHtml(p)}</p>`)
     .join('');
+  const imageBlock = imageUrl
+    ? `<tr><td style="padding:0"><img src="${imageUrl}" width="100%" alt="" style="display:block;width:100%;height:auto"/></td></tr>`
+    : '';
   return `
 <div style="background:#F2F7F6;padding:32px 16px;font-family:Tahoma,Arial,sans-serif">
   <table role="presentation" width="100%" style="max-width:480px;margin:0 auto;border-collapse:collapse" dir="rtl">
@@ -43,6 +50,7 @@ function brandEmailHtml(subject: string, bodyText: string): string {
         <div style="color:rgba(255,255,255,0.7);font-size:11px;margin-top:2px">خدمة توصيل دمياط</div>
       </td>
     </tr>
+    ${imageBlock}
     <tr>
       <td style="background:#ffffff;border:1px solid #E2E8F0;border-top:none;border-radius:0 0 14px 14px;padding:28px 24px">
         <h2 style="color:#0E4B49;font-size:17px;margin:0 0 14px">${escapeHtml(subject)}</h2>
@@ -62,7 +70,7 @@ Deno.serve(async (req) => {
     return new Response('forbidden', { status: 403 });
   }
 
-  let payload: { target?: string; subject?: string; body?: string };
+  let payload: { target?: string; subject?: string; body?: string; image_url?: string | null };
   try { payload = await req.json(); } catch { return new Response('bad json', { status: 400 }); }
 
   const subject = payload.subject || 'وصّلها';
@@ -77,7 +85,7 @@ Deno.serve(async (req) => {
   const emails = [...new Set((rows || []).map((r) => r.email as string).filter(Boolean))];
   if (!emails.length) return Response.json({ sent: 0, total: 0 });
 
-  const html = brandEmailHtml(subject, bodyText);
+  const html = brandEmailHtml(subject, bodyText, payload.image_url);
   let sent = 0;
 
   // Resend's batch endpoint accepts up to 100 emails per call.

@@ -1125,6 +1125,12 @@
                 <input class="search-input" id="ecmp-send-at" type="datetime-local" style="width:100%"/>
               </div>
             </div>
+            <div>
+              <label style="font-size:.75rem;color:#64748B;display:block;margin-bottom:.3rem">صورة إعلانية أفقية (اختياري — الأفضل ١٠٨٠×٥٦٦ بكسل)</label>
+              <div class="upload-zone" id="ecmp-upload-zone" style="border:2px dashed #CBD5E1;border-radius:10px;padding:1.25rem;text-align:center;cursor:pointer;font-size:.85rem;color:#64748B">📷 اضغط لإضافة صورة إعلانية</div>
+              <input type="file" id="ecmp-file-input" accept="image/*" hidden/>
+              <div id="ecmp-thumb" style="margin-top:.6rem"></div>
+            </div>
           </div>
           <button class="btn btn--primary" onclick="createEmailCampaign()" id="ecmp-create-btn" style="margin-top:1rem">📧 إرسال الحملة</button>
           <div id="ecmp-msg" style="display:none;font-size:.82rem;font-weight:700;padding:.5rem .75rem;border-radius:6px;margin-top:.5rem"></div>
@@ -4307,6 +4313,35 @@ async function loadEmailCampaigns() {
     </tr>`).join('');
 }
 
+let ecmpImageUrl = null;
+
+document.getElementById('ecmp-upload-zone')?.addEventListener('click', () => {
+  document.getElementById('ecmp-file-input')?.click();
+});
+document.getElementById('ecmp-file-input')?.addEventListener('change', async (e) => {
+  const file = e.target.files?.[0];
+  if (!file) return;
+  const zone = document.getElementById('ecmp-upload-zone');
+  zone.textContent = 'جاري رفع الصورة...';
+  try {
+    const path = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}-${file.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
+    const res = await fetch(`${SB_URL}/storage/v1/object/promotions/${path}`, {
+      method: 'POST',
+      headers: { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}`, 'Content-Type': file.type },
+      body: file,
+    });
+    if (res.ok) {
+      ecmpImageUrl = `${SB_URL}/storage/v1/object/public/promotions/${path}`;
+      document.getElementById('ecmp-thumb').innerHTML = `<img src="${ecmpImageUrl}" style="max-width:280px;border-radius:8px;display:block"/>`;
+      zone.textContent = '📷 اضغط لتغيير الصورة';
+    } else {
+      zone.textContent = '❌ فشل رفع الصورة — حاول تاني';
+    }
+  } catch {
+    zone.textContent = '❌ فشل رفع الصورة — حاول تاني';
+  }
+});
+
 async function createEmailCampaign() {
   const pass = await getAdminPass();
   if (!pass) return;
@@ -4323,6 +4358,7 @@ async function createEmailCampaign() {
     p_admin_phone: ADMIN.phone, p_admin_password: pass, p_subject: subject, p_body: body,
     p_target_role: document.getElementById('ecmp-target').value,
     p_send_at: sendAtRaw ? new Date(sendAtRaw).toISOString() : null,
+    p_image_url: ecmpImageUrl,
   });
 
   btn.disabled = false; btn.textContent = '📧 إرسال الحملة';
@@ -4332,6 +4368,9 @@ async function createEmailCampaign() {
     document.getElementById('ecmp-subject').value = '';
     document.getElementById('ecmp-body').value = '';
     document.getElementById('ecmp-send-at').value = '';
+    document.getElementById('ecmp-thumb').innerHTML = '';
+    document.getElementById('ecmp-upload-zone').textContent = '📷 اضغط لإضافة صورة إعلانية';
+    ecmpImageUrl = null;
     loadEmailCampaigns();
   } else {
     msg.textContent = '❌ فشل — تحقق من كلمة مرور المشرف';
