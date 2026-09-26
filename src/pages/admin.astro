@@ -1131,6 +1131,10 @@
               <input type="file" id="ecmp-file-input" accept="image/*" hidden/>
               <div id="ecmp-thumb" style="margin-top:.6rem"></div>
             </div>
+            <div>
+              <label style="font-size:.75rem;color:#64748B;display:block;margin-bottom:.3rem">بريد إلكتروني إضافي (اختياري — مش لازم يكونوا مسجّلين في التطبيق، لإعلان البراند لجهات خارجية)</label>
+              <textarea id="ecmp-extra-emails" rows="2" placeholder="افصل بين كل بريد وبريد بفاصلة أو سطر جديد&#10;example1@email.com, example2@email.com" style="width:100%;padding:.6rem .75rem;border-radius:8px;border:1px solid #CBD5E1;font-family:inherit;font-size:.85rem;resize:vertical;direction:ltr;text-align:left"></textarea>
+            </div>
           </div>
           <button class="btn btn--primary" onclick="createEmailCampaign()" id="ecmp-create-btn" style="margin-top:1rem">📧 إرسال الحملة</button>
           <div id="ecmp-msg" style="display:none;font-size:.82rem;font-weight:700;padding:.5rem .75rem;border-radius:6px;margin-top:.5rem"></div>
@@ -4353,12 +4357,18 @@ async function createEmailCampaign() {
   const msg = document.getElementById('ecmp-msg');
   btn.disabled = true; btn.textContent = 'جاري الإرسال...';
 
+  const extraEmailsRaw = (document.getElementById('ecmp-extra-emails').value || '').trim();
+  const extraEmails = extraEmailsRaw
+    ? extraEmailsRaw.split(/[,\n]/).map(e => e.trim()).filter(Boolean)
+    : null;
+
   const sendAtRaw = document.getElementById('ecmp-send-at').value;
   const ok = await sbRpc('admin_create_email_campaign', {
     p_admin_phone: ADMIN.phone, p_admin_password: pass, p_subject: subject, p_body: body,
     p_target_role: document.getElementById('ecmp-target').value,
     p_send_at: sendAtRaw ? new Date(sendAtRaw).toISOString() : null,
     p_image_url: ecmpImageUrl,
+    p_extra_emails: extraEmails,
   });
 
   btn.disabled = false; btn.textContent = '📧 إرسال الحملة';
@@ -4368,6 +4378,7 @@ async function createEmailCampaign() {
     document.getElementById('ecmp-subject').value = '';
     document.getElementById('ecmp-body').value = '';
     document.getElementById('ecmp-send-at').value = '';
+    document.getElementById('ecmp-extra-emails').value = '';
     document.getElementById('ecmp-thumb').innerHTML = '';
     document.getElementById('ecmp-upload-zone').textContent = '📷 اضغط لإضافة صورة إعلانية';
     ecmpImageUrl = null;

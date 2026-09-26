@@ -1,13 +1,11 @@
 // وصّلها — دالة إرسال الحملات التسويقية عبر البريد
-// تُستدعى من send_due_email_campaigns() (db/security-100/101) بنفس
-// نمط التحقق بتاع send-push بالضبط (x-push-secret) — امتداد
-// لأداة الإشعارات الترويجية الموجودة لتشمل قناة البريد كمان
-// طلب صراحة (لبناء سمعة الدومين الجديد عند Gmail بإرسال حقيقي
-// مرغوب فيه، مش بس اختبار).
+// تُستدعى من send_due_email_campaigns() (db/security-100/101/102) بنفس
+// نمط التحقق بتاع send-push بالضبط (x-push-secret).
 //
-// image_url (security-101) — بانر إعلاني اختياري أفقي يظهر تحت الهيدر
-// التيلي مباشرة لحملات أكثر احترافية/تسويقية — نفس المقاس الموصى به (1080×566)
-// ونفس bucket 'promotions' المستخدم في أداة النوافذ المنبثقة (security-98b).
+// image_url (security-101) — بانر إعلاني اختياري.
+// extra_emails (security-102) — قائمة بريد إضافية اختيارية (مش لازم حسابات
+// مسجّلة بالتطبيق) — لإعلانات البراند لجهات خارجية/قوائم مجمّعة، تُدمج
+// مع إيميلات الفئة المستهدفة ويُزال منها المكرر.
 //
 // تحذير مهم: دومين جديد لسة أيام (وصّلها اتفعّل للإرسال منذ  2026-09-25)
 // يحتاج تدرج بطيء في الحجم — إرسال دفعة واحدة لكل المستخدمين من
@@ -28,6 +26,8 @@ const admin = createClient(
 function escapeHtml(s: string): string {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 // Same teal-header/gold-accent brand shell as swift-processor's OTP
 // email (public/global.css tokens) — generic paragraph body instead of
@@ -70,7 +70,7 @@ Deno.serve(async (req) => {
     return new Response('forbidden', { status: 403 });
   }
 
-  let payload: { target?: string; subject?: string; body?: string; image_url?: string | null };
+  let payload: { target?: string; subject?: string; body?: string; image_url?: string | null; extra_emails?: string[] | null };
   try { payload = await req.json(); } catch { return new Response('bad json', { status: 400 }); }
 
   const subject = payload.subject || 'وصّلها';
@@ -82,7 +82,9 @@ Deno.serve(async (req) => {
   const { data: rows, error } = await query;
   if (error) return new Response('db error: ' + error.message, { status: 500 });
 
-  const emails = [...new Set((rows || []).map((r) => r.email as string).filter(Boolean))];
+  const roleEmails = (rows || []).map((r) => r.email as string).filter(Boolean);
+  const extraEmails = (payload.extra_emails || []).filter((e) => typeof e === 'string' && EMAIL_RE.test(e.trim())).map((e) => e.trim());
+  const emails = [...new Set([...roleEmails, ...extraEmails])];
   if (!emails.length) return Response.json({ sent: 0, total: 0 });
 
   const html = brandEmailHtml(subject, bodyText, payload.image_url);
