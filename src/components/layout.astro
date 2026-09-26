@@ -163,6 +163,7 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site ?? 'https://wslha.co
   <a
     href="https://wa.me/201102667324"
     class="whatsapp-float"
+    id="whatsapp-float-link"
     aria-label="تواصل معنا عبر واتساب"
     rel="noopener noreferrer"
     target="_blank"
@@ -261,6 +262,30 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site ?? 'https://wslha.co
           });
         } catch (e) {}
       }
+    })();
+  </script>
+
+  <script>
+    // رقم الواتساب العائم أسفل الموقع (زرار الدردشة/الدعم المباشر) قابل
+    // للتعديل من نفس كارت "بيانات فوتر البريد الإلكتروني" في لوحة الأدمن
+    // (app_settings, brand_footer_whatsapp) — بدون نشر نسخة جديدة. لو
+    // الطلب فشل، بيفضل الرقم الثابت الموجود في الـ HTML.
+    const SB_URL = 'https://vtikgyiopkjnrwlqnmfx.supabase.co';
+    const SB_KEY = 'sb_publishable_PLSnpvCT-sAyUMtymNgTwA_QmL2suw4';
+
+    (async () => {
+      try {
+        const res = await fetch(
+          `${SB_URL}/rest/v1/app_settings?select=value&key=eq.brand_footer_whatsapp`,
+          { headers: { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}` } },
+        );
+        if (!res.ok) return;
+        const rows: { value: string }[] = await res.json();
+        const whatsapp = rows[0]?.value;
+        if (!whatsapp) return;
+        const link = document.getElementById('whatsapp-float-link') as HTMLAnchorElement | null;
+        if (link) link.href = `https://wa.me/${whatsapp}`;
+      } catch { /* keep the static default already rendered */ }
     })();
   </script>
 </body>

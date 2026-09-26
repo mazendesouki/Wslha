@@ -16,10 +16,12 @@ const ICONS = {
   pin:   `<path d="M12 21s7-6.1 7-11.5A7 7 0 0 0 5 9.5C5 14.9 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/>`,
 };
 
-const CONTACT_CARDS: ContactCard[] = [
-  { icon: ICONS.phone, label: 'اتصل بنا',           value: '0020 1102 667324',  href: 'tel:+201102667324'          },
-  { icon: ICONS.chat,  label: 'واتساب',              value: '0020 1102 667324',  href: 'https://wa.me/201102667324' },
-  { icon: ICONS.mail,  label: 'البريد الإلكتروني',  value: 'info@wslha.co',     href: 'mailto:info@wslha.co'       },
+interface ContactCard2 extends ContactCard { key?: string }
+
+const CONTACT_CARDS: ContactCard2[] = [
+  { icon: ICONS.phone, label: 'اتصل بنا',           value: '0020 1102 667324',  href: 'tel:+201102667324',          key: 'phone'    },
+  { icon: ICONS.chat,  label: 'واتساب',              value: '0020 1102 667324',  href: 'https://wa.me/201102667324', key: 'whatsapp' },
+  { icon: ICONS.mail,  label: 'البريد الإلكتروني',  value: 'info@wslha.co',     href: 'mailto:info@wslha.co',        key: 'email'    },
   { icon: ICONS.pin,   label: 'الموقع',              value: 'دمياط الجديدة، مصر',    href: '#'                       },
 ];
 
@@ -327,6 +329,37 @@ const SUBJECTS = [
       submit.textContent = 'إرسال الرسالة ←';
     }
   });
+
+  /* ── بيانات التواصل (هاتف/واتساب/بريد) قابلة للتعديل من لوحة الأدمن ──
+     نفس مفاتيح app_settings (brand_footer_*) اللي بتتحكم في فوتر الموقع
+     وفوتر رسائل البريد — لو الطلب فشل، بتفضل القيم الثابتة في الصفحة. */
+  (async () => {
+    try {
+      const keys = ['brand_footer_phone_display', 'brand_footer_phone_tel', 'brand_footer_whatsapp', 'brand_footer_email'];
+      const res = await fetch(`${SB_URL}/rest/v1/app_settings?select=key,value&key=in.(${keys.join(',')})`, { headers: SB_H });
+      if (!res.ok) return;
+      const rows: { key: string; value: string }[] = await res.json();
+      const map: Record<string, string> = {};
+      rows.forEach((r) => { map[r.key] = r.value; });
+
+      const phoneCard = document.querySelector('[data-contact="phone"]') as HTMLAnchorElement | null;
+      const waCard    = document.querySelector('[data-contact="whatsapp"]') as HTMLAnchorElement | null;
+      const emailCard = document.querySelector('[data-contact="email"]') as HTMLAnchorElement | null;
+
+      if (phoneCard && map.brand_footer_phone_tel) phoneCard.href = `tel:${map.brand_footer_phone_tel}`;
+      if (phoneCard && map.brand_footer_phone_display) {
+        const v = phoneCard.querySelector('.contact-card__value'); if (v) v.textContent = map.brand_footer_phone_display;
+      }
+      if (waCard && map.brand_footer_whatsapp) waCard.href = `https://wa.me/${map.brand_footer_whatsapp}`;
+      if (waCard && map.brand_footer_phone_display) {
+        const v = waCard.querySelector('.contact-card__value'); if (v) v.textContent = map.brand_footer_phone_display;
+      }
+      if (emailCard && map.brand_footer_email) {
+        emailCard.href = `mailto:${map.brand_footer_email}`;
+        const v = emailCard.querySelector('.contact-card__value'); if (v) v.textContent = map.brand_footer_email;
+      }
+    } catch { /* keep the static defaults already rendered */ }
+  })();
 </script>
 
 <Layout
@@ -346,7 +379,7 @@ const SUBJECTS = [
     <aside aria-label="معلومات التواصل">
       <div class="contact-info">
         {CONTACT_CARDS.map(card => (
-          <a href={card.href} class="contact-card" rel={card.href.startsWith('http') ? 'noopener noreferrer' : undefined}>
+          <a href={card.href} class="contact-card" data-contact={card.key} rel={card.href.startsWith('http') ? 'noopener noreferrer' : undefined}>
             <div class="contact-card__icon" aria-hidden="true">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" set:html={card.icon} />
             </div>
