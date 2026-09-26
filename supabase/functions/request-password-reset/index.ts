@@ -7,6 +7,14 @@
 //  Deploy:   supabase functions deploy request-password-reset --no-verify-jwt
 //  Secrets:  supabase secrets set RESEND_API_KEY=re_xxx RESEND_FROM="وصّلها <noreply@yourdomain>"
 //  (SUPABASE_URL & SUPABASE_SERVICE_ROLE_KEY are injected automatically.)
+//
+//  wslha.co is verified on Resend (2026-09-25). Sender switched from
+//  noreply@ to accounts@wslha.co (2026-09-26) — Resend's deliverability
+//  insights flag "no-reply" as hurting inbox placement. Email template
+//  (2026-09-26) rebuilt to match the site's real brand tokens (public/
+//  global.css): teal #0E4B49 header, gold #B8863B accent on the code box
+//  — previously just a generic blue box with no brand identity at all.
+//  Still overridable via the RESEND_FROM secret if that's ever set.
 // =====================================================================
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
@@ -23,6 +31,36 @@ function localVariants(p: string): string[] {
   if (p.startsWith('+20')) set.add('0' + p.slice(3));
   if (p.startsWith('01'))  set.add('+2' + p);
   return [...set];
+}
+
+// Table-based layout with every style inlined — the only markup pattern
+// that renders consistently across Gmail/Outlook/Apple Mail (flexbox/grid
+// and <style> blocks are unreliable in email clients). Colors/radii/fonts
+// pulled straight from public/global.css's :root tokens.
+function otpEmailHtml(name: string, code: string): string {
+  return `
+<div style="background:#F2F7F6;padding:32px 16px;font-family:Tahoma,Arial,sans-serif">
+  <table role="presentation" width="100%" style="max-width:480px;margin:0 auto;border-collapse:collapse" dir="rtl">
+    <tr>
+      <td style="background:#0E4B49;border-radius:14px 14px 0 0;padding:28px 24px;text-align:center">
+        <div style="display:inline-block;width:44px;height:44px;background:rgba(255,255,255,0.15);border-radius:12px;color:#ffffff;font-size:22px;line-height:44px;margin-bottom:10px">🚚</div>
+        <div style="color:#ffffff;font-size:22px;font-weight:900">وصّلها</div>
+        <div style="color:rgba(255,255,255,0.7);font-size:11px;margin-top:2px">خدمة توصيل دمياط</div>
+      </td>
+    </tr>
+    <tr>
+      <td style="background:#ffffff;border:1px solid #E2E8F0;border-top:none;border-radius:0 0 14px 14px;padding:28px 24px">
+        <p style="color:#16262A;font-size:15px;margin:0 0 6px">مرحباً ${name}،</p>
+        <p style="color:#5B6B6A;font-size:14px;margin:0 0 18px;line-height:1.6">رمز استعادة كلمة المرور الخاص بك هو:</p>
+        <div style="font-size:32px;font-weight:900;letter-spacing:8px;color:#96692A;text-align:center;background:#F8FAFC;border:2px dashed #B8863B;border-radius:10px;padding:16px;margin-bottom:18px">${code}</div>
+        <p style="color:#8A9998;font-size:12px;margin:0;line-height:1.6">الرمز صالح لمدة 5 دقائق. إذا لم تطلب ذلك، تجاهل هذه الرسالة.</p>
+      </td>
+    </tr>
+    <tr>
+      <td style="text-align:center;padding:16px 0;color:#8A9998;font-size:11px">وصّلها — خدمة توصيل دمياط</td>
+    </tr>
+  </table>
+</div>`;
 }
 
 Deno.serve(async (req) => {
@@ -53,7 +91,7 @@ Deno.serve(async (req) => {
 
     // Send the email via Resend.
     const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
-    const RESEND_FROM = Deno.env.get('RESEND_FROM') || 'وصّلها <onboarding@resend.dev>';
+    const RESEND_FROM = Deno.env.get('RESEND_FROM') || 'وصّلها <accounts@wslha.co>';
     if (!RESEND_API_KEY) return json({ error: 'email_not_configured' }, 500);
 
     const emailRes = await fetch('https://api.resend.com/emails', {
@@ -63,14 +101,7 @@ Deno.serve(async (req) => {
         from: RESEND_FROM,
         to: [acc.email],
         subject: 'رمز استعادة كلمة المرور — وصّلها',
-        html: `
-          <div dir="rtl" style="font-family:Tahoma,Arial,sans-serif;max-width:480px;margin:auto;padding:24px;background:#f8fafc;border-radius:12px">
-            <h2 style="color:#1a2340;margin:0 0 8px">وصّلها</h2>
-            <p style="color:#334155;font-size:15px">مرحباً ${acc.name || ''}،</p>
-            <p style="color:#334155;font-size:15px">رمز استعادة كلمة المرور الخاص بك هو:</p>
-            <div style="font-size:34px;font-weight:900;letter-spacing:10px;color:#1d4ed8;text-align:center;background:#fff;border:2px dashed #93c5fd;border-radius:10px;padding:16px;margin:16px 0">${code}</div>
-            <p style="color:#64748b;font-size:13px">الرمز صالح لمدة 5 دقائق. إذا لم تطلب ذلك، تجاهل هذه الرسالة.</p>
-          </div>`,
+        html: otpEmailHtml(acc.name || '', code),
       }),
     });
     if (!emailRes.ok) {

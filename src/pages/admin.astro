@@ -1074,6 +1074,10 @@
                 <input class="search-input" id="cmp-send-at" type="datetime-local" style="width:100%"/>
               </div>
             </div>
+            <label style="display:flex;align-items:center;gap:.5rem;font-size:.82rem;font-weight:700;color:#334155;margin-top:.85rem;cursor:pointer">
+              <input type="checkbox" id="cmp-send-email"/> 📧 ابعت كمان بريد إلكتروني (لكل مستخدم عنده بريد مسجّل في الفئة المستهدفة)
+            </label>
+            <p style="font-size:.72rem;color:#94A3B8;margin:.35rem 0 0">⚠️ الدومين لسه جديد على Gmail (اتفعّل بالأمس) — ابدأ بفئة صغيرة وزوّد تدريجيًا بدل ما تبعت لكل المستخدمين مرة واحدة، عشان تبني سمعة إرسال سليمة.</p>
           </div>
           <button class="btn btn--primary" onclick="createCampaign()" id="cmp-create-btn" style="margin-top:1rem">📣 إنشاء الإشعار</button>
           <div id="cmp-msg" style="display:none;font-size:.82rem;font-weight:700;padding:.5rem .75rem;border-radius:6px;margin-top:.5rem"></div>
@@ -4178,7 +4182,7 @@ async function loadCampaigns() {
   tbody.innerHTML = rows.map(c => `
     <tr>
       <td style="font-weight:700">${escapeHtml(c.title)}</td>
-      <td>${targetLabel[c.target_role] || c.target_role}</td>
+      <td>${targetLabel[c.target_role] || c.target_role}${c.send_email ? ' <span title="اترسل بالبريد كمان" style="font-size:.78rem">📧</span>' : ''}</td>
       <td style="font-size:.78rem;color:#64748B">${new Date(c.send_at).toLocaleString('ar-EG')}</td>
       <td><span style="padding:2px 8px;border-radius:99px;font-size:.75rem;font-weight:700;background:${statusColor[c.status]}22;color:${statusColor[c.status]}">${statusLabel[c.status] || c.status}</span></td>
       <td>${c.status === 'scheduled' ? `<button onclick="cancelCampaign('${c.id}')" style="padding:.3rem .7rem;background:#DC2626;color:#fff;border:none;border-radius:5px;font-size:.78rem;cursor:pointer">إلغاء</button>` : '—'}</td>
@@ -4202,6 +4206,7 @@ async function createCampaign() {
     p_target_role: document.getElementById('cmp-target').value,
     p_url: document.getElementById('cmp-url').value || '/',
     p_send_at: sendAtRaw ? new Date(sendAtRaw).toISOString() : null,
+    p_send_email: document.getElementById('cmp-send-email').checked,
   });
 
   btn.disabled = false; btn.textContent = '📣 إنشاء الإشعار';
@@ -4212,6 +4217,7 @@ async function createCampaign() {
     document.getElementById('cmp-body').value = '';
     document.getElementById('cmp-url').value = '';
     document.getElementById('cmp-send-at').value = '';
+    document.getElementById('cmp-send-email').checked = false;
     loadCampaigns();
   } else {
     msg.textContent = '❌ فشل — تحقق من كلمة مرور المشرف';
