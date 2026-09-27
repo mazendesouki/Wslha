@@ -242,40 +242,50 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
 
   Future<void> _toggleOnline(bool value) async {
     setState(() => _busy = true);
-    if (value) {
-      final ok = await _repo.goOnline(widget.session.phone, widget.session.name);
-      if (!ok && mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(context.tr('driver_home_location_permission_needed'))),
-        );
+    // Both branches used to call the network directly with no try/catch —
+    // unlike every other action in this file. A single failed request (a
+    // network blip, a transient Supabase/RLS error) left the awaited call
+    // uncaught, so the setState below that resets _busy never ran. The
+    // Switch's onChanged is `busy ? null : onChanged`, so a stuck _busy=true
+    // permanently disabled it — reported live as "stuck on متصل": tapping
+    // to go offline failed silently, _busy stayed true, _online was never
+    // set to false, and (for the offline branch) the prefs flag was never
+    // updated either, so even relaunching the app called _restoreOnlineStatus
+    // → _toggleOnline(true) again, re-locking it online every time.
+    try {
+      if (value) {
+        final ok = await _repo.goOnline(widget.session.phone, widget.session.name);
+        if (!ok && mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(context.tr('driver_home_location_permission_needed'))),
+          );
+        }
+        // Persisted so a real app relaunch (not just backgrounding) restores
+        // this — see _restoreOnlineStatus() in initState(). Only saved on
+        // success: a failed attempt (e.g. permission denied) must not look
+        // "online" to the next cold start either.
+        (await SharedPreferences.getInstance()).setBool(_onlinePrefKey, ok);
+        if (ok) {
+          _startPolling();
+          _startPushWatch();
+          _startLocationPings();
+        }
+        if (mounted) setState(() => _online = ok);
+      } else {
+        await _repo.goOffline(widget.session.phone);
+        _pollTimer?.cancel();
+        _offersSub?.cancel();
+        _locationTimer?.cancel();
+        _countdownTimer?.cancel();
+        _countdownTimer = null;
+        (await SharedPreferences.getInstance()).setBool(_onlinePrefKey, false);
+        if (mounted) setState(() => _offers = []);
+        if (mounted) setState(() => _online = false);
       }
-      setState(() {
-        _online = ok;
-        _busy = false;
-      });
-      // Persisted so a real app relaunch (not just backgrounding) restores
-      // this — see _restoreOnlineStatus() in initState(). Only saved on
-      // success: a failed attempt (e.g. permission denied) must not look
-      // "online" to the next cold start either.
-      (await SharedPreferences.getInstance()).setBool(_onlinePrefKey, ok);
-      if (ok) {
-        _startPolling();
-        _startPushWatch();
-        _startLocationPings();
-      }
-    } else {
-      await _repo.goOffline(widget.session.phone);
-      _pollTimer?.cancel();
-      _offersSub?.cancel();
-      _locationTimer?.cancel();
-      _countdownTimer?.cancel();
-      _countdownTimer = null;
-      setState(() {
-        _online = false;
-        _busy = false;
-        _offers = [];
-      });
-      (await SharedPreferences.getInstance()).setBool(_onlinePrefKey, false);
+    } catch (e) {
+      _showError(e);
+    } finally {
+      if (mounted) setState(() => _busy = false);
     }
   }
 
