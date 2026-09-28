@@ -25,6 +25,10 @@ const Map<String, Map<String, String>> batchBStrings = {
     'ar': 'السائق لم يستطع قبول الطلب (اتقبل من غيرك أو انتهت صلاحيته)',
     'en': "Couldn't accept the request (someone else took it, or it expired)",
   },
+  'driver_home_accept_error_already_taken': {
+    'ar': 'سائق تاني اتقبّل عليها قبلك',
+    'en': 'Another driver already took this one',
+  },
   'driver_home_airport_reminder_title': {'ar': '✈️ تذكير رحلة مطار', 'en': '✈️ Airport ride reminder'},
   'driver_home_airport_reminder_body': {
     'ar': 'موعدك مع العميل قرّب — راجع تفاصيل الرحلة',

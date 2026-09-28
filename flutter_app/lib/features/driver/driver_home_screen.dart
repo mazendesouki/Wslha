@@ -66,6 +66,11 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
   final _ratingsRepo = RatingsRepository();
   List<PendingOffer> _offers = [];
   String? _actingOnOfferId;
+  // Rides/orders this driver explicitly declined via the broadcast fallback
+  // (see _fetchBroadcastFallbackOffer) — without this, the same aged ride
+  // would just reappear on the very next 5s poll after being rejected.
+  final Set<String> _dismissedBroadcast = {};
+  static const _broadcastFallbackAge = Duration(seconds: 90);
   final _jobs = ActiveJobStore.instance;
   String? _vehicleCategory;
 
@@ -208,11 +213,48 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
       return;
     }
     if (!mounted) return;
+
+    // Broadcast fallback (mirrors driver-dashboard.astro's pollRides()/
+    // pollOrders()) — only when the targeted dispatch engine has nothing
+    // for this driver and they aren't mid-job, so it never competes with
+    // (or gets buried under) a real targeted offer or an active job.
+    if (offers.isEmpty && _jobs.job == null) {
+      try {
+        final fallback = await _fetchBroadcastFallbackOffer();
+        if (fallback != null) offers = [fallback];
+      } catch (_) {}
+      if (!mounted) return;
+    }
+
     final hadIds = _offers.map((o) => o.offerId).toSet();
     final isNew = offers.any((o) => !hadIds.contains(o.offerId));
     if (isNew) HapticFeedback.heavyImpact();
     setState(() => _offers = offers);
     _ensureCountdownTicking();
+  }
+
+  // offerId prefix distinguishes these from real dispatch_offers rows so
+  // _accept()/_reject() can route them through the different accept RPCs
+  // (no offer_id to accept/reject against — the ride/order itself is the
+  // target). No expiresAt: unlike a targeted offer, this isn't reserved
+  // for this driver alone, so there's nothing to visibly count down.
+  Future<PendingOffer?> _fetchBroadcastFallbackOffer() async {
+    final now = DateTime.now().toUtc();
+    final ride = await _repo.fetchOldestPendingRide();
+    if (ride != null && !_dismissedBroadcast.contains('ride:${ride['id']}')) {
+      final createdAt = DateTime.tryParse(ride['created_at'] as String? ?? '');
+      if (createdAt != null && now.difference(createdAt) >= _broadcastFallbackAge) {
+        return PendingOffer('broadcast:ride:${ride['id']}', 'ride', ride);
+      }
+    }
+    final order = await _repo.fetchOldestPendingOrder();
+    if (order != null && !_dismissedBroadcast.contains('order:${order['id']}')) {
+      final agedAt = DateTime.tryParse((order['accepted_at'] ?? order['created_at']) as String? ?? '');
+      if (agedAt != null && now.difference(agedAt) >= _broadcastFallbackAge) {
+        return PendingOffer('broadcast:order:${order['id']}', 'order', order);
+      }
+    }
+    return null;
   }
 
   void _startPolling() {
@@ -307,39 +349,56 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
   Future<void> _accept(PendingOffer offer) async {
     if (_actingOnOfferId != null) return;
     setState(() => _actingOnOfferId = offer.offerId);
+    final isBroadcast = offer.offerId.startsWith('broadcast:');
     try {
-      final result = await _repo.acceptOffer(offer.offerId, widget.session.phone, widget.session.name);
+      String result;
+      Map<String, dynamic>? freshRow;
+      if (isBroadcast) {
+        final id = offer.data['id'].toString();
+        final r = offer.targetType == 'ride'
+            ? await _repo.acceptRideBroadcast(id, widget.session.phone, widget.session.name)
+            : await _repo.claimOrderBroadcast(id, widget.session.phone, widget.session.name);
+        result = r.$1;
+        freshRow = r.$2;
+      } else {
+        result = await _repo.acceptOffer(offer.offerId, widget.session.phone, widget.session.name);
+      }
       final ok = result == 'ok';
       if (!mounted) return;
       if (!ok) {
         _showError(
-          result == 'vehicle_category_mismatch'
+          result == 'vehicle_category_mismatch' || result == 'delivery_only_vehicle'
               ? context.tr('driver_home_accept_error_vehicle_mismatch')
               : result == 'quality_tier_mismatch'
                   ? context.tr('driver_home_accept_error_quality_mismatch')
                   : result == 'driver_not_approved'
                       ? context.tr('driver_home_accept_error_not_approved')
-                      : context.tr('driver_home_accept_error_generic'),
+                      : result == 'already_taken'
+                          ? context.tr('driver_home_accept_error_already_taken')
+                          : context.tr('driver_home_accept_error_generic'),
         );
       }
       setState(() {
         _actingOnOfferId = null;
         _offers = _offers.where((o) => o.offerId != offer.offerId).toList();
         if (ok) {
-          // offer.data is a snapshot taken when the offer was CREATED, not
-          // when it was accepted just now — accepted_at is still null on
-          // it, so _ArrivalDeadlineChip (which needs accepted_at +
-          // eta_minutes) silently rendered nothing on the active-job card,
-          // even though the customer's own deadline card worked fine
-          // (their ride row was fetched live, already carrying the real
-          // accepted_at the server just set). Stamping it here with "now"
-          // is accurate enough — accept_dispatch_offer() just set it
-          // server-side a moment ago.
-          final data = {
-            ...offer.data,
-            'status': 'accepted',
-            'accepted_at': DateTime.now().toUtc().toIso8601String(),
-          };
+          // freshRow (broadcast path) is the real post-accept DB row, already
+          // carrying an accurate status/accepted_at — no need to fake it.
+          // offer.data (dispatch-offer path) is a snapshot taken when the
+          // offer was CREATED, not when it was accepted just now —
+          // accepted_at is still null on it, so _ArrivalDeadlineChip (which
+          // needs accepted_at + eta_minutes) silently rendered nothing on
+          // the active-job card, even though the customer's own deadline
+          // card worked fine (their ride row was fetched live, already
+          // carrying the real accepted_at the server just set). Stamping it
+          // here with "now" is accurate enough — accept_dispatch_offer()
+          // just set it server-side a moment ago.
+          final data = freshRow ??
+              {
+                ...offer.data,
+                'status': 'accepted',
+                'accepted_at': DateTime.now().toUtc().toIso8601String(),
+              };
           final job = QueuedJob(offer.targetType, data);
           if (_jobs.job == null) {
             _jobs.activate(job.type, job.data);
@@ -380,10 +439,17 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
   Future<void> _reject(PendingOffer offer) async {
     if (_actingOnOfferId != null) return;
     setState(() => _actingOnOfferId = offer.offerId);
-    try {
-      await _repo.rejectOffer(offer.offerId, widget.session.phone);
-    } catch (e) {
-      _showError(e);
+    if (offer.offerId.startsWith('broadcast:')) {
+      // No real dispatch_offers row to reject server-side — this ride/order
+      // is still open to every other driver either way. Just remember it
+      // locally so it doesn't immediately reappear on the next poll.
+      _dismissedBroadcast.add('${offer.targetType}:${offer.data['id']}');
+    } else {
+      try {
+        await _repo.rejectOffer(offer.offerId, widget.session.phone);
+      } catch (e) {
+        _showError(e);
+      }
     }
     if (!mounted) return;
     setState(() {

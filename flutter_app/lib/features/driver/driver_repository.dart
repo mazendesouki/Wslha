@@ -164,6 +164,77 @@ class DriverRepository {
     await sb.rpc('reject_dispatch_offer', params: {'p_offer_id': offerId, 'p_driver_phone': phone});
   }
 
+  /// Legacy broadcast-fallback path (mirrors driver-dashboard.astro's
+  /// pollRides()/acceptRide()) — the targeted dispatch engine
+  /// (server/index.js, a separate always-on Node service, NOT part of
+  /// this Flutter app or Supabase) is what normally creates a
+  /// dispatch_offers row for a ride the instant it's created, or
+  /// re-sweeps every 15s for anything still unmatched. If that service
+  /// is down/asleep, or a driver was offline for the entire window it
+  /// was matching against, a ride can sit pending with literally no
+  /// offer ever created for this driver — reported live: a driver who
+  /// went online never saw a ride that arrived while they were offline.
+  /// This lets the app fall back to claiming an aged, still-unmatched
+  /// ride/order directly, same as the web dashboard already does.
+  Future<Map<String, dynamic>?> fetchOldestPendingRide() async {
+    final rows = await sb
+        .from('rides')
+        .select()
+        .eq('status', 'pending')
+        .isFilter('driver_phone', null)
+        .order('created_at', ascending: true)
+        .limit(1);
+    return rows.isEmpty ? null : Map<String, dynamic>.from(rows.first);
+  }
+
+  Future<Map<String, dynamic>?> fetchOldestPendingOrder() async {
+    final rows = await sb
+        .from('orders')
+        .select()
+        .eq('status', 'preparing')
+        .isFilter('driver_phone', null)
+        .order('accepted_at', ascending: true)
+        .limit(1);
+    return rows.isEmpty ? null : Map<String, dynamic>.from(rows.first);
+  }
+
+  /// Returns ('ok', the updated row) | ('already_taken' | 'driver_not_approved'
+  /// | 'delivery_only_vehicle' | 'error', null).
+  Future<(String, Map<String, dynamic>?)> acceptRideBroadcast(String rideId, String phone, String name) async {
+    try {
+      final rows = await sb.rpc('driver_accept_ride', params: {
+        'p_ride_id': rideId,
+        'p_driver_phone': phone,
+        'p_driver_name': name,
+      });
+      if (rows is List && rows.isNotEmpty) return ('ok', Map<String, dynamic>.from(rows.first as Map));
+      return ('already_taken', null); // no row returned = someone else got it first
+    } catch (e) {
+      final msg = e.toString();
+      if (msg.contains('driver_not_approved')) return ('driver_not_approved', null);
+      if (msg.contains('delivery_only_vehicle')) return ('delivery_only_vehicle', null);
+      return ('error', null);
+    }
+  }
+
+  /// Same shape as acceptRideBroadcast(), for delivery orders.
+  Future<(String, Map<String, dynamic>?)> claimOrderBroadcast(String orderId, String phone, String name) async {
+    try {
+      final rows = await sb.rpc('driver_claim_delivery_order', params: {
+        'p_order_id': orderId,
+        'p_driver_phone': phone,
+        'p_driver_name': name,
+      });
+      if (rows is List && rows.isNotEmpty) return ('ok', Map<String, dynamic>.from(rows.first as Map));
+      return ('already_taken', null);
+    } catch (e) {
+      final msg = e.toString();
+      if (msg.contains('driver_not_approved')) return ('driver_not_approved', null);
+      if (msg.contains('vehicle_category_mismatch')) return ('vehicle_category_mismatch', null);
+      return ('error', null);
+    }
+  }
+
   /// Negotiable rides still open for bidding (no driver assigned yet) —
   /// `rides` is anon-readable directly (security07rlslockdown.sql), so this
   /// is a plain filtered query, not a dedicated RPC; only submitting/
