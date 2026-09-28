@@ -87,12 +87,22 @@ class DriverRepository {
     return rows.first['status'] as String?;
   }
 
+  // update(), not upsert(): this payload has no lat/lng, and those columns
+  // are NOT NULL on driver_locations. A driver going offline always has a
+  // row already (goOnline() created it with a real position first) — but
+  // if that row is somehow missing (e.g. it was deleted, or this is called
+  // in an unexpected state), upsert() would INSERT a new one missing lat,
+  // which violated the not-null constraint and threw (reported live:
+  // "null value in column lat ... violates not-null constraint" the
+  // instant the toggle's try/catch — added right after this — started
+  // surfacing the error instead of hanging silently). update() is simply a
+  // no-op when there's no matching row, which is the correct behavior:
+  // nothing to mark offline.
   Future<void> goOffline(String phone) async {
-    await sb.from('driver_locations').upsert({
-      'driver_phone': phone,
+    await sb.from('driver_locations').update({
       'is_online': false,
       'updated_at': DateTime.now().toIso8601String(),
-    });
+    }).eq('driver_phone', phone);
   }
 
   Future<PendingOffer?> getPendingOffer(String phone) async {
