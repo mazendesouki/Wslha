@@ -1667,6 +1667,40 @@
             </div>
           </div>
         </div>
+        <!-- Cancellation-rate admin alert -->
+        <div class="card">
+          <div class="card__head"><span class="card__title">⚠️ تنبيه ارتفاع معدل الإلغاء/الرفض</span></div>
+          <div class="card__body">
+            <p style="font-size:.8rem;color:#64748B;margin-bottom:1rem">فحص تلقائي كل 10 دقايق (pg_cron) لنسبة الرحلات/الطلبات الملغاة أو المرفوضة — لو عدّت الحد المحدد، بيوصلك إشعار push على طول وبيتسجّل هنا.</p>
+            <div style="display:flex;flex-direction:column;gap:.85rem;margin-bottom:1rem">
+              <label style="display:flex;align-items:center;gap:.5rem;font-size:.8rem;font-weight:700;background:#F1F5F9;border-radius:8px;padding:.6rem .75rem">
+                <input type="checkbox" id="alert-cancel-enabled"/> تفعيل التنبيه
+              </label>
+              <div>
+                <label style="font-size:.78rem;font-weight:700;color:#64748B;display:block;margin-bottom:.3rem">نسبة الإلغاء/الرفض (%)</label>
+                <input class="search-input" id="alert-cancel-threshold" type="number" min="1" max="100" step="1" value="40" style="width:100px;text-align:center;font-weight:700"/>
+              </div>
+              <div>
+                <label style="font-size:.78rem;font-weight:700;color:#64748B;display:block;margin-bottom:.3rem">النافذة الزمنية (دقيقة)</label>
+                <input class="search-input" id="alert-cancel-window" type="number" min="5" step="5" value="30" style="width:100px;text-align:center;font-weight:700"/>
+              </div>
+              <div>
+                <label style="font-size:.78rem;font-weight:700;color:#64748B;display:block;margin-bottom:.3rem">أقل عدد رحلات/طلبات للاعتداد بالنسبة</label>
+                <input class="search-input" id="alert-cancel-min-sample" type="number" min="1" step="1" value="5" style="width:100px;text-align:center;font-weight:700"/>
+              </div>
+              <div>
+                <label style="font-size:.78rem;font-weight:700;color:#64748B;display:block;margin-bottom:.3rem">فترة تهدئة بين التنبيهات (دقيقة)</label>
+                <input class="search-input" id="alert-cancel-cooldown" type="number" min="5" step="5" value="60" style="width:100px;text-align:center;font-weight:700"/>
+              </div>
+              <button class="btn btn--primary" onclick="saveCancellationAlertSettings()" id="save-alert-cancel-btn">💾 حفظ الإعدادات</button>
+              <div id="alert-cancel-msg" style="display:none;font-size:.82rem;font-weight:700;padding:.5rem .75rem;border-radius:6px"></div>
+            </div>
+            <div style="border-top:1px solid #E2E8F0;padding-top:.85rem">
+              <div style="font-size:.78rem;font-weight:700;color:#64748B;margin-bottom:.5rem">آخر التنبيهات</div>
+              <div id="alert-cancel-list" style="display:flex;flex-direction:column;gap:.5rem;font-size:.8rem"></div>
+            </div>
+          </div>
+        </div>
         <!-- Create admin account -->
         <div class="card">
           <div class="card__head"><span class="card__title">➕ إنشاء حساب مشرف جديد</span></div>
@@ -4866,6 +4900,7 @@ async function loadSettingsSection() {
   await loadTripPricing();
   await loadFeatureFlags();
   await loadFooterSettings();
+  await loadCancellationAlertSettings();
 }
 
 /* ── بيانات فوتر البريد الإلكتروني (app_settings: brand_footer_*) ── */
@@ -4910,6 +4945,68 @@ async function saveFooterSettings() {
     msg.style.cssText = 'display:block;background:#FEE2E2;color:#991B1B;font-size:.82rem;font-weight:700;padding:.5rem .75rem;border-radius:6px';
   }
   btn.disabled = false; btn.textContent = '💾 حفظ بيانات الفوتر';
+  setTimeout(() => { msg.style.display = 'none'; }, 4000);
+}
+
+/* ── تنبيه ارتفاع معدل الإلغاء/الرفض (app_settings: alert_cancellation_*) ── */
+async function loadCancellationAlertSettings() {
+  try {
+    const rows = await sbGet('app_settings?key=in.(alert_cancellation_enabled,alert_cancellation_rate_threshold,alert_cancellation_window_minutes,alert_cancellation_min_sample,alert_cancellation_cooldown_minutes)&select=key,value');
+    const map = {}; (rows||[]).forEach(r => { map[r.key] = r.value; });
+    if (map.alert_cancellation_enabled !== undefined) document.getElementById('alert-cancel-enabled').checked = map.alert_cancellation_enabled === 'true';
+    if (map.alert_cancellation_rate_threshold !== undefined) document.getElementById('alert-cancel-threshold').value = map.alert_cancellation_rate_threshold;
+    if (map.alert_cancellation_window_minutes !== undefined) document.getElementById('alert-cancel-window').value = map.alert_cancellation_window_minutes;
+    if (map.alert_cancellation_min_sample !== undefined) document.getElementById('alert-cancel-min-sample').value = map.alert_cancellation_min_sample;
+    if (map.alert_cancellation_cooldown_minutes !== undefined) document.getElementById('alert-cancel-cooldown').value = map.alert_cancellation_cooldown_minutes;
+  } catch {}
+  await loadCancellationAlertsList();
+}
+
+async function loadCancellationAlertsList() {
+  const box = document.getElementById('alert-cancel-list');
+  const pass = await getAdminPass(); if (!pass) { box.textContent = ''; return; }
+  try {
+    const rows = await sbRpcRows('admin_list_alerts', { p_admin_phone: ADMIN.phone, p_admin_password: pass, p_limit: 10 });
+    if (!rows || !rows.length) { box.innerHTML = '<span style="color:#94A3B8">مفيش تنبيهات لحد دلوقتي — الوضع طبيعي</span>'; return; }
+    box.innerHTML = rows.map(r => `
+      <div style="background:#FEF2F2;border:1px solid #FECACA;border-radius:8px;padding:.5rem .75rem">
+        <div style="color:#991B1B;font-weight:700">${r.message}</div>
+        <div style="color:#94A3B8;font-size:.72rem;margin-top:2px">${new Date(r.created_at).toLocaleString('ar-EG')}</div>
+      </div>`).join('');
+  } catch { box.textContent = ''; }
+}
+
+async function saveCancellationAlertSettings() {
+  const btn = document.getElementById('save-alert-cancel-btn');
+  const msg = document.getElementById('alert-cancel-msg');
+  const pass = await getAdminPass();
+  if (!pass) { msg.textContent='مطلوب كلمة مرور المشرف'; msg.style.cssText='display:block;background:#FEE2E2;color:#991B1B;font-size:.82rem;font-weight:700;padding:.5rem .75rem;border-radius:6px'; return; }
+  btn.disabled = true; btn.textContent = 'جاري الحفظ...';
+  const pairs = [
+    { key: 'alert_cancellation_enabled', value: document.getElementById('alert-cancel-enabled').checked ? 'true' : 'false' },
+    { key: 'alert_cancellation_rate_threshold', value: document.getElementById('alert-cancel-threshold').value },
+    { key: 'alert_cancellation_window_minutes', value: document.getElementById('alert-cancel-window').value },
+    { key: 'alert_cancellation_min_sample', value: document.getElementById('alert-cancel-min-sample').value },
+    { key: 'alert_cancellation_cooldown_minutes', value: document.getElementById('alert-cancel-cooldown').value },
+  ];
+  try {
+    const results = await Promise.all(pairs.map(p =>
+      sbRpc('admin_set_setting', { p_admin_phone: ADMIN.phone, p_admin_password: pass, p_key: p.key, p_value: p.value })
+    ));
+    if (results.every(Boolean)) {
+      msg.textContent = '✅ تم حفظ إعدادات التنبيه';
+      msg.style.cssText = 'display:block;background:#DCFCE7;color:#14532D;font-size:.82rem;font-weight:700;padding:.5rem .75rem;border-radius:6px';
+      showToast('✅ تم حفظ إعدادات تنبيه الإلغاء', '#16A34A');
+    } else {
+      clearAdminPass();
+      msg.textContent = '❌ فشل — تحقق من كلمة مرور المشرف';
+      msg.style.cssText = 'display:block;background:#FEE2E2;color:#991B1B;font-size:.82rem;font-weight:700;padding:.5rem .75rem;border-radius:6px';
+    }
+  } catch {
+    msg.textContent = 'حدث خطأ، حاول مرة أخرى';
+    msg.style.cssText = 'display:block;background:#FEE2E2;color:#991B1B;font-size:.82rem;font-weight:700;padding:.5rem .75rem;border-radius:6px';
+  }
+  btn.disabled = false; btn.textContent = '💾 حفظ الإعدادات';
   setTimeout(() => { msg.style.display = 'none'; }, 4000);
 }
 
