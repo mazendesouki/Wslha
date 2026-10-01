@@ -54,7 +54,17 @@ jobs:
           done
 
       - name: Deploy to Vercel
-        run: npx vercel --prod --token "$VERCEL_TOKEN"
+        # --prebuilt: without it, the CLI ignores our already-built
+        # .vercel/output entirely and re-runs a full build on Vercel's own
+        # remote infrastructure instead — which is what was actually
+        # silently happening here (visible in the deploy logs: "Running
+        # build in Washington, D.C." / "Running 'vercel build'" right
+        # before every failure). That remote rebuild re-generates its own
+        # nodejs18.x runtime from scratch, so the local patch step above
+        # never had any effect — it was patching a file Vercel never
+        # looked at. --prebuilt makes it deploy exactly what we already
+        # built (and just patched) instead.
+        run: npx vercel --prod --prebuilt --token "$VERCEL_TOKEN"
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
