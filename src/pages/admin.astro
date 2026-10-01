@@ -1023,6 +1023,9 @@
               <input class="search-input" id="cpn-expires" type="date"/>
             </div>
           </div>
+          <label style="display:flex;align-items:center;gap:.5rem;font-size:.8rem;font-weight:700;background:#F1F5F9;border-radius:8px;padding:.6rem .75rem;margin-top:.85rem">
+            <input type="checkbox" id="cpn-auto-first"/> 🎁 تطبيق تلقائي لأول رحلة/طلب لأي عميل جديد (بدون ما يكتب الكود)
+          </label>
           <button class="btn btn--primary" onclick="createCoupon()" id="cpn-create-btn" style="margin-top:1rem">➕ إنشاء الكود</button>
           <div id="cpn-msg" style="display:none;font-size:.82rem;font-weight:700;padding:.5rem .75rem;border-radius:6px;margin-top:.5rem"></div>
         </div>
@@ -1034,8 +1037,8 @@
         </div>
         <div class="tbl-wrap">
           <table>
-            <thead><tr><th>الكود</th><th>الخصم</th><th>الخدمة</th><th>الاستخدام</th><th>الانتهاء</th><th>الحالة</th><th>إجراء</th></tr></thead>
-            <tbody id="coupons-tbody"><tr><td colspan="7" style="text-align:center;color:#94A3B8;padding:2rem">جاري التحميل…</td></tr></tbody>
+            <thead><tr><th>الكود</th><th>الخصم</th><th>الخدمة</th><th>الاستخدام</th><th>الانتهاء</th><th>أول طلب؟</th><th>الحالة</th><th>إجراء</th></tr></thead>
+            <tbody id="coupons-tbody"><tr><td colspan="8" style="text-align:center;color:#94A3B8;padding:2rem">جاري التحميل…</td></tr></tbody>
           </table>
         </div>
       </div>
@@ -4214,7 +4217,7 @@ async function loadCoupons() {
   allCoupons = rows;
   const tbody = document.getElementById('coupons-tbody');
   if (!tbody) return;
-  if (!rows.length) { tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#94A3B8;padding:2rem">لسه مفيش أكواد خصم</td></tr>'; return; }
+  if (!rows.length) { tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#94A3B8;padding:2rem">لسه مفيش أكواد خصم</td></tr>'; return; }
 
   const svcLabel = { ride: 'مشاوير', delivery: 'توصيل', all: 'الكل' };
   tbody.innerHTML = rows.map(c => `
@@ -4224,6 +4227,7 @@ async function loadCoupons() {
       <td>${svcLabel[c.applies_to] || c.applies_to}</td>
       <td style="font-size:.78rem;color:#64748B">${c.times_used}${c.usage_limit ? ' / ' + c.usage_limit : ''} استخدام</td>
       <td style="font-size:.78rem;color:#64748B">${c.expires_at ? new Date(c.expires_at).toLocaleDateString('ar-EG') : 'بلا انتهاء'}</td>
+      <td>${c.auto_apply_first_order ? '🎁 نعم' : '—'}</td>
       <td>${c.active ? '<span style="padding:2px 8px;border-radius:99px;font-size:.75rem;font-weight:700;background:#16A34A22;color:#16A34A">شغال</span>' : '<span style="padding:2px 8px;border-radius:99px;font-size:.75rem;font-weight:700;background:#DC262622;color:#DC2626">متوقف</span>'}</td>
       <td><button onclick="toggleCoupon('${c.id}', ${!c.active})" style="padding:.3rem .7rem;background:${c.active ? '#DC2626' : '#16A34A'};color:#fff;border:none;border-radius:5px;font-size:.78rem;cursor:pointer">${c.active ? 'إيقاف' : 'تفعيل'}</button></td>
     </tr>`).join('');
@@ -4254,6 +4258,7 @@ async function createCoupon() {
     p_per_user_limit: Number(document.getElementById('cpn-per-user').value || 1),
     p_applies_to: document.getElementById('cpn-applies').value,
     p_expires_at: expiresRaw ? new Date(expiresRaw + 'T23:59:59').toISOString() : null,
+    p_auto_apply_first_order: document.getElementById('cpn-auto-first').checked,
   });
 
   btn.disabled = false; btn.textContent = '➕ إنشاء الكود';
@@ -4265,6 +4270,7 @@ async function createCoupon() {
     document.getElementById('cpn-max').value = '';
     document.getElementById('cpn-usage-limit').value = '';
     document.getElementById('cpn-expires').value = '';
+    document.getElementById('cpn-auto-first').checked = false;
     loadCoupons();
   } else {
     msg.textContent = '❌ فشل — الكود موجود بالفعل أو كلمة مرور المشرف غلط';
