@@ -32,6 +32,27 @@ jobs:
       - name: Build
         run: npm run build
 
+      - name: Patch serverless function runtime (nodejs18.x -> nodejs20.x)
+        # The installed @astrojs/vercel adapter (7.8.2) only recognizes
+        # Node 18/20 and falls back to "nodejs18.x" whenever the build runs
+        # on anything else (here: Node 22, required — see the comment
+        # above — so WebSocket exists for @supabase/realtime-js at build
+        # time). Vercel has since made "nodejs18.x" an outright invalid
+        # runtime value ("The following Serverless Functions contain an
+        # invalid runtime"), which failed every deploy outright. Patches
+        # the adapter's own generated .vc-config.json to the newest
+        # runtime value it's actually capable of emitting (nodejs20.x,
+        # still Vercel-accepted) instead of upgrading Astro/the adapter
+        # across a major version just to fix a version-detection warning.
+        run: |
+          set -e
+          for f in .vercel/output/functions/*/.vc-config.json; do
+            [ -f "$f" ] || continue
+            sed -i 's/"runtime": *"nodejs18\.x"/"runtime": "nodejs20.x"/' "$f"
+            echo "Patched $f:"
+            cat "$f"
+          done
+
       - name: Deploy to Vercel
         run: npx vercel --prod --token "$VERCEL_TOKEN"
         env:
