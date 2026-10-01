@@ -407,6 +407,30 @@ class DriverRepository {
     return {};
   }
 
+  /// Per-period (week/month) earnings, newest first — db/security-106.
+  /// Grouped directly off wallet_transactions (type='earning'), the same
+  /// source of truth fetchTripStats' lifetime total uses, just bucketed by
+  /// the earning's own date instead of collapsed into one running sum.
+  Future<List<({DateTime periodStart, int trips, double earnings})>> fetchEarningsBreakdown(
+    String phone, {
+    String period = 'week',
+    int periods = 8,
+  }) async {
+    final rows = await sb.rpc('get_driver_earnings_breakdown', params: {
+      'p_driver_phone': phone,
+      'p_period': period,
+      'p_periods': periods,
+    });
+    if (rows is! List) return [];
+    return rows
+        .map((r) => (
+              periodStart: DateTime.parse(r['period_start'] as String),
+              trips: ((r['trips'] as num?) ?? 0).toInt(),
+              earnings: ((r['total_earnings'] as num?) ?? 0).toDouble(),
+            ))
+        .toList();
+  }
+
   /// The driver's own latest application row — vehicle photos/model/plate
   /// live here (driver_applications), not on accounts. Same table the web
   /// driver-dashboard reads for the vehicle-info card.

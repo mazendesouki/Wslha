@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
+import '../../core/date_format_ar.dart';
 import '../../core/feature_flags.dart';
 import '../../core/i18n.dart';
 import '../../core/phone_utils.dart';
@@ -49,6 +50,9 @@ class DriverProfileScreenState extends State<DriverProfileScreen> {
   Map<String, dynamic>? _vehicle;
   Map<String, dynamic> _stats = {};
   (int, int) _progress = (0, 0);
+  String _earningsPeriod = 'week';
+  List<({DateTime periodStart, int trips, double earnings})> _earnings = [];
+  bool _earningsLoading = true;
   RatingSummary _ratingSummary = RatingSummary(0, 0);
   List<Map<String, dynamic>> _reviews = [];
   bool _loading = true;
@@ -130,6 +134,19 @@ class DriverProfileScreenState extends State<DriverProfileScreen> {
       _stats = results[2] as Map<String, dynamic>;
       _progress = results[3] as (int, int);
       _loading = false;
+    });
+    await _loadEarnings();
+  }
+
+  Future<void> _loadEarnings() async {
+    if (mounted) setState(() => _earningsLoading = true);
+    final rows = await _driverRepo
+        .fetchEarningsBreakdown(widget.session.phone, period: _earningsPeriod, periods: _earningsPeriod == 'month' ? 6 : 8)
+        .catchError((_) => <({DateTime periodStart, int trips, double earnings})>[]);
+    if (!mounted) return;
+    setState(() {
+      _earnings = rows;
+      _earningsLoading = false;
     });
   }
 
@@ -309,6 +326,8 @@ class DriverProfileScreenState extends State<DriverProfileScreen> {
             _buildRatingCard(),
             const SizedBox(height: 16),
             _buildTripStats(),
+            const SizedBox(height: 16),
+            _buildEarningsReportCard(),
             if (_vehicle != null) ...[
               const SizedBox(height: 16),
               _buildVehicleCard(),
@@ -560,6 +579,111 @@ class DriverProfileScreenState extends State<DriverProfileScreen> {
             mainAxisSpacing: 10,
             childAspectRatio: 2.2,
             children: tiles.map((t) => _statTile(t.$1, t.$2, t.$3)).toList(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEarningsReportCard() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), boxShadow: const [
+        BoxShadow(color: Color(0x11000000), blurRadius: 8, offset: Offset(0, 2)),
+      ]),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(context.tr('driver_profile_earnings_title'), style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w900)),
+              _earningsPeriodToggle(),
+            ],
+          ),
+          const SizedBox(height: 12),
+          if (_earningsLoading)
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 24),
+              child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+            )
+          else if (_earnings.isEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              child: Text(
+                context.tr('driver_profile_earnings_empty'),
+                style: const TextStyle(fontSize: 12, color: AppColors.textFaint),
+                textAlign: TextAlign.center,
+              ),
+            )
+          else
+            Column(children: _earnings.map(_earningsRow).toList()),
+        ],
+      ),
+    );
+  }
+
+  Widget _earningsPeriodToggle() {
+    Widget seg(String value, String label) {
+      final selected = _earningsPeriod == value;
+      return GestureDetector(
+        onTap: selected
+            ? null
+            : () {
+                setState(() => _earningsPeriod = value);
+                _loadEarnings();
+              },
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(
+            color: selected ? AppColors.primary : AppColors.primaryLight,
+            borderRadius: BorderRadius.circular(999),
+          ),
+          child: Text(
+            label,
+            style: TextStyle(fontSize: 11, fontWeight: FontWeight.w900, color: selected ? Colors.white : AppColors.primaryDark),
+          ),
+        ),
+      );
+    }
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        seg('week', context.tr('driver_profile_earnings_weekly')),
+        const SizedBox(width: 6),
+        seg('month', context.tr('driver_profile_earnings_monthly')),
+      ],
+    );
+  }
+
+  Widget _earningsRow(({DateTime periodStart, int trips, double earnings}) row) {
+    final maxEarn = _earnings.map((e) => e.earnings).fold<double>(0, (a, b) => a > b ? a : b);
+    final ratio = maxEarn > 0 ? (row.earnings / maxEarn).clamp(0.0, 1.0) : 0.0;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(arDate(row.periodStart), style: const TextStyle(fontSize: 11, color: AppColors.textFaint)),
+              Text(
+                '${row.earnings.toStringAsFixed(0)} ج.م · ${row.trips} ${context.tr('driver_profile_earnings_trips_suffix')}',
+                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w900, color: AppColors.primaryDark),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(999),
+            child: LinearProgressIndicator(
+              value: ratio,
+              minHeight: 6,
+              backgroundColor: AppColors.primaryLight,
+              valueColor: const AlwaysStoppedAnimation(AppColors.primary),
+            ),
           ),
         ],
       ),
