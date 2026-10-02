@@ -431,6 +431,26 @@ class DriverRepository {
         .toList();
   }
 
+  /// Grid-aggregated "demand hotspots" — db/security-107. Each cell is a
+  /// lat/lng rounded to 2 decimals (~1.1km) with the count of pending
+  /// rides/orders in it over the last [windowMinutes], highest demand
+  /// first (capped at 30 cells server-side).
+  Future<List<({double lat, double lng, int rideCount, int orderCount, int demandCount})>> fetchDemandHotspots({
+    int windowMinutes = 45,
+  }) async {
+    final rows = await sb.rpc('get_demand_hotspots', params: {'p_window_minutes': windowMinutes});
+    if (rows is! List) return [];
+    return rows
+        .map((r) => (
+              lat: (r['lat'] as num).toDouble(),
+              lng: (r['lng'] as num).toDouble(),
+              rideCount: ((r['ride_count'] as num?) ?? 0).toInt(),
+              orderCount: ((r['order_count'] as num?) ?? 0).toInt(),
+              demandCount: ((r['demand_count'] as num?) ?? 0).toInt(),
+            ))
+        .toList();
+  }
+
   /// The driver's own latest application row — vehicle photos/model/plate
   /// live here (driver_applications), not on accounts. Same table the web
   /// driver-dashboard reads for the vehicle-info card.

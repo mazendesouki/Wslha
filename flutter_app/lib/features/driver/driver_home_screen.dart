@@ -29,6 +29,7 @@ import '../rides/ride_repository.dart';
 import 'active_job_store.dart';
 import 'airport_ride_requests_screen.dart';
 import 'cash_reminder_dialog.dart';
+import 'demand_hotspots_screen.dart';
 import 'driver_repository.dart';
 import 'negotiation_screen.dart';
 import 'trip_log_screen.dart';
@@ -737,6 +738,13 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
               );
               if (accepted == true) _restoreActiveJob();
             },
+          ),
+          IconButton(
+            tooltip: context.tr('driver_home_hotspots_tooltip'),
+            icon: const Text('🔥', style: TextStyle(fontSize: 20)),
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const DemandHotspotsScreen()),
+            ),
           ),
           const LogoutButton(),
         ],
