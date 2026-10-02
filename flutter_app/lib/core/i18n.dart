@@ -14,6 +14,7 @@ import 'i18n_batch_j.dart';
 import 'i18n_batch_k.dart';
 import 'i18n_batch_l.dart';
 import 'i18n_batch_m.dart';
+import 'i18n_batch_n.dart';
 
 /// Lightweight manual translation system — no codegen (`flutter gen-l10n`)
 /// since there's no Dart SDK available in this environment to verify
@@ -179,6 +180,7 @@ final Map<String, Map<String, String>> _allStrings = {
   ...batchKStrings,
   ...batchLStrings,
   ...batchMStrings,
+  ...batchNStrings,
 };
 
 extension AppLocalizationsX on BuildContext {

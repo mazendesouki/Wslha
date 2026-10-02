@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart' show TimeOfDay;
 import '../../core/phone_utils.dart';
 import '../../core/supabase_client.dart';
 
@@ -136,6 +137,70 @@ class RideRepository {
 
   Future<bool> cancelScheduledRide(String rideId, String phone) async {
     final result = await sb.rpc('cancel_scheduled_ride', params: {'p_ride_id': rideId, 'p_customer_phone': phone});
+    return result == true;
+  }
+
+  /// "رحلة متكررة ثابتة" (db/security-108) — a standing template (same
+  /// route + fixed days of the week + time) instead of booking each trip
+  /// manually. A daily pg_cron job (generate_recurring_rides) turns it into
+  /// an ordinary 'scheduled' ride on each matching day, which then flows
+  /// through the exact same activation/dispatch pipeline createRide's
+  /// scheduledAt already uses — no separate dispatch logic needed here.
+  Future<String?> createRecurringRideSchedule({
+    required String customerPhone,
+    required String customerName,
+    required String fromArea,
+    required double fromLat,
+    required double fromLng,
+    required String toArea,
+    required double toLat,
+    required double toLng,
+    required double distanceKm,
+    required int fare,
+    required int etaMinutes,
+    required int passengers,
+    required String payment,
+    // 0=Sunday..6=Saturday, matching Postgres extract(dow) (and Dart's
+    // DateTime.weekday % 7, since DateTime uses 1=Monday..7=Sunday).
+    required List<int> daysOfWeek,
+    required TimeOfDay timeOfDay,
+    String rideType = 'local',
+    bool isNegotiable = false,
+    String? qualityTier,
+  }) async {
+    final hh = timeOfDay.hour.toString().padLeft(2, '0');
+    final mm = timeOfDay.minute.toString().padLeft(2, '0');
+    final id = await sb.rpc('create_recurring_ride_schedule', params: {
+      'p_customer_phone': customerPhone,
+      'p_customer_name': customerName,
+      'p_from_area': fromArea,
+      'p_from_lat': fromLat,
+      'p_from_lng': fromLng,
+      'p_to_area': toArea,
+      'p_to_lat': toLat,
+      'p_to_lng': toLng,
+      'p_distance_km': distanceKm,
+      'p_fare': fare,
+      'p_eta_minutes': etaMinutes,
+      'p_passengers': passengers,
+      'p_payment': payment,
+      'p_days_of_week': daysOfWeek,
+      'p_time_of_day': '$hh:$mm:00',
+      'p_ride_type': rideType,
+      'p_is_negotiable': isNegotiable,
+      if (qualityTier != null && qualityTier != 'regular') 'p_quality_tier': qualityTier,
+    });
+    return id as String?;
+  }
+
+  Future<List<Map<String, dynamic>>> fetchMyRecurringSchedules(String phone) async {
+    final rows = await sb.rpc('list_my_recurring_schedules', params: {'p_customer_phone': phone});
+    if (rows is! List) return [];
+    return List<Map<String, dynamic>>.from(rows);
+  }
+
+  Future<bool> cancelRecurringRideSchedule(String scheduleId, String phone) async {
+    final result = await sb.rpc('cancel_recurring_ride_schedule', params: {'p_schedule_id': scheduleId, 'p_customer_phone': phone});
     return result == true;
   }
 

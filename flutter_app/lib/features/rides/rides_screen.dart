@@ -12,9 +12,13 @@ import 'address_field.dart';
 import 'directions_service.dart';
 import 'fare_calculator.dart' as fare_calc;
 import 'places_service.dart';
+import 'recurring_ride_schedules_screen.dart';
 import 'ride_repository.dart';
 import 'ride_tracking_screen.dart';
 import 'scheduled_rides_screen.dart';
+
+// 0=Sunday..6=Saturday — matches Postgres extract(dow).
+const List<String> _recurringDayShortLabels = ['أحد', 'إثنين', 'ثلاثاء', 'أربعاء', 'خميس', 'جمعة', 'سبت'];
 
 const int _maxStops = 3;
 
@@ -65,6 +69,12 @@ class _RidesScreenState extends State<RidesScreen> {
   final _couponRepo = CouponRepository();
   String? _appliedCouponCode;
   DateTime? _scheduledAt;
+  // "رحلة متكررة ثابتة" (db/security-108) — a standing weekly template
+  // instead of a one-time scheduled ride. Independent of _scheduledAt:
+  // picking recurring days routes _submit() to createRecurringRideSchedule
+  // instead of booking an immediate/one-time ride.
+  final Set<int> _recurringDays = {};
+  TimeOfDay? _recurringTime;
   UserSession? _session;
   double _surgeMult = 1.0;
   String? _surgeFetchedFor;
@@ -176,6 +186,12 @@ class _RidesScreenState extends State<RidesScreen> {
   Future<void> _submit() async {
     final points = _filledPoints;
     if (points.length < 2 || _session == null) return;
+
+    if (_recurringDays.isNotEmpty && _recurringTime != null) {
+      await _submitRecurring(points);
+      return;
+    }
+
     setState(() => _submitting = true);
 
     // The background fetch from _maybeRefreshRoute() (driven by build())
@@ -287,6 +303,64 @@ class _RidesScreenState extends State<RidesScreen> {
     );
   }
 
+  /// Single-leg only (no multi-stop) — a recurring template books the same
+  /// fixed route every matching day, so it uses the final destination
+  /// directly rather than the stops list createRide's one-off flow supports.
+  Future<void> _submitRecurring(List<PlaceResult> points) async {
+    setState(() => _submitting = true);
+    if (_routedRoute == null) {
+      final route = await _directionsService.fetchRoadRoute(points);
+      if (mounted && route != null) {
+        setState(() {
+          _routedRoute = route;
+          _routeFetchedFor = points.map((p) => '${p.lat},${p.lng}').join('|');
+        });
+      }
+    }
+    final destination = points.last;
+    try {
+      await _rideRepo.createRecurringRideSchedule(
+        customerPhone: _session!.phone,
+        customerName: _session!.name,
+        fromArea: _from!.name,
+        fromLat: _from!.lat,
+        fromLng: _from!.lng,
+        toArea: destination.name,
+        toLat: destination.lat,
+        toLng: destination.lng,
+        distanceKm: _roadKm,
+        fare: _fare,
+        etaMinutes: _eta,
+        passengers: _passengers,
+        payment: _payment,
+        rideType: _isExternal ? 'external' : 'local',
+        daysOfWeek: _recurringDays.toList(),
+        timeOfDay: _recurringTime!,
+        qualityTier: _qualityTier,
+      );
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _submitting = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('${context.tr('rides_submit_failed_prefix')} $e'), backgroundColor: AppColors.error, duration: const Duration(seconds: 6)),
+      );
+      return;
+    }
+
+    if (!mounted) return;
+    setState(() {
+      _submitting = false;
+      _recurringDays.clear();
+      _recurringTime = null;
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(context.tr('recurring_rides_created_success'))),
+    );
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => RecurringRideSchedulesScreen(phone: _session!.phone)),
+    );
+  }
+
   Future<void> _pickScheduleTime() async {
     final now = DateTime.now();
     final date = await showDatePicker(
@@ -335,7 +409,10 @@ class _RidesScreenState extends State<RidesScreen> {
       _maybeRefreshSurge();
       _maybeRefreshRoute();
     }
-    final ready = _filledPoints.length >= 2 && _session != null && !_submitting;
+    final ready = _filledPoints.length >= 2 &&
+        _session != null &&
+        !_submitting &&
+        (_recurringDays.isEmpty || _recurringTime != null);
 
     return Scaffold(
       backgroundColor: context.mutedSurface,
@@ -610,6 +687,86 @@ class _RidesScreenState extends State<RidesScreen> {
                   ),
                 ),
               ],
+              if (FeatureFlags.recurringRidesEnabled && !_negotiable && _scheduledAt == null) ...[
+                const SizedBox(height: 12),
+                InkWell(
+                  onTap: () => setState(() {
+                    if (_recurringDays.isEmpty) {
+                      _recurringDays.addAll([1, 2, 3, 4, 5]); // default: weekdays
+                    } else {
+                      _recurringDays.clear();
+                      _recurringTime = null;
+                    }
+                  }),
+                  borderRadius: BorderRadius.circular(10),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: _recurringDays.isNotEmpty ? AppColors.primary.withValues(alpha: 0.08) : context.surfaceColor,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: _recurringDays.isNotEmpty ? AppColors.primary : context.borderColor),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.repeat, size: 18, color: AppColors.primaryDark),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(context.tr('rides_make_recurring'), style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
+                        ),
+                        if (_recurringDays.isNotEmpty)
+                          const Icon(Icons.close, size: 18),
+                      ],
+                    ),
+                  ),
+                ),
+                if (_recurringDays.isNotEmpty) ...[
+                  const SizedBox(height: 10),
+                  Wrap(
+                    spacing: 6,
+                    runSpacing: 6,
+                    children: List.generate(7, (d) {
+                      final selected = _recurringDays.contains(d);
+                      return FilterChip(
+                        label: Text(_recurringDayShortLabels[d], style: const TextStyle(fontSize: 12)),
+                        selected: selected,
+                        onSelected: (v) => setState(() => v ? _recurringDays.add(d) : _recurringDays.remove(d)),
+                        selectedColor: AppColors.primary.withValues(alpha: 0.2),
+                      );
+                    }),
+                  ),
+                  const SizedBox(height: 8),
+                  InkWell(
+                    onTap: () async {
+                      final picked = await showTimePicker(
+                        context: context,
+                        initialTime: _recurringTime ?? const TimeOfDay(hour: 8, minute: 0),
+                      );
+                      if (picked != null) setState(() => _recurringTime = picked);
+                    },
+                    borderRadius: BorderRadius.circular(10),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                      decoration: BoxDecoration(
+                        color: context.surfaceColor,
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: context.borderColor),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.access_time, size: 18, color: AppColors.primaryDark),
+                          const SizedBox(width: 8),
+                          Text(
+                            _recurringTime == null
+                                ? context.tr('rides_recurring_pick_time')
+                                : '${context.tr('rides_recurring_at_prefix')} ${_recurringTime!.hour.toString().padLeft(2, '0')}:${_recurringTime!.minute.toString().padLeft(2, '0')}',
+                            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ],
               if (FeatureFlags.couponsEnabled && _fare > 0 && _session != null) ...[
                 const SizedBox(height: 12),
                 CouponField(
@@ -645,9 +802,11 @@ class _RidesScreenState extends State<RidesScreen> {
                           child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                         )
                       : Text(
-                          _scheduledAt != null
-                              ? context.tr('rides_submit_schedule')
-                              : (_negotiable ? context.tr('rides_submit_negotiable') : context.tr('rides_submit_now')),
+                          _recurringDays.isNotEmpty
+                              ? context.tr('rides_submit_recurring')
+                              : (_scheduledAt != null
+                                  ? context.tr('rides_submit_schedule')
+                                  : (_negotiable ? context.tr('rides_submit_negotiable') : context.tr('rides_submit_now'))),
                           style: TextStyle(color: ready ? Colors.white : AppColors.textFaint, fontWeight: FontWeight.w900, fontSize: 15),
                         ),
                 ),
@@ -670,13 +829,27 @@ class _RidesScreenState extends State<RidesScreen> {
     return BrandedHeader(
       title: '${context.tr('home_greeting_prefix')} ${_session?.name.isNotEmpty == true ? _session!.name : context.tr('home_greeting_default_name')} 👋',
       subtitle: _session?.city,
-      trailing: FeatureFlags.scheduledRidesEnabled && _session != null
-          ? IconButton(
-              tooltip: context.tr('rides_my_scheduled_rides'),
-              icon: const Icon(Icons.event_available, color: Colors.white),
-              onPressed: () => Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => ScheduledRidesScreen(phone: _session!.phone)),
-              ),
+      trailing: _session != null
+          ? Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (FeatureFlags.recurringRidesEnabled)
+                  IconButton(
+                    tooltip: context.tr('rides_my_recurring_rides'),
+                    icon: const Icon(Icons.repeat, color: Colors.white),
+                    onPressed: () => Navigator.of(context).push(
+                      MaterialPageRoute(builder: (_) => RecurringRideSchedulesScreen(phone: _session!.phone)),
+                    ),
+                  ),
+                if (FeatureFlags.scheduledRidesEnabled)
+                  IconButton(
+                    tooltip: context.tr('rides_my_scheduled_rides'),
+                    icon: const Icon(Icons.event_available, color: Colors.white),
+                    onPressed: () => Navigator.of(context).push(
+                      MaterialPageRoute(builder: (_) => ScheduledRidesScreen(phone: _session!.phone)),
+                    ),
+                  ),
+              ],
             )
           : null,
     );

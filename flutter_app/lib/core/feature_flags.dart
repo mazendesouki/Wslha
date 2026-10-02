@@ -20,6 +20,7 @@ class FeatureFlags {
   static bool aiBotEnabled = true;
   static bool couponsEnabled = true;
   static bool scheduledRidesEnabled = true;
+  static bool recurringRidesEnabled = true;
   static bool darkModeEnabled = true;
   static bool languageSwitchEnabled = true;
 
@@ -45,6 +46,7 @@ class FeatureFlags {
         'feature_ai_bot_enabled',
         'feature_coupons_enabled',
         'feature_scheduled_rides_enabled',
+        'feature_recurring_rides_enabled',
         'feature_dark_mode_enabled',
         'feature_language_switch_enabled',
       ]);
@@ -67,6 +69,7 @@ class FeatureFlags {
       aiBotEnabled = flag('feature_ai_bot_enabled') ?? aiBotEnabled;
       couponsEnabled = flag('feature_coupons_enabled') ?? couponsEnabled;
       scheduledRidesEnabled = flag('feature_scheduled_rides_enabled') ?? scheduledRidesEnabled;
+      recurringRidesEnabled = flag('feature_recurring_rides_enabled') ?? recurringRidesEnabled;
       darkModeEnabled = flag('feature_dark_mode_enabled') ?? darkModeEnabled;
       languageSwitchEnabled = flag('feature_language_switch_enabled') ?? languageSwitchEnabled;
       _loaded = true;
