@@ -521,6 +521,24 @@
         </div>
       </div>
 
+      <!-- تحليلات أعمق (db/security-109) -->
+      <div class="card" style="margin-bottom:1.25rem">
+        <div class="card__head">
+          <span class="card__title">📊 تحليلات متقدمة</span>
+          <div style="display:flex;align-items:center;gap:.5rem">
+            <select class="filter-select" id="deep-analytics-days" style="padding:.35rem .6rem;font-size:.78rem">
+              <option value="7">آخر 7 أيام</option>
+              <option value="30" selected>آخر 30 يوم</option>
+              <option value="90">آخر 90 يوم</option>
+            </select>
+            <button class="btn btn--primary" style="font-size:.78rem;padding:.4rem .8rem" onclick="loadDeepAnalytics()" id="deep-analytics-btn">🔓 عرض</button>
+          </div>
+        </div>
+        <div class="card__body" id="deep-analytics-body">
+          <p style="color:#94A3B8;font-size:.85rem">اضغط "عرض" لتحميل تحليلات أفضل السائقين، أكتر المناطق طلبًا، طريقة الدفع، ونسبة تكرار العملاء — محتاجة كلمة مرور المشرف.</p>
+        </div>
+      </div>
+
       <div class="dash-grid">
         <div class="card">
           <div class="card__head"><span class="card__title">📦 آخر الطلبات</span></div>
@@ -2421,6 +2439,80 @@ async function loadDashCharts() {
   renderGroupedBarChart('activity-chart', 'activity-tooltip', ridesByDay, ordersByDay, dayLabels,
     { colorA: '#2563EB', colorB: '#D97706', labelA: 'رحلات', labelB: 'طلبات' });
   renderBarChart('drivers-chart', 'drivers-tooltip', driversByDay, dayLabels, { color: '#16A34A', unit: 'سائق' });
+}
+
+/* ── تحليلات أعمق (db/security-109): أفضل سائقين/أكتر مناطق/طريقة الدفع/تكرار العملاء ── */
+async function loadDeepAnalytics() {
+  const body = document.getElementById('deep-analytics-body');
+  const btn = document.getElementById('deep-analytics-btn');
+  const days = Number(document.getElementById('deep-analytics-days').value) || 30;
+  const pass = await getAdminPass();
+  if (!pass) return;
+  btn.disabled = true; btn.textContent = 'جاري التحميل...';
+  try {
+    const data = await sbRpcJson('admin_analytics_overview', { p_admin_phone: ADMIN.phone, p_admin_password: pass, p_days: days });
+    if (!data) {
+      clearAdminPass();
+      body.innerHTML = '<p style="color:#991B1B;font-size:.85rem">❌ فشل التحقق — تحقق من كلمة مرور المشرف</p>';
+      return;
+    }
+    const topDriversRows = (data.top_drivers || []).map((d, i) => `
+      <tr>
+        <td>${i + 1}</td>
+        <td>${d.name || '—'}</td>
+        <td dir="ltr" style="text-align:right">${d.phone}</td>
+        <td>${d.trips}</td>
+        <td style="font-weight:700;color:#16A34A">${Number(d.earnings).toFixed(0)} ج.م</td>
+        <td>${d.avg_rating > 0 ? '⭐ ' + d.avg_rating : '—'}</td>
+      </tr>`).join('') || '<tr><td colspan="6" style="text-align:center;color:#94A3B8">مفيش بيانات</td></tr>';
+
+    const maxArea = Math.max(1, ...(data.busiest_areas || []).map(a => a.ride_count));
+    const areaRows = (data.busiest_areas || []).map(a => `
+      <div style="display:flex;align-items:center;gap:.6rem;margin-bottom:.45rem">
+        <span style="font-size:.78rem;font-weight:700;min-width:110px">${a.area}</span>
+        <div style="flex:1;background:#F1F5F9;border-radius:6px;overflow:hidden;height:16px">
+          <div style="width:${(a.ride_count / maxArea * 100).toFixed(0)}%;background:#0E4B49;height:100%"></div>
+        </div>
+        <span style="font-size:.75rem;color:#64748B;min-width:30px;text-align:left">${a.ride_count}</span>
+      </div>`).join('') || '<p style="color:#94A3B8;font-size:.8rem">مفيش بيانات</p>';
+
+    const payEntries = Object.entries(data.payment_breakdown || {});
+    const payRows = payEntries.map(([method, v]) => `
+      <div style="background:#F8FAFC;border-radius:8px;padding:.6rem .85rem;flex:1;min-width:130px">
+        <div style="font-size:.72rem;color:#64748B;font-weight:700">${method === 'cash' ? '💵 كاش' : method === 'wallet' ? '👛 محفظة' : method}</div>
+        <div style="font-size:1.1rem;font-weight:900;color:#1E293B">${v.count} <span style="font-size:.7rem;font-weight:700;color:#94A3B8">رحلة</span></div>
+        <div style="font-size:.75rem;color:#16A34A;font-weight:700">${Number(v.amount || 0).toFixed(0)} ج.م</div>
+      </div>`).join('') || '<p style="color:#94A3B8;font-size:.8rem">مفيش بيانات</p>';
+
+    body.innerHTML = `
+      <div style="display:grid;grid-template-columns:1.3fr 1fr;gap:1.25rem;align-items:start">
+        <div>
+          <div style="font-size:.82rem;font-weight:800;color:#1E293B;margin-bottom:.6rem">🏆 أفضل 10 سائقين (بالأرباح)</div>
+          <div class="tbl-wrap"><table><thead><tr><th>#</th><th>الاسم</th><th>الجوال</th><th>رحلات</th><th>الأرباح</th><th>التقييم</th></tr></thead>
+          <tbody>${topDriversRows}</tbody></table></div>
+        </div>
+        <div>
+          <div style="font-size:.82rem;font-weight:800;color:#1E293B;margin-bottom:.6rem">📍 أكتر المناطق طلبًا (رحلات)</div>
+          ${areaRows}
+        </div>
+      </div>
+      <div style="margin-top:1.25rem;display:flex;gap:1.5rem;flex-wrap:wrap;align-items:flex-start">
+        <div style="flex:1;min-width:260px">
+          <div style="font-size:.82rem;font-weight:800;color:#1E293B;margin-bottom:.6rem">💳 طريقة الدفع</div>
+          <div style="display:flex;gap:.6rem;flex-wrap:wrap">${payRows}</div>
+        </div>
+        <div style="flex:1;min-width:200px">
+          <div style="font-size:.82rem;font-weight:800;color:#1E293B;margin-bottom:.6rem">🔁 تكرار العملاء</div>
+          <div class="kpi kpi--blue" style="margin:0">
+            <div class="kpi__val">${data.repeat_customer_rate}%</div>
+            <div class="kpi__label">${data.repeat_customers} من ${data.total_customers} عميل حجزوا أكتر من مرة</div>
+          </div>
+        </div>
+      </div>`;
+  } catch (e) {
+    body.innerHTML = `<p style="color:#991B1B;font-size:.85rem">❌ ${e.message || 'حدث خطأ'}</p>`;
+  }
+  btn.disabled = false; btn.textContent = '🔓 عرض';
 }
 
 // Area + line chart with a hover crosshair that snaps to the nearest day.
