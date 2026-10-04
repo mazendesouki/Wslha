@@ -7,6 +7,7 @@ import '../../core/session.dart';
 import '../../core/theme.dart';
 import '../../shared/widgets/logout_button.dart';
 import '../promotions/promotion_popup.dart';
+import 'merchant_order_history_screen.dart';
 import 'merchant_repository.dart';
 
 const Map<String, String> _statusKeys = {
@@ -162,7 +163,16 @@ class _MerchantHomeScreenState extends State<MerchantHomeScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(_store!['name'] as String? ?? context.tr('merchant_home_title')),
-        actions: const [LogoutButton()],
+        actions: [
+          IconButton(
+            tooltip: context.tr('merchant_history_tooltip'),
+            icon: const Icon(Icons.history),
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => MerchantOrderHistoryScreen(storeId: storeId)),
+            ),
+          ),
+          const LogoutButton(),
+        ],
       ),
       body: SafeArea(
         top: false,
@@ -175,9 +185,8 @@ class _MerchantHomeScreenState extends State<MerchantHomeScreen> {
 
           final pending = orders.where((o) => o['status'] == 'pending').toList();
           final active = orders.where((o) => ['preparing', 'on_the_way'].contains(o['status'])).toList();
-          final history = orders.where((o) => ['delivered', 'rejected'].contains(o['status'])).toList();
 
-          if (orders.isEmpty) {
+          if (pending.isEmpty && active.isEmpty) {
             return Center(child: Text(context.tr('merchant_home_no_orders'), style: const TextStyle(color: AppColors.textFaint)));
           }
 
@@ -186,7 +195,6 @@ class _MerchantHomeScreenState extends State<MerchantHomeScreen> {
             children: [
               if (pending.isNotEmpty) ..._section(context.tr('merchant_home_section_new'), pending, showActions: true),
               if (active.isNotEmpty) ..._section(context.tr('merchant_home_section_active'), active),
-              if (history.isNotEmpty) ..._section(context.tr('merchant_home_section_history'), history, muted: true),
             ],
           );
         },
@@ -312,6 +320,15 @@ class _OrderCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 4),
+          if (order['code'] != null || order['store_name'] != null)
+            Text(
+              [
+                if (order['code'] != null) '${context.tr('merchant_order_number_prefix')} #${order['code']}',
+                if (order['store_name'] != null) order['store_name'] as String,
+              ].join('  •  '),
+              style: const TextStyle(fontSize: 11.5, color: AppColors.textFaint, fontWeight: FontWeight.w700),
+            ),
+          const SizedBox(height: 2),
           Text(order['items_summary'] as String? ?? '', style: const TextStyle(fontSize: 13)),
           const SizedBox(height: 6),
           Text('${order['total'] ?? ''} ${context.tr('merchant_home_currency')}', style: const TextStyle(fontWeight: FontWeight.w900, color: AppColors.primary)),

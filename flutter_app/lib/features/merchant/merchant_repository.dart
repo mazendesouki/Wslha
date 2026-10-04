@@ -22,6 +22,21 @@ class MerchantRepository {
     return sb.from('orders').stream(primaryKey: ['id']).eq('store_id', storeId).order('created_at', ascending: false);
   }
 
+  /// Past orders only (delivered/rejected) for the dedicated history
+  /// screen — same table/columns as getOrders, just a wider limit since
+  /// this is a deliberate "browse the past" view rather than the live
+  /// kitchen board.
+  Future<List<Map<String, dynamic>>> getOrderHistory(String storeId, {int limit = 200}) async {
+    final rows = await sb
+        .from('orders')
+        .select()
+        .eq('store_id', storeId)
+        .inFilter('status', ['delivered', 'rejected'])
+        .order('created_at', ascending: false)
+        .limit(limit);
+    return List<Map<String, dynamic>>.from(rows);
+  }
+
   // merchant_accept_order/merchant_reject_order (security-48) verify the
   // caller's phone actually owns this order's store server-side — a raw
   // table UPDATE would let anyone accept/reject any store's orders.
