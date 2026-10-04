@@ -54,4 +54,28 @@ class MerchantRepository {
       'p_merchant_phone': merchantPhone,
     });
   }
+
+  /// Store-profile self-edit — `stores` is open for direct update except
+  /// `owner_phone` (locked server-side, see db/security-47-lockdown-
+  /// accounts-stores.sql), same "hard-to-guess id = trust" model the rest
+  /// of this app's open tables use. Scoped to the merchant's own store id,
+  /// which the caller already only ever has for their own store.
+  Future<void> updateStoreInfo(
+    String storeId, {
+    String? name,
+    String? tagline,
+    bool? isOpen,
+    num? deliveryFee,
+    num? minOrder,
+  }) async {
+    final patch = <String, dynamic>{
+      if (name != null) 'name': name,
+      if (tagline != null) 'tagline': tagline,
+      if (isOpen != null) 'is_open': isOpen,
+      if (deliveryFee != null) 'delivery_fee': deliveryFee,
+      if (minOrder != null) 'min_order': minOrder,
+    };
+    if (patch.isEmpty) return;
+    await sb.from('stores').update(patch).eq('id', storeId);
+  }
 }

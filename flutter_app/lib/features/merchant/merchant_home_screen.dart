@@ -9,6 +9,7 @@ import '../../shared/widgets/logout_button.dart';
 import '../promotions/promotion_popup.dart';
 import 'merchant_order_history_screen.dart';
 import 'merchant_repository.dart';
+import 'merchant_settings_screen.dart';
 
 const Map<String, String> _statusKeys = {
   'pending': 'merchant_home_status_pending',
@@ -141,6 +142,31 @@ class _MerchantHomeScreenState extends State<MerchantHomeScreen> {
     }
   }
 
+  // The order board is already a live Supabase realtime stream, so this
+  // isn't fixing staleness — it's the explicit "did it actually just
+  // check?" control/reassurance a merchant expects a refresh button to
+  // give, confirmed with a brief re-fetch + toast instead of a silent
+  // no-op.
+  Future<void> _manualRefresh() async {
+    final storeId = _store?['id']?.toString();
+    if (storeId == null) return;
+    await _repo.getOrders(storeId);
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(context.tr('merchant_refresh_done')), duration: const Duration(seconds: 2)),
+    );
+  }
+
+  Future<void> _openSettings() async {
+    final changed = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(builder: (_) => MerchantSettingsScreen(session: widget.session, store: _store!)),
+    );
+    if (changed == true) {
+      final store = await _repo.getStoreForOwner(widget.session.phone);
+      if (mounted) setState(() => _store = store);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_loading) {
@@ -165,11 +191,21 @@ class _MerchantHomeScreenState extends State<MerchantHomeScreen> {
         title: Text(_store!['name'] as String? ?? context.tr('merchant_home_title')),
         actions: [
           IconButton(
+            tooltip: context.tr('merchant_refresh_tooltip'),
+            icon: const Icon(Icons.refresh),
+            onPressed: _manualRefresh,
+          ),
+          IconButton(
             tooltip: context.tr('merchant_history_tooltip'),
             icon: const Icon(Icons.history),
             onPressed: () => Navigator.of(context).push(
               MaterialPageRoute(builder: (_) => MerchantOrderHistoryScreen(storeId: storeId)),
             ),
+          ),
+          IconButton(
+            tooltip: context.tr('merchant_settings_tooltip'),
+            icon: const Icon(Icons.settings),
+            onPressed: _openSettings,
           ),
           const LogoutButton(),
         ],
