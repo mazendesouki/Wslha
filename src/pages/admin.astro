@@ -1625,6 +1625,29 @@
             <div id="flags-msg" style="display:none;font-size:.82rem;font-weight:700;padding:.5rem .75rem;border-radius:6px;margin-top:.5rem"></div>
           </div>
         </div>
+        <!-- Referral program overview (db/security-112) -->
+        <div class="card">
+          <div class="card__head"><span class="card__title">🎁 برنامج الدعوات</span></div>
+          <div class="card__body">
+            <div class="kpi-grid" style="grid-template-columns:repeat(auto-fit,minmax(140px,1fr));margin-bottom:1rem">
+              <div class="kpi kpi--blue">
+                <div class="kpi__val" id="ref-total-referred">—</div><div class="kpi__label">إجمالي الدعوات الناجحة</div>
+              </div>
+              <div class="kpi kpi--green">
+                <div class="kpi__val" id="ref-total-paid">—</div><div class="kpi__label">إجمالي المكافآت المدفوعة (ج.م)</div>
+              </div>
+            </div>
+            <div style="display:flex;align-items:flex-end;gap:.75rem">
+              <div>
+                <label style="font-size:.78rem;font-weight:700;color:#64748B;display:block;margin-bottom:.3rem">قيمة المكافأة لكل طرف (ج.م)</label>
+                <input class="search-input" id="ref-reward-amount" type="number" min="0" step="1" style="width:140px;text-align:center;font-weight:700"/>
+              </div>
+              <button class="btn btn--primary" onclick="saveReferralRewardAmount()" id="ref-save-btn">💾 حفظ</button>
+              <button class="btn btn--ghost" onclick="loadReferralOverview()">🔄 تحديث</button>
+            </div>
+            <div id="ref-msg" style="display:none;font-size:.82rem;font-weight:700;padding:.5rem .75rem;border-radius:6px;margin-top:.5rem"></div>
+          </div>
+        </div>
         <!-- Merchant-delivery flat service fee -->
         <div class="card">
           <div class="card__head"><span class="card__title">🛵 رسوم توصيل التجار</span></div>
@@ -5089,6 +5112,41 @@ async function loadSettingsSection() {
   await loadFeatureFlags();
   await loadFooterSettings();
   await loadCancellationAlertSettings();
+  await loadReferralOverview();
+}
+
+/* ── برنامج الدعوات (db/security-112) ── */
+async function loadReferralOverview() {
+  const pass = await getAdminPass(); if (!pass) return;
+  try {
+    const rows = await sbRpcRows('admin_get_referral_overview', { p_admin_phone: ADMIN.phone, p_admin_password: pass });
+    const row = rows && rows[0];
+    if (!row) { clearAdminPass(); return; }
+    document.getElementById('ref-total-referred').textContent = fmt(row.total_referred);
+    document.getElementById('ref-total-paid').textContent = fmt(Number(row.total_rewards_paid));
+    document.getElementById('ref-reward-amount').value = row.reward_amount;
+  } catch {}
+}
+
+async function saveReferralRewardAmount() {
+  const btn = document.getElementById('ref-save-btn');
+  const msg = document.getElementById('ref-msg');
+  const pass = await getAdminPass();
+  if (!pass) { msg.textContent='مطلوب كلمة مرور المشرف'; msg.style.cssText='display:block;background:#FEE2E2;color:#991B1B;font-size:.82rem;font-weight:700;padding:.5rem .75rem;border-radius:6px'; return; }
+  const value = document.getElementById('ref-reward-amount').value;
+  btn.disabled = true; btn.textContent = 'جاري الحفظ...';
+  const ok = await sbRpc('admin_set_setting', { p_admin_phone: ADMIN.phone, p_admin_password: pass, p_key: 'referral_reward_amount', p_value: value });
+  if (ok) {
+    msg.textContent = '✅ تم حفظ قيمة المكافأة';
+    msg.style.cssText = 'display:block;background:#DCFCE7;color:#14532D;font-size:.82rem;font-weight:700;padding:.5rem .75rem;border-radius:6px';
+    showToast('✅ تم تحديث مكافأة الدعوة', '#16A34A');
+  } else {
+    clearAdminPass();
+    msg.textContent = '❌ فشل — تحقق من كلمة مرور المشرف';
+    msg.style.cssText = 'display:block;background:#FEE2E2;color:#991B1B;font-size:.82rem;font-weight:700;padding:.5rem .75rem;border-radius:6px';
+  }
+  btn.disabled = false; btn.textContent = '💾 حفظ';
+  setTimeout(() => { msg.style.display = 'none'; }, 4000);
 }
 
 /* ── بيانات فوتر البريد الإلكتروني (app_settings: brand_footer_*) ── */

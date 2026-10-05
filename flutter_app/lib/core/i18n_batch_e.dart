@@ -47,6 +47,11 @@ const Map<String, Map<String, String>> batchEStrings = {
   'referral_have_code_question': {'ar': 'عندك كود من صاحبك؟', 'en': "Have a friend's code?"},
   'referral_code_hint': {'ar': 'اكتب الكود هنا', 'en': 'Enter the code here'},
   'referral_use_button': {'ar': 'استخدام', 'en': 'Redeem'},
+  // db/security-112 — referral stats + "who I invited" list.
+  'referral_stat_invited': {'ar': 'صاحب دعوته', 'en': 'Friends invited'},
+  'referral_stat_earned': {'ar': 'كسبته من الدعوات', 'en': 'Earned from referrals'},
+  'referral_currency': {'ar': 'ج.م', 'en': 'EGP'},
+  'referral_people_invited_title': {'ar': '👥 اللي دعوتهم', 'en': '👥 People you invited'},
 
   // --- ratings/rate_sheet.dart ---
   'rate_sheet_what_happened': {'ar': 'إيه اللي حصل بالظبط؟ (اختياري)', 'en': 'What happened exactly? (optional)'},

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../../core/i18n.dart';
 import '../../core/session.dart';
@@ -22,6 +22,9 @@ class _ReferralScreenState extends State<ReferralScreen> {
   bool _redeeming = false;
   String? _resultMessage;
   bool _resultOk = false;
+  int _referredCount = 0;
+  double _totalEarned = 0;
+  List<Map<String, dynamic>> _referrals = [];
 
   @override
   void initState() {
@@ -44,12 +47,23 @@ class _ReferralScreenState extends State<ReferralScreen> {
       _phone = session.phone;
       _myCode = code;
     });
+    final results = await Future.wait([
+      _repo.getStats(session.phone),
+      _repo.getMyReferrals(session.phone),
+    ]).catchError((_) => <Object>[(referredCount: 0, totalEarned: 0.0), <Map<String, dynamic>>[]]);
+    if (!mounted) return;
+    final stats = results[0] as ({int referredCount, double totalEarned});
+    setState(() {
+      _referredCount = stats.referredCount;
+      _totalEarned = stats.totalEarned;
+      _referrals = results[1] as List<Map<String, dynamic>>;
+    });
   }
 
   Future<void> _shareCode() async {
     if (_myCode == null) return;
-    final text = Uri.encodeComponent('${context.tr('referral_share_prefix')} "$_myCode" — ${context.tr('referral_share_suffix')}');
-    await launchUrl(Uri.parse('https://wa.me/?text=$text'), mode: LaunchMode.externalApplication);
+    final text = '${context.tr('referral_share_prefix')} "$_myCode" — ${context.tr('referral_share_suffix')}';
+    await Share.share(text);
   }
 
   Future<void> _copyCode() async {
@@ -128,6 +142,52 @@ class _ReferralScreenState extends State<ReferralScreen> {
             style: const TextStyle(fontSize: 12, color: AppColors.textFaint, height: 1.6),
             textAlign: TextAlign.center,
           ),
+          const SizedBox(height: 20),
+          Row(
+            children: [
+              Expanded(
+                child: _StatTile(
+                  icon: '👥',
+                  value: '$_referredCount',
+                  label: context.tr('referral_stat_invited'),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: _StatTile(
+                  icon: '💰',
+                  value: '${_totalEarned.toStringAsFixed(0)} ${context.tr('referral_currency')}',
+                  label: context.tr('referral_stat_earned'),
+                ),
+              ),
+            ],
+          ),
+          if (_referrals.isNotEmpty) ...[
+            const SizedBox(height: 16),
+            Text(context.tr('referral_people_invited_title'), style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 14)),
+            const SizedBox(height: 8),
+            ..._referrals.map((r) {
+              final joined = DateTime.tryParse(r['created_at'] as String? ?? '')?.toLocal();
+              return Container(
+                margin: const EdgeInsets.only(bottom: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                decoration: BoxDecoration(
+                  color: context.surfaceColor,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: context.borderColor),
+                ),
+                child: Row(
+                  children: [
+                    const CircleAvatar(radius: 16, backgroundColor: AppColors.primaryLight, child: Text('👤')),
+                    const SizedBox(width: 10),
+                    Expanded(child: Text(r['name'] as String? ?? '—', style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13))),
+                    if (joined != null)
+                      Text('${joined.day}/${joined.month}/${joined.year}', style: const TextStyle(fontSize: 11, color: AppColors.textFaint)),
+                  ],
+                ),
+              );
+            }),
+          ],
           const SizedBox(height: 24),
           Text(context.tr('referral_have_code_question'), style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 14)),
           const SizedBox(height: 10),
@@ -159,6 +219,33 @@ class _ReferralScreenState extends State<ReferralScreen> {
           ],
         ],
         ),
+      ),
+    );
+  }
+}
+
+class _StatTile extends StatelessWidget {
+  final String icon;
+  final String value;
+  final String label;
+  const _StatTile({required this.icon, required this.value, required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 10),
+      decoration: BoxDecoration(
+        color: context.surfaceColor,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: context.borderColor),
+      ),
+      child: Column(
+        children: [
+          Text(icon, style: const TextStyle(fontSize: 20)),
+          const SizedBox(height: 4),
+          Text(value, style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16, color: AppColors.primaryDark)),
+          Text(label, style: const TextStyle(fontSize: 11, color: AppColors.textFaint), textAlign: TextAlign.center),
+        ],
       ),
     );
   }

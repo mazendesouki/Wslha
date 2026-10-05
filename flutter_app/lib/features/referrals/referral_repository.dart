@@ -15,4 +15,21 @@ class ReferralRepository {
     final result = await sb.rpc('redeem_referral_code', params: {'p_phone': phone, 'p_code': code});
     return result == true;
   }
+
+  /// {referredCount, totalEarned} — db/security-112.
+  Future<({int referredCount, double totalEarned})> getStats(String phone) async {
+    final rows = await sb.rpc('get_my_referral_stats', params: {'p_phone': phone});
+    if (rows is! List || rows.isEmpty) return (referredCount: 0, totalEarned: 0);
+    final row = rows.first as Map;
+    return (
+      referredCount: ((row['referred_count'] as num?) ?? 0).toInt(),
+      totalEarned: ((row['total_earned'] as num?) ?? 0).toDouble(),
+    );
+  }
+
+  Future<List<Map<String, dynamic>>> getMyReferrals(String phone) async {
+    final rows = await sb.rpc('list_my_referrals', params: {'p_phone': phone, 'p_limit': 50});
+    if (rows is! List) return [];
+    return List<Map<String, dynamic>>.from(rows);
+  }
 }

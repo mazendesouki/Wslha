@@ -138,6 +138,7 @@ const Map<String, Map<String, String>> _strings = {
   'register_confirm_password': {'ar': 'تأكيد كلمة المرور', 'en': 'Confirm password'},
   'register_passwords_match': {'ar': '✓ كلمتا المرور متطابقتان', 'en': '✓ Passwords match'},
   'register_passwords_mismatch': {'ar': '✗ كلمتا المرور غير متطابقتين', 'en': '✗ Passwords do not match'},
+  'register_referral_code_label': {'ar': 'كود دعوة (اختياري)', 'en': 'Referral code (optional)'},
   'register_submit': {'ar': 'إنشاء الحساب ✓', 'en': 'Create account ✓'},
   'register_pw_rule_length': {'ar': '8 أحرف على الأقل', 'en': 'At least 8 characters'},
   'register_pw_rule_upper': {'ar': 'حرف كبير (A-Z)', 'en': 'One uppercase letter (A-Z)'},

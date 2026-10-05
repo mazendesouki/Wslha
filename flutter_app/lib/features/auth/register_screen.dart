@@ -8,6 +8,7 @@ import '../../core/phone_utils.dart';
 import '../../core/registration_validation.dart';
 import '../../core/session.dart';
 import '../../core/theme.dart';
+import '../referrals/referral_repository.dart';
 import 'auth_repository.dart';
 
 enum _Avail { idle, checking, ok, taken }
@@ -35,6 +36,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _emailCtrl = TextEditingController();
   final _passwordCtrl = TextEditingController();
   final _confirmCtrl = TextEditingController();
+  final _referralCodeCtrl = TextEditingController();
 
   DateTime? _nationalIdExpiry;
   String? _city;
@@ -67,6 +69,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     _emailCtrl.dispose();
     _passwordCtrl.dispose();
     _confirmCtrl.dispose();
+    _referralCodeCtrl.dispose();
     super.dispose();
   }
 
@@ -259,6 +262,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
       return;
     }
 
+    // Best-effort — an invalid/already-used code shouldn't block an
+    // otherwise-successful signup; redeem_referral_code just returns false.
+    final referralCode = _referralCodeCtrl.text.trim();
+    if (referralCode.isNotEmpty) {
+      try {
+        await ReferralRepository().redeem(phone, referralCode);
+      } catch (_) {}
+    }
+
     await SessionStore.save(UserSession(
       name: _nameCtrl.text.trim(),
       phone: phone,
@@ -436,6 +448,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
             style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: _confirmCtrl.text == _passwordCtrl.text ? AppColors.success : AppColors.error),
           ),
         ],
+        const SizedBox(height: 16),
+        TextField(
+          controller: _referralCodeCtrl,
+          textCapitalization: TextCapitalization.characters,
+          decoration: InputDecoration(
+            labelText: context.tr('register_referral_code_label'),
+            prefixIcon: const Icon(Icons.card_giftcard_outlined),
+          ),
+        ),
         const SizedBox(height: 24),
         Row(
           children: [
