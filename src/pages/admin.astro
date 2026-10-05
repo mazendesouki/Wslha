@@ -2484,7 +2484,36 @@ async function loadDeepAnalytics() {
         <div style="font-size:.75rem;color:#16A34A;font-weight:700">${Number(v.amount || 0).toFixed(0)} ج.م</div>
       </div>`).join('') || '<p style="color:#94A3B8;font-size:.8rem">مفيش بيانات</p>';
 
+    const trend = data.trend || [];
+    const trendUnitLabel = data.trend_unit === 'week' ? 'أسبوعي' : 'يومي';
+    const trendLabels = trend.map(p => {
+      const d = new Date(p.date);
+      return d.toLocaleDateString('ar-EG', { day: 'numeric', month: 'short' });
+    });
+    const revenueByBucket = trend.map(p => Number(p.revenue) || 0);
+    const bookingsByBucket = trend.map(p => Number(p.bookings) || 0);
+
     body.innerHTML = `
+      <div class="chart-grid" style="margin-bottom:1.25rem">
+        <div class="card">
+          <div class="chart-card__head">
+            <div><span class="chart-card__title">💰 اتجاه الإيراد</span><span class="chart-card__sub">${trendUnitLabel} — آخر ${days} يوم</span></div>
+          </div>
+          <div class="chart-card__body">
+            <svg id="deep-revenue-chart" class="chart-svg" viewBox="0 0 640 160"></svg>
+            <div class="chart-tooltip hidden" id="deep-revenue-tooltip"></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="chart-card__head">
+            <div><span class="chart-card__title">📦 اتجاه الحجوزات</span><span class="chart-card__sub">رحلات مكتملة + طلبات مُسلَّمة</span></div>
+          </div>
+          <div class="chart-card__body">
+            <svg id="deep-bookings-chart" class="chart-svg" viewBox="0 0 640 160"></svg>
+            <div class="chart-tooltip hidden" id="deep-bookings-tooltip"></div>
+          </div>
+        </div>
+      </div>
       <div style="display:grid;grid-template-columns:1.3fr 1fr;gap:1.25rem;align-items:start">
         <div>
           <div style="font-size:.82rem;font-weight:800;color:#1E293B;margin-bottom:.6rem">🏆 أفضل 10 سائقين (بالأرباح)</div>
@@ -2509,6 +2538,9 @@ async function loadDeepAnalytics() {
           </div>
         </div>
       </div>`;
+
+    renderLineChart('deep-revenue-chart', 'deep-revenue-tooltip', revenueByBucket, trendLabels, { color: '#0E4B49', suffix: ' ج.م' });
+    renderBarChart('deep-bookings-chart', 'deep-bookings-tooltip', bookingsByBucket, trendLabels, { color: '#2563EB', unit: 'حجز' });
   } catch (e) {
     body.innerHTML = `<p style="color:#991B1B;font-size:.85rem">❌ ${e.message || 'حدث خطأ'}</p>`;
   }

@@ -2,14 +2,18 @@
 --  وصّلها — Security #109: تحليلات أعمق للأدمن
 --
 --  لوحة التحكم الحالية (admin.astro) عندها رسوم بيانية للإيراد/النشاط
---  اليومي آخر 14 يوم (محسوبة في المتصفح من بيانات خام)، وملخص مالي
---  إجمالي (get_platform_finance_summary). لكن مفيش حاجة بتجاوب على:
---  "مين أفضل السائقين؟"، "فين أكتر المناطق طلبًا؟"، "العملاء بيرجعوا
---  يحجزوا تاني ولا لأ؟"، "الدفع كاش ولا محفظة أكتر؟".
+--  اليومي آخر 14 يوم بس (محسوبة في المتصفح من بيانات خام، نافذة ثابتة)،
+--  وملخص مالي إجمالي (get_platform_finance_summary). لكن مفيش حاجة
+--  بتجاوب على: "مين أفضل السائقين؟"، "فين أكتر المناطق طلبًا؟"، "العملاء
+--  بيرجعوا يحجزوا تاني ولا لأ؟"، "الدفع كاش ولا محفظة أكتر؟"، أو تدّي
+--  اتجاه الإيراد/الحجوزات لفترة مختارة (مش 14 يوم ثابتة بس).
 --
---  دالة واحدة (admin_analytics_overview) بترجع JSON فيه الأربع حاجات دي
---  مع بعض لفترة زمنية مختارة (افتراضيًا 30 يوم)، بنفس نمط الحماية
---  بباسورد الأدمن المستخدم في كل دالة admin_* تانية.
+--  دالة واحدة (admin_analytics_overview) بترجع JSON فيه كل ده مع بعض
+--  لفترة زمنية مختارة (افتراضيًا 30 يوم)، بنفس نمط الحماية بباسورد
+--  الأدمن المستخدم في كل دالة admin_* تانية. حقل trend بيرجع نقطة لكل
+--  يوم (لو الفترة ≤31 يوم) أو لكل أسبوع (لو أطول) — إيراد + عدد حجوزات
+--  (رحلات مكتملة + طلبات مُسلَّمة) محسوبة من السيرفر مباشرة، بديل أدق
+--  وأمرن من رسم الـ14-يوم الثابت الموجود بالفعل.
 --
 --  آمن لإعادة التشغيل.
 -- =====================================================================
@@ -32,6 +36,8 @@ declare
   v_payment_breakdown jsonb;
   v_total_customers int;
   v_repeat_customers int;
+  v_unit text;
+  v_trend jsonb;
 begin
   select * into v_admin from public.accounts
    where role = 'admin'
@@ -90,6 +96,39 @@ begin
   )
   select count(*), count(*) filter (where c > 1) into v_total_customers, v_repeat_customers from counts;
 
+  -- اتجاه الإيراد/الحجوزات — يومي لو الفترة 31 يوم أو أقل، أسبوعي لو
+  -- أطول (90 يوم يومي = 90 عمود، كتير على رسم بياني واحد).
+  v_unit := case when coalesce(p_days, 30) <= 31 then 'day' else 'week' end;
+
+  with buckets as (
+    select generate_series(
+      date_trunc(v_unit, v_cutoff),
+      date_trunc(v_unit, now()),
+      case when v_unit = 'day' then interval '1 day' else interval '1 week' end
+    ) as bucket
+  ),
+  ride_agg as (
+    select date_trunc(v_unit, created_at) as bucket, count(*)::int as cnt, sum(fare) as rev
+    from public.rides
+    where status = 'completed' and created_at >= v_cutoff
+    group by 1
+  ),
+  order_agg as (
+    select date_trunc(v_unit, created_at) as bucket, count(*)::int as cnt, sum(total) as rev
+    from public.orders
+    where status = 'delivered' and created_at >= v_cutoff
+    group by 1
+  )
+  select coalesce(jsonb_agg(jsonb_build_object(
+    'date', to_char(b.bucket, 'YYYY-MM-DD'),
+    'revenue', round(coalesce(r.rev, 0) + coalesce(o.rev, 0), 2),
+    'bookings', coalesce(r.cnt, 0) + coalesce(o.cnt, 0)
+  ) order by b.bucket), '[]'::jsonb)
+  into v_trend
+  from buckets b
+  left join ride_agg r on r.bucket = b.bucket
+  left join order_agg o on o.bucket = b.bucket;
+
   return jsonb_build_object(
     'days', p_days,
     'top_drivers', v_top_drivers,
@@ -99,7 +138,9 @@ begin
     'repeat_customers', coalesce(v_repeat_customers, 0),
     'repeat_customer_rate', case when coalesce(v_total_customers, 0) > 0
       then round(100.0 * v_repeat_customers / v_total_customers, 1)
-      else 0 end
+      else 0 end,
+    'trend_unit', v_unit,
+    'trend', v_trend
   );
 end;
 $$;
