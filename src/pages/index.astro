@@ -1,6 +1,10 @@
 ---
 import Layout from '../components/layout.astro';
 
+const SB_URL = 'https://vtikgyiopkjnrwlqnmfx.supabase.co';
+const SB_KEY = 'sb_publishable_PLSnpvCT-sAyUMtymNgTwA_QmL2suw4';
+const SB_HEADERS = { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}` };
+
 const STATS = [
   { value: '30د',  label: 'متوسط التوصيل' },
   { value: '24/7', label: 'خدمة متاحة'    },
@@ -35,11 +39,34 @@ const JOURNEY = [
   { icon: ICONS.store,  title: 'استلم بأمان', desc: 'تتبع لحظي حتى وصولك'                    },
 ];
 
-const REVIEWS = [
-  { text: 'من أول ما نزّلت التطبيق وأنا مستخدمه كل يوم تقريبًا — السائق بيوصل فعلاً في الوقت المتفق عليه.', name: 'محمود عادل',  meta: 'عميل منذ 2026' },
-  { text: 'كتاجر، لوحة التحكم سهّلت عليّ متابعة الطلبات جدًا. مفيش لخبطة زي قبل كده.',                        name: 'سارة الشريف',  meta: 'صاحبة متجر شريك' },
-  { text: 'حجزت توصيل مطار في آخر لحظة والسائق كان في الموعد بالظبط. تجربة محترفة فعلاً.',                    name: 'يوسف كامل',   meta: 'عميل منذ 2026' },
+// Fallback/seed content — shown until real customers submit app reviews
+// (db/security-111-app-reviews.sql: "قيّم التطبيق" in the Flutter settings
+// screen) and an admin approves at least 3 of them. Never shows unapproved
+// reviews — get_public_app_reviews() only returns is_approved=true rows.
+const STATIC_REVIEWS = [
+  { text: 'من أول ما نزّلت التطبيق وأنا مستخدمه كل يوم تقريبًا — السائق بيوصل فعلاً في الوقت المتفق عليه.', name: 'محمود عادل',  meta: 'عميل منذ 2026', rating: 5 },
+  { text: 'كتاجر، لوحة التحكم سهّلت عليّ متابعة الطلبات جدًا. مفيش لخبطة زي قبل كده.',                        name: 'سارة الشريف',  meta: 'صاحبة متجر شريك', rating: 5 },
+  { text: 'حجزت توصيل مطار في آخر لحظة والسائق كان في الموعد بالظبط. تجربة محترفة فعلاً.',                    name: 'يوسف كامل',   meta: 'عميل منذ 2026', rating: 5 },
 ];
+
+let REVIEWS = STATIC_REVIEWS;
+try {
+  const res = await fetch(`${SB_URL}/rest/v1/rpc/get_public_app_reviews`, {
+    method: 'POST',
+    headers: { ...SB_HEADERS, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ p_limit: 6 }),
+  });
+  const rows = res.ok ? await res.json() : [];
+  const live = (Array.isArray(rows) ? rows : []).map((r: any) => ({
+    text: r.comment || 'تجربة ممتازة مع وصّلها.',
+    name: r.customer_name || 'عميل وصّلها',
+    meta: 'عميل وصّلها',
+    rating: Number(r.rating) || 5,
+  }));
+  // Needs at least 3 to fill the "featured quote + minor quotes" layout —
+  // otherwise keep the static seed set rather than show a half-empty section.
+  if (live.length >= 3) REVIEWS = live;
+} catch { /* build proceeds with the static seed reviews if Supabase is unreachable */ }
 ---
 
 <style>
@@ -449,7 +476,7 @@ const REVIEWS = [
     <h2 class="section-title sr-only" id="reviews-title">آراء العملاء</h2>
     <div class="reviews__inner">
       <div class="review-feature">
-        <div class="review-feature__stars">★★★★★</div>
+        <div class="review-feature__stars">{'★'.repeat(REVIEWS[0].rating)}{'☆'.repeat(5 - REVIEWS[0].rating)}</div>
         <p class="review-feature__quote">"{REVIEWS[0].text}"</p>
         <div class="review-feature__author">{REVIEWS[0].name}</div>
         <div class="review-feature__meta">{REVIEWS[0].meta}</div>

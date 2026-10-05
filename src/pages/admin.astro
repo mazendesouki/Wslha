@@ -421,6 +421,10 @@
     <button class="nav-item" data-section="campaigns">
       <span class="nav-item__icon">📣</span> إشعارات ترويجية
     </button>
+    <button class="nav-item" data-section="app-reviews">
+      <span class="nav-item__icon">⭐</span> مراجعات التطبيق
+      <span class="nav-item__badge hidden" id="badge-app-reviews">0</span>
+    </button>
     <div class="nav-divider"></div>
     <button class="nav-item" data-section="corporate">
       <span class="nav-item__icon">🏢</span> عقود الشركات
@@ -1230,6 +1234,20 @@
             <thead><tr><th>الرسالة</th><th>الفئة</th><th>ينتهي في</th><th>الحالة</th><th>إجراء</th></tr></thead>
             <tbody id="promotions-tbody"><tr><td colspan="5" style="text-align:center;color:#94A3B8;padding:2rem">جاري التحميل…</td></tr></tbody>
           </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════ APP REVIEWS (db/security-111) ═══ -->
+    <div class="section" id="sec-app-reviews">
+      <div class="card">
+        <div class="card__head">
+          <span class="card__title">⭐ مراجعات التطبيق</span>
+          <button class="btn btn--ghost btn--sm" onclick="loadAppReviews()">🔄 تحديث</button>
+        </div>
+        <div class="card__body">
+          <p style="font-size:.8rem;color:#64748B;margin-bottom:1rem">مراجعات عامة عن التطبيق بعتها العملاء من شاشة الإعدادات — المراجعات الموافق عليها بس هي اللي بتظهر كـ"شهادات" في الصفحة الرئيسية للموقع.</p>
+          <div id="app-reviews-list" style="display:flex;flex-direction:column;gap:.75rem"></div>
         </div>
       </div>
     </div>
@@ -2268,6 +2286,7 @@ const sectionTitles = {
   merchants:'إدارة التجار', orders:'إدارة الطلبات', rides:'إدارة الرحلات',
   stores:'إدارة المتاجر', courier:'الطرود والمستندات', 'merchant-delivery':'توصيل التجار', 'general-delivery':'خدمة دليفري', marketplace:'سوق المستعمل',
   corporate:'عقود الشركات', support:'الدعم الفني', coupons:'الكوبونات', campaigns:'إشعارات ترويجية',
+  'app-reviews':'مراجعات التطبيق',
   finance:'التقارير المالية', wallets:'إدارة المحافظ', settings:'الإعدادات'
 };
 let currentSection = 'dash';
@@ -2282,10 +2301,49 @@ function loadMerchantsSection() {
   else loadMerchantAccounts();
 }
 function loadCampaignsSection() { loadCampaigns(); loadEmailCampaigns(); loadPromotions(); }
+
+/* ── مراجعات التطبيق (db/security-111) ── */
+async function loadAppReviews() {
+  const box = document.getElementById('app-reviews-list');
+  const pass = await getAdminPass();
+  if (!pass) { box.textContent = ''; return; }
+  box.innerHTML = '<p style="color:#94A3B8;font-size:.85rem">جاري التحميل...</p>';
+  try {
+    const rows = await sbRpcRows('admin_list_app_reviews', { p_admin_phone: ADMIN.phone, p_admin_password: pass, p_limit: 100 });
+    if (!rows) { clearAdminPass(); box.innerHTML = '<p style="color:#991B1B;font-size:.85rem">❌ فشل التحقق — تحقق من كلمة مرور المشرف</p>'; return; }
+    const pending = rows.filter(r => !r.is_approved);
+    const bpEl = document.getElementById('badge-app-reviews');
+    if (bpEl) { bpEl.textContent = pending.length; bpEl.classList.toggle('hidden', pending.length === 0); }
+    if (!rows.length) { box.innerHTML = '<p style="color:#94A3B8;font-size:.85rem">مفيش مراجعات لسه</p>'; return; }
+    box.innerHTML = rows.map(r => `
+      <div style="background:${r.is_approved ? '#F0FDF4' : '#FFFBEB'};border:1px solid ${r.is_approved ? '#BBF7D0' : '#FDE68A'};border-radius:10px;padding:.75rem .9rem">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:.75rem">
+          <div>
+            <div style="font-weight:800;font-size:.85rem">${r.customer_name} <span style="color:#D97706">${'★'.repeat(r.rating)}${'☆'.repeat(5-r.rating)}</span></div>
+            <div style="font-size:.72rem;color:#94A3B8;direction:ltr;text-align:right">${r.customer_phone}</div>
+          </div>
+          <span style="font-size:.7rem;font-weight:700;padding:.2rem .5rem;border-radius:999px;background:${r.is_approved ? '#DCFCE7;color:#14532D' : '#FEF3C7;color:#92400E'}">${r.is_approved ? '✅ منشورة' : '⏳ قيد المراجعة'}</span>
+        </div>
+        ${r.comment ? `<p style="font-size:.82rem;margin-top:.5rem">${r.comment}</p>` : ''}
+        <div style="margin-top:.6rem;display:flex;gap:.5rem">
+          ${!r.is_approved ? `<button class="btn btn--primary btn--sm" onclick="setAppReviewApproved('${r.id}', true)">✅ موافقة ونشر</button>` : `<button class="btn btn--ghost btn--sm" onclick="setAppReviewApproved('${r.id}', false)">إخفاء</button>`}
+        </div>
+      </div>`).join('');
+  } catch (e) {
+    box.innerHTML = `<p style="color:#991B1B;font-size:.85rem">❌ ${e.message || 'حدث خطأ'}</p>`;
+  }
+}
+
+async function setAppReviewApproved(id, approved) {
+  const pass = await getAdminPass(); if (!pass) return;
+  const ok = await sbRpc('admin_set_app_review_approved', { p_admin_phone: ADMIN.phone, p_admin_password: pass, p_review_id: id, p_approved: approved });
+  if (ok) { showToast(approved ? '✅ اتعرضت المراجعة' : 'تم الإخفاء', '#16A34A'); loadAppReviews(); }
+  else { clearAdminPass(); showToast('❌ فشل — تحقق من كلمة مرور المشرف', '#DC2626'); }
+}
 const loaders = { dash:loadDash, users:loadUsers, drivers:loadDriversSection,
   merchants:loadMerchantsSection, orders:loadOrders, rides:loadRides, stores:loadStores,
   courier:loadCourierOrders, 'merchant-delivery':loadMerchantDeliveries, 'general-delivery':loadGeneralDeliveries, marketplace:loadMarketplaceSection, corporate:loadCorporateContracts,
-  messages:loadMessages, support:loadSupportChats, coupons:loadCoupons, campaigns:loadCampaignsSection, finance:loadFinance, wallets:loadWalletsSection, settings:loadSettingsSection };
+  messages:loadMessages, support:loadSupportChats, coupons:loadCoupons, campaigns:loadCampaignsSection, 'app-reviews':loadAppReviews, finance:loadFinance, wallets:loadWalletsSection, settings:loadSettingsSection };
 
 document.querySelectorAll('.nav-item').forEach(btn => {
   btn.addEventListener('click', () => {

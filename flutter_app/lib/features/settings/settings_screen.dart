@@ -12,6 +12,7 @@ import '../../shared/widgets/branded_header.dart';
 import '../notifications/notifications_screen.dart';
 import '../safety/emergency_contacts_screen.dart';
 import '../support/support_screen.dart';
+import 'app_review_repository.dart';
 
 /// Mirrors settings.astro: links to Profile/Wallet/Orders, a local
 /// notifications toggle (localStorage['wslha_notif'] there → shared_prefs
@@ -28,6 +29,7 @@ class SettingsScreen extends StatefulWidget {
 
 class _SettingsScreenState extends State<SettingsScreen> {
   static const _notifKey = 'wslha_notif';
+  final _reviewRepo = AppReviewRepository();
   UserSession? _session;
   bool _notifEnabled = true;
   String? _versionLabel;
@@ -76,6 +78,81 @@ class _SettingsScreenState extends State<SettingsScreen> {
     await SessionStore.clear();
     if (!mounted) return;
     Navigator.of(context).pushNamedAndRemoveUntil('/home', (route) => false);
+  }
+
+  Future<void> _openRateAppSheet() async {
+    final session = _session;
+    if (session == null) return;
+    int rating = 5;
+    final commentController = TextEditingController();
+    bool busy = false;
+
+    await showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (ctx) => SafeArea(top: false, child: Padding(
+        padding: EdgeInsets.only(
+          left: 20, right: 20, top: 20,
+          bottom: MediaQuery.of(ctx).viewInsets.bottom + 20,
+        ),
+        child: StatefulBuilder(
+          builder: (ctx, setSheetState) => Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(context.tr('rate_app_sheet_title'), style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900)),
+              const SizedBox(height: 4),
+              Text(context.tr('rate_app_sheet_subtitle'), style: const TextStyle(fontSize: 12, color: AppColors.textFaint)),
+              const SizedBox(height: 16),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: List.generate(5, (i) {
+                  final star = i + 1;
+                  return IconButton(
+                    iconSize: 32,
+                    onPressed: () => setSheetState(() => rating = star),
+                    icon: Icon(star <= rating ? Icons.star : Icons.star_border, color: AppColors.accent),
+                  );
+                }),
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: commentController,
+                maxLines: 3,
+                decoration: InputDecoration(labelText: context.tr('rate_app_comment_label')),
+              ),
+              const SizedBox(height: 12),
+              ElevatedButton(
+                onPressed: busy
+                    ? null
+                    : () async {
+                        setSheetState(() => busy = true);
+                        try {
+                          await _reviewRepo.submit(session.phone, session.name, rating, commentController.text.trim());
+                          if (ctx.mounted) Navigator.pop(ctx);
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text(context.tr('rate_app_success')), backgroundColor: AppColors.success),
+                            );
+                          }
+                        } catch (e) {
+                          if (ctx.mounted) {
+                            ScaffoldMessenger.of(ctx).showSnackBar(
+                              SnackBar(content: Text('${context.tr('rate_app_failed_prefix')} $e'), backgroundColor: AppColors.error, duration: const Duration(seconds: 6)),
+                            );
+                            setSheetState(() => busy = false);
+                          }
+                        }
+                      },
+                child: busy
+                    ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                    : Text(context.tr('rate_app_submit')),
+              ),
+            ],
+          ),
+        ),
+      )),
+    );
   }
 
   @override
@@ -217,6 +294,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
             title: context.tr('settings_support'),
             onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const SupportScreen())),
           ),
+          if (_session != null)
+            _SettingsTile(
+              icon: '⭐',
+              title: context.tr('settings_rate_app'),
+              onTap: _openRateAppSheet,
+            ),
           const Divider(height: 24),
           if (_session != null)
             ListTile(
