@@ -19,6 +19,17 @@ class AppNotifications {
   static final AppNotifications instance = AppNotifications._();
 
   static const _notifPrefKey = 'wslha_notif';
+  // "الإشعارات الأذكى" — تحكم أدق من مفتاح واحد بيشغّل/يطفي كل حاجة:
+  // تصنيف لكل قناة (الطلبات مقابل باقي التحديثات: عروض السائقين، الشات،
+  // تذكيرات الكاش...) + نافذة "ساعات هدوء" تكتم القناتين دول بس — تنبيه
+  // اقتراب السائق (wslha_proximity_v3) دايمًا شغال، لأنه بيحصل بس وقت
+  // رحلة فعلية شغالة والعميل مستني فيها، فكتمه وقت الهدوء غير منطقي
+  // وممكن يضر بدل ما يفيد.
+  static const _ordersEnabledKey = 'wslha_notif_orders';
+  static const _ridesEnabledKey = 'wslha_notif_rides';
+  static const _quietEnabledKey = 'wslha_quiet_enabled';
+  static const _quietStartKey = 'wslha_quiet_start'; // "HH:mm", Cairo local
+  static const _quietEndKey = 'wslha_quiet_end';
   // Device-local log of what show() actually displayed, for the "سجل
   // الإشعارات" screen (features/notifications/notifications_screen.dart).
   // No Supabase table backs this — nothing server-side needs a durable
@@ -93,13 +104,46 @@ class AppNotifications {
     ));
   }
 
-  Future<bool> _enabled() async {
+  Future<bool> _enabled(String channelId) async {
     final prefs = await SharedPreferences.getInstance();
-    return prefs.getBool(_notifPrefKey) ?? true;
+    if (!(prefs.getBool(_notifPrefKey) ?? true)) return false;
+
+    if (channelId == 'wslha_proximity_v3') return true; // never muted, see field doc above
+
+    final categoryKey = channelId == 'wslha_orders' ? _ordersEnabledKey : _ridesEnabledKey;
+    if (!(prefs.getBool(categoryKey) ?? true)) return false;
+
+    if (prefs.getBool(_quietEnabledKey) ?? false) {
+      final start = _parseHm(prefs.getString(_quietStartKey)) ?? const (hour: 22, minute: 0);
+      final end = _parseHm(prefs.getString(_quietEndKey)) ?? const (hour: 8, minute: 0);
+      if (_withinQuietWindow(DateTime.now(), start, end)) return false;
+    }
+    return true;
+  }
+
+  ({int hour, int minute})? _parseHm(String? raw) {
+    if (raw == null) return null;
+    final parts = raw.split(':');
+    if (parts.length != 2) return null;
+    final h = int.tryParse(parts[0]);
+    final m = int.tryParse(parts[1]);
+    if (h == null || m == null) return null;
+    return (hour: h, minute: m);
+  }
+
+  /// Handles a window that wraps past midnight (e.g. 22:00 → 08:00) the
+  /// same way it handles a same-day one (e.g. 13:00 → 14:00).
+  bool _withinQuietWindow(DateTime now, ({int hour, int minute}) start, ({int hour, int minute}) end) {
+    final nowMin = now.hour * 60 + now.minute;
+    final startMin = start.hour * 60 + start.minute;
+    final endMin = end.hour * 60 + end.minute;
+    if (startMin == endMin) return false;
+    if (startMin < endMin) return nowMin >= startMin && nowMin < endMin;
+    return nowMin >= startMin || nowMin < endMin;
   }
 
   Future<void> show(String title, String body, {String channelId = 'wslha_rides'}) async {
-    if (!await _enabled()) return;
+    if (!await _enabled(channelId)) return;
     await init();
     final (channelName, channelDesc) = switch (channelId) {
       'wslha_orders' => ('الطلبات الجديدة', 'إشعار فوري عند وصول طلب جديد'),
@@ -155,7 +199,7 @@ class AppNotifications {
   /// `inexactAllowWhileIdle` deliberately trades a few minutes of precision
   /// for not requiring Android 12+'s "exact alarm" permission.
   Future<void> scheduleAt(int id, String title, String body, DateTime whenLocal, {String channelId = 'wslha_rides'}) async {
-    if (!await _enabled()) return;
+    if (!await _enabled(channelId)) return;
     await init();
     if (whenLocal.isBefore(DateTime.now())) return;
     final scheduled = tz.TZDateTime.from(whenLocal, tz.local);

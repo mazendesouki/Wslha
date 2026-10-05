@@ -29,9 +29,21 @@ class SettingsScreen extends StatefulWidget {
 
 class _SettingsScreenState extends State<SettingsScreen> {
   static const _notifKey = 'wslha_notif';
+  // "الإشعارات الأذكى" — نفس المفاتيح بالظبط المستخدمة في
+  // core/notifications.dart's AppNotifications._enabled().
+  static const _ordersKey = 'wslha_notif_orders';
+  static const _ridesKey = 'wslha_notif_rides';
+  static const _quietEnabledKey = 'wslha_quiet_enabled';
+  static const _quietStartKey = 'wslha_quiet_start';
+  static const _quietEndKey = 'wslha_quiet_end';
   final _reviewRepo = AppReviewRepository();
   UserSession? _session;
   bool _notifEnabled = true;
+  bool _ordersNotifEnabled = true;
+  bool _ridesNotifEnabled = true;
+  bool _quietEnabled = false;
+  TimeOfDay _quietStart = const TimeOfDay(hour: 22, minute: 0);
+  TimeOfDay _quietEnd = const TimeOfDay(hour: 8, minute: 0);
   String? _versionLabel;
   UpdateInfo? _updateInfo;
 
@@ -48,6 +60,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
     setState(() {
       _session = session;
       _notifEnabled = prefs.getBool(_notifKey) ?? true;
+      _ordersNotifEnabled = prefs.getBool(_ordersKey) ?? true;
+      _ridesNotifEnabled = prefs.getBool(_ridesKey) ?? true;
+      _quietEnabled = prefs.getBool(_quietEnabledKey) ?? false;
+      _quietStart = _parseTimeOfDay(prefs.getString(_quietStartKey)) ?? _quietStart;
+      _quietEnd = _parseTimeOfDay(prefs.getString(_quietEndKey)) ?? _quietEnd;
     });
     // Was a hardcoded "1.0.0" string that never once matched the real
     // installed build across this whole session's version bumps — read the
@@ -72,6 +89,52 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_notifKey, value);
     setState(() => _notifEnabled = value);
+  }
+
+  Future<void> _toggleOrdersNotif(bool value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_ordersKey, value);
+    setState(() => _ordersNotifEnabled = value);
+  }
+
+  Future<void> _toggleRidesNotif(bool value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_ridesKey, value);
+    setState(() => _ridesNotifEnabled = value);
+  }
+
+  Future<void> _toggleQuiet(bool value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_quietEnabledKey, value);
+    setState(() => _quietEnabled = value);
+  }
+
+  TimeOfDay? _parseTimeOfDay(String? raw) {
+    if (raw == null) return null;
+    final parts = raw.split(':');
+    if (parts.length != 2) return null;
+    final h = int.tryParse(parts[0]);
+    final m = int.tryParse(parts[1]);
+    if (h == null || m == null) return null;
+    return TimeOfDay(hour: h, minute: m);
+  }
+
+  String _formatTimeOfDay(TimeOfDay t) => '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}';
+
+  Future<void> _pickQuietStart() async {
+    final picked = await showTimePicker(context: context, initialTime: _quietStart);
+    if (picked == null) return;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_quietStartKey, _formatTimeOfDay(picked));
+    setState(() => _quietStart = picked);
+  }
+
+  Future<void> _pickQuietEnd() async {
+    final picked = await showTimePicker(context: context, initialTime: _quietEnd);
+    if (picked == null) return;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_quietEndKey, _formatTimeOfDay(picked));
+    setState(() => _quietEnd = picked);
   }
 
   Future<void> _logout() async {
@@ -245,6 +308,59 @@ class _SettingsScreenState extends State<SettingsScreen> {
             activeThumbColor: AppColors.primary,
             onChanged: _toggleNotif,
           ),
+          if (_notifEnabled) ...[
+            Padding(
+              padding: const EdgeInsetsDirectional.only(start: 16),
+              child: SwitchListTile(
+                dense: true,
+                secondary: const Text('📦', style: TextStyle(fontSize: 16)),
+                title: Text(context.tr('settings_notif_orders'), style: const TextStyle(fontSize: 13)),
+                value: _ordersNotifEnabled,
+                activeThumbColor: AppColors.primary,
+                onChanged: _toggleOrdersNotif,
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsetsDirectional.only(start: 16),
+              child: SwitchListTile(
+                dense: true,
+                secondary: const Text('🚗', style: TextStyle(fontSize: 16)),
+                title: Text(context.tr('settings_notif_rides'), style: const TextStyle(fontSize: 13)),
+                value: _ridesNotifEnabled,
+                activeThumbColor: AppColors.primary,
+                onChanged: _toggleRidesNotif,
+              ),
+            ),
+            SwitchListTile(
+              secondary: const Text('🌙', style: TextStyle(fontSize: 20)),
+              title: Text(context.tr('settings_quiet_hours')),
+              subtitle: Text(context.tr('settings_quiet_hours_subtitle'), style: const TextStyle(fontSize: 11)),
+              value: _quietEnabled,
+              activeThumbColor: AppColors.primary,
+              onChanged: _toggleQuiet,
+            ),
+            if (_quietEnabled)
+              Padding(
+                padding: const EdgeInsetsDirectional.only(start: 16, bottom: 8),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: _pickQuietStart,
+                        child: Text('${context.tr('settings_quiet_from')} ${_formatTimeOfDay(_quietStart)}'),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: _pickQuietEnd,
+                        child: Text('${context.tr('settings_quiet_to')} ${_formatTimeOfDay(_quietEnd)}'),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+          ],
           if (FeatureFlags.darkModeEnabled)
             ValueListenableBuilder<ThemeMode>(
               valueListenable: ThemeController.mode,
