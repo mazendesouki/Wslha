@@ -10,8 +10,18 @@
 --  قديمة "allow_anon_all_*" (FOR ALL USING true) — بالظبط نفس ثغرة
 --  security-26 (ratings/wallets/push_subscriptions) اللي اتقفلت قبل
 --  كده، لكن النقط فاتت من غير ما حد يلاحظها. أي حد كان يقدر يضيف لنفسه
---  نقط لا نهائية مباشرة عن طريق PostgREST. اتقفلت هنا بنفس أسلوب
---  security-02/26/44 (قراءة مفتوحة + كتابة عن طريق دوال محمية بس).
+--  نقط لا نهائية مباشرة عن طريق PostgREST، أو حتى يقرا رصيد/سجل أي رقم
+--  تاني (dump جماعي زي ما كان حاصل في wallets قبل security-49).
+--
+--  القفل هنا أشمل من مجرد "قراءة مفتوحة + كتابة محمية": الجدولين
+--  مقفولين تمامًا (مفيش GRANT خالص لـ anon/authenticated غير REFERENCES/
+--  TRIGGER)، وكل قراءة/كتابة بتعدي من دوال SECURITY DEFINER بس —
+--  get_my_points_balance/list_my_point_transactions للقراءة (نفس نمط
+--  get_my_wallet_balance في security-49: برجع بيانات رقم واحد بس، مش
+--  dump كامل)، و redeem_loyalty_points + الـ trigger تحت دي للكتابة.
+--  REVOKE وحده كفاية لقفل الثغرة فعليًا حتى مع بقاء السياسة القديمة —
+--  GRANT على مستوى الجدول بيتفحص قبل أي RLS policy، فمفيش داعي لـ DROP
+--  POLICY (تم تفادي استخدامه هنا عمدًا).
 --
 --  الآلية:
 --   - العميل يكسب نقط تلقائيًا لما رحلة توصل 'completed' أو طلب يوصل
@@ -29,22 +39,47 @@
 set search_path = public, extensions;
 
 -- ---------------------------------------------------------------------
--- 0) قفل السياسة المفتوحة القديمة — قراءة فقط لـ anon/authenticated
---    (العميل بيفلتر بـ phone بنفسه، زي wallets)، كتابة بس عن طريق
---    الدوال تحت دي.
+-- 0) قفل كامل للجدولين — كل الصلاحيات المباشرة لـ anon/authenticated
+--    (SELECT/INSERT/UPDATE/DELETE/TRUNCATE) بره، القراءة/الكتابة بس عن
+--    طريق الدوال تحت دي. السياسة القديمة المفتوحة بتفضل موجودة فعليًا
+--    (DROP POLICY محتاج تأكيد يدوي من المالك مش متاح هنا) لكنها بقت
+--    عديمة الأثر طالما مفيش GRANT يسمح بالوصول للجدول أصلاً — لو حد
+--    يقدر يشغّل DROP POLICY بنفسه بعدين (من SQL Editor مباشرة) يقدر
+--    يمسح allow_anon_all_points / allow_anon_all_point_tx للتنظيف، بس
+--    مش ضروري أمنيًا.
 -- ---------------------------------------------------------------------
-drop policy if exists allow_anon_all_points on public.points;
-drop policy if exists allow_anon_all_point_tx on public.point_transactions;
+revoke select, insert, update, delete, truncate
+  on public.points, public.point_transactions
+  from anon, authenticated;
 
-drop policy if exists points_select_all on public.points;
-create policy points_select_all on public.points
-  for select to anon, authenticated using (true);
-revoke insert, update, delete on public.points from anon, authenticated;
+create or replace function public.get_my_points_balance(p_phone text)
+returns int
+language sql
+security definer
+set search_path = public, extensions
+as $$
+  select coalesce(total_points, 0) from public.points
+   where phone in (p_phone,
+                   case when p_phone like '+20%' then '0'||substr(p_phone,4) else p_phone end,
+                   case when p_phone like '0%'   then '+2'||p_phone           else p_phone end)
+   limit 1;
+$$;
+grant execute on function public.get_my_points_balance(text) to anon, authenticated;
 
-drop policy if exists point_tx_select_all on public.point_transactions;
-create policy point_tx_select_all on public.point_transactions
-  for select to anon, authenticated using (true);
-revoke insert, update, delete on public.point_transactions from anon, authenticated;
+create or replace function public.list_my_point_transactions(p_phone text, p_limit int default 50)
+returns setof public.point_transactions
+language sql
+security definer
+set search_path = public, extensions
+as $$
+  select * from public.point_transactions
+   where phone in (p_phone,
+                   case when p_phone like '+20%' then '0'||substr(p_phone,4) else p_phone end,
+                   case when p_phone like '0%'   then '+2'||p_phone           else p_phone end)
+   order by created_at desc
+   limit p_limit;
+$$;
+grant execute on function public.list_my_point_transactions(text, int) to anon, authenticated;
 
 insert into public.app_settings (key, value) values
   ('feature_loyalty_enabled', 'true'),
@@ -65,10 +100,16 @@ set search_path = public, extensions
 as $$
 declare v_new int;
 begin
+  -- NOTE: must reference p_delta directly in the UPDATE branch, not
+  -- excluded.total_points — excluded.total_points is the *inserted*
+  -- value (already floored to >= 0 above), so for a negative p_delta
+  -- (redemption) it would read as 0 and silently fail to ever deduct
+  -- anything. Caught live during testing: a 100-point redemption
+  -- credited the wallet cashback but left the points balance unchanged.
   insert into public.points (phone, total_points, updated_at)
   values (p_phone, greatest(p_delta, 0), now())
   on conflict (phone)
-  do update set total_points = greatest(public.points.total_points + excluded.total_points, 0),
+  do update set total_points = greatest(public.points.total_points + p_delta, 0),
                 updated_at = now()
   returning total_points into v_new;
   return v_new;

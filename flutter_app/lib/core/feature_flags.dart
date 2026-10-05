@@ -21,6 +21,7 @@ class FeatureFlags {
   static bool couponsEnabled = true;
   static bool scheduledRidesEnabled = true;
   static bool recurringRidesEnabled = true;
+  static bool loyaltyEnabled = true;
   static bool darkModeEnabled = true;
   static bool languageSwitchEnabled = true;
 
@@ -47,6 +48,7 @@ class FeatureFlags {
         'feature_coupons_enabled',
         'feature_scheduled_rides_enabled',
         'feature_recurring_rides_enabled',
+        'feature_loyalty_enabled',
         'feature_dark_mode_enabled',
         'feature_language_switch_enabled',
       ]);
@@ -70,6 +72,7 @@ class FeatureFlags {
       couponsEnabled = flag('feature_coupons_enabled') ?? couponsEnabled;
       scheduledRidesEnabled = flag('feature_scheduled_rides_enabled') ?? scheduledRidesEnabled;
       recurringRidesEnabled = flag('feature_recurring_rides_enabled') ?? recurringRidesEnabled;
+      loyaltyEnabled = flag('feature_loyalty_enabled') ?? loyaltyEnabled;
       darkModeEnabled = flag('feature_dark_mode_enabled') ?? darkModeEnabled;
       languageSwitchEnabled = flag('feature_language_switch_enabled') ?? languageSwitchEnabled;
       _loaded = true;

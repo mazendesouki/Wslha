@@ -54,6 +54,37 @@ class WalletRepository {
       'p_note': note,
     });
   }
+
+  // نقاط الولاء (db/security-110) — same "scoped RPC, no direct table
+  // access" pattern as the wallet above (get_my_wallet_balance/security-49).
+  Future<int> getLoyaltyPoints(String phone) async {
+    final result = await sb.rpc('get_my_points_balance', params: {'p_phone': phone});
+    return (result as num?)?.toInt() ?? 0;
+  }
+
+  Future<List<Map<String, dynamic>>> getLoyaltyHistory(String phone) async {
+    final rows = await sb.rpc('list_my_point_transactions', params: {'p_phone': phone, 'p_limit': 50});
+    if (rows is! List) return [];
+    return List<Map<String, dynamic>>.from(rows);
+  }
+
+  /// Returns the EGP amount credited to the wallet. Throws with the raw
+  /// RPC exception text on failure (below_minimum/insufficient_points) —
+  /// see loyaltyErrorMessage for the mapped Arabic messages.
+  Future<double> redeemLoyaltyPoints(String phone, int points) async {
+    final result = await sb.rpc('redeem_loyalty_points', params: {'p_phone': phone, 'p_points': points});
+    return (result as num?)?.toDouble() ?? 0;
+  }
+}
+
+/// Maps redeem_loyalty_points' raised exception text to Arabic messages,
+/// same role as walletErrorMessage above.
+String loyaltyErrorMessage(Object error) {
+  final txt = error.toString();
+  if (txt.contains('below_minimum')) return 'أقل عدد نقط للاستبدال لسه ما وصلتوش';
+  if (txt.contains('insufficient_points')) return 'نقطك مش كفاية';
+  if (txt.contains('invalid_points')) return 'عدد نقط غير صالح';
+  return 'حدث خطأ، حاول مرة أخرى';
 }
 
 /// Maps the RPC's raised exception text to the same Arabic messages

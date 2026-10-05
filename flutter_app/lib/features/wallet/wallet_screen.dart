@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import '../../core/feature_flags.dart';
 import '../../core/session.dart';
 import '../../core/theme.dart';
 import '../../shared/widgets/branded_header.dart';
@@ -20,6 +21,7 @@ const Map<String, String> _txLabels = {
   'transfer_out': 'تحويل صادر',
   'admin_credit': 'شحن يدوي',
   'admin_debit': 'خصم يدوي',
+  'loyalty_redemption': 'استبدال نقط ولاء',
 };
 
 class WalletScreen extends StatefulWidget {
@@ -34,6 +36,7 @@ class _WalletScreenState extends State<WalletScreen> {
   UserSession? _session;
   double _balance = 0;
   List<Map<String, dynamic>> _transactions = [];
+  int _loyaltyPoints = 0;
   bool _loading = true;
   String? _error;
 
@@ -57,12 +60,14 @@ class _WalletScreenState extends State<WalletScreen> {
       final results = await Future.wait([
         _walletRepo.getBalance(session.phone),
         _walletRepo.getTransactions(session.phone),
+        if (FeatureFlags.loyaltyEnabled) _walletRepo.getLoyaltyPoints(session.phone),
       ]);
       if (!mounted) return;
       setState(() {
         _session = session;
         _balance = results[0] as double;
         _transactions = results[1] as List<Map<String, dynamic>>;
+        _loyaltyPoints = results.length > 2 ? results[2] as int : 0;
         _loading = false;
       });
     } catch (e) {
@@ -324,6 +329,80 @@ class _WalletScreenState extends State<WalletScreen> {
     );
   }
 
+  Future<void> _openRedeemPointsSheet() async {
+    final pointsController = TextEditingController(text: _loyaltyPoints >= 100 ? '100' : '');
+    bool busy = false;
+
+    await showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (ctx) => SafeArea(top: false, child: Padding(
+        padding: EdgeInsets.only(
+          left: 20, right: 20, top: 20,
+          bottom: MediaQuery.of(ctx).viewInsets.bottom + 20,
+        ),
+        child: StatefulBuilder(
+          builder: (ctx, setSheetState) => Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(context.tr('wallet_redeem_sheet_title'), style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900)),
+              const SizedBox(height: 4),
+              Text(
+                '${context.tr('wallet_loyalty_available_prefix')} $_loyaltyPoints ${context.tr('wallet_loyalty_points_unit')}',
+                style: const TextStyle(fontSize: 12, color: AppColors.textFaint, fontWeight: FontWeight.w700),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: pointsController,
+                keyboardType: TextInputType.number,
+                decoration: InputDecoration(labelText: context.tr('wallet_redeem_points_label')),
+              ),
+              const SizedBox(height: 10),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [100, 200, 500]
+                    .where((p) => p <= _loyaltyPoints)
+                    .map((p) => SelectablePill(
+                          label: '$p',
+                          selected: pointsController.text == '$p',
+                          onTap: () => setSheetState(() => pointsController.text = '$p'),
+                        ))
+                    .toList(),
+              ),
+              const SizedBox(height: 12),
+              ElevatedButton(
+                onPressed: busy
+                    ? null
+                    : () async {
+                        final points = int.tryParse(pointsController.text) ?? 0;
+                        if (points <= 0 || points > _loyaltyPoints) {
+                          _showToast(context.tr('wallet_redeem_invalid_error'), ok: false);
+                          return;
+                        }
+                        setSheetState(() => busy = true);
+                        try {
+                          final cash = await _walletRepo.redeemLoyaltyPoints(_session!.phone, points);
+                          if (ctx.mounted) Navigator.pop(ctx);
+                          _showToast('${context.tr('wallet_redeem_success_prefix')} ${cash.toStringAsFixed(2)} ${context.tr('wallet_redeem_success_suffix')}');
+                          _load();
+                        } catch (e) {
+                          _showToast(loyaltyErrorMessage(e), ok: false);
+                          if (ctx.mounted) setSheetState(() => busy = false);
+                        }
+                      },
+                child: busy
+                    ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                    : Text(context.tr('wallet_redeem_button')),
+              ),
+            ],
+          ),
+        ),
+      )),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_loading) {
@@ -405,6 +484,40 @@ class _WalletScreenState extends State<WalletScreen> {
                 ],
               ),
             ),
+            if (FeatureFlags.loyaltyEnabled) ...[
+              const SizedBox(height: 14),
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: context.surfaceColor,
+                  borderRadius: BorderRadius.circular(18),
+                  border: Border.all(color: context.borderColor),
+                ),
+                child: Row(
+                  children: [
+                    const Text('⭐', style: TextStyle(fontSize: 26)),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(context.tr('wallet_loyalty_title'), style: const TextStyle(fontSize: 12, color: AppColors.textFaint, fontWeight: FontWeight.w700)),
+                          Text(
+                            '$_loyaltyPoints ${context.tr('wallet_loyalty_points_unit')}',
+                            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: AppColors.primaryDark),
+                          ),
+                        ],
+                      ),
+                    ),
+                    ElevatedButton(
+                      onPressed: _loyaltyPoints >= 100 ? _openRedeemPointsSheet : null,
+                      style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10)),
+                      child: Text(context.tr('wallet_loyalty_redeem_button')),
+                    ),
+                  ],
+                ),
+              ),
+            ],
             const SizedBox(height: 20),
             Text(context.tr('wallet_transactions_title'), style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 15)),
             const SizedBox(height: 8),
