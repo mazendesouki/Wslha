@@ -19,7 +19,7 @@ class ReferralRepository {
   /// {referredCount, totalEarned} — db/security-112.
   Future<({int referredCount, double totalEarned})> getStats(String phone) async {
     final rows = await sb.rpc('get_my_referral_stats', params: {'p_phone': phone});
-    if (rows is! List || rows.isEmpty) return (referredCount: 0, totalEarned: 0);
+    if (rows is! List || rows.isEmpty) return (referredCount: 0, totalEarned: 0.0);
     final row = rows.first as Map;
     return (
       referredCount: ((row['referred_count'] as num?) ?? 0).toInt(),
