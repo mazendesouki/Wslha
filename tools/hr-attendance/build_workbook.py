@@ -175,7 +175,7 @@ rows = [
     ("1) الإعدادات", "حدّد شهر التقارير، ساعات العمل اليومية، أيام الشهر لحساب الراتب، يوم الراحة الأسبوعية والحد الأدنى للإضافي."),
     ("2) الورديات", "اسم كل وردية ومواعيد بدايتها ونهايتها ودقائق السماح بالتأخير. الورديات الليلية التي تعبر منتصف الليل محسوبة صح."),
     ("3) الموظفين", "اكتب: الكود، الاسم، القسم، الوظيفة، اختر الوردية، قيمة اليوم، قيمة ساعة الإضافي، والحالة. مواعيد الدوام تُسحب تلقائياً من الوردية."),
-    ("4) الحضور والانصراف", "كل موظف متسجّل تلقائياً بـ 31 صف (يوم لكل صف) للشهر المحدد في الإعدادات — مش محتاج تكتب تاريخ ولا كود. اكتب بس وقت الحضور والانصراف قدام الموظف في اليوم (مثال 08:05 و 16:30). لو الخانة فاضية واليوم عدّى ← «غائب»، ويوم الراحة ← «راحة أسبوعية». لعرض يوم واحد لكل الموظفين: افتح فلتر عمود «التاريخ» واختر اليوم."),
+    ("4) الحضور والانصراف", "كل موظف متسجّل تلقائياً بـ 31 صف (يوم لكل صف) للشهر المحدد في الإعدادات — مش محتاج تكتب تاريخ ولا كود. اكتب بس وقت الحضور والانصراف قدام الموظف في اليوم (مثال 08:05 و 16:30). لو الخانة فاضية واليوم عدّى ← «غائب»، ويوم الراحة ← «راحة أسبوعية». عمود «حضور» يظهر فيه ✔ للحاضر، وعمود «غياب» يظهر فيه ✖ للغائب. لو كتبت وقت حضور لموظف عنده إجازة، الحضور الفعلي هو اللي بيتحسب. لعرض يوم واحد لكل الموظفين: افتح فلتر عمود «التاريخ» واختر اليوم."),
     ("كشف اليوم", "اكتب التاريخ في الخانة الصفراء فيظهر كل الموظفين: مين حاضر ومين غايب ومين متأخر، ووقت الدخول والخروج وعدد كل حالة."),
     ("شهر جديد", "احفظ نسخة من الملف باسم الشهر، ثم غيّر «شهر التقارير» في الإعدادات وامسح أعمدة الحضور والانصراف والحالة اليدوية والملاحظات في شيت الحضور."),
     ("5) الإجازات", "سجّل الإجازة بالكود ومن/إلى تاريخ واجعل الحالة «مقبولة» — تظهر تلقائياً في عمود الإجازة بشيت الحضور وفي أيام الإجازة بتقرير الرواتب."),
@@ -323,13 +323,13 @@ MS = q(S_MS)
 # employees sheet) owns attendance rows 2+(k-1)*31 .. 2+(k-1)*31+30, one per day
 # of the report month. The user only types check-in / check-out times.
 ws = new_sheet(wb, S_ATT, [13, 15, 26, 16, 12, 11, 11, 11, 11, 11, 11, 11, 11,
-                           18, 16, 18, 12, 14, 12, 26, 4])
+                           18, 16, 18, 8, 8, 12, 14, 12, 26, 4])
 header(ws, 1, [("التاريخ", False), ("كود الموظف", False), ("اسم الموظف", False), ("القسم", False),
                ("الوردية", False), ("بداية الدوام", False), ("نهاية الدوام", False),
                ("الحضور", True), ("الانصراف", True), ("ساعات العمل", False),
                ("التأخير (د)", False), ("انصراف مبكر (د)", False), ("إضافي (د)", False),
                ("إجازة/مأمورية (تلقائي)", False), ("حالة يدوية", True), ("الحالة", False),
-               ("خصم الغياب", False), ("خصم التأخير", False), ("قيمة الإضافي", False),
+               ("حضور", False), ("غياب", False), ("خصم الغياب", False), ("خصم التأخير", False), ("قيمة الإضافي", False),
                ("ملاحظات", True), ("مفتاح", False)])
 
 E_ = q(S_EMP) + "!"
@@ -360,9 +360,11 @@ att_cols = [
      f'LOOKUP(2,1/({leave_match}),{LV}!$C$2:$C${LV_LAST})))', None, False),
     (None, None, True),
     (f'=IF(B{{r}}="","",IF(AND({E_}$J${{e}}<>"",{E_}$J${{e}}<>"نشط"),"غير نشط",'
-     'IF(O{r}<>"",O{r},IF(N{r}<>"",N{r},IF(H{r}="",'
-     f'IF(WEEKDAY(A{{r}})={SET_REST},"راحة أسبوعية",IF(A{{r}}>TODAY(),"","غائب")),'
-     'IF(I{r}="","بدون انصراف",IF(N(K{r})>0,"متأخر","حاضر")))))))', None, False),
+     'IF(O{r}<>"",O{r},IF(H{r}<>"",IF(I{r}="","بدون انصراف",IF(N(K{r})>0,"متأخر","حاضر")),'
+     f'IF(N{{r}}<>"",N{{r}},IF(WEEKDAY(A{{r}})={SET_REST},"راحة أسبوعية",'
+     'IF(A{r}>TODAY(),"","غائب")))))))', None, False),
+    ('=IF(OR(P{r}="حاضر",P{r}="متأخر",P{r}="بدون انصراف"),"✔","")', None, False),
+    ('=IF(OR(P{r}="غائب",P{r}="غياب"),"✖","")', None, False),
     (f'=IF(B{{r}}="","",IF(OR(P{{r}}="غائب",P{{r}}="غياب",P{{r}}="إجازة بدون راتب"),N({E_}$H${{e}}),0))',
      FMT_MONEY, False),
     (f'=IF(B{{r}}="","",ROUND((N(K{{r}})+N(L{{r}}))/60*N({E_}$H${{e}})/{SET_HOURS}*{SET_LATEX},2))',
@@ -403,9 +405,15 @@ for txt, color in STATUS_COLORS:
 ws.conditional_formatting.add(status_rng, FormulaRule(
     formula=['AND(P2<>"",OR(LEFT(P2,5)="إجازة",LEFT(P2,6)="مأمورية",P2="مهمة رسمية",P2="غياب بعذر"))'],
     fill=PatternFill("solid", fgColor="BDD7EE")))
-ws.column_dimensions["U"].hidden = True
+ws.conditional_formatting.add(f"Q2:Q{ATT_LAST}", CellIsRule(
+    operator="equal", formula=['"✔"'], fill=PatternFill("solid", fgColor="C6EFCE"),
+    font=Font(name=FONT, bold=True, color="006100")))
+ws.conditional_formatting.add(f"R2:R{ATT_LAST}", CellIsRule(
+    operator="equal", formula=['"✖"'], fill=PatternFill("solid", fgColor="FFC7CE"),
+    font=Font(name=FONT, bold=True, color="9C0006")))
+ws.column_dimensions["W"].hidden = True
 ws.freeze_panes = "D2"
-ws.auto_filter.ref = f"A1:T{ATT_LAST}"
+ws.auto_filter.ref = f"A1:V{ATT_LAST}"
 
 
 def att(col):
@@ -457,7 +465,7 @@ pay_cols = [
     (g + cnt("حاضر") + "+" + cnt("متأخر") + "+" + cnt("بدون انصراف") + ")", "0"),
     (g + cnt("متأخر") + ")", "0"),
     (g + cnt("غائب") + "+" + cnt("غياب") + ")", "0"),
-    (g + f'SUMIFS({LV}!$I$2:$I${LV_LAST},{LV}!$A$2:$A${LV_LAST},$A{{r}},{LV}!$G$2:$G${LV_LAST},"مقبولة"))', "0"),
+    (g + cnt("إجازة*") + "+" + cnt("مأمورية*") + "+" + cnt("مهمة رسمية") + ")", "0"),
     (g + by_emp("J") + ")", FMT_NUM),
     (g + by_emp("K") + ")", "0"),
     (g + by_emp("L") + ")", "0"),
@@ -465,9 +473,9 @@ pay_cols = [
     (g + f'SUMIFS({MS}!$F$2:$F${LV_LAST},{MS}!$A$2:$A${LV_LAST},$A{{r}},{MS}!$C$2:$C${LV_LAST},">="&$D$3,'
      f'{MS}!$C$2:$C${LV_LAST},"<="&$F$3,{MS}!$H$2:$H${LV_LAST},"موافق"))', FMT_NUM),
     (g + f'N({q(S_EMP)}!K{{e}}))', FMT_MONEY),
+    (g + by_emp("U") + ")", FMT_MONEY),
     (g + by_emp("S") + ")", FMT_MONEY),
-    (g + by_emp("Q") + ")", FMT_MONEY),
-    (g + by_emp("R") + ")", FMT_MONEY),
+    (g + by_emp("T") + ")", FMT_MONEY),
     (g + 'M{r}+N{r}-O{r}-P{r})', FMT_MONEY),
 ]
 for i, r in enumerate(range(pay_first, pay_last + 1)):
@@ -539,9 +547,9 @@ summary = [
     ("ساعات العمل", "SUM($E$11:$E$41)", FMT_NUM),
     ("التأخير (د)", "SUM($F$11:$F$41)", "0"),
     ("ساعات الإضافي", "ROUND(SUM($G$11:$G$41)/60,2)", FMT_NUM),
-    ("خصم الغياب", f'SUMIFS({att("Q")},{att("B")},$B$3,{att("A")},">="&$K$3,{att("A")},"<="&$K$4)', FMT_MONEY),
-    ("خصم التأخير", f'SUMIFS({att("R")},{att("B")},$B$3,{att("A")},">="&$K$3,{att("A")},"<="&$K$4)', FMT_MONEY),
-    ("قيمة الإضافي", f'SUMIFS({att("S")},{att("B")},$B$3,{att("A")},">="&$K$3,{att("A")},"<="&$K$4)', FMT_MONEY),
+    ("خصم الغياب", f'SUMIFS({att("S")},{att("B")},$B$3,{att("A")},">="&$K$3,{att("A")},"<="&$K$4)', FMT_MONEY),
+    ("خصم التأخير", f'SUMIFS({att("T")},{att("B")},$B$3,{att("A")},">="&$K$3,{att("A")},"<="&$K$4)', FMT_MONEY),
+    ("قيمة الإضافي", f'SUMIFS({att("U")},{att("B")},$B$3,{att("A")},">="&$K$3,{att("A")},"<="&$K$4)', FMT_MONEY),
 ]
 for i, (lab, f, fmt) in enumerate(summary):
     col = 1 + i
@@ -563,7 +571,7 @@ header(ws, 10, [("التاريخ", False), ("اليوم", False), ("الحضور
                 ("ساعات العمل", False), ("التأخير (د)", False), ("إضافي (د)", False),
                 ("الحالة", False), ("ملاحظات", False)])
 key = '$A{r}&"|"&$B$3'
-match = f"MATCH({key},{att('U')},0)"
+match = f"MATCH({key},{att('W')},0)"
 
 
 def pick(col, blank='""'):
@@ -588,7 +596,7 @@ rep_cols = [
     (f'=IF(OR($A{{r}}="",$B$3=""),"",IFERROR(INDEX({att("P")},{match}),'
      f'IF({rep_leave_count}>0,LOOKUP(2,1/({rep_leave_match}),{LV}!$C$2:$C${LV_LAST}),'
      f'IF(WEEKDAY($A{{r}})={SET_REST},"راحة أسبوعية","لا يوجد تسجيل"))))', None),
-    (pick("T"), None),
+    (pick("V"), None),
 ]
 for d in range(1, 32):
     r = 10 + d
@@ -664,7 +672,7 @@ for k in range(1, EMP_ROWS + 1):
         (day_pick("K", k).format(r=r), "0"),
         (day_pick("M", k).format(r=r), "0"),
         (day_pick("P", k).format(r=r), None),
-        (day_pick("T", k).format(r=r), None),
+        (day_pick("V", k).format(r=r), None),
     ]
     for col, (f, fmt) in enumerate(cells, 1):
         c = ws.cell(r, col, f)
@@ -770,9 +778,13 @@ if DATA:
             if wb[S_EMP].cell(k + 1, 1).value}
     a_in, a_val, a_out = dw[S_ATT], dv_[S_ATT], wb[S_ATT]
     moved = 0
+    # map source columns by header so older layouts carry over too
+    hdr = {a_in.cell(1, c).value: c for c in range(1, a_in.max_column + 1)}
+    src_cols = {hdr[h]: dst for h, dst in (("الحضور", 8), ("الانصراف", 9), ("حالة يدوية", 15),
+                                          ("ملاحظات", 22)) if h in hdr}
     for r in range(2, a_in.max_row + 1):
         d, code = a_val.cell(r, 1).value, a_val.cell(r, 2).value
-        vals = {col: a_in.cell(r, col).value for col in (8, 9, 15, 20)}
+        vals = {dst: a_in.cell(r, src).value for src, dst in src_cols.items()}
         if not isinstance(d, dt.datetime) or code not in slot or all(v is None for v in vals.values()):
             continue
         if (d.year, d.month) != (month.year, month.month):
