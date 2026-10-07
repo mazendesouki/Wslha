@@ -1,0 +1,61 @@
+name: Load Test — Registration (read+write, self-cleaning)
+
+# Manually triggered — simulates N concurrent new-customer sign-ups
+# (POST /rest/v1/accounts, the same path AuthRepository.register() uses)
+# to check how the live backend holds up under concurrent registration
+# load. Every test account is tagged (LOADTEST_*) and placed in a
+# reserved fake phone block (01590000xxx), then deleted again in a
+# second step so no test data is left behind.
+#
+# Deliberately registration-only, not booking/ride-request — `rides` has
+# no DELETE path at all (audit-trail table, not even an admin RPC can
+# remove a row), so a write load test against it would leave permanent
+# test rows with no way to clean them up.
+on:
+  workflow_dispatch:
+    inputs:
+      totalUsers:
+        description: 'Number of simulated concurrent registrations'
+        required: false
+        default: '1000'
+      concurrency:
+        description: 'How many registrations fire at once, per wave'
+        required: false
+        default: '100'
+
+jobs:
+  load-test-register:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Run registration load test
+        run: |
+          node scripts/loadtest-register.mjs \
+            "https://vtikgyiopkjnrwlqnmfx.supabase.co" \
+            "sb_publishable_PLSnpvCT-sAyUMtymNgTwA_QmL2suw4" \
+            run \
+            "${{ inputs.totalUsers }}" \
+            "${{ inputs.concurrency }}"
+
+      # Always clean up test accounts, even if the run step above reported
+      # some failures — partial successes still created real rows to remove.
+      - name: Clean up test accounts
+        if: always()
+        run: |
+          node scripts/loadtest-register.mjs \
+            "https://vtikgyiopkjnrwlqnmfx.supabase.co" \
+            "sb_publishable_PLSnpvCT-sAyUMtymNgTwA_QmL2suw4" \
+            cleanup
+
+      - name: Verify cleanup
+        if: always()
+        run: |
+          node scripts/loadtest-register.mjs \
+            "https://vtikgyiopkjnrwlqnmfx.supabase.co" \
+            "sb_publishable_PLSnpvCT-sAyUMtymNgTwA_QmL2suw4" \
+            verify
