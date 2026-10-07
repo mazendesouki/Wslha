@@ -52,7 +52,9 @@ async function registerUser(i) {
       headers: { ...HEADERS, Prefer: 'return=minimal' },
       body: JSON.stringify(payload),
     });
-    return { i, ms: Date.now() - t0, ok: res.ok, status: res.status };
+    let errorBody = '';
+    if (!res.ok) { try { errorBody = (await res.text()).slice(0, 300); } catch {} }
+    return { i, ms: Date.now() - t0, ok: res.ok, status: res.status, error: errorBody };
   } catch (e) {
     return { i, ms: Date.now() - t0, ok: false, status: 0, error: String(e.message || e) };
   }
@@ -85,7 +87,7 @@ async function runLoadTest(totalUsers, concurrency) {
   console.log(`Effective throughput: ${(all.length / (totalMs / 1000)).toFixed(1)} req/s`);
   if (fail > 0) {
     const samples = all.filter(r => !r.ok).slice(0, 5);
-    for (const s of samples) console.log(`  failure[${s.i}]: status=${s.status} ${s.error || ''}`);
+    for (const s of samples) console.log(`  failure[${s.i}]: status=${s.status} body=${s.error || ''}`);
   }
 
   const summaryPath = process.env.GITHUB_STEP_SUMMARY;
@@ -114,6 +116,7 @@ async function cleanup() {
     if (Array.isArray(rows)) deletedCount = rows.length;
   } catch { /* non-JSON body, leave as unknown */ }
   console.log(`DELETE status: ${res.status}, deleted: ${deletedCount}`);
+  if (!res.ok) console.log(`DELETE response body: ${text.slice(0, 500)}`);
   const summaryPath = process.env.GITHUB_STEP_SUMMARY;
   if (summaryPath) {
     const fs = await import('node:fs/promises');
@@ -126,8 +129,11 @@ async function verify() {
   const res = await fetch(`${SB_URL}/rest/v1/accounts?phone=like.${PHONE_PREFIX}*&select=phone`, {
     headers: { ...HEADERS, Prefer: 'count=exact' },
   });
-  const rows = await res.json();
+  const text = await res.text();
+  let rows;
+  try { rows = JSON.parse(text); } catch { rows = null; }
   console.log(`Accounts currently matching ${PHONE_PREFIX}*: ${Array.isArray(rows) ? rows.length : 'error'}`);
+  if (!res.ok || !Array.isArray(rows)) console.log(`verify status=${res.status} body: ${text.slice(0, 500)}`);
 }
 
 if (mode === 'run') {
