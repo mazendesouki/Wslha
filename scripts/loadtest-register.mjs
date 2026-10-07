@@ -104,36 +104,44 @@ async function runLoadTest(totalUsers, concurrency) {
 }
 
 async function cleanup() {
-  console.log(`Deleting all accounts with phone like ${PHONE_PREFIX}*...`);
-  const res = await fetch(`${SB_URL}/rest/v1/accounts?phone=like.${PHONE_PREFIX}*`, {
-    method: 'DELETE',
-    headers: { ...HEADERS, Prefer: 'return=representation' },
+  // anon has INSERT on accounts (security-113) but not SELECT/DELETE, so a
+  // raw DELETE as anon 401s. cleanup_loadtest_accounts() (security-114) is a
+  // SECURITY DEFINER RPC hardcoded to only ever delete rows matching this
+  // exact test's tag (phone '01590000%' AND name 'LOADTEST_%') — it can't be
+  // pointed at anything else, so it's safe to expose to anon.
+  console.log(`Calling cleanup_loadtest_accounts() RPC...`);
+  const res = await fetch(`${SB_URL}/rest/v1/rpc/cleanup_loadtest_accounts`, {
+    method: 'POST',
+    headers: HEADERS,
+    body: JSON.stringify({}),
   });
   const text = await res.text();
   let deletedCount = 'unknown';
-  try {
-    const rows = JSON.parse(text);
-    if (Array.isArray(rows)) deletedCount = rows.length;
-  } catch { /* non-JSON body, leave as unknown */ }
-  console.log(`DELETE status: ${res.status}, deleted: ${deletedCount}`);
-  if (!res.ok) console.log(`DELETE response body: ${text.slice(0, 500)}`);
+  try { deletedCount = JSON.parse(text); } catch { /* non-JSON body, leave as unknown */ }
+  console.log(`RPC status: ${res.status}, deleted: ${deletedCount}`);
+  if (!res.ok) console.log(`RPC response body: ${text.slice(0, 500)}`);
   const summaryPath = process.env.GITHUB_STEP_SUMMARY;
   if (summaryPath) {
     const fs = await import('node:fs/promises');
-    await fs.appendFile(summaryPath, `## \u{1F9F9} Cleanup\n\nDELETE status: ${res.status} — removed ${deletedCount} test account(s) (phone like \`${PHONE_PREFIX}*\`).\n`);
+    await fs.appendFile(summaryPath, `## \u{1F9F9} Cleanup\n\nRPC status: ${res.status} — removed ${deletedCount} test account(s) (phone like \`${PHONE_PREFIX}*\`).\n`);
   }
   if (!res.ok) process.exitCode = 1;
 }
 
 async function verify() {
-  const res = await fetch(`${SB_URL}/rest/v1/accounts?phone=like.${PHONE_PREFIX}*&select=phone`, {
-    headers: { ...HEADERS, Prefer: 'count=exact' },
-  });
-  const text = await res.text();
-  let rows;
-  try { rows = JSON.parse(text); } catch { rows = null; }
-  console.log(`Accounts currently matching ${PHONE_PREFIX}*: ${Array.isArray(rows) ? rows.length : 'error'}`);
-  if (!res.ok || !Array.isArray(rows)) console.log(`verify status=${res.status} body: ${text.slice(0, 500)}`);
+  // anon has no SELECT on accounts, so counting via a GET filter 401s too —
+  // use the public lookup_account RPC per-phone instead as an existence check.
+  let remaining = 0;
+  for (let i = 0; i < 1000; i++) {
+    const res = await fetch(`${SB_URL}/rest/v1/rpc/lookup_account`, {
+      method: 'POST', headers: HEADERS, body: JSON.stringify({ p_phone: phoneFor(i) }),
+    });
+    if (res.ok) {
+      const body = await res.json().catch(() => null);
+      if (body && (Array.isArray(body) ? body.length > 0 : body)) remaining++;
+    }
+  }
+  console.log(`Accounts currently matching ${PHONE_PREFIX}* (checked via lookup_account): ${remaining}`);
 }
 
 if (mode === 'run') {
