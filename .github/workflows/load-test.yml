@@ -1,0 +1,37 @@
+name: Load Test (read-only)
+
+# Manually triggered — simulates N concurrent users hitting a mix of
+# read-only Supabase REST/RPC endpoints (see scripts/loadtest.mjs) to
+# check how the live backend holds up under concurrent load. Never writes
+# to rides/orders/accounts/wallets. Runs on a GitHub-hosted runner because
+# some development sandboxes used on this project have network policies
+# that block direct outbound calls to supabase.co.
+on:
+  workflow_dispatch:
+    inputs:
+      totalUsers:
+        description: 'Number of simulated concurrent users'
+        required: false
+        default: '1000'
+      concurrency:
+        description: 'How many users fire requests at once, per wave'
+        required: false
+        default: '100'
+
+jobs:
+  load-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Run load test
+        run: |
+          node scripts/loadtest.mjs \
+            "https://vtikgyiopkjnrwlqnmfx.supabase.co" \
+            "sb_publishable_PLSnpvCT-sAyUMtymNgTwA_QmL2suw4" \
+            "${{ inputs.totalUsers }}" \
+            "${{ inputs.concurrency }}"
