@@ -140,6 +140,22 @@ Deno.serve(async (req) => {
   const { data: subs, error } = await query;
   if (error) return new Response('db error: ' + error.message, { status: 500 });
 
+  // صندوق الإشعارات الدائم (security-116) — نسخة من كل إشعار بنبعته
+  // تتخزن في public.notifications عشان تظهر في "سجل الإشعارات" داخل
+  // التطبيق حتى لو العميل مقفل التطبيق وقت الإرسال أو مسح الـ push
+  // subscription بتاعته، وتفضل متزامنة بين أجهزته. مش معتمدة على نجاح
+  // إرسال الـ push نفسه — لو الـ push فشل (توكن قديم مثلاً) السجل يفضل
+  // موجود في الـ inbox.
+  const recipientPhones: string[] = payload.phone
+    ? [payload.phone]
+    : (await admin.from('accounts').select('phone').eq('role', payload.target || 'driver'))
+        .data?.map((r) => r.phone).filter(Boolean) ?? [];
+  if (recipientPhones.length) {
+    await admin.from('notifications').insert(
+      recipientPhones.map((phone) => ({ phone, title, body, url, type, tag })),
+    );
+  }
+
   const message = JSON.stringify({ title, body, url, tag });
   let sent = 0;
   const dead: string[] = [];
@@ -162,17 +178,9 @@ Deno.serve(async (req) => {
   // أرقام أصحاب الدور ده من accounts الأول.
   let fcmSent = 0;
   let fcmTokens: { id: string; token: string }[] = [];
-  if (payload.phone) {
-    const { data } = await admin.from('device_tokens').select('id, token').eq('phone', payload.phone);
+  if (recipientPhones.length) {
+    const { data } = await admin.from('device_tokens').select('id, token').in('phone', recipientPhones);
     fcmTokens = data || [];
-  } else {
-    const role = payload.target || 'driver';
-    const { data: roleAccounts } = await admin.from('accounts').select('phone').eq('role', role);
-    const phones = (roleAccounts || []).map((r) => r.phone).filter(Boolean);
-    if (phones.length) {
-      const { data } = await admin.from('device_tokens').select('id, token').in('phone', phones);
-      fcmTokens = data || [];
-    }
   }
   const deadTokens: string[] = [];
   await Promise.allSettled(fcmTokens.map(async (d) => {

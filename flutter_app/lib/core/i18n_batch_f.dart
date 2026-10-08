@@ -122,6 +122,7 @@ const Map<String, Map<String, String>> batchFStrings = {
   'notif_list_clear_confirm': {'ar': 'مسح', 'en': 'Clear'},
   'notif_list_title': {'ar': 'الإشعارات', 'en': 'Notifications'},
   'notif_list_clear_tooltip': {'ar': 'مسح الكل', 'en': 'Clear all'},
+  'notif_list_mark_all_read': {'ar': 'تحديد الكل كمقروء', 'en': 'Mark all as read'},
   'notif_list_empty_title': {'ar': 'مفيش إشعارات لسه', 'en': 'No notifications yet'},
   'notif_list_empty_body': {
     'ar': 'إشعارات مشاويرك وطلباتك هتظهر هنا أول ما توصلك.',

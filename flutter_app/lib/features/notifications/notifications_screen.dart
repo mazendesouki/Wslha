@@ -2,12 +2,13 @@ import 'package:flutter/material.dart';
 
 import '../../core/date_format_ar.dart';
 import '../../core/i18n.dart';
-import '../../core/notifications.dart';
+import '../../core/session.dart';
 import '../../core/theme.dart';
+import 'notifications_repository.dart';
 
-const Map<String, String> _channelIcon = {
-  'wslha_orders': '📦',
-  'wslha_proximity_v3': '🚗',
+const Map<String, String> _typeIcon = {
+  'order': '📦',
+  'ride': '🚗',
 };
 
 class NotificationsScreen extends StatefulWidget {
@@ -18,7 +19,9 @@ class NotificationsScreen extends StatefulWidget {
 }
 
 class _NotificationsScreenState extends State<NotificationsScreen> {
-  List<Map<String, dynamic>>? _items;
+  final _repo = NotificationsRepository();
+  String? _phone;
+  List<AppNotification>? _items;
 
   @override
   void initState() {
@@ -27,51 +30,57 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   }
 
   Future<void> _load() async {
-    final items = await AppNotifications.instance.history();
+    final session = await SessionStore.load();
+    _phone = session?.phone;
+    if (_phone == null) {
+      if (!mounted) return;
+      setState(() => _items = []);
+      return;
+    }
+    final items = await _repo.list(_phone!);
     if (!mounted) return;
     setState(() => _items = items);
   }
 
-  Future<void> _clear() async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text(dialogContext.tr('notif_list_clear_title')),
-        content: Text(dialogContext.tr('notif_list_clear_body')),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(dialogContext, false), child: Text(dialogContext.tr('notif_list_cancel'))),
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext, true),
-            child: Text(dialogContext.tr('notif_list_clear_confirm'), style: const TextStyle(color: AppColors.error)),
-          ),
-        ],
-      ),
-    );
-    if (confirmed != true) return;
-    await AppNotifications.instance.clearHistory();
+  Future<void> _markAllRead() async {
+    final phone = _phone;
+    if (phone == null) return;
+    await _repo.markAllRead(phone);
     await _load();
+  }
+
+  Future<void> _onTap(AppNotification item) async {
+    final phone = _phone;
+    if (phone != null && !item.read) {
+      await _repo.markRead(phone, item.id);
+      await _load();
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final items = _items;
+    final hasUnread = items != null && items.any((n) => !n.read);
     return Scaffold(
       appBar: AppBar(
         title: Text(context.tr('notif_list_title')),
         actions: [
-          if (items != null && items.isNotEmpty)
-            IconButton(onPressed: _clear, icon: const Icon(Icons.delete_outline), tooltip: context.tr('notif_list_clear_tooltip')),
+          if (hasUnread)
+            IconButton(onPressed: _markAllRead, icon: const Icon(Icons.done_all), tooltip: context.tr('notif_list_mark_all_read')),
         ],
       ),
       body: items == null
           ? const Center(child: CircularProgressIndicator())
           : items.isEmpty
               ? const _EmptyState()
-              : ListView.separated(
-                  padding: const EdgeInsets.symmetric(vertical: 8),
-                  itemCount: items.length,
-                  separatorBuilder: (_, __) => const Divider(height: 1),
-                  itemBuilder: (_, i) => _NotificationTile(item: items[i]),
+              : RefreshIndicator(
+                  onRefresh: _load,
+                  child: ListView.separated(
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    itemCount: items.length,
+                    separatorBuilder: (_, __) => const Divider(height: 1),
+                    itemBuilder: (_, i) => _NotificationTile(item: items[i], onTap: () => _onTap(items[i])),
+                  ),
                 ),
     );
   }
@@ -105,34 +114,47 @@ class _EmptyState extends StatelessWidget {
 }
 
 class _NotificationTile extends StatelessWidget {
-  final Map<String, dynamic> item;
-  const _NotificationTile({required this.item});
+  final AppNotification item;
+  final VoidCallback onTap;
+  const _NotificationTile({required this.item, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
-    final channelId = item['channelId'] as String? ?? '';
-    final icon = _channelIcon[channelId] ?? '🔔';
-    final title = item['title'] as String? ?? '';
-    final body = item['body'] as String? ?? '';
-    final at = DateTime.tryParse(item['at'] as String? ?? '');
+    final icon = _typeIcon[item.type ?? ''] ?? '🔔';
     return ListTile(
+      onTap: onTap,
+      tileColor: item.read ? null : AppColors.primaryLight.withValues(alpha: 0.25),
       leading: CircleAvatar(
         radius: 20,
         backgroundColor: AppColors.primaryLight,
         child: Text(icon, style: const TextStyle(fontSize: 18)),
       ),
-      title: Text(title, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14)),
+      title: Text(
+        item.title,
+        style: TextStyle(fontWeight: item.read ? FontWeight.w700 : FontWeight.w900, fontSize: 14),
+      ),
       subtitle: Padding(
         padding: const EdgeInsets.only(top: 2),
-        child: Text(body, style: const TextStyle(fontSize: 13)),
+        child: Text(item.body, style: const TextStyle(fontSize: 13)),
       ),
-      trailing: at == null
-          ? null
-          : Text(
-              arRelativeTime(at),
-              style: const TextStyle(fontSize: 11, color: AppColors.textFaint),
-              textAlign: TextAlign.left,
+      trailing: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          Text(
+            arRelativeTime(item.createdAt),
+            style: const TextStyle(fontSize: 11, color: AppColors.textFaint),
+            textAlign: TextAlign.left,
+          ),
+          if (!item.read) const SizedBox(height: 4),
+          if (!item.read)
+            Container(
+              width: 8,
+              height: 8,
+              decoration: const BoxDecoration(color: AppColors.primaryDark, shape: BoxShape.circle),
             ),
+        ],
+      ),
       isThreeLine: false,
     );
   }
