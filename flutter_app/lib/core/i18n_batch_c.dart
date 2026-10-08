@@ -9,8 +9,10 @@ const Map<String, Map<String, String>> batchCStrings = {
   // --- rides_screen.dart ---
   'rides_submit_failed_prefix': {'ar': 'تعذّر إرسال الطلب:', 'en': 'Could not send the request:'},
   'rides_submit_failed_generic': {'ar': 'تعذّر إرسال الطلب، حاول مجدداً', 'en': 'Could not send the request, please try again'},
-  'rides_coupon_credited_prefix': {'ar': '🎟️ اتضاف', 'en': '🎟️ '},
-  'rides_coupon_credited_suffix': {'ar': 'ج.م لمحفظتك من كود الخصم', 'en': 'ج.م was added to your wallet from the discount code'},
+  'rides_coupon_applied_pending': {
+    'ar': '🎟️ كود الخصم هيتضاف لمحفظتك بعد اكتمال الرحلة',
+    'en': '🎟️ The discount will be credited to your wallet once the ride is completed',
+  },
   'rides_scheduled_confirmation_prefix': {'ar': '✅ اتحجزت رحلتك ليوم', 'en': '✅ Your ride is booked for'},
   'rides_scheduled_confirmation_at': {'ar': 'الساعة', 'en': 'at'},
   'rides_schedule_too_soon': {'ar': 'لازم الميعاد يكون بعد نص ساعة على الأقل من دلوقتي', 'en': 'The scheduled time must be at least half an hour from now'},

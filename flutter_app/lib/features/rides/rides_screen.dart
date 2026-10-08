@@ -7,7 +7,6 @@ import '../../shared/widgets/branded_header.dart';
 import '../../shared/widgets/selectable_pill.dart';
 import '../airport/airport_fare.dart' show qualityMultiplier;
 import '../coupons/coupon_field.dart';
-import '../coupons/coupon_repository.dart';
 import 'address_field.dart';
 import 'directions_service.dart';
 import 'fare_calculator.dart' as fare_calc;
@@ -66,7 +65,6 @@ class _RidesScreenState extends State<RidesScreen> {
   String _qualityTier = 'regular';
   bool _negotiable = false;
   bool _submitting = false;
-  final _couponRepo = CouponRepository();
   String? _appliedCouponCode;
   DateTime? _scheduledAt;
   // "رحلة متكررة ثابتة" (db/security-108) — a standing weekly template
@@ -235,6 +233,7 @@ class _RidesScreenState extends State<RidesScreen> {
         isNegotiable: _negotiable,
         qualityTier: _qualityTier,
         scheduledAt: _scheduledAt,
+        couponCode: _appliedCouponCode,
       );
     } catch (e) {
       // createRide() throws straight from the Supabase insert on failure
@@ -261,21 +260,15 @@ class _RidesScreenState extends State<RidesScreen> {
       return;
     }
 
-    final couponCode = _appliedCouponCode;
-    if (couponCode != null) {
-      // Best-effort: the ride is already booked either way — a coupon
-      // failure here (already used, race with another device) shouldn't
-      // block the ride the customer just paid full price to secure.
-      try {
-        final credited = await _couponRepo.redeem(
-          code: couponCode, phone: _session!.phone, amount: _fare.toDouble(), serviceType: 'ride', referenceId: rideId,
-        );
-        if (mounted && credited > 0) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('${context.tr('rides_coupon_credited_prefix')} ${credited.toStringAsFixed(0)} ${context.tr('rides_coupon_credited_suffix')}')),
-          );
-        }
-      } catch (_) {}
+    // The coupon code travels with the ride row itself (couponCode above) —
+    // the discount is credited to the wallet by a server-side trigger only
+    // once the ride reaches status='completed' (db/security-120), not here
+    // at booking time, so cancelling right after booking can't farm free
+    // cashback. Just let the customer know it's applied, not yet credited.
+    if (_appliedCouponCode != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.tr('rides_coupon_applied_pending'))),
+      );
     }
 
     if (!mounted) return;

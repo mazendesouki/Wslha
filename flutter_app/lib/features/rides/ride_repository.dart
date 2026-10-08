@@ -97,6 +97,12 @@ class RideRepository {
     // dispatch/push calls those triggers would have) once scheduledAt
     // gets within the admin-configured lead window.
     DateTime? scheduledAt,
+    // Stored on the ride row only — not redeemed here. The discount is
+    // credited to the wallet by a server-side trigger (db/security-120)
+    // only once the ride actually reaches status='completed', so booking
+    // then cancelling can't farm free cashback (see security-120's doc
+    // comment for why this moved off the client).
+    String? couponCode,
   }) async {
     final row = await sb.from('rides').insert({
       'customer_phone': customerPhone,
@@ -117,6 +123,7 @@ class RideRepository {
       'is_negotiable': isNegotiable,
       if (stops != null && stops.isNotEmpty) 'stops': stops,
       if (qualityTier != null && qualityTier != 'regular') 'airport_quality_tier': qualityTier,
+      if (couponCode != null) 'coupon_code': couponCode,
       if (scheduledAt != null) 'scheduled_at': scheduledAt.toUtc().toIso8601String(),
     }).select().single();
     return row;
