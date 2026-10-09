@@ -77,24 +77,38 @@ async function svc(path: string, init: RequestInit = {}): Promise<Response> {
   });
 }
 
+// Service-role-authenticated object download — bypasses RLS/bucket
+// privacy (security-125's driver-docs bucket has no anon/authenticated
+// SELECT policy at all), unlike svc() above which targets /rest/v1/.
+async function fetchPrivateObject(bucket: string, path: string): Promise<Response> {
+  const key = requireEnv('SUPABASE_SERVICE_ROLE_KEY');
+  return fetch(`${SB_URL}/storage/v1/object/${bucket}/${path}`, {
+    headers: { apikey: key, Authorization: `Bearer ${key}` },
+  });
+}
+
 export const POST: APIRoute = async ({ request }) => {
-  let body: { imageUrl?: string; docType?: DocType; phone?: string };
+  let body: { imageUrl?: string; privateBucket?: string; privatePath?: string; docType?: DocType; phone?: string };
   try {
     body = await request.json();
   } catch {
     return new Response(JSON.stringify({ ok: false, reason: 'bad_json' }), { status: 400 });
   }
-  const { imageUrl, docType, phone } = body;
-  if (!imageUrl || !docType || !phone) {
+  const { imageUrl, privateBucket, privatePath, docType, phone } = body;
+  if ((!imageUrl && !(privateBucket && privatePath)) || !docType || !phone) {
     return new Response(JSON.stringify({ ok: false, reason: 'missing_fields' }), { status: 400 });
   }
 
   // Fetch the image once — reused for both the hash and, if needed, the
-  // vision call, instead of downloading it twice.
+  // vision call, instead of downloading it twice. A private-bucket
+  // upload (security-125) has no public URL to plain-fetch, so it goes
+  // through the service-role-authenticated object endpoint instead.
   let imageBytes: ArrayBuffer;
   let contentType = 'image/jpeg';
   try {
-    const imgRes = await fetch(imageUrl);
+    const imgRes = privateBucket && privatePath
+      ? await fetchPrivateObject(privateBucket, privatePath)
+      : await fetch(imageUrl!);
     if (!imgRes.ok) throw new Error('fetch_failed');
     contentType = imgRes.headers.get('content-type') || contentType;
     imageBytes = await imgRes.arrayBuffer();

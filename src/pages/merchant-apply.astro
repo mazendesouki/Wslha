@@ -622,14 +622,19 @@ async function handleUpload(input, key, zoneId) {
   document.getElementById(zoneId).style.borderColor = '#16A34A';
   const ext  = file.name.split('.').pop() || 'jpg';
   const path = `merchant-apps/${USER?.phone||'anon'}/${key}-${Date.now()}.${ext}`;
+  // All merchant documents (commercial registration, national ID, tax
+  // card, work permit) are identity/business-sensitive — the private
+  // driver-docs bucket (security-125), not the old public one. Admin
+  // review exchanges this marker for a short-lived signed URL
+  // (src/pages/api/admin/sign-document.ts).
   try {
-    const res = await fetch(`${SB_URL}/storage/v1/object/documents/${path}`, {
+    const res = await fetch(`${SB_URL}/storage/v1/object/driver-docs/${path}`, {
       method: 'POST',
       headers: { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}`, 'Content-Type': file.type },
       body: file,
     });
     uploads[key] = res.ok
-      ? `${SB_URL}/storage/v1/object/public/documents/${path}`
+      ? `private:driver-docs:${path}`
       : URL.createObjectURL(file);
   } catch { uploads[key] = URL.createObjectURL(file); }
 }

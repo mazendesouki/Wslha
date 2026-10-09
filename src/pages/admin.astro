@@ -2263,6 +2263,72 @@ async function sbRpcJson(fn, body) {
   return await r.json();
 }
 
+// driver_applications/merchant_applications SELECT is locked down
+// (security-122 — was previously USING(true), letting anyone dump every
+// applicant's national ID/license/photos) — every read here now goes
+// through these two password-gated RPCs instead of a raw sbGet. Returns
+// [] on auth failure/network error so existing `(rows||[]).length`-style
+// call sites keep working without a null check at every site.
+async function adminListApplications(type) {
+  const pass = await getAdminPass();
+  if (!pass) return [];
+  const rows = await sbRpcRows('admin_list_applications', { p_admin_phone: ADMIN.phone, p_admin_password: pass, p_type: type });
+  return rows || [];
+}
+async function adminGetApplication(type, phone) {
+  const pass = await getAdminPass();
+  if (!pass) return null;
+  try {
+    const a = await sbRpcJson('admin_get_application', { p_admin_phone: ADMIN.phone, p_admin_password: pass, p_type: type, p_phone: phone });
+    return a ? await resolvePrivateDocUrls(a, pass) : a;
+  } catch { return null; }
+}
+// Documents uploaded after security-125 are stored as a
+// "private:<bucket>:<path>" marker (no working public URL) instead of
+// a real URL — swap every such marker in `obj` for a short-lived signed
+// URL (src/pages/api/admin/sign-document.ts) before the review modal
+// renders it. Falls back to null (shows the "no image" placeholder)
+// for any path that fails to sign, rather than leaking the raw marker
+// string into an <img src>.
+async function resolvePrivateDocUrls(obj, pass) {
+  const PREFIX = 'private:driver-docs:';
+  const paths = Object.values(obj).filter((v) => typeof v === 'string' && v.startsWith(PREFIX)).map((v) => v.slice(PREFIX.length));
+  if (!paths.length) return obj;
+  let urls = {};
+  try {
+    const res = await fetch('/api/admin/sign-document', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ adminPhone: ADMIN.phone, adminPassword: pass, paths }),
+    });
+    if (res.ok) ({ urls } = await res.json());
+  } catch {}
+  const out = { ...obj };
+  for (const [k, v] of Object.entries(out)) {
+    if (typeof v === 'string' && v.startsWith(PREFIX)) out[k] = urls[v.slice(PREFIX.length)] || null;
+  }
+  return out;
+}
+// Background polling (autoRefreshDash) must never pop the password prompt
+// on its own — only piggyback on an already-cached password from some
+// earlier real action this tab session, else leave the badges as-is.
+async function quietAdminListApplications(type) {
+  if (!_adminPass) return null;
+  return await sbRpcRows('admin_list_applications', { p_admin_phone: ADMIN.phone, p_admin_password: _adminPass, p_type: type });
+}
+
+// wallet_transactions SELECT is locked down (security-124 — was a
+// blanket, unfiltered GRANT letting anyone dump every user's financial
+// history). p_phone omitted (null) returns every transaction (platform
+// ledger / all-transactions table); passed, scopes to one user.
+async function adminListWalletTransactions(phone, limit) {
+  const pass = await getAdminPass();
+  if (!pass) return [];
+  const rows = await sbRpcRows('admin_list_wallet_transactions', {
+    p_admin_phone: ADMIN.phone, p_admin_password: pass, p_phone: phone || null, p_limit: limit || 500,
+  });
+  return rows || [];
+}
+
 // طبقة حماية إضافية (2FA تجريبي) فوق كلمة المرور/مفتاح الحماية — بترسل كود
 // 6 أرقام لبريد المشرف المسجّل (نفس آلية "نسيت كلمة المرور") وتتحقق منه قبل
 // تنفيذ الإجراء. بترجع true/false، من غير ما تعرض أي toast بنفسها — الاستدعاء
@@ -2403,14 +2469,17 @@ document.getElementById('logout-btn').addEventListener('click', () => {
 
 /* ═══════════════════ DASHBOARD ════════════════════════════ */
 async function loadDash() {
-  const [users, orders, rides, stores, dApps, mApps] = await Promise.all([
+  await getAdminPass(); // prime the cache once so the two calls below don't race each other into separate prompts
+  const [users, orders, rides, stores, dAppsAll, mAppsAll] = await Promise.all([
     adminListAccounts(),
     sbGet('orders?select=id,code,customer_name,customer_phone,store_name,total,status,created_at&order=created_at.desc&limit=200'),
     sbGet('rides?select=id,status,base_fare,created_at'),
     sbGet('stores?select=id,is_active'),
-    sbGet('driver_applications?select=id,phone,status&status=eq.pending'),
-    sbGet('merchant_applications?select=id,phone,status,business_name&status=eq.pending'),
+    adminListApplications('driver'),
+    adminListApplications('merchant'),
   ]);
+  const dApps = (dAppsAll||[]).filter(d => d.status === 'pending');
+  const mApps = (mAppsAll||[]).filter(m => m.status === 'pending');
   const today = new Date().toISOString().slice(0,10);
   const todayOrd = (orders||[]).filter(o => (o.created_at||'').startsWith(today));
   const revenue  = todayOrd.filter(o => o.status==='delivered').reduce((s,o)=>s+(Number(o.total)||0),0);
@@ -2482,11 +2551,13 @@ function renderTrend(elId, current, previous) {
 }
 async function loadDashCharts() {
   const since = new Date(); since.setHours(0, 0, 0, 0); since.setDate(since.getDate() - 13);
-  const [ordersR, ridesR, appsR] = await Promise.all([
+  const [ordersR, ridesR, appsAllR] = await Promise.all([
     sbGet(`orders?select=total,status,created_at&created_at=gte.${since.toISOString()}`),
     sbGet(`rides?select=fare,base_fare,status,created_at&created_at=gte.${since.toISOString()}`),
-    sbGet(`driver_applications?select=created_at&status=eq.approved&created_at=gte.${since.toISOString()}`),
+    adminListApplications('driver'),
   ]);
+  const sinceIso = since.toISOString();
+  const appsR = (appsAllR||[]).filter(a => a.status === 'approved' && a.created_at >= sinceIso);
   const days  = datesLast14();
   const keys  = days.map(d => d.toISOString().slice(0, 10));
   const revenueByDay  = keys.map(() => 0);
@@ -3029,12 +3100,11 @@ async function changeUserRole(phone, role) {
 
 /* ═══════════════════ USER PROFILE ══════════════════════════ */
 // Full-detail profile view for any row in the users/drivers/merchants
-// tables — opened by clicking a name. accounts is the only PII-locked
-// table (admin_get_account_detail, password-verified like
-// admin_list_accounts); everything else (orders/rides/ratings/stores/
-// wallets/driver_applications/merchant_applications) is anon-readable and
-// fetched client-side filtered by phone, same pattern as the existing
-// viewUserStats/viewMerchantStats/openDriverModal/openMerchantModal.
+// tables — opened by clicking a name. accounts and driver_applications/
+// merchant_applications are PII-locked (admin_get_account_detail/
+// admin_get_application, password-verified); orders/rides/ratings/stores
+// are still anon-readable and fetched client-side filtered by phone, same
+// pattern as the existing viewUserStats/viewMerchantStats.
 let currentProfilePhone = null;
 function kpiTile(cls, icon, val, label) {
   return `<div class="kpi kpi--${cls}"><div class="kpi__row"><div class="kpi__icon-wrap">${icon}</div></div><div class="kpi__val">${val}</div><div class="kpi__label">${label}</div></div>`;
@@ -3104,9 +3174,9 @@ async function openUserProfile(phone) {
   const sideCard = document.getElementById('up-side-card');
 
   if (acc.role === 'driver') {
-    const [trip, app, ratings] = await Promise.all([
+    const [trip, a, ratings] = await Promise.all([
       sbRpcJson('get_driver_trip_stats', { p_driver_phone: acc.phone }).catch(() => null),
-      sbGet(`driver_applications?${phoneOrFilter(acc.phone)}&select=vehicle_model,vehicle_color,vehicle_year,license_number,vehicle_reg_number,status&order=created_at.desc&limit=1`),
+      adminGetApplication('driver', acc.phone),
       sbGet(`ratings?${phoneOrFilter(acc.phone,'driver_phone')}&rated_by=eq.customer&rating=not.is.null&select=rating,tags,comment,created_at&order=created_at.desc&limit=30`),
     ]);
     const overall = trip?.overall || {};
@@ -3116,7 +3186,6 @@ async function openUserProfile(phone) {
       kpiTile('orange', '📦', fmt(trip?.store_orders?.trips || 0), 'طلبات توصيل'),
       kpiTile('blue', '💳', fmt(balance) + ' ج.م', 'رصيد المحفظة'),
     );
-    const a = app && app[0];
     if (a) {
       sideCard.style.display = '';
       document.getElementById('up-side-title').textContent = '🚗 بيانات السائق والمركبة';
@@ -3311,8 +3380,7 @@ document.getElementById('drivers-acct-search').addEventListener('input', renderD
 document.getElementById('drivers-acct-status').addEventListener('change', renderDriverAccounts);
 
 async function loadDriverApps() {
-  const data = await sbGet('driver_applications?select=*&order=created_at.desc&limit=200');
-  allDriverApps = data || [];
+  allDriverApps = await adminListApplications('driver');
   renderDriverApps();
 }
 function renderDriverApps() {
@@ -3358,8 +3426,7 @@ async function openDriverModal(phone) {
   document.getElementById('driver-reject-toggle').classList.remove('hidden');
   document.getElementById('driver-reject-confirm').classList.add('hidden');
   document.getElementById('driver-modal-body').innerHTML = '<p style="color:#94A3B8">جاري التحميل…</p>';
-  const rows = await sbGet(`driver_applications?${phoneOrFilter(phone)}&select=*&order=created_at.desc&limit=1`);
-  const a = rows?.[0];
+  const a = await adminGetApplication('driver', phone);
   if (!a) { document.getElementById('driver-modal-body').innerHTML = '<p style="color:#DC2626">لم يتم العثور على الطلب</p>'; return; }
 
   const escLbl = (s) => (s || '').replace(/'/g, "\\'");
@@ -3532,8 +3599,7 @@ let allMerchantApps = [], currentMerchantPhone = '';
 let currentMerchantTab = 'pending';
 
 async function loadMerchantApps() {
-  const data = await sbGet('merchant_applications?select=*&order=created_at.desc&limit=200');
-  allMerchantApps = data || [];
+  allMerchantApps = await adminListApplications('merchant');
   renderMerchantApps();
 }
 function renderMerchantApps() {
@@ -3569,8 +3635,7 @@ async function openMerchantModal(phone) {
   document.getElementById('merchant-reject-toggle').classList.remove('hidden');
   document.getElementById('merchant-reject-confirm').classList.add('hidden');
   document.getElementById('merchant-modal-body').innerHTML = '<p style="color:#94A3B8">جاري التحميل…</p>';
-  const rows = await sbGet(`merchant_applications?${phoneOrFilter(phone)}&select=*&order=created_at.desc&limit=1`);
-  const a = rows?.[0];
+  const a = await adminGetApplication('merchant', phone);
   if (!a) { document.getElementById('merchant-modal-body').innerHTML = '<p style="color:#DC2626">لم يتم العثور على الطلب</p>'; return; }
 
   const docItem = (label, url) => `
@@ -4796,7 +4861,7 @@ async function loadFinance() {
   const [orders, rides, commissions] = await Promise.all([
     sbGet('orders?select=id,status,total,delivery_fee,created_at&order=created_at.desc&limit=1000'),
     sbGet('rides?select=id,status,fare,created_at&order=created_at.desc&limit=500'),
-    sbGet('wallet_transactions?phone=eq.platform&select=amount,type,note,reference_id,created_at&order=created_at.desc&limit=500'),
+    adminListWalletTransactions('platform', 500),
   ]);
   const delivered = (orders||[]).filter(o => o.status === 'delivered');
   const totalRev  = delivered.reduce((s,o) => s + (Number(o.total)||0), 0);
@@ -5267,7 +5332,7 @@ async function loadWalletsSection() {
   const [wallets, accounts, txData] = await Promise.all([
     pass ? sbRpcRows('admin_list_wallets', { p_admin_phone: ADMIN.phone, p_admin_password: pass }) : Promise.resolve([]),
     adminListAccounts(),
-    sbGet('wallet_transactions?select=id,phone,amount,type,note,reference_id,created_at&order=created_at.desc&limit=500'),
+    adminListWalletTransactions(null, 500),
   ]);
 
   allWalletAccounts = accounts || [];
@@ -5498,7 +5563,7 @@ async function viewUserTransactions(phone, name) {
   document.getElementById('user-tx-modal-title').textContent = `📋 معاملات: ${name || phone}`;
   document.getElementById('user-tx-tbody').innerHTML = '<tr><td colspan="4" style="text-align:center;color:#94A3B8;padding:2rem">جاري التحميل…</td></tr>';
   document.getElementById('user-tx-modal').classList.remove('hidden');
-  const txData = await sbGet(`wallet_transactions?phone=eq.${encodeURIComponent(phone)}&select=amount,type,note,reference_id,created_at&order=created_at.desc&limit=300`);
+  const txData = await adminListWalletTransactions(phone, 300);
   if (!txData || !txData.length) {
     document.getElementById('user-tx-tbody').innerHTML = '<tr><td colspan="4" style="text-align:center;color:#94A3B8;padding:2rem">لا توجد معاملات</td></tr>';
     return;
@@ -5781,19 +5846,26 @@ function setSyncing(on) {
 async function autoRefreshDash() {
   setSyncing(true);
   try {
-    // Lightweight KPI-only refresh
-    const [users, orders, stores, dApps, mApps] = await Promise.all([
+    // Lightweight KPI-only refresh. driver/merchant application counts are
+    // only refreshed here if an admin password is already cached from an
+    // earlier real action this tab session — this polling loop must never
+    // itself trigger the password prompt (see quietAdminListApplications).
+    const [users, orders, stores, dAppsAll, mAppsAll] = await Promise.all([
       adminListAccounts(),
       sbGet('orders?select=id,status,total,created_at'),
       sbGet('stores?select=id,is_active'),
-      sbGet('driver_applications?select=id,phone,status,full_name'),
-      sbGet('merchant_applications?select=id,phone,status,business_name'),
+      quietAdminListApplications('driver'),
+      quietAdminListApplications('merchant'),
     ]);
     const today = new Date().toISOString().slice(0,10);
     const todayOrd  = (orders||[]).filter(o => (o.created_at||'').startsWith(today));
     const revenue   = todayOrd.filter(o => o.status==='delivered').reduce((s,o)=>s+(Number(o.total)||0),0);
-    const pendingD  = (dApps||[]).filter(a=>a.status==='pending');
-    const pendingM  = (mApps||[]).filter(a=>a.status==='pending');
+    // null means no cached admin password yet this tab session — leave
+    // every pending-application-derived figure exactly as it was last
+    // rendered instead of zeroing it out.
+    const haveAppData = dAppsAll !== null && mAppsAll !== null;
+    const pendingD  = (dAppsAll||[]).filter(a=>a.status==='pending');
+    const pendingM  = (mAppsAll||[]).filter(a=>a.status==='pending');
     const pendingTotal = pendingD.length + pendingM.length;
 
     // Update KPIs
@@ -5803,27 +5875,23 @@ async function autoRefreshDash() {
     set('kpi-today-orders', todayOrd.length);
     set('kpi-revenue',  revenue);
     set('kpi-stores',   (stores||[]).filter(s=>s.is_active).length);
-    set('kpi-pending',  pendingTotal);
+    if (haveAppData) {
+      set('kpi-pending', pendingTotal);
 
-    // Update sidebar badges
-    const db = document.getElementById('badge-drivers');
-    const mb = document.getElementById('badge-merchants');
-    if (db) { db.textContent = pendingD.length; db.classList.toggle('hidden', pendingD.length===0); }
-    if (mb) { mb.textContent = pendingM.length; mb.classList.toggle('hidden', pendingM.length===0); }
+      const db = document.getElementById('badge-drivers');
+      const mb = document.getElementById('badge-merchants');
+      if (db) { db.textContent = pendingD.length; db.classList.toggle('hidden', pendingD.length===0); }
+      if (mb) { mb.textContent = pendingM.length; mb.classList.toggle('hidden', pendingM.length===0); }
 
-    // Alert if new pending apps appeared
-    if (pendingTotal > prevPendingCount && prevPendingCount !== 0) {
-      showToast(`🔔 طلب اعتماد جديد! (${pendingTotal} معلق)`, '#0E4B49');
+      const mainBadge = document.getElementById('dmain-pending-cnt');
+      if (mainBadge) { mainBadge.textContent = pendingD.length; mainBadge.style.display = pendingD.length ? '' : 'none'; }
+
+      // Alert if new pending apps appeared
+      if (pendingTotal > prevPendingCount && prevPendingCount !== 0) {
+        showToast(`🔔 طلب اعتماد جديد! (${pendingTotal} معلق)`, '#0E4B49');
+      }
+      prevPendingCount = pendingTotal;
     }
-    prevPendingCount = pendingTotal;
-
-    // Always silently refresh pending driver/merchant counts for badges
-    const dAppsQuiet = await sbGet('driver_applications?select=id,status&status=eq.pending');
-    const mAppsQuiet = await sbGet('merchant_applications?select=id,status&status=eq.pending');
-    const dPending = (dAppsQuiet||[]).length;
-    const mPending = (mAppsQuiet||[]).length;
-    const mainBadge = document.getElementById('dmain-pending-cnt');
-    if (mainBadge) { mainBadge.textContent = dPending; mainBadge.style.display = dPending ? '' : 'none'; }
 
     // If currently viewing a section, refresh it too
     if (loaders[currentSection] && currentSection !== 'dash') loaders[currentSection]();

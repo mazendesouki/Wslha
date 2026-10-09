@@ -12,12 +12,10 @@ class WalletRepository {
   }
 
   Future<List<Map<String, dynamic>>> getTransactions(String phone) async {
-    final rows = await sb
-        .from('wallet_transactions')
-        .select('amount,type,note,created_at')
-        .eq('phone', phone)
-        .order('created_at', ascending: false)
-        .limit(50);
+    // wallet_transactions SELECT is locked down (security-124) — only
+    // the phone's own rows, via get_my_wallet_transactions.
+    final rows = await sb.rpc('get_my_wallet_transactions', params: {'p_phone': phone, 'p_limit': 50});
+    if (rows is! List) return [];
     return List<Map<String, dynamic>>.from(rows);
   }
 

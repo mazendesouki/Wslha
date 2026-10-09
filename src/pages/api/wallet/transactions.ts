@@ -2,12 +2,11 @@
 // Same pattern as /api/wallet/balance: the phone whose transaction
 // history gets returned comes from the signed, server-verified access
 // token (Authorization: Bearer <token>) — never from anything the
-// client sends. wallet_transactions' own row-level policy is still the
-// same phone-scoped-but-anon-callable shape it always was (other pages
-// — driver-dashboard.astro, merchant-dashboard.astro, admin.astro —
-// still read it directly and aren't migrated yet), so this route
-// doesn't need a new RPC: it just makes sure the *filter* is the
-// authenticated phone, not a client-supplied one.
+// client sends. wallet_transactions SELECT is locked down for anon/
+// authenticated (security-124 — it had no filter at all and dumped
+// every user's financial history), so this now goes through
+// get_my_wallet_transactions, still filtered by the authenticated
+// phone, not a client-supplied one.
 import type { APIRoute } from 'astro';
 import { verifyAccessToken, SB_URL } from '../../../lib/session';
 
@@ -29,11 +28,10 @@ export const GET: APIRoute = async ({ request, url: reqUrl }) => {
   const limitParam = parseInt(reqUrl.searchParams.get('limit') || '50', 10);
   const limit = Number.isFinite(limitParam) ? Math.min(Math.max(limitParam, 1), 100) : 50;
 
-  const url =
-    `${SB_URL}/rest/v1/wallet_transactions?phone=eq.${encodeURIComponent(payload.sub)}` +
-    `&select=amount,type,note,created_at&order=created_at.desc&limit=${limit}`;
-  const res = await fetch(url, {
-    headers: { apikey: SB_ANON_KEY, Authorization: `Bearer ${SB_ANON_KEY}` },
+  const res = await fetch(`${SB_URL}/rest/v1/rpc/get_my_wallet_transactions`, {
+    method: 'POST',
+    headers: { apikey: SB_ANON_KEY, Authorization: `Bearer ${SB_ANON_KEY}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ p_phone: payload.sub, p_limit: limit }),
   });
   if (!res.ok) {
     return new Response(JSON.stringify({ error: 'transactions_fetch_failed' }), { status: 502 });

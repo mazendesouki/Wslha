@@ -1262,8 +1262,15 @@ window.doRegister = async function() {
 };
 
 async function getApp(phone, fields) {
+  // driver_applications SELECT is locked down (security-122) — this now
+  // always goes through get_my_driver_application, which returns every
+  // column regardless of `fields`; callers just pick what they need off
+  // the result, same as before.
   try {
-    var r = await fetch(SB_URL + '/rest/v1/driver_applications?' + orFilter(phone) + '&select=' + (fields || 'id') + '&limit=1', { headers: SB_H });
+    var r = await fetch(SB_URL + '/rest/v1/rpc/get_my_driver_application', {
+      method: 'POST', headers: Object.assign({}, SB_H, { 'Content-Type': 'application/json' }),
+      body: JSON.stringify({ p_phone: phone }),
+    });
     var d = r.ok ? await r.json() : [];
     return Array.isArray(d) && d.length > 0 ? d[0] : null;
   } catch { return null; }
@@ -1404,15 +1411,30 @@ window.handleUpload = async function(input, key, zoneId) {
 
   var ext  = (file.name.split('.').pop() || 'jpg').toLowerCase();
   var path = 'driver-apps/' + (USER && USER.phone || 'anon') + '/' + key + '-' + Date.now() + '.' + ext;
+  // Official identity/vehicle documents go to the private driver-docs
+  // bucket (security-125) — anyone with the anon key could otherwise
+  // read or enumerate national ID/license/criminal-record photos from
+  // the old public bucket. The driver's own selfie and vehicle/plate
+  // photos stay on the public bucket since they're legitimately shown
+  // to customers later (get_approved_driver_badge).
+  var SENSITIVE_DOCS = ['nat-front', 'nat-back', 'license', 'vreg', 'insurance', 'inspection', 'conduct'];
+  var isPrivate = SENSITIVE_DOCS.indexOf(key) !== -1;
+  var bucket = isPrivate ? 'driver-docs' : 'documents';
 
   try {
-    var res = await fetch(SB_URL + '/storage/v1/object/documents/' + path, {
+    var res = await fetch(SB_URL + '/storage/v1/object/' + bucket + '/' + path, {
       method: 'POST',
       headers: { apikey: SB_KEY, Authorization: 'Bearer ' + SB_KEY, 'Content-Type': file.type || 'image/jpeg' },
       body: file,
     });
     if (res.ok) {
-      var publicUrl = SB_URL + '/storage/v1/object/public/documents/' + path;
+      // A private-bucket upload has no working public URL — store a
+      // marker the admin review modal recognizes and exchanges for a
+      // short-lived signed URL (src/pages/api/admin/sign-document.ts)
+      // instead of a directly-usable one.
+      var publicUrl = isPrivate
+        ? ('private:driver-docs:' + path)
+        : (SB_URL + '/storage/v1/object/public/documents/' + path);
 
       // Duplicate-image + (for official documents) AI content check —
       // server-side, see src/pages/api/documents/verify.ts. Runs after
@@ -1425,7 +1447,9 @@ window.handleUpload = async function(input, key, zoneId) {
         var vRes = await fetch('/api/documents/verify', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ imageUrl: publicUrl, docType: key, phone: (USER && USER.phone) || 'anon' }),
+          body: JSON.stringify(isPrivate
+            ? { privateBucket: 'driver-docs', privatePath: path, docType: key, phone: (USER && USER.phone) || 'anon' }
+            : { imageUrl: publicUrl, docType: key, phone: (USER && USER.phone) || 'anon' }),
         });
         // The endpoint returns a real JSON body on every explicit
         // rejection too (409/422/etc, not just 200) — vRes.ok is only

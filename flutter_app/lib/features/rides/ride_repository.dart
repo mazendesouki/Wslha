@@ -28,7 +28,10 @@ class RideRepository {
   /// original fare.
   Future<List<Map<String, dynamic>>> fetchRidePenalties(String rideId) async {
     try {
-      final rows = await sb.from('wallet_transactions').select('phone,amount,note').eq('reference_id', rideId).eq('type', 'penalty');
+      // wallet_transactions SELECT is locked down (security-124) — only
+      // this ride's penalty rows, via get_ride_penalties.
+      final rows = await sb.rpc('get_ride_penalties', params: {'p_ride_id': rideId});
+      if (rows is! List) return [];
       return List<Map<String, dynamic>>.from(rows);
     } catch (_) {
       return [];
@@ -319,17 +322,9 @@ class RideRepository {
   /// (driver_applications, keyed by phone). Same lookup rides.astro's
   /// loadDriverBadges() does on the web.
   Future<Map<String, dynamic>?> fetchDriverProfile(String driverPhone) async {
-    final rows = await sb
-        .from('driver_applications')
-        .select(
-          'full_name,driver_photo_url,vehicle_category,vehicle_model,vehicle_color,vehicle_year,vehicle_reg_number,vehicle_front_url,has_ac,is_clean',
-        )
-        .eq('phone', driverPhone)
-        .eq('status', 'approved')
-        .order('created_at', ascending: false)
-        .limit(1);
-    if (rows.isEmpty) return null;
-    final profile = Map<String, dynamic>.from(rows.first);
+    final rows = await sb.rpc('get_approved_driver_detail', params: {'p_driver_phone': driverPhone});
+    if (rows is! List || rows.isEmpty) return null;
+    final profile = Map<String, dynamic>.from(rows.first as Map);
     // Prefer the driver's own up-to-date photo (accounts.avatar_url, the
     // same one shown on their "حسابي" screen and editable there anytime)
     // over the frozen registration selfie, so the customer always sees the

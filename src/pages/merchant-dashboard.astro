@@ -924,13 +924,13 @@ import Layout from '../components/layout.astro';
   // the pending/rejected screen and returns false.
   async function checkMerchantApproval(phone: string): Promise<boolean> {
     try {
-      const local = phone.startsWith('+20') ? '0' + phone.slice(3) : phone;
-      const intl  = phone.startsWith('01')  ? '+2' + phone : phone;
-      const orFilter = `or=(phone.eq.${encodeURIComponent(intl)},phone.eq.${encodeURIComponent(local)})`;
-
       const [acctRes, appRes] = await Promise.all([
         fetch(`${SB_URL}/rest/v1/rpc/lookup_account?p_phone=${encodeURIComponent(phone)}`, { headers: SB_H }),
-        fetch(`${SB_URL}/rest/v1/merchant_applications?${orFilter}&select=status&order=created_at.desc&limit=1`, { headers: SB_H }),
+        // merchant_applications SELECT is locked down (security-122) —
+        // only the phone's own row, via get_my_merchant_application.
+        fetch(`${SB_URL}/rest/v1/rpc/get_my_merchant_application`, {
+          method: 'POST', headers: { ...SB_H, 'Content-Type': 'application/json' }, body: JSON.stringify({ p_phone: phone }),
+        }),
       ]);
       const acctRows = acctRes.ok ? await acctRes.json() : [];
       const appRows  = appRes.ok  ? await appRes.json()  : [];
@@ -1628,7 +1628,12 @@ import Layout from '../components/layout.astro';
     try { user = JSON.parse(localStorage.getItem('wslha_user') || 'null'); } catch {}
     if (!user?.phone) return;
     try {
-      const rows = await sbGet(`merchant_applications?phone=eq.${encodeURIComponent(user.phone)}&select=status&order=created_at.desc&limit=1`);
+      // merchant_applications SELECT is locked down (security-122) — only
+      // the phone's own row, via get_my_merchant_application.
+      const res = await fetch(`${SB_URL}/rest/v1/rpc/get_my_merchant_application`, {
+        method: 'POST', headers: { ...SB_H, 'Content-Type': 'application/json' }, body: JSON.stringify({ p_phone: user.phone }),
+      });
+      const rows = res.ok ? await res.json() : null;
       const banner = document.getElementById('merchant-approval-banner')!;
       if (!rows || rows.length === 0) { banner.style.display = 'none'; return; }
       const { status } = rows[0];
@@ -1665,8 +1670,16 @@ import Layout from '../components/layout.astro';
         if (res.ok) { const { transactions } = await res.json(); if (Array.isArray(transactions)) return transactions; }
       }
     } catch {}
-    const txs = await sbGet(`wallet_transactions?phone=eq.${encodeURIComponent(phone)}&select=amount,type,note,created_at&order=created_at.desc&limit=10`);
-    return Array.isArray(txs) ? txs : [];
+    // wallet_transactions SELECT is locked down (security-124) — only
+    // the phone's own rows, via get_my_wallet_transactions.
+    try {
+      const res = await fetch(`${SB_URL}/rest/v1/rpc/get_my_wallet_transactions`, {
+        method: 'POST', headers: { ...SB_H, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ p_phone: phone, p_limit: 10 }),
+      });
+      const txs = res.ok ? await res.json() : [];
+      return Array.isArray(txs) ? txs : [];
+    } catch { return []; }
   }
 
   // Access-token-first, phone-trust-fallback for the loyalty points

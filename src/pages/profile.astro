@@ -1185,10 +1185,16 @@ import { endServerSession, getValidAccessToken } from '../utils/clientSession';
     } catch { return null; }
   }
   async function fetchDriverApp(phone) {
-    const data = await sbFetch(
-      SB_URL + '/rest/v1/driver_applications?' + phoneOrFilter(phone) +
-      '&select=status,rejection_reason&order=created_at.desc&limit=1');
-    return Array.isArray(data) ? (data[0] || null) : null;
+    // driver_applications SELECT is locked down (security-122) — only the
+    // phone's own row, via get_my_driver_application.
+    try {
+      const res = await fetch(SB_URL + '/rest/v1/rpc/get_my_driver_application', {
+        method: 'POST', headers: { ...SB_H, 'Content-Type': 'application/json' }, body: JSON.stringify({ p_phone: phone }),
+      });
+      if (!res.ok) return null;
+      const data = await res.json();
+      return Array.isArray(data) ? (data[0] || null) : null;
+    } catch { return null; }
   }
 
   /* ── Status labels ─────────────────────────────────────────── */

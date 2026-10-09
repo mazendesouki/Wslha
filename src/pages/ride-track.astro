@@ -283,10 +283,13 @@ import PageHero from '../components/PageHero.astro';
   async function fetchDriverProfile(phone) {
     if (!phone) return null;
     try {
-      const r = await fetch(
-        `${SB_URL}/rest/v1/driver_applications?phone=eq.${encodeURIComponent(phone)}&status=eq.approved&select=full_name,driver_photo_url,vehicle_model,vehicle_color&order=created_at.desc&limit=1`,
-        { headers: SB_H },
-      );
+      // driver_applications SELECT is locked down (security-122) — only
+      // a narrow public subset of an approved driver, via
+      // get_approved_driver_badge (no identity documents/PII).
+      const r = await fetch(`${SB_URL}/rest/v1/rpc/get_approved_driver_badge`, {
+        method: 'POST', headers: { ...SB_H, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ p_driver_phone: phone }),
+      });
       if (!r.ok) return null;
       const rows = await r.json();
       return rows?.[0] || null;

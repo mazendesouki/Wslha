@@ -130,18 +130,20 @@ export function yearMultiplier(year: number): number {
 // ─── كتالوج السيارات المسجّلة فعليًا (سائقون معتمدون فقط) ────────────────────
 // بدل قائمة موديلات ثابتة — العميل يختار بس من عربيات سائقين معتمدين فعليًا
 // في قاعدة البيانات (نفس فئة/موديل/سنة اللي سجّلها السائق في طلبه).
+// driver_applications SELECT is locked down (security-122) — this now goes
+// through get_available_driver_vehicles (a POST RPC), not a raw REST GET.
 export function registeredVehicleFetchUrl(): string {
-  return 'https://vtikgyiopkjnrwlqnmfx.supabase.co/rest/v1/driver_applications' +
-    '?status=eq.approved&select=vehicle_category,vehicle_model,vehicle_year';
+  return 'https://vtikgyiopkjnrwlqnmfx.supabase.co/rest/v1/rpc/get_available_driver_vehicles';
 }
 export const REGISTERED_VEHICLE_HEADERS = {
   apikey: 'sb_publishable_PLSnpvCT-sAyUMtymNgTwA_QmL2suw4',
   Authorization: 'Bearer sb_publishable_PLSnpvCT-sAyUMtymNgTwA_QmL2suw4',
+  'Content-Type': 'application/json',
 };
 
 export async function fetchRegisteredVehicles(): Promise<VehicleModel[]> {
   try {
-    const res = await fetch(registeredVehicleFetchUrl(), { headers: REGISTERED_VEHICLE_HEADERS });
+    const res = await fetch(registeredVehicleFetchUrl(), { method: 'POST', headers: REGISTERED_VEHICLE_HEADERS, body: '{}' });
     if (!res.ok) return [];
     const rows: { vehicle_category: string; vehicle_model: string; vehicle_year: number | null }[] = await res.json();
     const byKey = new Map<string, VehicleModel>();

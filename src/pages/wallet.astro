@@ -345,7 +345,12 @@ import Layout from '../components/layout.astro';
         }
       }
     } catch {}
-    var res = await fetch(SB_URL + '/rest/v1/wallet_transactions?phone=eq.' + encodeURIComponent(user.phone) + '&select=amount,type,note,created_at&order=created_at.desc&limit=50', { headers: SB_H });
+    // wallet_transactions SELECT is locked down (security-124) — only
+    // the phone's own rows, via get_my_wallet_transactions.
+    var res = await fetch(SB_URL + '/rest/v1/rpc/get_my_wallet_transactions', {
+      method: 'POST', headers: Object.assign({}, SB_H, { 'Content-Type': 'application/json' }),
+      body: JSON.stringify({ p_phone: user.phone, p_limit: 50 }),
+    });
     return await res.json();
   }
 

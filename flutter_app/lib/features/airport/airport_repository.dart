@@ -5,10 +5,7 @@ import 'airport_fare.dart';
 /// approved drivers' real vehicles are offered, not a static catalog.
 class AirportRepository {
   Future<List<RegisteredVehicle>> fetchRegisteredVehicles() async {
-    final rows = await sb
-        .from('driver_applications')
-        .select('vehicle_category,vehicle_model,vehicle_year')
-        .eq('status', 'approved');
+    final rows = await sb.rpc('get_available_driver_vehicles') as List;
 
     final byKey = <String, RegisteredVehicle>{};
     for (final r in rows) {

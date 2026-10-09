@@ -58,13 +58,12 @@ class DriverRepository {
   Future<bool> goOnline(String phone, String name) async {
     final pos = await _currentPosition();
     if (pos == null) return false;
-    await sb.from('driver_locations').upsert({
-      'driver_phone': phone,
-      'driver_name': name,
-      'lat': pos.latitude,
-      'lng': pos.longitude,
-      'is_online': true,
-      'updated_at': DateTime.now().toIso8601String(),
+    await sb.rpc('upsert_driver_location', params: {
+      'p_driver_phone': phone,
+      'p_driver_name': name,
+      'p_lat': pos.latitude,
+      'p_lng': pos.longitude,
+      'p_is_online': true,
     });
     return true;
   }
@@ -77,14 +76,9 @@ class DriverRepository {
   /// unapproved driver gets a clear explanation instead of every accept
   /// silently failing.
   Future<String?> fetchApprovalStatus(String phone) async {
-    final rows = await sb
-        .from('driver_applications')
-        .select('status')
-        .eq('phone', phone)
-        .order('created_at', ascending: false)
-        .limit(1);
-    if (rows.isEmpty) return null;
-    return rows.first['status'] as String?;
+    final rows = await sb.rpc('get_my_driver_application', params: {'p_phone': phone});
+    if (rows is! List || rows.isEmpty) return null;
+    return (rows.first as Map<String, dynamic>)['status'] as String?;
   }
 
   // update(), not upsert(): this payload has no lat/lng, and those columns
@@ -99,10 +93,7 @@ class DriverRepository {
   // no-op when there's no matching row, which is the correct behavior:
   // nothing to mark offline.
   Future<void> goOffline(String phone) async {
-    await sb.from('driver_locations').update({
-      'is_online': false,
-      'updated_at': DateTime.now().toIso8601String(),
-    }).eq('driver_phone', phone);
+    await sb.rpc('set_driver_offline', params: {'p_driver_phone': phone});
   }
 
   Future<PendingOffer?> getPendingOffer(String phone) async {
@@ -135,12 +126,11 @@ class DriverRepository {
   Future<void> pingLocation(String phone) async {
     final pos = await _currentPosition();
     if (pos == null) return;
-    await sb.from('driver_locations').upsert({
-      'driver_phone': phone,
-      'lat': pos.latitude,
-      'lng': pos.longitude,
-      'heading': pos.heading,
-      'updated_at': DateTime.now().toIso8601String(),
+    await sb.rpc('upsert_driver_location', params: {
+      'p_driver_phone': phone,
+      'p_lat': pos.latitude,
+      'p_lng': pos.longitude,
+      'p_heading': pos.heading,
     });
   }
 
@@ -455,18 +445,9 @@ class DriverRepository {
   /// live here (driver_applications), not on accounts. Same table the web
   /// driver-dashboard reads for the vehicle-info card.
   Future<Map<String, dynamic>?> fetchVehicleInfo(String phone) async {
-    final rows = await sb
-        .from('driver_applications')
-        .select(
-          'vehicle_category,vehicle_model,vehicle_color,vehicle_year,vehicle_reg_number,'
-          'vehicle_front_url,vehicle_back_url,vehicle_right_url,vehicle_left_url,plate_photo_url,'
-          'has_ac,is_clean,is_modern',
-        )
-        .eq('phone', phone)
-        .order('created_at', ascending: false)
-        .limit(1);
-    if (rows.isEmpty) return null;
-    return Map<String, dynamic>.from(rows.first);
+    final rows = await sb.rpc('get_my_driver_application', params: {'p_phone': phone});
+    if (rows is! List || rows.isEmpty) return null;
+    return Map<String, dynamic>.from(rows.first as Map);
   }
 
   /// Same raw PATCH driver-dashboard.astro's "عربية مكيّفة" toggle does —
@@ -478,7 +459,7 @@ class DriverRepository {
   /// picker on the customer side looked broken because no driver could
   /// ever actually qualify.
   Future<void> updateQualityFlag(String phone, String column, bool value) async {
-    await sb.from('driver_applications').update({column: value}).eq('phone', phone);
+    await sb.rpc('update_driver_quality_flag', params: {'p_phone': phone, 'p_column': column, 'p_value': value});
   }
 
   Future<RideSettlement?> completeRide(String rideId, String driverPhone) async {

@@ -1037,9 +1037,9 @@ import PageHero from '../components/PageHero.astro';
     const checked = e.target.checked;
     _driverHasAc = checked;
     try {
-      await fetch(`${SB_URL}/rest/v1/driver_applications?phone=eq.${encodeURIComponent(driver.phone)}`, {
-        method: 'PATCH', headers: { ...SB_H, Prefer: 'return=minimal' },
-        body: JSON.stringify({ has_ac: checked }),
+      await fetch(`${SB_URL}/rest/v1/rpc/update_driver_quality_flag`, {
+        method: 'POST', headers: { ...SB_H, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ p_phone: driver.phone, p_column: 'has_ac', p_value: checked }),
       });
       showToast(checked ? '❄️ تم تفعيل شارة السيارة المكيفة' : 'تم إلغاء شارة السيارة المكيفة');
     } catch {}
@@ -1080,9 +1080,9 @@ import PageHero from '../components/PageHero.astro';
         });
         if (uploadRes.ok) patch.plate_photo_url = `${SB_URL}/storage/v1/object/public/documents/${path}`;
       }
-      await fetch(`${SB_URL}/rest/v1/driver_applications?phone=eq.${encodeURIComponent(driver.phone)}`, {
-        method: 'PATCH', headers: { ...SB_H, Prefer: 'return=minimal' },
-        body: JSON.stringify(patch),
+      await fetch(`${SB_URL}/rest/v1/rpc/update_driver_plate_info`, {
+        method: 'POST', headers: { ...SB_H, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ p_phone: driver.phone, p_vehicle_reg_number: patch.vehicle_reg_number, p_plate_photo_url: patch.plate_photo_url || null }),
       });
       msg.textContent = '✅ تم حفظ رقم اللوحة بنجاح';
       msg.style.cssText = 'display:block;background:#DCFCE7;color:#14532D;font-size:.78rem;font-weight:700;padding:.5rem .75rem;border-radius:6px;margin-top:.5rem';
@@ -1415,19 +1415,22 @@ import PageHero from '../components/PageHero.astro';
   async function upsertLocation(online) {
     if (!driver) return;
     try {
-      await fetch(`${SB_URL}/rest/v1/driver_locations`, {
+      // driver_locations direct writes are locked down (security-123) —
+      // goes through upsert_driver_location_with_job instead of a raw POST.
+      await fetch(`${SB_URL}/rest/v1/rpc/upsert_driver_location_with_job`, {
         method: 'POST',
-        headers: { ...SB_H, Prefer: 'resolution=merge-duplicates,return=minimal' },
+        headers: { ...SB_H, 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          driver_phone: driver.phone,
-          driver_name: driver.name || driver.phone,
-          lat: driverLat ?? 31.418,
-          lng: driverLng ?? 31.814,
-          heading: _driverHeading,
-          is_online: online,
-          updated_at: new Date().toISOString(),
-          ...(currentRide  ? { ride_id: currentRide.id }   : { ride_id: null }),
-          ...(currentOrder ? { current_order_id: currentOrder.id } : { current_order_id: null }),
+          p_driver_phone: driver.phone,
+          p_driver_name: driver.name || driver.phone,
+          p_lat: driverLat ?? 31.418,
+          p_lng: driverLng ?? 31.814,
+          p_heading: _driverHeading,
+          p_is_online: online,
+          p_ride_id: currentRide ? currentRide.id : null,
+          p_clear_ride: !currentRide,
+          p_current_order_id: currentOrder ? currentOrder.id : null,
+          p_clear_order: !currentOrder,
         }),
       });
     } catch {}
@@ -2027,13 +2030,14 @@ import PageHero from '../components/PageHero.astro';
     try {
       // Support both phone formats
       const p = driver.phone;
-      const local  = p.startsWith('+20') ? '0' + p.slice(3) : p;
-      const intl   = p.startsWith('01')  ? '+2' + p : p;
-      const orFilter = `or=(phone.eq.${encodeURIComponent(intl)},phone.eq.${encodeURIComponent(local)})`;
 
       const [acctRes, appRes] = await Promise.all([
         fetch(`${SB_URL}/rest/v1/rpc/lookup_account?p_phone=${encodeURIComponent(p)}`, { headers: SB_H }),
-        fetch(`${SB_URL}/rest/v1/driver_applications?${orFilter}&select=status,rejection_reason,created_at&order=created_at.desc&limit=1`, { headers: SB_H }),
+        // driver_applications SELECT is locked down (security-122) — only
+        // the phone's own row, via get_my_driver_application.
+        fetch(`${SB_URL}/rest/v1/rpc/get_my_driver_application`, {
+          method: 'POST', headers: { ...SB_H, 'Content-Type': 'application/json' }, body: JSON.stringify({ p_phone: p }),
+        }),
       ]);
 
       const acctRows = acctRes.ok ? await acctRes.json() : [];
@@ -2155,7 +2159,12 @@ import PageHero from '../components/PageHero.astro';
       }
     } catch {}
     try {
-      const res = await fetch(`${SB_URL}/rest/v1/wallet_transactions?phone=eq.${encodeURIComponent(phone)}&select=amount,type,note,created_at&order=created_at.desc&limit=10`, { headers: SB_H });
+      // wallet_transactions SELECT is locked down (security-124) — only
+      // the phone's own rows, via get_my_wallet_transactions.
+      const res = await fetch(`${SB_URL}/rest/v1/rpc/get_my_wallet_transactions`, {
+        method: 'POST', headers: { ...SB_H, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ p_phone: phone, p_limit: 10 }),
+      });
       return res.ok ? await res.json() : [];
     } catch { return []; }
   }
@@ -2198,7 +2207,11 @@ import PageHero from '../components/PageHero.astro';
       fetch(`${SB_URL}/rest/v1/ratings?driver_phone=eq.${driver.phone}&rated_by=eq.customer&select=id,rating,comment,service_type,created_at,driver_reply&order=created_at.desc&limit=20`, { headers: SB_H }),
       fetch(`${SB_URL}/rest/v1/rides?driver_phone=eq.${phone}&status=eq.completed&select=id`, { headers: { ...SB_H, Prefer: 'count=exact' } }),
       fetch(`${SB_URL}/rest/v1/orders?driver_phone=eq.${phone}&status=eq.delivered&select=id`, { headers: { ...SB_H, Prefer: 'count=exact' } }),
-      fetch(`${SB_URL}/rest/v1/driver_applications?phone=eq.${phone}&select=has_ac,vehicle_reg_number,plate_photo_url&order=created_at.desc&limit=1`, { headers: SB_H }),
+      // driver_applications SELECT is locked down (security-122) — only
+      // the phone's own row, via get_my_driver_application.
+      fetch(`${SB_URL}/rest/v1/rpc/get_my_driver_application`, {
+        method: 'POST', headers: { ...SB_H, 'Content-Type': 'application/json' }, body: JSON.stringify({ p_phone: driver.phone }),
+      }),
     ]);
 
     // Trip count (rides + orders completed lifetime)
