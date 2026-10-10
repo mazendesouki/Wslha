@@ -6,12 +6,33 @@ on:
       - main
       - master
       - claude/dreamy-johnson-nuzHs
+  # The "Publish APKs to website downloads" step in build-flutter-apps.yml
+  # commits new public/downloads/*.apk bytes and pushes using the default
+  # GITHUB_TOKEN — pushes authenticated that way deliberately don't trigger
+  # other workflows' `push` listeners (loop prevention), so that commit was
+  # silently never deploying on its own. The live site kept serving a
+  # stale APK at the same download URL for ~28 hours after a real fix
+  # shipped, until an unrelated later human push happened to trigger this
+  # workflow again and pick it up along the way. workflow_run doesn't have
+  # that restriction (it fires on the *other* workflow completing,
+  # regardless of which token pushed the commit it built), so chain off it
+  # explicitly instead of relying on a future unrelated push to notice.
+  workflow_run:
+    workflows: ["Build Flutter Apps (customer / driver / merchant)"]
+    types: [completed]
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
     steps:
       - uses: actions/checkout@v4
+        with:
+          # workflow_run runs in the context of the DEFAULT branch unless
+          # told otherwise — without this, a workflow_run-triggered deploy
+          # would silently build and ship main/master instead of the
+          # commit that actually just published new APKs.
+          ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || github.sha }}
 
       - uses: actions/setup-node@v4
         with:
