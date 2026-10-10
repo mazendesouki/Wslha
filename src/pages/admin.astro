@@ -1083,12 +1083,17 @@
             <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:.75rem">
               <div>
                 <label style="font-size:.75rem;color:#64748B;display:block;margin-bottom:.3rem">الفئة المستهدفة</label>
-                <select class="filter-select" id="cmp-target" style="width:100%">
+                <select class="filter-select" id="cmp-target" style="width:100%" onchange="document.getElementById('cmp-phone-wrap').style.display = this.value === 'phone' ? '' : 'none'">
                   <option value="all">الكل</option>
                   <option value="customer">العملاء فقط</option>
                   <option value="driver">السائقين فقط</option>
                   <option value="merchant">التجار فقط</option>
+                  <option value="phone">رقم تليفون محدد</option>
                 </select>
+              </div>
+              <div id="cmp-phone-wrap" style="display:none">
+                <label style="font-size:.75rem;color:#64748B;display:block;margin-bottom:.3rem">رقم التليفون</label>
+                <input class="search-input" id="cmp-phone" type="text" placeholder="01xxxxxxxxx" dir="ltr" style="width:100%"/>
               </div>
               <div>
                 <label style="font-size:.75rem;color:#64748B;display:block;margin-bottom:.3rem">رابط عند الضغط (اختياري)</label>
@@ -4576,7 +4581,7 @@ async function loadCampaigns() {
   tbody.innerHTML = rows.map(c => `
     <tr>
       <td style="font-weight:700">${escapeHtml(c.title)}</td>
-      <td>${targetLabel[c.target_role] || c.target_role}</td>
+      <td>${c.target_role === 'phone' ? `📱 ${escapeHtml(c.target_phone || '')}` : (targetLabel[c.target_role] || c.target_role)}</td>
       <td style="font-size:.78rem;color:#64748B">${new Date(c.send_at).toLocaleString('ar-EG')}</td>
       <td><span style="padding:2px 8px;border-radius:99px;font-size:.75rem;font-weight:700;background:${statusColor[c.status]}22;color:${statusColor[c.status]}">${statusLabel[c.status] || c.status}</span></td>
       <td>${c.status === 'scheduled' ? `<button onclick="cancelCampaign('${c.id}')" style="padding:.3rem .7rem;background:#DC2626;color:#fff;border:none;border-radius:5px;font-size:.78rem;cursor:pointer">إلغاء</button>` : '—'}</td>
@@ -4590,6 +4595,10 @@ async function createCampaign() {
   const body = (document.getElementById('cmp-body').value || '').trim();
   if (!title || !body) { showToast('❌ لازم عنوان ونص للإشعار', '#DC2626'); return; }
 
+  const targetRole = document.getElementById('cmp-target').value;
+  const targetPhone = (document.getElementById('cmp-phone').value || '').trim();
+  if (targetRole === 'phone' && !targetPhone) { showToast('❌ أدخل رقم التليفون', '#DC2626'); return; }
+
   const btn = document.getElementById('cmp-create-btn');
   const msg = document.getElementById('cmp-msg');
   btn.disabled = true; btn.textContent = 'جاري الإنشاء...';
@@ -4597,9 +4606,10 @@ async function createCampaign() {
   const sendAtRaw = document.getElementById('cmp-send-at').value;
   const ok = await sbRpc('admin_create_campaign', {
     p_admin_phone: ADMIN.phone, p_admin_password: pass, p_title: title, p_body: body,
-    p_target_role: document.getElementById('cmp-target').value,
+    p_target_role: targetRole,
     p_url: document.getElementById('cmp-url').value || '/',
     p_send_at: sendAtRaw ? new Date(sendAtRaw).toISOString() : null,
+    p_target_phone: targetRole === 'phone' ? targetPhone : null,
   });
 
   btn.disabled = false; btn.textContent = '📣 إنشاء الإشعار';
@@ -4610,6 +4620,7 @@ async function createCampaign() {
     document.getElementById('cmp-body').value = '';
     document.getElementById('cmp-url').value = '';
     document.getElementById('cmp-send-at').value = '';
+    document.getElementById('cmp-phone').value = '';
     loadCampaigns();
   } else {
     msg.textContent = '❌ فشل — تحقق من كلمة مرور المشرف';
