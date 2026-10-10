@@ -3,6 +3,7 @@ import '../../core/flavor.dart';
 import '../../core/i18n.dart';
 import '../../core/session.dart';
 import '../../core/update_checker.dart';
+import '../../shared/widgets/update_required_screen.dart';
 import '../account/account_screen.dart';
 import '../orders/orders_screen.dart';
 import '../promotions/promotion_popup.dart';
@@ -24,13 +25,13 @@ class HomeShell extends StatefulWidget {
 class _HomeShellState extends State<HomeShell> {
   int _index = 0;
   final _accountKey = GlobalKey<AccountScreenState>();
-  bool _updateAvailable = false;
+  UpdateInfo? _requiredUpdate;
 
   @override
   void initState() {
     super.initState();
     UpdateChecker().checkForUpdate(AppFlavor.customer).then((info) {
-      if (mounted && info != null) setState(() => _updateAvailable = true);
+      if (mounted && info != null) setState(() => _requiredUpdate = info);
     });
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) maybeShowPromotion(context, 'customer');
@@ -57,6 +58,9 @@ class _HomeShellState extends State<HomeShell> {
 
   @override
   Widget build(BuildContext context) {
+    if (_requiredUpdate != null) {
+      return UpdateRequiredScreen(info: _requiredUpdate!);
+    }
     return Scaffold(
       body: IndexedStack(index: _index, children: _tabs),
       // Material 3 NavigationBar (pill indicator behind the selected tab)
@@ -71,12 +75,7 @@ class _HomeShellState extends State<HomeShell> {
           NavigationDestination(icon: const Text('👤', style: TextStyle(fontSize: 20)), label: context.tr('nav_account')),
           NavigationDestination(icon: const Text('📦', style: TextStyle(fontSize: 20)), label: context.tr('nav_orders')),
           NavigationDestination(icon: const Text('🚖', style: TextStyle(fontSize: 20)), label: context.tr('nav_rides')),
-          NavigationDestination(
-            icon: _updateAvailable
-                ? const Badge(smallSize: 8, child: Text('⚙️', style: TextStyle(fontSize: 20)))
-                : const Text('⚙️', style: TextStyle(fontSize: 20)),
-            label: context.tr('nav_settings'),
-          ),
+          NavigationDestination(icon: const Text('⚙️', style: TextStyle(fontSize: 20)), label: context.tr('nav_settings')),
         ],
       ),
     );

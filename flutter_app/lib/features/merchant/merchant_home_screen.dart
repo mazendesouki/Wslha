@@ -1,11 +1,14 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import '../../core/flavor.dart';
 import '../../core/i18n.dart';
 import '../../core/notifications.dart';
 import '../../core/session.dart';
 import '../../core/theme.dart';
+import '../../core/update_checker.dart';
 import '../../shared/widgets/logout_button.dart';
+import '../../shared/widgets/update_required_screen.dart';
 import '../promotions/promotion_popup.dart';
 import 'merchant_order_history_screen.dart';
 import 'merchant_repository.dart';
@@ -42,6 +45,7 @@ class _MerchantHomeScreenState extends State<MerchantHomeScreen> {
   Timer? _ticker;
   final Set<String> _knownPendingIds = {};
   bool _firstSnapshot = true;
+  UpdateInfo? _requiredUpdate;
 
   @override
   void initState() {
@@ -52,6 +56,9 @@ class _MerchantHomeScreenState extends State<MerchantHomeScreen> {
         _store = store;
         _loading = false;
       });
+    });
+    UpdateChecker().checkForUpdate(AppFlavor.merchant).then((info) {
+      if (mounted && info != null) setState(() => _requiredUpdate = info);
     });
     // Re-renders every 15s purely to age the elapsed-time/countdown badges
     // forward — the StreamBuilder below only fires on real data changes,
@@ -169,6 +176,9 @@ class _MerchantHomeScreenState extends State<MerchantHomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    if (_requiredUpdate != null) {
+      return UpdateRequiredScreen(info: _requiredUpdate!);
+    }
     if (_loading) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }

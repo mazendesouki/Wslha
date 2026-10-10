@@ -79,6 +79,14 @@ const Map<String, Map<String, String>> batchHStrings = {
   },
   'driver_shell_refresh_status': {'ar': '🔄 تحديث الحالة', 'en': '🔄 Refresh status'},
 
+  // shared/widgets/update_required_screen.dart
+  'update_required_title': {'ar': 'في تحديث جديد للتطبيق', 'en': 'A new app update is available'},
+  'update_required_body': {
+    'ar': 'النسخة اللي عندك قديمة ومحتاجة تحديث عشان التطبيق يشتغل صح. حمّل النسخة الجديدة دلوقتي.',
+    'en': 'Your installed version is out of date and needs updating for the app to work correctly. Download the new version now.',
+  },
+  'update_required_button': {'ar': '⬇️ تحديث الآن', 'en': '⬇️ Update now'},
+
   // features/settings/settings_screen.dart
   'settings_new_version_title': {'ar': 'نسخة جديدة متاحة', 'en': 'New version available'},
   'settings_new_version_body': {'ar': 'الإصدار VERSION', 'en': 'Version VERSION'},

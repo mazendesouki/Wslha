@@ -5,6 +5,7 @@ import '../../core/i18n.dart';
 import '../../core/session.dart';
 import '../../core/theme.dart';
 import '../../core/update_checker.dart';
+import '../../shared/widgets/update_required_screen.dart';
 import '../promotions/promotion_popup.dart';
 import '../settings/settings_screen.dart';
 import '../wallet/wallet_screen.dart';
@@ -32,14 +33,17 @@ class _DriverHomeShellState extends State<DriverHomeShell> {
   final _profileKey = GlobalKey<DriverProfileScreenState>();
   bool _loadingStatus = true;
   String? _status;
-  bool _updateAvailable = false;
+  UpdateInfo? _requiredUpdate;
 
   @override
   void initState() {
     super.initState();
     _loadStatus();
+    // Checked independently of (and rendered ahead of) the approval-status
+    // gate below — see update_required_screen.dart's doc comment for why
+    // that gate alone isn't a safe place to surface this.
     UpdateChecker().checkForUpdate(AppFlavor.driver).then((info) {
-      if (mounted && info != null) setState(() => _updateAvailable = true);
+      if (mounted && info != null) setState(() => _requiredUpdate = info);
     });
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) maybeShowPromotion(context, 'driver');
@@ -100,6 +104,9 @@ class _DriverHomeShellState extends State<DriverHomeShell> {
 
   @override
   Widget build(BuildContext context) {
+    if (_requiredUpdate != null) {
+      return UpdateRequiredScreen(info: _requiredUpdate!);
+    }
     if (_loadingStatus) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
@@ -125,9 +132,7 @@ class _DriverHomeShellState extends State<DriverHomeShell> {
           BottomNavigationBarItem(icon: const Text('👤', style: TextStyle(fontSize: 20)), label: context.tr('nav_account')),
           BottomNavigationBarItem(icon: const Text('📦', style: TextStyle(fontSize: 20)), label: context.tr('nav_orders')),
           BottomNavigationBarItem(
-            icon: _updateAvailable
-                ? const Badge(smallSize: 8, child: Text('⚙️', style: TextStyle(fontSize: 20)))
-                : const Text('⚙️', style: TextStyle(fontSize: 20)),
+            icon: const Text('⚙️', style: TextStyle(fontSize: 20)),
             label: context.tr('nav_settings'),
           ),
         ],
