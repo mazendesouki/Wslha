@@ -134,7 +134,7 @@ import Layout from '../../components/layout.astro';
 </style>
 
 <script>
-  import { fetchItem, incrementViews, reportItem, requestDelivery, CONDITIONS, type MarketItem } from '../../utils/marketplaceApi';
+  import { fetchItem, incrementViews, reportItem, requestDelivery, checkServiceActive, CONDITIONS, type MarketItem } from '../../utils/marketplaceApi';
   import { isEgyptianMobile, EG_PHONE_ERROR } from '../../utils/phone';
 
   const id = new URLSearchParams(window.location.search).get('id') || '';
@@ -288,6 +288,16 @@ import Layout from '../../components/layout.astro';
     } catch { /* ignore */ }
   }
   prefillContactIfLoggedIn();
+
+  // db/security-127 — request_marketplace_delivery already rejects this
+  // server-side when off; this just tells the buyer up front instead of
+  // only after they've filled in name/phone/address and hit submit.
+  checkServiceActive('marketplace').then((active) => {
+    if (active) return;
+    const btn = document.getElementById('delivery-submit') as HTMLButtonElement;
+    btn.disabled = true;
+    btn.textContent = '⛔ الخدمة غير متاحة حاليًا';
+  });
 
   init();
 </script>

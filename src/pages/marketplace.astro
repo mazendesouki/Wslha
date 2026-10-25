@@ -162,7 +162,7 @@ import PageHero from '../components/PageHero.astro';
 </style>
 
 <script>
-  import { fetchItems, CATEGORIES, type MarketItem } from '../utils/marketplaceApi';
+  import { fetchItems, checkServiceActive, CATEGORIES, type MarketItem } from '../utils/marketplaceApi';
 
   let all: MarketItem[] = [];
   let activeCat = '';
@@ -233,7 +233,14 @@ import PageHero from '../components/PageHero.astro';
     });
   });
 
-  load();
+  (async () => {
+    if (!(await checkServiceActive('marketplace'))) {
+      document.getElementById('market-content')!.style.display = 'none';
+      document.getElementById('market-unavailable')!.style.display = 'block';
+      return;
+    }
+    load();
+  })();
 </script>
 
 <Layout title="سوق المستعمل | وصّلها" description="بيع واشترِ مستعمل بسهولة في دمياط الجديدة" page="marketplace">
@@ -244,6 +251,12 @@ import PageHero from '../components/PageHero.astro';
   />
 
   <section class="market">
+    <div id="market-unavailable" class="no-results" style="display:none;padding:var(--sp-20) var(--sp-6)">
+      <div class="no-results__icon">⛔</div>
+      <p style="font-weight:800;font-size:var(--text-lg)">الخدمة غير متاحة حاليًا</p>
+      <p style="color:var(--color-text-faint);margin-top:var(--sp-2)">سوق المستعمل متوقف مؤقتًا — حاول تاني بعد شوية.</p>
+    </div>
+    <div id="market-content">
     <div class="post-cta">
       <div>
         <div class="post-cta__text">عندك حاجة تبيعها؟</div>
@@ -267,5 +280,6 @@ import PageHero from '../components/PageHero.astro';
     </div>
 
     <div class="grid" id="mkt-grid"></div>
+    </div>
   </section>
 </Layout>

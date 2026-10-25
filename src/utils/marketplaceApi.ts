@@ -53,6 +53,21 @@ async function sb<T>(path: string, init?: RequestInit): Promise<T | null> {
   } catch { return null; }
 }
 
+// db/security-127's service_controls — the real on/off switch already
+// enforced server-side (requestDelivery below gets rejected outright
+// when off). This is purely a UX improvement: show "غير متاحة" up
+// front instead of letting the customer browse/fill the whole flow
+// and only discover it's off at the final submit. Fails open (true)
+// on any network hiccup — same convention as core/feature_flags.dart —
+// so a flaky connection never blocks a feature that's actually on.
+export async function checkServiceActive(key: string): Promise<boolean> {
+  const result = await sb<boolean>('rpc/is_service_active', {
+    method: 'POST',
+    body: JSON.stringify({ p_key: key }),
+  });
+  return result !== false;
+}
+
 export async function fetchItems(filters: { category?: string; city?: string; search?: string } = {}): Promise<MarketItem[]> {
   const parts = ['status=eq.active', 'order=created_at.desc', 'limit=200'];
   if (filters.category) parts.push(`category=eq.${encodeURIComponent(filters.category)}`);
