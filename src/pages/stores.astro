@@ -246,6 +246,13 @@ try {
 
   <div class="market">
 
+    <div id="stores-unavailable" class="no-results" style="display:none;padding:var(--sp-20) var(--sp-6)">
+      <div class="no-results__icon">🏪</div>
+      <p>⛔ خدمة المتاجر غير متاحة حاليًا — حاول تاني بعد شوية</p>
+    </div>
+
+    <div id="stores-content">
+
     <!-- Search -->
     <div class="search-bar" id="search-bar">
       <span class="search-bar__icon">🔍</span>
@@ -322,10 +329,21 @@ try {
       </div>
     </div>
 
+    </div>
+
   </div>
 </Layout>
 
 <script define:vars={{ STORES, ALL_PRODUCTS }}>
+  import { checkServiceActive } from '../utils/serviceControls';
+
+  checkServiceActive('stores_directory').then(active => {
+    if (!active) {
+      document.getElementById('stores-content').style.display = 'none';
+      document.getElementById('stores-unavailable').style.display = 'block';
+    }
+  });
+
   // ── Category filtering ──
   const chips   = document.querySelectorAll('.cat-chip');
   const cards   = document.querySelectorAll('.store-card');

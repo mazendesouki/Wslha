@@ -358,6 +358,12 @@ const staticMenuJson = JSON.stringify(
   description={`اطلب من ${store.name} في ${store.area} — ${store.tagline}`}
   page="stores"
 >
+  <div id="stores-unavailable-overlay" style="display:none;position:fixed;inset:0;z-index:9999;background:var(--color-bg-soft);align-items:center;justify-content:center;flex-direction:column;gap:.75rem;padding:2rem;text-align:center">
+    <div style="font-size:3rem">🏪</div>
+    <div style="font-weight:800;font-size:1.1rem">خدمة المتاجر غير متاحة حاليًا</div>
+    <div style="color:var(--color-text-faint)">حاول تاني بعد شوية.</div>
+  </div>
+
   <header
     class="store-head"
     data-store-id={store.id}
@@ -543,6 +549,13 @@ const staticMenuJson = JSON.stringify(
     const SB_URL = 'https://vtikgyiopkjnrwlqnmfx.supabase.co';
     const SB_KEY = 'sb_publishable_PLSnpvCT-sAyUMtymNgTwA_QmL2suw4';
     const SB_H   = { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}` };
+
+    checkServiceActive('stores_directory').then(active => {
+      if (!active) {
+        const overlay = document.getElementById('stores-unavailable-overlay');
+        if (overlay) overlay.style.display = 'flex';
+      }
+    });
 
     // ── Google Places for co-area ──
     const GMAPS_KEY = 'AIzaSyAKvFfBYNDcTZgvZZH5s_lQbOc24LNjLsY';
