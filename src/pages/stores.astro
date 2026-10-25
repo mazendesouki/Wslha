@@ -335,14 +335,24 @@ try {
 </Layout>
 
 <script define:vars={{ STORES, ALL_PRODUCTS }}>
-  import { checkServiceActive } from '../utils/serviceControls';
-
-  checkServiceActive('stores_directory').then(active => {
-    if (!active) {
+  // define:vars scripts are always plain inline scripts (not ES modules —
+  // the server data has to be injected before bundling), so `import` isn't
+  // valid here; call the RPC directly via fetch instead, same pattern as
+  // driver.astro's is:inline service-control check.
+  fetch('https://vtikgyiopkjnrwlqnmfx.supabase.co/rest/v1/rpc/is_service_active', {
+    method: 'POST',
+    headers: {
+      apikey: 'sb_publishable_PLSnpvCT-sAyUMtymNgTwA_QmL2suw4',
+      Authorization: 'Bearer sb_publishable_PLSnpvCT-sAyUMtymNgTwA_QmL2suw4',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ p_key: 'stores_directory' }),
+  }).then(function (r) { return r.ok ? r.json() : true; }).then(function (active) {
+    if (active === false) {
       document.getElementById('stores-content').style.display = 'none';
       document.getElementById('stores-unavailable').style.display = 'block';
     }
-  });
+  }).catch(function () { /* fail open */ });
 
   // ── Category filtering ──
   const chips   = document.querySelectorAll('.cat-chip');
