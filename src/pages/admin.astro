@@ -437,6 +437,9 @@
     <button class="nav-item" data-section="wallets">
       <span class="nav-item__icon">💳</span> إدارة المحافظ
     </button>
+    <button class="nav-item" data-section="service-controls">
+      <span class="nav-item__icon">🚦</span> التحكم في الخدمات
+    </button>
     <button class="nav-item" data-section="settings">
       <span class="nav-item__icon">⚙️</span> الإعدادات
     </button>
@@ -1416,6 +1419,23 @@
       </div>
     </div>
 
+    <!-- ═══════════════════ SERVICE CONTROL CENTER ═══════════ -->
+    <div class="section" id="sec-service-controls">
+      <div class="card">
+        <div class="card__head">
+          <span class="card__title">🚦 التحكم في الخدمات</span>
+        </div>
+        <div class="card__body">
+          <p style="font-size:.8rem;color:#64748B;margin-bottom:1rem">
+            تحكم حقيقي من السيرفر — مش بس إخفاء في الواجهة. "إيقاف دايم" أو "تشغيل مؤقت لفترة محددة" بيرفض أي محاولة فعلية لاستخدام الخدمة فورًا، حتى لو حد حاول يتحايل ويستخدم التطبيق مباشرة. مفيد وقت الإطلاق الرسمي: تقفل كل حاجة وتسيب بس اللي عايزه شغال.
+          </p>
+          <div id="service-controls-list" style="display:flex;flex-direction:column;gap:.75rem">
+            <p style="text-align:center;color:#94A3B8;padding:2rem">جاري التحميل…</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- ═══════════════════ SETTINGS ════════════════════════ -->
     <div class="section" id="sec-settings">
       <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:1.25rem">
@@ -2381,7 +2401,7 @@ const sectionTitles = {
   stores:'إدارة المتاجر', courier:'الطرود والمستندات', 'merchant-delivery':'توصيل التجار', 'general-delivery':'خدمة دليفري', marketplace:'سوق المستعمل',
   corporate:'عقود الشركات', support:'الدعم الفني', coupons:'الكوبونات', campaigns:'إشعارات ترويجية',
   'app-reviews':'مراجعات التطبيق',
-  finance:'التقارير المالية', wallets:'إدارة المحافظ', settings:'الإعدادات'
+  finance:'التقارير المالية', wallets:'إدارة المحافظ', 'service-controls':'التحكم في الخدمات', settings:'الإعدادات'
 };
 let currentSection = 'dash';
 function loadDriversSection() {
@@ -2437,7 +2457,7 @@ async function setAppReviewApproved(id, approved) {
 const loaders = { dash:loadDash, users:loadUsers, drivers:loadDriversSection,
   merchants:loadMerchantsSection, orders:loadOrders, rides:loadRides, stores:loadStores,
   courier:loadCourierOrders, 'merchant-delivery':loadMerchantDeliveries, 'general-delivery':loadGeneralDeliveries, marketplace:loadMarketplaceSection, corporate:loadCorporateContracts,
-  messages:loadMessages, support:loadSupportChats, coupons:loadCoupons, campaigns:loadCampaignsSection, 'app-reviews':loadAppReviews, finance:loadFinance, wallets:loadWalletsSection, settings:loadSettingsSection };
+  messages:loadMessages, support:loadSupportChats, coupons:loadCoupons, campaigns:loadCampaignsSection, 'app-reviews':loadAppReviews, finance:loadFinance, wallets:loadWalletsSection, 'service-controls':loadServiceControls, settings:loadSettingsSection };
 
 document.querySelectorAll('.nav-item').forEach(btn => {
   btn.addEventListener('click', () => {
@@ -5105,6 +5125,103 @@ async function saveFeatureFlags() {
   }
   btn.disabled = false; btn.textContent = '💾 حفظ التحكم في الميزات';
   setTimeout(() => { msg.style.display = 'none'; }, 4000);
+}
+
+/* ═══════════════════ SERVICE CONTROL CENTER ═════════════════ */
+// service_controls (db/security-127) — real server-side enforcement
+// (a trigger/check inside the actual booking/order/registration/etc.
+// write path itself), unlike FEATURE_FLAG_MAP above which only hides
+// a feature client-side. Each service is 'on' (always active), 'off'
+// (always rejected), or 'scheduled' (rejected except inside a chosen
+// time window) — no polling/cron needed, is_service_active() just
+// compares against now() live on every check.
+const STATUS_LABEL = { on: '🟢 تشغيل دايم', off: '🔴 إيقاف دايم', scheduled: '🟡 تشغيل مؤقت لفترة' };
+
+function toLocalInputValue(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  const pad = (n) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+async function loadServiceControls() {
+  const pass = await getAdminPass();
+  const list = document.getElementById('service-controls-list');
+  if (!pass) { list.innerHTML = '<p style="text-align:center;color:#DC2626;padding:2rem">محتاج كلمة مرور المشرف</p>'; return; }
+  const rows = await sbRpcRows('admin_list_service_controls', { p_admin_phone: ADMIN.phone, p_admin_password: pass });
+  if (rows === null) { clearAdminPass(); list.innerHTML = '<p style="text-align:center;color:#DC2626;padding:2rem">فشل التحقق — أعد المحاولة</p>'; return; }
+
+  list.innerHTML = rows.map(s => {
+    const id = s.service_key;
+    const isScheduled = s.status === 'scheduled';
+    return `
+    <div class="card" style="margin:0;border:1px solid var(--bdr)">
+      <div class="card__body" style="padding:1rem 1.25rem">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.5rem;margin-bottom:.75rem">
+          <div style="font-weight:800;font-size:.95rem">${escapeHtml(s.label_ar)}</div>
+          <span id="svc-badge-${id}" style="padding:2px 10px;border-radius:99px;font-size:.75rem;font-weight:700;background:#F1F5F9">${STATUS_LABEL[s.status] || s.status}</span>
+        </div>
+        <div style="display:flex;gap:1.25rem;flex-wrap:wrap;font-size:.82rem;margin-bottom:.6rem">
+          <label style="display:flex;align-items:center;gap:.35rem;cursor:pointer">
+            <input type="radio" name="svc-status-${id}" value="on" ${s.status==='on'?'checked':''} onchange="toggleScheduleInputs('${id}', false)"/> 🟢 تشغيل دايم
+          </label>
+          <label style="display:flex;align-items:center;gap:.35rem;cursor:pointer">
+            <input type="radio" name="svc-status-${id}" value="off" ${s.status==='off'?'checked':''} onchange="toggleScheduleInputs('${id}', false)"/> 🔴 إيقاف دايم
+          </label>
+          <label style="display:flex;align-items:center;gap:.35rem;cursor:pointer">
+            <input type="radio" name="svc-status-${id}" value="scheduled" ${isScheduled?'checked':''} onchange="toggleScheduleInputs('${id}', true)"/> 🟡 تشغيل مؤقت لفترة محددة
+          </label>
+        </div>
+        <div id="svc-schedule-${id}" style="display:${isScheduled?'flex':'none'};gap:.75rem;flex-wrap:wrap;margin-bottom:.6rem">
+          <div>
+            <label style="font-size:.72rem;color:#64748B;display:block;margin-bottom:.2rem">من</label>
+            <input class="search-input" type="datetime-local" id="svc-start-${id}" value="${toLocalInputValue(s.scheduled_start)}" style="width:100%"/>
+          </div>
+          <div>
+            <label style="font-size:.72rem;color:#64748B;display:block;margin-bottom:.2rem">إلى (اختياري — فاضي = مفتوح من غير نهاية)</label>
+            <input class="search-input" type="datetime-local" id="svc-end-${id}" value="${toLocalInputValue(s.scheduled_end)}" style="width:100%"/>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:.75rem">
+          <button class="btn btn--primary btn--sm" onclick="saveServiceControl('${id}')" id="svc-save-${id}">💾 حفظ</button>
+          ${s.updated_at ? `<span style="font-size:.72rem;color:#94A3B8">آخر تحديث: ${new Date(s.updated_at).toLocaleString('ar-EG')}${s.updated_by ? ' — ' + escapeHtml(s.updated_by) : ''}</span>` : ''}
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function toggleScheduleInputs(serviceKey, show) {
+  const el = document.getElementById(`svc-schedule-${serviceKey}`);
+  if (el) el.style.display = show ? 'flex' : 'none';
+}
+
+async function saveServiceControl(serviceKey) {
+  const pass = await getAdminPass();
+  if (!pass) return;
+  const btn = document.getElementById(`svc-save-${serviceKey}`);
+  const status = document.querySelector(`input[name="svc-status-${serviceKey}"]:checked`)?.value || 'on';
+  let startIso = null, endIso = null;
+  if (status === 'scheduled') {
+    const startRaw = document.getElementById(`svc-start-${serviceKey}`).value;
+    if (!startRaw) { showToast('❌ لازم تحدد وقت البداية للتشغيل المؤقت', '#DC2626'); return; }
+    startIso = new Date(startRaw).toISOString();
+    const endRaw = document.getElementById(`svc-end-${serviceKey}`).value;
+    endIso = endRaw ? new Date(endRaw).toISOString() : null;
+  }
+  btn.disabled = true; btn.textContent = 'جاري الحفظ...';
+  const ok = await sbRpc('admin_set_service_control', {
+    p_admin_phone: ADMIN.phone, p_admin_password: pass, p_service_key: serviceKey,
+    p_status: status, p_scheduled_start: startIso, p_scheduled_end: endIso,
+  });
+  btn.disabled = false; btn.textContent = '💾 حفظ';
+  if (ok) {
+    showToast('✅ اتحفظ — الخدمة اتطبّقت فورًا', '#16A34A');
+    loadServiceControls();
+  } else {
+    clearAdminPass();
+    showToast('❌ فشل — تحقق من كلمة مرور المشرف', '#DC2626');
+  }
 }
 
 async function saveMerchantDeliveryFee() {
