@@ -133,6 +133,7 @@ import PageHero from '../components/PageHero.astro';
 </Layout>
 
 <script>
+  import { checkServiceActive } from '../utils/serviceControls';
   const SB_URL = 'https://vtikgyiopkjnrwlqnmfx.supabase.co';
   const SB_KEY = 'sb_publishable_PLSnpvCT-sAyUMtymNgTwA_QmL2suw4';
   const SB_H = { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}`, 'Content-Type': 'application/json' };
@@ -304,6 +305,11 @@ import PageHero from '../components/PageHero.astro';
     const subtotal = Number((document.getElementById('md-subtotal') as HTMLInputElement).value) || 0;
     const payment = (document.getElementById('md-payment') as HTMLSelectElement).value;
 
+    // db/security-127 — the orders INSERT is already rejected
+    // server-side when 'delivery_orders' is off; check up front.
+    if (!(await checkServiceActive('delivery_orders'))) {
+      errEl.textContent = '⛔ خدمة التوصيل غير متاحة حاليًا — حاول تاني بعد شوية.'; errEl.classList.add('visible'); return;
+    }
     if (!custName) { errEl.textContent = 'يرجى إدخال اسم العميل.'; errEl.classList.add('visible'); return; }
     if (!EG.test(custPhone)) { errEl.textContent = 'رقم جوال العميل غير صحيح (01...)'; errEl.classList.add('visible'); return; }
     if (!items) { errEl.textContent = 'يرجى إدخال المنتجات المطلوبة.'; errEl.classList.add('visible'); return; }

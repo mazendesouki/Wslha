@@ -3,6 +3,7 @@ import '../../core/date_format_ar.dart';
 import '../../core/i18n.dart';
 import '../../core/phone_utils.dart';
 import '../../core/pricing_settings.dart';
+import '../../core/service_controls.dart';
 import '../../core/session.dart';
 import '../../core/theme.dart';
 import '../../shared/widgets/branded_header.dart';
@@ -266,6 +267,11 @@ class _AirportScreenState extends State<AirportScreen> {
 
   Future<void> _submit() async {
     setState(() => _error = null);
+
+    if (!await ServiceControls.isActive('rides_airport')) {
+      setState(() => _error = context.tr('airport_service_unavailable'));
+      return;
+    }
 
     final name = _nameCtrl.text.trim();
     final phone = normalizeEgyptianPhone(_phoneCtrl.text.trim());

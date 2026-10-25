@@ -9,6 +9,8 @@ const Map<String, Map<String, String>> batchCStrings = {
   // --- rides_screen.dart ---
   'rides_submit_failed_prefix': {'ar': 'تعذّر إرسال الطلب:', 'en': 'Could not send the request:'},
   'rides_submit_failed_generic': {'ar': 'تعذّر إرسال الطلب، حاول مجدداً', 'en': 'Could not send the request, please try again'},
+  'rides_service_unavailable': {'ar': '⛔ خدمة الرحلات غير متاحة حاليًا، حاول تاني بعد شوية', 'en': '⛔ Rides are unavailable right now, please try again later'},
+  'airport_service_unavailable': {'ar': '⛔ خدمة رحلات المطار غير متاحة حاليًا، حاول تاني بعد شوية', 'en': '⛔ Airport rides are unavailable right now, please try again later'},
   'rides_coupon_applied_pending': {
     'ar': '🎟️ كود الخصم هيتضاف لمحفظتك بعد اكتمال الرحلة',
     'en': '🎟️ The discount will be credited to your wallet once the ride is completed',

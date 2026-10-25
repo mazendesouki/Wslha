@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../core/feature_flags.dart';
 import '../../core/i18n.dart';
+import '../../core/service_controls.dart';
 import '../../core/session.dart';
 import '../../core/theme.dart';
 import '../../shared/widgets/branded_header.dart';
@@ -184,6 +185,15 @@ class _RidesScreenState extends State<RidesScreen> {
   Future<void> _submit() async {
     final points = _filledPoints;
     if (points.length < 2 || _session == null) return;
+
+    final serviceKey = _isExternal ? 'rides_external' : 'rides_local';
+    if (!await ServiceControls.isActive(serviceKey)) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.tr('rides_service_unavailable')), backgroundColor: AppColors.error, duration: const Duration(seconds: 6)),
+      );
+      return;
+    }
 
     if (_recurringDays.isNotEmpty && _recurringTime != null) {
       await _submitRecurring(points);

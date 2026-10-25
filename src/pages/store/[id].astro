@@ -538,6 +538,7 @@ const staticMenuJson = JSON.stringify(
   <script>
     import { getCart, saveCart, cartCount, cartSubtotal, type Cart } from '../../utils/cart';
     import { isEgyptianMobile, normalizeEgyptianPhone, EG_PHONE_ERROR } from '../../utils/phone';
+    import { checkServiceActive } from '../../utils/serviceControls';
 
     const SB_URL = 'https://vtikgyiopkjnrwlqnmfx.supabase.co';
     const SB_KEY = 'sb_publishable_PLSnpvCT-sAyUMtymNgTwA_QmL2suw4';
@@ -997,6 +998,12 @@ const staticMenuJson = JSON.stringify(
       const notes = (document.getElementById('co-notes') as HTMLTextAreaElement).value.trim() || null;
 
       const fail = (msg: string) => { errBox.textContent = msg; errBox.classList.add('is-visible'); };
+      // db/security-127 — the orders INSERT is already rejected
+      // server-side when 'delivery_orders' is off; check up front so
+      // the customer doesn't fill the whole checkout sheet for nothing.
+      if (!(await checkServiceActive('delivery_orders'))) {
+        return fail('⛔ خدمة التوصيل غير متاحة حاليًا — حاول تاني بعد شوية.');
+      }
       if (name.length < 2) return fail('يرجى إدخال اسم المستلم.');
       if (!isEgyptianMobile(phone)) return fail(EG_PHONE_ERROR);
       if (address.length < 5) return fail('يرجى إدخال العنوان بالتفصيل.');

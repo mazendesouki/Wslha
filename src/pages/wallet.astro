@@ -261,6 +261,7 @@ import Layout from '../components/layout.astro';
 
 <script>
   import { getValidAccessToken } from '../utils/clientSession';
+  import { checkServiceActive } from '../utils/serviceControls';
   const SB_URL = 'https://vtikgyiopkjnrwlqnmfx.supabase.co';
   const SB_KEY = 'sb_publishable_PLSnpvCT-sAyUMtymNgTwA_QmL2suw4';
   const SB_H = { apikey: SB_KEY, Authorization: 'Bearer ' + SB_KEY, 'Content-Type': 'application/json' };
@@ -280,6 +281,17 @@ import Layout from '../components/layout.astro';
     document.getElementById(id).addEventListener('click', function(e) { if (e.target === this) closeSheet(id); });
   });
   document.getElementById('btn-deposit').addEventListener('click', function() { openSheet('sheet-deposit'); });
+  // db/security-127 — request_deposit (both the manual-transfer and the
+  // Paymob online path, which reuses it server-side) already rejects
+  // this when 'wallet_deposit' is off; disable the entry button too so
+  // the customer doesn't open the sheet just to hit that at the end.
+  checkServiceActive('wallet_deposit').then(function(active) {
+    if (active) return;
+    var btn = document.getElementById('btn-deposit');
+    btn.disabled = true;
+    btn.title = 'الخدمة غير متاحة حاليًا';
+    btn.style.opacity = '.5';
+  });
   document.getElementById('btn-withdraw-open').addEventListener('click', function() { openSheet('sheet-withdraw'); });
   document.getElementById('btn-transfer-open').addEventListener('click', function() { openSheet('sheet-transfer'); });
 

@@ -3,6 +3,12 @@ import Layout from '../components/layout.astro';
 ---
 <Layout title="انضم كسائق — وصّلها" currentPage="driver">
 
+<div id="reg-unavailable-overlay" style="display:none;position:fixed;inset:0;z-index:9999;background:var(--color-bg-soft);align-items:center;justify-content:center;flex-direction:column;gap:.75rem;padding:2rem;text-align:center">
+  <div style="font-size:3rem">⛔</div>
+  <div style="font-weight:800;font-size:1.1rem">الخدمة غير متاحة حاليًا</div>
+  <div style="color:var(--color-text-faint)">تسجيل السائقين الجدد متوقف مؤقتًا — حاول تاني بعد شوية.</div>
+</div>
+
 <style>
 /* ── Base ── */
 .driver-page { background: var(--color-bg-soft); min-height: calc(100vh - var(--nav-height)); }
@@ -907,6 +913,20 @@ label .req { color: #DC2626; }
 var SB_URL = 'https://vtikgyiopkjnrwlqnmfx.supabase.co';
 var SB_KEY = 'sb_publishable_PLSnpvCT-sAyUMtymNgTwA_QmL2suw4';
 var SB_H   = { apikey: SB_KEY, Authorization: 'Bearer ' + SB_KEY };
+
+// db/security-127 — new driver_applications inserts are already
+// rejected server-side when 'driver_registration' is off; this just
+// tells the visitor up front instead of after a long multi-step form.
+fetch(SB_URL + '/rest/v1/rpc/is_service_active', {
+  method: 'POST',
+  headers: Object.assign({}, SB_H, { 'Content-Type': 'application/json' }),
+  body: JSON.stringify({ p_key: 'driver_registration' }),
+}).then(function(r) { return r.ok ? r.json() : true; }).then(function(active) {
+  if (active === false) {
+    var overlay = document.getElementById('reg-unavailable-overlay');
+    if (overlay) overlay.style.display = 'flex';
+  }
+}).catch(function() { /* fail open */ });
 
 var USER       = null;
 var currentPanel = 0;

@@ -6,6 +6,7 @@ const Map<String, Map<String, String>> batchAStrings = {
   'wallet_deposit_sheet_title': {'ar': '⬆️ إيداع رصيد', 'en': '⬆️ Deposit Funds'},
   'wallet_amount_label': {'ar': 'المبلغ (جنيه)', 'en': 'Amount (EGP)'},
   'wallet_min_amount_error': {'ar': 'أدخل مبلغاً لا يقل عن 10 جنيه', 'en': 'Enter an amount of at least 10 EGP'},
+  'wallet_deposit_service_unavailable': {'ar': '⛔ خدمة الإيداع غير متاحة حاليًا، حاول تاني بعد شوية', 'en': '⛔ Deposits are unavailable right now, please try again later'},
   'wallet_deposit_request_note': {'ar': 'طلب إيداع عبر', 'en': 'Deposit request via'},
   'wallet_deposit_success': {
     'ar': '✅ تم استلام طلب الإيداع — سيُضاف الرصيد بعد تأكيد التحويل',

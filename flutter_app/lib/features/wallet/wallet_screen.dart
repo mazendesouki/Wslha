@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../core/feature_flags.dart';
+import '../../core/service_controls.dart';
 import '../../core/session.dart';
 import '../../core/theme.dart';
 import '../../shared/widgets/branded_header.dart';
@@ -129,6 +130,10 @@ class _WalletScreenState extends State<WalletScreen> {
                         final amount = double.tryParse(amountController.text) ?? 0;
                         if (amount < 10) {
                           _showToast(context.tr('wallet_min_amount_error'), ok: false);
+                          return;
+                        }
+                        if (!await ServiceControls.isActive('wallet_deposit')) {
+                          _showToast(context.tr('wallet_deposit_service_unavailable'), ok: false);
                           return;
                         }
                         setSheetState(() => busy = true);

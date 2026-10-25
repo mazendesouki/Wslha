@@ -18,6 +18,7 @@ const Map<String, Map<String, String>> batchFStrings = {
   'driver_reg_back_to_login': {'ar': 'رجوع لتسجيل الدخول', 'en': 'Back to login'},
   'driver_reg_err_password_mismatch': {'ar': 'كلمتا المرور غير متطابقتين.', 'en': 'Passwords do not match.'},
   'driver_reg_err_photo_required': {'ar': 'التقط صورتك الشخصية أولاً.', 'en': 'Take your personal photo first.'},
+  'driver_reg_err_registration_unavailable': {'ar': '⛔ التسجيل غير متاح حاليًا، حاول تاني بعد شوية', 'en': '⛔ Registration is unavailable right now, please try again later'},
   'driver_reg_err_already_registered': {
     'ar': 'الحساب ده مسجّل بالفعل — سجّل الدخول من الشاشة الرئيسية بدل التسجيل من جديد.',
     'en': 'This account is already registered — log in from the main screen instead of registering again.',

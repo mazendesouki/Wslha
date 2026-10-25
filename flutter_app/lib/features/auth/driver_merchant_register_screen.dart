@@ -9,6 +9,7 @@ import '../../core/password_utils.dart';
 import '../../core/phone_utils.dart';
 import '../../core/pricing_settings.dart';
 import '../../core/registration_validation.dart';
+import '../../core/service_controls.dart';
 import '../../core/theme.dart';
 import 'auth_repository.dart';
 
@@ -78,6 +79,10 @@ class _DriverMerchantRegisterScreenState extends State<DriverMerchantRegisterScr
     }
     if (_isDriver && _photo == null) {
       setState(() => _error = context.tr('driver_reg_err_photo_required'));
+      return;
+    }
+    if (!await ServiceControls.isActive(_isDriver ? 'driver_registration' : 'merchant_registration')) {
+      setState(() => _error = context.tr('driver_reg_err_registration_unavailable'));
       return;
     }
 

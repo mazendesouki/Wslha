@@ -18,6 +18,7 @@ const Map<String, Map<String, String>> batchDStrings = {
   'checkout_error_address': {'ar': 'يرجى إدخال العنوان بالتفصيل.', 'en': 'Please enter the detailed address.'},
   'checkout_error_min_order': {'ar': 'الحد الأدنى للطلب', 'en': 'Minimum order is'},
   'checkout_error_submit': {'ar': 'حصل خطأ في إرسال الطلب — حاول تاني.', 'en': 'Something went wrong sending your order — please try again.'},
+  'checkout_service_unavailable': {'ar': '⛔ خدمة التوصيل غير متاحة حاليًا، حاول تاني بعد شوية', 'en': '⛔ Delivery is unavailable right now, please try again later'},
   'checkout_success_title': {'ar': '✅ تم إرسال طلبك', 'en': '✅ Your order was sent'},
   'checkout_success_order_number_label': {'ar': 'رقم الطلب', 'en': 'Order number'},
   'checkout_success_update_note': {'ar': 'هيوصلك تحديث لحظة ما المتجر يقبل طلبك.', 'en': "You'll get an update as soon as the store accepts your order."},

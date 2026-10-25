@@ -101,6 +101,23 @@ import PageHero from '../components/PageHero.astro';
   function normPhone(s: string) { return s.replace(/[\s\-()+]/g, ''); }
   const EG = /^01[0125][0-9]{8}$/;
 
+  // db/security-127 — corporate_contracts already rejects this
+  // server-side when 'corporate' is off; this just tells the visitor
+  // up front instead of after they've filled the whole form.
+  (async () => {
+    try {
+      const res = await fetch(`${SB_URL}/rest/v1/rpc/is_service_active`, {
+        method: 'POST', headers: SB_H, body: JSON.stringify({ p_key: 'corporate' }),
+      });
+      const active = !res.ok || (await res.json()) !== false;
+      if (!active) {
+        const btn = document.getElementById('biz-submit-btn') as HTMLButtonElement;
+        btn.disabled = true;
+        btn.textContent = '⛔ الخدمة غير متاحة حاليًا';
+      }
+    } catch { /* fail open — network hiccup shouldn't block a working feature */ }
+  })();
+
   document.getElementById('biz-submit-btn')?.addEventListener('click', async () => {
     const errEl = document.getElementById('biz-alert')!;
     errEl.classList.remove('visible');

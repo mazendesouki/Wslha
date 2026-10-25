@@ -2,6 +2,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import '../../core/i18n.dart';
 import '../../core/phone_utils.dart';
+import '../../core/service_controls.dart';
 import '../../core/session.dart';
 import '../../core/supabase_client.dart';
 import '../../core/theme.dart';
@@ -114,6 +115,10 @@ class _CheckoutSheetState extends State<CheckoutSheet> {
     }
     if (_cart.subtotal < _cart.minOrder) {
       setState(() => _error = '${context.tr('checkout_error_min_order')} ${_cart.minOrder.toStringAsFixed(0)} ج.م.');
+      return;
+    }
+    if (!await ServiceControls.isActive('delivery_orders')) {
+      setState(() => _error = context.tr('checkout_service_unavailable'));
       return;
     }
 

@@ -2,6 +2,11 @@
 import Layout from '../components/layout.astro';
 ---
 <Layout title="تقديم طلب تاجر — وصّلها" currentPage="merchant-apply">
+<div id="reg-unavailable-overlay" style="display:none;position:fixed;inset:0;z-index:9999;background:var(--color-bg-soft);align-items:center;justify-content:center;flex-direction:column;gap:.75rem;padding:2rem;text-align:center">
+  <div style="font-size:3rem">⛔</div>
+  <div style="font-weight:800;font-size:1.1rem">الخدمة غير متاحة حاليًا</div>
+  <div style="color:var(--color-text-faint)">تسجيل التجار الجدد متوقف مؤقتًا — حاول تاني بعد شوية.</div>
+</div>
 <style>
   /* ── 2026 Merchant Signup ──────────────────────────────────── */
   .apply-wrap{
@@ -372,6 +377,19 @@ import Layout from '../components/layout.astro';
 const SB_URL = 'https://vtikgyiopkjnrwlqnmfx.supabase.co';
 const SB_KEY = 'sb_publishable_PLSnpvCT-sAyUMtymNgTwA_QmL2suw4';
 const SB_H   = { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}` };
+
+// db/security-127 — new merchant_applications inserts are already
+// rejected server-side when 'merchant_registration' is off; this just
+// tells the visitor up front instead of after a long multi-step form.
+fetch(`${SB_URL}/rest/v1/rpc/is_service_active`, {
+  method: 'POST', headers: { ...SB_H, 'Content-Type': 'application/json' },
+  body: JSON.stringify({ p_key: 'merchant_registration' }),
+}).then(r => r.ok ? r.json() : true).then(active => {
+  if (active === false) {
+    const overlay = document.getElementById('reg-unavailable-overlay');
+    if (overlay) overlay.style.display = 'flex';
+  }
+}).catch(() => {});
 
 let USER;
 try { USER = JSON.parse(localStorage.getItem('wslha_user') || 'null'); } catch {}
