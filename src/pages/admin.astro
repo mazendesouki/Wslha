@@ -5137,6 +5137,20 @@ async function saveFeatureFlags() {
 // compares against now() live on every check.
 const STATUS_LABEL = { on: '🟢 تشغيل دايم', off: '🔴 إيقاف دايم', scheduled: '🟡 تشغيل مؤقت لفترة' };
 
+// Mirrors is_service_active()'s 'scheduled' branch exactly (now >= start
+// and (no end or now <= end)) — the raw status column alone doesn't say
+// whether a scheduled window actually ended or hasn't started yet, so the
+// badge used to keep showing "🟡 تشغيل مؤقت لفترة" forever past scheduled_end.
+function scheduledBadgeLabel(s) {
+  if (s.status !== 'scheduled') return STATUS_LABEL[s.status] || s.status;
+  const now = new Date();
+  const start = s.scheduled_start ? new Date(s.scheduled_start) : null;
+  const end = s.scheduled_end ? new Date(s.scheduled_end) : null;
+  if (start && now < start) return '⏳ لسه ما بدأش (مجدولة)';
+  if (end && now > end) return '🔴 انتهت الفترة المجدولة';
+  return '🟡 تشغيل مؤقت لفترة';
+}
+
 function toLocalInputValue(iso) {
   if (!iso) return '';
   const d = new Date(iso);
@@ -5159,7 +5173,7 @@ async function loadServiceControls() {
       <div class="card__body" style="padding:1rem 1.25rem">
         <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.5rem;margin-bottom:.75rem">
           <div style="font-weight:800;font-size:.95rem">${escapeHtml(s.label_ar)}</div>
-          <span id="svc-badge-${id}" style="padding:2px 10px;border-radius:99px;font-size:.75rem;font-weight:700;background:#F1F5F9">${STATUS_LABEL[s.status] || s.status}</span>
+          <span id="svc-badge-${id}" style="padding:2px 10px;border-radius:99px;font-size:.75rem;font-weight:700;background:#F1F5F9">${scheduledBadgeLabel(s)}</span>
         </div>
         <div style="display:flex;gap:1.25rem;flex-wrap:wrap;font-size:.82rem;margin-bottom:.6rem">
           <label style="display:flex;align-items:center;gap:.35rem;cursor:pointer">
