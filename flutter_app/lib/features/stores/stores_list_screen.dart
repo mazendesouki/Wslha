@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/i18n.dart';
+import '../../core/service_controls.dart';
 import '../../core/theme.dart';
 import '../../shared/widgets/branded_header.dart';
 import 'store_detail_screen.dart';
@@ -33,6 +34,14 @@ class _StoresListScreenState extends State<StoresListScreen> {
       _loading = true;
       _error = null;
     });
+    if (!await ServiceControls.isActive('stores_directory')) {
+      if (!mounted) return;
+      setState(() {
+        _loading = false;
+        _error = context.tr('stores_list_service_unavailable');
+      });
+      return;
+    }
     try {
       final stores = await _repo.fetchStores();
       if (!mounted) return;

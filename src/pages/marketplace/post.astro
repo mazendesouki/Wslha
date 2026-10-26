@@ -55,11 +55,20 @@ import PageHero from '../../components/PageHero.astro';
   .auth-error.visible { display: block; }
   .success-box { text-align: center; padding: var(--sp-8) 0; }
   .limit-note { font-size: var(--text-xs); color: var(--color-text-faint); margin-top: -var(--sp-3); margin-bottom: var(--sp-4); }
+  .post-unavailable { text-align: center; padding: var(--sp-16) var(--sp-6); display: none; }
+  .post-unavailable__icon { font-size: 3rem; margin-bottom: var(--sp-3); }
 </style>
 
 <script>
-  import { CATEGORIES, CONDITIONS, createItem, uploadImage, fetchMarketplaceListingFee } from '../../utils/marketplaceApi';
+  import { CATEGORIES, CONDITIONS, createItem, uploadImage, fetchMarketplaceListingFee, checkServiceActive } from '../../utils/marketplaceApi';
   import { isEgyptianMobile, EG_PHONE_ERROR } from '../../utils/phone';
+
+  checkServiceActive('marketplace').then(active => {
+    if (!active) {
+      document.getElementById('post-card')!.style.display = 'none';
+      document.getElementById('post-unavailable')!.style.display = 'block';
+    }
+  });
 
   fetchMarketplaceListingFee().then(fee => {
     const el = document.getElementById('listing-fee-note');
@@ -186,7 +195,11 @@ import PageHero from '../../components/PageHero.astro';
   <PageHero badge="🛍️ سوق المستعمل" title="أضف إعلانك" subtitle="ثلاث خطوات بسيطة وينشر إعلانك فوراً" />
 
   <section class="post-page">
-    <div class="card">
+    <div id="post-unavailable" class="post-unavailable">
+      <div class="post-unavailable__icon">🛍️</div>
+      <p>⛔ خدمة السوق المستعمل غير متاحة حاليًا — حاول تاني بعد شوية</p>
+    </div>
+    <div class="card" id="post-card">
       <div class="steps">
         <div class="steps__dot active"></div><div class="steps__dot"></div><div class="steps__dot"></div>
       </div>

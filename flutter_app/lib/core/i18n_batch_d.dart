@@ -47,6 +47,7 @@ const Map<String, Map<String, String>> batchDStrings = {
   'stores_list_empty_no_stores': {'ar': 'لا يوجد متاجر متاحة الآن', 'en': 'No stores available right now'},
   'stores_list_empty_no_results': {'ar': 'لا يوجد نتائج بحث', 'en': 'No search results'},
   'stores_list_closed_badge': {'ar': 'مغلق', 'en': 'Closed'},
+  'stores_list_service_unavailable': {'ar': '⛔ خدمة المتاجر غير متاحة حاليًا — حاول تاني بعد شوية', 'en': '⛔ The stores service is unavailable right now — please try again later'},
 
   // support_screen.dart
   'support_appbar_title': {'ar': 'المساعدة والدعم', 'en': 'Help & support'},

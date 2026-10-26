@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../core/i18n.dart';
+import '../../core/service_controls.dart';
 import '../../core/theme.dart';
 import 'marketplace_item_screen.dart';
 import 'marketplace_models.dart';
@@ -39,6 +40,14 @@ class _MarketplaceListScreenState extends State<MarketplaceListScreen> {
       _loading = true;
       _error = null;
     });
+    if (!await ServiceControls.isActive('marketplace')) {
+      if (!mounted) return;
+      setState(() {
+        _loading = false;
+        _error = context.tr('marketplace_list_service_unavailable');
+      });
+      return;
+    }
     try {
       final items = await _repo.fetchItems();
       if (!mounted) return;

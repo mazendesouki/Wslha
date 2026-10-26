@@ -13,6 +13,7 @@ const Map<String, Map<String, String>> batchIStrings = {
   'marketplace_list_retry': {'ar': 'حاول تاني', 'en': 'Retry'},
   'marketplace_list_empty': {'ar': 'مفيش إعلانات دلوقتي', 'en': 'No listings right now'},
   'marketplace_list_no_results': {'ar': 'مفيش نتائج لبحثك', 'en': 'No results for your search'},
+  'marketplace_list_service_unavailable': {'ar': '⛔ السوق المستعمل غير متاح حاليًا — حاول تاني بعد شوية', 'en': '⛔ The used market is unavailable right now — please try again later'},
   'marketplace_category_all': {'ar': 'الكل', 'en': 'All'},
 
   // marketplace_item_screen.dart
