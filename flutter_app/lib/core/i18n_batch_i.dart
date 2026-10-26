@@ -42,6 +42,7 @@ const Map<String, Map<String, String>> batchIStrings = {
   'marketplace_delivery_error_name': {'ar': 'أدخل اسمك', 'en': 'Enter your name'},
   'marketplace_delivery_error_address': {'ar': 'أدخل عنوانك بالتفصيل', 'en': 'Enter your full address'},
   'marketplace_delivery_error_generic': {'ar': 'حدث خطأ، حاول مرة أخرى', 'en': 'Something went wrong, try again'},
+  'marketplace_delivery_error_service_unavailable': {'ar': '⛔ خدمة التوصيل من السوق المستعمل غير متاحة حاليًا', 'en': '⛔ Used-market delivery is unavailable right now'},
   'marketplace_delivery_success': {'ar': '✅ تم إرسال طلب التوصيل — سيتواصل معك فريقنا لتأكيد السائق', 'en': '✅ Delivery request sent — our team will contact you to confirm a driver'},
 
   // location_confirm_screen.dart

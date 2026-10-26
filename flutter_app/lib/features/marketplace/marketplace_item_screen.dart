@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../core/contact_launcher.dart';
 import '../../core/i18n.dart';
 import '../../core/phone_utils.dart';
+import '../../core/service_controls.dart';
 import '../../core/session.dart';
 import '../../core/theme.dart';
 import 'marketplace_models.dart';
@@ -355,6 +356,10 @@ class _DeliveryRequestSheetState extends State<_DeliveryRequestSheet> {
     }
     if (_shipmentType == null) {
       setState(() => _error = context.tr('marketplace_delivery_error_shipment_type'));
+      return;
+    }
+    if (!await ServiceControls.isActive('marketplace')) {
+      setState(() => _error = context.tr('marketplace_delivery_error_service_unavailable'));
       return;
     }
     setState(() {
