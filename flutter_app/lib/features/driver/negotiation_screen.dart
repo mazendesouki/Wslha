@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/i18n.dart';
+import '../../core/pricing_settings.dart';
 import '../../core/session.dart';
 import '../../core/theme.dart';
 import '../airport/airport_fare.dart' show qualityLabels;
@@ -19,6 +20,17 @@ class NegotiationScreen extends StatefulWidget {
 
 class _NegotiationScreenState extends State<NegotiationScreen> {
   final _repo = DriverRepository();
+
+  @override
+  void initState() {
+    super.initState();
+    // Admin-configurable negotiation floor (db/security-133) — fetched
+    // fresh here since a driver may open this screen long after app
+    // startup, and the percentage can change at any time.
+    PricingSettings.refresh().then((_) {
+      if (mounted) setState(() {});
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -90,9 +102,10 @@ class _NegotiableRideCardState extends State<_NegotiableRideCard> {
       return;
     }
     final fairFare = (widget.ride['fare'] as num?);
-    if (fairFare != null && price < fairFare) {
+    final floor = fairFare == null ? null : fairFare * PricingSettings.negotiationMinPricePct / 100;
+    if (floor != null && price < floor) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('${context.tr('negotiation_err_below_fair_fare_prefix')} ${fairFare.toStringAsFixed(0)} ${context.tr('negotiation_err_below_fair_fare_suffix')}')),
+        SnackBar(content: Text('${context.tr('negotiation_err_below_fair_fare_prefix')} ${floor.toStringAsFixed(0)} ${context.tr('negotiation_err_below_fair_fare_suffix')}')),
       );
       return;
     }
@@ -113,7 +126,8 @@ class _NegotiableRideCardState extends State<_NegotiableRideCard> {
   @override
   Widget build(BuildContext context) {
     final ride = widget.ride;
-    final refFare = ride['fare'];
+    final rideFare = ride['fare'] as num?;
+    final refFare = rideFare == null ? null : (rideFare * PricingSettings.negotiationMinPricePct / 100).toStringAsFixed(0);
     final distanceKm = (ride['distance_km'] as num?)?.toStringAsFixed(1);
     final etaMinutes = ride['eta_minutes'];
     final qualityTier = ride['airport_quality_tier'] as String?;

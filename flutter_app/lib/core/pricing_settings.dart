@@ -59,6 +59,13 @@ class PricingSettings {
   static double commissionExternal = 6;
   static double commissionAirport = 7;
 
+  // Minimum % of a negotiable ride's fair fare (rides.fare, already
+  // server-computed) a driver is allowed to bid — enforced server-side in
+  // submit_ride_price_offer/accept_ride_price_offer (db/security-133).
+  // This is only used client-side to pre-check and show the real floor
+  // before hitting the RPC; 100 matches the previous hardcoded behavior.
+  static double negotiationMinPricePct = 100;
+
   static bool _loaded = false;
 
   /// Fire-and-forget is fine to call repeatedly (e.g. from each screen's
@@ -86,6 +93,7 @@ class PricingSettings {
         'no_show_grace_minutes', 'no_show_fee',
         'driver_daily_goal', 'driver_weekly_goal',
         'commission_ride', 'commission_delivery', 'commission_external', 'commission_airport',
+        'negotiation_min_price_pct',
       ]);
       double? num(String key) {
         final row = (rows as List).cast<Map<String, dynamic>>().where((r) => r['key'] == key).toList();
@@ -123,6 +131,7 @@ class PricingSettings {
       commissionDelivery = num('commission_delivery') ?? commissionDelivery;
       commissionExternal = num('commission_external') ?? commissionExternal;
       commissionAirport = num('commission_airport') ?? commissionAirport;
+      negotiationMinPricePct = num('negotiation_min_price_pct') ?? negotiationMinPricePct;
       _loaded = true;
     } catch (_) {
       // Network hiccup — keep the hardcoded defaults.

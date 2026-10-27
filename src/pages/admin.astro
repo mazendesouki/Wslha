@@ -1585,6 +1585,12 @@
               </div>
               <div style="font-size:.72rem;color:#94A3B8;margin-top:.5rem">لو السائق اتأخر عن العميل أكتر من المهلة، بيتخصم من رصيده تلقائيًا. ولو العميل اتأخر يركب بعد وصول السائق أكتر من مهلته، بيتخصم منه المبلغ عن كل دقيقة إضافية.</div>
             </div>
+            <div style="margin-top:1.25rem;padding:.85rem 1rem;background:#F1F5F9;border-radius:10px">
+              <div style="font-weight:800;font-size:.85rem">🤝 الحد الأدنى لعروض الرحلات التفاوضية</div>
+              <div style="font-size:.75rem;color:#64748B;margin-top:.2rem;margin-bottom:.6rem">أي عرض سعر من سائق على رحلة تفاوضية لازم يكون النسبة دي على الأقل من السعر العادل المحسوب للرحلة (100% = السعر العادل بالظبط، مينفعش السائق يعرض أقل منه).</div>
+              <label style="font-size:.75rem;color:#64748B;display:block;margin-bottom:.3rem">النسبة المسموحة (%)</label>
+              <input class="search-input" id="price-negotiation-min-pct" type="number" min="1" max="500" step="1" style="max-width:160px"/>
+            </div>
             <button class="btn btn--primary" onclick="saveTripPricing()" id="save-pricing-btn" style="margin-top:1rem">💾 حفظ تسعيرة المشاوير</button>
             <div id="pricing-msg" style="display:none;font-size:.82rem;font-weight:700;padding:.5rem .75rem;border-radius:6px;margin-top:.5rem"></div>
           </div>
@@ -5017,6 +5023,7 @@ const PRICING_FIELD_MAP = {
   airport_rate_sedan: 'price-airport-sedan', airport_rate_suv: 'price-airport-suv', airport_rate_van: 'price-airport-van',
   driver_late_grace_minutes: 'wait-driver-grace', driver_late_fee: 'wait-driver-fee',
   customer_late_grace_minutes: 'wait-customer-grace', customer_late_fee_per_minute: 'wait-customer-fee',
+  negotiation_min_price_pct: 'price-negotiation-min-pct',
 };
 
 async function loadTripPricing() {
