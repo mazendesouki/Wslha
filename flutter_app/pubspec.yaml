@@ -66,6 +66,18 @@ dev_dependencies:
   # rules and activating additional ones.
   flutter_lints: ^6.0.0
 
+# pdf/printing pull in `image` transitively (not a direct dependency here),
+# and image 4.11.0 shipped with a buggy constraint that let pub resolve an
+# archive version older than 4.4.0 — the release where ZLibDecoder gained
+# decodeLazy(), which 4.11.0 actually calls. Every CI build since has failed
+# with "The method 'decodeLazy' isn't defined for the type 'ZLibDecoder'"
+# (image's own maintainers fixed the constraint in 4.11.1, "Fix dependency
+# constraint to archive 4.4.0"). Forcing archive to a version that actually
+# has decodeLazy() sidesteps the bad constraint without needing a full
+# `flutter pub get` re-resolve.
+dependency_overrides:
+  archive: ^4.5.0
+
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
 
