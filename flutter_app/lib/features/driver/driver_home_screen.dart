@@ -33,6 +33,7 @@ import 'demand_hotspots_screen.dart';
 import 'driver_repository.dart';
 import 'negotiation_screen.dart';
 import 'trip_log_screen.dart';
+import 'vehicle_service_screen.dart';
 
 /// Visual language ported from driver-dashboard.astro: teal online toggle,
 /// pulsing "radar" while idle, a list of 30s-countdown offer cards,
@@ -744,6 +745,14 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
             icon: const Text('🔥', style: TextStyle(fontSize: 20)),
             onPressed: () => Navigator.of(context).push(
               MaterialPageRoute(builder: (_) => const DemandHotspotsScreen()),
+            ),
+          ),
+          // "خدمات المركبة" (db/security-134) — صيانة/وقود/كاوتش/زيت/فحص.
+          IconButton(
+            tooltip: '🔧 خدمات المركبة',
+            icon: const Text('🔧', style: TextStyle(fontSize: 20)),
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => VehicleServiceScreen(driverPhone: widget.session.phone)),
             ),
           ),
           const LogoutButton(),

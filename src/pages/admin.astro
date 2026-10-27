@@ -440,6 +440,9 @@
     <button class="nav-item" data-section="service-controls">
       <span class="nav-item__icon">🚦</span> التحكم في الخدمات
     </button>
+    <button class="nav-item" data-section="vehicle-services">
+      <span class="nav-item__icon">🔧</span> خدمات المركبات
+    </button>
     <button class="nav-item" data-section="settings">
       <span class="nav-item__icon">⚙️</span> الإعدادات
     </button>
@@ -1436,6 +1439,53 @@
       </div>
     </div>
 
+    <!-- ═══════════════════ VEHICLE SERVICES ════════════════ -->
+    <div class="section" id="sec-vehicle-services">
+      <div class="card" style="margin-bottom:1.25rem">
+        <div class="card__head"><span class="card__title">🔧 ملخص التكلفة حسب نوع الخدمة</span></div>
+        <div class="card__body">
+          <div id="vs-summary" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:.75rem">
+            <p style="text-align:center;color:#94A3B8;padding:1rem;grid-column:1/-1">جاري التحميل…</p>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card__head">
+          <span class="card__title">📋 سجل خدمات المركبات</span>
+        </div>
+        <div class="card__body">
+          <p style="font-size:.8rem;color:#64748B;margin-bottom:1rem">
+            صيانة دورية، وقود، كاوتش، زيت، فحص المحرك، وأي خدمة تانية يسجّلها السائق بنفسه من التطبيق — ده الملف/التاريخ الكامل لكل عربية.
+          </p>
+          <div style="display:flex;gap:.75rem;flex-wrap:wrap;margin-bottom:1rem">
+            <input class="search-input" id="vs-filter-phone" type="text" placeholder="فلترة برقم السائق (اختياري)" style="max-width:220px"/>
+            <select class="search-input" id="vs-filter-type" style="max-width:180px">
+              <option value="">كل الأنواع</option>
+              <option value="maintenance">🛠️ صيانة دورية</option>
+              <option value="fuel">⛽ وقود</option>
+              <option value="tire">🛞 كاوتش</option>
+              <option value="oil">🛢️ زيت</option>
+              <option value="inspection">🔍 فحص المحرك</option>
+              <option value="other">➕ خدمة تانية</option>
+            </select>
+            <button class="btn btn--primary btn--sm" onclick="loadVehicleServices()">🔍 فلترة</button>
+          </div>
+          <div style="overflow-x:auto">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>السائق</th><th>النوع</th><th>التكلفة</th><th>العداد</th><th>لتر الوقود</th><th>ملاحظات</th><th>التاريخ</th>
+                </tr>
+              </thead>
+              <tbody id="vs-logs-body">
+                <tr><td colspan="7" style="text-align:center;color:#94A3B8;padding:2rem">جاري التحميل…</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- ═══════════════════ SETTINGS ════════════════════════ -->
     <div class="section" id="sec-settings">
       <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:1.25rem">
@@ -2407,7 +2457,7 @@ const sectionTitles = {
   stores:'إدارة المتاجر', courier:'الطرود والمستندات', 'merchant-delivery':'توصيل التجار', 'general-delivery':'خدمة دليفري', marketplace:'سوق المستعمل',
   corporate:'عقود الشركات', support:'الدعم الفني', coupons:'الكوبونات', campaigns:'إشعارات ترويجية',
   'app-reviews':'مراجعات التطبيق',
-  finance:'التقارير المالية', wallets:'إدارة المحافظ', 'service-controls':'التحكم في الخدمات', settings:'الإعدادات'
+  finance:'التقارير المالية', wallets:'إدارة المحافظ', 'service-controls':'التحكم في الخدمات', 'vehicle-services':'خدمات المركبات', settings:'الإعدادات'
 };
 let currentSection = 'dash';
 function loadDriversSection() {
@@ -2463,7 +2513,7 @@ async function setAppReviewApproved(id, approved) {
 const loaders = { dash:loadDash, users:loadUsers, drivers:loadDriversSection,
   merchants:loadMerchantsSection, orders:loadOrders, rides:loadRides, stores:loadStores,
   courier:loadCourierOrders, 'merchant-delivery':loadMerchantDeliveries, 'general-delivery':loadGeneralDeliveries, marketplace:loadMarketplaceSection, corporate:loadCorporateContracts,
-  messages:loadMessages, support:loadSupportChats, coupons:loadCoupons, campaigns:loadCampaignsSection, 'app-reviews':loadAppReviews, finance:loadFinance, wallets:loadWalletsSection, 'service-controls':loadServiceControls, settings:loadSettingsSection };
+  messages:loadMessages, support:loadSupportChats, coupons:loadCoupons, campaigns:loadCampaignsSection, 'app-reviews':loadAppReviews, finance:loadFinance, wallets:loadWalletsSection, 'service-controls':loadServiceControls, 'vehicle-services':loadVehicleServices, settings:loadSettingsSection };
 
 document.querySelectorAll('.nav-item').forEach(btn => {
   btn.addEventListener('click', () => {
@@ -5243,6 +5293,59 @@ async function saveServiceControl(serviceKey) {
     clearAdminPass();
     showToast('❌ فشل — تحقق من كلمة مرور المشرف', '#DC2626');
   }
+}
+
+/* ═══════════════════ VEHICLE SERVICES (db/security-134) ═══════════ */
+const VS_TYPE_LABELS = {
+  maintenance: '🛠️ صيانة دورية', fuel: '⛽ وقود', tire: '🛞 كاوتش',
+  oil: '🛢️ زيت', inspection: '🔍 فحص المحرك', other: '➕ خدمة تانية',
+};
+
+async function loadVehicleServices() {
+  const pass = await getAdminPass();
+  const summaryEl = document.getElementById('vs-summary');
+  const bodyEl = document.getElementById('vs-logs-body');
+  if (!pass) {
+    summaryEl.innerHTML = '<p style="text-align:center;color:#DC2626;padding:1rem;grid-column:1/-1">محتاج كلمة مرور المشرف</p>';
+    bodyEl.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#DC2626;padding:2rem">محتاج كلمة مرور المشرف</td></tr>';
+    return;
+  }
+
+  const summary = await sbRpcRows('admin_vehicle_service_summary', { p_admin_phone: ADMIN.phone, p_admin_password: pass });
+  if (summary === null) {
+    clearAdminPass();
+    summaryEl.innerHTML = '<p style="text-align:center;color:#DC2626;padding:1rem;grid-column:1/-1">فشل التحقق — أعد المحاولة</p>';
+    bodyEl.innerHTML = '';
+    return;
+  }
+  summaryEl.innerHTML = summary.length
+    ? summary.map(s => `
+      <div style="background:#F1F5F9;border-radius:10px;padding:.75rem 1rem">
+        <div style="font-weight:800;font-size:.82rem;margin-bottom:.3rem">${VS_TYPE_LABELS[s.service_type] || s.service_type}</div>
+        <div style="font-size:1.1rem;font-weight:900">${Number(s.total_cost).toLocaleString('ar-EG')} ج.م</div>
+        <div style="font-size:.72rem;color:#64748B">${s.entries_count} سجل${s.service_type === 'fuel' ? ' — ' + Number(s.total_fuel_liters).toFixed(1) + ' لتر' : ''}</div>
+      </div>`).join('')
+    : '<p style="text-align:center;color:#94A3B8;padding:1rem;grid-column:1/-1">مفيش سجلات لسه</p>';
+
+  const phoneFilter = document.getElementById('vs-filter-phone').value.trim();
+  const typeFilter = document.getElementById('vs-filter-type').value;
+  const rows = await sbRpcRows('admin_list_vehicle_service_logs', {
+    p_admin_phone: ADMIN.phone, p_admin_password: pass,
+    p_driver_phone: phoneFilter || null, p_service_type: typeFilter || null,
+  });
+  if (rows === null) { clearAdminPass(); bodyEl.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#DC2626;padding:2rem">فشل التحقق — أعد المحاولة</td></tr>'; return; }
+  bodyEl.innerHTML = rows.length
+    ? rows.map(r => `
+      <tr>
+        <td>${escapeHtml(r.driver_name || r.driver_phone)}<br><span style="font-size:.72rem;color:#94A3B8">${escapeHtml(r.driver_phone)}</span></td>
+        <td>${r.service_type === 'other' && r.custom_label ? '➕ ' + escapeHtml(r.custom_label) : (VS_TYPE_LABELS[r.service_type] || r.service_type)}</td>
+        <td>${r.cost != null ? Number(r.cost).toLocaleString('ar-EG') + ' ج.م' : '—'}</td>
+        <td>${r.odometer_km != null ? Number(r.odometer_km).toLocaleString('ar-EG') + ' كم' : '—'}</td>
+        <td>${r.fuel_liters != null ? Number(r.fuel_liters).toFixed(1) + ' لتر' : '—'}</td>
+        <td style="max-width:200px">${escapeHtml(r.notes || '—')}</td>
+        <td>${new Date(r.performed_at).toLocaleDateString('ar-EG')}</td>
+      </tr>`).join('')
+    : '<tr><td colspan="7" style="text-align:center;color:#94A3B8;padding:2rem">مفيش سجلات تطابق الفلترة</td></tr>';
 }
 
 async function saveMerchantDeliveryFee() {
