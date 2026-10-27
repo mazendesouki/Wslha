@@ -262,6 +262,12 @@ class DriverRepository {
       final msg = e.toString();
       if (msg.contains('ride_already_taken')) return 'الرحلة اتقفلت — سائق تاني اتقبل عليها.';
       if (msg.contains('not_negotiable')) return 'الرحلة دي مش تفاوضية.';
+      if (msg.contains('price_below_fair_fare')) {
+        final floor = RegExp(r'price_below_fair_fare:([\d.]+)').firstMatch(msg)?.group(1);
+        return floor != null
+            ? 'السعر ده أقل من السعر العادل للرحلة (${num.parse(floor).toStringAsFixed(0)} ج.م) — مينفعش عرض أقل من كده.'
+            : 'السعر ده أقل من السعر العادل للرحلة.';
+      }
       return 'تعذّر إرسال العرض، حاول مرة أخرى.';
     }
   }

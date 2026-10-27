@@ -89,6 +89,13 @@ class _NegotiableRideCardState extends State<_NegotiableRideCard> {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.tr('negotiation_err_invalid_price'))));
       return;
     }
+    final fairFare = (widget.ride['fare'] as num?);
+    if (fairFare != null && price < fairFare) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('${context.tr('negotiation_err_below_fair_fare_prefix')} ${fairFare.toStringAsFixed(0)} ${context.tr('negotiation_err_below_fair_fare_suffix')}')),
+      );
+      return;
+    }
     setState(() => _submitting = true);
     final error = await widget.repo.submitPriceOffer(
       widget.ride['id'].toString(),

@@ -38,7 +38,7 @@ const Map<String, Map<String, String>> batchCStrings = {
   'rides_negotiable_title': {'ar': '🤝 اطلب بسعر تفاوضي', 'en': '🤝 Request a negotiable price'},
   'rides_negotiable_subtitle': {'ar': 'السائقين يقدّموا أسعارهم وانت تختار', 'en': 'Drivers submit their prices and you choose'},
   'rides_section_fare_summary': {'ar': '💰 ملخص الأجرة', 'en': '💰 Fare summary'},
-  'rides_negotiable_notice': {'ar': '🤝 وضع تفاوضي — الرقم اللي تحت ده تقديري بس، السعر النهائي هيكون حسب عرض السائق اللي هتختاره', 'en': '🤝 Negotiable mode — the number below is just an estimate, the final price depends on the driver offer you choose'},
+  'rides_negotiable_notice': {'ar': '🤝 وضع تفاوضي — الرقم اللي تحت ده أقل سعر مسموح، السائقين يقدروا يعرضوا بيه أو أعلى بس', 'en': "🤝 Negotiable mode — the number below is the minimum allowed price, drivers can only offer this or higher"},
   'rides_external_notice': {'ar': '🛣️ رحلة خارج محافظة دمياط — سعر مختلف عن المشاوير الداخلية', 'en': '🛣️ Trip outside Damietta governorate — a different price than in-town rides'},
   'rides_surge_notice_prefix': {'ar': '🔥 الطلب مرتفع دلوقتي — السعر شمل زيادة مؤقتة ×', 'en': '🔥 Demand is high right now — the price includes a temporary surge ×'},
   'rides_multistop_notice_prefix': {'ar': '🛑 مشوار متعدد النقاط', 'en': '🛑 Multi-stop ride'},
