@@ -11,6 +11,8 @@ class VehicleServiceLog {
   final double? odometerKm;
   final double? fuelLiters;
   final double? pricePerLiter;
+  final double? quantity;
+  final double? unitPrice;
   final String? notes;
   final DateTime performedAt;
 
@@ -22,6 +24,8 @@ class VehicleServiceLog {
     this.odometerKm,
     this.fuelLiters,
     this.pricePerLiter,
+    this.quantity,
+    this.unitPrice,
     this.notes,
     required this.performedAt,
   });
@@ -34,6 +38,8 @@ class VehicleServiceLog {
         odometerKm: (r['odometer_km'] as num?)?.toDouble(),
         fuelLiters: (r['fuel_liters'] as num?)?.toDouble(),
         pricePerLiter: (r['price_per_liter'] as num?)?.toDouble(),
+        quantity: (r['quantity'] as num?)?.toDouble(),
+        unitPrice: (r['unit_price'] as num?)?.toDouble(),
         notes: r['notes'] as String?,
         performedAt: DateTime.parse(r['performed_at'] as String),
       );
@@ -54,9 +60,9 @@ class VehicleServiceRepository {
   }
 
   /// Returns an error message on failure, null on success — same
-  /// convention as DriverRepository.submitPriceOffer. When [pricePerLiter]
-  /// and [fuelLiters] are both given and [cost] is left null, the server
-  /// computes cost = pricePerLiter * fuelLiters.
+  /// convention as DriverRepository.submitPriceOffer. When [cost] is left
+  /// null, the server computes it: pricePerLiter * fuelLiters (fuel), else
+  /// quantity * unitPrice (oil: liters, tire: count).
   Future<String?> logService({
     required String driverPhone,
     required String serviceType,
@@ -65,6 +71,8 @@ class VehicleServiceRepository {
     double? odometerKm,
     double? fuelLiters,
     double? pricePerLiter,
+    double? quantity,
+    double? unitPrice,
     String? notes,
     DateTime? performedAt,
   }) async {
@@ -77,6 +85,8 @@ class VehicleServiceRepository {
         'p_odometer_km': odometerKm,
         'p_fuel_liters': fuelLiters,
         'p_price_per_liter': pricePerLiter,
+        'p_quantity': quantity,
+        'p_unit_price': unitPrice,
         'p_notes': notes,
         'p_performed_at': (performedAt ?? DateTime.now()).toIso8601String(),
       });
@@ -97,6 +107,8 @@ class VehicleServiceRepository {
     double? odometerKm,
     double? fuelLiters,
     double? pricePerLiter,
+    double? quantity,
+    double? unitPrice,
     String? notes,
     DateTime? performedAt,
   }) async {
@@ -110,6 +122,8 @@ class VehicleServiceRepository {
         'p_odometer_km': odometerKm,
         'p_fuel_liters': fuelLiters,
         'p_price_per_liter': pricePerLiter,
+        'p_quantity': quantity,
+        'p_unit_price': unitPrice,
         'p_notes': notes,
         'p_performed_at': (performedAt ?? DateTime.now()).toIso8601String(),
       });

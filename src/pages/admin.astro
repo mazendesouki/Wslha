@@ -1474,7 +1474,7 @@
             <table class="data-table">
               <thead>
                 <tr>
-                  <th>السائق</th><th>النوع</th><th>التكلفة</th><th>العداد</th><th>لتر الوقود</th><th>سعر اللتر</th><th>ملاحظات</th><th>التاريخ</th>
+                  <th>السائق</th><th>النوع</th><th>التكلفة</th><th>العداد</th><th>لتر الوقود</th><th>سعر اللتر</th><th>الكمية</th><th>سعر الوحدة</th><th>ملاحظات</th><th>التاريخ</th>
                 </tr>
               </thead>
               <tbody id="vs-logs-body">
@@ -5329,16 +5329,15 @@ async function loadVehicleServices() {
 
   const phoneFilter = document.getElementById('vs-filter-phone').value.trim();
   const typeFilter = document.getElementById('vs-filter-type').value;
-  // _v2: db/security-137 added price_per_liter to the output columns —
-  // CREATE OR REPLACE can't change a function's return shape, and
-  // DROP FUNCTION needs a confirmation this environment couldn't get
-  // answered in time, so the enhanced version got a new name instead of
-  // replacing admin_list_vehicle_service_logs in place.
-  const rows = await sbRpcRows('admin_list_vehicle_service_logs_v2', {
+  // _v3: db/security-140 added quantity/unit_price (oil/tire calc) to the
+  // output columns — CREATE OR REPLACE can't change a function's return
+  // shape, so each enhanced version gets a new name instead of replacing
+  // the previous admin_list_vehicle_service_logs_vN in place.
+  const rows = await sbRpcRows('admin_list_vehicle_service_logs_v3', {
     p_admin_phone: ADMIN.phone, p_admin_password: pass,
     p_driver_phone: phoneFilter || null, p_service_type: typeFilter || null,
   });
-  if (rows === null) { clearAdminPass(); bodyEl.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#DC2626;padding:2rem">فشل التحقق — أعد المحاولة</td></tr>'; return; }
+  if (rows === null) { clearAdminPass(); bodyEl.innerHTML = '<tr><td colspan="10" style="text-align:center;color:#DC2626;padding:2rem">فشل التحقق — أعد المحاولة</td></tr>'; return; }
   bodyEl.innerHTML = rows.length
     ? rows.map(r => `
       <tr>
@@ -5348,10 +5347,12 @@ async function loadVehicleServices() {
         <td>${r.odometer_km != null ? Number(r.odometer_km).toLocaleString('ar-EG') + ' كم' : '—'}</td>
         <td>${r.fuel_liters != null ? Number(r.fuel_liters).toFixed(1) + ' لتر' : '—'}</td>
         <td>${r.price_per_liter != null ? Number(r.price_per_liter).toFixed(2) + ' ج.م' : '—'}</td>
+        <td>${r.quantity != null ? Number(r.quantity).toLocaleString('ar-EG') : '—'}</td>
+        <td>${r.unit_price != null ? Number(r.unit_price).toFixed(2) + ' ج.م' : '—'}</td>
         <td style="max-width:200px">${escapeHtml(r.notes || '—')}</td>
         <td>${new Date(r.performed_at).toLocaleDateString('ar-EG')}</td>
       </tr>`).join('')
-    : '<tr><td colspan="8" style="text-align:center;color:#94A3B8;padding:2rem">مفيش سجلات تطابق الفلترة</td></tr>';
+    : '<tr><td colspan="10" style="text-align:center;color:#94A3B8;padding:2rem">مفيش سجلات تطابق الفلترة</td></tr>';
 }
 
 async function saveMerchantDeliveryFee() {

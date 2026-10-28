@@ -11,6 +11,44 @@ const Map<String, String> _serviceTypeLabels = {
   'other': '➕ خدمة تانية',
 };
 
+/// Service types priced as (unit price × quantity) with an auto-computed
+/// total, same calculation pattern as fuel — just with a generic
+/// quantity/unit_price pair instead of fuel's dedicated liters/price-per-
+/// liter columns. maintenance/inspection/other stay flat-cost (no single
+/// natural unit applies to all of them).
+class _QuantityUnitConfig {
+  final String quantityLabel;
+  final String unitPriceLabel;
+  final String quantitySuffix;
+  final String unitPriceSuffix;
+  const _QuantityUnitConfig({
+    required this.quantityLabel,
+    required this.unitPriceLabel,
+    required this.quantitySuffix,
+    required this.unitPriceSuffix,
+  });
+}
+
+String _formatQuantity(double? q) {
+  if (q == null) return '';
+  return q % 1 == 0 ? q.toStringAsFixed(0) : q.toStringAsFixed(1);
+}
+
+const Map<String, _QuantityUnitConfig> _quantityUnitConfigs = {
+  'oil': _QuantityUnitConfig(
+    quantityLabel: 'عدد اللترات',
+    unitPriceLabel: 'سعر اللتر (ج.م)',
+    quantitySuffix: 'لتر',
+    unitPriceSuffix: 'ج.م/لتر',
+  ),
+  'tire': _QuantityUnitConfig(
+    quantityLabel: 'العدد',
+    unitPriceLabel: 'سعر الكاوتش الواحد (ج.م)',
+    quantitySuffix: 'كاوتش',
+    unitPriceSuffix: 'ج.م/كاوتش',
+  ),
+};
+
 /// "خدمات المركبات" — سجل/ملف صيانة العربية: صيانة دورية، وقود (سعر
 /// اللتر + معدل الاستهلاك محسوب تلقائيًا)، كاوتش، زيت، فحص المحرك، وأي
 /// خدمة تانية السائق يحددها بنفسه. See db/security-134/137.
@@ -300,6 +338,16 @@ class _LogCard extends StatelessWidget {
                 if (log.odometerKm != null) Text('🧭 ${log.odometerKm!.toStringAsFixed(0)} كم', style: const TextStyle(fontSize: 12, color: AppColors.textFaint)),
                 if (log.fuelLiters != null) Text('⛽ ${log.fuelLiters!.toStringAsFixed(1)} لتر', style: const TextStyle(fontSize: 12, color: AppColors.textFaint)),
                 if (log.pricePerLiter != null) Text('(${log.pricePerLiter!.toStringAsFixed(2)} ج.م/لتر)', style: const TextStyle(fontSize: 11, color: AppColors.textFaint)),
+                if (log.quantity != null)
+                  Text(
+                    '${_formatQuantity(log.quantity)} ${_quantityUnitConfigs[log.serviceType]?.quantitySuffix ?? ''}',
+                    style: const TextStyle(fontSize: 12, color: AppColors.textFaint),
+                  ),
+                if (log.unitPrice != null)
+                  Text(
+                    '(${log.unitPrice!.toStringAsFixed(2)} ${_quantityUnitConfigs[log.serviceType]?.unitPriceSuffix ?? 'ج.م'})',
+                    style: const TextStyle(fontSize: 11, color: AppColors.textFaint),
+                  ),
               ],
             ),
             if (log.notes != null && log.notes!.isNotEmpty) ...[
@@ -330,6 +378,8 @@ class _AddServiceLogSheetState extends State<_AddServiceLogSheet> {
   late final TextEditingController _odometerCtrl;
   late final TextEditingController _fuelLitersCtrl;
   late final TextEditingController _pricePerLiterCtrl;
+  late final TextEditingController _quantityCtrl;
+  late final TextEditingController _unitPriceCtrl;
   late final TextEditingController _notesCtrl;
   late DateTime _date;
   bool _submitting = false;
@@ -348,9 +398,11 @@ class _AddServiceLogSheetState extends State<_AddServiceLogSheet> {
     _odometerCtrl = TextEditingController(text: log?.odometerKm?.toStringAsFixed(0) ?? '');
     _fuelLitersCtrl = TextEditingController(text: log?.fuelLiters?.toStringAsFixed(1) ?? '');
     _pricePerLiterCtrl = TextEditingController(text: log?.pricePerLiter?.toStringAsFixed(2) ?? '');
+    _quantityCtrl = TextEditingController(text: _formatQuantity(log?.quantity));
+    _unitPriceCtrl = TextEditingController(text: log?.unitPrice?.toStringAsFixed(2) ?? '');
     _notesCtrl = TextEditingController(text: log?.notes ?? '');
     _date = log?.performedAt ?? DateTime.now();
-    for (final c in [_fuelLitersCtrl, _pricePerLiterCtrl]) {
+    for (final c in [_fuelLitersCtrl, _pricePerLiterCtrl, _quantityCtrl, _unitPriceCtrl]) {
       c.addListener(() => setState(() {}));
     }
   }
@@ -362,6 +414,8 @@ class _AddServiceLogSheetState extends State<_AddServiceLogSheet> {
     _odometerCtrl.dispose();
     _fuelLitersCtrl.dispose();
     _pricePerLiterCtrl.dispose();
+    _quantityCtrl.dispose();
+    _unitPriceCtrl.dispose();
     _notesCtrl.dispose();
     super.dispose();
   }
@@ -371,6 +425,13 @@ class _AddServiceLogSheetState extends State<_AddServiceLogSheet> {
     final liters = double.tryParse(_fuelLitersCtrl.text.trim());
     if (price == null || liters == null) return null;
     return price * liters;
+  }
+
+  double? get _computedQuantityTotal {
+    final price = double.tryParse(_unitPriceCtrl.text.trim());
+    final qty = double.tryParse(_quantityCtrl.text.trim());
+    if (price == null || qty == null) return null;
+    return price * qty;
   }
 
   Future<void> _pickDate() async {
@@ -394,6 +455,8 @@ class _AddServiceLogSheetState extends State<_AddServiceLogSheet> {
     });
 
     final isFuel = _type == 'fuel';
+    final quantityConfig = _quantityUnitConfigs[_type];
+    final usesFlatCost = !isFuel && quantityConfig == null;
     final String? error;
     if (_editing) {
       error = await widget.repo.updateLog(
@@ -401,10 +464,12 @@ class _AddServiceLogSheetState extends State<_AddServiceLogSheet> {
         logId: widget.existingLog!.id,
         serviceType: _type,
         customLabel: _type == 'other' ? _customLabelCtrl.text.trim() : null,
-        cost: isFuel ? null : double.tryParse(_costCtrl.text.trim()),
+        cost: usesFlatCost ? double.tryParse(_costCtrl.text.trim()) : null,
         odometerKm: double.tryParse(_odometerCtrl.text.trim()),
         fuelLiters: isFuel ? double.tryParse(_fuelLitersCtrl.text.trim()) : null,
         pricePerLiter: isFuel ? double.tryParse(_pricePerLiterCtrl.text.trim()) : null,
+        quantity: quantityConfig != null ? double.tryParse(_quantityCtrl.text.trim()) : null,
+        unitPrice: quantityConfig != null ? double.tryParse(_unitPriceCtrl.text.trim()) : null,
         notes: _notesCtrl.text.trim().isEmpty ? null : _notesCtrl.text.trim(),
         performedAt: _date,
       );
@@ -413,10 +478,12 @@ class _AddServiceLogSheetState extends State<_AddServiceLogSheet> {
         driverPhone: widget.driverPhone,
         serviceType: _type,
         customLabel: _type == 'other' ? _customLabelCtrl.text.trim() : null,
-        cost: isFuel ? null : double.tryParse(_costCtrl.text.trim()),
+        cost: usesFlatCost ? double.tryParse(_costCtrl.text.trim()) : null,
         odometerKm: double.tryParse(_odometerCtrl.text.trim()),
         fuelLiters: isFuel ? double.tryParse(_fuelLitersCtrl.text.trim()) : null,
         pricePerLiter: isFuel ? double.tryParse(_pricePerLiterCtrl.text.trim()) : null,
+        quantity: quantityConfig != null ? double.tryParse(_quantityCtrl.text.trim()) : null,
+        unitPrice: quantityConfig != null ? double.tryParse(_unitPriceCtrl.text.trim()) : null,
         notes: _notesCtrl.text.trim().isEmpty ? null : _notesCtrl.text.trim(),
         performedAt: _date,
       );
@@ -463,7 +530,8 @@ class _AddServiceLogSheetState extends State<_AddServiceLogSheet> {
     final d = _date;
     final dateStr = '${d.year}/${d.month.toString().padLeft(2, '0')}/${d.day.toString().padLeft(2, '0')}';
     final isFuel = _type == 'fuel';
-    final computedTotal = _computedFuelTotal;
+    final quantityConfig = _quantityUnitConfigs[_type];
+    final computedTotal = isFuel ? _computedFuelTotal : (quantityConfig != null ? _computedQuantityTotal : null);
     final busy = _submitting || _deleting;
 
     return SafeArea(
@@ -525,6 +593,43 @@ class _AddServiceLogSheetState extends State<_AddServiceLogSheet> {
                           controller: _fuelLitersCtrl,
                           keyboardType: const TextInputType.numberWithOptions(decimal: true),
                           decoration: const InputDecoration(labelText: 'عدد اللترات'),
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (computedTotal != null) ...[
+                    const SizedBox(height: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                      decoration: BoxDecoration(color: AppColors.primaryLight, borderRadius: BorderRadius.circular(8)),
+                      child: Text('💰 الإجمالي: ${computedTotal.toStringAsFixed(2)} ج.م', style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13)),
+                    ),
+                  ],
+                  const SizedBox(height: 10),
+                  TextField(
+                    controller: _odometerCtrl,
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    decoration: const InputDecoration(labelText: 'عداد الكيلومترات'),
+                  ),
+                ] else if (quantityConfig != null) ...[
+                  // Same calculation pattern as fuel (price_per_liter ×
+                  // fuel_liters) but with a generic quantity/unit_price pair
+                  // — oil: liters, tire: count. See db/security-140.
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: _unitPriceCtrl,
+                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                          decoration: InputDecoration(labelText: quantityConfig.unitPriceLabel),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: TextField(
+                          controller: _quantityCtrl,
+                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                          decoration: InputDecoration(labelText: quantityConfig.quantityLabel),
                         ),
                       ),
                     ],
