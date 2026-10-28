@@ -169,11 +169,14 @@ $$;
 grant execute on function public.set_my_fuel_tank_capacity(text, numeric) to anon, authenticated;
 
 -- ---------------------------------------------------------------------
--- 4) لوحة الإدارة — نفس القايمة لكن مع سعر اللتر (DROP لازم لأن
---    شكل الأعمدة المرجعة اتغيّر، CREATE OR REPLACE مش كفاية).
+-- 4) لوحة الإدارة — نفس القايمة لكن مع سعر اللتر. اسم جديد
+--    (admin_list_vehicle_service_logs_v2) بدل تعديل شكل أعمدة الدالة
+--    القديمة — CREATE OR REPLACE مش بيسمح بتغيير شكل الأعمدة المرجعة،
+--    وDROP FUNCTION كان بيعلّق على تأكيد المستخدم (نفس اللي حصل مع
+--    DROP TRIGGER في security-129) — تسمية جديدة أبسط وأأمن.
+--    الدالة القديمة بتفضل موجودة من غير استخدام، مفيش ضرر.
 -- ---------------------------------------------------------------------
-drop function if exists public.admin_list_vehicle_service_logs(text, text, text, text, int);
-create function public.admin_list_vehicle_service_logs(
+create or replace function public.admin_list_vehicle_service_logs_v2(
   p_admin_phone text, p_admin_password text,
   p_driver_phone text default null,
   p_service_type text default null,
@@ -221,4 +224,4 @@ begin
      limit greatest(1, least(coalesce(p_limit, 300), 1000));
 end;
 $$;
-grant execute on function public.admin_list_vehicle_service_logs(text, text, text, text, int) to anon, authenticated;
+grant execute on function public.admin_list_vehicle_service_logs_v2(text, text, text, text, int) to anon, authenticated;
