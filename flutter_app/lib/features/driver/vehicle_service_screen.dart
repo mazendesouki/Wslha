@@ -29,6 +29,23 @@ class _QuantityUnitConfig {
   });
 }
 
+/// Fallback labels for _LogCard (which has no catalog fetch of its own) —
+/// mirrors db/security-142's seeded maintenance_catalog_items. An item_key
+/// not found here (e.g. a future admin-added item) just shows its raw key.
+const Map<String, String> _maintenanceItemLabels = {
+  'oil_filter': 'تغيير فلتر الزيت',
+  'air_filter': 'فلتر الهواء',
+  'fuel_filter': 'فلتر البنزين',
+  'spark_plugs': 'البوجيهات',
+  'brake_pads': 'تيل الفرامل',
+  'brake_fluid': 'زيت الفرامل',
+  'timing_belt': 'سير الكاتينة/التايمنج',
+  'battery': 'البطارية',
+  'coolant': 'سائل التبريد',
+  'transmission_fluid': 'زيت الجير',
+  'shock_absorbers': 'المساعدين (الكاتم)',
+};
+
 String _formatQuantity(double? q) {
   if (q == null) return '';
   return q % 1 == 0 ? q.toStringAsFixed(0) : q.toStringAsFixed(1);
@@ -64,6 +81,7 @@ class _VehicleServiceScreenState extends State<VehicleServiceScreen> {
   final _repo = VehicleServiceRepository();
   late Future<List<VehicleServiceLog>> _future;
   late Future<List<VehicleServiceLog>> _fuelFuture;
+  late Future<List<MaintenanceDueStatus>> _maintenanceDueFuture;
   double? _tankCapacity;
   String? _filter;
 
@@ -72,6 +90,7 @@ class _VehicleServiceScreenState extends State<VehicleServiceScreen> {
     super.initState();
     _load();
     _loadFuelSummary();
+    _loadMaintenanceDue();
     _repo.getFuelTankCapacity(widget.driverPhone).then((v) {
       if (mounted) setState(() => _tankCapacity = v);
     });
@@ -85,12 +104,17 @@ class _VehicleServiceScreenState extends State<VehicleServiceScreen> {
     _fuelFuture = _repo.listMine(widget.driverPhone, serviceType: 'fuel');
   }
 
+  void _loadMaintenanceDue() {
+    _maintenanceDueFuture = _repo.getMaintenanceDueStatus(widget.driverPhone);
+  }
+
   Future<void> _refresh() async {
     setState(() {
       _load();
       _loadFuelSummary();
+      _loadMaintenanceDue();
     });
-    await Future.wait([_future, _fuelFuture]);
+    await Future.wait([_future, _fuelFuture, _maintenanceDueFuture]);
   }
 
   Future<void> _openSheet({VehicleServiceLog? existingLog}) async {
@@ -155,6 +179,10 @@ class _VehicleServiceScreenState extends State<VehicleServiceScreen> {
                 tankCapacity: _tankCapacity,
                 onEditCapacity: _editTankCapacity,
               ),
+            ),
+            FutureBuilder<List<MaintenanceDueStatus>>(
+              future: _maintenanceDueFuture,
+              builder: (context, snap) => _MaintenanceDueCard(items: snap.data ?? const []),
             ),
             SizedBox(
               height: 44,
@@ -296,6 +324,62 @@ class _FuelSummaryCard extends StatelessWidget {
   }
 }
 
+/// Shows which periodic-maintenance catalog items (db/security-142) are
+/// overdue or due soon, computed server-side from km since each item was
+/// last logged against the driver's latest known odometer reading.
+/// Collapses to nothing once everything is ok/never-tracked-yet, so it
+/// doesn't take space when there's nothing actionable.
+class _MaintenanceDueCard extends StatelessWidget {
+  final List<MaintenanceDueStatus> items;
+  const _MaintenanceDueCard({required this.items});
+
+  @override
+  Widget build(BuildContext context) {
+    final due = items.where((i) => i.status == 'overdue' || i.status == 'due_soon').toList()
+      ..sort((a, b) {
+        if (a.status != b.status) return a.status == 'overdue' ? -1 : 1;
+        if (a.importance != b.importance) return a.importance == 'critical' ? -1 : 1;
+        return 0;
+      });
+    if (due.isEmpty) return const SizedBox.shrink();
+
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(color: AppColors.error.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(14)),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const Text('🛠️ صيانة مطلوبة', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 13)),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            runSpacing: 6,
+            children: [
+              for (final i in due)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: i.status == 'overdue' ? AppColors.error.withValues(alpha: 0.15) : const Color(0xFFFFEDD5),
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: Text(
+                    '${i.status == 'overdue' ? '⛔' : '⏰'} ${i.labelAr}${i.importance == 'critical' ? ' ‼️' : ''}',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w800,
+                      color: i.status == 'overdue' ? AppColors.error : const Color(0xFFB45309),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _LogCard extends StatelessWidget {
   final VehicleServiceLog log;
   final VoidCallback onTap;
@@ -350,6 +434,21 @@ class _LogCard extends StatelessWidget {
                   ),
               ],
             ),
+            if (log.maintenanceItems != null && log.maintenanceItems!.isNotEmpty) ...[
+              const SizedBox(height: 6),
+              Wrap(
+                spacing: 6,
+                runSpacing: 4,
+                children: [
+                  for (final key in log.maintenanceItems!)
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(color: AppColors.primaryLight, borderRadius: BorderRadius.circular(999)),
+                      child: Text(_maintenanceItemLabels[key] ?? key, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.primary)),
+                    ),
+                ],
+              ),
+            ],
             if (log.notes != null && log.notes!.isNotEmpty) ...[
               const SizedBox(height: 4),
               Text(log.notes!, style: const TextStyle(fontSize: 12, color: AppColors.textFaint)),
@@ -385,6 +484,8 @@ class _AddServiceLogSheetState extends State<_AddServiceLogSheet> {
   bool _submitting = false;
   bool _deleting = false;
   String? _error;
+  late Future<List<MaintenanceCatalogItem>> _catalogFuture;
+  late Set<String> _selectedMaintenanceItems;
 
   bool get _editing => widget.existingLog != null;
 
@@ -402,6 +503,8 @@ class _AddServiceLogSheetState extends State<_AddServiceLogSheet> {
     _unitPriceCtrl = TextEditingController(text: log?.unitPrice?.toStringAsFixed(2) ?? '');
     _notesCtrl = TextEditingController(text: log?.notes ?? '');
     _date = log?.performedAt ?? DateTime.now();
+    _selectedMaintenanceItems = {...(log?.maintenanceItems ?? const [])};
+    _catalogFuture = widget.repo.listMaintenanceCatalog();
     for (final c in [_fuelLitersCtrl, _pricePerLiterCtrl, _quantityCtrl, _unitPriceCtrl]) {
       c.addListener(() => setState(() {}));
     }
@@ -470,6 +573,7 @@ class _AddServiceLogSheetState extends State<_AddServiceLogSheet> {
         pricePerLiter: isFuel ? double.tryParse(_pricePerLiterCtrl.text.trim()) : null,
         quantity: quantityConfig != null ? double.tryParse(_quantityCtrl.text.trim()) : null,
         unitPrice: quantityConfig != null ? double.tryParse(_unitPriceCtrl.text.trim()) : null,
+        maintenanceItems: _type == 'maintenance' ? _selectedMaintenanceItems.toList() : null,
         notes: _notesCtrl.text.trim().isEmpty ? null : _notesCtrl.text.trim(),
         performedAt: _date,
       );
@@ -484,6 +588,7 @@ class _AddServiceLogSheetState extends State<_AddServiceLogSheet> {
         pricePerLiter: isFuel ? double.tryParse(_pricePerLiterCtrl.text.trim()) : null,
         quantity: quantityConfig != null ? double.tryParse(_quantityCtrl.text.trim()) : null,
         unitPrice: quantityConfig != null ? double.tryParse(_unitPriceCtrl.text.trim()) : null,
+        maintenanceItems: _type == 'maintenance' ? _selectedMaintenanceItems.toList() : null,
         notes: _notesCtrl.text.trim().isEmpty ? null : _notesCtrl.text.trim(),
         performedAt: _date,
       );
@@ -647,6 +752,57 @@ class _AddServiceLogSheetState extends State<_AddServiceLogSheet> {
                     controller: _odometerCtrl,
                     keyboardType: const TextInputType.numberWithOptions(decimal: true),
                     decoration: const InputDecoration(labelText: 'عداد الكيلومترات'),
+                  ),
+                ] else if (_type == 'maintenance') ...[
+                  // Pick which catalog items (db/security-142) were done in
+                  // this visit — drives the "صيانة مطلوبة" due-tracking.
+                  const Text('العناصر اللي تمت صيانتها', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
+                  const SizedBox(height: 8),
+                  FutureBuilder<List<MaintenanceCatalogItem>>(
+                    future: _catalogFuture,
+                    builder: (context, snap) {
+                      final items = snap.data ?? const [];
+                      if (items.isEmpty) return const SizedBox.shrink();
+                      return Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: [
+                          for (final item in items)
+                            FilterChip(
+                              label: Text(item.labelAr, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: _selectedMaintenanceItems.contains(item.itemKey) ? Colors.white : null)),
+                              selected: _selectedMaintenanceItems.contains(item.itemKey),
+                              selectedColor: AppColors.primary,
+                              onSelected: (sel) => setState(() {
+                                if (sel) {
+                                  _selectedMaintenanceItems.add(item.itemKey);
+                                } else {
+                                  _selectedMaintenanceItems.remove(item.itemKey);
+                                }
+                              }),
+                            ),
+                        ],
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: _costCtrl,
+                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                          decoration: const InputDecoration(labelText: 'التكلفة (ج.م)'),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: TextField(
+                          controller: _odometerCtrl,
+                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                          decoration: const InputDecoration(labelText: 'عداد الكيلومترات'),
+                        ),
+                      ),
+                    ],
                   ),
                 ] else ...[
                   Row(

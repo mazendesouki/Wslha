@@ -13,6 +13,7 @@ class VehicleServiceLog {
   final double? pricePerLiter;
   final double? quantity;
   final double? unitPrice;
+  final List<String>? maintenanceItems;
   final String? notes;
   final DateTime performedAt;
 
@@ -26,6 +27,7 @@ class VehicleServiceLog {
     this.pricePerLiter,
     this.quantity,
     this.unitPrice,
+    this.maintenanceItems,
     this.notes,
     required this.performedAt,
   });
@@ -40,8 +42,56 @@ class VehicleServiceLog {
         pricePerLiter: (r['price_per_liter'] as num?)?.toDouble(),
         quantity: (r['quantity'] as num?)?.toDouble(),
         unitPrice: (r['unit_price'] as num?)?.toDouble(),
+        maintenanceItems: (r['maintenance_items'] as List?)?.map((e) => e.toString()).toList(),
         notes: r['notes'] as String?,
         performedAt: DateTime.parse(r['performed_at'] as String),
+      );
+}
+
+/// One standard periodic-maintenance item — db/security-142's
+/// maintenance_catalog_items, admin-editable from the dashboard.
+class MaintenanceCatalogItem {
+  final String itemKey;
+  final String labelAr;
+  final String importance; // 'critical' | 'important'
+  final double? intervalKm;
+
+  MaintenanceCatalogItem({required this.itemKey, required this.labelAr, required this.importance, this.intervalKm});
+
+  factory MaintenanceCatalogItem.fromRow(Map<String, dynamic> r) => MaintenanceCatalogItem(
+        itemKey: r['item_key'] as String,
+        labelAr: r['label_ar'] as String,
+        importance: r['importance'] as String,
+        intervalKm: (r['interval_km'] as num?)?.toDouble(),
+      );
+}
+
+/// Due/overdue status for one catalog item, computed server-side from the
+/// driver's own maintenance history + latest logged odometer reading.
+class MaintenanceDueStatus {
+  final String itemKey;
+  final String labelAr;
+  final String importance;
+  final double? intervalKm;
+  final double? kmSince;
+  final String status; // 'overdue' | 'due_soon' | 'ok' | 'never_done'
+
+  MaintenanceDueStatus({
+    required this.itemKey,
+    required this.labelAr,
+    required this.importance,
+    this.intervalKm,
+    this.kmSince,
+    required this.status,
+  });
+
+  factory MaintenanceDueStatus.fromRow(Map<String, dynamic> r) => MaintenanceDueStatus(
+        itemKey: r['item_key'] as String,
+        labelAr: r['label_ar'] as String,
+        importance: r['importance'] as String,
+        intervalKm: (r['interval_km'] as num?)?.toDouble(),
+        kmSince: (r['km_since'] as num?)?.toDouble(),
+        status: r['status'] as String,
       );
 }
 
@@ -73,6 +123,7 @@ class VehicleServiceRepository {
     double? pricePerLiter,
     double? quantity,
     double? unitPrice,
+    List<String>? maintenanceItems,
     String? notes,
     DateTime? performedAt,
   }) async {
@@ -87,6 +138,7 @@ class VehicleServiceRepository {
         'p_price_per_liter': pricePerLiter,
         'p_quantity': quantity,
         'p_unit_price': unitPrice,
+        'p_maintenance_items': maintenanceItems,
         'p_notes': notes,
         'p_performed_at': (performedAt ?? DateTime.now()).toIso8601String(),
       });
@@ -109,6 +161,7 @@ class VehicleServiceRepository {
     double? pricePerLiter,
     double? quantity,
     double? unitPrice,
+    List<String>? maintenanceItems,
     String? notes,
     DateTime? performedAt,
   }) async {
@@ -124,6 +177,7 @@ class VehicleServiceRepository {
         'p_price_per_liter': pricePerLiter,
         'p_quantity': quantity,
         'p_unit_price': unitPrice,
+        'p_maintenance_items': maintenanceItems,
         'p_notes': notes,
         'p_performed_at': (performedAt ?? DateTime.now()).toIso8601String(),
       });
@@ -163,6 +217,24 @@ class VehicleServiceRepository {
       return ok == true;
     } catch (_) {
       return false;
+    }
+  }
+
+  Future<List<MaintenanceCatalogItem>> listMaintenanceCatalog() async {
+    try {
+      final rows = await sb.rpc('list_maintenance_catalog');
+      return (rows as List).map((r) => MaintenanceCatalogItem.fromRow(r as Map<String, dynamic>)).toList();
+    } catch (_) {
+      return [];
+    }
+  }
+
+  Future<List<MaintenanceDueStatus>> getMaintenanceDueStatus(String driverPhone) async {
+    try {
+      final rows = await sb.rpc('get_maintenance_due_status', params: {'p_driver_phone': driverPhone});
+      return (rows as List).map((r) => MaintenanceDueStatus.fromRow(r as Map<String, dynamic>)).toList();
+    } catch (_) {
+      return [];
     }
   }
 }

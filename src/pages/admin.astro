@@ -1449,6 +1449,27 @@
           </div>
         </div>
       </div>
+      <div class="card" style="margin-bottom:1.25rem">
+        <div class="card__head">
+          <span class="card__title">📋 كتالوج الصيانة الدورية</span>
+        </div>
+        <div class="card__body">
+          <p style="font-size:.8rem;color:#64748B;margin-bottom:1rem">
+            العناصر القياسية للصيانة الدورية — بتظهر للسائق كاختيارات عند تسجيل عملية "صيانة دورية"، وبيحسب التطبيق تلقائيًا إيه اللي مستحق بناءً على الكيلومترات.
+          </p>
+          <div style="overflow-x:auto;margin-bottom:1rem">
+            <table class="data-table">
+              <thead>
+                <tr><th>العنصر</th><th>الأهمية</th><th>الفترة (كم)</th><th>الفترة (شهور)</th><th>مفعّل</th><th></th></tr>
+              </thead>
+              <tbody id="mc-catalog-body">
+                <tr><td colspan="6" style="text-align:center;color:#94A3B8;padding:2rem">جاري التحميل…</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <button class="btn btn--outline btn--sm" onclick="openMaintenanceCatalogItemModal()">➕ إضافة عنصر جديد</button>
+        </div>
+      </div>
       <div class="card">
         <div class="card__head">
           <span class="card__title">📋 سجل خدمات المركبات</span>
@@ -2000,6 +2021,53 @@
       </div>
       <button class="btn btn--primary" style="width:100%" id="wallet-op-confirm-btn" onclick="execAdminWalletOp()">تأكيد</button>
       <div id="wallet-op-msg" style="display:none;font-size:.82rem;font-weight:700;padding:.5rem .75rem;border-radius:6px"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Maintenance catalog item add/edit modal (db/security-142) -->
+<div class="modal-bg hidden" id="mc-item-modal">
+  <div class="modal" style="max-width:440px">
+    <div class="modal__head">
+      <span id="mc-item-modal-title">إضافة عنصر صيانة</span>
+      <button class="modal__close" onclick="closeModal('mc-item-modal')">✕</button>
+    </div>
+    <div class="modal__body" style="display:flex;flex-direction:column;gap:.85rem">
+      <input type="hidden" id="mc-item-key-original"/>
+      <div>
+        <label style="font-size:.78rem;font-weight:700;color:#64748B;display:block;margin-bottom:.3rem">مفتاح العنصر (إنجليزي، بدون مسافات) <span style="color:#DC2626">*</span></label>
+        <input class="search-input" id="mc-item-key" type="text" placeholder="e.g. cabin_filter" style="width:100%"/>
+      </div>
+      <div>
+        <label style="font-size:.78rem;font-weight:700;color:#64748B;display:block;margin-bottom:.3rem">اسم العنصر (عربي) <span style="color:#DC2626">*</span></label>
+        <input class="search-input" id="mc-item-label" type="text" placeholder="مثال: فلتر التكييف" style="width:100%"/>
+      </div>
+      <div>
+        <label style="font-size:.78rem;font-weight:700;color:#64748B;display:block;margin-bottom:.3rem">درجة الأهمية</label>
+        <select class="search-input" id="mc-item-importance" style="width:100%">
+          <option value="important">مهمة</option>
+          <option value="critical">حرجة</option>
+        </select>
+      </div>
+      <div style="display:flex;gap:.75rem">
+        <div style="flex:1">
+          <label style="font-size:.78rem;font-weight:700;color:#64748B;display:block;margin-bottom:.3rem">الفترة بالكيلومتر</label>
+          <input class="search-input" id="mc-item-interval-km" type="number" min="0" placeholder="اختياري" style="width:100%"/>
+        </div>
+        <div style="flex:1">
+          <label style="font-size:.78rem;font-weight:700;color:#64748B;display:block;margin-bottom:.3rem">الفترة بالشهور</label>
+          <input class="search-input" id="mc-item-interval-months" type="number" min="0" placeholder="اختياري" style="width:100%"/>
+        </div>
+      </div>
+      <div>
+        <label style="font-size:.78rem;font-weight:700;color:#64748B;display:block;margin-bottom:.3rem">ترتيب العرض</label>
+        <input class="search-input" id="mc-item-sort-order" type="number" min="0" value="0" style="width:100%"/>
+      </div>
+      <label style="display:flex;align-items:center;gap:.5rem;font-size:.85rem;font-weight:700">
+        <input type="checkbox" id="mc-item-active" checked/> مفعّل (يظهر للسائقين)
+      </label>
+      <button class="btn btn--primary" style="width:100%" id="mc-item-save-btn" onclick="saveMaintenanceCatalogItem()">حفظ</button>
+      <div id="mc-item-msg" style="display:none;font-size:.82rem;font-weight:700;padding:.5rem .75rem;border-radius:6px"></div>
     </div>
   </div>
 </div>
@@ -5301,7 +5369,89 @@ const VS_TYPE_LABELS = {
   oil: '🛢️ زيت', inspection: '🔍 فحص المحرك', other: '➕ خدمة تانية',
 };
 
+const MC_IMPORTANCE_LABELS = { critical: 'حرجة', important: 'مهمة' };
+
+async function loadMaintenanceCatalog() {
+  const bodyEl = document.getElementById('mc-catalog-body');
+  const pass = await getAdminPass();
+  if (!pass) {
+    bodyEl.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#DC2626;padding:2rem">محتاج كلمة مرور المشرف</td></tr>';
+    return;
+  }
+  const rows = await sbRpcRows('admin_list_maintenance_catalog', { p_admin_phone: ADMIN.phone, p_admin_password: pass });
+  if (rows === null) { clearAdminPass(); bodyEl.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#DC2626;padding:2rem">فشل التحقق — أعد المحاولة</td></tr>'; return; }
+  bodyEl.innerHTML = rows.length
+    ? rows.map(r => `
+      <tr>
+        <td>${escapeHtml(r.label_ar)}<br><span style="font-size:.72rem;color:#94A3B8">${escapeHtml(r.item_key)}</span></td>
+        <td>${MC_IMPORTANCE_LABELS[r.importance] || r.importance}</td>
+        <td>${r.interval_km != null ? Number(r.interval_km).toLocaleString('ar-EG') : '—'}</td>
+        <td>${r.interval_months != null ? Number(r.interval_months).toLocaleString('ar-EG') : '—'}</td>
+        <td>${r.active ? '✅' : '❌'}</td>
+        <td><button class="btn btn--outline btn--sm" onclick='openMaintenanceCatalogItemModal(${JSON.stringify(r).replace(/'/g, "&apos;")})'>✏️ تعديل</button></td>
+      </tr>`).join('')
+    : '<tr><td colspan="6" style="text-align:center;color:#94A3B8;padding:2rem">مفيش عناصر لسه</td></tr>';
+}
+
+function openMaintenanceCatalogItemModal(item) {
+  const msg = document.getElementById('mc-item-msg');
+  msg.style.display = 'none';
+  document.getElementById('mc-item-modal-title').textContent = item ? 'تعديل عنصر صيانة' : 'إضافة عنصر صيانة';
+  document.getElementById('mc-item-key-original').value = item ? item.item_key : '';
+  document.getElementById('mc-item-key').value = item ? item.item_key : '';
+  document.getElementById('mc-item-key').disabled = !!item;
+  document.getElementById('mc-item-label').value = item ? item.label_ar : '';
+  document.getElementById('mc-item-importance').value = item ? item.importance : 'important';
+  document.getElementById('mc-item-interval-km').value = item && item.interval_km != null ? item.interval_km : '';
+  document.getElementById('mc-item-interval-months').value = item && item.interval_months != null ? item.interval_months : '';
+  document.getElementById('mc-item-sort-order').value = item ? item.sort_order : 0;
+  document.getElementById('mc-item-active').checked = item ? !!item.active : true;
+  document.getElementById('mc-item-modal').classList.remove('hidden');
+}
+
+async function saveMaintenanceCatalogItem() {
+  const btn = document.getElementById('mc-item-save-btn');
+  const msg = document.getElementById('mc-item-msg');
+  const showMsg = (text, ok) => {
+    msg.textContent = text;
+    msg.style.cssText = `display:block;background:${ok ? '#DCFCE7' : '#FEE2E2'};color:${ok ? '#14532D' : '#991B1B'};font-size:.82rem;font-weight:700;padding:.5rem .75rem;border-radius:6px`;
+  };
+  const itemKey = document.getElementById('mc-item-key').value.trim();
+  const labelAr = document.getElementById('mc-item-label').value.trim();
+  if (!itemKey || !labelAr) { showMsg('المفتاح والاسم إلزاميين', false); return; }
+
+  const pass = await getAdminPass();
+  if (!pass) { showMsg('مطلوب كلمة مرور المشرف', false); return; }
+  btn.disabled = true; btn.textContent = 'جاري الحفظ...';
+  try {
+    const kmVal = document.getElementById('mc-item-interval-km').value;
+    const monthsVal = document.getElementById('mc-item-interval-months').value;
+    const ok = await sbRpc('admin_upsert_maintenance_catalog_item', {
+      p_admin_phone: ADMIN.phone, p_admin_password: pass,
+      p_item_key: itemKey,
+      p_label_ar: labelAr,
+      p_importance: document.getElementById('mc-item-importance').value,
+      p_interval_km: kmVal === '' ? null : Number(kmVal),
+      p_interval_months: monthsVal === '' ? null : Number(monthsVal),
+      p_sort_order: Number(document.getElementById('mc-item-sort-order').value) || 0,
+      p_active: document.getElementById('mc-item-active').checked,
+    });
+    if (ok) {
+      showToast('✅ تم حفظ عنصر الصيانة', '#16A34A');
+      closeModal('mc-item-modal');
+      loadMaintenanceCatalog();
+    } else {
+      clearAdminPass();
+      showMsg('❌ فشل — تحقق من كلمة مرور المشرف', false);
+    }
+  } catch {
+    showMsg('حدث خطأ، حاول مرة أخرى', false);
+  }
+  btn.disabled = false; btn.textContent = 'حفظ';
+}
+
 async function loadVehicleServices() {
+  loadMaintenanceCatalog();
   const pass = await getAdminPass();
   const summaryEl = document.getElementById('vs-summary');
   const bodyEl = document.getElementById('vs-logs-body');
