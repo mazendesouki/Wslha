@@ -46,6 +46,134 @@ const Map<String, String> _maintenanceItemLabels = {
   'shock_absorbers': 'المساعدين (الكاتم)',
 };
 
+/// One short "what it is / why it matters" + a practical tip — shown
+/// inline under the selected service/item in the add-log sheet, so the
+/// driver sees guidance right when it's relevant instead of a separate
+/// reference page.
+class _ServiceGuidance {
+  final String description;
+  final String tip;
+  const _ServiceGuidance({required this.description, required this.tip});
+}
+
+const Map<String, _ServiceGuidance> _serviceTypeGuidance = {
+  'fuel': _ServiceGuidance(
+    description: 'سجّل سعر اللتر وعدد اللترات بدل التكلفة الكلية — كده التطبيق يحسبلك معدل الاستهلاك أوتوماتيك.',
+    tip: 'سجّل عداد الكيلومترات مع كل تعبئة — من غيره معدل الاستهلاك ما يتحسبش صح.',
+  ),
+  'tire': _ServiceGuidance(
+    description: 'الكاوتش بيتأثر بالتحميل والسرعة وحالة الطرق، مش بس بعدد الكيلومترات.',
+    tip: 'افحص ضغط الهواء بانتظام وراقب علامات التآكل غير المتساوي — ممكن تدل على مشكلة في الكمبيوتر أو الفرامل.',
+  ),
+  'oil': _ServiceGuidance(
+    description: 'زيت المحرك بيفقد كفاءته مع الوقت حتى لو العربية واقفة — غيّره على الفترة الموصى بيها حتى لو مشيت كيلومترات قليلة.',
+    tip: 'اختار النوع المناسب لموديل عربيتك، ومتأخرش عن الموعد عشان ميأثرش على عمر المحرك.',
+  ),
+  'inspection': _ServiceGuidance(
+    description: 'فحص دوري شامل للمحرك بيكشف مشاكل بسيطة قبل ما تبقى كبيرة ومكلفة.',
+    tip: 'لو سمعت صوت غريب أو حسيت بأداء مختلف، متأجلش الفحص.',
+  ),
+  'other': _ServiceGuidance(
+    description: 'لأي خدمة مش موجودة في القايمة — اكتب اسمها بوضوح عشان تقدر تتابعها بسهولة بعدين.',
+    tip: 'لو الخدمة دي بتتكرر معاك، يستاهل توضيح اسمها بشكل ثابت كل مرة عشان تبقى سهلة التتبع.',
+  ),
+};
+
+const Map<String, _ServiceGuidance> _maintenanceItemGuidance = {
+  'oil_filter': _ServiceGuidance(
+    description: 'فلتر الزيت بيمنع الشوائب من الوصول للمحرك — فلتر متسخ بيقلل كفاءة التزييت.',
+    tip: 'غيّره مع كل تغيير زيت — متأخرش عنه.',
+  ),
+  'air_filter': _ServiceGuidance(
+    description: 'فلتر الهواء بيأثر على كفاءة احتراق الوقود واستهلاك البنزين.',
+    tip: 'فلتر متسخ بيزوّد استهلاك الوقود ويقلل قوة المحرك.',
+  ),
+  'fuel_filter': _ServiceGuidance(
+    description: 'فلتر البنزين بيمنع الشوائب من الوصول لنظام الحقن.',
+    tip: 'إهماله ممكن يسبب تقطيع في أداء المحرك أو صعوبة في التشغيل.',
+  ),
+  'spark_plugs': _ServiceGuidance(
+    description: 'البوجيهات مسؤولة عن إشعال خليط الوقود والهواء جوه المحرك.',
+    tip: 'بوجيهات قديمة بتسبب استهلاك وقود أعلى وتقطيع في أداء المحرك.',
+  ),
+  'brake_pads': _ServiceGuidance(
+    description: 'تيل الفرامل من أهم عناصر الأمان في العربية.',
+    tip: 'لو سمعت صوت صرير عند الفرملة، افحصه فورًا — ده عنصر حرج.',
+  ),
+  'brake_fluid': _ServiceGuidance(
+    description: 'زيت الفرامل بينقل الضغط من الدواسة للفرامل — تدهوره بيضعف كفاءة الفرملة.',
+    tip: 'لازم يتغيّر بالفترة حتى لو مشيتش كيلومترات كتير، لأنه بيمتص رطوبة مع الوقت.',
+  ),
+  'timing_belt': _ServiceGuidance(
+    description: 'سير الكاتينة/التايمنج بينظّم حركة المحرك — قطعه المفاجئ ممكن يسبب تلف كبير جدًا في المحرك.',
+    tip: 'متأخرش عن موعده أبدًا — ده من أخطر عناصر الصيانة لو اتجاهل.',
+  ),
+  'battery': _ServiceGuidance(
+    description: 'البطارية بتضعف مع الوقت حتى لو العربية بتتستخدم بانتظام.',
+    tip: 'لو لاحظت صعوبة في بدء التشغيل، افحص البطارية قبل ما تقف تمامًا.',
+  ),
+  'coolant': _ServiceGuidance(
+    description: 'سائل التبريد بيمنع المحرك من السخونة الزايدة.',
+    tip: 'لو عداد الحرارة بيرتفع كتير، افحص مستوى السائل فورًا.',
+  ),
+  'transmission_fluid': _ServiceGuidance(
+    description: 'زيت الجير بيحافظ على سلاسة نقل الحركة بين الجير والمحرك.',
+    tip: 'إهماله بيسبب صعوبة في تغيير السرعات بمرور الوقت.',
+  ),
+  'shock_absorbers': _ServiceGuidance(
+    description: 'المساعدين (الكاتم) بيحافظوا على ثبات العربية والتحكم فيها.',
+    tip: 'لو حسيت العربية بترتج كتير في المطبات، افحصهم.',
+  ),
+};
+
+/// Inline "what it is / why it matters" card shown right under the
+/// selected service or maintenance item — see the _serviceTypeGuidance/
+/// _maintenanceItemGuidance maps above for the content itself.
+class _GuidanceCard extends StatelessWidget {
+  final _ServiceGuidance guidance;
+  final String? importance; // 'critical' | 'important' — maintenance items only
+  final String? intervalText;
+  const _GuidanceCard({required this.guidance, this.importance, this.intervalText});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(top: 10),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(color: AppColors.primaryLight, borderRadius: BorderRadius.circular(10)),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (importance != null || intervalText != null)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 6),
+              child: Wrap(
+                spacing: 8,
+                runSpacing: 4,
+                children: [
+                  if (importance != null)
+                    Text(
+                      importance == 'critical' ? '‼️ عنصر حرج' : 'ℹ️ عنصر مهم',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w900,
+                        color: importance == 'critical' ? AppColors.error : AppColors.primary,
+                      ),
+                    ),
+                  if (intervalText != null)
+                    Text(intervalText!, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.textFaint)),
+                ],
+              ),
+            ),
+          Text('💡 ${guidance.description}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, height: 1.5)),
+          const SizedBox(height: 6),
+          Text('👁️ ${guidance.tip}', style: const TextStyle(fontSize: 12, color: AppColors.textFaint, height: 1.5)),
+        ],
+      ),
+    );
+  }
+}
+
 String _formatQuantity(double? q) {
   if (q == null) return '';
   return q % 1 == 0 ? q.toStringAsFixed(0) : q.toStringAsFixed(1);
@@ -485,7 +613,7 @@ class _AddServiceLogSheetState extends State<_AddServiceLogSheet> {
   bool _deleting = false;
   String? _error;
   late Future<List<MaintenanceCatalogItem>> _catalogFuture;
-  late Set<String> _selectedMaintenanceItems;
+  String? _selectedMaintenanceItem;
 
   bool get _editing => widget.existingLog != null;
 
@@ -503,7 +631,7 @@ class _AddServiceLogSheetState extends State<_AddServiceLogSheet> {
     _unitPriceCtrl = TextEditingController(text: log?.unitPrice?.toStringAsFixed(2) ?? '');
     _notesCtrl = TextEditingController(text: log?.notes ?? '');
     _date = log?.performedAt ?? DateTime.now();
-    _selectedMaintenanceItems = {...(log?.maintenanceItems ?? const [])};
+    _selectedMaintenanceItem = (log?.maintenanceItems?.isNotEmpty ?? false) ? log!.maintenanceItems!.first : null;
     _catalogFuture = widget.repo.listMaintenanceCatalog();
     for (final c in [_fuelLitersCtrl, _pricePerLiterCtrl, _quantityCtrl, _unitPriceCtrl]) {
       c.addListener(() => setState(() {}));
@@ -552,6 +680,10 @@ class _AddServiceLogSheetState extends State<_AddServiceLogSheet> {
       setState(() => _error = 'اكتب اسم الخدمة');
       return;
     }
+    if (_type == 'maintenance' && _selectedMaintenanceItem == null) {
+      setState(() => _error = 'اختار العنصر اللي تمت صيانته');
+      return;
+    }
     setState(() {
       _submitting = true;
       _error = null;
@@ -573,7 +705,7 @@ class _AddServiceLogSheetState extends State<_AddServiceLogSheet> {
         pricePerLiter: isFuel ? double.tryParse(_pricePerLiterCtrl.text.trim()) : null,
         quantity: quantityConfig != null ? double.tryParse(_quantityCtrl.text.trim()) : null,
         unitPrice: quantityConfig != null ? double.tryParse(_unitPriceCtrl.text.trim()) : null,
-        maintenanceItems: _type == 'maintenance' ? _selectedMaintenanceItems.toList() : null,
+        maintenanceItems: _type == 'maintenance' && _selectedMaintenanceItem != null ? [_selectedMaintenanceItem!] : null,
         notes: _notesCtrl.text.trim().isEmpty ? null : _notesCtrl.text.trim(),
         performedAt: _date,
       );
@@ -588,7 +720,7 @@ class _AddServiceLogSheetState extends State<_AddServiceLogSheet> {
         pricePerLiter: isFuel ? double.tryParse(_pricePerLiterCtrl.text.trim()) : null,
         quantity: quantityConfig != null ? double.tryParse(_quantityCtrl.text.trim()) : null,
         unitPrice: quantityConfig != null ? double.tryParse(_unitPriceCtrl.text.trim()) : null,
-        maintenanceItems: _type == 'maintenance' ? _selectedMaintenanceItems.toList() : null,
+        maintenanceItems: _type == 'maintenance' && _selectedMaintenanceItem != null ? [_selectedMaintenanceItem!] : null,
         notes: _notesCtrl.text.trim().isEmpty ? null : _notesCtrl.text.trim(),
         performedAt: _date,
       );
@@ -716,6 +848,7 @@ class _AddServiceLogSheetState extends State<_AddServiceLogSheet> {
                     keyboardType: const TextInputType.numberWithOptions(decimal: true),
                     decoration: const InputDecoration(labelText: 'عداد الكيلومترات'),
                   ),
+                  _GuidanceCard(guidance: _serviceTypeGuidance['fuel']!),
                 ] else if (quantityConfig != null) ...[
                   // Same calculation pattern as fuel (price_per_liter ×
                   // fuel_liters) but with a generic quantity/unit_price pair
@@ -753,32 +886,48 @@ class _AddServiceLogSheetState extends State<_AddServiceLogSheet> {
                     keyboardType: const TextInputType.numberWithOptions(decimal: true),
                     decoration: const InputDecoration(labelText: 'عداد الكيلومترات'),
                   ),
+                  _GuidanceCard(guidance: _serviceTypeGuidance[_type]!),
                 ] else if (_type == 'maintenance') ...[
-                  // Pick which catalog items (db/security-142) were done in
-                  // this visit — drives the "صيانة مطلوبة" due-tracking.
-                  const Text('العناصر اللي تمت صيانتها', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
+                  // Pick EXACTLY ONE catalog item (db/security-142) per log
+                  // entry — a visit covering several items gets logged as
+                  // several entries, each with its own real cost, instead
+                  // of lumping them under one shared total (explicit driver
+                  // feedback: the old multi-select UI made it impossible to
+                  // tell items apart or track their individual prices).
+                  const Text('العنصر اللي تمت صيانته', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
                   const SizedBox(height: 8),
                   FutureBuilder<List<MaintenanceCatalogItem>>(
                     future: _catalogFuture,
                     builder: (context, snap) {
                       final items = snap.data ?? const [];
                       if (items.isEmpty) return const SizedBox.shrink();
-                      return Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
+                      MaintenanceCatalogItem? selectedCatalogItem;
+                      for (final item in items) {
+                        if (item.itemKey == _selectedMaintenanceItem) selectedCatalogItem = item;
+                      }
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          for (final item in items)
-                            FilterChip(
-                              label: Text(item.labelAr, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: _selectedMaintenanceItems.contains(item.itemKey) ? Colors.white : null)),
-                              selected: _selectedMaintenanceItems.contains(item.itemKey),
-                              selectedColor: AppColors.primary,
-                              onSelected: (sel) => setState(() {
-                                if (sel) {
-                                  _selectedMaintenanceItems.add(item.itemKey);
-                                } else {
-                                  _selectedMaintenanceItems.remove(item.itemKey);
-                                }
-                              }),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: [
+                              for (final item in items)
+                                ChoiceChip(
+                                  label: Text(item.labelAr, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: _selectedMaintenanceItem == item.itemKey ? Colors.white : null)),
+                                  selected: _selectedMaintenanceItem == item.itemKey,
+                                  selectedColor: AppColors.primary,
+                                  onSelected: (_) => setState(() => _selectedMaintenanceItem = item.itemKey),
+                                ),
+                            ],
+                          ),
+                          if (selectedCatalogItem != null && _maintenanceItemGuidance[selectedCatalogItem.itemKey] != null)
+                            _GuidanceCard(
+                              guidance: _maintenanceItemGuidance[selectedCatalogItem.itemKey]!,
+                              importance: selectedCatalogItem.importance,
+                              intervalText: selectedCatalogItem.intervalKm != null
+                                  ? 'كل ${selectedCatalogItem.intervalKm!.toStringAsFixed(0)} كم'
+                                  : null,
                             ),
                         ],
                       );
@@ -824,6 +973,7 @@ class _AddServiceLogSheetState extends State<_AddServiceLogSheet> {
                       ),
                     ],
                   ),
+                  if (_serviceTypeGuidance[_type] != null) _GuidanceCard(guidance: _serviceTypeGuidance[_type]!),
                 ],
                 const SizedBox(height: 10),
                 TextField(controller: _notesCtrl, maxLines: 2, decoration: const InputDecoration(labelText: 'ملاحظات (اختياري)')),
