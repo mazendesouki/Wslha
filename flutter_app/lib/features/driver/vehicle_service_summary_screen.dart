@@ -1,32 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../core/theme.dart';
 import 'vehicle_service_repository.dart';
-
-const Map<String, String> _summaryServiceTypeLabels = {
-  'maintenance': '🛠️ صيانة دورية',
-  'fuel': '⛽ وقود',
-  'tire': '🛞 كاوتش',
-  'oil': '🛢️ زيت',
-  'inspection': '🔍 فحص المحرك',
-  'other': '➕ خدمة تانية',
-};
-
-/// Mirrors db/security-142's seeded maintenance_catalog_items — same
-/// fallback map vehicle_service_screen.dart keeps for its own log card.
-const Map<String, String> _summaryMaintenanceItemLabels = {
-  'oil_filter': 'تغيير فلتر الزيت',
-  'air_filter': 'فلتر الهواء',
-  'fuel_filter': 'فلتر البنزين',
-  'spark_plugs': 'البوجيهات',
-  'brake_pads': 'تيل الفرامل',
-  'brake_fluid': 'زيت الفرامل',
-  'timing_belt': 'سير الكاتينة/التايمنج',
-  'battery': 'البطارية',
-  'coolant': 'سائل التبريد',
-  'transmission_fluid': 'زيت الجير',
-  'shock_absorbers': 'المساعدين (الكاتم)',
-  'ac_filter': 'فلتر التكييف',
-};
+import 'vehicle_service_shared.dart';
 
 /// "الملخص العام" — per db/security-151's get_my_vehicle_service_summary,
 /// a lifetime rollup per distinct service: how many times it was done,
@@ -54,9 +29,9 @@ class _VehicleServiceSummaryScreenState extends State<VehicleServiceSummaryScree
       return '➕ ${r.customLabel}';
     }
     if (r.maintenanceItemKey != null) {
-      return _summaryMaintenanceItemLabels[r.maintenanceItemKey] ?? r.maintenanceItemKey!;
+      return vehicleMaintenanceItemLabels[r.maintenanceItemKey] ?? r.maintenanceItemKey!;
     }
-    return _summaryServiceTypeLabels[r.serviceType] ?? r.serviceType;
+    return vehicleServiceTypeLabels[r.serviceType] ?? r.serviceType;
   }
 
   @override
