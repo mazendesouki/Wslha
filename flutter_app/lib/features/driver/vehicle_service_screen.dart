@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import '../../core/theme.dart';
+import 'driver_repository.dart';
+import 'vehicle_service_monthly_report_screen.dart';
 import 'vehicle_service_repository.dart';
+import 'vehicle_service_summary_screen.dart';
 
 const Map<String, String> _serviceTypeLabels = {
   'maintenance': '🛠️ صيانة دورية',
@@ -207,9 +210,11 @@ class VehicleServiceScreen extends StatefulWidget {
 
 class _VehicleServiceScreenState extends State<VehicleServiceScreen> {
   final _repo = VehicleServiceRepository();
+  final _driverRepo = DriverRepository();
   late Future<List<VehicleServiceLog>> _future;
   late Future<List<VehicleServiceLog>> _fuelFuture;
   late Future<List<MaintenanceDueStatus>> _maintenanceDueFuture;
+  late Future<Map<String, dynamic>?> _vehicleInfoFuture;
   double? _tankCapacity;
   String? _filter;
 
@@ -219,6 +224,7 @@ class _VehicleServiceScreenState extends State<VehicleServiceScreen> {
     _load();
     _loadFuelSummary();
     _loadMaintenanceDue();
+    _vehicleInfoFuture = _driverRepo.fetchVehicleInfo(widget.driverPhone);
     _repo.getFuelTankCapacity(widget.driverPhone).then((v) {
       if (mounted) setState(() => _tankCapacity = v);
     });
@@ -290,7 +296,25 @@ class _VehicleServiceScreenState extends State<VehicleServiceScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: context.mutedSurface,
-      appBar: AppBar(title: const Text('🔧 خدمات المركبة')),
+      appBar: AppBar(
+        title: const Text('🔧 خدمات المركبة'),
+        actions: [
+          IconButton(
+            tooltip: 'الملخص العام',
+            icon: const Text('📋', style: TextStyle(fontSize: 18)),
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => VehicleServiceSummaryScreen(repo: _repo, driverPhone: widget.driverPhone)),
+            ),
+          ),
+          IconButton(
+            tooltip: 'التقرير الشهري',
+            icon: const Text('📊', style: TextStyle(fontSize: 18)),
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => VehicleServiceMonthlyReportScreen(repo: _repo, driverPhone: widget.driverPhone)),
+            ),
+          ),
+        ],
+      ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _openSheet(),
         icon: const Icon(Icons.add),
@@ -300,6 +324,10 @@ class _VehicleServiceScreenState extends State<VehicleServiceScreen> {
         top: false,
         child: Column(
           children: [
+            FutureBuilder<Map<String, dynamic>?>(
+              future: _vehicleInfoFuture,
+              builder: (context, snap) => _VehicleInfoHeaderCard(vehicle: snap.data),
+            ),
             FutureBuilder<List<VehicleServiceLog>>(
               future: _fuelFuture,
               builder: (context, snap) => _FuelSummaryCard(
@@ -370,6 +398,63 @@ class _VehicleServiceScreenState extends State<VehicleServiceScreen> {
           _filter = type;
           _load();
         }),
+      ),
+    );
+  }
+}
+
+/// Read-only strip showing the vehicle details already captured at
+/// registration (driver_applications) — model/color/plate/year — so the
+/// driver never has to re-type them here; every log entry is implicitly
+/// tied to this one vehicle via driver_phone. Collapses to nothing while
+/// loading/on failure rather than showing a placeholder skeleton, since
+/// this is a nice-to-have header, not something worth blocking on.
+class _VehicleInfoHeaderCard extends StatelessWidget {
+  final Map<String, dynamic>? vehicle;
+  const _VehicleInfoHeaderCard({required this.vehicle});
+
+  @override
+  Widget build(BuildContext context) {
+    final v = vehicle;
+    if (v == null) return const SizedBox.shrink();
+    // vehicle_year/vehicle_reg_number can be numeric or text depending on
+    // when the driver_applications row was created — toString() instead of
+    // `as String?`, same fix driver_profile_screen.dart already needed.
+    final model = v['vehicle_model']?.toString();
+    final color = v['vehicle_color']?.toString();
+    final regNumber = v['vehicle_reg_number']?.toString();
+    final year = v['vehicle_year']?.toString();
+    final parts = [model, color].where((e) => e != null && e.isNotEmpty).join(' — ');
+    if (parts.isEmpty && (regNumber == null || regNumber.isEmpty) && (year == null || year.isEmpty)) {
+      return const SizedBox.shrink();
+    }
+
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(color: context.surfaceColor, borderRadius: BorderRadius.circular(12), border: Border.all(color: context.borderColor)),
+      child: Row(
+        children: [
+          const Text('🚗', style: TextStyle(fontSize: 20)),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (parts.isNotEmpty) Text(parts, style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 13)),
+                Wrap(
+                  spacing: 10,
+                  children: [
+                    if (regNumber != null && regNumber.isNotEmpty)
+                      Text('لوحة: $regNumber', style: const TextStyle(fontSize: 11, color: AppColors.textFaint)),
+                    if (year != null && year.isNotEmpty)
+                      Text('موديل: $year', style: const TextStyle(fontSize: 11, color: AppColors.textFaint)),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -577,6 +662,10 @@ class _LogCard extends StatelessWidget {
                 ],
               ),
             ],
+            if (log.serviceCenter != null && log.serviceCenter!.isNotEmpty) ...[
+              const SizedBox(height: 4),
+              Text('🏢 ${log.serviceCenter}', style: const TextStyle(fontSize: 12, color: AppColors.textFaint)),
+            ],
             if (log.notes != null && log.notes!.isNotEmpty) ...[
               const SizedBox(height: 4),
               Text(log.notes!, style: const TextStyle(fontSize: 12, color: AppColors.textFaint)),
@@ -607,6 +696,7 @@ class _AddServiceLogSheetState extends State<_AddServiceLogSheet> {
   late final TextEditingController _pricePerLiterCtrl;
   late final TextEditingController _quantityCtrl;
   late final TextEditingController _unitPriceCtrl;
+  late final TextEditingController _serviceCenterCtrl;
   late final TextEditingController _notesCtrl;
   late DateTime _date;
   bool _submitting = false;
@@ -629,6 +719,7 @@ class _AddServiceLogSheetState extends State<_AddServiceLogSheet> {
     _pricePerLiterCtrl = TextEditingController(text: log?.pricePerLiter?.toStringAsFixed(2) ?? '');
     _quantityCtrl = TextEditingController(text: _formatQuantity(log?.quantity));
     _unitPriceCtrl = TextEditingController(text: log?.unitPrice?.toStringAsFixed(2) ?? '');
+    _serviceCenterCtrl = TextEditingController(text: log?.serviceCenter ?? '');
     _notesCtrl = TextEditingController(text: log?.notes ?? '');
     _date = log?.performedAt ?? DateTime.now();
     _selectedMaintenanceItem = (log?.maintenanceItems?.isNotEmpty ?? false) ? log!.maintenanceItems!.first : null;
@@ -647,6 +738,7 @@ class _AddServiceLogSheetState extends State<_AddServiceLogSheet> {
     _pricePerLiterCtrl.dispose();
     _quantityCtrl.dispose();
     _unitPriceCtrl.dispose();
+    _serviceCenterCtrl.dispose();
     _notesCtrl.dispose();
     super.dispose();
   }
@@ -706,6 +798,7 @@ class _AddServiceLogSheetState extends State<_AddServiceLogSheet> {
         quantity: quantityConfig != null ? double.tryParse(_quantityCtrl.text.trim()) : null,
         unitPrice: quantityConfig != null ? double.tryParse(_unitPriceCtrl.text.trim()) : null,
         maintenanceItems: _type == 'maintenance' && _selectedMaintenanceItem != null ? [_selectedMaintenanceItem!] : null,
+        serviceCenter: _serviceCenterCtrl.text.trim().isEmpty ? null : _serviceCenterCtrl.text.trim(),
         notes: _notesCtrl.text.trim().isEmpty ? null : _notesCtrl.text.trim(),
         performedAt: _date,
       );
@@ -721,6 +814,7 @@ class _AddServiceLogSheetState extends State<_AddServiceLogSheet> {
         quantity: quantityConfig != null ? double.tryParse(_quantityCtrl.text.trim()) : null,
         unitPrice: quantityConfig != null ? double.tryParse(_unitPriceCtrl.text.trim()) : null,
         maintenanceItems: _type == 'maintenance' && _selectedMaintenanceItem != null ? [_selectedMaintenanceItem!] : null,
+        serviceCenter: _serviceCenterCtrl.text.trim().isEmpty ? null : _serviceCenterCtrl.text.trim(),
         notes: _notesCtrl.text.trim().isEmpty ? null : _notesCtrl.text.trim(),
         performedAt: _date,
       );
@@ -975,6 +1069,8 @@ class _AddServiceLogSheetState extends State<_AddServiceLogSheet> {
                   ),
                   if (_serviceTypeGuidance[_type] != null) _GuidanceCard(guidance: _serviceTypeGuidance[_type]!),
                 ],
+                const SizedBox(height: 10),
+                TextField(controller: _serviceCenterCtrl, decoration: const InputDecoration(labelText: 'مركز/ورشة الصيانة (اختياري)')),
                 const SizedBox(height: 10),
                 TextField(controller: _notesCtrl, maxLines: 2, decoration: const InputDecoration(labelText: 'ملاحظات (اختياري)')),
                 const SizedBox(height: 10),

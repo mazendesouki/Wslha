@@ -14,6 +14,7 @@ class VehicleServiceLog {
   final double? quantity;
   final double? unitPrice;
   final List<String>? maintenanceItems;
+  final String? serviceCenter;
   final String? notes;
   final DateTime performedAt;
 
@@ -28,6 +29,7 @@ class VehicleServiceLog {
     this.quantity,
     this.unitPrice,
     this.maintenanceItems,
+    this.serviceCenter,
     this.notes,
     required this.performedAt,
   });
@@ -43,8 +45,58 @@ class VehicleServiceLog {
         quantity: (r['quantity'] as num?)?.toDouble(),
         unitPrice: (r['unit_price'] as num?)?.toDouble(),
         maintenanceItems: (r['maintenance_items'] as List?)?.map((e) => e.toString()).toList(),
+        serviceCenter: r['service_center'] as String?,
         notes: r['notes'] as String?,
         performedAt: DateTime.parse(r['performed_at'] as String),
+      );
+}
+
+/// One row of db/security-151's get_my_vehicle_service_monthly_totals —
+/// per-service-type cost/count subtotal for a single month.
+class VehicleServiceMonthlyTotal {
+  final String serviceType;
+  final int entriesCount;
+  final double totalCost;
+
+  VehicleServiceMonthlyTotal({required this.serviceType, required this.entriesCount, required this.totalCost});
+
+  factory VehicleServiceMonthlyTotal.fromRow(Map<String, dynamic> r) => VehicleServiceMonthlyTotal(
+        serviceType: r['service_type'] as String,
+        entriesCount: (r['entries_count'] as num).toInt(),
+        totalCost: (r['total_cost'] as num?)?.toDouble() ?? 0,
+      );
+}
+
+/// One row of db/security-151's get_my_vehicle_service_summary — a
+/// lifetime rollup per distinct "service" (a specific maintenance catalog
+/// item, a service type like fuel/oil/tire/inspection, or a custom "other"
+/// label): how many times it was done, total spent, and when it was last
+/// done. itemKey/serviceType/customLabel come back raw (no ready-made
+/// label) so the UI can reuse the same label maps it already has.
+class VehicleServiceSummaryRow {
+  final String serviceType;
+  final String? maintenanceItemKey;
+  final String? customLabel;
+  final int entriesCount;
+  final double totalCost;
+  final DateTime lastPerformedAt;
+
+  VehicleServiceSummaryRow({
+    required this.serviceType,
+    this.maintenanceItemKey,
+    this.customLabel,
+    required this.entriesCount,
+    required this.totalCost,
+    required this.lastPerformedAt,
+  });
+
+  factory VehicleServiceSummaryRow.fromRow(Map<String, dynamic> r) => VehicleServiceSummaryRow(
+        serviceType: r['service_type'] as String,
+        maintenanceItemKey: r['maintenance_item_key'] as String?,
+        customLabel: r['custom_label'] as String?,
+        entriesCount: (r['entries_count'] as num).toInt(),
+        totalCost: (r['total_cost'] as num?)?.toDouble() ?? 0,
+        lastPerformedAt: DateTime.parse(r['last_performed_at'] as String),
       );
 }
 
@@ -124,6 +176,7 @@ class VehicleServiceRepository {
     double? quantity,
     double? unitPrice,
     List<String>? maintenanceItems,
+    String? serviceCenter,
     String? notes,
     DateTime? performedAt,
   }) async {
@@ -139,6 +192,7 @@ class VehicleServiceRepository {
         'p_quantity': quantity,
         'p_unit_price': unitPrice,
         'p_maintenance_items': maintenanceItems,
+        'p_service_center': serviceCenter,
         'p_notes': notes,
         'p_performed_at': (performedAt ?? DateTime.now()).toIso8601String(),
       });
@@ -162,6 +216,7 @@ class VehicleServiceRepository {
     double? quantity,
     double? unitPrice,
     List<String>? maintenanceItems,
+    String? serviceCenter,
     String? notes,
     DateTime? performedAt,
   }) async {
@@ -178,6 +233,7 @@ class VehicleServiceRepository {
         'p_quantity': quantity,
         'p_unit_price': unitPrice,
         'p_maintenance_items': maintenanceItems,
+        'p_service_center': serviceCenter,
         'p_notes': notes,
         'p_performed_at': (performedAt ?? DateTime.now()).toIso8601String(),
       });
@@ -236,5 +292,34 @@ class VehicleServiceRepository {
     } catch (_) {
       return [];
     }
+  }
+
+  /// All of a driver's entries for one calendar month — db/security-151's
+  /// monthly report RPC. [month] is 1-12.
+  Future<List<VehicleServiceLog>> listMonthlyReport(String driverPhone, int year, int month) async {
+    final rows = await sb.rpc('get_my_vehicle_service_monthly_report', params: {
+      'p_driver_phone': driverPhone,
+      'p_year': year,
+      'p_month': month,
+    });
+    return (rows as List).map((r) => VehicleServiceLog.fromRow(r as Map<String, dynamic>)).toList();
+  }
+
+  /// Per-service-type cost/count subtotal for one calendar month — the UI
+  /// sums these for the month's grand total.
+  Future<List<VehicleServiceMonthlyTotal>> getMonthlyTotals(String driverPhone, int year, int month) async {
+    final rows = await sb.rpc('get_my_vehicle_service_monthly_totals', params: {
+      'p_driver_phone': driverPhone,
+      'p_year': year,
+      'p_month': month,
+    });
+    return (rows as List).map((r) => VehicleServiceMonthlyTotal.fromRow(r as Map<String, dynamic>)).toList();
+  }
+
+  /// Lifetime per-service rollup (frequency, total cost, last performed
+  /// date) — not limited to one month, covers the vehicle's whole history.
+  Future<List<VehicleServiceSummaryRow>> getServiceSummary(String driverPhone) async {
+    final rows = await sb.rpc('get_my_vehicle_service_summary', params: {'p_driver_phone': driverPhone});
+    return (rows as List).map((r) => VehicleServiceSummaryRow.fromRow(r as Map<String, dynamic>)).toList();
   }
 }
