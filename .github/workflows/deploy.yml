@@ -31,8 +31,20 @@ jobs:
           # workflow_run runs in the context of the DEFAULT branch unless
           # told otherwise — without this, a workflow_run-triggered deploy
           # would silently build and ship main/master instead of the
-          # commit that actually just published new APKs.
-          ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || github.sha }}
+          # branch that actually just published new APKs.
+          #
+          # Deliberately head_branch, not head_sha: head_sha is the commit
+          # that TRIGGERED build-flutter-apps.yml — i.e. the one *before*
+          # its own "Publish APKs to website downloads" step ran and
+          # pushed a further commit with the newly built APKs + bumped
+          # version.json. By the time this workflow_run fires (after that
+          # whole build run, publish step included, has finished), the
+          # branch tip already includes that publish commit — checking
+          # out head_sha instead deploys the build from one cycle earlier,
+          # so the live site's version.json buildNumber (and the in-app
+          # update prompt, which compares against it) permanently lagged
+          # one release behind every single deploy.
+          ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_branch || github.sha }}
 
       - uses: actions/setup-node@v4
         with:
