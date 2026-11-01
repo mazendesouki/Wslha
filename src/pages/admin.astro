@@ -1338,11 +1338,18 @@
         <div class="card__head">
           <span class="card__title">🏢 صافي ربح المنصة</span>
           <div style="display:flex;gap:.5rem;align-items:center">
+            <span style="font-size:.7rem;display:none;align-items:center;gap:4px" id="np-live-dot">
+              <span style="width:7px;height:7px;border-radius:50%;background:#16A34A;display:inline-block"></span>
+              <span style="color:#16A34A;font-weight:700">لحظي</span>
+            </span>
             <span style="font-size:.72rem;color:#94A3B8" id="np-refresh-note"></span>
             <button class="btn btn--sm btn--primary" onclick="adminSettlePlatform()">💸 سحب أرباح</button>
           </div>
         </div>
         <div class="card__body">
+          <div id="np-no-funds-banner" style="display:none;background:#FEF3C7;border:1px solid #FDE68A;border-radius:10px;padding:.7rem 1rem;margin-bottom:1rem;font-size:.82rem;font-weight:700;color:#92400E;align-items:center;gap:8px">
+            <span>⚠️</span><span>لا يوجد صافي ربح متاح للسحب حاليًا — الرصيد القابل للسحب 0 ج.م</span>
+          </div>
           <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:1rem;margin-bottom:1.25rem">
             <div style="background:#DCFCE7;border-radius:10px;padding:.85rem 1rem;text-align:center">
               <div style="font-size:1.35rem;font-weight:900;color:#15803D" id="pw-ride">—</div>
@@ -5836,6 +5843,10 @@ async function loadPlatformFinance() {
     document.getElementById('pw-airport').textContent  = fmt(Math.round(summary.by_type.airport))  + ' ج.م';
     renderNetProfitChart(summary.by_type);
     document.getElementById('np-refresh-note').textContent = 'آخر تحديث: ' + new Date().toLocaleTimeString('ar-EG', { hour:'2-digit', minute:'2-digit' });
+
+    // إشعار دائم ومُحدَّث لحظيًا: مفيش صافي ربح متاح للسحب حاليًا.
+    const noFunds = document.getElementById('np-no-funds-banner');
+    noFunds.style.display = Number(summary.balance) <= 0 ? 'flex' : 'none';
   } catch (e) {
     showToast('❌ تعذّر تحميل بيانات الأرباح: ' + (e.message||''), '#DC2626');
   }
@@ -6403,6 +6414,44 @@ setInterval(pollSupportUnread, 25000);
 /* ── Init ───────────────────────────────────────────────────── */
 loadDash();
 startAutoRefresh();
+</script>
+
+<!--
+  تحديث لحظي لـ"صافي ربح المنصة" (security-155) — بث Supabase Realtime
+  (realtime.send من settle_ride_commission/settle_order_commission/
+  admin_withdraw_platform_profit) بدل انتظار التحديث الدوري كل 30
+  ثانية. البث فاضٍ (بدون أرقام)، فعند وصوله بنعيد تحميل الأرقام الحقيقية
+  من get_platform_finance_summary المحمية بكلمة مرور الأدمن كالمعتاد —
+  هنا مش هنكشف أي بيانات حساسة زيادة. لو فشل الاتصال اللحظي لأي سبب
+  (شبكة/متصفح)، التحديث الدوري الموجود أصلاً في loadPlatformFinance
+  بيفضل شغّال كخط رجعة، فمفيش أي اعتماد كامل على الاتصال اللحظي.
+-->
+<script type="module">
+  import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+
+  const sbRealtime = createClient(
+    'https://vtikgyiopkjnrwlqnmfx.supabase.co',
+    'sb_publishable_PLSnpvCT-sAyUMtymNgTwA_QmL2suw4'
+  );
+
+  let _pfDebounce = null;
+  function onPlatformFinanceBroadcast() {
+    clearTimeout(_pfDebounce);
+    _pfDebounce = setTimeout(() => {
+      if (typeof window.loadPlatformFinance === 'function') window.loadPlatformFinance();
+    }, 400);
+  }
+
+  const channel = sbRealtime
+    .channel('platform-finance')
+    .on('broadcast', { event: 'update' }, onPlatformFinanceBroadcast)
+    .subscribe((status) => {
+      const dot = document.getElementById('np-live-dot');
+      if (!dot) return;
+      dot.style.display = status === 'SUBSCRIBED' ? 'inline-flex' : 'none';
+    });
+
+  window.addEventListener('beforeunload', () => { sbRealtime.removeChannel(channel); });
 </script>
 </body>
 </html>
