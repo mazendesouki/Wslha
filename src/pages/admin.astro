@@ -1441,6 +1441,18 @@
 
     <!-- ═══════════════════ VEHICLE SERVICES ════════════════ -->
     <div class="section" id="sec-vehicle-services">
+      <!-- مؤشرات تكلفة الأسطول (security-153) — متوسط سعر لتر البنزين
+           وإجمالي إنفاق الصيانة، آخر 30 يوم مقابل الـ30 يوم اللي قبلها،
+           من بيانات حقيقية سجّلها السواقين — عشان يبان ارتفاع سعر
+           البنزين أو مصاريف الصيانة بسرعة من غير ما الأدمن يحسب يدوي. -->
+      <div class="card" style="margin-bottom:1.25rem">
+        <div class="card__head"><span class="card__title">📈 مؤشرات تكلفة الأسطول (آخر 30 يوم مقابل الـ30 يوم اللي قبلها)</span></div>
+        <div class="card__body">
+          <div id="fleet-cost-metrics" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:.75rem">
+            <p style="text-align:center;color:#94A3B8;padding:1rem;grid-column:1/-1">جاري التحميل…</p>
+          </div>
+        </div>
+      </div>
       <div class="card" style="margin-bottom:1.25rem">
         <div class="card__head"><span class="card__title">🔧 ملخص التكلفة حسب نوع الخدمة</span></div>
         <div class="card__body">
@@ -5450,8 +5462,47 @@ async function saveMaintenanceCatalogItem() {
   btn.disabled = false; btn.textContent = 'حفظ';
 }
 
+const FLEET_METRIC_LABELS = {
+  avg_fuel_price_per_liter: { label: '⛽ متوسط سعر لتر البنزين', unit: 'ج.م', higherIsBad: true },
+  total_fuel_spend:         { label: '💰 إجمالي إنفاق الوقود',    unit: 'ج.م', higherIsBad: true },
+  total_maintenance_spend:  { label: '🛠️ إجمالي إنفاق الصيانة',  unit: 'ج.م', higherIsBad: true },
+  maintenance_entries_count:{ label: '📋 عدد عمليات الصيانة',     unit: 'عملية', higherIsBad: false },
+};
+
+async function loadFleetCostMetrics() {
+  const el = document.getElementById('fleet-cost-metrics');
+  const pass = await getAdminPass();
+  if (!pass) { el.innerHTML = '<p style="text-align:center;color:#DC2626;padding:1rem;grid-column:1/-1">محتاج كلمة مرور المشرف</p>'; return; }
+  const rows = await sbRpcRows('admin_get_fleet_cost_metrics', { p_admin_phone: ADMIN.phone, p_admin_password: pass });
+  if (rows === null) { clearAdminPass(); el.innerHTML = '<p style="text-align:center;color:#DC2626;padding:1rem;grid-column:1/-1">فشل التحقق — أعد المحاولة</p>'; return; }
+  if (!rows.length || rows.every(r => r.current_value == null)) {
+    el.innerHTML = '<p style="text-align:center;color:#94A3B8;padding:1rem;grid-column:1/-1">مفيش بيانات كفاية لسه لحساب المؤشرات</p>';
+    return;
+  }
+  el.innerHTML = rows.map(r => {
+    const info = FLEET_METRIC_LABELS[r.metric] || { label: r.metric, unit: '', higherIsBad: true };
+    const cur = r.current_value != null ? Number(r.current_value).toLocaleString('ar-EG', { maximumFractionDigits: 2 }) : '—';
+    const pct = r.pct_change;
+    let deltaHtml = '<span style="font-size:.72rem;color:#94A3B8">مفيش بيانات مقارنة</span>';
+    if (pct != null) {
+      const rose = pct > 0;
+      const isBad = info.higherIsBad ? rose : !rose;
+      const color = pct == 0 ? '#64748B' : (isBad ? '#DC2626' : '#16A34A');
+      const arrow = pct == 0 ? '→' : (rose ? '▲' : '▼');
+      deltaHtml = `<span style="font-size:.78rem;font-weight:800;color:${color}">${arrow} ${Math.abs(pct)}%</span>`;
+    }
+    return `
+      <div style="background:#F1F5F9;border-radius:10px;padding:.75rem 1rem">
+        <div style="font-weight:800;font-size:.82rem;margin-bottom:.3rem">${info.label}</div>
+        <div style="font-size:1.1rem;font-weight:900">${cur} ${info.unit}</div>
+        <div style="margin-top:.3rem">${deltaHtml}</div>
+      </div>`;
+  }).join('');
+}
+
 async function loadVehicleServices() {
   loadMaintenanceCatalog();
+  loadFleetCostMetrics();
   const pass = await getAdminPass();
   const summaryEl = document.getElementById('vs-summary');
   const bodyEl = document.getElementById('vs-logs-body');
