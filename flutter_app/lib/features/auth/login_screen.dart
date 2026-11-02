@@ -55,11 +55,12 @@ class _LoginScreenState extends State<LoginScreen> {
         unawaited(PushRegistrar.registerForSession(session)); // fire-and-forget
         if (!mounted) return;
         Navigator.of(context).pushNamedAndRemoveUntil('/home', (route) => false);
-      case LoginFailure(:final reason):
+      case LoginFailure(:final reason, :final message):
         setState(() {
           _error = switch (reason) {
             'not_found' => context.tr('login_error_not_found'),
             'bad_password' => context.tr('login_error_bad_password'),
+            'rate_limited' => message ?? context.tr('login_error_generic'),
             _ => context.tr('login_error_generic'),
           };
         });

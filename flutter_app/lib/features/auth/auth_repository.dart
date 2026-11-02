@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import '../../core/api_session.dart';
 import '../../core/phone_utils.dart';
 import '../../core/supabase_client.dart';
 import '../../core/session.dart';
@@ -12,8 +13,9 @@ class LoginSuccess extends LoginResult {
 }
 
 class LoginFailure extends LoginResult {
-  final String reason; // 'not_found' | 'bad_password' | 'error'
-  LoginFailure(this.reason);
+  final String reason; // 'not_found' | 'bad_password' | 'rate_limited' | 'error'
+  final String? message; // ready-to-show text for 'rate_limited'
+  LoginFailure(this.reason, {this.message});
 }
 
 Map<String, String> get _sbHeaders => {
@@ -22,41 +24,59 @@ Map<String, String> get _sbHeaders => {
       'Content-Type': 'application/json',
     };
 
-/// Ported 1:1 from src/utils/accounts.ts's verifyLogin() — same RPCs, same
-/// two-step "no row → disambiguate via lookup_account" fallback so a wrong
-/// password and an unregistered number get different error messages.
+/// Goes through POST /api/auth/login (src/lib/session.ts) instead of
+/// calling verify_login directly — that endpoint IS the same verify_login
+/// check, plus it starts a signed session (ApiSession) the IDOR fix's
+/// Phase 2 proxy routes need. Calling verify_login separately as well
+/// would double-count a wrong password against its own rate limiter
+/// (db/security-156), so this is the only login path now.
+///
+/// /api/auth/login doesn't distinguish "number not registered" from
+/// "wrong password" (neither did verify_login itself — same query either
+/// way), so the not_found-vs-bad_password disambiguation via
+/// lookup_account below is ported 1:1 from the old direct-RPC version.
 class AuthRepository {
   Future<LoginResult> login(String phoneInput, String password) async {
     final phone = normalizeEgyptianPhone(phoneInput);
-    try {
-      final res = await http.post(
-        Uri.parse('$supabaseUrl/rest/v1/rpc/verify_login'),
-        headers: _sbHeaders,
-        body: jsonEncode({'p_phone': phone, 'p_password': password}),
+    String? failureReason;
+    String? failureMessage;
+    final account = await ApiSession.login(
+      phone,
+      password,
+      onError: (reason, {message}) {
+        failureReason = reason;
+        failureMessage = message;
+      },
+    );
+
+    if (account != null && account['phone'] != null) {
+      final session = UserSession(
+        name: account['name'] as String? ?? '',
+        phone: account['phone'] as String,
+        role: account['role'] as String? ?? 'customer',
+        city: account['city'] as String?,
+        loginAt: DateTime.now().toIso8601String(),
       );
-      if (res.statusCode == 200) {
-        final decoded = jsonDecode(res.body);
-        final raw = decoded is List ? (decoded.isNotEmpty ? decoded.first : null) : decoded;
-        if (raw != null && raw['phone'] != null) {
-          final session = UserSession(
-            name: raw['name'] as String? ?? '',
-            phone: raw['phone'] as String,
-            role: raw['role'] as String? ?? 'customer',
-            city: raw['city'] as String?,
-            loginAt: DateTime.now().toIso8601String(),
-          );
-          return LoginSuccess(session);
-        }
-        // No row → disambiguate: does this phone exist at all?
-        final lookup = await http.post(
-          Uri.parse('$supabaseUrl/rest/v1/rpc/lookup_account'),
-          headers: _sbHeaders,
-          body: jsonEncode({'p_phone': phone}),
-        );
-        final exists = lookup.statusCode == 200 && (jsonDecode(lookup.body) as List).isNotEmpty;
-        return LoginFailure(exists ? 'bad_password' : 'not_found');
-      }
+      return LoginSuccess(session);
+    }
+
+    if (failureReason == 'rate_limited') {
+      return LoginFailure('rate_limited', message: failureMessage);
+    }
+    if (failureReason != 'invalid_credentials') {
+      // network/unexpected failure — no point disambiguating further.
       return LoginFailure('error');
+    }
+
+    // invalid_credentials → disambiguate: does this phone exist at all?
+    try {
+      final lookup = await http.post(
+        Uri.parse('$supabaseUrl/rest/v1/rpc/lookup_account'),
+        headers: _sbHeaders,
+        body: jsonEncode({'p_phone': phone}),
+      );
+      final exists = lookup.statusCode == 200 && (jsonDecode(lookup.body) as List).isNotEmpty;
+      return LoginFailure(exists ? 'bad_password' : 'not_found');
     } catch (_) {
       return LoginFailure('error');
     }

@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'api_session.dart';
 
 /// Mirrors the shape written to localStorage['wslha_user'] by the web app
 /// (login.astro/register.astro) so both clients agree on what a "session"
@@ -68,8 +69,15 @@ class SessionStore {
     }
   }
 
+  /// Also revokes the token-based session (ApiSession, IDOR fix Phase 2)
+  /// server-side, not just the locally-cached UserSession — every call
+  /// site that logs the user out already goes through this one method,
+  /// so centralizing it here guarantees the server session is actually
+  /// killed on logout instead of staying valid until its 15-minute access
+  /// token naturally expires.
   static Future<void> clear() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_key);
+    await ApiSession.logout();
   }
 }

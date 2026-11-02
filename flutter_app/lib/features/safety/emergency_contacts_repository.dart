@@ -1,3 +1,4 @@
+import '../../core/api_session.dart';
 import '../../core/supabase_client.dart';
 
 class EmergencyContact {
@@ -19,6 +20,11 @@ class EmergencyContact {
 /// AccountRepository's saved-addresses methods.
 class EmergencyContactsRepository {
   Future<List<EmergencyContact>> list(String phone) async {
+    final data = await ApiSession.getJson('/api/profile/emergency-contacts');
+    if (data != null) {
+      final list = data['contacts'];
+      if (list is List) return list.map((r) => EmergencyContact.fromRow(Map<String, dynamic>.from(r as Map))).toList();
+    }
     final rows = await sb.rpc('list_emergency_contacts', params: {'p_phone': phone});
     return (rows as List).map((r) => EmergencyContact.fromRow(Map<String, dynamic>.from(r as Map))).toList();
   }

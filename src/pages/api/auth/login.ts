@@ -30,6 +30,16 @@ export const POST: APIRoute = async ({ request }) => {
     body: JSON.stringify({ p_phone: phone, p_password: password }),
   });
   if (!loginRes.ok) {
+    // verify_login (security-156) raises instead of just returning no rows
+    // once an account is locked out — surface that distinctly instead of
+    // collapsing it into the same generic failure as a real upstream error.
+    const text = await loginRes.text().catch(() => '');
+    if (text.includes('محاولات دخول كتير غلط')) {
+      return new Response(
+        JSON.stringify({ error: 'rate_limited', message: 'محاولات دخول كتير غلط — حاول تاني بعد شوية' }),
+        { status: 429 },
+      );
+    }
     return new Response(JSON.stringify({ error: 'login_failed' }), { status: 502 });
   }
   const rows = await loginRes.json();

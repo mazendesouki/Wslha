@@ -1,3 +1,4 @@
+import '../../core/api_session.dart';
 import '../../core/supabase_client.dart';
 
 /// Same wallets/wallet_transactions tables and RPCs wallet.astro uses —
@@ -6,14 +7,25 @@ import '../../core/supabase_client.dart';
 class WalletRepository {
   // get_my_wallet_balance (security-49) — direct SELECT on wallets is
   // closed since it had no filter and dumped every user's balance.
+  // IDOR fix Phase 2: tries the token-verified /api/wallet/balance proxy
+  // first, falling back to the direct RPC (same one the proxy itself
+  // calls) if there's no session token yet — see core/api_session.dart.
   Future<double> getBalance(String phone) async {
+    final data = await ApiSession.getJson('/api/wallet/balance');
+    if (data != null) return (data['balance'] as num?)?.toDouble() ?? 0;
     final result = await sb.rpc('get_my_wallet_balance', params: {'p_phone': phone});
     return (result as num?)?.toDouble() ?? 0;
   }
 
   Future<List<Map<String, dynamic>>> getTransactions(String phone) async {
     // wallet_transactions SELECT is locked down (security-124) — only
-    // the phone's own rows, via get_my_wallet_transactions.
+    // the phone's own rows, via get_my_wallet_transactions. IDOR fix
+    // Phase 2: same proxy-first, RPC-fallback pattern as getBalance.
+    final data = await ApiSession.getJson('/api/wallet/transactions?limit=50');
+    if (data != null) {
+      final list = data['transactions'];
+      if (list is List) return List<Map<String, dynamic>>.from(list);
+    }
     final rows = await sb.rpc('get_my_wallet_transactions', params: {'p_phone': phone, 'p_limit': 50});
     if (rows is! List) return [];
     return List<Map<String, dynamic>>.from(rows);

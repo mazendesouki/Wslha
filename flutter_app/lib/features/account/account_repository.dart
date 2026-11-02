@@ -1,4 +1,5 @@
 import 'package:http/http.dart' as http;
+import '../../core/api_session.dart';
 import '../../core/supabase_client.dart';
 
 /// The `accounts` table has no SELECT grant for anon/authenticated at all —
@@ -23,6 +24,12 @@ class AccountRepository {
     String? username,
   }) async {
     if (name == null && city == null && username == null) return;
+    final data = await ApiSession.postJson('/api/profile/update', {
+      'name': name,
+      'city': city,
+      'username': username,
+    });
+    if (data != null) return;
     await sb.rpc('update_account_profile', params: {
       'p_phone': phone,
       if (name != null) 'p_name': name,
@@ -61,7 +68,10 @@ class AccountRepository {
     );
     if (uploadRes.statusCode != 200 && uploadRes.statusCode != 201) return null;
     final url = '$supabaseUrl/storage/v1/object/public/documents/$path';
-    await sb.rpc('update_account_avatar', params: {'p_phone': phone, 'p_avatar_url': url});
+    final data = await ApiSession.postJson('/api/profile/avatar', {'avatar_url': url});
+    if (data == null) {
+      await sb.rpc('update_account_avatar', params: {'p_phone': phone, 'p_avatar_url': url});
+    }
     return url;
   }
 
@@ -75,6 +85,11 @@ class AccountRepository {
   // ---------------------------------------------------------------------
 
   Future<List<Map<String, dynamic>>> fetchSavedAddresses(String phone) async {
+    final data = await ApiSession.getJson('/api/profile/addresses');
+    if (data != null) {
+      final list = data['addresses'];
+      if (list is List) return List<Map<String, dynamic>>.from(list);
+    }
     final rows = await sb.rpc('list_saved_addresses', params: {'p_phone': phone});
     return List<Map<String, dynamic>>.from(rows as List);
   }

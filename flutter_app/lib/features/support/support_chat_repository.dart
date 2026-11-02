@@ -1,3 +1,4 @@
+import '../../core/api_session.dart';
 import '../../core/supabase_client.dart';
 
 class SupportMessage {
@@ -34,6 +35,11 @@ class SupportChatRepository {
   }
 
   Future<List<SupportMessage>> fetchMessages({required String conversationId, required String phone}) async {
+    final data = await ApiSession.getJson('/api/support/messages?conversation_id=$conversationId');
+    if (data != null) {
+      final list = data['messages'];
+      if (list is List) return list.cast<Map<String, dynamic>>().map(SupportMessage.fromRow).toList();
+    }
     final rows = await sb.rpc('get_support_messages', params: {
       'p_conversation_id': conversationId,
       'p_phone': phone,

@@ -6,6 +6,13 @@
 // comes from the verified access token. This endpoint is called
 // frequently during an active trip, so it's deliberately minimal —
 // no extra round-trips beyond the token check and the RPC itself.
+//
+// is_online must stay optional/null-passthrough, not default to true:
+// the RPC's own default (p_is_online DEFAULT NULL) means "preserve
+// whatever's already stored" via `coalesce(excluded.is_online,
+// driver_locations.is_online)` — a plain GPS ping while already
+// online omits this field on purpose, and forcing it to true would
+// silently bring an offline driver back online on every ping.
 import type { APIRoute } from 'astro';
 import { verifyAccessToken, SB_URL } from '../../../lib/session';
 
@@ -44,7 +51,7 @@ export const POST: APIRoute = async ({ request }) => {
       p_lng: lng,
       p_driver_name: driver_name ?? null,
       p_heading: typeof heading === 'number' ? heading : null,
-      p_is_online: is_online !== false,
+      p_is_online: typeof is_online === 'boolean' ? is_online : null,
     }),
   });
   if (!res.ok) {

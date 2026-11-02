@@ -1,4 +1,5 @@
 import 'package:geolocator/geolocator.dart';
+import '../../core/api_session.dart';
 import '../../core/supabase_client.dart';
 
 class RideSettlement {
@@ -55,9 +56,19 @@ class DriverRepository {
     }
   }
 
+  // IDOR fix Phase 2: tries the token-verified /api/driver/location proxy
+  // first (which can't be spoofed to move another driver's dot), falling
+  // back to the direct RPC if there's no session token yet.
   Future<bool> goOnline(String phone, String name) async {
     final pos = await _currentPosition();
     if (pos == null) return false;
+    final data = await ApiSession.postJson('/api/driver/location', {
+      'driver_name': name,
+      'lat': pos.latitude,
+      'lng': pos.longitude,
+      'is_online': true,
+    });
+    if (data != null) return true;
     await sb.rpc('upsert_driver_location', params: {
       'p_driver_phone': phone,
       'p_driver_name': name,
@@ -76,6 +87,8 @@ class DriverRepository {
   /// unapproved driver gets a clear explanation instead of every accept
   /// silently failing.
   Future<String?> fetchApprovalStatus(String phone) async {
+    final data = await ApiSession.getJson('/api/profile/driver-application');
+    if (data != null) return (data['application'] as Map<String, dynamic>?)?['status'] as String?;
     final rows = await sb.rpc('get_my_driver_application', params: {'p_phone': phone});
     if (rows is! List || rows.isEmpty) return null;
     return (rows.first as Map<String, dynamic>)['status'] as String?;
@@ -93,6 +106,8 @@ class DriverRepository {
   // no-op when there's no matching row, which is the correct behavior:
   // nothing to mark offline.
   Future<void> goOffline(String phone) async {
+    final data = await ApiSession.postJson('/api/driver/go-offline', {});
+    if (data != null) return;
     await sb.rpc('set_driver_offline', params: {'p_driver_phone': phone});
   }
 
@@ -126,6 +141,15 @@ class DriverRepository {
   Future<void> pingLocation(String phone) async {
     final pos = await _currentPosition();
     if (pos == null) return;
+    // is_online deliberately omitted — both the proxy and the RPC itself
+    // preserve the existing online flag when it's not sent, see
+    // src/pages/api/driver/location.ts's header comment.
+    final data = await ApiSession.postJson('/api/driver/location', {
+      'lat': pos.latitude,
+      'lng': pos.longitude,
+      'heading': pos.heading,
+    });
+    if (data != null) return;
     await sb.rpc('upsert_driver_location', params: {
       'p_driver_phone': phone,
       'p_lat': pos.latitude,
@@ -451,6 +475,8 @@ class DriverRepository {
   /// live here (driver_applications), not on accounts. Same table the web
   /// driver-dashboard reads for the vehicle-info card.
   Future<Map<String, dynamic>?> fetchVehicleInfo(String phone) async {
+    final data = await ApiSession.getJson('/api/profile/driver-application');
+    if (data != null) return data['application'] as Map<String, dynamic>?;
     final rows = await sb.rpc('get_my_driver_application', params: {'p_phone': phone});
     if (rows is! List || rows.isEmpty) return null;
     return Map<String, dynamic>.from(rows.first as Map);
