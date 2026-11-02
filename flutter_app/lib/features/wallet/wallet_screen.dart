@@ -161,6 +161,7 @@ class _WalletScreenState extends State<WalletScreen> {
   Future<void> _openWithdrawSheet() async {
     final amountController = TextEditingController();
     final destController = TextEditingController();
+    final passwordController = TextEditingController();
     bool busy = false;
 
     await showModalBottomSheet(
@@ -192,6 +193,12 @@ class _WalletScreenState extends State<WalletScreen> {
                 decoration: InputDecoration(labelText: context.tr('wallet_dest_phone_label')),
               ),
               const SizedBox(height: 12),
+              TextField(
+                controller: passwordController,
+                obscureText: true,
+                decoration: InputDecoration(labelText: context.tr('wallet_password_confirm_label')),
+              ),
+              const SizedBox(height: 12),
               ElevatedButton(
                 onPressed: busy
                     ? null
@@ -205,9 +212,13 @@ class _WalletScreenState extends State<WalletScreen> {
                           _showToast(context.tr('wallet_dest_required_error'), ok: false);
                           return;
                         }
+                        if (passwordController.text.isEmpty) {
+                          _showToast(context.tr('wallet_password_required_error'), ok: false);
+                          return;
+                        }
                         setSheetState(() => busy = true);
                         try {
-                          await _walletRepo.requestWithdrawal(_session!.phone, amount, destController.text.trim(), null);
+                          await _walletRepo.requestWithdrawal(_session!.phone, amount, destController.text.trim(), passwordController.text, null);
                           if (ctx.mounted) Navigator.pop(ctx);
                           _showToast('${context.tr('wallet_withdraw_requested_prefix')} $amount ج.م ${context.tr('wallet_withdraw_requested_suffix')}');
                           _load();

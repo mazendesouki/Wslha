@@ -28,11 +28,12 @@ class WalletRepository {
     });
   }
 
-  Future<void> requestWithdrawal(String phone, double amount, String dest, String? note) async {
+  Future<void> requestWithdrawal(String phone, double amount, String dest, String password, String? note) async {
     await sb.rpc('request_withdrawal', params: {
       'p_phone': phone,
       'p_amount': amount,
       'p_dest': dest,
+      'p_password': password,
       'p_note': note,
     });
   }

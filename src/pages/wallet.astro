@@ -229,6 +229,8 @@ import Layout from '../components/layout.astro';
       <input type="tel" id="withdraw-dest" class="s-input" placeholder="01xxxxxxxxxx" />
       <label class="s-label">ملاحظة (اختياري)</label>
       <input type="text" id="withdraw-note" class="s-input" placeholder="سبب السحب..." />
+      <label class="s-label">كلمة مرور حسابك (تأكيد)</label>
+      <input type="password" id="withdraw-password" class="s-input" placeholder="••••••••" />
       <button class="s-btn" id="withdraw-btn" type="button">طلب سحب</button>
     </div>
   </div>
@@ -492,14 +494,17 @@ import Layout from '../components/layout.astro';
     var amt = parseFloat(document.getElementById('withdraw-amount').value);
     var dest = document.getElementById('withdraw-dest').value.trim();
     var note = document.getElementById('withdraw-note').value.trim();
+    var password = document.getElementById('withdraw-password').value;
     if (!amt || amt < 10) { toast('أدخل مبلغاً لا يقل عن 10 جنيه', false); return; }
     if (!dest) { toast('أدخل رقم فودافون كاش أو إنستاباي', false); return; }
+    if (!password) { toast('أدخل كلمة مرور حسابك لتأكيد السحب', false); return; }
     var btn = this; btn.disabled = true; btn.textContent = 'جاري المعالجة...';
     try {
-      await callRpc('request_withdrawal', { p_phone:user.phone, p_amount:amt, p_dest:dest, p_note:note || null });
+      await callRpc('request_withdrawal', { p_phone:user.phone, p_amount:amt, p_dest:dest, p_password:password, p_note:note || null });
       document.getElementById('withdraw-amount').value = '';
       document.getElementById('withdraw-dest').value = '';
       document.getElementById('withdraw-note').value = '';
+      document.getElementById('withdraw-password').value = '';
       closeSheet('sheet-withdraw');
       toast('✅ تم طلب سحب ' + amt + ' ج.م — قيد المراجعة');
       loadWallet(); loadLog();
