@@ -6185,6 +6185,15 @@ async function adminSettlePlatform() {
       p_admin_phone: ADMIN.phone, p_admin_password: pass, p_action_key: key,
       p_amount: amount, p_note: note,
     });
+    // security-158: a failed credential check now comes back as a normal
+    // {ok:false, message} response instead of an HTTP error — needed so
+    // the login-attempt counter actually persists (a raised exception
+    // rolls back the whole transaction, including the attempt it just
+    // recorded). Check result.ok before assuming success.
+    if (result && result.ok === false) {
+      showToast('❌ ' + (result.message || 'فشلت عملية السحب'), '#DC2626');
+      return;
+    }
     showToast(`✅ تم سحب ${amount.toFixed(2)} ج.م — الرصيد المتبقي ${fmt(Math.round(result.balance_after))} ج.م`, '#16A34A');
     loadPlatformFinance();
   } catch (e) {
