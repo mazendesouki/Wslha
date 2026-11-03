@@ -169,6 +169,14 @@ import PageHero from '../components/PageHero.astro';
 
   function fmtPrice(n: number) { return Number(n || 0).toLocaleString('ar-EG') + ' ج.م'; }
 
+  // Listing titles/city/area are free text any logged-in user sets when
+  // posting (marketplace/post.astro) — escape before interpolating into
+  // this grid's innerHTML, since this page is public and shown to every
+  // visitor, not just the poster.
+  function escapeHtml(s: unknown): string {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c] as string));
+  }
+
   function render() {
     const search = (document.getElementById('mkt-search') as HTMLInputElement).value.trim().toLowerCase();
     let rows = all;
@@ -183,15 +191,15 @@ import PageHero from '../components/PageHero.astro';
       return;
     }
     grid.innerHTML = rows.map(i => `
-      <a class="item-card" href="/marketplace/item?id=${i.id}">
+      <a class="item-card" href="/marketplace/item?id=${encodeURIComponent(i.id)}">
         <div class="item-card__cover">
-          ${i.images?.[0] ? `<img src="${i.images[0]}" loading="lazy" alt="">` : '📦'}
+          ${i.images?.[0] ? `<img src="${escapeHtml(i.images[0])}" loading="lazy" alt="">` : '📦'}
           ${i.seller_type === 'merchant' ? '<span class="item-card__merchant">🏪 تاجر</span>' : ''}
           <span class="item-card__badge">${i.condition === 'new' ? 'جديد' : i.condition === 'like_new' ? 'كالجديد' : 'مستعمل'}</span>
         </div>
         <div class="item-card__body">
-          <div class="item-card__title">${i.title}</div>
-          <div class="item-card__meta">📍 ${i.city || i.area || 'دمياط الجديدة'}</div>
+          <div class="item-card__title">${escapeHtml(i.title)}</div>
+          <div class="item-card__meta">📍 ${escapeHtml(i.city) || escapeHtml(i.area) || 'دمياط الجديدة'}</div>
           <div class="item-card__price">${fmtPrice(i.price)}</div>
         </div>
       </a>`).join('');

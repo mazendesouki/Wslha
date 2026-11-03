@@ -74,7 +74,7 @@ import PageHero from '../../components/PageHero.astro';
     }
     el.innerHTML = `<div class="mine-list">${items.map(i => `
       <div class="mine-item" data-id="${i.id}">
-        <div class="mine-item__cover">${i.images?.[0] ? `<img src="${i.images[0]}" alt="">` : '📦'}</div>
+        <div class="mine-item__cover">${i.images?.[0] ? `<img src="${escapeHtml(i.images[0])}" alt="">` : '📦'}</div>
         <div class="mine-item__body">
           <div class="mine-item__title">${escapeHtml(i.title)}</div>
           <div class="mine-item__meta">👁️ ${i.views || 0} مشاهدة</div>

@@ -1463,8 +1463,8 @@ import Layout from '../components/layout.astro';
   function renderItems(o: any): string {
     let items: any[] = [];
     try { items = Array.isArray(o.items) ? o.items : JSON.parse(o.items || '[]'); } catch {}
-    if (items.length) return items.map(i => `${i.qty}× ${i.emoji || ''} ${i.name}`).join('<br>');
-    return o.items_summary || '—';
+    if (items.length) return items.map(i => `${i.qty}× ${i.emoji || ''} ${escapeHtml(i.name)}`).join('<br>');
+    return escapeHtml(o.items_summary) || '—';
   }
 
   async function loadOrders(announce = false) {
@@ -1497,8 +1497,8 @@ import Layout from '../components/layout.astro';
           <span class="new-order__time">${timeAgo(o.created_at)}</span>
         </div>
         <div class="new-order__cust">
-          <b>${o.customer_name || '—'}</b> · ${o.customer_phone || ''}<br>
-          📍 ${o.area || ''} — ${o.address || ''}
+          <b>${escapeHtml(o.customer_name) || '—'}</b> · ${escapeHtml(o.customer_phone) || ''}<br>
+          📍 ${escapeHtml(o.area) || ''} — ${escapeHtml(o.address) || ''}
         </div>
         <div class="new-order__items">${renderItems(o)}</div>
         <div class="new-order__total">
@@ -1524,16 +1524,16 @@ import Layout from '../components/layout.astro';
     activeWrap.innerHTML = active.map((o: any) => {
       const statusBit = o.status === 'preparing'
         ? (o.driver_phone
-            ? `<span class="ao-driver">🛵 السائق ${o.driver_name || ''} في الطريق للاستلام</span>`
+            ? `<span class="ao-driver">🛵 السائق ${escapeHtml(o.driver_name) || ''} في الطريق للاستلام</span>`
             : `<span class="searching-pill"><span class="dot"></span> جارٍ البحث عن سائق…</span>`)
-        : `<span class="ao-driver">🚗 ${o.driver_name || 'السائق'} — في الطريق للعميل</span>`;
+        : `<span class="ao-driver">🚗 ${escapeHtml(o.driver_name) || 'السائق'} — في الطريق للعميل</span>`;
       const readyBtn = o.status === 'preparing'
         ? `<button class="btn-ready" data-ready="${o.id}">📦 الطلب جاهز للتسليم</button>` : '';
       return `
         <div class="active-order" data-oid="${o.id}">
           <div class="active-order__info">
             <div class="active-order__code">${o.code || ('#' + String(o.id).slice(-6))} · <span class="order-status ${o.status}">${STATUS_LABEL[o.status]}</span></div>
-            <div class="active-order__meta">${o.customer_name || ''} · ${o.total || 0} ج.م · ${o.area || ''}</div>
+            <div class="active-order__meta">${escapeHtml(o.customer_name) || ''} · ${o.total || 0} ج.م · ${escapeHtml(o.area) || ''}</div>
             <div style="margin-top:4px;">${statusBit}</div>
           </div>
           ${readyBtn}
@@ -1552,8 +1552,8 @@ import Layout from '../components/layout.astro';
         <div class="order-row">
           <span class="order-id">${o.code || ('#' + String(o.id).slice(-6))}</span>
           <div class="order-cust">
-            <div style="font-weight:600;">${o.customer_name || '—'}</div>
-            <div style="font-size:11px;color:var(--color-text-faint);">${o.customer_phone || ''} · ${o.area || ''}</div>
+            <div style="font-weight:600;">${escapeHtml(o.customer_name) || '—'}</div>
+            <div style="font-size:11px;color:var(--color-text-faint);">${escapeHtml(o.customer_phone) || ''} · ${escapeHtml(o.area) || ''}</div>
           </div>
           <span class="order-total">${o.total || 0} ج.م</span>
           <span class="order-status ${o.status}">${STATUS_LABEL[o.status] || o.status}</span>

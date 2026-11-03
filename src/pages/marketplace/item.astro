@@ -145,6 +145,14 @@ import Layout from '../../components/layout.astro';
     setTimeout(() => t.classList.remove('show'), 2800);
   }
 
+  // city/area is free text the poster set — the rest of this listing's
+  // text (title, description) goes through .textContent elsewhere in
+  // this file, which is safe by construction; this one spot uses
+  // .innerHTML, so it needs explicit escaping.
+  function escapeHtml(s: unknown): string {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c] as string));
+  }
+
   let item: MarketItem | null = null;
 
   async function init() {
@@ -219,7 +227,7 @@ import Layout from '../../components/layout.astro';
     document.getElementById('title')!.textContent = i.title;
     document.getElementById('price')!.textContent = Number(i.price).toLocaleString('ar-EG') + ' ج.م';
     document.getElementById('meta')!.innerHTML = `
-      <span class="meta-chip">📍 ${i.city || i.area || 'دمياط الجديدة'}</span>
+      <span class="meta-chip">📍 ${escapeHtml(i.city) || escapeHtml(i.area) || 'دمياط الجديدة'}</span>
       <span class="meta-chip">👁️ ${i.views} مشاهدة</span>
       <span class="meta-chip">🗓️ ${new Date(i.created_at).toLocaleDateString('ar-EG')}</span>
     `;
