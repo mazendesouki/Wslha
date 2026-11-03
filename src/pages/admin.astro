@@ -2587,12 +2587,12 @@ async function loadAppReviews() {
       <div style="background:${r.is_approved ? '#F0FDF4' : '#FFFBEB'};border:1px solid ${r.is_approved ? '#BBF7D0' : '#FDE68A'};border-radius:10px;padding:.75rem .9rem">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:.75rem">
           <div>
-            <div style="font-weight:800;font-size:.85rem">${r.customer_name} <span style="color:#D97706">${'★'.repeat(r.rating)}${'☆'.repeat(5-r.rating)}</span></div>
-            <div style="font-size:.72rem;color:#94A3B8;direction:ltr;text-align:right">${r.customer_phone}</div>
+            <div style="font-weight:800;font-size:.85rem">${escapeHtml(r.customer_name)} <span style="color:#D97706">${'★'.repeat(r.rating)}${'☆'.repeat(5-r.rating)}</span></div>
+            <div style="font-size:.72rem;color:#94A3B8;direction:ltr;text-align:right">${escapeHtml(r.customer_phone)}</div>
           </div>
           <span style="font-size:.7rem;font-weight:700;padding:.2rem .5rem;border-radius:999px;background:${r.is_approved ? '#DCFCE7;color:#14532D' : '#FEF3C7;color:#92400E'}">${r.is_approved ? '✅ منشورة' : '⏳ قيد المراجعة'}</span>
         </div>
-        ${r.comment ? `<p style="font-size:.82rem;margin-top:.5rem">${r.comment}</p>` : ''}
+        ${r.comment ? `<p style="font-size:.82rem;margin-top:.5rem">${escapeHtml(r.comment)}</p>` : ''}
         <div style="margin-top:.6rem;display:flex;gap:.5rem">
           ${!r.is_approved ? `<button class="btn btn--primary btn--sm" onclick="setAppReviewApproved('${r.id}', true)">✅ موافقة ونشر</button>` : `<button class="btn btn--ghost btn--sm" onclick="setAppReviewApproved('${r.id}', false)">إخفاء</button>`}
         </div>
@@ -2681,8 +2681,8 @@ async function loadDash() {
   const recentRows = (orders||[]).slice(0,10).map(o => `
     <tr>
       <td style="direction:ltr;font-size:.78rem">${o.code||o.id?.slice(0,8)||'—'}</td>
-      <td>${o.customer_name||'—'}</td>
-      <td>${o.store_name||'—'}</td>
+      <td>${escapeHtml(o.customer_name)||'—'}</td>
+      <td>${escapeHtml(o.store_name)||'—'}</td>
       <td style="font-weight:700;color:var(--pr)">${fmt(o.total)} ج.م</td>
       <td>${badge(o.status)}</td>
       <td style="font-size:.78rem">${fmtTime(o.created_at)}</td>
@@ -2694,14 +2694,14 @@ async function loadDash() {
     ...(dApps||[]).map(d => `
       <div style="display:flex;align-items:center;gap:.75rem;padding:.6rem 1rem;background:#F8FAFC;border-radius:8px;border:1px solid #E2E8F0">
         <span style="font-size:1.3rem">🚗</span>
-        <div style="flex:1"><div style="font-size:.82rem;font-weight:700">${d.phone}</div><div style="font-size:.72rem;color:#64748B">طلب سائق</div></div>
-        <button class="btn btn--primary btn--sm" onclick="openDriverModal('${d.phone}')">مراجعة</button>
+        <div style="flex:1"><div style="font-size:.82rem;font-weight:700">${escapeHtml(d.phone)}</div><div style="font-size:.72rem;color:#64748B">طلب سائق</div></div>
+        <button class="btn btn--primary btn--sm" onclick="openDriverModal('${jsAttrSafe(d.phone)}')">مراجعة</button>
       </div>`),
     ...(mApps||[]).map(m => `
       <div style="display:flex;align-items:center;gap:.75rem;padding:.6rem 1rem;background:#F8FAFC;border-radius:8px;border:1px solid #E2E8F0">
         <span style="font-size:1.3rem">🏪</span>
-        <div style="flex:1"><div style="font-size:.82rem;font-weight:700">${m.business_name||m.phone}</div><div style="font-size:.72rem;color:#64748B">طلب تاجر</div></div>
-        <button class="btn btn--primary btn--sm" onclick="openMerchantModal('${m.phone}')">مراجعة</button>
+        <div style="flex:1"><div style="font-size:.82rem;font-weight:700">${escapeHtml(m.business_name)||escapeHtml(m.phone)}</div><div style="font-size:.72rem;color:#64748B">طلب تاجر</div></div>
+        <button class="btn btn--primary btn--sm" onclick="openMerchantModal('${jsAttrSafe(m.phone)}')">مراجعة</button>
       </div>`),
   ].join('') || '<p style="color:#94A3B8;font-size:.875rem">لا توجد طلبات معلقة</p>';
   document.getElementById('dash-pending-list').innerHTML = pendingHtml;
@@ -2790,8 +2790,8 @@ async function loadDeepAnalytics() {
     const topDriversRows = (data.top_drivers || []).map((d, i) => `
       <tr>
         <td>${i + 1}</td>
-        <td>${d.name || '—'}</td>
-        <td dir="ltr" style="text-align:right">${d.phone}</td>
+        <td>${escapeHtml(d.name) || '—'}</td>
+        <td dir="ltr" style="text-align:right">${escapeHtml(d.phone)}</td>
         <td>${d.trips}</td>
         <td style="font-weight:700;color:#16A34A">${Number(d.earnings).toFixed(0)} ج.م</td>
         <td>${d.avg_rating > 0 ? '⭐ ' + d.avg_rating : '—'}</td>
@@ -2800,7 +2800,7 @@ async function loadDeepAnalytics() {
     const maxArea = Math.max(1, ...(data.busiest_areas || []).map(a => a.ride_count));
     const areaRows = (data.busiest_areas || []).map(a => `
       <div style="display:flex;align-items:center;gap:.6rem;margin-bottom:.45rem">
-        <span style="font-size:.78rem;font-weight:700;min-width:110px">${a.area}</span>
+        <span style="font-size:.78rem;font-weight:700;min-width:110px">${escapeHtml(a.area)}</span>
         <div style="flex:1;background:#F1F5F9;border-radius:6px;overflow:hidden;height:16px">
           <div style="width:${(a.ride_count / maxArea * 100).toFixed(0)}%;background:#0E4B49;height:100%"></div>
         </div>
@@ -3052,10 +3052,10 @@ function renderUsers() {
     <tr>
       <td style="color:#94A3B8;font-size:.78rem">${i+1}</td>
       <td><div class="user-cell">${avatarChip(u.name,u.phone)}<button class="link-btn" onclick="openUserProfile('${u.phone}')" title="عرض الملف الشخصي الكامل">${escapeHtml(u.name)||'—'}</button></div></td>
-      <td class="num" style="text-align:right;font-size:.85rem">${u.phone||'—'}</td>
+      <td class="num" style="text-align:right;font-size:.85rem">${escapeHtml(u.phone)||'—'}</td>
       <td>${roleBadge(u.role)}</td>
       <td>${badge(u.status||'active')}</td>
-      <td style="font-size:.82rem">${u.city||'—'}</td>
+      <td style="font-size:.82rem">${escapeHtml(u.city)||'—'}</td>
       <td style="font-size:.78rem">${fmtDate(u.created_at||u.createdAt)}</td>
       <td>
         ${isAdminRow ? `
@@ -3202,9 +3202,9 @@ async function openCashRemindersModal() {
           <tbody>
             ${rows.map(r => `
               <tr>
-                <td>${r.driver_name || '—'}<br><span class="num" style="font-size:.75rem;color:#94A3B8">${r.driver_phone}</span></td>
+                <td>${escapeHtml(r.driver_name) || '—'}<br><span class="num" style="font-size:.75rem;color:#94A3B8">${escapeHtml(r.driver_phone)}</span></td>
                 <td style="font-weight:800">${r.amount} ج.م</td>
-                <td style="font-size:.8rem;color:#64748B">${r.note || '—'}</td>
+                <td style="font-size:.8rem;color:#64748B">${escapeHtml(r.note) || '—'}</td>
                 <td style="font-size:.78rem">${fmtDate(r.due_at)}</td>
                 <td>${r.settled ? '<span class="badge badge--green">تم السداد</span>' : '<span class="badge badge--orange">مستحق</span>'}</td>
                 <td>${r.settled ? '' : `<button class="btn btn--outline btn--sm" onclick="settleCashReminder('${r.id}')">✅ تم السداد</button>`}</td>
@@ -3288,9 +3288,17 @@ let currentProfilePhone = null;
 function kpiTile(cls, icon, val, label) {
   return `<div class="kpi kpi--${cls}"><div class="kpi__row"><div class="kpi__icon-wrap">${icon}</div></div><div class="kpi__val">${val}</div><div class="kpi__label">${label}</div></div>`;
 }
-function revField(label, val) {
+// `val` is escaped by default — every call site in this file passes raw
+// user/account/application data (name, email, city, national ID, vehicle
+// fields, addresses, etc.), with exactly one exception (a pre-built
+// badge(...) <span>, which legitimately needs to render as HTML) —
+// callers pass rawHtml:true for that one case instead of leaving escaping
+// as an opt-out default, since a missed call site here is exactly the
+// class of bug this file already had several of.
+function revField(label, val, rawHtml) {
   if (val === null || val === undefined || val === '') return '';
-  return `<div class="rev-field"><div class="rev-field__label">${label}</div><div class="rev-field__val">${val}</div></div>`;
+  const safeVal = rawHtml ? val : escapeHtml(val);
+  return `<div class="rev-field"><div class="rev-field__label">${escapeHtml(label)}</div><div class="rev-field__val">${safeVal}</div></div>`;
 }
 function closeUserProfile() {
   document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
@@ -3333,7 +3341,7 @@ async function openUserProfile(phone) {
   document.getElementById('up-role-badge').innerHTML = roleBadge(acc.role);
   document.getElementById('up-status-badge').innerHTML = badge(acc.status || 'active');
   if (acc.avatar_url) {
-    document.getElementById('up-avatar').outerHTML = `<img id="up-avatar" class="rev-avatar" src="${acc.avatar_url}" alt="${(acc.name||'').replace(/"/g,'')}" onclick="document.getElementById('lightbox-img').src='${acc.avatar_url}';document.getElementById('lightbox').classList.remove('hidden')"/>`;
+    document.getElementById('up-avatar').outerHTML = `<img id="up-avatar" class="rev-avatar" src="${escapeHtml(acc.avatar_url)}" alt="${escapeHtml(acc.name)}" onclick="document.getElementById('lightbox-img').src='${jsAttrSafe(acc.avatar_url)}';document.getElementById('lightbox').classList.remove('hidden')"/>`;
   }
   document.getElementById('up-account-fields').innerHTML = [
     revField('اسم المستخدم', acc.username),
@@ -3369,7 +3377,7 @@ async function openUserProfile(phone) {
       sideCard.style.display = '';
       document.getElementById('up-side-title').textContent = '🚗 بيانات السائق والمركبة';
       document.getElementById('up-side-fields').innerHTML = [
-        revField('حالة طلب الاعتماد', badge(a.status)),
+        revField('حالة طلب الاعتماد', badge(a.status), true),
         revField('موديل السيارة', a.vehicle_model),
         revField('اللون', a.vehicle_color),
         revField('سنة الصنع', a.vehicle_year),
@@ -3425,7 +3433,7 @@ async function openUserProfile(phone) {
       sideCard.style.display = '';
       document.getElementById('up-side-title').textContent = '🏪 بيانات المتجر';
       document.getElementById('up-side-fields').innerHTML = [
-        revField('اسم المتجر', `${escapeHtml(s.emoji)||''} ${escapeHtml(s.name)||''}`.trim()),
+        revField('اسم المتجر', `${s.emoji||''} ${s.name||''}`.trim()),
         revField('الفئة', s.category),
         revField('المنطقة', s.area),
         revField('العنوان', s.address),
@@ -3495,7 +3503,7 @@ async function openUserProfile(phone) {
   document.getElementById('up-activity-tbody').innerHTML = activityRows.length
     ? activityRows.map(r => `<tr>
         <td style="font-size:.78rem">${r.type}</td>
-        <td style="font-size:.78rem">${r.detail}</td>
+        <td style="font-size:.78rem">${escapeHtml(r.detail)}</td>
         <td style="font-weight:800">${r.amount != null ? fmt(Math.round(Number(r.amount)||0)) + ' ج.م' : '—'}</td>
         <td>${badge(r.status)}</td>
         <td style="font-size:.78rem">${fmtTime(r.date)}</td>
@@ -3536,8 +3544,8 @@ function renderDriverAccounts() {
     <tr>
       <td style="color:#94A3B8;font-size:.78rem">${i+1}</td>
       <td><div class="user-cell">${avatarChip(u.name,u.phone)}<button class="link-btn" onclick="openUserProfile('${u.phone}')" title="عرض الملف الشخصي الكامل">${escapeHtml(u.name)||'—'}</button></div></td>
-      <td class="num" style="font-size:.85rem">${u.phone||'—'}</td>
-      <td style="font-size:.82rem">${u.city||'—'}</td>
+      <td class="num" style="font-size:.85rem">${escapeHtml(u.phone)||'—'}</td>
+      <td style="font-size:.82rem">${escapeHtml(u.city)||'—'}</td>
       <td>${badge(u.status||'active')}</td>
       <td style="font-size:.78rem">${fmtDate(u.created_at||u.createdAt)}</td>
       <td>
@@ -3573,12 +3581,12 @@ function renderDriverApps() {
   document.getElementById('drivers-tab-title').textContent = titles[currentDriverTab]||'';
   const html = rows.map(a => `
     <tr>
-      <td style="font-weight:700">${a.full_name||'—'}</td>
-      <td style="direction:ltr;font-size:.85rem">${a.phone||'—'}</td>
-      <td style="font-size:.82rem">${a.vehicle_model||'—'} ${a.vehicle_color||''} ${a.vehicle_year||''}</td>
+      <td style="font-weight:700">${escapeHtml(a.full_name)||'—'}</td>
+      <td style="direction:ltr;font-size:.85rem">${escapeHtml(a.phone)||'—'}</td>
+      <td style="font-size:.82rem">${escapeHtml(a.vehicle_model)||'—'} ${escapeHtml(a.vehicle_color)||''} ${escapeHtml(a.vehicle_year)||''}</td>
       <td style="font-size:.78rem">${fmtDate(a.created_at)}</td>
       <td>${badge(a.status)}</td>
-      <td><button class="btn btn--primary btn--sm" onclick="openDriverModal('${a.phone}')">📋 مراجعة</button></td>
+      <td><button class="btn btn--primary btn--sm" onclick="openDriverModal('${jsAttrSafe(a.phone)}')">📋 مراجعة</button></td>
     </tr>`).join('') || '<tr><td colspan="6" style="text-align:center;color:#94A3B8;padding:2rem">لا توجد طلبات</td></tr>';
   document.getElementById('drivers-tbody').innerHTML = html;
 }
@@ -3608,13 +3616,16 @@ async function openDriverModal(phone) {
   const a = await adminGetApplication('driver', phone);
   if (!a) { document.getElementById('driver-modal-body').innerHTML = '<p style="color:#DC2626">لم يتم العثور على الطلب</p>'; return; }
 
-  const escLbl = (s) => (s || '').replace(/'/g, "\\'");
+  // label is always a hardcoded caller-supplied string (never user data —
+  // verified against every rdoc()/rfield() call site in this function);
+  // url/val come from driver_applications and are self-submitted at
+  // registration, so those are escaped.
   const rdoc = (label, url) => `
     <div class="rev-doc">
       ${url
-        ? `<img class="rev-doc__img" src="${url}" alt="${label}" onclick="document.getElementById('lightbox-img').src='${url}';document.getElementById('lightbox').classList.remove('hidden')" loading="lazy"/>`
+        ? `<img class="rev-doc__img" src="${escapeHtml(url)}" alt="${escapeHtml(label)}" onclick="document.getElementById('lightbox-img').src='${jsAttrSafe(url)}';document.getElementById('lightbox').classList.remove('hidden')" loading="lazy"/>`
         : `<div class="rev-doc__img no-img">📄</div>`}
-      <div class="rev-doc__label">${label}</div>
+      <div class="rev-doc__label">${escapeHtml(label)}</div>
     </div>`;
   const daysUntil = (dateStr) => dateStr ? Math.floor((new Date(dateStr) - new Date()) / 86400000) : null;
   const rfield = (label, val, dateStr) => {
@@ -3624,7 +3635,7 @@ async function openDriverModal(phone) {
       const d = daysUntil(dateStr);
       if (d !== null) cls = d < 0 ? 'is-expired' : d <= 30 ? 'is-expiring' : '';
     }
-    return `<div class="rev-field"><div class="rev-field__label">${label}</div><div class="rev-field__val ${cls}">${val}</div></div>`;
+    return `<div class="rev-field"><div class="rev-field__label">${escapeHtml(label)}</div><div class="rev-field__val ${cls}">${escapeHtml(val)}</div></div>`;
   };
   const rsection = (icon, title, fieldsHtml, docsHtml) => {
     const fields = (fieldsHtml || []).filter(Boolean).join('');
@@ -3649,11 +3660,11 @@ async function openDriverModal(phone) {
   document.getElementById('driver-modal-body').innerHTML = `
     <div class="rev-header">
       ${a.driver_photo_url
-        ? `<img class="rev-avatar" src="${a.driver_photo_url}" alt="${escLbl(a.full_name)}" onclick="document.getElementById('lightbox-img').src='${a.driver_photo_url}';document.getElementById('lightbox').classList.remove('hidden')"/>`
+        ? `<img class="rev-avatar" src="${escapeHtml(a.driver_photo_url)}" alt="${escapeHtml(a.full_name)}" onclick="document.getElementById('lightbox-img').src='${jsAttrSafe(a.driver_photo_url)}';document.getElementById('lightbox').classList.remove('hidden')"/>`
         : `<div class="rev-avatar no-img">🧑‍✈️</div>`}
       <div>
         <div class="rev-header__top">
-          <span class="rev-header__name">${a.full_name || '—'}</span>
+          <span class="rev-header__name">${escapeHtml(a.full_name)||'—'}</span>
           ${badge(a.status)}
         </div>
         <div class="rev-header__phone">📞 ${a.phone || '—'}</div>
@@ -3708,7 +3719,7 @@ async function openDriverModal(phone) {
       a.good_conduct_url ? rdoc('شهادة حسن السيرة', a.good_conduct_url) : '',
     ])}
 
-    ${a.rejection_reason ? `<div style="background:#FEE2E2;border:1px solid #FECACA;border-radius:8px;padding:.75rem 1rem;margin-top:1rem"><span style="font-size:.8rem;font-weight:700;color:#DC2626">سبب الرفض السابق:</span> <span style="font-size:.85rem;color:#DC2626">${a.rejection_reason}</span></div>` : ''}
+    ${a.rejection_reason ? `<div style="background:#FEE2E2;border:1px solid #FECACA;border-radius:8px;padding:.75rem 1rem;margin-top:1rem"><span style="font-size:.8rem;font-weight:700;color:#DC2626">سبب الرفض السابق:</span> <span style="font-size:.85rem;color:#DC2626">${escapeHtml(a.rejection_reason)}</span></div>` : ''}
     ${a.status !== 'pending' ? `<div style="background:#F8FAFC;border-radius:8px;padding:.75rem 1rem;margin-top:.75rem;font-size:.82rem;color:#64748B">تمت المراجعة بواسطة إدارة وصّلها — ${fmtDate(a.reviewed_at)}</div>` : ''}
   `;
   // Hide approve/reject if already decided
@@ -3750,8 +3761,8 @@ function renderMerchantAccounts() {
     <tr>
       <td style="color:#94A3B8;font-size:.78rem">${i+1}</td>
       <td><div class="user-cell">${avatarChip(u.name,u.phone)}<button class="link-btn" onclick="openUserProfile('${u.phone}')" title="عرض الملف الشخصي الكامل">${escapeHtml(u.name)||'—'}</button></div></td>
-      <td class="num" style="font-size:.85rem">${u.phone||'—'}</td>
-      <td style="font-size:.82rem">${u.city||'—'}</td>
+      <td class="num" style="font-size:.85rem">${escapeHtml(u.phone)||'—'}</td>
+      <td style="font-size:.82rem">${escapeHtml(u.city)||'—'}</td>
       <td>${badge(u.status||'active')}</td>
       <td style="font-size:.78rem">${fmtDate(u.created_at||u.createdAt)}</td>
       <td>
@@ -3789,12 +3800,12 @@ function renderMerchantApps() {
   document.getElementById('merchants-tab-title').textContent = titles[currentMerchantTab]||'';
   const html = rows.map(a => `
     <tr>
-      <td style="font-weight:700">${a.business_name||'—'}</td>
-      <td style="direction:ltr;font-size:.85rem">${a.phone||'—'}</td>
-      <td style="font-size:.82rem">${a.business_type||'—'}</td>
+      <td style="font-weight:700">${escapeHtml(a.business_name)||'—'}</td>
+      <td style="direction:ltr;font-size:.85rem">${escapeHtml(a.phone)||'—'}</td>
+      <td style="font-size:.82rem">${escapeHtml(a.business_type)||'—'}</td>
       <td style="font-size:.78rem">${fmtDate(a.created_at)}</td>
       <td>${badge(a.status)}</td>
-      <td><button class="btn btn--primary btn--sm" onclick="openMerchantModal('${a.phone}')">📋 مراجعة</button></td>
+      <td><button class="btn btn--primary btn--sm" onclick="openMerchantModal('${jsAttrSafe(a.phone)}')">📋 مراجعة</button></td>
     </tr>`).join('') || '<tr><td colspan="6" style="text-align:center;color:#94A3B8;padding:2rem">لا توجد طلبات</td></tr>';
   document.getElementById('merchants-tbody').innerHTML = html;
 }
@@ -3820,11 +3831,11 @@ async function openMerchantModal(phone) {
   const docItem = (label, url) => `
     <div class="doc-card">
       ${url
-        ? `<img class="doc-card__img" src="${url}" alt="${label}" onclick="document.getElementById('lightbox-img').src='${url}';document.getElementById('lightbox').classList.remove('hidden')" loading="lazy"/>`
+        ? `<img class="doc-card__img" src="${escapeHtml(url)}" alt="${escapeHtml(label)}" onclick="document.getElementById('lightbox-img').src='${jsAttrSafe(url)}';document.getElementById('lightbox').classList.remove('hidden')" loading="lazy"/>`
         : `<div class="doc-card__img no-img">📄</div>`}
-      <div class="doc-card__label">${label}</div>
+      <div class="doc-card__label">${escapeHtml(label)}</div>
     </div>`;
-  const infoF = (label, val) => val ? `<div class="info-field"><div class="info-field__label">${label}</div><div class="info-field__val">${val}</div></div>` : '';
+  const infoF = (label, val) => val ? `<div class="info-field"><div class="info-field__label">${escapeHtml(label)}</div><div class="info-field__val">${escapeHtml(val)}</div></div>` : '';
 
   document.getElementById('merchant-modal-body').innerHTML = `
     <h3 style="font-size:.85rem;font-weight:700;color:#64748B;text-transform:uppercase;letter-spacing:.05em;margin-bottom:.75rem">📋 معلومات النشاط التجاري</h3>
@@ -3846,7 +3857,7 @@ async function openMerchantModal(phone) {
       ${docItem('البطاقة الضريبية', a.tax_card_url)}
       ${docItem('رخصة العمل', a.work_permit_url)}
     </div>
-    ${a.rejection_reason ? `<div style="background:#FEE2E2;border:1px solid #FECACA;border-radius:8px;padding:.75rem 1rem;margin-top:1rem"><span style="font-size:.8rem;font-weight:700;color:#DC2626">سبب الرفض السابق:</span> <span style="font-size:.85rem;color:#DC2626">${a.rejection_reason}</span></div>` : ''}
+    ${a.rejection_reason ? `<div style="background:#FEE2E2;border:1px solid #FECACA;border-radius:8px;padding:.75rem 1rem;margin-top:1rem"><span style="font-size:.8rem;font-weight:700;color:#DC2626">سبب الرفض السابق:</span> <span style="font-size:.85rem;color:#DC2626">${escapeHtml(a.rejection_reason)}</span></div>` : ''}
     ${a.status !== 'pending' ? `<div style="background:#F8FAFC;border-radius:8px;padding:.75rem 1rem;margin-top:.75rem;font-size:.82rem;color:#64748B">تمت المراجعة بواسطة إدارة وصّلها — ${fmtDate(a.reviewed_at)}</div>` : ''}
   `;
   const hide = a.status !== 'pending';
@@ -4374,8 +4385,8 @@ function renderStores() {
   const html = rows.map(s => `
     <tr>
       <td style="font-weight:700">${escapeHtml(s.emoji)||''} ${escapeHtml(s.name)||'—'}</td>
-      <td style="font-size:.82rem">${s.category||'—'}</td>
-      <td>${s.area||'—'}</td>
+      <td style="font-size:.82rem">${escapeHtml(s.category)||'—'}</td>
+      <td>${escapeHtml(s.area)||'—'}</td>
       <td style="direction:ltr;font-size:.82rem">${s.owner_phone||'—'}</td>
       <td>${fmt(s.delivery_fee)} ج.م</td>
       <td>${s.rating||'—'} ⭐ (${s.reviews||0})</td>
@@ -5076,8 +5087,8 @@ async function loadFinance() {
       <td>${d}</td>
       <td>${typeIcon} ${(c.note||'').includes('توصيل') ? 'توصيل' : (c.note||'').includes('مطار') ? 'مطار' : 'رحلة'}</td>
       <td style="font-weight:700;color:#16A34A">+${fmt(Math.abs(Number(c.amount||0)))} ج.م</td>
-      <td style="font-size:.8rem;color:#64748B">${c.note||'—'}</td>
-      <td style="font-size:.75rem;color:#94A3B8;direction:ltr">${(c.reference_id||'').slice(0,12)||'—'}</td>
+      <td style="font-size:.8rem;color:#64748B">${escapeHtml(c.note)||'—'}</td>
+      <td style="font-size:.75rem;color:#94A3B8;direction:ltr">${escapeHtml((c.reference_id||'').slice(0,12))||'—'}</td>
     </tr>`;
   }).join('') || '<tr><td colspan="5" style="text-align:center;color:#94A3B8;padding:2rem">لا توجد عمولات بعد</td></tr>';
 
@@ -5760,7 +5771,7 @@ async function loadCancellationAlertsList() {
     if (!rows || !rows.length) { box.innerHTML = '<span style="color:#94A3B8">مفيش تنبيهات لحد دلوقتي — الوضع طبيعي</span>'; return; }
     box.innerHTML = rows.map(r => `
       <div style="background:#FEF2F2;border:1px solid #FECACA;border-radius:8px;padding:.5rem .75rem">
-        <div style="color:#991B1B;font-weight:700">${r.message}</div>
+        <div style="color:#991B1B;font-weight:700">${escapeHtml(r.message)}</div>
         <div style="color:#94A3B8;font-size:.72rem;margin-top:2px">${new Date(r.created_at).toLocaleString('ar-EG')}</div>
       </div>`).join('');
   } catch { box.textContent = ''; }
@@ -6059,7 +6070,7 @@ async function viewUserTransactions(phone, name) {
       <td style="font-size:.78rem">${d}</td>
       <td style="font-size:.78rem"><span style="background:${(TX_CLR[t.type]||'#64748B')}22;color:${TX_CLR[t.type]||'#64748B'};font-size:.7rem;font-weight:700;padding:2px 7px;border-radius:99px">${TX_TYPES_AR[t.type]||t.type}</span></td>
       <td style="font-weight:800;color:${ac}">${amt>=0?'+':''}${amt.toFixed(2)} ج.م</td>
-      <td style="font-size:.78rem;color:#64748B">${t.note||t.reference_id||'—'}</td>
+      <td style="font-size:.78rem;color:#64748B">${escapeHtml(t.note)||escapeHtml(t.reference_id)||'—'}</td>
     </tr>`;
   }).join('');
 }

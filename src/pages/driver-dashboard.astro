@@ -2248,7 +2248,7 @@ import PageHero from '../components/PageHero.astro';
           const cls  = amt >= 0 ? 'pos' : 'neg';
           const d = new Date(t.created_at).toLocaleDateString('ar-EG', { month: 'short', day: 'numeric' });
           const typeLabel = { commission:'عمولة منصة', earning:'أرباح', topup:'إضافة رصيد', withdrawal:'سحب', refund:'استرداد' }[t.type] || t.type;
-          return `<div class="acct-tx"><span class="acct-tx__note">${t.note || typeLabel}</span><span class="acct-tx__date">${d}</span><span class="acct-tx__amt ${cls}">${sign}${Math.abs(amt)} ج.م</span></div>`;
+          return `<div class="acct-tx"><span class="acct-tx__note">${escapeHtml(t.note) || typeLabel}</span><span class="acct-tx__date">${d}</span><span class="acct-tx__amt ${cls}">${sign}${Math.abs(amt)} ج.م</span></div>`;
         }).join('');
       }
     } catch {}
@@ -2426,7 +2426,7 @@ import PageHero from '../components/PageHero.astro';
       const d = it.date ? new Date(it.date).toLocaleDateString('ar-EG', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—';
       const statusLabel = { completed:'مكتملة', delivered:'مكتمل', cancelled:'ملغاة' }[it.status] || it.status;
       const statusCls   = (it.status === 'completed' || it.status === 'delivered') ? 'completed' : 'cancelled';
-      return `<div class="activity-item"><div class="activity-icon">${it.icon}</div><div class="activity-info"><div class="activity-title">${it.title}</div><div class="activity-sub"><span class="activity-status ${statusCls}">${statusLabel}</span></div></div><div class="activity-right"><div class="activity-earn">+${it.earn || 0} ج.م</div><div class="activity-date">${d}</div></div></div>`;
+      return `<div class="activity-item"><div class="activity-icon">${it.icon}</div><div class="activity-info"><div class="activity-title">${escapeHtml(it.title)}</div><div class="activity-sub"><span class="activity-status ${statusCls}">${statusLabel}</span></div></div><div class="activity-right"><div class="activity-earn">+${it.earn || 0} ج.م</div><div class="activity-date">${d}</div></div></div>`;
     }).join('');
   }
 

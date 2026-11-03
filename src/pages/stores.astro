@@ -422,6 +422,13 @@ try {
   const searchRes = document.getElementById('search-results');
   const clearBtn  = document.getElementById('search-clear');
 
+  // ALL_PRODUCTS is live merchant-entered data (product name/description) —
+  // escape before interpolating into the search results dropdown, which
+  // every visitor to this public page can trigger.
+  function escapeHtml(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+  }
+
   function doSearch(q) {
     if (!q || q.length < 2) {
       searchRes.classList.remove('visible');
@@ -440,11 +447,11 @@ try {
       searchRes.innerHTML = '<div class="search-loading">لا توجد نتائج — جرّب كلمة أخرى</div>';
     } else {
       searchRes.innerHTML = hits.map(p => `
-        <a href="/store/${p.storeId}" class="search-result-item">
-          <span class="sri-emoji">${p.emoji}</span>
+        <a href="/store/${encodeURIComponent(p.storeId)}" class="search-result-item">
+          <span class="sri-emoji">${escapeHtml(p.emoji)}</span>
           <div>
-            <div class="sri-name">${p.name}</div>
-            <div class="sri-meta">${p.storeEmoji} ${p.storeName}${p.desc ? ' · ' + p.desc.slice(0, 40) : ''}</div>
+            <div class="sri-name">${escapeHtml(p.name)}</div>
+            <div class="sri-meta">${escapeHtml(p.storeEmoji)} ${escapeHtml(p.storeName)}${p.desc ? ' · ' + escapeHtml(p.desc.slice(0, 40)) : ''}</div>
           </div>
           <span class="sri-price">${p.price} ج.م</span>
         </a>`).join('');
