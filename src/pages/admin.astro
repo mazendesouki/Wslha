@@ -2543,9 +2543,12 @@ async function verifyAdminOtp() {
 async function adminListAccounts(roleFilter) {
   const pass = await getAdminPass();
   if (!pass) return [];
-  const rows = await sbRpcRows('admin_list_accounts', { p_admin_phone: ADMIN.phone, p_admin_password: pass, p_role: roleFilter || null });
-  if (rows === null) { clearAdminPass(); return []; }
-  return rows;
+  let result;
+  try {
+    result = await sbRpcJson('admin_list_accounts', { p_admin_phone: ADMIN.phone, p_admin_password: pass, p_role: roleFilter || null });
+  } catch { clearAdminPass(); return []; }
+  if (!result || result.ok !== true) { clearAdminPass(); return []; }
+  return result.rows || [];
 }
 
 /* ── Navigation ─────────────────────────────────────────────── */
@@ -3165,10 +3168,15 @@ async function createCashReminder(phone, name) {
   const key = await getActionKey();
   if (!key) return;
   try {
-    await sbRpcJson('admin_create_cash_reminder', {
+    const result = await sbRpcJson('admin_create_cash_reminder', {
       p_admin_phone: ADMIN.phone, p_admin_password: pass, p_driver_phone: phone,
       p_amount: amount, p_note: note?.trim() || null, p_action_key: key,
     });
+    if (!result || result.ok !== true) {
+      if (result && (result.error === 'invalid_credentials' || result.error === 'invalid_action_key')) clearAdminPass();
+      showToast(`❌ فشل — ${(result && result.message) || 'تحقق من كلمة المرور ومفتاح الأمان'}`, '#DC2626');
+      return;
+    }
     showToast('✅ اتسجّل التذكير واتبعت للسائق', '#16A34A');
   } catch (e) {
     clearAdminPass();
@@ -3331,10 +3339,13 @@ async function openUserProfile(phone) {
 
   const pass = await getAdminPass();
   if (!pass) { closeUserProfile(); return; }
-  const rows = await sbRpcRows('admin_get_account_detail', { p_admin_phone: ADMIN.phone, p_admin_password: pass, p_target_phone: phone });
-  if (rows === null) { clearAdminPass(); showToast('❌ فشل التحقق — أعد المحاولة', '#DC2626'); closeUserProfile(); return; }
-  const acc = rows[0];
-  if (!acc) { showToast('❌ لم يتم العثور على المستخدم', '#DC2626'); closeUserProfile(); return; }
+  let result;
+  try {
+    result = await sbRpcJson('admin_get_account_detail', { p_admin_phone: ADMIN.phone, p_admin_password: pass, p_target_phone: phone });
+  } catch { result = null; }
+  if (!result || result.ok !== true) { clearAdminPass(); showToast('❌ فشل التحقق — أعد المحاولة', '#DC2626'); closeUserProfile(); return; }
+  const acc = result.account;
+  if (!acc || !acc.phone) { showToast('❌ لم يتم العثور على المستخدم', '#DC2626'); closeUserProfile(); return; }
 
   document.getElementById('up-name').textContent = acc.name || '—';
   document.getElementById('up-phone').textContent = '📞 ' + (acc.phone || phone);
@@ -4966,8 +4977,12 @@ document.getElementById('promo-file-input')?.addEventListener('change', async (e
 async function loadPromotions() {
   const pass = await getAdminPass();
   if (!pass) return;
-  const rows = await sbRpcRows('admin_list_promotions', { p_admin_phone: ADMIN.phone, p_admin_password: pass });
-  if (rows === null) { clearAdminPass(); return; }
+  let result;
+  try {
+    result = await sbRpcJson('admin_list_promotions', { p_admin_phone: ADMIN.phone, p_admin_password: pass });
+  } catch { result = null; }
+  if (!result || result.ok !== true) { clearAdminPass(); return; }
+  const rows = result.rows || [];
   const tbody = document.getElementById('promotions-tbody');
   if (!tbody) return;
   if (!rows.length) { tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#94A3B8;padding:2rem">لسه مفيش نوافذ منبثقة</td></tr>'; return; }
@@ -5005,18 +5020,21 @@ async function createPromotion() {
   const msg = document.getElementById('promo-msg');
   btn.disabled = true; btn.textContent = 'جاري الإرسال...';
 
-  const ok = await sbRpc('admin_create_promotion', {
-    p_admin_phone: ADMIN.phone, p_admin_password: pass,
-    p_message: message,
-    p_emoji: document.getElementById('promo-emoji').value || null,
-    p_image_url: promoImageUrl,
-    p_target: document.getElementById('promo-target').value,
-    p_display_seconds: Number(document.getElementById('promo-seconds').value) || 8,
-    p_ends_at: new Date(endsAtRaw).toISOString(),
-  });
+  let result;
+  try {
+    result = await sbRpcJson('admin_create_promotion', {
+      p_admin_phone: ADMIN.phone, p_admin_password: pass,
+      p_message: message,
+      p_emoji: document.getElementById('promo-emoji').value || null,
+      p_image_url: promoImageUrl,
+      p_target: document.getElementById('promo-target').value,
+      p_display_seconds: Number(document.getElementById('promo-seconds').value) || 8,
+      p_ends_at: new Date(endsAtRaw).toISOString(),
+    });
+  } catch { result = null; }
 
   btn.disabled = false; btn.textContent = '🖼️ إرسال النافذة المنبثقة';
-  if (ok) {
+  if (result && result.ok) {
     msg.textContent = '✅ اترسلت النافذة المنبثقة';
     msg.style.cssText = 'display:block;background:#DCFCE7;color:#14532D;font-size:.82rem;font-weight:700;padding:.5rem .75rem;border-radius:6px;margin-top:.5rem';
     document.getElementById('promo-message').value = '';
@@ -5028,7 +5046,8 @@ async function createPromotion() {
     promoImageUrl = null;
     loadPromotions();
   } else {
-    msg.textContent = '❌ فشل — تحقق من كلمة مرور المشرف';
+    if (result && result.error === 'invalid_credentials') clearAdminPass();
+    msg.textContent = `❌ فشل — ${(result && result.message) || 'تحقق من كلمة مرور المشرف'}`;
     msg.style.cssText = 'display:block;background:#FEE2E2;color:#991B1B;font-size:.82rem;font-weight:700;padding:.5rem .75rem;border-radius:6px;margin-top:.5rem';
   }
   setTimeout(() => { msg.style.display = 'none'; }, 4000);
