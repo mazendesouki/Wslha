@@ -5905,10 +5905,21 @@ async function loadWalletsSection() {
 }
 
 // ── صافي ربح المنصة — محسوب سيرفرياً (تلاعب المتصفح مايأثرش على الرقم) ──
+// ثغرة حرجة اتصلّحت هنا (security-164): get_platform_finance_summary كانت
+// بتاخد رقم تليفون الأدمن بس من غير أي كلمة مرور، ومتاحة لـ anon — يعني
+// أي حد يعرف رقم المشرف يقدر يسحب أرباح المنصة كاملة مباشرة عبر REST API.
+// بقت تطلب p_admin_password وتتحقق عبر _check_admin() زي كل حاجة تانية.
 let _npRefreshTimer = null;
 async function loadPlatformFinance() {
+  const pass = await getAdminPass();
+  if (!pass) { clearTimeout(_npRefreshTimer); _npRefreshTimer = setTimeout(loadPlatformFinance, 30000); return; }
   try {
-    const summary = await sbRpcJson('get_platform_finance_summary', { p_admin_phone: ADMIN.phone });
+    const result = await sbRpcJson('get_platform_finance_summary', { p_admin_phone: ADMIN.phone, p_admin_password: pass });
+    if (!result || result.ok !== true) {
+      if (result && result.error === 'invalid_credentials') clearAdminPass();
+      throw new Error((result && result.message) || 'فشل التحقق');
+    }
+    const summary = result;
     document.getElementById('np-revenue').textContent   = fmt(Math.round(summary.total_revenue))   + ' ج.م';
     document.getElementById('np-withdrawn').textContent = fmt(Math.round(summary.total_withdrawn)) + ' ج.م';
     document.getElementById('np-balance').textContent   = fmt(Math.round(summary.balance))          + ' ج.م';
@@ -5924,7 +5935,7 @@ async function loadPlatformFinance() {
   } catch (e) {
     showToast('❌ تعذّر تحميل بيانات الأرباح: ' + (e.message||''), '#DC2626');
   }
-  await loadWithdrawalHistory();
+  await loadWithdrawalHistory(pass);
   clearTimeout(_npRefreshTimer);
   _npRefreshTimer = setTimeout(loadPlatformFinance, 30000); // تحديث تلقائي كل 30 ثانية
 }
@@ -5948,9 +5959,16 @@ function renderNetProfitChart(byType) {
   }).join('');
 }
 
-async function loadWithdrawalHistory() {
-  const rows = await sbRpcRows('get_platform_withdrawal_history', { p_admin_phone: ADMIN.phone });
+async function loadWithdrawalHistory(pass) {
+  pass = pass || await getAdminPass();
   const tbody = document.getElementById('withdrawals-tbody');
+  if (!pass) { tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#94A3B8;padding:2rem">لا توجد عمليات سحب بعد</td></tr>'; return; }
+  let result;
+  try {
+    result = await sbRpcJson('get_platform_withdrawal_history', { p_admin_phone: ADMIN.phone, p_admin_password: pass });
+  } catch { result = null; }
+  if (result && result.error === 'invalid_credentials') clearAdminPass();
+  const rows = (result && result.ok) ? result.rows : null;
   if (!rows || !rows.length) {
     tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#94A3B8;padding:2rem">لا توجد عمليات سحب بعد</td></tr>';
     return;
