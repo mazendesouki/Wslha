@@ -2285,8 +2285,13 @@ async function sbDelete(path) {
 // browser tab session, not re-prompted on every page reload/tab switch —
 // and cleared automatically when the tab closes (never persisted longer
 // than that) or on a wrong-password failure / explicit logout.
+// _adminPass is only ever trusted after admin_verify_password() has
+// confirmed it server-side (in getAdminPass() below) — the value restored
+// here from sessionStorage is an unverified candidate only, never used
+// directly, so a forged sessionStorage entry (devtools) can't skip that check.
 let _adminPass = null;
-try { _adminPass = sessionStorage.getItem('wslha_admin_pass') || null; } catch {}
+let _adminPassCandidate = null;
+try { _adminPassCandidate = sessionStorage.getItem('wslha_admin_pass') || null; } catch {}
 
 // Promise-based replacement for window.prompt() — shows #pass-gate (an
 // opaque full-screen overlay, not a dismissible browser dialog) and
@@ -2324,12 +2329,40 @@ function showPassGate(title, subtitle) {
   });
 }
 
+// الثغرة اللي اتصلّحت هنا: الشاشة دي كانت بتقبل أي كود مكتوب فيها وتخزّنه
+// كـ _adminPass من غير أي تحقق — زائد إن حارس الدخول لصفحة /admin كله
+// client-side (localStorage)، فأي حد يقدر يغيّر ADMIN.phone في المتصفح
+// لأي رقم ويدخل اللوحة، والشاشة دي كانت هتقبل أي كلمة مرور يكتبها بلا
+// فحص فعلي. الحل: نتحقق من كلمة المرور فورًا سيرفر-سايد عبر
+// admin_verify_password() (بتستخدم _check_admin() المحصّنة بقفل 5
+// محاولات/15 دقيقة — security-159) قبل ما نقبلها؛ ده بيضمن كمان إن
+// مفيش رقم تليفون غير رقم الأدمن الحقيقي المسجّل ممكن ينجح، لأن
+// _check_admin() بترفض أي رقم مش admin فعلي بغض النظر عن كلمة المرور.
+async function verifyAndCacheAdminPass(candidate) {
+  let valid = false;
+  try {
+    valid = await sbRpc('admin_verify_password', { p_admin_phone: ADMIN.phone, p_admin_password: candidate });
+  } catch { valid = false; }
+  if (!valid) return false;
+  _adminPass = candidate;
+  try { sessionStorage.setItem('wslha_admin_pass', _adminPass); } catch {}
+  return true;
+}
+
 async function getAdminPass() {
-  if (!_adminPass) {
-    _adminPass = await showPassGate('لوحة تحكم المشرفين', 'رمز الأمان لتأكيد الدخول');
-    if (_adminPass) { try { sessionStorage.setItem('wslha_admin_pass', _adminPass); } catch {} }
+  if (_adminPass) return _adminPass;
+  if (_adminPassCandidate) {
+    const ok = await verifyAndCacheAdminPass(_adminPassCandidate);
+    _adminPassCandidate = null;
+    if (ok) return _adminPass;
+    try { sessionStorage.removeItem('wslha_admin_pass'); } catch {}
   }
-  return _adminPass;
+  while (true) {
+    const candidate = await showPassGate('لوحة تحكم المشرفين', 'رمز الأمان لتأكيد الدخول');
+    if (!candidate) return null;
+    if (await verifyAndCacheAdminPass(candidate)) return _adminPass;
+    showToast('❌ كلمة المرور غير صحيحة أو محاولات كتير غلط', '#DC2626');
+  }
 }
 function clearAdminPass() {
   _adminPass = null;
