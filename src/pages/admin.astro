@@ -2294,6 +2294,14 @@ async function sbDelete(path) {
 let _adminPass = null;
 let _adminPassCandidate = null;
 try { _adminPassCandidate = sessionStorage.getItem('wslha_admin_pass') || null; } catch {}
+// Several widgets call getAdminPass() concurrently on page load (loadDash(),
+// autoRefreshDash(), etc. each await it independently). Without this,
+// concurrent calls would each open their OWN #pass-gate instance — since
+// showPassGate() always resets the shared DOM element, a second prompt
+// popping up right after you enter the correct password in the first one
+// made it look like the correct password had failed too. Single-flighting
+// it here means every concurrent caller shares the one real prompt.
+let _adminPassInFlight = null;
 
 // Promise-based replacement for window.prompt() — shows #pass-gate (an
 // opaque full-screen overlay, not a dismissible browser dialog) and
@@ -2362,19 +2370,27 @@ async function verifyAndCacheAdminPass(candidate) {
 
 async function getAdminPass() {
   if (_adminPass) return _adminPass;
-  if (_adminPassCandidate) {
-    const ok = await verifyAndCacheAdminPass(_adminPassCandidate);
-    _adminPassCandidate = null;
-    if (ok) return _adminPass;
-    try { sessionStorage.removeItem('wslha_admin_pass'); } catch {}
-  }
-  let errorMsg = null;
-  while (true) {
-    const candidate = await showPassGate('لوحة تحكم المشرفين', 'رمز الأمان لتأكيد الدخول', errorMsg);
-    if (!candidate) return null;
-    if (await verifyAndCacheAdminPass(candidate)) return _adminPass;
-    errorMsg = '❌ كلمة المرور غير صحيحة أو محاولات كتير غلط';
-  }
+  if (_adminPassInFlight) return _adminPassInFlight;
+  _adminPassInFlight = (async () => {
+    try {
+      if (_adminPassCandidate) {
+        const ok = await verifyAndCacheAdminPass(_adminPassCandidate);
+        _adminPassCandidate = null;
+        if (ok) return _adminPass;
+        try { sessionStorage.removeItem('wslha_admin_pass'); } catch {}
+      }
+      let errorMsg = null;
+      while (true) {
+        const candidate = await showPassGate('لوحة تحكم المشرفين', 'رمز الأمان لتأكيد الدخول', errorMsg);
+        if (!candidate) return null;
+        if (await verifyAndCacheAdminPass(candidate)) return _adminPass;
+        errorMsg = '❌ كلمة المرور غير صحيحة أو محاولات كتير غلط';
+      }
+    } finally {
+      _adminPassInFlight = null;
+    }
+  })();
+  return _adminPassInFlight;
 }
 function clearAdminPass() {
   _adminPass = null;
