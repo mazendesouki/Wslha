@@ -1,0 +1,46 @@
+-- =====================================================================
+--  وصّلها — Security #167: سحب صلاحية anon/authenticated من دالتين
+--  كانتا بيتنفذوا من غير أي تحقق هوية خالص
+--
+--  اتكشفوا أثناء مراجعة شاملة بعد سلسلة إصلاحات لوحة الأدمن
+--  (security-159 لـ166)، بناءً على طلب صريح بمراجعة أي دالة أدمن
+--  تانية ناقصها فحص كلمة مرور. الدالتين دول مش جزء من عائلة admin_*
+--  (مفيش p_admin_phone/p_admin_password أصلاً)، لكنهم بيكشفوا/بيغيّروا
+--  حاجات حساسة من غير أي تحقق هوية خالص — مش حتى كلمة مرور غلط، صفر
+--  تحقق:
+--
+--    • get_eligible_driver_phones_for_order(p_order_id): بترجع رقم
+--      تليفون واسم وموقع (lat/lng) حي للسائقين المتاحين لأي طلب — أي
+--      حد يعرف (أو يخمّن) order_id يقدر يتتبّع مواقع سائقين حقيقيين
+--      لحظيًا. الاستدعاء الشرعي الوحيد موجود في server/index.js
+--      (الباكند اللي بيدير التوزيع)، وده بيستخدم SUPABASE_SERVICE_ROLE_KEY
+--      مش anon — يعني مايحتاجش صلاحية anon/authenticated أصلاً
+--      (service_role بيتخطى الصلاحيات دي تمامًا).
+--
+--    • assign_random_driver_to_ride(p_ride_id): بتسند سائق عشوائي لأي
+--      رحلة وتغيّر حالتها لـ'accepted' من غير أي تحقق ملكية أو حتى
+--      تحقق إن الرحلة لسه في حالة تسمح بالإسناد (مفيش WHERE على status
+--      في الـ update). بحثنا في الكود كله (flutter_app/, src/, server/)
+--      ومفيش أي استدعاء ليها خالص — كود قديم من security-06 اتستبدل
+--      بنظام عروض التوزيع الحالي (accept_dispatch_offer) من غير ما حد
+--      يسحب صلاحيتها بعدها.
+--
+--  الإصلاح: سحب EXECUTE من anon و authenticated للدالتين — الدوال
+--  نفسها فضلت موجودة (الأولى لسه مستخدمة شرعيًا عبر service_role اللي
+--  مش متأثر بالـ REVOKE، والتانية مش مستخدمة أصلاً، بس تفضل موجودة
+--  كمرجع تاريخي بدل الحذف، سهل التراجع لو لزم الأمر).
+--
+--  ملحوظة مهمة اتكشفت أثناء التحقق الحي: REVOKE ... FROM anon,
+--  authenticated وحده مش كافي — في Postgres كل دالة جديدة بتاخد
+--  EXECUTE لـ PUBLIC تلقائيًا، وanon/authenticated كلاهما عضو ضمني في
+--  PUBLIC، فسحب الصلاحية من الدورين المحددين مباشرة بيسيب PUBLIC grant
+--  شغّال وبيفضل أي حد يقدر ينادي الدالة. لازم REVOKE ... FROM PUBLIC
+--  صراحةً كمان، مع إعادة GRANT لـ service_role تحديدًا (احتياطًا، رغم
+--  إن service_role بيتخطى نظام الصلاحيات دي أصلاً).
+--
+--  آمن لإعادة التشغيل.
+-- =====================================================================
+revoke execute on function public.get_eligible_driver_phones_for_order(text) from anon, authenticated, public;
+revoke execute on function public.assign_random_driver_to_ride(text) from anon, authenticated, public;
+grant execute on function public.get_eligible_driver_phones_for_order(text) to service_role;
+grant execute on function public.assign_random_driver_to_ride(text) to service_role;
