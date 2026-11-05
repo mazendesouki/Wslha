@@ -133,7 +133,16 @@
           headers: { ...SB_H, 'Content-Type': 'application/json' },
           body: JSON.stringify({ p_phone: local, p_password: password }),
         });
-        const rows = res.ok ? await res.json() : [];
+        if (!res.ok) {
+          // verify_login raises an exception (instead of returning an empty
+          // result) when this phone is rate-limited after 5 failed attempts
+          // — surface that specific message instead of the misleading
+          // "wrong phone/password" one.
+          let detail = '';
+          try { const j = await res.json(); detail = j.message || ''; } catch {}
+          throw new Error(detail || 'رقم الجوال أو كلمة المرور غير صحيحة');
+        }
+        const rows = await res.json();
         const acc  = Array.isArray(rows) ? rows[0] : rows;
 
         if (!acc || !acc.phone) { throw new Error('رقم الجوال أو كلمة المرور غير صحيحة'); }
