@@ -207,6 +207,7 @@
     .pass-gate__logo{width:58px;height:58px;border-radius:14px;margin:0 auto .9rem;background:linear-gradient(135deg,var(--pr3),var(--pr));display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:1.6rem;box-shadow:0 10px 24px -8px rgba(63,167,154,.6)}
     .pass-gate__title{font-size:1.05rem;font-weight:900;color:#10201E}
     .pass-gate__subtitle{font-size:.8rem;color:var(--tx3);margin-top:.3rem;margin-bottom:1.25rem}
+    .pass-gate__error{background:#FEE2E2;color:#DC2626;font-size:.8rem;font-weight:700;padding:.55rem .75rem;border-radius:8px;margin-bottom:.9rem}
     .pass-gate__input{width:100%;border:1.5px solid var(--bdr);border-radius:var(--radius);padding:.7rem .9rem;font-size:.95rem;text-align:center;letter-spacing:1px}
     .pass-gate__input:focus{outline:none;border-color:var(--pr3)}
     .pass-gate__actions{display:flex;gap:.6rem;margin-top:1.1rem}
@@ -317,6 +318,7 @@
     <div class="pass-gate__logo">و</div>
     <div class="pass-gate__title" id="pass-gate-title">لوحة تحكم المشرفين</div>
     <div class="pass-gate__subtitle" id="pass-gate-subtitle">رمز الأمان لتأكيد الدخول</div>
+    <div class="pass-gate__error" id="pass-gate-error" style="display:none"></div>
     <input type="password" class="pass-gate__input" id="pass-gate-input" autocomplete="off" />
     <div class="pass-gate__actions">
       <button type="button" class="pass-gate__cancel" id="pass-gate-cancel">إلغاء</button>
@@ -2298,14 +2300,23 @@ try { _adminPassCandidate = sessionStorage.getItem('wslha_admin_pass') || null; 
 // resolves with the trimmed input, or null on cancel/empty. Only one can
 // be open at a time, which matches every call site (each awaits before
 // doing anything else).
-function showPassGate(title, subtitle) {
+// errorMsg (optional): shown inline inside the dialog itself. This exists
+// because the gate's own z-index (99999) sits well above the toast's
+// (9999) and fully repaints the screen — a showToast() call made right
+// before re-opening the gate (e.g. getAdminPass()'s retry loop) was
+// getting instantly buried underneath it, so a wrong password just looked
+// like the dialog flickering with no explanation.
+function showPassGate(title, subtitle, errorMsg) {
   return new Promise((resolve) => {
     const gate = document.getElementById('pass-gate');
     const input = document.getElementById('pass-gate-input');
     const okBtn = document.getElementById('pass-gate-ok');
     const cancelBtn = document.getElementById('pass-gate-cancel');
+    const errorEl = document.getElementById('pass-gate-error');
     document.getElementById('pass-gate-title').textContent = title;
     document.getElementById('pass-gate-subtitle').textContent = subtitle;
+    if (errorMsg) { errorEl.textContent = errorMsg; errorEl.style.display = 'block'; }
+    else { errorEl.textContent = ''; errorEl.style.display = 'none'; }
     input.value = '';
     gate.style.display = 'flex';
     setTimeout(() => input.focus(), 50);
@@ -2357,11 +2368,12 @@ async function getAdminPass() {
     if (ok) return _adminPass;
     try { sessionStorage.removeItem('wslha_admin_pass'); } catch {}
   }
+  let errorMsg = null;
   while (true) {
-    const candidate = await showPassGate('لوحة تحكم المشرفين', 'رمز الأمان لتأكيد الدخول');
+    const candidate = await showPassGate('لوحة تحكم المشرفين', 'رمز الأمان لتأكيد الدخول', errorMsg);
     if (!candidate) return null;
     if (await verifyAndCacheAdminPass(candidate)) return _adminPass;
-    showToast('❌ كلمة المرور غير صحيحة أو محاولات كتير غلط', '#DC2626');
+    errorMsg = '❌ كلمة المرور غير صحيحة أو محاولات كتير غلط';
   }
 }
 function clearAdminPass() {
