@@ -4586,10 +4586,13 @@ let currentMsg = null;
 let allMessages = [];
 
 async function loadMessages() {
+  const pass = await getAdminPass();
+  if (!pass) return;
   const filterEl = document.getElementById('msg-filter');
   const filter = filterEl ? filterEl.value : '';
-  const q = filter ? `messages?status=eq.${filter}&order=created_at.desc` : 'messages?order=created_at.desc';
-  const rows = await sbGet(q);
+  // security-174: messages لفظ RLS المفتوحة (SELECT/UPDATE لـ public) —
+  // القراية دلوقتي لازم تعدي من admin_list_messages المحمية بكلمة مرور.
+  const rows = await sbRpcRows('admin_list_messages', { p_admin_phone: ADMIN.phone, p_admin_password: pass, p_status_filter: filter || null });
   allMessages = rows || [];
   const tbody = document.getElementById('messages-tbody');
   if (!tbody) return;
@@ -4633,12 +4636,18 @@ function openMsg(id) {
 }
 
 async function updateMsgStatus(id, status) {
-  await fetch(`${SB_URL}/rest/v1/messages?id=eq.${id}`, {
-    method: 'PATCH', headers: { ...SB_H, Prefer:'return=minimal' },
-    body: JSON.stringify({ status }),
-  });
-  if (currentMsg && currentMsg.id === id) currentMsg.status = status;
-  loadMessages();
+  const pass = await getAdminPass();
+  if (!pass) return false;
+  // security-174: same lockdown as above — admin_update_message_status
+  // verifies the admin password before touching the row.
+  const ok = await sbRpc('admin_update_message_status', { p_admin_phone: ADMIN.phone, p_admin_password: pass, p_message_id: id, p_status: status });
+  if (ok) {
+    if (currentMsg && currentMsg.id === id) currentMsg.status = status;
+    loadMessages();
+  } else {
+    clearAdminPass();
+  }
+  return ok;
 }
 
 const msgMarkRead = document.getElementById('msg-mark-read');
@@ -4974,16 +4983,21 @@ document.getElementById('ecmp-file-input')?.addEventListener('change', async (e)
   const file = e.target.files?.[0];
   if (!file) return;
   const zone = document.getElementById('ecmp-upload-zone');
+  // security-175: the promotions bucket's anon-upload policy is gone —
+  // uploads now go through the password-verified proxy route, same
+  // pattern as admin.astro's driver-doc signing (sign-document.ts).
+  const pass = await getAdminPass();
+  if (!pass) return;
   zone.textContent = 'جاري رفع الصورة...';
   try {
-    const path = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}-${file.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
-    const res = await fetch(`${SB_URL}/storage/v1/object/promotions/${path}`, {
-      method: 'POST',
-      headers: { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}`, 'Content-Type': file.type },
-      body: file,
-    });
+    const form = new FormData();
+    form.append('adminPhone', ADMIN.phone);
+    form.append('adminPassword', pass);
+    form.append('file', file);
+    const res = await fetch('/api/admin/upload-promotion-image', { method: 'POST', body: form });
     if (res.ok) {
-      ecmpImageUrl = `${SB_URL}/storage/v1/object/public/promotions/${path}`;
+      const { url } = await res.json();
+      ecmpImageUrl = url;
       document.getElementById('ecmp-thumb').innerHTML = `<img src="${ecmpImageUrl}" style="max-width:280px;border-radius:8px;display:block"/>`;
       zone.textContent = '📷 اضغط لتغيير الصورة';
     } else {
@@ -5058,16 +5072,21 @@ document.getElementById('promo-file-input')?.addEventListener('change', async (e
   const file = e.target.files?.[0];
   if (!file) return;
   const zone = document.getElementById('promo-upload-zone');
+  // security-175: same password-verified upload proxy as the email
+  // campaign image above — the promotions bucket no longer accepts
+  // anonymous uploads directly.
+  const pass = await getAdminPass();
+  if (!pass) return;
   zone.textContent = 'جاري رفع الصورة...';
   try {
-    const path = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}-${file.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
-    const res = await fetch(`${SB_URL}/storage/v1/object/promotions/${path}`, {
-      method: 'POST',
-      headers: { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}`, 'Content-Type': file.type },
-      body: file,
-    });
+    const form = new FormData();
+    form.append('adminPhone', ADMIN.phone);
+    form.append('adminPassword', pass);
+    form.append('file', file);
+    const res = await fetch('/api/admin/upload-promotion-image', { method: 'POST', body: form });
     if (res.ok) {
-      promoImageUrl = `${SB_URL}/storage/v1/object/public/promotions/${path}`;
+      const { url } = await res.json();
+      promoImageUrl = url;
       document.getElementById('promo-thumb').innerHTML = `<img src="${promoImageUrl}" style="max-width:280px;border-radius:8px;display:block"/>`;
       zone.textContent = '📷 اضغط لتغيير الصورة';
     } else {
