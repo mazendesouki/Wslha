@@ -1042,15 +1042,18 @@
   /* ══════════════════════════════════════════════
      ACTIONS
   ══════════════════════════════════════════════ */
+  // security-171 (orders): orders فقدت UPDATE المباشر (كانت مفتوحة
+  // بالكامل لأي حد) — الثلاث دوال دول بقوا يعدّوا من
+  // merchant_accept_order/merchant_reject_order/merchant_mark_order_ready
+  // الموجودين بالفعل (كانوا مستخدمين في merchant-dashboard.astro بس)،
+  // بيتحققوا إن currentStore.owner_phone فعلاً صاحب الطلب ده قبل أي
+  // تعديل، وبيعملوا raise exception لو لأ — sbPost هنا أصلاً بيرمي
+  // الخطأ ده زي ما هو، فمفيش تغيير مطلوب في منطق catch().
   window.acceptOrder = async function(id) {
     const btn = document.querySelector('.order-card[data-id="' + id + '"] .btn-accept');
     if (btn) { btn.disabled = true; btn.textContent = '⏳ جارٍ القبول…'; }
     try {
-      await sbPatch('orders?id=eq.' + id, {
-        status: 'preparing',
-        accepted_at: new Date().toISOString(),
-        store_name: currentStore.name
-      });
+      await sbPost('rpc/merchant_accept_order', { p_order_id: id, p_merchant_phone: currentStore.owner_phone });
       showToast('✅ تم قبول الطلب بنجاح', 'success');
       await loadOrders(false);
     } catch (err) {
@@ -1064,10 +1067,7 @@
     const btn = document.querySelector('.order-card[data-id="' + id + '"] .btn-reject');
     if (btn) { btn.disabled = true; btn.textContent = '⏳ جارٍ الرفض…'; }
     try {
-      await sbPatch('orders?id=eq.' + id, {
-        status: 'rejected',
-        rejected_at: new Date().toISOString()
-      });
+      await sbPost('rpc/merchant_reject_order', { p_order_id: id, p_merchant_phone: currentStore.owner_phone });
       showToast('🚫 تم رفض الطلب', 'info');
       await loadOrders(false);
     } catch (err) {
@@ -1080,7 +1080,7 @@
     const btn = document.querySelector('.order-card[data-id="' + id + '"] .btn-ready');
     if (btn) { btn.disabled = true; btn.textContent = '⏳ جارٍ التأكيد…'; }
     try {
-      await sbPatch('orders?id=eq.' + id, { ready_at: new Date().toISOString() });
+      await sbPost('rpc/merchant_mark_order_ready', { p_order_id: id, p_merchant_phone: currentStore.owner_phone });
       showToast('📦 تم تأكيد جاهزية الطلب', 'success');
       await loadOrders(false);
     } catch (err) {
