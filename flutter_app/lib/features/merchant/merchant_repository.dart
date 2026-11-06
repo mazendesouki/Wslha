@@ -55,27 +55,35 @@ class MerchantRepository {
     });
   }
 
-  /// Store-profile self-edit — `stores` is open for direct update except
-  /// `owner_phone` (locked server-side, see db/security-47-lockdown-
-  /// accounts-stores.sql), same "hard-to-guess id = trust" model the rest
-  /// of this app's open tables use. Scoped to the merchant's own store id,
-  /// which the caller already only ever has for their own store.
+  /// Store-profile self-edit — `stores` no longer allows a direct client
+  /// UPDATE at all (it used to be wide open to anyone, security-171);
+  /// this now goes through merchant_update_store_settings, which verifies
+  /// server-side that merchantPhone actually owns storeId before writing.
   Future<void> updateStoreInfo(
-    String storeId, {
+    String storeId,
+    String merchantPhone, {
     String? name,
     String? tagline,
     bool? isOpen,
     num? deliveryFee,
     num? minOrder,
   }) async {
-    final patch = <String, dynamic>{
-      if (name != null) 'name': name,
-      if (tagline != null) 'tagline': tagline,
-      if (isOpen != null) 'is_open': isOpen,
-      if (deliveryFee != null) 'delivery_fee': deliveryFee,
-      if (minOrder != null) 'min_order': minOrder,
-    };
-    if (patch.isEmpty) return;
-    await sb.from('stores').update(patch).eq('id', storeId);
+    if (isOpen != null) {
+      await sb.rpc('merchant_set_store_open', params: {
+        'p_merchant_phone': merchantPhone,
+        'p_store_id': storeId,
+        'p_open': isOpen,
+      });
+    }
+    if (name != null || tagline != null || deliveryFee != null || minOrder != null) {
+      await sb.rpc('merchant_update_store_settings', params: {
+        'p_merchant_phone': merchantPhone,
+        'p_store_id': storeId,
+        if (name != null) 'p_name': name,
+        if (tagline != null) 'p_tagline': tagline,
+        if (deliveryFee != null) 'p_delivery_fee': deliveryFee,
+        if (minOrder != null) 'p_min_order': minOrder,
+      });
+    }
   }
 }

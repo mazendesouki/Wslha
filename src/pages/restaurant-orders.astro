@@ -690,6 +690,16 @@
     return res.json();
   }
 
+  async function sbPost(path, body) {
+    const res = await fetch(SB_URL + '/rest/v1/' + path, {
+      method: 'POST',
+      headers: { ...SB_H, 'Prefer': 'return=representation' },
+      body: JSON.stringify(body)
+    });
+    if (!res.ok) throw new Error(await res.text());
+    return res.json();
+  }
+
   /* ══════════════════════════════════════════════
      AUTH CHECK
   ══════════════════════════════════════════════ */
@@ -1086,7 +1096,11 @@
     if (!currentStore) return;
     const newVal = !currentStore.is_open;
     try {
-      await sbPatch('stores?id=eq.' + currentStore.id, { is_open: newVal });
+      // security-171: stores فقدت UPDATE المباشر (كانت مفتوحة بالكامل لأي
+      // حد) — بقى التعديل لازم يعدي من merchant_set_store_open اللي
+      // بتتحقق إن owner_phone فعلاً بتاع صاحب الطلب.
+      const ok = await sbPost('rpc/merchant_set_store_open', { p_merchant_phone: currentStore.owner_phone, p_store_id: currentStore.id, p_open: newVal });
+      if (!ok) throw new Error('ownership check failed');
       currentStore.is_open = newVal;
       updateOpenBtn();
       showToast(newVal ? '🟢 المطعم مفتوح الآن' : '🔴 المطعم مغلق الآن', 'info');

@@ -4512,16 +4512,23 @@ function renderStores() {
   document.getElementById('stores-tbody').innerHTML = html;
 }
 document.getElementById('stores-search').addEventListener('input', renderStores);
+// security-171: anon فقدت صلاحية UPDATE/DELETE مباشرة على stores (كانت
+// مفتوحة بالكامل لأي حد)، فالتعديل/الحذف بقوا لازم يعدّوا من دوال
+// الأدمن المحمية بكلمة مرور دول بدل sbPatch/sbDelete المباشرين.
 async function toggleStore(id, is_active) {
-  const ok = await sbPatch(`stores?id=eq.${encodeURIComponent(id)}`, { is_active });
+  const pass = await getAdminPass();
+  if (!pass) return;
+  const ok = await sbRpc('admin_set_store_active', { p_admin_phone: ADMIN.phone, p_admin_password: pass, p_store_id: id, p_active: is_active });
   if (ok) showToast(`✅ ${is_active?'تم تفعيل':'تم تعطيل'} المتجر`, '#16A34A');
-  else { showToast('❌ حدث خطأ', '#DC2626'); loadStores(); }
+  else { clearAdminPass(); showToast('❌ حدث خطأ — تحقق من كلمة مرور المشرف', '#DC2626'); loadStores(); }
 }
 async function deleteStore(id) {
   if (!(await showConfirmGate('حذف هذا المتجر نهائياً؟', { danger: true }))) return;
-  const ok = await sbDelete(`stores?id=eq.${encodeURIComponent(id)}`);
+  const pass = await getAdminPass();
+  if (!pass) return;
+  const ok = await sbRpc('admin_delete_store', { p_admin_phone: ADMIN.phone, p_admin_password: pass, p_store_id: id });
   if (ok) { showToast('✅ تم الحذف', '#16A34A'); loadStores(); }
-  else showToast('❌ حدث خطأ', '#DC2626');
+  else { clearAdminPass(); showToast('❌ حدث خطأ — تحقق من كلمة مرور المشرف', '#DC2626'); }
 }
 
 /* ═══════════════════ MARKETPLACE ═══════════════════════════ */

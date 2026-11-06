@@ -79,6 +79,7 @@ class _MerchantSettingsScreenState extends State<MerchantSettingsScreen> {
     try {
       await _repo.updateStoreInfo(
         widget.store['id'].toString(),
+        widget.session.phone,
         name: _nameCtrl.text.trim().isEmpty ? null : _nameCtrl.text.trim(),
         tagline: _taglineCtrl.text.trim(),
         isOpen: _isOpen,

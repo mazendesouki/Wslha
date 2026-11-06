@@ -1092,7 +1092,10 @@ import Layout from '../components/layout.astro';
 
   async function toggleOpen() {
     const newState = !currentStore.is_open;
-    const ok = await sbPatch(`stores?id=eq.${currentStore.id}`, { is_open: newState });
+    // security-171: stores فقدت UPDATE المباشر (كانت مفتوحة بالكامل لأي
+    // حد) — بقى التعديل لازم يعدي من merchant_set_store_open اللي بتتحقق
+    // إن owner_phone فعلاً بتاع صاحب الطلب، نفس نمط merchant_accept_order.
+    const ok = await sbPost('rpc/merchant_set_store_open', { p_merchant_phone: currentStore.owner_phone, p_store_id: currentStore.id, p_open: newState });
     if (ok) { currentStore.is_open = newState; updateOpenToggle(newState); toast(newState ? '✅ المتجر مفتوح الآن' : '🔴 المتجر مغلق'); }
     else toast('❌ فشل تحديث الحالة');
   }
@@ -1613,7 +1616,15 @@ import Layout from '../components/layout.astro';
       delivery_time: (document.getElementById('set-time') as HTMLInputElement).value.trim(),
       tagline:       (document.getElementById('set-tagline') as HTMLInputElement).value.trim(),
     };
-    const ok = await sbPatch(`stores?id=eq.${currentStore.id}`, patch);
+    // security-171: stores فقدت UPDATE المباشر — بقى التعديل لازم يعدي
+    // من merchant_update_store_settings اللي بتتحقق إن owner_phone فعلاً
+    // بتاع صاحب الطلب.
+    const ok = await sbPost('rpc/merchant_update_store_settings', {
+      p_merchant_phone: currentStore.owner_phone, p_store_id: currentStore.id,
+      p_name: patch.name, p_emoji: patch.emoji, p_display_phone: patch.phone,
+      p_address: patch.address, p_delivery_fee: patch.delivery_fee, p_min_order: patch.min_order,
+      p_delivery_time: patch.delivery_time, p_tagline: patch.tagline,
+    });
     if (ok) {
       Object.assign(currentStore, patch);
       document.getElementById('dh-emoji')!.textContent = patch.emoji;
