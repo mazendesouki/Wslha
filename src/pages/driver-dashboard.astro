@@ -1507,6 +1507,29 @@ import PageHero from '../components/PageHero.astro';
     }).catch(() => {});
   }
 
+  // Access-token-first shortcut for restoreActiveRide/loadActivityLog below
+  // — /api/history/rides|orders already return this driver's own rows
+  // (matched against driver_phone server-side via the signed token), so no
+  // separate endpoint is needed; the status/column filtering those two
+  // callers need just happens client-side on the already-scoped rows.
+  // Returns null (never throws) on no session token, so callers fall back
+  // to the direct driver_phone=eq.… REST query.
+  async function fetchDriverHistoryViaToken() {
+    try {
+      const token = await getValidAccessToken();
+      if (!token) return null;
+      const [ridesRes, ordersRes] = await Promise.all([
+        fetch('/api/history/rides', { headers: { Authorization: 'Bearer ' + token } }),
+        fetch('/api/history/orders', { headers: { Authorization: 'Bearer ' + token } }),
+      ]);
+      if (!ridesRes.ok || !ordersRes.ok) return null;
+      const { rides } = await ridesRes.json();
+      const { orders } = await ordersRes.json();
+      if (!Array.isArray(rides) || !Array.isArray(orders)) return null;
+      return { rides, orders };
+    } catch { return null; }
+  }
+
   // رحلة/طلب نشط كان بيتخزّن في متغيّر جافاسكريبت بس (currentRide/currentOrder)،
   // فأي تحديث للصفحة كان بيفقد الحالة بالكامل رغم إن الرحلة لسه شغّالة فعليًا
   // في قاعدة البيانات — يترجم للسائق كـ"إلغاء" الرحلة ومفيش زر توجيه شغال
@@ -1514,19 +1537,32 @@ import PageHero from '../components/PageHero.astro';
   async function restoreActiveRide() {
     if (!driver) return;
     let rideRows = [], orderRows = [];
-    try {
-      const [rideRes, orderRes] = await Promise.all([
-        fetch(`${SB_URL}/rest/v1/rides?driver_phone=eq.${encodeURIComponent(driver.phone)}&status=in.(accepted,arrived,in_progress)&select=*&order=created_at.desc&limit=1`, { headers: SB_H }),
-        fetch(`${SB_URL}/rest/v1/orders?driver_phone=eq.${encodeURIComponent(driver.phone)}&status=eq.on_the_way&select=*&order=created_at.desc&limit=1`, { headers: SB_H }),
-      ]);
-      if (!rideRes.ok) console.error('[restoreActiveRide] rides fetch failed', rideRes.status, await rideRes.text().catch(() => ''));
-      if (!orderRes.ok) console.error('[restoreActiveRide] orders fetch failed', orderRes.status, await orderRes.text().catch(() => ''));
-      rideRows  = rideRes.ok  ? await rideRes.json()  : [];
-      orderRows = orderRes.ok ? await orderRes.json() : [];
-      console.log('[restoreActiveRide] phone=' + driver.phone, 'rides=' + (Array.isArray(rideRows) ? rideRows.length : 'n/a'), 'orders=' + (Array.isArray(orderRows) ? orderRows.length : 'n/a'));
-    } catch (e) {
-      console.error('[restoreActiveRide] fetch threw', e);
-      return;
+    const viaToken = await fetchDriverHistoryViaToken();
+    if (viaToken) {
+      rideRows = viaToken.rides
+        .filter(r => r.driver_phone === driver.phone && ['accepted', 'arrived', 'in_progress'].includes(r.status))
+        .sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0))
+        .slice(0, 1);
+      orderRows = viaToken.orders
+        .filter(o => o.driver_phone === driver.phone && o.status === 'on_the_way')
+        .sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0))
+        .slice(0, 1);
+      console.log('[restoreActiveRide] via token, phone=' + driver.phone, 'rides=' + rideRows.length, 'orders=' + orderRows.length);
+    } else {
+      try {
+        const [rideRes, orderRes] = await Promise.all([
+          fetch(`${SB_URL}/rest/v1/rides?driver_phone=eq.${encodeURIComponent(driver.phone)}&status=in.(accepted,arrived,in_progress)&select=*&order=created_at.desc&limit=1`, { headers: SB_H }),
+          fetch(`${SB_URL}/rest/v1/orders?driver_phone=eq.${encodeURIComponent(driver.phone)}&status=eq.on_the_way&select=*&order=created_at.desc&limit=1`, { headers: SB_H }),
+        ]);
+        if (!rideRes.ok) console.error('[restoreActiveRide] rides fetch failed', rideRes.status, await rideRes.text().catch(() => ''));
+        if (!orderRes.ok) console.error('[restoreActiveRide] orders fetch failed', orderRes.status, await orderRes.text().catch(() => ''));
+        rideRows  = rideRes.ok  ? await rideRes.json()  : [];
+        orderRows = orderRes.ok ? await orderRes.json() : [];
+        console.log('[restoreActiveRide] phone=' + driver.phone, 'rides=' + (Array.isArray(rideRows) ? rideRows.length : 'n/a'), 'orders=' + (Array.isArray(orderRows) ? orderRows.length : 'n/a'));
+      } catch (e) {
+        console.error('[restoreActiveRide] fetch threw', e);
+        return;
+      }
     }
 
     const arriveBtn   = document.getElementById('btn-arrive');
@@ -2380,27 +2416,45 @@ import PageHero from '../components/PageHero.astro';
 
   async function loadActivityLog() {
     if (!driver) return;
-    const phone = encodeURIComponent(driver.phone);
-    const [ridesRes, ordersRes] = await Promise.allSettled([
-      fetch(`${SB_URL}/rest/v1/rides?driver_phone=eq.${driver.phone}&select=id,from_area,to_area,fare,status,completed_at&order=completed_at.desc&limit=20`, { headers: SB_H }),
-      fetch(`${SB_URL}/rest/v1/orders?driver_phone=eq.${driver.phone}&select=id,store_name,address,delivery_fee,status,delivered_at&order=delivered_at.desc&limit=20`, { headers: SB_H }),
-    ]);
-
     const items = [];
-    try {
-      const rides = await ridesRes.value.json();
-      if (Array.isArray(rides)) rides.forEach(r => items.push({
-        icon: '🚗', title: `${r.from_area} ← ${r.to_area}`, earn: r.fare,
-        status: r.status, type: 'ride', date: r.completed_at,
-      }));
-    } catch {}
-    try {
-      const orders = await ordersRes.value.json();
-      if (Array.isArray(orders)) orders.forEach(o => items.push({
-        icon: '🛵', title: `توصيل — ${o.store_name || ''}`, earn: o.delivery_fee,
-        status: o.status, type: 'delivery', date: o.delivered_at,
-      }));
-    } catch {}
+    const viaToken = await fetchDriverHistoryViaToken();
+    if (viaToken) {
+      viaToken.rides
+        .filter(r => r.driver_phone === driver.phone)
+        .sort((a, b) => new Date(b.completed_at || 0) - new Date(a.completed_at || 0))
+        .slice(0, 20)
+        .forEach(r => items.push({
+          icon: '🚗', title: `${r.from_area} ← ${r.to_area}`, earn: r.fare,
+          status: r.status, type: 'ride', date: r.completed_at,
+        }));
+      viaToken.orders
+        .filter(o => o.driver_phone === driver.phone)
+        .sort((a, b) => new Date(b.delivered_at || 0) - new Date(a.delivered_at || 0))
+        .slice(0, 20)
+        .forEach(o => items.push({
+          icon: '🛵', title: `توصيل — ${o.store_name || ''}`, earn: o.delivery_fee,
+          status: o.status, type: 'delivery', date: o.delivered_at,
+        }));
+    } else {
+      const [ridesRes, ordersRes] = await Promise.allSettled([
+        fetch(`${SB_URL}/rest/v1/rides?driver_phone=eq.${driver.phone}&select=id,from_area,to_area,fare,status,completed_at&order=completed_at.desc&limit=20`, { headers: SB_H }),
+        fetch(`${SB_URL}/rest/v1/orders?driver_phone=eq.${driver.phone}&select=id,store_name,address,delivery_fee,status,delivered_at&order=delivered_at.desc&limit=20`, { headers: SB_H }),
+      ]);
+      try {
+        const rides = await ridesRes.value.json();
+        if (Array.isArray(rides)) rides.forEach(r => items.push({
+          icon: '🚗', title: `${r.from_area} ← ${r.to_area}`, earn: r.fare,
+          status: r.status, type: 'ride', date: r.completed_at,
+        }));
+      } catch {}
+      try {
+        const orders = await ordersRes.value.json();
+        if (Array.isArray(orders)) orders.forEach(o => items.push({
+          icon: '🛵', title: `توصيل — ${o.store_name || ''}`, earn: o.delivery_fee,
+          status: o.status, type: 'delivery', date: o.delivered_at,
+        }));
+      } catch {}
+    }
 
     items.sort((a, b) => new Date(b.date||0) - new Date(a.date||0));
     activityItems = items;
