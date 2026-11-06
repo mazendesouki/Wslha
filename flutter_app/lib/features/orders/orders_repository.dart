@@ -1,3 +1,4 @@
+import '../../core/api_session.dart';
 import '../../core/phone_utils.dart';
 import '../../core/supabase_client.dart';
 
@@ -146,7 +147,72 @@ class OrdersRepository {
     return HistoryStats(totalOrders: orders.length, totalRides: rides.length, totalSpent: spent);
   }
 
+  /// Shared parse for the token-verified /api/history/orders|rides routes'
+  /// full-row JSON — a superset of the plain-select fallback below (same
+  /// fields fetchHistory already extracts), so safe to reuse for both the
+  /// customer and driver history methods.
+  List<HistoryItem> _parseHistoryJson(Map<String, dynamic> ordersJson, Map<String, dynamic> ridesJson) {
+    final orders = ((ordersJson['orders'] as List?) ?? const []).map((o) {
+      final rawItems = o['items'];
+      return HistoryItem(
+        kind: 'order',
+        id: '${o['id']}',
+        status: o['status'] as String? ?? 'pending',
+        title: '📦 طلب من ${o['store_name'] ?? 'المتجر'}',
+        subtitle: statusAr[o['status']] ?? '${o['status']}',
+        total: (o['total'] as num?) ?? 0,
+        createdAt: DateTime.tryParse(o['created_at'] as String? ?? ''),
+        storeId: o['store_id'] as String?,
+        items: rawItems is List ? rawItems.whereType<Map<String, dynamic>>().toList() : null,
+      );
+    });
+
+    final rides = ((ridesJson['rides'] as List?) ?? const []).map((r) {
+      return HistoryItem(
+        kind: 'ride',
+        id: '${r['id']}',
+        status: r['status'] as String? ?? 'pending',
+        title: '🚖 ${r['from_area'] ?? ''} ← ${r['to_area'] ?? ''}',
+        subtitle: (r['driver_name'] as String?)?.isNotEmpty == true
+            ? 'السائق: ${r['driver_name']}'
+            : statusAr[r['status']] ?? '${r['status']}',
+        total: (r['fare'] as num?) ?? 0,
+        createdAt: DateTime.tryParse(r['created_at'] as String? ?? ''),
+        rideType: (r['ride_type'] as String?) ?? 'local',
+        fromArea: r['from_area'] as String?,
+        fromLat: (r['from_lat'] as num?)?.toDouble(),
+        fromLng: (r['from_lng'] as num?)?.toDouble(),
+        toArea: r['to_area'] as String?,
+        toLat: (r['to_lat'] as num?)?.toDouble(),
+        toLng: (r['to_lng'] as num?)?.toDouble(),
+      );
+    });
+
+    final all = [...orders, ...rides];
+    all.sort((a, b) => (b.createdAt ?? DateTime(0)).compareTo(a.createdAt ?? DateTime(0)));
+    return all;
+  }
+
+  /// Token-verified path shared by fetchHistory/fetchDriverHistory below —
+  /// /api/history/orders|rides already match BOTH customer_phone and
+  /// driver_phone for whatever phone is in the caller's own signed token,
+  /// so one call serves either role. Returns null (never throws) if there's
+  /// no valid session yet, so callers fall back to the direct-select path.
+  Future<List<HistoryItem>?> _fetchHistoryViaToken() async {
+    final results = await Future.wait([
+      ApiSession.getJson('/api/history/orders'),
+      ApiSession.getJson('/api/history/rides'),
+    ]);
+    final ordersJson = results[0];
+    final ridesJson = results[1];
+    if (ordersJson == null || ridesJson == null) return null;
+    return _parseHistoryJson(ordersJson, ridesJson);
+  }
+
   Future<List<HistoryItem>> fetchHistory(String phone) async {
+    final tokenResult = await _fetchHistoryViaToken();
+    if (tokenResult != null) return tokenResult;
+
     final local = normalizeEgyptianPhone(phone);
     final intl = toIntlEgyptianPhone(phone);
     final filter = 'customer_phone.eq.$local,customer_phone.eq.$intl';
@@ -216,6 +282,9 @@ class OrdersRepository {
   /// active jobs (orders.driver_phone / rides.driver_phone — confirmed real
   /// columns, driver-dashboard.astro filters on both the same way).
   Future<List<HistoryItem>> fetchDriverHistory(String driverPhone) async {
+    final tokenResult = await _fetchHistoryViaToken();
+    if (tokenResult != null) return tokenResult;
+
     final results = await Future.wait([
       sb
           .from('orders')
