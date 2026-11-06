@@ -78,7 +78,33 @@ const Map<String, String> statusAr = {
   'completed': 'مكتملة',
 };
 
+const _kOrderTerminalStatuses = {'delivered', 'rejected', 'cancelled'};
+
 class OrdersRepository {
+  /// Token-verified shortcut for findActiveOrder/findActiveOrderForDriver —
+  /// /api/history/orders already returns this phone's own rows (customer OR
+  /// driver side, up to 100, newest first), so the active one — if any —
+  /// is just the first row still matching [phoneColumn] that isn't in a
+  /// terminal status. Returns null (never throws) on no session token OR
+  /// genuinely no active order, either way safe for the caller to fall back
+  /// to the equivalent direct-select query, which would find the same
+  /// answer.
+  Future<Map<String, dynamic>?> _findActiveOrderViaToken(String phoneColumn, String phone) async {
+    final json = await ApiSession.getJson('/api/history/orders');
+    if (json == null) return null;
+    final rows = (json['orders'] as List?) ?? const [];
+    final local = normalizeEgyptianPhone(phone);
+    final intl = toIntlEgyptianPhone(phone);
+    for (final row in rows) {
+      final o = row as Map<String, dynamic>;
+      if ((o[phoneColumn] == local || o[phoneColumn] == intl) &&
+          !_kOrderTerminalStatuses.contains(o['status'])) {
+        return o;
+      }
+    }
+    return null;
+  }
+
   /// Same purpose as RideRepository.findActiveRide() — lets app startup
   /// resume straight into OrderInvoiceScreen for a delivery order this
   /// customer is still waiting on, instead of losing it to the home screen
@@ -89,6 +115,9 @@ class OrdersRepository {
   /// their history (a cancelled test, an old bug) would otherwise always
   /// get sent back into that instead of a genuinely newer order.
   Future<Map<String, dynamic>?> findActiveOrder(String phone) async {
+    final viaToken = await _findActiveOrderViaToken('customer_phone', phone);
+    if (viaToken != null) return viaToken;
+
     final local = normalizeEgyptianPhone(phone);
     final intl = toIntlEgyptianPhone(phone);
     final filter = 'customer_phone.eq.$local,customer_phone.eq.$intl';
@@ -110,6 +139,9 @@ class OrdersRepository {
   /// driver_mark_order_picked_up in security-48) or still heading to the
   /// store.
   Future<Map<String, dynamic>?> findActiveOrderForDriver(String phone) async {
+    final viaToken = await _findActiveOrderViaToken('driver_phone', phone);
+    if (viaToken != null) return viaToken;
+
     final local = normalizeEgyptianPhone(phone);
     final intl = toIntlEgyptianPhone(phone);
     final filter = 'driver_phone.eq.$local,driver_phone.eq.$intl';

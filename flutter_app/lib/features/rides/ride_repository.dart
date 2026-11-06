@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart' show TimeOfDay;
+import '../../core/api_session.dart';
 import '../../core/phone_utils.dart';
 import '../../core/supabase_client.dart';
+
+const _kRideTerminalStatuses = {'completed', 'cancelled'};
 
 /// Same `rides` table the web app writes to (rides.astro's sbCreateRide()) —
 /// only the core columns needed for a working booking (vehicle-model
@@ -294,6 +297,29 @@ class RideRepository {
     }
   }
 
+  /// Token-verified shortcut for findActiveRide — /api/history/rides
+  /// already returns this phone's own rows (customer OR driver side, up to
+  /// 100, newest first), so the active one — if any — is just the first
+  /// row still matching [phoneColumn] that isn't in a terminal status.
+  /// Returns null (never throws) on no session token OR genuinely no
+  /// active ride, either way safe for the caller to fall back to the
+  /// equivalent direct-select query, which would find the same answer.
+  Future<Map<String, dynamic>?> _findActiveRideViaToken(String phoneColumn, String phone) async {
+    final json = await ApiSession.getJson('/api/history/rides');
+    if (json == null) return null;
+    final rows = (json['rides'] as List?) ?? const [];
+    final local = normalizeEgyptianPhone(phone);
+    final intl = toIntlEgyptianPhone(phone);
+    for (final row in rows) {
+      final r = row as Map<String, dynamic>;
+      if ((r[phoneColumn] == local || r[phoneColumn] == intl) &&
+          !_kRideTerminalStatuses.contains(r['status'])) {
+        return r;
+      }
+    }
+    return null;
+  }
+
   /// Finds a ride this phone is still "in" (not completed/cancelled) so
   /// app startup can resume into it instead of the home screen — fixes the
   /// ride "disappearing" after Android kills the app in the background
@@ -303,9 +329,12 @@ class RideRepository {
   /// the driver-side resume path needs every column to repopulate
   /// ActiveJobStore, not just enough to open RideTrackingScreen.
   Future<Map<String, dynamic>?> findActiveRide(String phone, {required bool asDriver}) async {
+    final column = asDriver ? 'driver_phone' : 'customer_phone';
+    final viaToken = await _findActiveRideViaToken(column, phone);
+    if (viaToken != null) return viaToken;
+
     final local = normalizeEgyptianPhone(phone);
     final intl = toIntlEgyptianPhone(phone);
-    final column = asDriver ? 'driver_phone' : 'customer_phone';
     final filter = '$column.eq.$local,$column.eq.$intl';
     final rows = await sb
         .from('rides')
