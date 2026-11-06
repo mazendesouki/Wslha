@@ -4,6 +4,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart' show debugPrint;
 
+import 'api_session.dart';
 import 'notifications.dart';
 import 'session.dart';
 import 'supabase_client.dart';
@@ -62,25 +63,37 @@ class PushRegistrar {
       }
       debugPrint('[push] registering token ${token.substring(0, 12)}... for ${session.phone}');
 
-      await sb.rpc('upsert_device_token', params: {
-        'p_phone': session.phone,
-        'p_token': token,
-        'p_platform': 'android',
-      });
+      await _registerToken(session.phone, token);
       debugPrint('[push] upsert_device_token ok');
       _registeredPhones.add(session.phone);
 
       messaging.onTokenRefresh.listen((newToken) {
-        sb.rpc('upsert_device_token', params: {
-          'p_phone': session.phone,
-          'p_token': newToken,
-          'p_platform': 'android',
-        });
+        _registerToken(session.phone, newToken);
       });
     } catch (e, st) {
       // No google-services.json yet, or the device has no Play Services —
       // the app should keep working without push either way.
       debugPrint('[push] registerForSession failed: $e\n$st');
     }
+  }
+
+  /// Access-token-first, phone-trust-RPC-fallback — upsert_device_token
+  /// trusted a bare p_phone with no check at all (security-178), so a
+  /// direct call could register a device token against any victim's
+  /// phone. /api/push/register derives the phone from the caller's own
+  /// verified session token instead; falls back to the old direct RPC
+  /// (now at least requiring p_phone to be a real account) when there's
+  /// no session token yet, same contract as every other migrated call.
+  static Future<void> _registerToken(String phone, String token) async {
+    final data = await ApiSession.postJson('/api/push/register', {
+      'fcm_token': token,
+      'platform': 'android',
+    });
+    if (data != null) return;
+    await sb.rpc('upsert_device_token', params: {
+      'p_phone': phone,
+      'p_token': token,
+      'p_platform': 'android',
+    });
   }
 }
