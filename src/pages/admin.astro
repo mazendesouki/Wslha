@@ -2256,7 +2256,20 @@ function showToast(msg, color='#1E293B') {
 function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
 
 /* ── API helpers ────────────────────────────────────────────── */
+// ثغرة حرجة اتصلّحت هنا (security-170, إصلاح فوري مؤقت): الدوال دي كانت
+// بتنادي جداول orders/rides/stores (وغيرها) مباشرة من غير أي تحقق كلمة
+// مرور خالص — فاللوحة كانت بتعرض بيانات حقيقية (طلبات، رحلات، متاجر)
+// حتى لو كلمة مرور الأدمن غلط أو حتى من غير ما حد يحاول يدخل كلمة مرور
+// أصلاً. السبب الجذري الحقيقي أعمق من كده: الجداول دي عندها RLS policies
+// مفتوحة بالكامل لـ anon (qual=true على كل العمليات) — يعني أي حد يقدر
+// يقرا/يعدّل/يمسح أي صف فيها مباشرة عبر الـ API من غير المرور بالموقع
+// خالص. الإصلاح الكامل (قفل الجداول نفسها + RPCs بديلة لكل استخدام شرعي
+// عبر الويب والفلاتر) شغل منفصل وأكبر (security-171+). الإصلاح الفوري
+// هنا بس بيمنع لوحة الأدمن (admin.astro) نفسها من طلب أي بيانات قبل
+// التأكد من كلمة مرور صحيحة، زي باقي استدعاءات RPC المحمية في الصفحة دي.
 async function sbGet(path) {
+  const pass = await getAdminPass();
+  if (!pass) return null;
   const ctrl = new AbortController();
   const tid  = setTimeout(() => ctrl.abort(), 8000);
   try {
@@ -2266,18 +2279,24 @@ async function sbGet(path) {
   } catch { return null; }
 }
 async function sbPatch(path, body) {
+  const pass = await getAdminPass();
+  if (!pass) return false;
   const r = await fetch(`${SB_URL}/rest/v1/${path}`, {
     method:'PATCH', headers:{...SB_H,Prefer:'return=minimal'}, body:JSON.stringify(body)
   });
   return r.ok;
 }
 async function sbPost(path, body) {
+  const pass = await getAdminPass();
+  if (!pass) return false;
   const r = await fetch(`${SB_URL}/rest/v1/${path}`, {
     method:'POST', headers:{...SB_H,Prefer:'return=minimal'}, body:JSON.stringify(body)
   });
   return r.ok;
 }
 async function sbDelete(path) {
+  const pass = await getAdminPass();
+  if (!pass) return false;
   const r = await fetch(`${SB_URL}/rest/v1/${path}`, { method:'DELETE', headers:SB_H });
   return r.ok;
 }
