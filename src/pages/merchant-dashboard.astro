@@ -1103,7 +1103,14 @@ import Layout from '../components/layout.astro';
   async function loadStats() {
     const today = new Date().toISOString().split('T')[0];
     const [todayOrd, allProd] = await Promise.all([
-      sbGet(`orders?store_id=eq.${currentStore.id}&created_at=gte.${today}&status=in.(delivered,completed)&select=total,subtotal`),
+      (async () => {
+        const viaToken = await fetchMerchantOrdersViaToken();
+        if (viaToken) {
+          return viaToken.filter((o: any) =>
+            o.store_id === currentStore.id && o.created_at >= today && (o.status === 'delivered' || o.status === 'completed'));
+        }
+        return await sbGet(`orders?store_id=eq.${currentStore.id}&created_at=gte.${today}&status=in.(delivered,completed)&select=total,subtotal`);
+      })(),
       sbGet(`products?store_id=eq.${currentStore.id}&select=is_available`),
     ]);
     const todayRevenue = (todayOrd || []).reduce((s: number, o: any) => s + (o.subtotal || o.total || 0), 0);
@@ -1471,7 +1478,10 @@ import Layout from '../components/layout.astro';
   }
 
   async function loadOrders(announce = false) {
-    const orders = await sbGet(`orders?store_id=eq.${currentStore.id}&order=created_at.desc&limit=40`);
+    const viaToken = await fetchMerchantOrdersViaToken();
+    const orders = viaToken
+      ? viaToken.filter((o: any) => o.store_id === currentStore.id).slice(0, 40)
+      : await sbGet(`orders?store_id=eq.${currentStore.id}&order=created_at.desc&limit=40`);
     if (!orders) return;
 
     const pending  = orders.filter((o: any) => o.status === 'pending');
@@ -1718,6 +1728,24 @@ import Layout from '../components/layout.astro';
     };
   }
 
+  // Access-token-first shortcut for loadStats/loadOrders/loadMerchantAccountData
+  // below — /api/history/merchant-orders resolves the caller's own store(s)
+  // from their signed token's phone server-side, then returns that store's
+  // orders (up to 1000, newest first), so all three callers can filter the
+  // same already-scoped rows client-side instead of each sending their own
+  // store_id=eq.… REST query. Returns null (never throws) on no session
+  // token, so callers fall back to their own direct sbGet() call.
+  async function fetchMerchantOrdersViaToken(): Promise<any[] | null> {
+    try {
+      const token = await getValidAccessToken();
+      if (!token) return null;
+      const res = await fetch('/api/history/merchant-orders?limit=1000', { headers: { Authorization: 'Bearer ' + token } });
+      if (!res.ok) return null;
+      const { orders } = await res.json();
+      return Array.isArray(orders) ? orders : null;
+    } catch { return null; }
+  }
+
   // ── Merchant account data (wallet, points, ratings) ──
   async function loadMerchantAccountData() {
     let user: any = null;
@@ -1732,7 +1760,14 @@ import Layout from '../components/layout.astro';
         ? sbGet(`ratings?store_id=eq.${encodeURIComponent(currentStore.id)}&store_rating=not.is.null&select=store_rating,comment,order_code,created_at&order=created_at.desc&limit=10`)
         : Promise.resolve(null),
       currentStore?.id
-        ? sbGet(`orders?store_id=eq.${encodeURIComponent(currentStore.id)}&status=in.(delivered,completed)&select=total,created_at&order=created_at.desc&limit=1000`)
+        ? (async () => {
+            const viaToken = await fetchMerchantOrdersViaToken();
+            if (viaToken) {
+              return viaToken.filter((o: any) =>
+                o.store_id === currentStore.id && (o.status === 'delivered' || o.status === 'completed'));
+            }
+            return await sbGet(`orders?store_id=eq.${encodeURIComponent(currentStore.id)}&status=in.(delivered,completed)&select=total,created_at&order=created_at.desc&limit=1000`);
+          })()
         : Promise.resolve(null),
     ]);
 
