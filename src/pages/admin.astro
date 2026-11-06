@@ -201,7 +201,7 @@
        behind it is fully hidden (not just dimmed) until confirmed or
        cancelled, for both the per-tab admin password (getAdminPass) and
        the never-cached sensitive-action key (getActionKey). */
-    .pass-gate{position:fixed;inset:0;z-index:99999;display:none;align-items:center;justify-content:center;padding:1rem;
+    .pass-gate{position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;padding:1rem;
       background:radial-gradient(circle at 50% 0%,var(--pr3) 0%,var(--pr) 45%,var(--pr2) 100%)}
     .pass-gate__box{background:var(--card);border-radius:var(--radius-lg);max-width:360px;width:100%;padding:2rem 1.75rem 1.75rem;text-align:center;box-shadow:0 30px 70px rgba(0,0,0,.35)}
     .pass-gate__logo{width:58px;height:58px;border-radius:14px;margin:0 auto .9rem;background:linear-gradient(135deg,var(--pr3),var(--pr));display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:1.6rem;box-shadow:0 10px 24px -8px rgba(63,167,154,.6)}
@@ -2308,24 +2308,30 @@ let _adminPassInFlight = null;
 // resolves with the trimmed input, or null on cancel/empty. Only one can
 // be open at a time, which matches every call site (each awaits before
 // doing anything else).
-// errorMsg (optional): shown inline inside the dialog itself. This exists
-// because the gate's own z-index (99999) sits well above the toast's
-// (9999) and fully repaints the screen — a showToast() call made right
-// before re-opening the gate (e.g. getAdminPass()'s retry loop) was
-// getting instantly buried underneath it, so a wrong password just looked
-// like the dialog flickering with no explanation.
-function showPassGate(title, subtitle, errorMsg) {
+// verify (optional async fn(value) -> boolean): when given, submitting a
+// value does NOT close the gate immediately — it disables the form, runs
+// verify(), and only closes on a true result. This exists because closing
+// the gate right on click (the old behavior) briefly exposed the dashboard
+// underneath for the whole network round-trip, on every single attempt —
+// reported as the dialog "opening and closing" with the real dashboard
+// content flashing visible behind it. On a false result the gate stays
+// open and shows an inline error instead of ever closing. Without verify,
+// behaves exactly as a plain prompt (used by getActionKey()).
+function showPassGate(title, subtitle, verify) {
   return new Promise((resolve) => {
     const gate = document.getElementById('pass-gate');
     const input = document.getElementById('pass-gate-input');
     const okBtn = document.getElementById('pass-gate-ok');
     const cancelBtn = document.getElementById('pass-gate-cancel');
     const errorEl = document.getElementById('pass-gate-error');
+    const okLabel = okBtn.textContent;
     document.getElementById('pass-gate-title').textContent = title;
     document.getElementById('pass-gate-subtitle').textContent = subtitle;
-    if (errorMsg) { errorEl.textContent = errorMsg; errorEl.style.display = 'block'; }
-    else { errorEl.textContent = ''; errorEl.style.display = 'none'; }
+    errorEl.textContent = '';
+    errorEl.style.display = 'none';
     input.value = '';
+    input.disabled = false;
+    okBtn.disabled = false;
     gate.style.display = 'flex';
     setTimeout(() => input.focus(), 50);
 
@@ -2334,9 +2340,23 @@ function showPassGate(title, subtitle, errorMsg) {
       okBtn.removeEventListener('click', onOk);
       cancelBtn.removeEventListener('click', onCancel);
       input.removeEventListener('keydown', onKey);
+      input.disabled = false; okBtn.disabled = false; okBtn.textContent = okLabel;
       resolve(result);
     }
-    function onOk() { cleanup((input.value || '').trim() || null); }
+    async function onOk() {
+      const val = (input.value || '').trim();
+      if (!val) return;
+      if (!verify) { cleanup(val); return; }
+      input.disabled = true; okBtn.disabled = true; okBtn.textContent = 'جاري التحقق…';
+      let ok = false;
+      try { ok = await verify(val); } catch { ok = false; }
+      if (ok) { cleanup(val); return; }
+      input.disabled = false; okBtn.disabled = false; okBtn.textContent = okLabel;
+      errorEl.textContent = '❌ كلمة المرور غير صحيحة أو محاولات كتير غلط';
+      errorEl.style.display = 'block';
+      input.value = '';
+      input.focus();
+    }
     function onCancel() { cleanup(null); }
     function onKey(e) {
       if (e.key === 'Enter') onOk();
@@ -2379,13 +2399,10 @@ async function getAdminPass() {
         if (ok) return _adminPass;
         try { sessionStorage.removeItem('wslha_admin_pass'); } catch {}
       }
-      let errorMsg = null;
-      while (true) {
-        const candidate = await showPassGate('لوحة تحكم المشرفين', 'رمز الأمان لتأكيد الدخول', errorMsg);
-        if (!candidate) return null;
-        if (await verifyAndCacheAdminPass(candidate)) return _adminPass;
-        errorMsg = '❌ كلمة المرور غير صحيحة أو محاولات كتير غلط';
-      }
+      // verify stays open on a wrong attempt (shows the inline error itself)
+      // instead of closing/reopening between tries — see showPassGate().
+      const result = await showPassGate('لوحة تحكم المشرفين', 'رمز الأمان لتأكيد الدخول', verifyAndCacheAdminPass);
+      return result ? _adminPass : null;
     } finally {
       _adminPassInFlight = null;
     }
