@@ -24,12 +24,22 @@ Map<String, String> get _sbHeaders => {
       'Content-Type': 'application/json',
     };
 
-/// Goes through POST /api/auth/login (src/lib/session.ts) instead of
-/// calling verify_login directly — that endpoint IS the same verify_login
-/// check, plus it starts a signed session (ApiSession) the IDOR fix's
-/// Phase 2 proxy routes need. Calling verify_login separately as well
-/// would double-count a wrong password against its own rate limiter
-/// (db/security-156), so this is the only login path now.
+/// Goes through POST /api/auth/login (src/lib/session.ts) first — that
+/// endpoint IS the same verify_login check, plus it starts a signed
+/// session (ApiSession) the IDOR fix's Phase 2 proxy routes need. Calling
+/// verify_login separately as well on top of a definitive wrong-password
+/// verdict would double-count that attempt against its own rate limiter
+/// (db/security-156), so a real bad-password/not-found result is never
+/// retried.
+///
+/// Any other failure from that endpoint — network hiccup, or the token/
+/// session layer itself being broken server-side (e.g. a missing secret;
+/// this exact case broke login outright for every Flutter user until
+/// security-178's follow-up added this fallback) — falls back to calling
+/// verify_login directly, the same path this app used before the token
+/// system existed. That fallback is safe to retry since it's only reached
+/// when the first attempt never produced a definitive "wrong password"
+/// verdict in the first place.
 ///
 /// /api/auth/login doesn't distinguish "number not registered" from
 /// "wrong password" (neither did verify_login itself — same query either
@@ -63,20 +73,69 @@ class AuthRepository {
     if (failureReason == 'rate_limited') {
       return LoginFailure('rate_limited', message: failureMessage);
     }
-    if (failureReason != 'invalid_credentials') {
-      // network/unexpected failure — no point disambiguating further.
-      return LoginFailure('error');
+
+    if (failureReason == 'invalid_credentials') {
+      // A real wrong-password/not-registered verdict from verify_login
+      // itself (ran server-side inside /api/auth/login) — disambiguate:
+      // does this phone exist at all?
+      try {
+        final lookup = await http.post(
+          Uri.parse('$supabaseUrl/rest/v1/rpc/lookup_account'),
+          headers: _sbHeaders,
+          body: jsonEncode({'p_phone': phone}),
+        );
+        final exists = lookup.statusCode == 200 && (jsonDecode(lookup.body) as List).isNotEmpty;
+        return LoginFailure(exists ? 'bad_password' : 'not_found');
+      } catch (_) {
+        return LoginFailure('error');
+      }
     }
 
-    // invalid_credentials → disambiguate: does this phone exist at all?
+    // Any other failure (network hiccup reaching the proxy, or the
+    // token/session layer itself being unavailable — e.g. a missing
+    // server secret, security-178) must never take login down entirely.
+    // Fall back to the direct verify_login RPC: the same check
+    // /api/auth/login.ts itself calls, and the only path this app used
+    // before the token system existed. Safe to retry here specifically
+    // because this branch is reached only when the first attempt never
+    // produced a definitive "wrong password" verdict, so it can't
+    // double-count a real bad-password attempt against security-156's
+    // rate limiter.
+    return _loginViaVerifyRpc(phone, password);
+  }
+
+  Future<LoginResult> _loginViaVerifyRpc(String phone, String password) async {
     try {
-      final lookup = await http.post(
-        Uri.parse('$supabaseUrl/rest/v1/rpc/lookup_account'),
+      final res = await http.post(
+        Uri.parse('$supabaseUrl/rest/v1/rpc/verify_login'),
         headers: _sbHeaders,
-        body: jsonEncode({'p_phone': phone}),
+        body: jsonEncode({'p_phone': phone, 'p_password': password}),
       );
-      final exists = lookup.statusCode == 200 && (jsonDecode(lookup.body) as List).isNotEmpty;
-      return LoginFailure(exists ? 'bad_password' : 'not_found');
+      if (res.statusCode != 200) {
+        if (res.body.contains('محاولات دخول كتير غلط')) {
+          return LoginFailure('rate_limited', message: 'محاولات دخول كتير غلط — حاول تاني بعد شوية');
+        }
+        return LoginFailure('error');
+      }
+      final rows = jsonDecode(res.body) as List;
+      if (rows.isEmpty) {
+        final lookup = await http.post(
+          Uri.parse('$supabaseUrl/rest/v1/rpc/lookup_account'),
+          headers: _sbHeaders,
+          body: jsonEncode({'p_phone': phone}),
+        );
+        final exists = lookup.statusCode == 200 && (jsonDecode(lookup.body) as List).isNotEmpty;
+        return LoginFailure(exists ? 'bad_password' : 'not_found');
+      }
+      final account = rows.first as Map<String, dynamic>;
+      final session = UserSession(
+        name: account['name'] as String? ?? '',
+        phone: account['phone'] as String,
+        role: account['role'] as String? ?? 'customer',
+        city: account['city'] as String?,
+        loginAt: DateTime.now().toIso8601String(),
+      );
+      return LoginSuccess(session);
     } catch (_) {
       return LoginFailure('error');
     }
