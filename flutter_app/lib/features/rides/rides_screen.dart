@@ -72,7 +72,14 @@ class _RidesScreenState extends State<RidesScreen> {
   // matching at accept time. Defaults to a common, modestly-priced sedan
   // rather than forcing a choice before the customer has even seen a fare
   // — they can always change it before booking.
-  String _vehicleModelId = 'corolla';
+  // Only models an approved driver actually has (db/security-180) —
+  // fetched live in initState(). Starts empty/null; once the fetch comes
+  // back, the first available model is pre-selected if there is one.
+  // Staying null falls back to the server's own sedan/2022 default, same
+  // as a ride booked with no vehicle_model always meant before this
+  // feature existed.
+  List<VehicleModel> _availableVehicles = [];
+  String? _vehicleModelId;
   int _vehicleYear = 2022;
   bool _negotiable = false;
   bool _submitting = false;
@@ -121,7 +128,7 @@ class _RidesScreenState extends State<RidesScreen> {
   // fare/ETA preview is never blocked on a network call.
   double get _roadKm => _routedRoute?.km ?? (_straightKm * fare_calc.roadFactor);
   bool get _isExternal => _roadKm > 0 && fare_calc.isExternalTrip(_roadKm);
-  int get _fare => _fareForVehicle(vehicleById(_vehicleModelId), _vehicleYear);
+  int get _fare => _fareForVehicle(findVehicleById(_availableVehicles, _vehicleModelId), _vehicleYear);
 
   /// Shared by the live fare display above and the vehicle picker sheet's
   /// per-model price preview below — both must compute the exact same
@@ -203,6 +210,17 @@ class _RidesScreenState extends State<RidesScreen> {
     // own pricing fields.
     PricingSettings.load().then((_) {
       if (mounted) setState(() {});
+    });
+    // db/security-180 — only models an approved driver actually has;
+    // pre-select the first one once it's back, if there is one.
+    _rideRepo.fetchAvailableVehicleModels().then((models) {
+      if (!mounted) return;
+      setState(() {
+        _availableVehicles = models;
+        if (_vehicleModelId == null && models.isNotEmpty) {
+          _vehicleModelId = models.first.id;
+        }
+      });
     });
   }
 
@@ -449,6 +467,7 @@ class _RidesScreenState extends State<RidesScreen> {
   Future<void> _openVehiclePicker() async {
     final result = await showVehiclePickerSheet(
       context,
+      models: _availableVehicles,
       initialModelId: _vehicleModelId,
       initialYear: _vehicleYear,
       fareFor: (model, year) => _fareForVehicle(model, year),
@@ -586,17 +605,31 @@ class _RidesScreenState extends State<RidesScreen> {
                     ),
                     child: Row(
                       children: [
-                        Text(
-                          vehicleCategoryLabels[vehicleById(_vehicleModelId)?.category ?? 'sedan']!.split(' ').first,
-                          style: const TextStyle(fontSize: 20),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            '${vehicleById(_vehicleModelId)?.name ?? ''} · $_vehicleYear',
-                            style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13.5),
-                          ),
-                        ),
+                        Builder(builder: (_) {
+                          final selected = findVehicleById(_availableVehicles, _vehicleModelId);
+                          if (selected == null) {
+                            return Expanded(
+                              child: Text(
+                                _availableVehicles.isEmpty ? context.tr('rides_vehicle_none_available') : context.tr('rides_vehicle_none_selected'),
+                                style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: AppColors.textFaint),
+                              ),
+                            );
+                          }
+                          return Expanded(
+                            child: Row(
+                              children: [
+                                Text(vehicleCategoryLabels[selected.category]!.split(' ').first, style: const TextStyle(fontSize: 20)),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    '${selected.name} · $_vehicleYear',
+                                    style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13.5),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        }),
                         const Icon(Icons.chevron_left),
                       ],
                     ),

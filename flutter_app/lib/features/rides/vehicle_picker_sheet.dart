@@ -11,15 +11,18 @@ class VehiclePickerResult {
 }
 
 const int _minVehicleYear = 2015;
+const List<String> _categoryOrder = ['sedan', 'suv', 'van'];
 
-/// Opens the car picker (db/security-179) — grouped by category, each
-/// model showing its own live fare ([fareFor], which the caller closes
-/// over its own distance/zone/quality-tier/surge state so this sheet never
-/// has to re-implement fare_calculator.dart's formula). Returns null if
-/// dismissed without confirming.
+/// Opens the car picker (db/security-180) — only models at least one
+/// approved driver actually has registered, grouped by category, each
+/// showing its own live fare ([fareFor], which the caller closes over its
+/// own distance/zone/quality-tier/surge state so this sheet never has to
+/// re-implement fare_calculator.dart's formula). Returns null if dismissed
+/// without confirming, or if [models] is empty (nothing to pick).
 Future<VehiclePickerResult?> showVehiclePickerSheet(
   BuildContext context, {
-  required String initialModelId,
+  required List<VehicleModel> models,
+  required String? initialModelId,
   required int initialYear,
   required int Function(VehicleModel model, int year) fareFor,
 }) {
@@ -28,6 +31,7 @@ Future<VehiclePickerResult?> showVehiclePickerSheet(
     isScrollControlled: true,
     shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
     builder: (sheetContext) => _VehiclePickerSheet(
+      models: models,
       initialModelId: initialModelId,
       initialYear: initialYear,
       fareFor: fareFor,
@@ -36,10 +40,11 @@ Future<VehiclePickerResult?> showVehiclePickerSheet(
 }
 
 class _VehiclePickerSheet extends StatefulWidget {
-  final String initialModelId;
+  final List<VehicleModel> models;
+  final String? initialModelId;
   final int initialYear;
   final int Function(VehicleModel model, int year) fareFor;
-  const _VehiclePickerSheet({required this.initialModelId, required this.initialYear, required this.fareFor});
+  const _VehiclePickerSheet({required this.models, required this.initialModelId, required this.initialYear, required this.fareFor});
 
   @override
   State<_VehiclePickerSheet> createState() => _VehiclePickerSheetState();
@@ -47,20 +52,45 @@ class _VehiclePickerSheet extends StatefulWidget {
 
 class _VehiclePickerSheetState extends State<_VehiclePickerSheet> {
   late String _category;
-  late String _modelId;
+  late String? _modelId;
   late int _year;
+
+  List<String> get _availableCategories => _categoryOrder.where((c) => widget.models.any((v) => v.category == c)).toList();
 
   @override
   void initState() {
     super.initState();
     _modelId = widget.initialModelId;
     _year = widget.initialYear;
-    _category = vehicleById(_modelId)?.category ?? 'sedan';
+    final selected = findVehicleById(widget.models, _modelId);
+    final categories = _availableCategories;
+    _category = selected?.category ?? (categories.isNotEmpty ? categories.first : 'sedan');
   }
 
   @override
   Widget build(BuildContext context) {
-    final models = vehicleCatalog.where((v) => v.category == _category).toList();
+    if (widget.models.isEmpty) {
+      return SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(context.tr('rides_vehicle_none_available'), style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900), textAlign: TextAlign.center),
+              const SizedBox(height: 8),
+              Text(context.tr('rides_vehicle_empty_state'), style: TextStyle(fontSize: 12.5, color: AppColors.textFaint, height: 1.4), textAlign: TextAlign.center),
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton(onPressed: () => Navigator.of(context).pop(), child: Text(context.tr('rides_vehicle_picker_done'))),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    final models = widget.models.where((v) => v.category == _category).toList();
     final maxYear = DateTime.now().year;
     return SafeArea(
       child: Padding(
@@ -78,7 +108,7 @@ class _VehiclePickerSheetState extends State<_VehiclePickerSheet> {
               child: Wrap(
                 spacing: 6,
                 children: [
-                  for (final cat in const ['sedan', 'suv', 'van'])
+                  for (final cat in _availableCategories)
                     SelectablePill(
                       label: vehicleCategoryLabels[cat]!,
                       selected: _category == cat,
@@ -131,7 +161,7 @@ class _VehiclePickerSheetState extends State<_VehiclePickerSheet> {
               child: SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: () => Navigator.of(context).pop(VehiclePickerResult(_modelId, _year)),
+                  onPressed: _modelId == null ? null : () => Navigator.of(context).pop(VehiclePickerResult(_modelId!, _year)),
                   child: Text(context.tr('rides_vehicle_picker_done')),
                 ),
               ),

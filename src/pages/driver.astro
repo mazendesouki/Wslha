@@ -692,10 +692,17 @@ label .req { color: #DC2626; }
               <option value="flatbed" hidden>🛻 سيارة نقالة سيارات (سطحة)</option>
             </select>
           </div>
-          <div class="fg">
-            <label for="v-model"><span id="lbl-v-model">الماركة والموديل</span> <span class="req">*</span></label>
-            <input class="fi" id="v-model" type="text" placeholder="مثال: تويوتا كورولا"/>
-            <span class="field-err" id="err-v-model"></span>
+          <div class="fg" id="fg-v-model-select">
+            <label for="v-model-select"><span id="lbl-v-model">الماركة والموديل</span> <span class="req">*</span></label>
+            <select class="fi" id="v-model-select">
+              <option value="">اختر السيارة…</option>
+            </select>
+            <span class="field-err" id="err-v-model-select"></span>
+          </div>
+          <div class="fg" id="fg-v-model-text" style="display:none">
+            <label for="v-model-text">الماركة والموديل <span class="req">*</span></label>
+            <input class="fi" id="v-model-text" type="text" placeholder="مثال: هوندا CG 125"/>
+            <span class="field-err" id="err-v-model-text"></span>
           </div>
           <div class="fg">
             <label for="v-year">سنة الصنع <span class="req">*</span></label>
@@ -1512,6 +1519,14 @@ window.handleUpload = async function(input, key, zoneId) {
   }
 };
 
+// Switching sedan/suv/van (without leaving "car" type) needs its own
+// listener — applyVehicleType() only fires on the panel-0 vtype pill,
+// not on this in-panel-3 category change.
+var _vCatEl = $('v-cat');
+if (_vCatEl) _vCatEl.addEventListener('change', function() {
+  if (isCarCategory(this.value)) buildModelOptions(this.value);
+});
+
 /* ── Radio pills ── */
 document.querySelectorAll('.radio-row').forEach(function(row) {
   row.querySelectorAll('.radio-pill').forEach(function(pill) {
@@ -1532,6 +1547,75 @@ document.querySelectorAll('.radio-row').forEach(function(row) {
    later reaches the vehicle step (panel-3); they're delivery-only
    regardless, see db/security-41 / security-42. Also updates the
    "ما ستحتاجه" requirements preview in panel-0 to match. */
+// Mirrors public.vehicle_rates (db/security-179/180) — same 29 models,
+// same category/km_per_liter. A driver registering a car (sedan/suv/van)
+// picks from this catalog instead of typing free text, so their
+// vehicle_model_id links cleanly to the pricing table and the customer-
+// facing booking picker (db/security-180's get_available_vehicle_models())
+// can tell which models are actually driven by an approved driver right
+// now. Motorcycle/cargo/box_truck/flatbed stay free text — this pricing
+// feature only covers passenger-car categories.
+var VEHICLE_CATALOG = [
+  {id:'mg5', name:'إم جي 5', category:'sedan'},
+  {id:'bmw3', name:'بي إم دبليو الفئة 3', category:'sedan'},
+  {id:'peugeot301', name:'بيجو 301', category:'sedan'},
+  {id:'corolla', name:'تويوتا كورولا', category:'sedan'},
+  {id:'logan', name:'رينو لوجان', category:'sedan'},
+  {id:'octavia', name:'سكودا أوكتافيا', category:'sedan'},
+  {id:'optra', name:'شيفروليه أوبترا', category:'sedan'},
+  {id:'fiattipo', name:'فيات تيبو', category:'sedan'},
+  {id:'cerato', name:'كيا سيراتو', category:'sedan'},
+  {id:'mercc', name:'مرسيدس الفئة C', category:'sedan'},
+  {id:'sunny', name:'نيسان صني', category:'sedan'},
+  {id:'elantra', name:'هيونداي إلنترا', category:'sedan'},
+  {id:'mgzs', name:'إم جي ZS', category:'suv'},
+  {id:'landcruiser', name:'تويوتا لاند كروزر', category:'suv'},
+  {id:'grandcherokee', name:'جيب جراند شيروكي', category:'suv'},
+  {id:'compass', name:'جيب كومباس', category:'suv'},
+  {id:'tiggo8', name:'شيري تيجو 8', category:'suv'},
+  {id:'sportage', name:'كيا سبورتاج', category:'suv'},
+  {id:'pajero', name:'ميتسوبيشي باجيرو', category:'suv'},
+  {id:'xtrail', name:'نيسان إكس تريل', category:'suv'},
+  {id:'patrol', name:'نيسان باترول', category:'suv'},
+  {id:'tucson', name:'هيونداي توسان', category:'suv'},
+  {id:'creta', name:'هيونداي كريتا', category:'suv'},
+  {id:'traveller', name:'بيجو ترافيلر', category:'van'},
+  {id:'hiace', name:'تويوتا هاي إيس', category:'van'},
+  {id:'carnival', name:'كيا كارنيفال', category:'van'},
+  {id:'sprinter', name:'مرسيدس سبرينتر', category:'van'},
+  {id:'xpander', name:'ميتسوبيشي إكسباندر', category:'van'},
+  {id:'h1', name:'هيونداي H1', category:'van'},
+];
+
+function isCarCategory(cat) { return cat === 'sedan' || cat === 'suv' || cat === 'van'; }
+
+// Repopulates the model <select> with just this category's catalog
+// entries, preserving the current selection if it's still valid for the
+// new category (otherwise resets to the blank placeholder).
+function buildModelOptions(category) {
+  var sel = $('v-model-select');
+  var prev = sel.value;
+  var items = VEHICLE_CATALOG.filter(function(v) { return v.category === category; });
+  sel.innerHTML = '<option value="">اختر السيارة…</option>' +
+    items.map(function(v) { return '<option value="' + v.id + '">' + v.name + '</option>'; }).join('');
+  if (items.some(function(v) { return v.id === prev; })) sel.value = prev;
+}
+
+// Which "برand/model" field is actually active right now — the catalog
+// select for a car, the old free-text input for everything else.
+function currentModelName() {
+  if (isCarCategory($('v-cat').value)) {
+    var sel = $('v-model-select');
+    if (!sel.value) return '';
+    var opt = sel.selectedOptions[0];
+    return opt ? opt.textContent : '';
+  }
+  return ($('v-model-text').value || '').trim();
+}
+function currentModelId() {
+  return isCarCategory($('v-cat').value) ? ($('v-model-select').value || null) : null;
+}
+
 var VEHICLE_TYPE_TEXT = {
   car: {
     needTitle: 'وثائق السيارة', needDoc1: '✅ رخصة سيارة + تأمين + فحص', needDoc2: '✅ صور السيارة (4 جوانب)',
@@ -1599,6 +1683,11 @@ function applyVehicleType(vtype) {
     $('v-has-ac').checked = false;
     $('v-is-clean').checked = false;
   }
+  // Catalog select for a car's brand/model (pricing, db/security-179/180),
+  // free text for everything else — see currentModelName()/currentModelId().
+  $('fg-v-model-select').style.display = isCar ? '' : 'none';
+  $('fg-v-model-text').style.display = isCar ? 'none' : '';
+  if (isCar) buildModelOptions($('v-cat').value);
   var t = VEHICLE_TYPE_TEXT[vtype] || VEHICLE_TYPE_TEXT.car;
   var set = function(id, text) { if ($(id)) $(id).textContent = text; };
   set('need-vehicle-title', t.needTitle);
@@ -1616,7 +1705,7 @@ function applyVehicleType(vtype) {
   set('lbl-v-model', t.modelLabel);
   set('photos-title', t.photosTitle);
   set('review-vehicle-title', t.reviewTitle);
-  var modelInput = $('v-model');
+  var modelInput = $('v-model-text');
   if (modelInput) modelInput.placeholder = t.modelPlaceholder;
   document.querySelectorAll('.veh-photo-icon').forEach(function(el) { el.textContent = t.photoIcon; });
 }
@@ -1714,8 +1803,10 @@ function validateVehicle() {
   var ok = true, miss = [];
   showErr('err-vehicle', '');
 
+  var modelFieldId = isCarCategory($('v-cat').value) ? 'v-model-select' : 'v-model-text';
+  var modelErrId = isCarCategory($('v-cat').value) ? 'err-v-model-select' : 'err-v-model-text';
   var checks = [
-    ['v-model', 'err-v-model', 'الماركة والموديل مطلوبين'],
+    [modelFieldId, modelErrId, 'الماركة والموديل مطلوبين'],
     ['v-color', 'err-v-color', 'اللون مطلوب'],
     ['v-year',  'err-v-year',  'سنة الصنع مطلوبة'],
     ['v-plate', 'err-v-plate', 'رقم اللوحة مطلوب'],
@@ -1774,7 +1865,7 @@ function buildReview() {
   // Vehicle
   var vehRows = [
     ['الفئة', {sedan:'سيدان',suv:'SUV / كروز',van:'ميكروباص',motorcycle:'🏍️ دراجة نارية',cargo:'📦 سيارة نقل بضائع'}[$('v-cat').value] || $('v-cat').value],
-    ['الماركة والموديل', $('v-model').value],
+    ['الماركة والموديل', currentModelName()],
     ['اللون', $('v-color').value],
     ['سنة الصنع', $('v-year').value],
     ['رقم اللوحة', $('v-plate').value],
@@ -1826,7 +1917,11 @@ window.submitApp = async function() {
     vehicle_category:   $('v-cat').value,
     has_ac:             $('v-has-ac').checked,
     is_clean:           $('v-is-clean').checked,
-    vehicle_model:      $('v-model').value.trim(),
+    vehicle_model:      currentModelName(),
+    // Links to vehicle_rates (db/security-179/180) when a car category was
+    // picked from the catalog — null for motorcycle/cargo/etc, which stay
+    // outside this pricing feature entirely.
+    vehicle_model_id:   currentModelId(),
     vehicle_color:      $('v-color').value.trim(),
     vehicle_year:       parseInt($('v-year').value, 10) || null,
     vehicle_purchase_date: $('v-purchase').value || null,

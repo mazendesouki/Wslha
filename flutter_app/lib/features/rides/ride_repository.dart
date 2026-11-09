@@ -2,6 +2,7 @@ import 'package:flutter/material.dart' show TimeOfDay;
 import '../../core/api_session.dart';
 import '../../core/phone_utils.dart';
 import '../../core/supabase_client.dart';
+import 'vehicle_catalog.dart';
 
 const _kRideTerminalStatuses = {'completed', 'cancelled'};
 
@@ -52,6 +53,31 @@ class RideRepository {
       return (result as num?)?.toInt();
     } catch (_) {
       return null;
+    }
+  }
+
+  /// Only models at least one currently-approved driver has actually
+  /// registered (db/security-180) — a customer can never pick/price a car
+  /// nobody on the road actually has right now. Empty list (never throws)
+  /// on any failure, or genuinely if no approved driver has picked a car
+  /// from the catalog yet — the booking screen falls back to the old
+  /// no-picker sedan/2022 default in that case, same as a null
+  /// vehicle_model always meant before this feature existed.
+  Future<List<VehicleModel>> fetchAvailableVehicleModels() async {
+    try {
+      final rows = await sb.rpc('get_available_vehicle_models');
+      if (rows is! List) return [];
+      return rows.map((r) {
+        final row = Map<String, dynamic>.from(r as Map);
+        return VehicleModel(
+          id: row['id'] as String,
+          name: row['name'] as String,
+          category: row['category'] as String,
+          kmPerLiter: (row['km_per_liter'] as num).toDouble(),
+        );
+      }).toList();
+    } catch (_) {
+      return [];
     }
   }
 
