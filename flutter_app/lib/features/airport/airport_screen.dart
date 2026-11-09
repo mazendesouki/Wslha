@@ -167,7 +167,12 @@ class _AirportScreenState extends State<AirportScreen> {
   }
 
   Future<void> _loadVehicles() async {
-    final vehicles = await _repo.fetchRegisteredVehicles();
+    List<fare.RegisteredVehicle> vehicles = const [];
+    try {
+      vehicles = await _repo.fetchRegisteredVehicles();
+    } catch (_) {
+      // leave vehicles empty — handled by the "no vehicles" empty state below
+    }
     if (!mounted) return;
     setState(() {
       _vehicles = vehicles;

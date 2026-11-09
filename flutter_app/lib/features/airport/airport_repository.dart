@@ -12,7 +12,8 @@ class AirportRepository {
       final cat = r['vehicle_category'] as String?;
       final name = (r['vehicle_model'] as String?)?.trim();
       if (cat == null || name == null || name.isEmpty || !vehicleCategoryInfo.containsKey(cat)) continue;
-      final year = (r['vehicle_year'] as num?)?.toInt() ?? DateTime.now().year;
+      final rawYear = r['vehicle_year'];
+      final year = (rawYear is num ? rawYear.toInt() : int.tryParse('$rawYear')) ?? DateTime.now().year;
       final key = '$cat|$name';
       final existing = byKey[key];
       if (existing != null) {
