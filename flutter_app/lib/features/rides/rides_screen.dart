@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../core/feature_flags.dart';
 import '../../core/i18n.dart';
+import '../../core/pricing_settings.dart';
 import '../../core/service_controls.dart';
 import '../../core/session.dart';
 import '../../core/theme.dart';
@@ -16,6 +17,8 @@ import 'recurring_ride_schedules_screen.dart';
 import 'ride_repository.dart';
 import 'ride_tracking_screen.dart';
 import 'scheduled_rides_screen.dart';
+import 'vehicle_catalog.dart';
+import 'vehicle_picker_sheet.dart';
 
 // 0=Sunday..6=Saturday — matches Postgres extract(dow).
 const List<String> _recurringDayShortLabels = ['أحد', 'إثنين', 'ثلاثاء', 'أربعاء', 'خميس', 'جمعة', 'سبت'];
@@ -64,6 +67,13 @@ class _RidesScreenState extends State<RidesScreen> {
   // regular/external rides too so a driver whose registered car has no AC
   // can't be matched to a customer who specifically asked for one.
   String _qualityTier = 'regular';
+  // Which car the customer wants (db/security-179) — drives the real
+  // category + fuel-cost pricing server-side and the driver-category
+  // matching at accept time. Defaults to a common, modestly-priced sedan
+  // rather than forcing a choice before the customer has even seen a fare
+  // — they can always change it before booking.
+  String _vehicleModelId = 'corolla';
+  int _vehicleYear = 2022;
   bool _negotiable = false;
   bool _submitting = false;
   String? _appliedCouponCode;
@@ -111,7 +121,13 @@ class _RidesScreenState extends State<RidesScreen> {
   // fare/ETA preview is never blocked on a network call.
   double get _roadKm => _routedRoute?.km ?? (_straightKm * fare_calc.roadFactor);
   bool get _isExternal => _roadKm > 0 && fare_calc.isExternalTrip(_roadKm);
-  int get _fare {
+  int get _fare => _fareForVehicle(vehicleById(_vehicleModelId), _vehicleYear);
+
+  /// Shared by the live fare display above and the vehicle picker sheet's
+  /// per-model price preview below — both must compute the exact same
+  /// number for a given (vehicle, year), or picking a car in the sheet
+  /// wouldn't visibly match what the booking screen then shows.
+  int _fareForVehicle(VehicleModel? vehicle, int year) {
     if (_straightKm <= 0) return 0;
     // fareForDistance() re-derives roadKm internally as straightKm ×
     // roadFactor — when a real routed distance came back, feed it that
@@ -121,8 +137,23 @@ class _RidesScreenState extends State<RidesScreen> {
     // side trusts distance_km as sent, so this is what actually gets billed).
     final fareInputKm = _routedRoute != null ? (_roadKm / fare_calc.roadFactor) : _straightKm;
     return _isExternal
-        ? fare_calc.externalFareForDistance(_roadKm, qualityTier: _qualityTier, surgeMultiplier: _surgeMult)
-        : fare_calc.fareForDistance(fareInputKm, toArea: _filledPoints.last.name, qualityTier: _qualityTier, surgeMultiplier: _surgeMult);
+        ? fare_calc.externalFareForDistance(
+            _roadKm,
+            qualityTier: _qualityTier,
+            surgeMultiplier: _surgeMult,
+            category: vehicle?.category ?? 'sedan',
+            year: year,
+            kmPerLiter: vehicle?.kmPerLiter,
+          )
+        : fare_calc.fareForDistance(
+            fareInputKm,
+            toArea: _filledPoints.last.name,
+            qualityTier: _qualityTier,
+            surgeMultiplier: _surgeMult,
+            category: vehicle?.category ?? 'sedan',
+            year: year,
+            kmPerLiter: vehicle?.kmPerLiter,
+          );
   }
 
   int get _eta => _routedRoute?.minutes ?? (_straightKm > 0 ? fare_calc.etaMinutes(_straightKm) : 0);
@@ -165,6 +196,13 @@ class _RidesScreenState extends State<RidesScreen> {
     SessionStore.load().then((s) => setState(() => _session = s));
     _rideRepo.fetchAvailableDriversCount().then((count) {
       if (mounted) setState(() => _availableDrivers = count);
+    });
+    // Picks up the real admin-configured category rates + fuel price
+    // (db/security-179) instead of this screen's hardcoded fallback
+    // defaults — airport_screen.dart already does the same thing for its
+    // own pricing fields.
+    PricingSettings.load().then((_) {
+      if (mounted) setState(() {});
     });
   }
 
@@ -244,6 +282,8 @@ class _RidesScreenState extends State<RidesScreen> {
         qualityTier: _qualityTier,
         scheduledAt: _scheduledAt,
         couponCode: _appliedCouponCode,
+        vehicleModel: _vehicleModelId,
+        vehicleYear: _vehicleYear,
       );
     } catch (e) {
       // createRide() throws straight from the Supabase insert on failure
@@ -406,6 +446,21 @@ class _RidesScreenState extends State<RidesScreen> {
     return '${context.tr('rides_stop_label_prefix')} ${index + 1}';
   }
 
+  Future<void> _openVehiclePicker() async {
+    final result = await showVehiclePickerSheet(
+      context,
+      initialModelId: _vehicleModelId,
+      initialYear: _vehicleYear,
+      fareFor: (model, year) => _fareForVehicle(model, year),
+    );
+    if (result != null && mounted) {
+      setState(() {
+        _vehicleModelId = result.modelId;
+        _vehicleYear = result.year;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_filledPoints.length >= 2) {
@@ -512,6 +567,40 @@ class _RidesScreenState extends State<RidesScreen> {
                       ],
                     ),
                   ],
+                ),
+              ),
+              const SizedBox(height: 10),
+              _sectionLabel(context.tr('rides_section_vehicle')),
+              Material(
+                color: Colors.transparent,
+                borderRadius: BorderRadius.circular(16),
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(16),
+                  onTap: _openVehiclePicker,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                    decoration: BoxDecoration(
+                      color: context.surfaceColor,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: context.borderColor),
+                    ),
+                    child: Row(
+                      children: [
+                        Text(
+                          vehicleCategoryLabels[vehicleById(_vehicleModelId)?.category ?? 'sedan']!.split(' ').first,
+                          style: const TextStyle(fontSize: 20),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            '${vehicleById(_vehicleModelId)?.name ?? ''} · $_vehicleYear',
+                            style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13.5),
+                          ),
+                        ),
+                        const Icon(Icons.chevron_left),
+                      ],
+                    ),
+                  ),
                 ),
               ),
               const SizedBox(height: 10),

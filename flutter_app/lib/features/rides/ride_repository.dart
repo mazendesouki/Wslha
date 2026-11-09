@@ -109,6 +109,14 @@ class RideRepository {
     // then cancelling can't farm free cashback (see security-120's doc
     // comment for why this moved off the client).
     String? couponCode,
+    // Which car the customer picked (db/security-179) — drives the real
+    // category + fuel-cost pricing server-side (guard_ride_fare()) and the
+    // driver-category matching at accept time (accept_dispatch_offer()).
+    // Null means the old no-picker behavior (prices as sedan/2022, no
+    // matching enforced) — kept for any caller that hasn't adopted the
+    // picker yet.
+    String? vehicleModel,
+    int? vehicleYear,
   }) async {
     final row = await sb.from('rides').insert({
       'customer_phone': customerPhone,
@@ -131,6 +139,8 @@ class RideRepository {
       if (qualityTier != null && qualityTier != 'regular') 'airport_quality_tier': qualityTier,
       if (couponCode != null) 'coupon_code': couponCode,
       if (scheduledAt != null) 'scheduled_at': scheduledAt.toUtc().toIso8601String(),
+      if (vehicleModel != null) 'vehicle_model': vehicleModel,
+      if (vehicleYear != null) 'vehicle_year': vehicleYear,
     }).select().single();
     return row;
   }

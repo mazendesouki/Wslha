@@ -16,6 +16,8 @@ class PricingSettings {
   static double localBaseFee = 25;
   static double localMinFare = 40;
   static double localRateSedan = 8;
+  static double localRateSuv = 10.4;
+  static double localRateVan = 11.2;
 
   static double airportBaseFee = 300;
   static double airportMinFare = 2500;
@@ -26,6 +28,14 @@ class PricingSettings {
   static double externalBaseFee = 50;
   static double externalMinFare = 150;
   static double externalRateSedan = 7;
+  static double externalRateSuv = 9.1;
+  static double externalRateVan = 9.8;
+
+  // Real fuel-cost component (db/security-179) — (trip_km ÷ the chosen
+  // vehicle's km_per_liter) × this price, added on top of the base+distance
+  // fare for local/external rides. Default matches the seeded app_settings
+  // value.
+  static double fuelPricePerLiter = 13.5;
 
   // Waiting-time penalties (db/security-63) — same defaults the SQL side
   // falls back to if a key is missing.
@@ -85,9 +95,10 @@ class PricingSettings {
   static Future<void> refresh() async {
     try {
       final rows = await sb.from('app_settings').select('key,value').inFilter('key', [
-        'local_base_fee', 'local_min_fare', 'local_rate_sedan',
+        'local_base_fee', 'local_min_fare', 'local_rate_sedan', 'local_rate_suv', 'local_rate_van',
         'airport_base_fee', 'airport_min_fare', 'airport_rate_sedan', 'airport_rate_suv', 'airport_rate_van',
-        'external_base_fee', 'external_min_fare', 'external_rate_sedan',
+        'external_base_fee', 'external_min_fare', 'external_rate_sedan', 'external_rate_suv', 'external_rate_van',
+        'fuel_price_per_liter',
         'driver_late_grace_minutes', 'driver_late_fee', 'driver_late_fee_enabled',
         'customer_late_grace_minutes', 'customer_late_fee_per_minute',
         'no_show_grace_minutes', 'no_show_fee',
@@ -110,6 +121,8 @@ class PricingSettings {
       localBaseFee    = num('local_base_fee') ?? localBaseFee;
       localMinFare     = num('local_min_fare') ?? localMinFare;
       localRateSedan   = num('local_rate_sedan') ?? localRateSedan;
+      localRateSuv     = num('local_rate_suv') ?? localRateSuv;
+      localRateVan     = num('local_rate_van') ?? localRateVan;
       airportBaseFee   = num('airport_base_fee') ?? airportBaseFee;
       airportMinFare   = num('airport_min_fare') ?? airportMinFare;
       airportRateSedan = num('airport_rate_sedan') ?? airportRateSedan;
@@ -118,6 +131,9 @@ class PricingSettings {
       externalBaseFee   = num('external_base_fee') ?? externalBaseFee;
       externalMinFare   = num('external_min_fare') ?? externalMinFare;
       externalRateSedan = num('external_rate_sedan') ?? externalRateSedan;
+      externalRateSuv   = num('external_rate_suv') ?? externalRateSuv;
+      externalRateVan   = num('external_rate_van') ?? externalRateVan;
+      fuelPricePerLiter = num('fuel_price_per_liter') ?? fuelPricePerLiter;
       driverLateGraceMinutes   = (num('driver_late_grace_minutes') ?? driverLateGraceMinutes.toDouble()).round();
       driverLateFee            = num('driver_late_fee') ?? driverLateFee;
       driverLateFeeEnabled     = boolSetting('driver_late_fee_enabled') ?? driverLateFeeEnabled;

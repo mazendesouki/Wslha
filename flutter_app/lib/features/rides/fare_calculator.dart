@@ -7,10 +7,11 @@ import '../airport/airport_fare.dart' show qualityMultiplier;
 // db/rides-vehicle-pricing.sql) — NOT the older flat base+perKm formula this
 // file used to have, which drifted from what the server actually charges
 // (customer would see one quote, then the server-side guard trigger would
-// silently recompute and overwrite it with a different fare). This app
-// doesn't offer a vehicle-category picker on the regular rides screen (only
-// airport does), so it always books as the same sedan/2022 default the
-// server falls back to when vehicle_model/vehicle_year are omitted.
+// silently recompute and overwrite it with a different fare). rides_screen
+// .dart now offers a real vehicle picker (db/security-179) — category/year/
+// kmPerLiter below reflect whatever car is actually selected there; a
+// caller that never passes them still gets the old sedan/2022/no-fuel-cost
+// default, matching the server's own fallback for a null vehicle_model.
 //
 // baseFare/minFare/sedan rate are admin-configurable (PricingSettings) —
 // this is only a client-side preview, guard_ride_fare() re-enforces the
@@ -18,8 +19,41 @@ import '../airport/airport_fare.dart' show qualityMultiplier;
 double get baseFare => PricingSettings.localBaseFee;
 double get minFare => PricingSettings.localMinFare;
 const double roadFactor = 1.35;
-double get _sedanRatePerKm => PricingSettings.localRateSedan; // TRIP_RATES.local.sedan
-const double _defaultYearMult = 1.035; // yearMultiplier(2022) — the server's fallback year
+
+// db/security-179: real per-model category + fuel-efficiency pricing, now
+// that rides_screen.dart offers a vehicle picker instead of always booking
+// as the sedan/2022 default. Mirrors guard_ride_fare()'s own category rate
+// lookup and fuel-cost term exactly, so this preview never disagrees with
+// what actually gets charged at insert.
+double _localRatePerKm(String category) {
+  switch (category) {
+    case 'suv':
+      return PricingSettings.localRateSuv;
+    case 'van':
+      return PricingSettings.localRateVan;
+    default:
+      return PricingSettings.localRateSedan;
+  }
+}
+
+double _externalRatePerKmFor(String category) {
+  switch (category) {
+    case 'suv':
+      return PricingSettings.externalRateSuv;
+    case 'van':
+      return PricingSettings.externalRateVan;
+    default:
+      return PricingSettings.externalRateSedan;
+  }
+}
+
+/// fare_cost = (trip_km ÷ km_per_liter) × fuel_price_per_liter — zero when
+/// no vehicle is chosen yet, matching guard_ride_fare()'s own null-model
+/// fallback (no vehicle_model → no fuel term).
+double _fuelCost(double km, double? kmPerLiter) {
+  if (kmPerLiter == null || kmPerLiter <= 0) return 0;
+  return (km / kmPerLiter) * PricingSettings.fuelPricePerLiter;
+}
 
 class _FareZone {
   final double factor;
@@ -71,12 +105,28 @@ double haversineKm(double lat1, double lng1, double lat2, double lng2) {
 /// supply crosses a threshold. Combined with the tier multiplier the exact
 /// same way (both floor and raw fare use the combined factor) so surge
 /// stacks on top of the tier price rather than replacing it.
-int fareForDistance(double straightKm, {String? toArea, String qualityTier = 'regular', double surgeMultiplier = 1.0}) {
+int fareForDistance(
+  double straightKm, {
+  String? toArea,
+  String qualityTier = 'regular',
+  double surgeMultiplier = 1.0,
+  // Defaults match the server's own fallback (no vehicle chosen yet) —
+  // sedan rate, year-2022 multiplier, zero fuel cost.
+  String category = 'sedan',
+  int year = 2022,
+  double? kmPerLiter,
+}) {
   final roadKm = straightKm * roadFactor;
   final zone = _resolveZone(toArea);
-  final effRate = _sedanRatePerKm * _defaultYearMult;
+  final effRate = _localRatePerKm(category) * _yearMultiplier(year); // _yearMultiplier(2022) == _defaultYearMult
   final mult = (qualityMultiplier[qualityTier] ?? 1.0) * surgeMultiplier;
-  final raw = ((baseFare + _tieredKm(roadKm) * effRate) * zone.factor + zone.surcharge) * mult;
+  // Fuel cost is added the same place guard_ride_fare() adds it server-side
+  // (after the zone multiplication, outside the quality-tier multiplier —
+  // that tier bump is a client-only preview today, not yet enforced
+  // server-side for local/external rides, so it was never part of the
+  // fuel term either).
+  final fuelCost = _fuelCost(roadKm, kmPerLiter);
+  final raw = ((baseFare + _tieredKm(roadKm) * effRate) * zone.factor + zone.surcharge) * mult + fuelCost;
   // The floor has to scale by the same multiplier too, not just the raw
   // fare — otherwise a short trip (very common; base_fee/rate are low
   // enough that most short local trips land below minFare) floors to the
@@ -101,7 +151,6 @@ int etaMinutes(double straightKm) {
 // rate band).
 const double externalThresholdKm = 40;
 
-double get _externalRatePerKm => PricingSettings.externalRateSedan;
 const double _yearMultBaseline = 2021;
 
 double _yearMultiplier(int year) {
@@ -111,9 +160,17 @@ double _yearMultiplier(int year) {
 
 bool isExternalTrip(double roadKm) => roadKm > externalThresholdKm;
 
-int externalFareForDistance(double roadKm, {String qualityTier = 'regular', double surgeMultiplier = 1.0}) {
-  final rate = _externalRatePerKm * _yearMultiplier(2022); // same sedan/2022 default as fareForDistance()
+int externalFareForDistance(
+  double roadKm, {
+  String qualityTier = 'regular',
+  double surgeMultiplier = 1.0,
+  String category = 'sedan',
+  int year = 2022,
+  double? kmPerLiter,
+}) {
+  final rate = _externalRatePerKmFor(category) * _yearMultiplier(year);
   final mult = (qualityMultiplier[qualityTier] ?? 1.0) * surgeMultiplier;
-  final raw = (PricingSettings.externalBaseFee + roadKm * rate) * mult;
+  final fuelCost = _fuelCost(roadKm, kmPerLiter);
+  final raw = (PricingSettings.externalBaseFee + roadKm * rate) * mult + fuelCost;
   return (math.max(raw, PricingSettings.externalMinFare * mult) / 5).ceil() * 5;
 }
