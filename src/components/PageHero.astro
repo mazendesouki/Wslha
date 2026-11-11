@@ -9,11 +9,7 @@ const { badge, title, subtitle } = Astro.props;
 ---
 
 <section class="page-hero" aria-labelledby="page-hero-title">
-  <svg class="page-hero__mark" viewBox="0 0 100 100" fill="#fff" aria-hidden="true">
-    <circle cx="50" cy="37" r="16"/>
-    <path d="M50 51 L50 60" stroke="#fff" stroke-width="7" stroke-linecap="round"/>
-    <path d="M50 60 L37 88 M50 60 L50 92 M50 60 L63 88" fill="none" stroke="#fff" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
-  </svg>
+  <img class="page-hero__mark" src="/brand-mark.png" alt="" aria-hidden="true">
   {badge && (
     <span class="page-hero__badge" aria-label={badge}>{badge}</span>
   )}

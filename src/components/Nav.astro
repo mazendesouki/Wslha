@@ -17,11 +17,7 @@ const { currentPage } = Astro.props;
       <!-- Logo -->
       <a href="/" class="nav__logo" aria-label="وصّلها — الصفحة الرئيسية">
         <div class="nav__logo-mark" aria-hidden="true">
-          <svg width="20" height="20" viewBox="0 0 100 100" fill="#fff">
-            <circle cx="50" cy="37" r="16"/>
-            <path d="M50 51 L50 60" stroke="#fff" stroke-width="7" stroke-linecap="round"/>
-            <path d="M50 60 L37 88 M50 60 L50 92 M50 60 L63 88" fill="none" stroke="#fff" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
+          <img src="/icon-192.png" width="38" height="38" alt="" loading="eager" decoding="async">
         </div>
         <div class="nav__logo-text">
           <span class="nav__logo-name" aria-hidden="true">وصّلها</span>
@@ -394,11 +390,15 @@ const { currentPage } = Astro.props;
   .nav__logo-mark {
     width: 38px; height: 38px;
     border-radius: var(--radius-lg);
-    background: var(--color-primary);
-    color: #fff;
+    overflow: hidden;
     display: flex; align-items: center; justify-content: center;
     flex-shrink: 0;
     box-shadow: var(--shadow-primary);
+  }
+
+  .nav__logo-mark img {
+    width: 100%; height: 100%;
+    display: block;
   }
 
   .nav__logo-text {
