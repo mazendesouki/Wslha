@@ -12,6 +12,7 @@ export const NAV_LINKS: NavLink[] = [
   { label: 'المتاجر',        href: '/stores',       page: 'stores'      },
   { label: 'سوق المستعمل',   href: '/marketplace',  page: 'marketplace' },
   { label: 'خدماتنا',        href: '/services',     page: 'services'    },
+  { label: 'الأمان والضمان', href: '/safety',       page: 'safety'      },
   { label: 'من نحن',         href: '/about',        page: 'about'       },
   { label: 'تواصل معنا',     href: '/contact',      page: 'contact'     },
 ];
@@ -20,6 +21,7 @@ export const FOOTER_LINKS = {
   quick: [
     { label: 'الرئيسية',       href: '/'        },
     { label: 'من نحن',          href: '/about'    },
+    { label: 'الأمان والضمان',  href: '/safety'   },
     { label: 'مشاوير',          href: '/rides'    },
     { label: 'المتاجر المحلية', href: '/stores'   },
     { label: 'تتبع الطلب',      href: '/track'    },

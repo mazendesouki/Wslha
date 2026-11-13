@@ -1,0 +1,204 @@
+---
+import Layout from '../components/layout.astro';
+import PageHero from '../components/PageHero.astro';
+import SectionHeader from '../components/SectionHeader.astro';
+
+const ICONS = {
+  idCard:  `<rect x="3" y="5" width="18" height="14" rx="2.5"/><circle cx="8.5" cy="11" r="2"/><path d="M6 16c.5-1.6 1.6-2.5 2.5-2.5s2 .9 2.5 2.5"/><path d="M14 9.5h4M14 13h4"/>`,
+  pin:     `<path d="M12 21s7-6.1 7-11.5A7 7 0 0 0 5 9.5C5 14.9 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/>`,
+  wallet:  `<path d="M4 8.5 5.5 4h13L20 8.5"/><path d="M4 8.5v11a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-11"/><path d="M9 20.5v-6a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v6"/>`,
+  lock:    `<rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>`,
+  chat:    `<path d="M4 5h16v11H8l-4 4V5z"/><path d="M8 9h8M8 12.5h5"/>`,
+  bell:    `<path d="M6 10a6 6 0 0 1 12 0c0 4 1.5 5.5 2 6H4c.5-.5 2-2 2-6z"/><path d="M10.5 19a1.5 1.5 0 0 0 3 0"/>`,
+  refund:  `<path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v4h4"/><path d="M12 8v4l2.5 1.5"/>`,
+  flag:    `<path d="M5 3v18"/><path d="M5 4h11l-2.5 4L16 12H5"/>`,
+};
+
+interface Pillar { icon: string; title: string; desc: string; }
+const PILLARS: Pillar[] = [
+  { icon: ICONS.idCard, title: 'سائقون موثّقون',       desc: 'كل سائق ومندوب يمر بمراجعة الرقم القومي ورخصة القيادة واستمارة السيارة قبل اعتماده على المنصة — ولا يقبل طلبات إلا بعد الموافقة.' },
+  { icon: ICONS.bell,   title: 'متابعة مستمرة للأوراق', desc: 'نراقب صلاحية الرخصة والاستمارة باستمرار، ونوقف أي سائق أوراقه منتهية تلقائياً لحد ما يجدّدها.' },
+  { icon: ICONS.pin,    title: 'تتبع لحظي لكل رحلة',    desc: 'من لحظة قبول الطلب لحد التسليم، تقدر تتابع موقع السائق أو المندوب لحظة بلحظة على الخريطة.' },
+  { icon: ICONS.wallet, title: 'دفع آمن',              desc: 'ادفع كاش أو من محفظتك داخل التطبيق — بياناتك البنكية مش بتتخزن عندنا أبداً.' },
+  { icon: ICONS.lock,   title: 'حماية بياناتك',         desc: 'حسابك محمي بنظام تسجيل دخول آمن وصلاحيات صارمة على كل بياناتك الشخصية وطلباتك.' },
+  { icon: ICONS.chat,   title: 'دعم متاح 24/7',         desc: 'فريق الدعم موجود على مدار الساعة لأي سؤال أو مشكلة، قبل الطلب أو أثناءه أو بعده.' },
+];
+
+interface Step { icon: string; title: string; desc: string; }
+const REFUND_STEPS: Step[] = [
+  { icon: ICONS.flag,   title: 'بلّغ عن المشكلة',   desc: 'تواصل مع فريق الدعم من خلال الموقع أو التطبيق أو واتساب فور حدوث أي مشكلة في طلبك.' },
+  { icon: ICONS.chat,   title: 'مراجعة سريعة',      desc: 'فريقنا يراجع تفاصيل الطلب مع السائق أو المتجر للتأكد من المشكلة في أسرع وقت ممكن.' },
+  { icon: ICONS.refund, title: 'استرداد قيمتك',     desc: 'لو ثبتت المشكلة، تسترد قيمة طلبك كاش أو في محفظتك داخل التطبيق — جاهزة لاستخدامها فوراً.' },
+];
+---
+
+<style>
+  .pillars { background: var(--color-bg); }
+
+  .pillars__grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--sp-6);
+    max-width: var(--container);
+    margin: 0 auto;
+  }
+
+  .pillar-card {
+    background: var(--color-bg);
+    border: 1.5px solid var(--color-border);
+    border-radius: var(--radius-xl);
+    padding: var(--sp-8);
+    transition: border-color var(--ease), box-shadow var(--ease), transform var(--ease);
+  }
+
+  .pillar-card:hover {
+    border-color: var(--color-primary);
+    box-shadow: var(--shadow-primary);
+    transform: translateY(-3px);
+  }
+
+  .pillar-card__icon {
+    width: 56px;
+    height: 56px;
+    border-radius: var(--radius-lg);
+    background: var(--color-primary-light);
+    color: var(--color-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: var(--sp-5);
+  }
+  .pillar-card__icon svg { width: 26px; height: 26px; }
+
+  .pillar-card__title { font-size: var(--text-lg); font-weight: var(--weight-black); color: var(--color-text); margin-bottom: var(--sp-2); }
+  .pillar-card__desc  { font-size: var(--text-sm); color: var(--color-text-muted); line-height: 1.8; }
+
+  /* ── Refund steps ──────────────────────────────────────────── */
+  .refund { background: var(--color-bg-soft); }
+
+  .refund__grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--sp-8);
+    max-width: var(--container);
+    margin: 0 auto;
+    padding: 0;
+    list-style: none;
+    counter-reset: refund-step;
+  }
+
+  .refund-step {
+    position: relative;
+    background: var(--color-bg);
+    border: 1.5px solid var(--color-border);
+    border-radius: var(--radius-xl);
+    padding: var(--sp-8) var(--sp-6);
+    text-align: center;
+  }
+
+  .refund-step::before {
+    counter-increment: refund-step;
+    content: counter(refund-step);
+    position: absolute;
+    top: var(--sp-4);
+    inset-inline-start: var(--sp-5);
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: var(--text-sm);
+    color: var(--color-primary);
+    opacity: .5;
+  }
+
+  .refund-step__icon {
+    width: 64px;
+    height: 64px;
+    border-radius: var(--radius-full);
+    background: var(--color-primary-light);
+    color: var(--color-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto var(--sp-5);
+  }
+  .refund-step__icon svg { width: 30px; height: 30px; }
+
+  .refund-step__title { font-size: var(--text-lg); font-weight: var(--weight-black); margin-bottom: var(--sp-2); }
+  .refund-step__desc  { font-size: var(--text-sm); color: var(--color-text-muted); line-height: 1.7; }
+
+  /* ── CTA ───────────────────────────────────────────────────── */
+  .safety-cta {
+    background: var(--color-primary-light);
+    padding: var(--sp-20) var(--sp-6);
+    text-align: center;
+  }
+
+  .safety-cta__title { font-family: var(--font-display); font-size: var(--text-3xl); font-weight: 800; margin-bottom: var(--sp-4); }
+  .safety-cta__desc  { color: var(--color-text-muted); font-size: var(--text-base); margin-bottom: var(--sp-8); }
+  .safety-cta__actions { display: flex; gap: var(--sp-4); justify-content: center; flex-wrap: wrap; }
+
+  @media (max-width: 900px) {
+    .pillars__grid { grid-template-columns: 1fr 1fr; }
+    .refund__grid  { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 560px) {
+    .pillars__grid { grid-template-columns: 1fr; }
+  }
+</style>
+
+<Layout
+  title="الأمان والضمان"
+  description="تعرّف على كيف تحافظ وصّلها على أمان رحلاتك وطلباتك وبياناتك، وكيف تسترد قيمة طلبك عند حدوث أي مشكلة"
+  page="safety"
+>
+  <PageHero
+    badge="أمان وضمان"
+    title="رحلتك وطلبك في أمان معنا"
+    subtitle="من توثيق السائقين للتتبع اللحظي للاسترداد الفوري — بنحميك في كل خطوة"
+  />
+
+  <!-- Pillars -->
+  <section class="section pillars" aria-labelledby="pillars-title">
+    <div class="container">
+      <SectionHeader badge="ركائز الأمان" title="إزاي بنحافظ على أمانك" subtitle="كل رحلة أو طلب على وصّلها بيمر بمستويات حماية واضحة" id="pillars-title" />
+      <ul class="pillars__grid" role="list">
+        {PILLARS.map(p => (
+          <li class="pillar-card">
+            <div class="pillar-card__icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" set:html={p.icon} />
+            </div>
+            <h3 class="pillar-card__title">{p.title}</h3>
+            <p class="pillar-card__desc">{p.desc}</p>
+          </li>
+        ))}
+      </ul>
+    </div>
+  </section>
+
+  <!-- Refund guarantee -->
+  <section class="section refund" aria-labelledby="refund-title">
+    <div class="container">
+      <SectionHeader badge="ضمان الاسترداد" title="حصل مشكلة؟ بنرجعلك فلوسك" subtitle="ثلاث خطوات بسيطة من التبليغ للاسترداد" id="refund-title" />
+      <ol class="refund__grid" role="list">
+        {REFUND_STEPS.map(s => (
+          <li class="refund-step">
+            <div class="refund-step__icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" set:html={s.icon} />
+            </div>
+            <h3 class="refund-step__title">{s.title}</h3>
+            <p class="refund-step__desc">{s.desc}</p>
+          </li>
+        ))}
+      </ol>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="safety-cta" aria-labelledby="safety-cta-title">
+    <h2 class="safety-cta__title" id="safety-cta-title">عندك سؤال عن الأمان أو مشكلة في طلب؟</h2>
+    <p class="safety-cta__desc">فريق الدعم متاح على مدار الساعة لمساعدتك</p>
+    <div class="safety-cta__actions">
+      <a href="/contact" class="btn btn--accent">تواصل مع الدعم</a>
+      <a href="/about" class="btn btn--outline">تعرّف علينا أكتر</a>
+    </div>
+  </section>
+</Layout>
