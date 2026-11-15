@@ -421,6 +421,9 @@
       <span class="nav-item__icon">⚠️</span> الشكاوى
       <span class="nav-item__badge hidden" id="badge-complaints">0</span>
     </button>
+    <button class="nav-item" data-section="ride-conversations">
+      <span class="nav-item__icon">💬</span> محادثات الرحلات
+    </button>
     <button class="nav-item" data-section="coupons">
       <span class="nav-item__icon">🎟️</span> الكوبونات
     </button>
@@ -1028,6 +1031,42 @@
             <thead><tr><th>النوع</th><th>العميل</th><th>السائق/المتجر</th><th>التقييم</th><th>التعليق</th><th>التاريخ</th><th>ملاحظة الأدمن</th><th>إجراء</th></tr></thead>
             <tbody id="complaints-tbody"><tr><td colspan="8" style="text-align:center;color:#94A3B8;padding:2rem">جاري التحميل…</td></tr></tbody>
           </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════ RIDE CONVERSATIONS ══════════════ -->
+    <div class="section" id="sec-ride-conversations">
+      <div class="card">
+        <div class="card__head" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.5rem">
+          <span class="card__title">💬 محادثات الرحلات (سائق↔عميل)</span>
+          <button class="btn btn--ghost btn--sm" onclick="loadRideConversations()">🔄 تحديث</button>
+        </div>
+        <p style="font-size:.78rem;color:#5C716D;margin:0 0 .75rem">
+          كل محادثة مباشرة بين سائق وعميل — متاحة أثناء الرحلة ولحد ٤٨ ساعة بعد انتهائها — للاطّلاع والتدخل عند أي سوء تصرف محتمل، قبل الرحلة أو أثناءها أو بعدها.
+        </p>
+        <input class="search-input" id="rideconv-search" type="text" placeholder="بحث برقم العميل، رقم السائق، أو رقم الرحلة..." style="width:100%;margin-bottom:.75rem" onkeydown="if(event.key==='Enter')loadRideConversations()"/>
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr><th>العميل</th><th>السائق</th><th>حالة الرحلة</th><th>عدد الرسائل</th><th>آخر رسالة</th><th>آخر نشاط</th><th>إجراء</th></tr></thead>
+            <tbody id="rideconv-tbody"><tr><td colspan="7" style="text-align:center;color:#94A3B8;padding:2rem">جاري التحميل…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Conversation thread modal -->
+      <div id="rideconv-modal" style="display:none;position:fixed;inset:0;background:rgba(8,23,22,.6);z-index:1000;align-items:center;justify-content:center;padding:1rem">
+        <div style="background:#fff;border-radius:14px;padding:1.5rem;max-width:560px;width:100%;box-shadow:0 30px 70px rgba(0,0,0,.35);max-height:85vh;display:flex;flex-direction:column">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.25rem">
+            <h3 style="font-size:1rem;font-weight:800;color:#10201E" id="rideconv-modal-title">—</h3>
+            <button onclick="closeRideConvModal()" style="background:none;border:none;color:#5C716D;font-size:1.2rem;cursor:pointer">✕</button>
+          </div>
+          <p style="font-size:.72rem;color:#94A3B8;margin:0 0 .75rem" id="rideconv-modal-sub">—</p>
+          <div id="rideconv-thread" style="flex:1;overflow-y:auto;background:#EAF0EE;border-radius:8px;padding:.75rem;margin-bottom:1rem;min-height:200px;display:flex;flex-direction:column;gap:.5rem"></div>
+          <div style="display:flex;gap:.5rem">
+            <input class="search-input" id="rideconv-reply-input" type="text" placeholder="تدخّل رسمي من الإدارة (تحذير، توضيح)..." style="flex:1" onkeydown="if(event.key==='Enter')sendRideConvMessage()"/>
+            <button class="btn btn--primary" onclick="sendRideConvMessage()" id="rideconv-reply-btn">إرسال</button>
+          </div>
         </div>
       </div>
     </div>
@@ -2682,7 +2721,7 @@ const sectionTitles = {
   dash:'لوحة التحكم', users:'إدارة المستخدمين', drivers:'إدارة السائقين',
   merchants:'إدارة التجار', orders:'إدارة الطلبات', rides:'إدارة الرحلات',
   stores:'إدارة المتاجر', courier:'الطرود والمستندات', 'merchant-delivery':'توصيل التجار', 'general-delivery':'خدمة دليفري', marketplace:'سوق المستعمل',
-  corporate:'عقود الشركات', support:'الدعم الفني', complaints:'الشكاوى', coupons:'الكوبونات', campaigns:'إشعارات ترويجية',
+  corporate:'عقود الشركات', support:'الدعم الفني', complaints:'الشكاوى', 'ride-conversations':'محادثات الرحلات', coupons:'الكوبونات', campaigns:'إشعارات ترويجية',
   'app-reviews':'مراجعات التطبيق',
   finance:'التقارير المالية', wallets:'إدارة المحافظ', 'service-controls':'التحكم في الخدمات', 'vehicle-services':'خدمات المركبات', settings:'الإعدادات'
 };
@@ -2740,7 +2779,7 @@ async function setAppReviewApproved(id, approved) {
 const loaders = { dash:loadDash, users:loadUsers, drivers:loadDriversSection,
   merchants:loadMerchantsSection, orders:loadOrders, rides:loadRides, stores:loadStores,
   courier:loadCourierOrders, 'merchant-delivery':loadMerchantDeliveries, 'general-delivery':loadGeneralDeliveries, marketplace:loadMarketplaceSection, corporate:loadCorporateContracts,
-  messages:loadMessages, support:loadSupportChats, complaints:loadComplaints, coupons:loadCoupons, campaigns:loadCampaignsSection, 'app-reviews':loadAppReviews, finance:loadFinance, wallets:loadWalletsSection, 'service-controls':loadServiceControls, 'vehicle-services':loadVehicleServices, settings:loadSettingsSection };
+  messages:loadMessages, support:loadSupportChats, complaints:loadComplaints, 'ride-conversations':loadRideConversations, coupons:loadCoupons, campaigns:loadCampaignsSection, 'app-reviews':loadAppReviews, finance:loadFinance, wallets:loadWalletsSection, 'service-controls':loadServiceControls, 'vehicle-services':loadVehicleServices, settings:loadSettingsSection };
 
 document.querySelectorAll('.nav-item').forEach(btn => {
   btn.addEventListener('click', () => {
@@ -4900,6 +4939,102 @@ async function reopenComplaint(ratingId) {
   if (ok) { showToast('↺ تم إعادة فتح الشكوى', '#D97706'); loadComplaints(); }
   else { clearAdminPass(); showToast('❌ فشل التحديث — تحقق من كلمة مرور المشرف', '#DC2626'); }
 }
+
+/* ═══════════════════ RIDE CONVERSATIONS ═══════════════════════
+   Direct driver<->customer chat (db/security-185) — management needs
+   visibility into these to handle any misconduct before, during, or
+   after a trip, per explicit request. Read-only browsing + an
+   optional official intervention message (sender_role='admin'),
+   same password-verified RPC pattern as the support-chat inbox. */
+let allRideConvs = [];
+let currentRideConv = null;
+let _rideConvPollTimer = null;
+
+async function loadRideConversations() {
+  const pass = await getAdminPass();
+  if (!pass) return;
+  const search = (document.getElementById('rideconv-search')?.value || '').trim();
+  const rows = await sbRpcRows('admin_list_ride_conversations', {
+    p_admin_phone: ADMIN.phone, p_admin_password: pass, p_search: search || null,
+  });
+  if (rows === null) { clearAdminPass(); return; }
+  allRideConvs = rows;
+  const tbody = document.getElementById('rideconv-tbody');
+  if (!tbody) return;
+  if (!rows.length) { tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#94A3B8;padding:2rem">لا توجد محادثات رحلات بعد</td></tr>'; return; }
+
+  const statusLabel = { pending:'⏳ معلّقة', accepted:'✅ مقبولة', arrived:'📍 وصل السائق', in_progress:'🚗 جارية', completed:'🏁 مكتملة', cancelled:'❌ ملغاة' };
+  tbody.innerHTML = rows.map(c => `
+    <tr>
+      <td style="font-weight:700;font-size:.82rem" dir="ltr">${escapeHtml(c.customer_phone || '—')}</td>
+      <td style="font-size:.82rem" dir="ltr">${escapeHtml(c.driver_phone || '—')}</td>
+      <td style="font-size:.78rem">${statusLabel[c.ride_status] || escapeHtml(c.ride_status || '—')}</td>
+      <td style="font-size:.82rem;text-align:center">${c.message_count}</td>
+      <td style="max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.82rem">${escapeHtml(c.last_message) || '—'}</td>
+      <td style="font-size:.76rem;color:#64748B;white-space:nowrap">${new Date(c.last_message_at).toLocaleString('ar-EG')}</td>
+      <td><button onclick="openRideConv('${c.ride_id}')" style="padding:.3rem .7rem;background:#0E4B49;color:#fff;border:none;border-radius:5px;font-size:.78rem;cursor:pointer">فتح المحادثة</button></td>
+    </tr>`).join('');
+}
+
+async function openRideConv(rideId) {
+  const c = allRideConvs.find(x => x.ride_id === rideId);
+  if (!c) return;
+  currentRideConv = c;
+  document.getElementById('rideconv-modal-title').textContent = `${c.customer_phone || '—'} ↔ ${c.driver_phone || '—'}`;
+  document.getElementById('rideconv-modal-sub').textContent = `رحلة ${rideId}`;
+  document.getElementById('rideconv-modal').style.display = 'flex';
+  await refreshRideConvThread();
+  clearInterval(_rideConvPollTimer);
+  _rideConvPollTimer = setInterval(refreshRideConvThread, 5000);
+}
+
+function closeRideConvModal() {
+  document.getElementById('rideconv-modal').style.display = 'none';
+  clearInterval(_rideConvPollTimer);
+  currentRideConv = null;
+  loadRideConversations();
+}
+
+async function refreshRideConvThread() {
+  if (!currentRideConv) return;
+  const pass = await getAdminPass();
+  if (!pass) return;
+  const rows = await sbRpcRows('admin_get_ride_messages', {
+    p_admin_phone: ADMIN.phone, p_admin_password: pass, p_ride_id: currentRideConv.ride_id,
+  });
+  if (rows === null) return;
+  const thread = document.getElementById('rideconv-thread');
+  if (!thread) return;
+  const roleColor = { driver: '#0E4B49', customer: '#334155', admin: '#DC2626' };
+  const roleLabel = { admin: '👮 إدارة وصّلها' };
+  thread.innerHTML = rows.map(m => `
+    <div style="align-self:${m.sender_role === 'customer' ? 'flex-start' : 'flex-end'};max-width:80%">
+      ${roleLabel[m.sender_role] ? `<div style="font-size:.68rem;color:${roleColor[m.sender_role]};font-weight:800;margin-bottom:2px;text-align:left">${roleLabel[m.sender_role]}</div>` : ''}
+      <div style="background:${roleColor[m.sender_role] || '#334155'};color:#f1f5f9;padding:.5rem .75rem;border-radius:10px;font-size:.85rem;line-height:1.6">${escapeHtml(m.body)}</div>
+      <div style="font-size:.68rem;color:#64748B;margin-top:2px;${m.sender_role !== 'customer' ? 'text-align:left' : ''}">${new Date(m.created_at).toLocaleTimeString('ar-EG')}</div>
+    </div>`).join('') || '<div style="color:#64748B;font-size:.82rem;text-align:center">لسه مفيش رسائل</div>';
+  thread.scrollTop = thread.scrollHeight;
+}
+
+async function sendRideConvMessage() {
+  if (!currentRideConv) return;
+  const input = document.getElementById('rideconv-reply-input');
+  const body = (input.value || '').trim();
+  if (!body) return;
+  const pass = await getAdminPass();
+  if (!pass) return;
+  const btn = document.getElementById('rideconv-reply-btn');
+  btn.disabled = true;
+  const ok = await sbRpc('admin_send_ride_message', {
+    p_admin_phone: ADMIN.phone, p_admin_password: pass, p_ride_id: currentRideConv.ride_id, p_body: body,
+  });
+  btn.disabled = false;
+  if (ok) { input.value = ''; await refreshRideConvThread(); }
+  else { clearAdminPass(); showToast('❌ فشل الإرسال — تحقق من كلمة مرور المشرف', '#DC2626'); }
+}
+
+const rideConvModalEl = document.getElementById('rideconv-modal');
+if (rideConvModalEl) rideConvModalEl.addEventListener('click', (e) => { if (e.target === rideConvModalEl) closeRideConvModal(); });
 
 /* ═══════════════════ COUPONS ═════════════════════════════════ */
 // coupons/coupon_redemptions carry no direct grants either (db/security-75)

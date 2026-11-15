@@ -112,6 +112,7 @@ const Map<String, Map<String, String>> batchFStrings = {
     'en': 'Start the conversation — messages here are only between you and the other party in this ride',
   },
   'ride_chat_hint': {'ar': 'اكتب رسالة...', 'en': 'Type a message...'},
+  'ride_chat_admin_label': {'ar': '👮 إدارة وصّلها', 'en': '👮 Wslha management'},
 
   // notifications_screen.dart
   'notif_list_clear_title': {'ar': 'مسح الإشعارات', 'en': 'Clear notifications'},

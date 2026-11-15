@@ -82,6 +82,11 @@ class _RideChatScreenState extends State<RideChatScreen> {
                   itemBuilder: (context, i) {
                     final m = messages[i];
                     final isMine = m.senderPhone == widget.myPhone;
+                    // Admin can post into this thread too (db/security-185,
+                    // "اطّلاع الأدمن على محادثات الرحلات") to intervene on
+                    // misconduct — labelled distinctly so neither side
+                    // mistakes it for a message from the other party.
+                    final isAdmin = m.senderRole == 'admin';
                     return Align(
                       alignment: isMine ? Alignment.centerLeft : Alignment.centerRight,
                       child: Container(
@@ -89,14 +94,18 @@ class _RideChatScreenState extends State<RideChatScreen> {
                         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                         constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.72),
                         decoration: BoxDecoration(
-                          color: isMine ? AppColors.primary : context.surfaceColor,
+                          color: isAdmin ? AppColors.error.withValues(alpha: 0.1) : (isMine ? AppColors.primary : context.surfaceColor),
                           borderRadius: BorderRadius.circular(14),
-                          border: isMine ? null : Border.all(color: context.borderColor),
+                          border: isAdmin ? Border.all(color: AppColors.error, width: 1.5) : (isMine ? null : Border.all(color: context.borderColor)),
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(m.body, style: TextStyle(color: isMine ? Colors.white : context.bodyText, fontSize: 14)),
+                            if (isAdmin) ...[
+                              Text(context.tr('ride_chat_admin_label'), style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.w900, color: AppColors.error)),
+                              const SizedBox(height: 3),
+                            ],
+                            Text(m.body, style: TextStyle(color: isAdmin ? AppColors.error : (isMine ? Colors.white : context.bodyText), fontSize: 14)),
                             const SizedBox(height: 4),
                             Text(
                               '${m.createdAt.hour.toString().padLeft(2, '0')}:${m.createdAt.minute.toString().padLeft(2, '0')}',
