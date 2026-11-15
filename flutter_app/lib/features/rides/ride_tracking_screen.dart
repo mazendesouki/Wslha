@@ -178,6 +178,24 @@ class _RideTrackingScreenState extends State<RideTrackingScreen> {
     return i < 0 ? 0 : i;
   }
 
+  /// Whether the direct driver↔customer chat (RideChatScreen,
+  /// db/security-69) should still be reachable. It used to vanish the
+  /// instant a ride became 'completed' or 'cancelled' — exactly when most
+  /// real complaints come up (overcharge, no-show dispute, bad conduct) —
+  /// even though send_ride_message() itself has no status check at all,
+  /// only a participant check. Kept open for 48h after the ride ends so a
+  /// dispute can actually be resolved directly between the two people
+  /// involved, not just routed to support.
+  static const _chatGraceWindow = Duration(hours: 48);
+  bool _chatStillAvailable(Map<String, dynamic> ride, String status, bool isCancelled) {
+    if (!isCancelled && status != 'completed') return true;
+    final anchorStr = (status == 'completed' ? ride['completed_at'] : ride['created_at']) as String?;
+    if (anchorStr == null) return false;
+    final anchor = DateTime.tryParse(anchorStr);
+    if (anchor == null) return false;
+    return DateTime.now().toUtc().difference(anchor.toUtc()) < _chatGraceWindow;
+  }
+
   /// Same step progression as driver_home_screen.dart's _advanceRide() —
   /// lets the driver work an already-accepted ride from the history list
   /// (طلباتي ورحلاتي), not just the one currently active on the home tab.
@@ -293,7 +311,7 @@ class _RideTrackingScreenState extends State<RideTrackingScreen> {
                 foregroundColor: Colors.white,
                 title: Text(widget.isDriverView ? context.tr('ride_tracking_title_driver') : context.tr('ride_tracking_title_customer')),
                 actions: [
-                  if (FeatureFlags.chatEnabled && !isCancelled && status != 'completed' && driverPhone != null && driverPhone.isNotEmpty)
+                  if (FeatureFlags.chatEnabled && driverPhone != null && driverPhone.isNotEmpty && _chatStillAvailable(ride, status, isCancelled))
                     IconButton(
                       onPressed: () {
                         final myPhone = widget.isDriverView ? driverPhone : customerPhone;

@@ -417,6 +417,10 @@
       <span class="nav-item__icon">🎧</span> الدعم الفني
       <span class="nav-item__badge hidden" id="badge-support">0</span>
     </button>
+    <button class="nav-item" data-section="complaints">
+      <span class="nav-item__icon">⚠️</span> الشكاوى
+      <span class="nav-item__badge hidden" id="badge-complaints">0</span>
+    </button>
     <button class="nav-item" data-section="coupons">
       <span class="nav-item__icon">🎟️</span> الكوبونات
     </button>
@@ -999,6 +1003,31 @@
             <input class="search-input" id="support-reply-input" type="text" placeholder="اكتب ردك هنا..." style="flex:1" onkeydown="if(event.key==='Enter')sendSupportReply()"/>
             <button class="btn btn--primary" onclick="sendSupportReply()" id="support-reply-btn">إرسال</button>
           </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════ COMPLAINTS ══════════════════════ -->
+    <div class="section" id="sec-complaints">
+      <div class="card">
+        <div class="card__head" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.5rem">
+          <span class="card__title">⚠️ الشكاوى</span>
+          <div style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap">
+            <div style="display:flex;background:#F1F5F4;border-radius:8px;padding:2px">
+              <button class="btn btn--sm complaints-tab-btn" data-status="open" onclick="setComplaintsTab('open')" style="padding:.35rem .9rem;border:none;border-radius:6px;font-size:.78rem;font-weight:700;cursor:pointer;background:#0E4B49;color:#fff">مفتوحة</button>
+              <button class="btn btn--sm complaints-tab-btn" data-status="resolved" onclick="setComplaintsTab('resolved')" style="padding:.35rem .9rem;border:none;border-radius:6px;font-size:.78rem;font-weight:700;cursor:pointer;background:transparent;color:#5C716D">تم التعامل معها</button>
+            </div>
+            <button class="btn btn--ghost btn--sm" onclick="loadComplaints()">🔄 تحديث</button>
+          </div>
+        </div>
+        <p style="font-size:.78rem;color:#5C716D;margin:0 0 .75rem">
+          تقييمات الرحلات/الطلبات اللي فيها تعليق مكتوب و٣ نجوم أو أقل — أقرب إشارة فعلية لشكوى حقيقية متاحة حاليًا، لحد ما يتعمل نظام تذاكر شكاوى منفصل.
+        </p>
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr><th>النوع</th><th>العميل</th><th>السائق/المتجر</th><th>التقييم</th><th>التعليق</th><th>التاريخ</th><th>ملاحظة الأدمن</th><th>إجراء</th></tr></thead>
+            <tbody id="complaints-tbody"><tr><td colspan="8" style="text-align:center;color:#94A3B8;padding:2rem">جاري التحميل…</td></tr></tbody>
+          </table>
         </div>
       </div>
     </div>
@@ -2653,7 +2682,7 @@ const sectionTitles = {
   dash:'لوحة التحكم', users:'إدارة المستخدمين', drivers:'إدارة السائقين',
   merchants:'إدارة التجار', orders:'إدارة الطلبات', rides:'إدارة الرحلات',
   stores:'إدارة المتاجر', courier:'الطرود والمستندات', 'merchant-delivery':'توصيل التجار', 'general-delivery':'خدمة دليفري', marketplace:'سوق المستعمل',
-  corporate:'عقود الشركات', support:'الدعم الفني', coupons:'الكوبونات', campaigns:'إشعارات ترويجية',
+  corporate:'عقود الشركات', support:'الدعم الفني', complaints:'الشكاوى', coupons:'الكوبونات', campaigns:'إشعارات ترويجية',
   'app-reviews':'مراجعات التطبيق',
   finance:'التقارير المالية', wallets:'إدارة المحافظ', 'service-controls':'التحكم في الخدمات', 'vehicle-services':'خدمات المركبات', settings:'الإعدادات'
 };
@@ -2711,7 +2740,7 @@ async function setAppReviewApproved(id, approved) {
 const loaders = { dash:loadDash, users:loadUsers, drivers:loadDriversSection,
   merchants:loadMerchantsSection, orders:loadOrders, rides:loadRides, stores:loadStores,
   courier:loadCourierOrders, 'merchant-delivery':loadMerchantDeliveries, 'general-delivery':loadGeneralDeliveries, marketplace:loadMarketplaceSection, corporate:loadCorporateContracts,
-  messages:loadMessages, support:loadSupportChats, coupons:loadCoupons, campaigns:loadCampaignsSection, 'app-reviews':loadAppReviews, finance:loadFinance, wallets:loadWalletsSection, 'service-controls':loadServiceControls, 'vehicle-services':loadVehicleServices, settings:loadSettingsSection };
+  messages:loadMessages, support:loadSupportChats, complaints:loadComplaints, coupons:loadCoupons, campaigns:loadCampaignsSection, 'app-reviews':loadAppReviews, finance:loadFinance, wallets:loadWalletsSection, 'service-controls':loadServiceControls, 'vehicle-services':loadVehicleServices, settings:loadSettingsSection };
 
 document.querySelectorAll('.nav-item').forEach(btn => {
   btn.addEventListener('click', () => {
@@ -4786,6 +4815,91 @@ async function sendSupportReply() {
 
 const supportModalEl = document.getElementById('support-modal');
 if (supportModalEl) supportModalEl.addEventListener('click', (e) => { if (e.target === supportModalEl) closeSupportModal(); });
+
+/* ═══════════════════ COMPLAINTS ═══════════════════════════════
+   ratings rows with a written comment and ≤3★ (db/security-184) —
+   the closest real signal to "an actual complaint" this platform has,
+   until/unless a separate ticket system exists. Tab toggles between
+   open (needs attention) and resolved (already handled) via
+   admin_list_complaints' p_only_open. */
+let allComplaints = [];
+let complaintsTab = 'open';
+
+function setComplaintsTab(status) {
+  complaintsTab = status;
+  document.querySelectorAll('.complaints-tab-btn').forEach(b => {
+    const active = b.dataset.status === status;
+    b.style.background = active ? '#0E4B49' : 'transparent';
+    b.style.color = active ? '#fff' : '#5C716D';
+  });
+  loadComplaints();
+}
+
+async function loadComplaints() {
+  const pass = await getAdminPass();
+  if (!pass) return;
+  const rows = await sbRpcRows('admin_list_complaints', {
+    p_admin_phone: ADMIN.phone, p_admin_password: pass, p_only_open: complaintsTab === 'open',
+  });
+  if (rows === null) { clearAdminPass(); return; }
+  allComplaints = rows;
+  const tbody = document.getElementById('complaints-tbody');
+  if (!tbody) return;
+
+  if (complaintsTab === 'open') {
+    const badge = document.getElementById('badge-complaints');
+    if (badge) {
+      if (rows.length > 0) { badge.textContent = String(rows.length); badge.classList.remove('hidden'); }
+      else badge.classList.add('hidden');
+    }
+  }
+
+  if (!rows.length) {
+    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;color:#94A3B8;padding:2rem">${complaintsTab === 'open' ? 'لا توجد شكاوى مفتوحة 🎉' : 'لا توجد شكاوى متعامل معها بعد'}</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = rows.map(c => {
+    const isOrder = !!c.order_code;
+    const lowestRating = Math.min(...[c.rating, c.store_rating, c.driver_rating].filter(v => v !== null && v !== undefined));
+    const counterpartPhone = c.driver_phone || '—';
+    return `
+    <tr>
+      <td style="font-size:.78rem">${isOrder ? '📦 طلب' : '🚗 رحلة'}</td>
+      <td style="font-weight:700;font-size:.82rem" dir="ltr">${escapeHtml(c.customer_phone || '—')}</td>
+      <td style="font-size:.82rem" dir="ltr">${escapeHtml(counterpartPhone)}</td>
+      <td><span style="padding:2px 8px;border-radius:99px;font-size:.78rem;font-weight:700;background:#FEE2E2;color:#DC2626">${lowestRating} ⭐</span></td>
+      <td style="max-width:260px;font-size:.82rem;line-height:1.5">${escapeHtml(c.comment)}</td>
+      <td style="font-size:.76rem;color:#64748B;white-space:nowrap">${new Date(c.created_at).toLocaleString('ar-EG')}</td>
+      <td style="max-width:180px;font-size:.78rem;color:#334155">${c.admin_note ? escapeHtml(c.admin_note) : '<span style=\"color:#94A3B8\">—</span>'}</td>
+      <td style="white-space:nowrap">
+        ${complaintsTab === 'open'
+          ? `<button onclick="resolveComplaint('${c.id}')" style="padding:.3rem .7rem;background:#16A34A;color:#fff;border:none;border-radius:5px;font-size:.78rem;cursor:pointer">✓ تم التعامل</button>`
+          : `<button onclick="reopenComplaint('${c.id}')" style="padding:.3rem .7rem;background:#D97706;color:#fff;border:none;border-radius:5px;font-size:.78rem;cursor:pointer">↺ إعادة فتح</button>`}
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+async function resolveComplaint(ratingId) {
+  const note = window.prompt('ملاحظة داخلية (اختياري) — إزاي اتحلت الشكوى؟', '');
+  if (note === null) return; // cancelled
+  const pass = await getAdminPass();
+  if (!pass) return;
+  const ok = await sbRpc('admin_resolve_complaint', {
+    p_admin_phone: ADMIN.phone, p_admin_password: pass, p_rating_id: ratingId, p_note: note || null,
+  });
+  if (ok) { showToast('✓ تم تسجيل الشكوى كمتعامل معها', '#16A34A'); loadComplaints(); }
+  else { clearAdminPass(); showToast('❌ فشل التحديث — تحقق من كلمة مرور المشرف', '#DC2626'); }
+}
+
+async function reopenComplaint(ratingId) {
+  const pass = await getAdminPass();
+  if (!pass) return;
+  const ok = await sbRpc('admin_reopen_complaint', { p_admin_phone: ADMIN.phone, p_admin_password: pass, p_rating_id: ratingId });
+  if (ok) { showToast('↺ تم إعادة فتح الشكوى', '#D97706'); loadComplaints(); }
+  else { clearAdminPass(); showToast('❌ فشل التحديث — تحقق من كلمة مرور المشرف', '#DC2626'); }
+}
 
 /* ═══════════════════ COUPONS ═════════════════════════════════ */
 // coupons/coupon_redemptions carry no direct grants either (db/security-75)
