@@ -4921,7 +4921,7 @@ async function loadComplaints() {
 }
 
 async function resolveComplaint(ratingId) {
-  const note = window.prompt('ملاحظة داخلية (اختياري) — إزاي اتحلت الشكوى؟', '');
+  const note = await showTextGate('ملاحظة داخلية (اختياري) — إزاي اتحلت الشكوى؟');
   if (note === null) return; // cancelled
   const pass = await getAdminPass();
   if (!pass) return;
