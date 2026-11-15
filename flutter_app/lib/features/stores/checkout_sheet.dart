@@ -6,6 +6,7 @@ import '../../core/service_controls.dart';
 import '../../core/session.dart';
 import '../../core/supabase_client.dart';
 import '../../core/theme.dart';
+import '../../shared/widgets/key_value_row.dart';
 import '../account/account_repository.dart';
 import 'cart_store.dart';
 
@@ -288,25 +289,13 @@ class _CheckoutSheetState extends State<CheckoutSheet> {
     }
   }
 
-  // Value wrapped in Flexible so a long value never overflows past the
-  // sheet's edge (same bug reported and fixed across the ride/order
-  // invoice rows — see ride_tracking_screen.dart's _row/_infoRow).
-  Widget _summaryRow(String label, String value, {bool bold = false}) => Padding(
+  // Delegates to KeyValueRow (shared/widgets/key_value_row.dart) — see
+  // that widget's doc comment for why.
+  Widget _summaryRow(String label, String value, {bool bold = false}) => KeyValueRow(
+        label: label,
+        value: value,
         padding: const EdgeInsets.symmetric(vertical: 2),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(label, style: TextStyle(fontSize: bold ? 14 : 12, fontWeight: bold ? FontWeight.w900 : FontWeight.w600, color: bold ? context.bodyText : AppColors.textFaint)),
-            const SizedBox(width: 10),
-            Flexible(
-              child: Text(
-                value,
-                textAlign: TextAlign.end,
-                style: TextStyle(fontSize: bold ? 14 : 12, fontWeight: FontWeight.w800, color: bold ? AppColors.primary : context.bodyText),
-              ),
-            ),
-          ],
-        ),
+        labelStyle: TextStyle(fontSize: bold ? 14 : 12, fontWeight: bold ? FontWeight.w900 : FontWeight.w600, color: bold ? context.bodyText : AppColors.textFaint),
+        valueStyle: TextStyle(fontSize: bold ? 14 : 12, fontWeight: FontWeight.w800, color: bold ? AppColors.primary : context.bodyText),
       );
 }

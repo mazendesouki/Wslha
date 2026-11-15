@@ -12,6 +12,7 @@ import '../../core/pricing_settings.dart';
 import '../../core/session.dart';
 import '../../core/supabase_client.dart';
 import '../../core/theme.dart';
+import '../../shared/widgets/key_value_row.dart';
 import '../account/account_repository.dart';
 import '../ratings/ratings_list_screen.dart';
 import '../ratings/ratings_repository.dart';
@@ -862,20 +863,7 @@ class DriverProfileScreenState extends State<DriverProfileScreen> {
     );
   }
 
-  // Value wrapped in Flexible so a long value never overflows past the
-  // card's edge (same bug reported and fixed across the ride/order
-  // invoice rows — see ride_tracking_screen.dart's _row/_infoRow).
-  Widget _infoRow(String label, String value) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(label, style: const TextStyle(fontSize: 12, color: AppColors.textFaint, fontWeight: FontWeight.w700)),
-        const SizedBox(width: 10),
-        Flexible(
-          child: Text(value, textAlign: TextAlign.end, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w900)),
-        ),
-      ],
-    );
-  }
+  // Delegates to KeyValueRow (shared/widgets/key_value_row.dart) — see
+  // that widget's doc comment for why.
+  Widget _infoRow(String label, String value) => KeyValueRow(label: label, value: value);
 }

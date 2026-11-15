@@ -6,6 +6,7 @@ import '../../core/invoice_pdf.dart';
 import '../../core/invoice_text.dart';
 import '../../core/supabase_client.dart';
 import '../../core/theme.dart';
+import '../../shared/widgets/key_value_row.dart';
 import '../orders/orders_repository.dart' show statusAr;
 
 /// Full invoice view for a single `rides` row (local/external/airport
@@ -230,26 +231,12 @@ class _RideInvoiceScreenState extends State<RideInvoiceScreen> {
         child: Text(text, style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 13)),
       );
 
-  // Value wrapped in Flexible so a long address/note wraps onto multiple
-  // lines instead of overflowing past the card edge (same bug reported
-  // and fixed across the ride invoice/receipt dialogs — see
-  // ride_tracking_screen.dart's _row/_infoRow for the full note).
-  Widget _row(String label, String value, {bool bold = false}) => Padding(
-        padding: const EdgeInsets.symmetric(vertical: 3),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(label, style: TextStyle(fontSize: bold ? 14 : 12, color: bold ? context.bodyText : AppColors.textFaint, fontWeight: bold ? FontWeight.w900 : FontWeight.w600)),
-            const SizedBox(width: 10),
-            Flexible(
-              child: Text(
-                value,
-                textAlign: TextAlign.end,
-                style: TextStyle(fontSize: bold ? 14 : 12, color: bold ? AppColors.primary : context.bodyText, fontWeight: FontWeight.w800),
-              ),
-            ),
-          ],
-        ),
+  // Delegates to KeyValueRow (shared/widgets/key_value_row.dart) — see
+  // that widget's doc comment for why.
+  Widget _row(String label, String value, {bool bold = false}) => KeyValueRow(
+        label: label,
+        value: value,
+        labelStyle: TextStyle(fontSize: bold ? 14 : 12, color: bold ? context.bodyText : AppColors.textFaint, fontWeight: bold ? FontWeight.w900 : FontWeight.w600),
+        valueStyle: TextStyle(fontSize: bold ? 14 : 12, color: bold ? AppColors.primary : context.bodyText, fontWeight: FontWeight.w800),
       );
 }

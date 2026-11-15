@@ -13,6 +13,7 @@ import '../../core/push.dart';
 import '../../core/session.dart';
 import '../../core/theme.dart';
 import '../../shared/widgets/finish_ride_button.dart';
+import '../../shared/widgets/key_value_row.dart';
 import '../../shared/widgets/logout_button.dart';
 import '../../shared/widgets/sos_button.dart';
 import '../../shared/widgets/waiting_timer_card.dart';
@@ -1909,34 +1910,21 @@ class _ReceiptDialog extends StatelessWidget {
     );
   }
 
-  // Same overflow bug and fix as ride_tracking_screen.dart's
-  // _CustomerInvoiceDialog._row (the customer-facing twin of this
-  // driver-facing receipt) — value now gets its own Expanded so a long
-  // address wraps instead of overflowing past the dialog's edge.
+  // Delegates to KeyValueRow (shared/widgets/key_value_row.dart) — the
+  // customer-facing twin of this receipt (ride_tracking_screen.dart's
+  // _CustomerInvoiceDialog._row) does the same, see that widget's doc
+  // comment for why.
   Widget _row(String label, String value, {bool bold = false, Color? color}) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 3),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Expanded(
-            child: Text(label, style: const TextStyle(fontSize: 13, color: AppColors.textFaint, fontWeight: FontWeight.w700)),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            flex: 2,
-            child: Text(
-              value,
-              textAlign: TextAlign.end,
-              style: TextStyle(
-                fontSize: bold ? 17 : 14,
-                fontWeight: bold ? FontWeight.w900 : FontWeight.w800,
-                color: color ?? Colors.black87,
-              ),
-            ),
-          ),
-        ],
+    return KeyValueRow(
+      label: label,
+      value: value,
+      flexLabel: true,
+      gap: 12,
+      labelStyle: const TextStyle(fontSize: 13, color: AppColors.textFaint, fontWeight: FontWeight.w700),
+      valueStyle: TextStyle(
+        fontSize: bold ? 17 : 14,
+        fontWeight: bold ? FontWeight.w900 : FontWeight.w800,
+        color: color ?? Colors.black87,
       ),
     );
   }
