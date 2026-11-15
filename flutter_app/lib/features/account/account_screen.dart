@@ -770,14 +770,24 @@ class AccountScreenState extends State<AccountScreen> {
     );
   }
 
+  // Value wrapped in Flexible so a long value never overflows past the
+  // card's edge (same bug reported and fixed across the ride/order
+  // invoice rows — see ride_tracking_screen.dart's _row/_infoRow).
   Widget _infoRow(IconData icon, String label, String value) {
     return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Icon(icon, size: 18, color: AppColors.textFaint),
         const SizedBox(width: 8),
         Text(label, style: const TextStyle(fontSize: 12, color: AppColors.textFaint, fontWeight: FontWeight.w700)),
-        const Spacer(),
-        Text(value, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w900)),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Text(
+            value,
+            textAlign: TextAlign.end,
+            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w900),
+          ),
+        ),
       ],
     );
   }

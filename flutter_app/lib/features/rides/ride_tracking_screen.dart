@@ -554,20 +554,35 @@ class _RideTrackingScreenState extends State<RideTrackingScreen> {
     );
   }
 
+  // Value side wraps within its own Expanded instead of staying an
+  // unconstrained single-line Text — a long address (plus-code-prefixed
+  // Google addresses routinely run 50+ chars) was overflowing straight
+  // past the card's edge instead of wrapping. Keep any future row builder
+  // in this file — or driver_home_screen.dart's near-identical _row — on
+  // this same shape: label gets a fixed/compact side, value gets an
+  // Expanded with textAlign: end and no maxLines cap.
   Widget _infoRow(String label, String value, {bool highlight = false}) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(label, style: const TextStyle(fontSize: 12, color: AppColors.textFaint, fontWeight: FontWeight.w700)),
-        Text(
-          value,
-          style: TextStyle(
-            fontSize: highlight ? 16 : 13,
-            fontWeight: FontWeight.w900,
-            color: highlight ? AppColors.success : context.bodyText,
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label, style: const TextStyle(fontSize: 12, color: AppColors.textFaint, fontWeight: FontWeight.w700)),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              value,
+              textAlign: TextAlign.end,
+              style: TextStyle(
+                fontSize: highlight ? 16 : 13,
+                fontWeight: FontWeight.w900,
+                color: highlight ? AppColors.success : context.bodyText,
+              ),
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }
@@ -1553,22 +1568,37 @@ class _CustomerInvoiceDialog extends StatelessWidget {
     );
   }
 
+  // Value side kept an unconstrained single-line Text while only the
+  // label was Expanded — a long address overflowed straight past the
+  // dialog's edge instead of wrapping. Value now gets its own Expanded
+  // (wider flex, since it's usually the longer side) so it wraps to
+  // multiple lines instead. Same fix applied to driver_home_screen.dart's
+  // near-identical _ReceiptDialog._row and this file's _infoRow.
   Widget _row(String label, String value, {bool bold = false, Color? color}) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Expanded(
-          child: Text(label, style: const TextStyle(fontSize: 13, color: AppColors.textFaint, fontWeight: FontWeight.w700)),
-        ),
-        Text(
-          value,
-          style: TextStyle(
-            fontSize: bold ? 17 : 14,
-            fontWeight: bold ? FontWeight.w900 : FontWeight.w800,
-            color: color ?? Colors.black87,
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 3),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Expanded(
+            child: Text(label, style: const TextStyle(fontSize: 13, color: AppColors.textFaint, fontWeight: FontWeight.w700)),
           ),
-        ),
-      ],
+          const SizedBox(width: 12),
+          Expanded(
+            flex: 2,
+            child: Text(
+              value,
+              textAlign: TextAlign.end,
+              style: TextStyle(
+                fontSize: bold ? 17 : 14,
+                fontWeight: bold ? FontWeight.w900 : FontWeight.w800,
+                color: color ?? Colors.black87,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

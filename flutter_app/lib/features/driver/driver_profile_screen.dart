@@ -862,12 +862,19 @@ class DriverProfileScreenState extends State<DriverProfileScreen> {
     );
   }
 
+  // Value wrapped in Flexible so a long value never overflows past the
+  // card's edge (same bug reported and fixed across the ride/order
+  // invoice rows — see ride_tracking_screen.dart's _row/_infoRow).
   Widget _infoRow(String label, String value) {
     return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text(label, style: const TextStyle(fontSize: 12, color: AppColors.textFaint, fontWeight: FontWeight.w700)),
-        Text(value, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w900)),
+        const SizedBox(width: 10),
+        Flexible(
+          child: Text(value, textAlign: TextAlign.end, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w900)),
+        ),
       ],
     );
   }
