@@ -22,6 +22,7 @@ import '../favorites/favorite_driver_button.dart';
 import '../ratings/rate_sheet.dart';
 import '../ratings/ratings_repository.dart';
 import '../ratings/trust_badge.dart';
+import '../support/support_screen.dart';
 import 'directions_service.dart';
 import 'fare_calculator.dart' show haversineKm, roadFactor;
 import 'places_service.dart' show PlaceResult;
@@ -136,7 +137,28 @@ class _RideTrackingScreenState extends State<RideTrackingScreen> {
         tags: result.tags,
         comment: result.comment,
       );
-      if (mounted) {
+      if (!mounted) return;
+      // A low/neutral rating (≤3★) is exactly the moment a customer most
+      // needs support and least knows it exists — it's otherwise only
+      // reachable one tap deep under Settings, which is why the in-app
+      // support chat (db/security-73) sees almost no real usage despite
+      // being fully built (AI auto-replies + admin inbox,
+      // db/security-74/84). Surface it right here instead of a plain
+      // "thanks" snackbar.
+      if (result.rating <= 3) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(context.tr('ride_tracking_low_rating_support_msg')),
+            duration: const Duration(seconds: 6),
+            action: SnackBarAction(
+              label: context.tr('ride_tracking_low_rating_support_action'),
+              onPressed: () {
+                if (mounted) Navigator.of(context).push(MaterialPageRoute(builder: (_) => const SupportScreen()));
+              },
+            ),
+          ),
+        );
+      } else {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.tr('ride_tracking_rating_thanks'))));
       }
     } catch (e) {
@@ -322,6 +344,10 @@ class _RideTrackingScreenState extends State<RideTrackingScreen> {
                             : _Timeline(curIdx: curIdx),
                       ),
                       const SizedBox(height: 16),
+                      if (isCancelled) ...[
+                        _SupportPromptBanner(message: context.tr('ride_tracking_cancelled_support_msg')),
+                        const SizedBox(height: 16),
+                      ],
                       if (!isCancelled) _EtaCard(status: status),
                       if (!isCancelled && !widget.isDriverView && status == 'accepted') ...[
                         const SizedBox(height: 12),
@@ -1300,6 +1326,42 @@ class _ArrivalDeadlineCard extends StatelessWidget {
             style: const TextStyle(fontSize: 11, color: AppColors.textFaint, height: 1.4),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// A tappable prompt straight into the in-app support chat
+/// (features/support/support_screen.dart) — shown at moments (a
+/// cancelled ride here, a low rating in _maybePromptRating above) where
+/// a customer is most likely to actually need it, instead of leaving
+/// support reachable only one tap deep under Settings.
+class _SupportPromptBanner extends StatelessWidget {
+  final String message;
+  const _SupportPromptBanner({required this.message});
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(14),
+      onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const SupportScreen())),
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: AppColors.primaryLight,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: AppColors.primary.withValues(alpha: 0.25)),
+        ),
+        child: Row(
+          children: [
+            const Text('🎧', style: TextStyle(fontSize: 18)),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(message, style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w800, color: AppColors.primary)),
+            ),
+            const Icon(Icons.chevron_left, color: AppColors.primary, size: 20),
+          ],
+        ),
       ),
     );
   }

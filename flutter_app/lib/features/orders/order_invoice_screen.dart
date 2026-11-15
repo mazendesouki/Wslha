@@ -8,6 +8,7 @@ import '../../core/supabase_client.dart';
 import '../../core/theme.dart';
 import '../ratings/order_rating_sheet.dart';
 import '../ratings/ratings_repository.dart';
+import '../support/support_screen.dart';
 import 'orders_repository.dart';
 
 /// Full invoice view for a single `orders` row — opened by tapping a
@@ -55,7 +56,27 @@ class _OrderInvoiceScreenState extends State<OrderInvoiceScreen> {
         tags: result.tags,
         comment: result.comment,
       );
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.tr('order_invoice_thanks_rating'))));
+      if (!mounted) return;
+      // Same reasoning as ride_tracking_screen.dart's _maybePromptRating —
+      // a low rating is the moment support is actually needed, and it's
+      // otherwise buried one tap under Settings.
+      final lowestRating = [result.storeRating, if (result.driverRating != null) result.driverRating!].reduce((a, b) => a < b ? a : b);
+      if (lowestRating <= 3) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(context.tr('ride_tracking_low_rating_support_msg')),
+            duration: const Duration(seconds: 6),
+            action: SnackBarAction(
+              label: context.tr('ride_tracking_low_rating_support_action'),
+              onPressed: () {
+                if (mounted) Navigator.of(context).push(MaterialPageRoute(builder: (_) => const SupportScreen()));
+              },
+            ),
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.tr('order_invoice_thanks_rating'))));
+      }
     } catch (e) {
       // Submission can fail server-side (RPC rejects an already-rated or
       // not-yet-delivered order) — surface it instead of staying silent,
