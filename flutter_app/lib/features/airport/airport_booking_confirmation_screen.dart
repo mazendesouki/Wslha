@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/date_format_ar.dart';
 import '../../core/i18n.dart';
@@ -210,8 +211,44 @@ class _AirportBookingConfirmationScreenState extends State<AirportBookingConfirm
               Text(context.tr('airport_confirm_payment_cash_note'), style: const TextStyle(fontSize: 11, color: AppColors.textFaint)),
             ],
           ),
+          // Tier-0 "guide, don't book" flight-search convenience — only
+          // shown when there's enough real info (a destination/origin
+          // country the traveler already typed in the booking form) to
+          // build an actually useful search, not just a generic link.
+          // Wslha never touches the flight itself: this opens Google
+          // Flights in the browser and the trip, if any, is booked there.
+          if (widget.flightCountry.trim().isNotEmpty) ...[
+            const SizedBox(height: 16),
+            _sectionCard(
+              title: context.tr('airport_flight_search_title'),
+              children: [
+                Text(context.tr('airport_flight_search_body'), style: const TextStyle(fontSize: 12, color: AppColors.textFaint)),
+                const SizedBox(height: 12),
+                OutlinedButton.icon(
+                  onPressed: _searchFlights,
+                  icon: const Icon(Icons.flight_takeoff, size: 18),
+                  label: Text(context.tr('airport_flight_search_button')),
+                ),
+              ],
+            ),
+          ],
         ],
     );
+  }
+
+  Future<void> _searchFlights() async {
+    final country = widget.flightCountry.trim();
+    final dateStr = '${widget.flightTime.year}-${widget.flightTime.month.toString().padLeft(2, '0')}-${widget.flightTime.day.toString().padLeft(2, '0')}';
+    // direction = 'departure' means this ride is taking the traveler TO
+    // the airport to catch an outbound flight (airport -> country);
+    // 'arrival' means they just landed and this ride takes them FROM the
+    // airport (country -> airport) — see airport_screen.dart's own
+    // direction doc.
+    final query = widget.direction == 'departure'
+        ? 'Flights from ${widget.airportName} to $country on $dateStr'
+        : 'Flights from $country to ${widget.airportName} on $dateStr';
+    final url = Uri.https('www.google.com', '/travel/flights', {'q': query});
+    await launchUrl(url, mode: LaunchMode.externalApplication);
   }
 
   Widget _bottomBar(BuildContext context) {

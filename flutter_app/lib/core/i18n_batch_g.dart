@@ -49,6 +49,14 @@ const Map<String, Map<String, String>> batchGStrings = {
   'airport_confirm_row_wait_airport_fee': {'ar': 'انتظار في ساحة المطار', 'en': 'Waiting at the airport'},
   'airport_confirm_row_total': {'ar': 'الإجمالي', 'en': 'Total'},
   'airport_confirm_payment_cash_note': {'ar': 'الدفع نقدًا عند الوصول', 'en': 'Payment in cash on arrival'},
+  // Tier-0 flight-search convenience link on the airport confirmation
+  // screen — see its _searchFlights() doc comment.
+  'airport_flight_search_title': {'ar': '✈️ رحلتك الجوية', 'en': '✈️ Your flight'},
+  'airport_flight_search_body': {
+    'ar': 'وصّلها مش وكالة سفر — ده بس رابط يوديك تدور على رحلات طيران في Google Flights وتحجز من هناك لو حابب.',
+    'en': "Wslha isn't a travel agency — this just opens Google Flights to search and book there if you'd like.",
+  },
+  'airport_flight_search_button': {'ar': 'ابحث عن رحلات طيران', 'en': 'Search flights'},
   'airport_confirm_btn_home': {'ar': 'العودة للرئيسية', 'en': 'Back to home'},
   'airport_confirm_btn_track': {'ar': 'تتبع حالة الحجز مباشرة', 'en': 'Track your booking live'},
 
