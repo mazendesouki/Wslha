@@ -252,6 +252,23 @@ class _RidesScreenState extends State<RidesScreen> {
       return;
     }
 
+    // Guard against creating a duplicate ride: createRide() is deliberately
+    // never auto-retried on a connectivity error (core/error_messages.dart's
+    // withConnectivityRetry doc comment — 'rides' has no idempotency key
+    // beyond its own generated id, so a blind retry risks a silent
+    // duplicate if the original request actually succeeded server-side but
+    // its response was what got lost). That means a customer who saw a
+    // failure after a connection drop and simply taps submit again could
+    // otherwise end up with two real rides. findActiveRide() already
+    // exists for app-resume; reused here as the user-facing check before
+    // that can happen, with the choice always left to the customer.
+    final existingRide = await _rideRepo.findActiveRide(_session!.phone, asDriver: false);
+    if (existingRide != null) {
+      if (!mounted) return;
+      final proceedAnyway = await _confirmProceedDespiteActiveRide(existingRide);
+      if (!proceedAnyway) return;
+    }
+
     if (_recurringDays.isNotEmpty && _recurringTime != null) {
       await _submitRecurring(points);
       return;
@@ -364,6 +381,40 @@ class _RidesScreenState extends State<RidesScreen> {
     Navigator.of(context).push(
       MaterialPageRoute(builder: (_) => RideTrackingScreen(rideId: rideId)),
     );
+  }
+
+  /// Shown by _submit()'s pre-submission active-ride guard. Any outcome
+  /// other than the explicit "create a new one anyway" tap (dismiss, back
+  /// button, tapping the existing-ride option) is treated as "go look at
+  /// the existing ride" — never as silent permission to create a second
+  /// one, since the whole point is avoiding an accidental duplicate.
+  Future<bool> _confirmProceedDespiteActiveRide(Map<String, dynamic> existingRide) async {
+    final createNew = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        title: Text(context.tr('rides_active_ride_found_title')),
+        content: Text(context.tr('rides_active_ride_found_body')),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: Text(context.tr('rides_active_ride_view_button')),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: Text(context.tr('rides_active_ride_new_button'), style: const TextStyle(color: AppColors.error)),
+          ),
+        ],
+      ),
+    );
+    if (createNew == true) return true;
+    final existingId = existingRide['id']?.toString();
+    if (mounted && existingId != null) {
+      Navigator.of(context).push(
+        MaterialPageRoute(builder: (_) => RideTrackingScreen(rideId: existingId)),
+      );
+    }
+    return false;
   }
 
   /// Single-leg only (no multi-stop) — a recurring template books the same

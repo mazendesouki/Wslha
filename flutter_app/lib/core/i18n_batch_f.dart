@@ -139,4 +139,16 @@ const Map<String, Map<String, String>> batchFStrings = {
     'ar': '⚠️ تعذّر الاتصال بالخادم — تأكد من اتصال الإنترنت وحاول تاني',
     'en': '⚠️ Could not reach the server — check your internet connection and try again',
   },
+  // rides_screen.dart's pre-submit active-ride guard — see _submit()'s
+  // comment for why: createRide() is never auto-retried, so this is the
+  // safety net against a customer accidentally creating a second, real
+  // ride after a connectivity drop made an earlier successful one look
+  // like it had failed.
+  'rides_active_ride_found_title': {'ar': 'عندك طلب رحلة نشط بالفعل', 'en': 'You already have an active ride request'},
+  'rides_active_ride_found_body': {
+    'ar': 'لقينا طلب رحلة لسه شغال على حسابك. لو كنت عملت الطلب ده قبل كده وحسّيت إنه فشل، ده هو — تقدر تتابعه دلوقتي. أو كمّل واعمل طلب جديد منفصل لو ده اللي محتاجه فعلاً.',
+    'en': "You already have a ride request still active. If you submitted this earlier and it looked like it failed, this is it — you can track it now. Or continue to create a new, separate request if that's really what you want.",
+  },
+  'rides_active_ride_view_button': {'ar': 'تابع الطلب الحالي', 'en': 'Track existing request'},
+  'rides_active_ride_new_button': {'ar': 'لأ، اعمل طلب جديد', 'en': 'No, create a new one'},
 };
