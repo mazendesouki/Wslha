@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../core/flavor.dart';
 import '../../core/i18n.dart';
 import '../../core/session.dart';
+import '../../core/update_check_controller.dart';
 import '../../core/update_checker.dart';
 import '../../shared/widgets/update_required_screen.dart';
 import '../account/account_screen.dart';
@@ -26,16 +27,26 @@ class _HomeShellState extends State<HomeShell> {
   int _index = 0;
   final _accountKey = GlobalKey<AccountScreenState>();
   UpdateInfo? _requiredUpdate;
+  late final _updateCheck = UpdateCheckController(
+    flavor: AppFlavor.customer,
+    onUpdateFound: (info) {
+      if (mounted) setState(() => _requiredUpdate = info);
+    },
+  );
 
   @override
   void initState() {
     super.initState();
-    UpdateChecker().checkForUpdate(AppFlavor.customer).then((info) {
-      if (mounted && info != null) setState(() => _requiredUpdate = info);
-    });
+    _updateCheck.start();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) maybeShowPromotion(context, 'customer');
     });
+  }
+
+  @override
+  void dispose() {
+    _updateCheck.dispose();
+    super.dispose();
   }
 
   void _goToTab(int i) {

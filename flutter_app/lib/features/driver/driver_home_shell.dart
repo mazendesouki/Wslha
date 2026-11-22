@@ -4,6 +4,7 @@ import '../../core/flavor.dart';
 import '../../core/i18n.dart';
 import '../../core/session.dart';
 import '../../core/theme.dart';
+import '../../core/update_check_controller.dart';
 import '../../core/update_checker.dart';
 import '../../shared/widgets/update_required_screen.dart';
 import '../promotions/promotion_popup.dart';
@@ -34,6 +35,12 @@ class _DriverHomeShellState extends State<DriverHomeShell> {
   bool _loadingStatus = true;
   String? _status;
   UpdateInfo? _requiredUpdate;
+  late final _updateCheck = UpdateCheckController(
+    flavor: AppFlavor.driver,
+    onUpdateFound: (info) {
+      if (mounted) setState(() => _requiredUpdate = info);
+    },
+  );
 
   @override
   void initState() {
@@ -41,13 +48,20 @@ class _DriverHomeShellState extends State<DriverHomeShell> {
     _loadStatus();
     // Checked independently of (and rendered ahead of) the approval-status
     // gate below — see update_required_screen.dart's doc comment for why
-    // that gate alone isn't a safe place to surface this.
-    UpdateChecker().checkForUpdate(AppFlavor.driver).then((info) {
-      if (mounted && info != null) setState(() => _requiredUpdate = info);
-    });
+    // that gate alone isn't a safe place to surface this. Re-checked on
+    // every resume + periodically (UpdateCheckController), not just here
+    // at cold start — see its doc comment for why that one-shot check
+    // used to miss a build published while the app stayed open.
+    _updateCheck.start();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) maybeShowPromotion(context, 'driver');
     });
+  }
+
+  @override
+  void dispose() {
+    _updateCheck.dispose();
+    super.dispose();
   }
 
   static const _statusCacheKey = 'wslha_driver_status_cache';

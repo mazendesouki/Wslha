@@ -86,6 +86,7 @@ const Map<String, Map<String, String>> batchHStrings = {
     'en': 'Your installed version is out of date and needs updating for the app to work correctly. Download the new version now.',
   },
   'update_required_button': {'ar': '⬇️ تحديث الآن', 'en': '⬇️ Update now'},
+  'update_required_version_prefix': {'ar': 'الإصدار الجديد:', 'en': 'New version:'},
 
   // features/settings/settings_screen.dart
   'settings_new_version_title': {'ar': 'نسخة جديدة متاحة', 'en': 'New version available'},

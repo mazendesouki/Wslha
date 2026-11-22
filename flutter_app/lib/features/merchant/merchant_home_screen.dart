@@ -7,6 +7,7 @@ import '../../core/i18n.dart';
 import '../../core/notifications.dart';
 import '../../core/session.dart';
 import '../../core/theme.dart';
+import '../../core/update_check_controller.dart';
 import '../../core/update_checker.dart';
 import '../../shared/widgets/logout_button.dart';
 import '../../shared/widgets/update_required_screen.dart';
@@ -47,6 +48,12 @@ class _MerchantHomeScreenState extends State<MerchantHomeScreen> {
   final Set<String> _knownPendingIds = {};
   bool _firstSnapshot = true;
   UpdateInfo? _requiredUpdate;
+  late final _updateCheck = UpdateCheckController(
+    flavor: AppFlavor.merchant,
+    onUpdateFound: (info) {
+      if (mounted) setState(() => _requiredUpdate = info);
+    },
+  );
 
   @override
   void initState() {
@@ -58,9 +65,10 @@ class _MerchantHomeScreenState extends State<MerchantHomeScreen> {
         _loading = false;
       });
     });
-    UpdateChecker().checkForUpdate(AppFlavor.merchant).then((info) {
-      if (mounted && info != null) setState(() => _requiredUpdate = info);
-    });
+    // Re-checked on every resume + periodically (UpdateCheckController),
+    // not just here at cold start — see its doc comment for why a one-shot
+    // check used to miss a build published while the app stayed open.
+    _updateCheck.start();
     // Re-renders every 15s purely to age the elapsed-time/countdown badges
     // forward — the StreamBuilder below only fires on real data changes,
     // which won't happen just because a minute passed on an unchanged order.
@@ -75,6 +83,7 @@ class _MerchantHomeScreenState extends State<MerchantHomeScreen> {
   @override
   void dispose() {
     _ticker?.cancel();
+    _updateCheck.dispose();
     super.dispose();
   }
 
