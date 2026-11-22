@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/error_messages.dart';
 import '../../core/feature_flags.dart';
 import '../../core/i18n.dart';
 import '../../core/pricing_settings.dart';
@@ -311,8 +312,9 @@ class _RidesScreenState extends State<RidesScreen> {
       // action in the customer app.
       if (!mounted) return;
       setState(() => _submitting = false);
+      final msg = isConnectivityError(e) ? context.tr('network_error_friendly') : '${context.tr('rides_submit_failed_prefix')} $e';
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('${context.tr('rides_submit_failed_prefix')} $e'), backgroundColor: AppColors.error, duration: const Duration(seconds: 6)),
+        SnackBar(content: Text(msg), backgroundColor: AppColors.error, duration: const Duration(seconds: 6)),
       );
       return;
     }
@@ -402,8 +404,9 @@ class _RidesScreenState extends State<RidesScreen> {
     } catch (e) {
       if (!mounted) return;
       setState(() => _submitting = false);
+      final msg = isConnectivityError(e) ? context.tr('network_error_friendly') : '${context.tr('rides_submit_failed_prefix')} $e';
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('${context.tr('rides_submit_failed_prefix')} $e'), backgroundColor: AppColors.error, duration: const Duration(seconds: 6)),
+        SnackBar(content: Text(msg), backgroundColor: AppColors.error, duration: const Duration(seconds: 6)),
       );
       return;
     }

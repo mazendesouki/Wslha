@@ -130,4 +130,13 @@ const Map<String, Map<String, String>> batchFStrings = {
     'ar': 'إشعارات مشاويرك وطلباتك هتظهر هنا أول ما توصلك.',
     'en': 'Notifications for your rides and orders will appear here as soon as they arrive.',
   },
+  // Shown instead of the raw exception text (SocketException/ClientException
+  // etc.) whenever an action fails from a genuine connectivity blip —
+  // reported live as a raw "ClientException with SocketException: ..."
+  // dump shown straight to a driver after a failed "اتصال" toggle. See
+  // core/error_messages.dart's isConnectivityError().
+  'network_error_friendly': {
+    'ar': '⚠️ تعذّر الاتصال بالخادم — تأكد من اتصال الإنترنت وحاول تاني',
+    'en': '⚠️ Could not reach the server — check your internet connection and try again',
+  },
 };

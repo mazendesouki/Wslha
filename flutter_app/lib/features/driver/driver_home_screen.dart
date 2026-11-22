@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/contact_launcher.dart';
+import '../../core/error_messages.dart';
 import '../../core/i18n.dart';
 import '../../core/date_format_ar.dart';
 import '../../core/feature_flags.dart';
@@ -336,8 +337,9 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
 
   void _showError(Object e) {
     if (!mounted) return;
+    final msg = isConnectivityError(e) ? context.tr('network_error_friendly') : '${context.tr('driver_home_error_prefix')} $e';
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('${context.tr('driver_home_error_prefix')} $e'), backgroundColor: AppColors.error, duration: const Duration(seconds: 6)),
+      SnackBar(content: Text(msg), backgroundColor: AppColors.error, duration: const Duration(seconds: 6)),
     );
   }
 

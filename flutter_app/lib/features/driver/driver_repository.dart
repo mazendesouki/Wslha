@@ -1,6 +1,23 @@
 import 'package:geolocator/geolocator.dart';
 import '../../core/api_session.dart';
+import '../../core/error_messages.dart';
 import '../../core/supabase_client.dart';
+
+/// One retry after a short delay for a transient connection error (reported
+/// live: "ClientException with SocketException: Software caused connection
+/// abort" on upsert_driver_location — the kind of blip that almost always
+/// succeeds on an immediate retry). Only retries connectivity-class errors
+/// (core/error_messages.dart); anything else (an RLS denial, a real server
+/// error) rethrows immediately so it isn't masked by a pointless retry.
+Future<T> _withRetry<T>(Future<T> Function() action) async {
+  try {
+    return await action();
+  } catch (e) {
+    if (!isConnectivityError(e)) rethrow;
+    await Future.delayed(const Duration(milliseconds: 800));
+    return action();
+  }
+}
 
 class RideSettlement {
   final double fare;
@@ -69,13 +86,13 @@ class DriverRepository {
       'is_online': true,
     });
     if (data != null) return true;
-    await sb.rpc('upsert_driver_location', params: {
-      'p_driver_phone': phone,
-      'p_driver_name': name,
-      'p_lat': pos.latitude,
-      'p_lng': pos.longitude,
-      'p_is_online': true,
-    });
+    await _withRetry(() => sb.rpc('upsert_driver_location', params: {
+          'p_driver_phone': phone,
+          'p_driver_name': name,
+          'p_lat': pos.latitude,
+          'p_lng': pos.longitude,
+          'p_is_online': true,
+        }));
     return true;
   }
 
@@ -150,12 +167,12 @@ class DriverRepository {
       'heading': pos.heading,
     });
     if (data != null) return;
-    await sb.rpc('upsert_driver_location', params: {
-      'p_driver_phone': phone,
-      'p_lat': pos.latitude,
-      'p_lng': pos.longitude,
-      'p_heading': pos.heading,
-    });
+    await _withRetry(() => sb.rpc('upsert_driver_location', params: {
+          'p_driver_phone': phone,
+          'p_lat': pos.latitude,
+          'p_lng': pos.longitude,
+          'p_heading': pos.heading,
+        }));
   }
 
   /// Returns 'ok', or a failure reason string ('vehicle_category_mismatch',
