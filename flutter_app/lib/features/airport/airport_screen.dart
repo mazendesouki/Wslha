@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/date_format_ar.dart';
+import '../../core/error_messages.dart';
 import '../../core/i18n.dart';
 import '../../core/phone_utils.dart';
 import '../../core/pricing_settings.dart';
@@ -12,6 +13,8 @@ import '../rides/address_field.dart';
 import '../rides/directions_service.dart';
 import '../rides/fare_calculator.dart' as fare_calc;
 import '../rides/places_service.dart';
+import '../rides/ride_repository.dart';
+import '../rides/ride_tracking_screen.dart';
 import 'airport_booking_confirmation_screen.dart';
 import 'airport_fare.dart' as fare;
 import 'airport_repository.dart';
@@ -37,6 +40,7 @@ class AirportScreen extends StatefulWidget {
 
 class _AirportScreenState extends State<AirportScreen> {
   final _repo = AirportRepository();
+  final _rideRepo = RideRepository();
 
   // Wizard steps instead of one long scroll — same fields/validation as
   // before, just shown one group at a time with a progress bar and
@@ -305,6 +309,19 @@ class _AirportScreenState extends State<AirportScreen> {
       return;
     }
 
+    // Same duplicate-request guard as rides_screen.dart's _submit() — this
+    // also inserts straight into `rides` (airport_repository.dart's
+    // createAirportRide), with no idempotency key beyond its own id, so
+    // it's exposed to the exact same risk: a connectivity drop making an
+    // actually-successful booking look like it failed, and the traveler
+    // tapping submit again creating a genuine second ride.
+    final existingRide = await _rideRepo.findActiveRide(phone, asDriver: false);
+    if (existingRide != null) {
+      if (!mounted) return;
+      final proceedAnyway = await _confirmProceedDespiteActiveRide(existingRide);
+      if (!proceedAnyway) return;
+    }
+
     setState(() => _submitting = true);
 
     // Same race as rides_screen.dart's _submit(): the background fetch
@@ -401,9 +418,42 @@ class _AirportScreenState extends State<AirportScreen> {
       if (!mounted) return;
       setState(() {
         _submitting = false;
-        _error = '${context.tr('airport_error_submit_failed_prefix')} $e';
+        _error = isConnectivityError(e) ? context.tr('network_error_friendly') : '${context.tr('airport_error_submit_failed_prefix')} $e';
       });
     }
+  }
+
+  /// Same dialog as rides_screen.dart's — see its doc comment for why. Any
+  /// outcome other than the explicit "create a new one anyway" tap is
+  /// treated as "go look at the existing ride" rather than silent
+  /// permission to create a second one.
+  Future<bool> _confirmProceedDespiteActiveRide(Map<String, dynamic> existingRide) async {
+    final createNew = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        title: Text(context.tr('rides_active_ride_found_title')),
+        content: Text(context.tr('rides_active_ride_found_body')),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: Text(context.tr('rides_active_ride_view_button')),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: Text(context.tr('rides_active_ride_new_button'), style: const TextStyle(color: AppColors.error)),
+          ),
+        ],
+      ),
+    );
+    if (createNew == true) return true;
+    final existingId = existingRide['id']?.toString();
+    if (mounted && existingId != null) {
+      Navigator.of(context).push(
+        MaterialPageRoute(builder: (_) => RideTrackingScreen(rideId: existingId)),
+      );
+    }
+    return false;
   }
 
   @override

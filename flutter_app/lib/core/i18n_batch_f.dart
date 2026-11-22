@@ -151,4 +151,13 @@ const Map<String, Map<String, String>> batchFStrings = {
   },
   'rides_active_ride_view_button': {'ar': 'تابع الطلب الحالي', 'en': 'Track existing request'},
   'rides_active_ride_new_button': {'ar': 'لأ، اعمل طلب جديد', 'en': 'No, create a new one'},
+  // checkout_sheet.dart's equivalent guard before placing a store order —
+  // same reasoning, 'orders' has no idempotency key either.
+  'checkout_active_order_found_title': {'ar': 'عندك طلب نشط بالفعل', 'en': 'You already have an active order'},
+  'checkout_active_order_found_body': {
+    'ar': 'لقينا طلب لسه شغال على حسابك. لو كنت عملت الطلب ده قبل كده وحسّيت إنه فشل، ده هو — تقدر تتابعه دلوقتي. أو كمّل واعمل طلب جديد منفصل لو ده اللي محتاجه فعلاً.',
+    'en': "You already have an order still active. If you submitted this earlier and it looked like it failed, this is it — you can track it now. Or continue to create a new, separate order if that's really what you want.",
+  },
+  'checkout_active_order_view_button': {'ar': 'تابع الطلب الحالي', 'en': 'Track existing order'},
+  'checkout_active_order_new_button': {'ar': 'لأ، اعمل طلب جديد', 'en': 'No, create a new one'},
 };

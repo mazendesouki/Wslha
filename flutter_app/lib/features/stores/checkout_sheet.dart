@@ -8,6 +8,8 @@ import '../../core/supabase_client.dart';
 import '../../core/theme.dart';
 import '../../shared/widgets/key_value_row.dart';
 import '../account/account_repository.dart';
+import '../orders/order_invoice_screen.dart';
+import '../orders/orders_repository.dart';
 import 'cart_store.dart';
 
 /// Submits straight into the `orders` table with the same shape
@@ -23,6 +25,7 @@ class CheckoutSheet extends StatefulWidget {
 class _CheckoutSheetState extends State<CheckoutSheet> {
   final _cart = CartStore.instance;
   final _accountRepo = AccountRepository();
+  final _ordersRepo = OrdersRepository();
   final _nameCtrl = TextEditingController();
   final _phoneCtrl = TextEditingController();
   final _areaCtrl = TextEditingController();
@@ -123,6 +126,17 @@ class _CheckoutSheetState extends State<CheckoutSheet> {
       return;
     }
 
+    // Same duplicate-request guard as rides_screen.dart's _submit() — this
+    // insert has no idempotency key beyond its own id either, so a
+    // connectivity drop that makes an actually-successful order look like
+    // it failed could otherwise lead to a genuine duplicate on resubmit.
+    final existingOrder = await _ordersRepo.findActiveOrder(normalizeEgyptianPhone(phone));
+    if (existingOrder != null) {
+      if (!mounted) return;
+      final proceedAnyway = await _confirmProceedDespiteActiveOrder(existingOrder);
+      if (!proceedAnyway) return;
+    }
+
     setState(() {
       _submitting = true;
       _error = null;
@@ -178,6 +192,39 @@ class _CheckoutSheetState extends State<CheckoutSheet> {
         _submitting = false;
       });
     }
+  }
+
+  /// Same dialog as rides_screen.dart's _confirmProceedDespiteActiveRide —
+  /// see its doc comment for why. Any outcome other than the explicit
+  /// "create a new one anyway" tap is treated as "go look at the existing
+  /// order" rather than silent permission to create a second one.
+  Future<bool> _confirmProceedDespiteActiveOrder(Map<String, dynamic> existingOrder) async {
+    final createNew = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        title: Text(context.tr('checkout_active_order_found_title')),
+        content: Text(context.tr('checkout_active_order_found_body')),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: Text(context.tr('checkout_active_order_view_button')),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: Text(context.tr('checkout_active_order_new_button'), style: const TextStyle(color: AppColors.error)),
+          ),
+        ],
+      ),
+    );
+    if (createNew == true) return true;
+    final existingId = existingOrder['id']?.toString();
+    if (mounted && existingId != null) {
+      Navigator.of(context).push(
+        MaterialPageRoute(builder: (_) => OrderInvoiceScreen(orderId: existingId)),
+      );
+    }
+    return false;
   }
 
   void _showSuccess(String code) {
