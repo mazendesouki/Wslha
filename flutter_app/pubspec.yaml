@@ -54,6 +54,14 @@ dependencies:
   google_maps_flutter: ^2.9.0
   pdf: ^3.11.1
   printing: ^5.13.1
+  # In-app APK download + install trigger for the "update now" flow
+  # (core/app_updater.dart) — path_provider for a local save location,
+  # open_filex to hand the finished download to Android's own package
+  # installer (its own bundled FileProvider, no manifest/paths.xml setup
+  # needed on this app's side beyond the REQUEST_INSTALL_PACKAGES
+  # permission already added to AndroidManifest.xml).
+  path_provider: ^2.1.4
+  open_filex: ^4.5.0
 
 dev_dependencies:
   flutter_test:

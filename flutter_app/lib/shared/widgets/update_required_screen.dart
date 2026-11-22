@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../core/app_updater.dart';
+import '../../core/error_messages.dart';
 import '../../core/i18n.dart';
 import '../../core/theme.dart';
 import '../../core/update_checker.dart';
@@ -19,12 +21,50 @@ import '../../core/update_checker.dart';
 /// nav (and its update badge) ever rendered. The driver had no way to
 /// learn an update even existed. This screen is checked first, so it
 /// can't be hidden behind another gate again.
-class UpdateRequiredScreen extends StatelessWidget {
+class UpdateRequiredScreen extends StatefulWidget {
   final UpdateInfo info;
   const UpdateRequiredScreen({super.key, required this.info});
 
-  Future<void> _openUpdateLink() async {
-    await launchUrl(Uri.parse(info.apkUrl), mode: LaunchMode.externalApplication);
+  @override
+  State<UpdateRequiredScreen> createState() => _UpdateRequiredScreenState();
+}
+
+class _UpdateRequiredScreenState extends State<UpdateRequiredScreen> {
+  bool _downloading = false;
+  double? _progress;
+  String? _error;
+
+  // Downloads + hands the APK to Android's installer in-app
+  // (core/app_updater.dart) instead of only ever being able to open it
+  // in the browser and leaving the user to find the download themselves.
+  // Falls back to that same browser-open on any failure here (network
+  // drop mid-download, no installer available, permission not granted
+  // yet) so a user is never stuck with no way forward at all.
+  Future<void> _downloadAndInstall() async {
+    setState(() {
+      _downloading = true;
+      _progress = null;
+      _error = null;
+    });
+    try {
+      await downloadAndInstallApk(
+        widget.info.apkUrl,
+        onProgress: (p) {
+          if (mounted) setState(() => _progress = p);
+        },
+      );
+      if (mounted) setState(() => _downloading = false);
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _downloading = false;
+        _error = isConnectivityError(e) ? context.tr('network_error_friendly') : context.tr('update_required_install_failed');
+      });
+    }
+  }
+
+  Future<void> _openInBrowser() async {
+    await launchUrl(Uri.parse(widget.info.apkUrl), mode: LaunchMode.externalApplication);
   }
 
   @override
@@ -76,30 +116,67 @@ class UpdateRequiredScreen extends StatelessWidget {
                     textAlign: TextAlign.center,
                     style: const TextStyle(color: Colors.white70),
                   ),
-                  if (info.versionName.isNotEmpty) ...[
+                  if (widget.info.versionName.isNotEmpty) ...[
                     const SizedBox(height: 6),
                     Text(
-                      '${context.tr('update_required_version_prefix')} ${info.versionName}',
+                      '${context.tr('update_required_version_prefix')} ${widget.info.versionName}',
                       style: const TextStyle(color: Colors.white54, fontSize: 12.5, fontWeight: FontWeight.w700),
                     ),
                   ],
                   const SizedBox(height: 28),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.white,
-                        foregroundColor: AppColors.primary,
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                      ),
-                      onPressed: _openUpdateLink,
-                      child: Text(
-                        context.tr('update_required_button'),
-                        style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 15),
+                  if (_downloading) ...[
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(999),
+                      child: LinearProgressIndicator(
+                        value: _progress,
+                        minHeight: 8,
+                        backgroundColor: Colors.white24,
+                        valueColor: const AlwaysStoppedAnimation(Colors.white),
                       ),
                     ),
-                  ),
+                    const SizedBox(height: 10),
+                    Text(
+                      _progress != null
+                          ? '${context.tr('update_required_downloading')} ${(_progress! * 100).toStringAsFixed(0)}%'
+                          : context.tr('update_required_downloading'),
+                      style: const TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.w700),
+                    ),
+                  ] else ...[
+                    if (_error != null) ...[
+                      Text(
+                        _error!,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 13),
+                      ),
+                      const SizedBox(height: 14),
+                    ],
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.white,
+                          foregroundColor: AppColors.primary,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                        ),
+                        onPressed: _downloadAndInstall,
+                        child: Text(
+                          context.tr('update_required_button'),
+                          style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 15),
+                        ),
+                      ),
+                    ),
+                    if (_error != null) ...[
+                      const SizedBox(height: 10),
+                      TextButton(
+                        onPressed: _openInBrowser,
+                        child: Text(
+                          context.tr('update_required_open_browser'),
+                          style: const TextStyle(color: Colors.white70, fontWeight: FontWeight.w700),
+                        ),
+                      ),
+                    ],
+                  ],
                 ],
               ),
             ),

@@ -3,6 +3,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../core/app_updater.dart';
 import '../../core/error_messages.dart';
 import '../../core/feature_flags.dart';
 import '../../core/flavor.dart';
@@ -39,6 +40,8 @@ class _MerchantSettingsScreenState extends State<MerchantSettingsScreen> {
   bool _notifEnabled = true;
   String? _versionLabel;
   UpdateInfo? _updateInfo;
+  bool _downloadingUpdate = false;
+  double? _updateProgress;
 
   @override
   void initState() {
@@ -63,9 +66,40 @@ class _MerchantSettingsScreenState extends State<MerchantSettingsScreen> {
     setState(() => _updateInfo = update);
   }
 
+  // Downloads + hands the APK to Android's installer in-app
+  // (core/app_updater.dart) instead of only opening the download in the
+  // browser — see update_required_screen.dart's doc comment for the full
+  // reasoning. Falls back to the old browser-open on any failure here.
   Future<void> _openUpdateLink() async {
     final url = _updateInfo?.apkUrl;
     if (url == null) return;
+    setState(() {
+      _downloadingUpdate = true;
+      _updateProgress = null;
+    });
+    try {
+      await downloadAndInstallApk(
+        url,
+        onProgress: (p) {
+          if (mounted) setState(() => _updateProgress = p);
+        },
+      );
+      if (mounted) setState(() => _downloadingUpdate = false);
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _downloadingUpdate = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(isConnectivityError(e) ? context.tr('network_error_friendly') : context.tr('update_required_install_failed')),
+          backgroundColor: AppColors.error,
+          duration: const Duration(seconds: 6),
+        ),
+      );
+      await _openInBrowserFallback(url);
+    }
+  }
+
+  Future<void> _openInBrowserFallback(String url) async {
     await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
   }
 
@@ -154,9 +188,13 @@ class _MerchantSettingsScreenState extends State<MerchantSettingsScreen> {
                               ),
                             ),
                             ElevatedButton(
-                              onPressed: _openUpdateLink,
+                              onPressed: _downloadingUpdate ? null : _openUpdateLink,
                               style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10)),
-                              child: Text(context.tr('settings_update_now')),
+                              child: _downloadingUpdate
+                                  ? Text(_updateProgress != null
+                                      ? '${(_updateProgress! * 100).toStringAsFixed(0)}%'
+                                      : context.tr('update_required_downloading'))
+                                  : Text(context.tr('settings_update_now')),
                             ),
                           ],
                         ),

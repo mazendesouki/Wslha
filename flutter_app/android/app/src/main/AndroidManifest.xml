@@ -23,6 +23,14 @@
          registration screen (features/auth/driver_register_screen.dart)
          via image_picker's camera source. -->
     <uses-permission android:name="android.permission.CAMERA"/>
+    <!-- Lets this app's own "تحديث الآن" flow (core/app_updater.dart)
+         hand a freshly-downloaded APK straight to Android's package
+         installer, instead of only being able to open it via a browser
+         download. Android still shows its own install-confirmation
+         prompt every time regardless of this permission — no app can
+         silently self-update, this only unlocks requesting that prompt
+         from inside the app rather than from a Downloads-folder tap. -->
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES"/>
     <application
         android:label="${appName}"
         android:name="${applicationName}"

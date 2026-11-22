@@ -87,6 +87,12 @@ const Map<String, Map<String, String>> batchHStrings = {
   },
   'update_required_button': {'ar': '⬇️ تحديث الآن', 'en': '⬇️ Update now'},
   'update_required_version_prefix': {'ar': 'الإصدار الجديد:', 'en': 'New version:'},
+  'update_required_downloading': {'ar': 'جاري تحميل التحديث...', 'en': 'Downloading update...'},
+  'update_required_install_failed': {
+    'ar': 'تعذّر فتح شاشة التثبيت. جرّب تاني أو حمّل التحديث من المتصفح.',
+    'en': "Couldn't open the install screen. Try again, or download the update from the browser instead.",
+  },
+  'update_required_open_browser': {'ar': 'حمّل من المتصفح بدلاً من كده', 'en': 'Download from the browser instead'},
 
   // features/settings/settings_screen.dart
   'settings_new_version_title': {'ar': 'نسخة جديدة متاحة', 'en': 'New version available'},
