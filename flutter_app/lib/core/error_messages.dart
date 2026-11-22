@@ -23,3 +23,22 @@ bool isConnectivityError(Object e) {
       s.contains('TimeoutException') ||
       s.contains('Software caused connection abort');
 }
+
+/// One retry after a short delay for a transient connection error — the
+/// shared version of the retry originally written inline in
+/// driver_repository.dart's goOnline()/pingLocation(). Any repository call
+/// on a critical single-shot action (submitting an order, accepting/
+/// rejecting one, going online) should go through this instead of calling
+/// the network directly, so a dropped/reset socket gets one more chance
+/// before the user sees a failure at all. Only retries connectivity-class
+/// errors; anything else (an RLS denial, a real server/validation error)
+/// rethrows immediately so it isn't masked by a pointless retry.
+Future<T> withConnectivityRetry<T>(Future<T> Function() action) async {
+  try {
+    return await action();
+  } catch (e) {
+    if (!isConnectivityError(e)) rethrow;
+    await Future.delayed(const Duration(milliseconds: 800));
+    return action();
+  }
+}

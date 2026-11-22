@@ -3,22 +3,6 @@ import '../../core/api_session.dart';
 import '../../core/error_messages.dart';
 import '../../core/supabase_client.dart';
 
-/// One retry after a short delay for a transient connection error (reported
-/// live: "ClientException with SocketException: Software caused connection
-/// abort" on upsert_driver_location — the kind of blip that almost always
-/// succeeds on an immediate retry). Only retries connectivity-class errors
-/// (core/error_messages.dart); anything else (an RLS denial, a real server
-/// error) rethrows immediately so it isn't masked by a pointless retry.
-Future<T> _withRetry<T>(Future<T> Function() action) async {
-  try {
-    return await action();
-  } catch (e) {
-    if (!isConnectivityError(e)) rethrow;
-    await Future.delayed(const Duration(milliseconds: 800));
-    return action();
-  }
-}
-
 class RideSettlement {
   final double fare;
   final double commission;
@@ -86,7 +70,7 @@ class DriverRepository {
       'is_online': true,
     });
     if (data != null) return true;
-    await _withRetry(() => sb.rpc('upsert_driver_location', params: {
+    await withConnectivityRetry(() => sb.rpc('upsert_driver_location', params: {
           'p_driver_phone': phone,
           'p_driver_name': name,
           'p_lat': pos.latitude,
@@ -167,7 +151,7 @@ class DriverRepository {
       'heading': pos.heading,
     });
     if (data != null) return;
-    await _withRetry(() => sb.rpc('upsert_driver_location', params: {
+    await withConnectivityRetry(() => sb.rpc('upsert_driver_location', params: {
           'p_driver_phone': phone,
           'p_lat': pos.latitude,
           'p_lng': pos.longitude,

@@ -133,6 +133,16 @@ class _CheckoutSheetState extends State<CheckoutSheet> {
       final normPhone = normalizeEgyptianPhone(phone);
       final itemsSummary = _cart.lines.map((l) => '${l.qty}× ${l.product.name}').join('، ');
 
+      // Deliberately NOT wrapped in withConnectivityRetry: 'orders' has no
+      // unique constraint beyond its server-generated id (confirmed live —
+      // only orders_pkey on id), so if the insert actually reached and
+      // committed on the server but the success response itself was lost
+      // to the same connection drop, a blind retry here would silently
+      // create a second, real duplicate order — unlike the idempotent
+      // upsert_driver_location / status-gated merchant_accept_order calls
+      // this mechanism is otherwise used for. A manual resubmit (the
+      // existing behavior) at least keeps the retry decision visible to
+      // the customer instead of risking an invisible double order.
       await sb.from('orders').insert({
         'code': code,
         'store_id': _cart.storeId,

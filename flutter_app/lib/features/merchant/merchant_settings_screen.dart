@@ -3,6 +3,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../core/error_messages.dart';
 import '../../core/feature_flags.dart';
 import '../../core/flavor.dart';
 import '../../core/i18n.dart';
@@ -93,8 +94,9 @@ class _MerchantSettingsScreenState extends State<MerchantSettingsScreen> {
       Navigator.of(context).pop(true);
     } catch (e) {
       if (!mounted) return;
+      final msg = isConnectivityError(e) ? context.tr('network_error_friendly') : '${context.tr('merchant_settings_save_failed_prefix')} $e';
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('${context.tr('merchant_settings_save_failed_prefix')} $e'), backgroundColor: AppColors.error, duration: const Duration(seconds: 6)),
+        SnackBar(content: Text(msg), backgroundColor: AppColors.error, duration: const Duration(seconds: 6)),
       );
     } finally {
       if (mounted) setState(() => _saving = false);

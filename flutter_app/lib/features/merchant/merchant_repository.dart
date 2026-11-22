@@ -1,3 +1,4 @@
+import '../../core/error_messages.dart';
 import '../../core/supabase_client.dart';
 
 /// Same stores/orders tables merchant-dashboard.astro reads/writes.
@@ -40,19 +41,23 @@ class MerchantRepository {
   // merchant_accept_order/merchant_reject_order (security-48) verify the
   // caller's phone actually owns this order's store server-side — a raw
   // table UPDATE would let anyone accept/reject any store's orders.
+  // Wrapped in withConnectivityRetry (core/error_messages.dart) — accepting/
+  // rejecting an order is a single-shot, time-sensitive action (same class
+  // of bug as driver_repository.dart's go-online call: a dropped/reset
+  // socket failed the whole action with no retry).
   Future<void> acceptOrder(String orderId, String merchantPhone, {int? prepMinutes}) async {
-    await sb.rpc('merchant_accept_order', params: {
-      'p_order_id': orderId,
-      'p_merchant_phone': merchantPhone,
-      'p_prep_minutes': ?prepMinutes,
-    });
+    await withConnectivityRetry(() => sb.rpc('merchant_accept_order', params: {
+          'p_order_id': orderId,
+          'p_merchant_phone': merchantPhone,
+          'p_prep_minutes': ?prepMinutes,
+        }));
   }
 
   Future<void> rejectOrder(String orderId, String merchantPhone) async {
-    await sb.rpc('merchant_reject_order', params: {
-      'p_order_id': orderId,
-      'p_merchant_phone': merchantPhone,
-    });
+    await withConnectivityRetry(() => sb.rpc('merchant_reject_order', params: {
+          'p_order_id': orderId,
+          'p_merchant_phone': merchantPhone,
+        }));
   }
 
   /// Store-profile self-edit — `stores` no longer allows a direct client

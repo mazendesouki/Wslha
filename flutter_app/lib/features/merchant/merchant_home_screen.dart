@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import '../../core/error_messages.dart';
 import '../../core/flavor.dart';
 import '../../core/i18n.dart';
 import '../../core/notifications.dart';
@@ -132,8 +133,9 @@ class _MerchantHomeScreenState extends State<MerchantHomeScreen> {
       await _repo.acceptOrder(orderId, widget.session.phone, prepMinutes: minutes);
     } catch (e) {
       if (!mounted) return;
+      final msg = isConnectivityError(e) ? context.tr('network_error_friendly') : '${context.tr('merchant_home_accept_failed_prefix')} $e';
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('${context.tr('merchant_home_accept_failed_prefix')} $e'), backgroundColor: AppColors.error, duration: const Duration(seconds: 6)),
+        SnackBar(content: Text(msg), backgroundColor: AppColors.error, duration: const Duration(seconds: 6)),
       );
     }
   }
@@ -143,8 +145,9 @@ class _MerchantHomeScreenState extends State<MerchantHomeScreen> {
       await _repo.rejectOrder(orderId, widget.session.phone);
     } catch (e) {
       if (!mounted) return;
+      final msg = isConnectivityError(e) ? context.tr('network_error_friendly') : '${context.tr('merchant_home_reject_failed_prefix')} $e';
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('${context.tr('merchant_home_reject_failed_prefix')} $e'), backgroundColor: AppColors.error, duration: const Duration(seconds: 6)),
+        SnackBar(content: Text(msg), backgroundColor: AppColors.error, duration: const Duration(seconds: 6)),
       );
     }
   }
