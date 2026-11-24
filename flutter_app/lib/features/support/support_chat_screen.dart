@@ -44,7 +44,11 @@ class _SupportChatScreenState extends State<SupportChatScreen> {
       final id = await _repo.getOrCreateConversation(widget.myPhone);
       _conversationId = id;
       await _refresh();
-      _pollTimer = Timer.periodic(const Duration(seconds: 4), (_) => _refresh());
+      // Support chat tolerates more latency than ride dispatch does — widened
+      // from 4s (found during a load-readiness audit: this was adding a fixed
+      // per-open-conversation request rate with no corresponding urgency,
+      // unlike the driver offer poll, which has a hard 25s expiry window).
+      _pollTimer = Timer.periodic(const Duration(seconds: 10), (_) => _refresh());
     } catch (_) {
       // Keep the loading spinner off and show the empty-state; the send
       // button still retries getOrCreateConversation on next attempt.
