@@ -64,6 +64,7 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
   Timer? _locationTimer;
   StreamSubscription<Map<String, dynamic>>? _offersSub;
   StreamSubscription<Map<String, dynamic>>? _cashReminderSub;
+  StreamSubscription<List<Map<String, dynamic>>>? _offersRealtimeSub;
 
   bool _online = false;
   bool _busy = false;
@@ -173,6 +174,7 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
     _locationTimer?.cancel();
     _offersSub?.cancel();
     _cashReminderSub?.cancel();
+    _offersRealtimeSub?.cancel();
     _jobs.removeListener(_onJobsChanged);
     super.dispose();
   }
@@ -261,9 +263,29 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
     return null;
   }
 
+  // Safety-net only now that realtime (_startOffersRealtime) and push
+  // (_startPushWatch) both nudge on the actual event — widened from 5s
+  // since this no longer carries the latency-sensitive path alone. Kept
+  // well inside the 25s offer-expiry window so a dropped realtime
+  // connection (or push not configured) still can't make a driver miss
+  // an offer outright, just see it a bit later.
   void _startPolling() {
     _pollTimer?.cancel();
-    _pollTimer = Timer.periodic(const Duration(seconds: 5), (_) => _refreshOffers());
+    _pollTimer = Timer.periodic(const Duration(seconds: 15), (_) => _refreshOffers());
+  }
+
+  // Realtime nudge (db/security-187) — fires within ~1s of a dispatch_offers
+  // insert/update for this driver, same role push notifications already
+  // play (_startPushWatch) but over a channel that doesn't depend on FCM
+  // being configured or the OS not having throttled the push. Both nudges
+  // + the poll above all just call _refreshOffers(), so there's no risk of
+  // acting on stale realtime payload data directly.
+  void _startOffersRealtime() {
+    _offersRealtimeSub?.cancel();
+    _offersRealtimeSub = _repo.watchMyOffers(widget.session.phone).listen(
+      (_) => _refreshOffers(),
+      onError: (_) {}, // poll keeps working if the realtime channel drops
+    );
   }
 
   // Just a UI heartbeat — each card computes its own remaining time from
@@ -314,6 +336,7 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
         if (ok) {
           _startPolling();
           _startPushWatch();
+          _startOffersRealtime();
           _startLocationPings();
         }
         if (mounted) setState(() => _online = ok);
@@ -321,6 +344,7 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
         await _repo.goOffline(widget.session.phone);
         _pollTimer?.cancel();
         _offersSub?.cancel();
+        _offersRealtimeSub?.cancel();
         _locationTimer?.cancel();
         _countdownTimer?.cancel();
         _countdownTimer = null;

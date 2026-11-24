@@ -129,6 +129,16 @@ class DriverRepository {
     return result.map((row) => _offerFromRow(row as Map<String, dynamic>)).toList();
   }
 
+  /// Realtime nudge for the offer poll — fires on any insert/update to this
+  /// driver's dispatch_offers rows (new offer created, or one expiring/being
+  /// taken by someone else) so the UI can re-fetch immediately instead of
+  /// waiting for the next poll tick. Not a replacement for the poll: this is
+  /// a fast path on top of it, since a dropped realtime connection must not
+  /// silently stop offers from ever being shown (see security-187).
+  Stream<List<Map<String, dynamic>>> watchMyOffers(String phone) {
+    return sb.from('dispatch_offers').stream(primaryKey: ['id']).eq('driver_phone', phone);
+  }
+
   PendingOffer _offerFromRow(Map<String, dynamic> row) => PendingOffer(
         row['offer_id'].toString(),
         row['target_type'] as String,
