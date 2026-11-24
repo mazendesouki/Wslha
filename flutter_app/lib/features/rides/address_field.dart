@@ -107,19 +107,34 @@ class _AddressFieldState extends State<AddressField> {
       // can simply never arrive (weak signal, indoors, a device/emulator
       // with no real GPS) and getCurrentPosition() has no timeout of its
       // own, so it just hangs. A bounded wait here means _locLoading always
-      // gets reset one way or another.
-      final pos = await Geolocator.getCurrentPosition().timeout(const Duration(seconds: 15));
+      // gets reset one way or another. Medium accuracy (city-block, not
+      // lane-level) resolves noticeably faster than high/best on weak
+      // signal, which is most of why the fresh fix was timing out at all.
+      Position? pos;
+      try {
+        pos = await Geolocator.getCurrentPosition(
+          locationSettings: const LocationSettings(accuracy: LocationAccuracy.medium),
+        ).timeout(const Duration(seconds: 12));
+      } on TimeoutException {
+        // A fresh fix is slow — fall back to the device's last known fix
+        // (from this app or any other) rather than failing outright. It's
+        // stale by seconds to minutes, close enough to start a pickup from,
+        // and the customer can still drag the pin on the next screen.
+        pos = await Geolocator.getLastKnownPosition();
+      }
+      if (pos == null) {
+        if (!mounted) return;
+        setState(() {
+          _locLoading = false;
+          _locError = context.tr('address_field_location_timeout');
+        });
+        return;
+      }
       final name = await _places.reverseGeocode(pos.latitude, pos.longitude);
       if (!mounted) return;
       _controller.text = name;
       widget.onSelected(PlaceResult(name, pos.latitude, pos.longitude));
       setState(() => _locLoading = false);
-    } on TimeoutException {
-      if (!mounted) return;
-      setState(() {
-        _locLoading = false;
-        _locError = context.tr('address_field_location_timeout');
-      });
     } catch (e) {
       if (!mounted) return;
       setState(() {
