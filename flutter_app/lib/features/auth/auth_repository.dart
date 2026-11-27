@@ -1,6 +1,8 @@
 import 'dart:convert';
+import 'dart:typed_data';
 import 'package:http/http.dart' as http;
 import '../../core/api_session.dart';
+import '../../core/image_upload_helper.dart';
 import '../../core/phone_utils.dart';
 import '../../core/supabase_client.dart';
 import '../../core/session.dart';
@@ -320,15 +322,16 @@ class AuthRepository {
   /// (?photo=) rather than written to driver_applications directly, since
   /// there's no row to attach it to yet (see registerDriverOrMerchant).
   Future<String?> uploadDriverPhoto(String phone, List<int> bytes, String fileExt) async {
-    final path = 'driver-apps/$phone/driver-photo-${DateTime.now().millisecondsSinceEpoch}.$fileExt';
+    final converted = await toWebpForUpload(Uint8List.fromList(bytes), fileExt);
+    final path = 'driver-apps/$phone/driver-photo-${DateTime.now().millisecondsSinceEpoch}.${converted.fileExt}';
     final uploadRes = await http.post(
       Uri.parse('$supabaseUrl/storage/v1/object/documents/$path'),
       headers: {
         'apikey': supabaseAnonKey,
         'Authorization': 'Bearer $supabaseAnonKey',
-        'Content-Type': 'image/$fileExt',
+        'Content-Type': 'image/${converted.fileExt}',
       },
-      body: bytes,
+      body: converted.bytes,
     );
     if (uploadRes.statusCode != 200 && uploadRes.statusCode != 201) return null;
     return '$supabaseUrl/storage/v1/object/public/documents/$path';

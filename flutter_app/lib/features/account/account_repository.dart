@@ -1,5 +1,7 @@
+import 'dart:typed_data';
 import 'package:http/http.dart' as http;
 import '../../core/api_session.dart';
+import '../../core/image_upload_helper.dart';
 import '../../core/supabase_client.dart';
 
 /// The `accounts` table has no SELECT grant for anon/authenticated at all —
@@ -56,15 +58,16 @@ class AccountRepository {
   /// just under an `avatars/` path instead of `driver-apps/` since this is a
   /// profile picture the user can change anytime, not a one-off KYC photo.
   Future<String?> uploadAvatar(String phone, List<int> bytes, String fileExt) async {
-    final path = 'avatars/$phone/avatar-${DateTime.now().millisecondsSinceEpoch}.$fileExt';
+    final converted = await toWebpForUpload(Uint8List.fromList(bytes), fileExt);
+    final path = 'avatars/$phone/avatar-${DateTime.now().millisecondsSinceEpoch}.${converted.fileExt}';
     final uploadRes = await http.post(
       Uri.parse('$supabaseUrl/storage/v1/object/documents/$path'),
       headers: {
         'apikey': supabaseAnonKey,
         'Authorization': 'Bearer $supabaseAnonKey',
-        'Content-Type': 'image/$fileExt',
+        'Content-Type': 'image/${converted.fileExt}',
       },
-      body: bytes,
+      body: converted.bytes,
     );
     if (uploadRes.statusCode != 200 && uploadRes.statusCode != 201) return null;
     final url = '$supabaseUrl/storage/v1/object/public/documents/$path';
