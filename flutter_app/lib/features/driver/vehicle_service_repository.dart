@@ -1,3 +1,4 @@
+import '../../core/data_cache.dart';
 import '../../core/supabase_client.dart';
 
 /// One log entry covering any kind of vehicle service — maintenance, fuel,
@@ -276,10 +277,21 @@ class VehicleServiceRepository {
     }
   }
 
+  // Cached 30 min (core/data_cache.dart) — this is the shared admin-edited
+  // reference catalog, identical for every driver, previously re-fetched
+  // in full every time this screen opened even though it changes rarely.
   Future<List<MaintenanceCatalogItem>> listMaintenanceCatalog() async {
+    final cached = await DataCache.readList<Map<String, dynamic>>(
+      'maintenance_catalog',
+      (m) => m,
+      maxAge: const Duration(minutes: 30),
+    );
+    if (cached != null) return cached.map(MaintenanceCatalogItem.fromRow).toList();
     try {
       final rows = await sb.rpc('list_maintenance_catalog');
-      return (rows as List).map((r) => MaintenanceCatalogItem.fromRow(r as Map<String, dynamic>)).toList();
+      final list = (rows as List).cast<Map<String, dynamic>>();
+      await DataCache.writeList('maintenance_catalog', list);
+      return list.map(MaintenanceCatalogItem.fromRow).toList();
     } catch (_) {
       return [];
     }
