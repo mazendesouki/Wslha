@@ -36,7 +36,9 @@ export const GET: APIRoute = async ({ request, url: reqUrl }) => {
   // configured yet, or on any cache error — this never becomes the only
   // path to the data.
   let fetchFailed = false;
+  let wasCacheMiss = false;
   const body = await cached(`points-summary:${payload.sub}:${limit}`, 20, async () => {
+    wasCacheMiss = true;
     const [totalsRes, txRes] = await Promise.all([
       fetch(`${SB_URL}/rest/v1/points?phone=eq.${phone}&select=total_points`, { headers: SB_H }),
       fetch(`${SB_URL}/rest/v1/point_transactions?phone=eq.${phone}&select=points,type,created_at&order=created_at.desc&limit=${limit}`, { headers: SB_H }),
@@ -50,6 +52,12 @@ export const GET: APIRoute = async ({ request, url: reqUrl }) => {
     const totalPoints = Array.isArray(totals) && totals[0] ? totals[0].total_points ?? 0 : 0;
     return { totalPoints, transactions };
   });
+
+  // Temporary — lets a Vercel runtime-log search for "points-summary" show
+  // whether a real request actually reached this route and whether Redis
+  // served it, since this route otherwise logs nothing on success. Remove
+  // once the Upstash setup is confirmed working end to end.
+  console.log(`points-summary: ${wasCacheMiss ? 'cache MISS (fetched from Supabase)' : 'cache HIT (served from Redis)'} for ${payload.sub}`);
 
   if (fetchFailed || body === null) {
     return new Response(JSON.stringify({ error: 'points_fetch_failed' }), { status: 502 });
