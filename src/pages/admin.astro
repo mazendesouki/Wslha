@@ -1405,6 +1405,22 @@
         <div class="kpi kpi--blue"><div class="kpi__icon">🏪</div><div class="kpi__val" id="w-merchant-balance">—</div><div class="kpi__label">أرصدة التجار</div></div>
       </div>
 
+      <!-- Large withdrawals pending review (db/security-190) — anything
+           over app_settings.large_withdrawal_threshold is held here with
+           nothing debited yet, instead of leaving the whole wallet open to
+           a single large draw on a compromised password. -->
+      <div class="card" id="pending-withdrawals-card" style="display:none">
+        <div class="card__head"><span class="card__title">🔒 طلبات سحب كبيرة بانتظار المراجعة</span></div>
+        <div class="card__body">
+          <div class="tbl-wrap">
+            <table>
+              <thead><tr><th>الجوال</th><th>المبلغ</th><th>الوجهة</th><th>ملاحظة</th><th>التاريخ</th><th>إجراء</th></tr></thead>
+              <tbody id="pending-withdrawals-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
       <!-- Platform net profit -->
       <div class="card">
         <div class="card__head">
@@ -6305,6 +6321,42 @@ async function loadWalletsSection() {
   renderWalletsList();
   loadTxLogPage(1);
   loadPlatformFinance();
+  loadPendingWithdrawals();
+}
+
+async function loadPendingWithdrawals() {
+  const pass = await getAdminPass();
+  if (!pass) return;
+  const rows = await sbRpcRows('admin_list_pending_withdrawals', { p_admin_phone: ADMIN.phone, p_admin_password: pass });
+  const card = document.getElementById('pending-withdrawals-card');
+  if (!rows || !rows.length) { card.style.display = 'none'; return; }
+  card.style.display = '';
+  document.getElementById('pending-withdrawals-tbody').innerHTML = rows.map(r => `
+    <tr>
+      <td dir="ltr" style="font-size:.82rem">${escapeHtml(r.phone)}</td>
+      <td style="font-weight:800;color:#DC2626">${fmt(r.amount)} ج.م</td>
+      <td style="font-size:.82rem">${escapeHtml(r.destination)||'—'}</td>
+      <td style="font-size:.78rem;color:#64748B">${escapeHtml(r.note)||'—'}</td>
+      <td style="font-size:.75rem">${fmtTime(r.created_at)}</td>
+      <td style="white-space:nowrap">
+        <button class="btn btn--green btn--sm" onclick="approvePendingWithdrawal('${r.id}')">✅ موافقة</button>
+        <button class="btn btn--red btn--sm" onclick="rejectPendingWithdrawal('${r.id}')">✗ رفض</button>
+      </td>
+    </tr>`).join('');
+}
+async function approvePendingWithdrawal(id) {
+  if (!(await showConfirmGate('تأكيد سحب هذا المبلغ من رصيد المستخدم فعليًا؟'))) return;
+  const pass = await getAdminPass(); if (!pass) return;
+  const ok = await sbRpc('admin_approve_withdrawal', { p_admin_phone: ADMIN.phone, p_admin_password: pass, p_request_id: id });
+  if (ok) { showToast('✅ تم اعتماد السحب', '#16A34A'); loadPendingWithdrawals(); loadWalletsSection(); }
+  else { clearAdminPass(); showToast('❌ تعذّر الاعتماد — تحقق من الرصيد الحالي', '#DC2626'); }
+}
+async function rejectPendingWithdrawal(id) {
+  const reason = (await showTextGate('سبب الرفض (اختياري):')) || '';
+  const pass = await getAdminPass(); if (!pass) return;
+  const ok = await sbRpc('admin_reject_withdrawal', { p_admin_phone: ADMIN.phone, p_admin_password: pass, p_request_id: id, p_reason: reason || null });
+  if (ok) { showToast('تم رفض الطلب — لم يُخصم أي مبلغ', '#DC2626'); loadPendingWithdrawals(); }
+  else { clearAdminPass(); showToast('❌ حدث خطأ', '#DC2626'); }
 }
 
 // Offset-paged transaction log (db/security-189 adds p_offset/p_type to
