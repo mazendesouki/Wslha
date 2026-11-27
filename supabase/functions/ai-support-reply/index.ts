@@ -4,6 +4,15 @@
 //  The API key never reaches the app or the database — it's a server-side
 //  secret on this function only.
 //
+//  Streams the reply (db/security-194): inserts an empty placeholder row
+//  immediately and updates its `body` as tokens arrive from Anthropic's
+//  SSE stream, throttled to ~4/sec — the client watches this row live via
+//  Supabase Realtime (support_messages is in the realtime publication
+//  with a permissive SELECT policy, same pattern as rides/driver_locations/
+//  dispatch_offers) instead of waiting for the existing 10s poll to catch
+//  the finished reply. `streaming` flips to false on the row's final
+//  update, which is also the client's signal that the reply is complete.
+//
 //  Called by the client right after send_support_message() succeeds
 //  (support_chat_repository.dart). Verifies the conversation belongs to
 //  the given phone, skips silently once a human admin has taken over
@@ -26,6 +35,12 @@ const SYSTEM_PROMPT = `انت مساعد الدعم الفني لتطبيق "و�
 جاوب بالعربي المصري العامي، بأسلوب ودود ومختصر (جملتين-تلاتة بالكتير).
 لو السؤال محتاج تدخل بشري فعلي (شكوى، استرجاع فلوس، مشكلة أمان) قول للعميل إن فريق الدعم هيتابع معاه بنفسه.
 ماتخترعش معلومات عن أسعار أو سياسات مش متأكد منها — لو مش عارف، قول هتحول الموضوع لفريق الدعم البشري.`;
+
+// Minimum gap between row updates while streaming — Anthropic can emit
+// dozens of small text deltas per second; updating on every single one
+// would mean dozens of Postgres writes (and realtime broadcasts) per
+// reply for no visible benefit over a smooth ~4-per-second reveal.
+const MIN_UPDATE_INTERVAL_MS = 250;
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors });
@@ -78,22 +93,77 @@ Deno.serve(async (req) => {
         max_tokens: 300,
         system: SYSTEM_PROMPT,
         messages: messages.map((m) => ({ role: m.role, content: m.body })),
+        stream: true,
       }),
     });
 
-    if (!claudeRes.ok) {
+    if (!claudeRes.ok || !claudeRes.body) {
       const detail = await claudeRes.text().catch(() => '');
       console.error('Anthropic error:', claudeRes.status, detail);
       return json({ error: 'ai_error' }, 502);
     }
 
-    const claudeJson = await claudeRes.json();
-    const reply = claudeJson?.content?.[0]?.text?.trim();
-    if (!reply) return json({ error: 'ai_empty' }, 502);
+    // Placeholder row the client watches live — inserted before the first
+    // token so the chat shows a reply "typing in" immediately rather than
+    // only once Claude has finished.
+    const { data: placeholder, error: insertErr } = await admin
+      .from('support_messages')
+      .insert({ conversation_id, sender_role: 'ai', body: '', read_by_admin: true, streaming: true })
+      .select('id')
+      .single();
+    if (insertErr || !placeholder) {
+      console.error('placeholder insert failed:', insertErr);
+      return json({ error: 'server_error' }, 500);
+    }
+    const messageId = placeholder.id;
 
-    await admin.from('support_messages').insert({
-      conversation_id, sender_role: 'ai', body: reply, read_by_admin: true,
-    });
+    let reply = '';
+    let lastUpdateAt = 0;
+    try {
+      const reader = claudeRes.body.getReader();
+      const decoder = new TextDecoder();
+      let buf = '';
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buf += decoder.decode(value, { stream: true });
+        const lines = buf.split('\n');
+        buf = lines.pop() ?? ''; // keep the last, possibly-incomplete line for next read
+        for (const line of lines) {
+          if (!line.startsWith('data: ')) continue;
+          let evt: unknown;
+          try {
+            evt = JSON.parse(line.slice('data: '.length));
+          } catch {
+            continue;
+          }
+          const e = evt as { type?: string; delta?: { type?: string; text?: string } };
+          if (e.type === 'content_block_delta' && e.delta?.type === 'text_delta' && e.delta.text) {
+            reply += e.delta.text;
+            const now = Date.now();
+            if (now - lastUpdateAt >= MIN_UPDATE_INTERVAL_MS) {
+              lastUpdateAt = now;
+              await admin.from('support_messages').update({ body: reply }).eq('id', messageId);
+            }
+          }
+        }
+      }
+    } catch (streamErr) {
+      console.error('stream read error:', streamErr);
+      // Fall through with whatever text arrived before the stream broke —
+      // finalizing below still clears `streaming` so the client never
+      // waits forever on a dropped connection.
+    }
+
+    reply = reply.trim();
+    if (!reply) {
+      // Nothing usable came through — remove the empty placeholder rather
+      // than leaving a blank "AI" bubble in the conversation.
+      await admin.from('support_messages').delete().eq('id', messageId);
+      return json({ error: 'ai_empty' }, 502);
+    }
+
+    await admin.from('support_messages').update({ body: reply, streaming: false }).eq('id', messageId);
     await admin.from('support_conversations').update({ updated_at: new Date().toISOString() }).eq('id', conversation_id);
 
     // Best-effort — the customer is usually already looking at the chat

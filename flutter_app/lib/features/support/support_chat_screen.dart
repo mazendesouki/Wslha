@@ -77,6 +77,28 @@ class _SupportChatScreenState extends State<SupportChatScreen> {
     }
   }
 
+  // Polls every 700ms (instead of the background 10s cadence) for up to
+  // ~20s right after triggering an AI reply, through the same phone-
+  // verified fetchMessages() path _refresh() already uses — no Realtime
+  // involved, since support_messages deliberately has no direct SELECT
+  // grant (it can hold PII/complaints across every user; see
+  // support_chat_repository.dart's class doc comment). Stops as soon as
+  // the newest message is a finished (non-streaming) AI reply, or after
+  // the timeout, whichever comes first — a stuck/slow stream just falls
+  // back to the normal 10s poll noticing it eventually, same as before
+  // this feature existed.
+  Future<void> _pollWhileStreaming() async {
+    final deadline = DateTime.now().add(const Duration(seconds: 20));
+    while (mounted && DateTime.now().isBefore(deadline)) {
+      await _refresh();
+      if (_messages.isNotEmpty) {
+        final last = _messages.last;
+        if (last.senderRole == 'ai' && !last.streaming) return;
+      }
+      await Future.delayed(const Duration(milliseconds: 700));
+    }
+  }
+
   Future<void> _send() async {
     final body = _msgCtrl.text.trim();
     if (body.isEmpty || _sending) return;
@@ -89,9 +111,19 @@ class _SupportChatScreenState extends State<SupportChatScreen> {
       await _repo.send(conversationId: id, phone: widget.myPhone, body: body);
       await _refresh();
       if (FeatureFlags.aiBotEnabled) {
-        // Fire-and-forget: refresh again once the bot (if it answers)
-        // has had time to reply, without blocking the send button.
-        unawaited(_repo.triggerAiReply(conversationId: id, phone: widget.myPhone).then((_) => _refresh()));
+        // ai-support-reply (supabase/functions/ai-support-reply) now writes
+        // its reply incrementally as Anthropic streams it back, rather than
+        // waiting for the whole thing — but sb.functions.invoke still only
+        // resolves once the function itself returns, so the streaming only
+        // becomes visible here if something keeps re-fetching the row while
+        // that call is in flight. _pollWhileStreaming does that: a tight
+        // poll (700ms) running concurrently with triggerAiReply, so the
+        // reply visibly grows in instead of appearing all at once at the
+        // end. The existing 10s background poll is untouched — this is
+        // purely an extra, short-lived, faster poll layered on top while a
+        // reply is actively being generated.
+        unawaited(_repo.triggerAiReply(conversationId: id, phone: widget.myPhone));
+        unawaited(_pollWhileStreaming());
       }
     } catch (_) {
       if (mounted) {
@@ -152,7 +184,18 @@ class _SupportChatScreenState extends State<SupportChatScreen> {
                                         style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: AppColors.primary),
                                       ),
                                     ),
-                                  Text(m.body, style: TextStyle(color: isMine ? Colors.white : context.bodyText, fontSize: 14)),
+                                  RichText(
+                                    text: TextSpan(
+                                      style: TextStyle(color: isMine ? Colors.white : context.bodyText, fontSize: 14),
+                                      children: [
+                                        TextSpan(text: m.body),
+                                        // Still streaming in — a trailing
+                                        // cursor so an empty/short bubble
+                                        // reads as "typing", not "empty".
+                                        if (m.streaming) const TextSpan(text: ' ▌', style: TextStyle(color: AppColors.primary)),
+                                      ],
+                                    ),
+                                  ),
                                   const SizedBox(height: 4),
                                   Text(
                                     '${m.createdAt.hour.toString().padLeft(2, '0')}:${m.createdAt.minute.toString().padLeft(2, '0')}',

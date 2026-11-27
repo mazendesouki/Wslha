@@ -6,6 +6,7 @@
 // always wants both at once.
 import type { APIRoute } from 'astro';
 import { verifyAccessToken, SB_URL } from '../../../lib/session';
+import { cached } from '../../../lib/redis';
 
 export const prerender = false;
 
@@ -27,18 +28,33 @@ export const GET: APIRoute = async ({ request, url: reqUrl }) => {
   const limit = Number.isFinite(limitParam) ? Math.min(Math.max(limitParam, 1), 100) : 10;
   const phone = encodeURIComponent(payload.sub);
 
-  const [totalsRes, txRes] = await Promise.all([
-    fetch(`${SB_URL}/rest/v1/points?phone=eq.${phone}&select=total_points`, { headers: SB_H }),
-    fetch(`${SB_URL}/rest/v1/point_transactions?phone=eq.${phone}&select=points,type,created_at&order=created_at.desc&limit=${limit}`, { headers: SB_H }),
-  ]);
-  if (!totalsRes.ok || !txRes.ok) {
+  // Cached 20s per (phone, limit) — this is read every time the wallet
+  // card opens, but a loyalty-points balance doesn't move within a
+  // 20-second window for any real user action, so a short cache here cuts
+  // duplicate reads without ever showing data more than ~20s stale. Falls
+  // through to the same two Supabase reads as before when Redis isn't
+  // configured yet, or on any cache error — this never becomes the only
+  // path to the data.
+  let fetchFailed = false;
+  const body = await cached(`points-summary:${payload.sub}:${limit}`, 20, async () => {
+    const [totalsRes, txRes] = await Promise.all([
+      fetch(`${SB_URL}/rest/v1/points?phone=eq.${phone}&select=total_points`, { headers: SB_H }),
+      fetch(`${SB_URL}/rest/v1/point_transactions?phone=eq.${phone}&select=points,type,created_at&order=created_at.desc&limit=${limit}`, { headers: SB_H }),
+    ]);
+    if (!totalsRes.ok || !txRes.ok) {
+      fetchFailed = true;
+      return null;
+    }
+    const totals = await totalsRes.json();
+    const transactions = await txRes.json();
+    const totalPoints = Array.isArray(totals) && totals[0] ? totals[0].total_points ?? 0 : 0;
+    return { totalPoints, transactions };
+  });
+
+  if (fetchFailed || body === null) {
     return new Response(JSON.stringify({ error: 'points_fetch_failed' }), { status: 502 });
   }
-  const totals = await totalsRes.json();
-  const transactions = await txRes.json();
-  const totalPoints = Array.isArray(totals) && totals[0] ? totals[0].total_points ?? 0 : 0;
-
-  return new Response(JSON.stringify({ totalPoints, transactions }), {
+  return new Response(JSON.stringify(body), {
     status: 200,
     headers: { 'Content-Type': 'application/json' },
   });

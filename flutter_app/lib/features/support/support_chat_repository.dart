@@ -3,14 +3,19 @@ import '../../core/supabase_client.dart';
 
 class SupportMessage {
   final String id;
-  final String senderRole; // 'user' | 'support'
+  final String senderRole; // 'user' | 'support' | 'ai'
   final String body;
   final DateTime createdAt;
+  // True while ai-support-reply is still receiving tokens from Anthropic
+  // for this row — the client uses this to know when to stop the tight
+  // poll started after triggering a reply (see _pollWhileStreaming below).
+  final bool streaming;
   const SupportMessage({
     required this.id,
     required this.senderRole,
     required this.body,
     required this.createdAt,
+    this.streaming = false,
   });
 
   factory SupportMessage.fromRow(Map<String, dynamic> r) => SupportMessage(
@@ -18,6 +23,7 @@ class SupportMessage {
         senderRole: r['sender_role'] as String,
         body: r['body'] as String,
         createdAt: DateTime.parse(r['created_at'] as String).toLocal(),
+        streaming: r['streaming'] as bool? ?? false,
       );
 }
 
