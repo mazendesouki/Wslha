@@ -19,6 +19,16 @@ class AppNotification {
     required this.read,
   });
 
+  AppNotification copyWith({bool? read}) => AppNotification(
+        id: id,
+        title: title,
+        body: body,
+        url: url,
+        type: type,
+        createdAt: createdAt,
+        read: read ?? this.read,
+      );
+
   factory AppNotification.fromRow(Map<String, dynamic> r) => AppNotification(
         id: r['id'] as String,
         title: r['title'] as String? ?? '',

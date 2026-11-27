@@ -88,7 +88,7 @@ class ApiSession {
         Uri.parse('$apiBaseUrl/api/auth/login'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({'phone': phone, 'password': password}),
-      );
+      ).timeout(const Duration(seconds: 15));
       Map<String, dynamic> decoded = {};
       try {
         if (res.body.isNotEmpty) decoded = jsonDecode(res.body) as Map<String, dynamic>;
@@ -127,7 +127,7 @@ class ApiSession {
           if (_accessToken != null) 'Authorization': 'Bearer $_accessToken',
           if (_refreshCookie != null) 'Cookie': _refreshCookie!,
         },
-      );
+      ).timeout(const Duration(seconds: 15));
     } catch (_) {}
     _accessToken = null;
     _accessTokenExpiresAt = null;
@@ -142,7 +142,7 @@ class ApiSession {
       final res = await http.post(
         Uri.parse('$apiBaseUrl/api/auth/refresh'),
         headers: {'Cookie': _refreshCookie!},
-      );
+      ).timeout(const Duration(seconds: 15));
       if (res.statusCode != 200) {
         // Dead, expired, or theft-revoked — stop retrying with it.
         _accessToken = null;
@@ -190,7 +190,7 @@ class ApiSession {
     final token = await getValidAccessToken();
     if (token == null) return null;
     try {
-      final res = await http.get(Uri.parse('$apiBaseUrl$path'), headers: {'Authorization': 'Bearer $token'});
+      final res = await http.get(Uri.parse('$apiBaseUrl$path'), headers: {'Authorization': 'Bearer $token'}).timeout(const Duration(seconds: 15));
       if (res.statusCode != 200) return null;
       return jsonDecode(res.body) as Map<String, dynamic>;
     } catch (_) {
@@ -208,7 +208,7 @@ class ApiSession {
         Uri.parse('$apiBaseUrl$path'),
         headers: {'Authorization': 'Bearer $token', 'Content-Type': 'application/json'},
         body: jsonEncode(body),
-      );
+      ).timeout(const Duration(seconds: 15));
       if (res.statusCode != 200) return null;
       if (res.body.isEmpty) return <String, dynamic>{};
       return jsonDecode(res.body) as Map<String, dynamic>;

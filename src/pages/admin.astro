@@ -2411,27 +2411,34 @@ function renderPager(id, page, pageSize, total, onPage) {
     b.addEventListener('click', () => onPage(parseInt(b.dataset.page, 10)));
   });
 }
+function _tablesFetch(path, options) {
+  const ctrl = new AbortController();
+  const tid = setTimeout(() => ctrl.abort(), 8000);
+  return fetch(`${SB_URL}/rest/v1/${path}`, { ...options, signal: ctrl.signal }).finally(() => clearTimeout(tid));
+}
 async function sbPatch(path, body) {
   const pass = await getAdminPass();
   if (!pass) return false;
-  const r = await fetch(`${SB_URL}/rest/v1/${path}`, {
-    method:'PATCH', headers:{...SB_H,Prefer:'return=minimal'}, body:JSON.stringify(body)
-  });
-  return r.ok;
+  try {
+    const r = await _tablesFetch(path, { method:'PATCH', headers:{...SB_H,Prefer:'return=minimal'}, body:JSON.stringify(body) });
+    return r.ok;
+  } catch { return false; }
 }
 async function sbPost(path, body) {
   const pass = await getAdminPass();
   if (!pass) return false;
-  const r = await fetch(`${SB_URL}/rest/v1/${path}`, {
-    method:'POST', headers:{...SB_H,Prefer:'return=minimal'}, body:JSON.stringify(body)
-  });
-  return r.ok;
+  try {
+    const r = await _tablesFetch(path, { method:'POST', headers:{...SB_H,Prefer:'return=minimal'}, body:JSON.stringify(body) });
+    return r.ok;
+  } catch { return false; }
 }
 async function sbDelete(path) {
   const pass = await getAdminPass();
   if (!pass) return false;
-  const r = await fetch(`${SB_URL}/rest/v1/${path}`, { method:'DELETE', headers:SB_H });
-  return r.ok;
+  try {
+    const r = await _tablesFetch(path, { method:'DELETE', headers:SB_H });
+    return r.ok;
+  } catch { return false; }
 }
 // Privileged admin actions (promote / create admin, delete, approve, list
 // PII, change settings) require the admin password; it is verified
@@ -2638,11 +2645,20 @@ function showTextGate(title, { defaultValue = '', placeholder = '' } = {}) {
   });
 }
 
+// Shared 8s timeout (same window sbGet already uses) — without it, a
+// hung connection left every write/action button in the admin panel
+// (these three helpers back almost all of them) spinning forever with
+// no way out but a page reload.
+function _rpcFetch(fn, body) {
+  const ctrl = new AbortController();
+  const tid = setTimeout(() => ctrl.abort(), 8000);
+  return fetch(`${SB_URL}/rest/v1/rpc/${fn}`, {
+    method: 'POST', headers: { ...SB_H, 'Content-Type': 'application/json' }, body: JSON.stringify(body), signal: ctrl.signal,
+  }).finally(() => clearTimeout(tid));
+}
 async function sbRpc(fn, body) {
   try {
-    const r = await fetch(`${SB_URL}/rest/v1/rpc/${fn}`, {
-      method:'POST', headers:{...SB_H,'Content-Type':'application/json'}, body:JSON.stringify(body)
-    });
+    const r = await _rpcFetch(fn, body);
     if (!r.ok) return false;
     return (await r.json()) === true;
   } catch { return false; }
@@ -2650,9 +2666,7 @@ async function sbRpc(fn, body) {
 // Like sbRpc but for table-returning RPCs — returns the row array, or null on failure.
 async function sbRpcRows(fn, body) {
   try {
-    const r = await fetch(`${SB_URL}/rest/v1/rpc/${fn}`, {
-      method:'POST', headers:{...SB_H,'Content-Type':'application/json'}, body:JSON.stringify(body)
-    });
+    const r = await _rpcFetch(fn, body);
     if (!r.ok) return null;
     const rows = await r.json();
     return Array.isArray(rows) ? rows : null;
@@ -2661,9 +2675,12 @@ async function sbRpcRows(fn, body) {
 // For RPCs that return a jsonb scalar/object rather than a boolean or row set.
 // Throws with the server's error message on failure so callers can show it.
 async function sbRpcJson(fn, body) {
-  const r = await fetch(`${SB_URL}/rest/v1/rpc/${fn}`, {
-    method:'POST', headers:{...SB_H,'Content-Type':'application/json'}, body:JSON.stringify(body)
-  });
+  let r;
+  try {
+    r = await _rpcFetch(fn, body);
+  } catch (e) {
+    throw new Error(e?.name === 'AbortError' ? 'انتهت مهلة الطلب — حاول تاني' : 'تعذّر الاتصال بالسيرفر');
+  }
   if (!r.ok) {
     let detail = '';
     try { const j = await r.json(); detail = j.message || j.hint || ''; } catch {}

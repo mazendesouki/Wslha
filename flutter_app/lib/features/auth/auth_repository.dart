@@ -85,7 +85,7 @@ class AuthRepository {
           Uri.parse('$supabaseUrl/rest/v1/rpc/lookup_account'),
           headers: _sbHeaders,
           body: jsonEncode({'p_phone': phone}),
-        );
+        ).timeout(const Duration(seconds: 15));
         final exists = lookup.statusCode == 200 && (jsonDecode(lookup.body) as List).isNotEmpty;
         return LoginFailure(exists ? 'bad_password' : 'not_found');
       } catch (_) {
@@ -112,7 +112,7 @@ class AuthRepository {
         Uri.parse('$supabaseUrl/rest/v1/rpc/verify_login'),
         headers: _sbHeaders,
         body: jsonEncode({'p_phone': phone, 'p_password': password}),
-      );
+      ).timeout(const Duration(seconds: 15));
       if (res.statusCode != 200) {
         if (res.body.contains('محاولات دخول كتير غلط')) {
           return LoginFailure('rate_limited', message: 'محاولات دخول كتير غلط — حاول تاني بعد شوية');
@@ -125,7 +125,7 @@ class AuthRepository {
           Uri.parse('$supabaseUrl/rest/v1/rpc/lookup_account'),
           headers: _sbHeaders,
           body: jsonEncode({'p_phone': phone}),
-        );
+        ).timeout(const Duration(seconds: 15));
         final exists = lookup.statusCode == 200 && (jsonDecode(lookup.body) as List).isNotEmpty;
         return LoginFailure(exists ? 'bad_password' : 'not_found');
       }
@@ -159,7 +159,7 @@ class AuthRepository {
           : '$supabaseUrl/rest/v1/rpc/check_field_availability'),
       headers: _sbHeaders,
       body: jsonEncode(isNationalId ? {'p_value': v} : {'p_field': field, 'p_value': v}),
-    );
+    ).timeout(const Duration(seconds: 15));
     if (res.statusCode != 200) return false;
     return jsonDecode(res.body) == true;
   }
@@ -203,7 +203,7 @@ class AuthRepository {
       Uri.parse('$supabaseUrl/rest/v1/accounts'),
       headers: {..._sbHeaders, 'Prefer': 'return=minimal'},
       body: jsonEncode(payload),
-    );
+    ).timeout(const Duration(seconds: 15));
     if (res.statusCode == 201 || res.statusCode == 200) return null;
 
     String body = '';
@@ -252,7 +252,7 @@ class AuthRepository {
         Uri.parse('$supabaseUrl/rest/v1/rpc/lookup_account'),
         headers: _sbHeaders,
         body: jsonEncode({'p_phone': normalizedPhone}),
-      );
+      ).timeout(const Duration(seconds: 15));
       final existing = lookupRes.statusCode == 200 ? jsonDecode(lookupRes.body) as List : [];
 
       if (existing.isNotEmpty) {
@@ -271,7 +271,7 @@ class AuthRepository {
           Uri.parse('$supabaseUrl/rest/v1/rpc/upgrade_account_role'),
           headers: _sbHeaders,
           body: jsonEncode({'p_phone': acc['phone'], 'p_role': role}),
-        );
+        ).timeout(const Duration(seconds: 15));
         if (patchRes.statusCode != 200 || jsonDecode(patchRes.body) != true) {
           return DriverMerchantRegisterResult(error: true, phone: normalizedPhone, debugDetail: 'RPC ${patchRes.statusCode}: ${patchRes.body}');
         }
@@ -289,7 +289,7 @@ class AuthRepository {
             'city': city,
             'created_at': DateTime.now().toIso8601String(),
           }),
-        );
+        ).timeout(const Duration(seconds: 15));
         if (createRes.statusCode != 201 && createRes.statusCode != 200) {
           return DriverMerchantRegisterResult(error: true, phone: normalizedPhone, debugDetail: 'POST ${createRes.statusCode}: ${createRes.body}');
         }
@@ -332,7 +332,7 @@ class AuthRepository {
         'Content-Type': 'image/${converted.fileExt}',
       },
       body: converted.bytes,
-    );
+    ).timeout(const Duration(seconds: 15));
     if (uploadRes.statusCode != 200 && uploadRes.statusCode != 201) return null;
     return '$supabaseUrl/storage/v1/object/public/documents/$path';
   }

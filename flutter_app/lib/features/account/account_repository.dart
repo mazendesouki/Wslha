@@ -68,7 +68,7 @@ class AccountRepository {
         'Content-Type': 'image/${converted.fileExt}',
       },
       body: converted.bytes,
-    );
+    ).timeout(const Duration(seconds: 15));
     if (uploadRes.statusCode != 200 && uploadRes.statusCode != 201) return null;
     final url = '$supabaseUrl/storage/v1/object/public/documents/$path';
     final data = await ApiSession.postJson('/api/profile/avatar', {'avatar_url': url});

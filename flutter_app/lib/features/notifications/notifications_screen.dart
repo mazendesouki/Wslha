@@ -92,10 +92,23 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     await _load();
   }
 
+  // Optimistic: flips the dot off immediately instead of waiting on a round
+  // trip first (same pattern as favorite_driver_button.dart) — reading a
+  // notification is a low-stakes, effectively-irreversible-either-way
+  // action, so there's nothing to lose by showing it read right away. Rolls
+  // back to the server's actual state via _load() only if the request
+  // genuinely fails.
   Future<void> _onTap(AppNotification item) async {
     final phone = _phone;
-    if (phone != null && !item.read) {
+    if (phone == null || item.read) return;
+    final items = _items;
+    if (items == null) return;
+    final i = items.indexOf(item);
+    if (i == -1) return;
+    setState(() => _items = [...items]..[i] = item.copyWith(read: true));
+    try {
       await _repo.markRead(phone, item.id);
+    } catch (_) {
       await _load();
     }
   }

@@ -21,7 +21,6 @@
   "devDependencies": {
     "@astrojs/preact": "^6.1.1",
     "@capacitor/cli": "^8.6.0",
-    "@resvg/resvg-js": "^2.6.2",
     "astro": "^7.4.5",
     "playwright": "^1.60.0"
   },
