@@ -20,13 +20,33 @@ class NotificationsScreen extends StatefulWidget {
 
 class _NotificationsScreenState extends State<NotificationsScreen> {
   final _repo = NotificationsRepository();
+  final _scrollController = ScrollController();
+  static const _pageSize = 50;
   String? _phone;
   List<AppNotification>? _items;
+  bool _hasMore = true;
+  bool _loadingMore = false;
 
   @override
   void initState() {
     super.initState();
     _load();
+    // Fetches the next page (db/security-188's cursor) once the list is
+    // scrolled near the bottom — without this, anything past the first
+    // _pageSize notifications was permanently unreachable.
+    _scrollController.addListener(() {
+      if (!_loadingMore &&
+          _hasMore &&
+          _scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 200) {
+        _loadMore();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
   }
 
   Future<void> _load() async {
@@ -37,9 +57,32 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       setState(() => _items = []);
       return;
     }
-    final items = await _repo.list(_phone!);
+    final items = await _repo.list(_phone!, limit: _pageSize);
     if (!mounted) return;
-    setState(() => _items = items);
+    setState(() {
+      _items = items;
+      _hasMore = items.length >= _pageSize;
+    });
+  }
+
+  Future<void> _loadMore() async {
+    final phone = _phone;
+    final items = _items;
+    if (phone == null || items == null || items.isEmpty) return;
+    setState(() => _loadingMore = true);
+    try {
+      final last = items.last;
+      final more = await _repo.list(phone, limit: _pageSize, afterCreatedAt: last.createdAt, afterId: last.id);
+      if (!mounted) return;
+      setState(() {
+        _items = [...items, ...more];
+        _hasMore = more.length >= _pageSize;
+      });
+    } catch (_) {
+      // Next scroll-triggered attempt (or a pull-to-refresh) will retry.
+    } finally {
+      if (mounted) setState(() => _loadingMore = false);
+    }
   }
 
   Future<void> _markAllRead() async {
@@ -76,10 +119,16 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               : RefreshIndicator(
                   onRefresh: _load,
                   child: ListView.separated(
+                    controller: _scrollController,
                     padding: const EdgeInsets.symmetric(vertical: 8),
-                    itemCount: items.length,
+                    itemCount: items.length + (_loadingMore ? 1 : 0),
                     separatorBuilder: (_, __) => const Divider(height: 1),
-                    itemBuilder: (_, i) => _NotificationTile(item: items[i], onTap: () => _onTap(items[i])),
+                    itemBuilder: (_, i) => i >= items.length
+                        ? const Padding(
+                            padding: EdgeInsets.all(16),
+                            child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                          )
+                        : _NotificationTile(item: items[i], onTap: () => _onTap(items[i])),
                   ),
                 ),
     );

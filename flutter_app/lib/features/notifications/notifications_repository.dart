@@ -39,8 +39,22 @@ class AppNotification {
 /// SELECT policy used for Realtime, see security-116) rather than a plain
 /// table select, matching the rest of this app's phone-scoped RPC pattern.
 class NotificationsRepository {
-  Future<List<AppNotification>> list(String phone, {int limit = 50}) async {
-    final rows = await sb.rpc('list_notifications', params: {'p_phone': phone, 'p_limit': limit});
+  /// Pass [afterCreatedAt]/[afterId] (the last item of the previous page's
+  /// `createdAt`/`id`) to fetch the next page — omit both for the first
+  /// page. Without a cursor, anything past the most recent [limit]
+  /// notifications was previously unreachable (db/security-188).
+  Future<List<AppNotification>> list(
+    String phone, {
+    int limit = 50,
+    DateTime? afterCreatedAt,
+    String? afterId,
+  }) async {
+    final rows = await sb.rpc('list_notifications', params: {
+      'p_phone': phone,
+      'p_limit': limit,
+      if (afterCreatedAt != null) 'p_after_created_at': afterCreatedAt.toUtc().toIso8601String(),
+      if (afterId != null) 'p_after_id': afterId,
+    });
     return (rows as List).map((r) => AppNotification.fromRow(r as Map<String, dynamic>)).toList();
   }
 
