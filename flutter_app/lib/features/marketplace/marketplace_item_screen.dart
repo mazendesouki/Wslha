@@ -5,6 +5,8 @@ import '../../core/phone_utils.dart';
 import '../../core/service_controls.dart';
 import '../../core/session.dart';
 import '../../core/theme.dart';
+import '../../shared/widgets/app_network_image.dart';
+import '../../shared/widgets/skeleton.dart';
 import 'marketplace_models.dart';
 import 'marketplace_repository.dart';
 
@@ -64,7 +66,25 @@ class _MarketplaceItemScreenState extends State<MarketplaceItemScreen> {
       body: SafeArea(
         top: false,
         child: _loading
-          ? const Center(child: CircularProgressIndicator())
+          ? const Padding(
+              padding: EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  AspectRatio(aspectRatio: 4 / 3, child: SkeletonBox(width: double.infinity, height: double.infinity, borderRadius: BorderRadius.all(Radius.circular(16)))),
+                  SizedBox(height: 16),
+                  SkeletonBox(width: 180, height: 16),
+                  SizedBox(height: 10),
+                  SkeletonBox(width: 100, height: 20),
+                  SizedBox(height: 16),
+                  SkeletonBox(width: double.infinity, height: 12),
+                  SizedBox(height: 8),
+                  SkeletonBox(width: double.infinity, height: 12),
+                  SizedBox(height: 8),
+                  SkeletonBox(width: 220, height: 12),
+                ],
+              ),
+            )
           : _notFound || item == null
               ? Center(
                   child: Column(
@@ -79,7 +99,7 @@ class _MarketplaceItemScreenState extends State<MarketplaceItemScreen> {
               : ListView(
                   padding: const EdgeInsets.all(16),
                   children: [
-                    _Gallery(images: item.images, title: item.title),
+                    _Gallery(images: item.images, title: item.title, itemId: widget.itemId),
                     const SizedBox(height: 16),
                     Wrap(
                       spacing: 6,
@@ -180,7 +200,8 @@ class _MarketplaceItemScreenState extends State<MarketplaceItemScreen> {
 class _Gallery extends StatefulWidget {
   final List<String> images;
   final String title;
-  const _Gallery({required this.images, required this.title});
+  final String itemId;
+  const _Gallery({required this.images, required this.title, required this.itemId});
 
   @override
   State<_Gallery> createState() => _GalleryState();
@@ -217,10 +238,18 @@ class _GalleryState extends State<_Gallery> {
               controller: _controller,
               onPageChanged: (i) => setState(() => _index = i),
               itemCount: widget.images.length,
-              itemBuilder: (_, i) => Image.network(
-                widget.images[i],
-                fit: BoxFit.contain,
-                errorBuilder: (_, _, _) => Container(color: context.mutedSurface, child: const Center(child: Text('📦', style: TextStyle(fontSize: 56)))),
+              itemBuilder: (_, i) => LayoutBuilder(
+                builder: (context, constraints) => AppNetworkImage(
+                  url: widget.images[i],
+                  width: constraints.maxWidth,
+                  height: constraints.maxHeight,
+                  fit: BoxFit.contain,
+                  // Only the first image shares the grid thumbnail's hero tag
+                  // (that's the one the grid ever shows) — the rest get none,
+                  // since two simultaneously-built Heroes can't share a tag.
+                  heroTag: i == 0 ? 'marketplace-item-${widget.itemId}' : null,
+                  errorBuilder: (_) => Container(color: context.mutedSurface, child: const Center(child: Text('📦', style: TextStyle(fontSize: 56)))),
+                ),
               ),
             ),
           ),

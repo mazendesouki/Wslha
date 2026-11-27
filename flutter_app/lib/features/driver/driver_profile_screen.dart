@@ -12,6 +12,7 @@ import '../../core/pricing_settings.dart';
 import '../../core/session.dart';
 import '../../core/supabase_client.dart';
 import '../../core/theme.dart';
+import '../../shared/widgets/app_network_image.dart';
 import '../../shared/widgets/key_value_row.dart';
 import '../account/account_repository.dart';
 import '../ratings/ratings_list_screen.dart';
@@ -383,7 +384,12 @@ class DriverProfileScreenState extends State<DriverProfileScreen> {
               CircleAvatar(
                 radius: 38,
                 backgroundColor: Colors.white24,
-                backgroundImage: avatarUrl != null ? NetworkImage(avatarUrl) : null,
+                // ResizeImage decodes at ~76px instead of the source's full
+                // resolution — this is a 38px-radius avatar, never shown
+                // bigger.
+                backgroundImage: avatarUrl != null
+                    ? ResizeImage(NetworkImage(avatarUrl), width: (76 * MediaQuery.of(context).devicePixelRatio).round())
+                    : null,
                 child: avatarUrl == null ? const Text('👤', style: TextStyle(fontSize: 32)) : null,
               ),
               Positioned(
@@ -742,7 +748,7 @@ class DriverProfileScreenState extends State<DriverProfileScreen> {
               ClipRRect(
                 borderRadius: BorderRadius.circular(12),
                 child: photo != null
-                    ? Image.network(photo, width: 72, height: 72, fit: BoxFit.cover)
+                    ? AppNetworkImage(url: photo, width: 72, height: 72)
                     : Container(
                         width: 72,
                         height: 72,

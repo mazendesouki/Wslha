@@ -12,6 +12,7 @@ import '../../core/notifications.dart';
 import '../../core/pricing_settings.dart';
 import '../../core/session.dart';
 import '../../core/theme.dart';
+import '../../shared/widgets/app_network_image.dart';
 import '../../shared/widgets/finish_ride_button.dart';
 import '../../shared/widgets/key_value_row.dart';
 import '../../shared/widgets/live_tracking_map.dart';
@@ -917,7 +918,9 @@ class _DriverCard extends StatelessWidget {
               CircleAvatar(
                 radius: 28,
                 backgroundColor: AppColors.primaryLight,
-                backgroundImage: (photoUrl != null && photoUrl.isNotEmpty) ? NetworkImage(photoUrl) : null,
+                backgroundImage: (photoUrl != null && photoUrl.isNotEmpty)
+                    ? ResizeImage(NetworkImage(photoUrl), width: (56 * MediaQuery.of(context).devicePixelRatio).round())
+                    : null,
                 child: (photoUrl == null || photoUrl.isEmpty)
                     ? const Text('🧑‍✈️', style: TextStyle(fontSize: 22))
                     : null,
@@ -989,21 +992,13 @@ class _DriverCard extends StatelessWidget {
           ],
           if (carPhotoUrl != null && carPhotoUrl.isNotEmpty) ...[
             const SizedBox(height: 12),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(12),
-              child: Image.network(
-                carPhotoUrl,
+            LayoutBuilder(
+              builder: (context, constraints) => AppNetworkImage(
+                url: carPhotoUrl,
+                width: constraints.maxWidth,
                 height: 140,
-                width: double.infinity,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) => const SizedBox.shrink(),
-                loadingBuilder: (context, child, progress) {
-                  if (progress == null) return child;
-                  return const SizedBox(
-                    height: 140,
-                    child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
-                  );
-                },
+                borderRadius: BorderRadius.circular(12),
+                errorBuilder: (_) => const SizedBox.shrink(),
               ),
             ),
           ],
@@ -1097,7 +1092,9 @@ class _CustomerCard extends StatelessWidget {
               return CircleAvatar(
                 radius: 24,
                 backgroundColor: AppColors.primaryLight,
-                backgroundImage: (avatarUrl != null && avatarUrl.isNotEmpty) ? NetworkImage(avatarUrl) : null,
+                backgroundImage: (avatarUrl != null && avatarUrl.isNotEmpty)
+                    ? ResizeImage(NetworkImage(avatarUrl), width: (48 * MediaQuery.of(context).devicePixelRatio).round())
+                    : null,
                 child: (avatarUrl == null || avatarUrl.isEmpty) ? const Text('🧑', style: TextStyle(fontSize: 20)) : null,
               );
             },

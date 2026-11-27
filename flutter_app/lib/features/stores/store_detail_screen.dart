@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../core/i18n.dart';
 import '../../core/theme.dart';
+import '../../shared/widgets/app_network_image.dart';
+import '../../shared/widgets/skeleton.dart';
 import '../ratings/ratings_repository.dart';
 import 'cart_store.dart';
 import 'checkout_sheet.dart';
@@ -101,7 +103,7 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
       backgroundColor: context.mutedSurface,
       appBar: AppBar(title: Text(widget.store.name)),
       body: _loading
-          ? const Center(child: CircularProgressIndicator())
+          ? const SkeletonList()
           : _error != null
               ? Center(
                   child: Padding(
@@ -253,10 +255,13 @@ class _ProductTile extends StatelessWidget {
       child: Row(
         children: [
           if (product.imageUrl != null && product.imageUrl!.isNotEmpty)
-            ClipRRect(
+            AppNetworkImage(
+              url: product.imageUrl!,
+              width: 56,
+              height: 56,
               borderRadius: BorderRadius.circular(10),
-              child: Image.network(product.imageUrl!, width: 56, height: 56, fit: BoxFit.cover,
-                  errorBuilder: (_, _, _) => _emojiBox()),
+              heroTag: 'product-${product.id}',
+              errorBuilder: (_) => _emojiBox(),
             )
           else
             _emojiBox(),

@@ -21,7 +21,7 @@ class NotificationsScreen extends StatefulWidget {
 class _NotificationsScreenState extends State<NotificationsScreen> {
   final _repo = NotificationsRepository();
   final _scrollController = ScrollController();
-  static const _pageSize = 50;
+  static const _pageSize = 20;
   String? _phone;
   List<AppNotification>? _items;
   bool _hasMore = true;

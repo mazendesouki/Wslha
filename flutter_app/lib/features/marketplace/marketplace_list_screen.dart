@@ -3,6 +3,8 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../core/i18n.dart';
 import '../../core/service_controls.dart';
 import '../../core/theme.dart';
+import '../../shared/widgets/app_network_image.dart';
+import '../../shared/widgets/skeleton.dart';
 import 'marketplace_item_screen.dart';
 import 'marketplace_models.dart';
 import 'marketplace_repository.dart';
@@ -115,7 +117,7 @@ class _MarketplaceListScreenState extends State<MarketplaceListScreen> {
           const SizedBox(height: 8),
           Expanded(
             child: _loading
-                ? const Center(child: CircularProgressIndicator())
+                ? const SkeletonImageTextGrid()
                 : _error != null
                     ? Center(
                         child: Padding(
@@ -203,10 +205,14 @@ class _ItemCard extends StatelessWidget {
                 child: ClipRRect(
                   borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
                   child: item.images.isNotEmpty
-                      ? Image.network(
-                          item.images.first,
-                          fit: BoxFit.cover,
-                          errorBuilder: (_, _, _) => Container(color: context.mutedSurface, child: const Center(child: Text('📦', style: TextStyle(fontSize: 32)))),
+                      ? LayoutBuilder(
+                          builder: (context, constraints) => AppNetworkImage(
+                            url: item.images.first,
+                            width: constraints.maxWidth,
+                            height: constraints.maxHeight,
+                            heroTag: 'marketplace-item-${item.id}',
+                            errorBuilder: (_) => Container(color: context.mutedSurface, child: const Center(child: Text('📦', style: TextStyle(fontSize: 32)))),
+                          ),
                         )
                       : Container(color: context.mutedSurface, child: const Center(child: Text('📦', style: TextStyle(fontSize: 32)))),
                 ),

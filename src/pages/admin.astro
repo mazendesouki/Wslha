@@ -4156,7 +4156,7 @@ async function confirmReject(type) {
 let allOrders = [], currentOrderId = '';
 let ordersPage = 1;
 let ordersTotal = 0;
-const ORDERS_PAGE_SIZE = 50;
+const ORDERS_PAGE_SIZE = 20;
 async function loadOrders(page = ordersPage, withCount = true) {
   ordersPage = page;
   const status = document.getElementById('orders-status-filter').value;
@@ -4570,7 +4570,7 @@ async function deleteCurrentOrder() {
 let allRides = [];
 let ridesPage = 1;
 let ridesTotal = 0;
-const RIDES_PAGE_SIZE = 50;
+const RIDES_PAGE_SIZE = 20;
 async function loadRides(page = ridesPage, withCount = true) {
   ridesPage = page;
   const status = document.getElementById('rides-status-filter').value;
@@ -6364,7 +6364,7 @@ async function rejectPendingWithdrawal(id) {
 // operation (268 rows today), and used to be fetched 500-at-a-time with
 // only the newest 200 ever rendered, so anything older was unreachable.
 let txPage = 1, txTotal = 0;
-const TX_PAGE_SIZE = 50;
+const TX_PAGE_SIZE = 20;
 async function loadTxLogPage(page = txPage) {
   txPage = page;
   const pass = await getAdminPass();

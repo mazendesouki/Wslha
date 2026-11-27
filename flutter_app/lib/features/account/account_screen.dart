@@ -378,7 +378,9 @@ class AccountScreenState extends State<AccountScreen> {
                         CircleAvatar(
                           radius: 32,
                           backgroundColor: Colors.white24,
-                          backgroundImage: avatarUrl != null && avatarUrl.isNotEmpty ? NetworkImage(avatarUrl) : null,
+                          backgroundImage: avatarUrl != null && avatarUrl.isNotEmpty
+                              ? ResizeImage(NetworkImage(avatarUrl), width: (64 * MediaQuery.of(context).devicePixelRatio).round())
+                              : null,
                           child: avatarUrl == null || avatarUrl.isEmpty
                               ? const Text('👤', style: TextStyle(fontSize: 28))
                               : null,
