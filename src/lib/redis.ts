@@ -61,11 +61,20 @@ export async function cacheGet<T>(key: string): Promise<T | null> {
 export async function cacheSet(key: string, value: unknown, ttlSeconds = 30): Promise<void> {
   if (!configured()) return;
   try {
-    await fetch(`${REST_URL}/set/${encodeURIComponent(key)}/${encodeURIComponent(JSON.stringify(value))}?EX=${ttlSeconds}`, {
+    const res = await fetch(`${REST_URL}/set/${encodeURIComponent(key)}/${encodeURIComponent(JSON.stringify(value))}?EX=${ttlSeconds}`, {
       headers: { Authorization: `Bearer ${REST_TOKEN}` },
       signal: AbortSignal.timeout(2000),
     });
-  } catch {
+    // Temporary — every GET has come back a clean miss with no error from
+    // `command()` above, which only makes sense if SET is the one quietly
+    // failing. This branch had no logging at all before, so a failing SET
+    // was invisible. Remove once Redis is confirmed actually connecting.
+    if (!res.ok) {
+      const body = await res.text().catch(() => '');
+      console.log(`redis: SET failed, status=${res.status} ${res.statusText} body=${body.slice(0, 200)}`);
+    }
+  } catch (err) {
+    console.log(`redis: SET threw: ${err instanceof Error ? err.message : String(err)}`);
     // Cache is a pure speed optimization — a failed write just means the
     // next read is a genuine cache miss, same as today.
   }
