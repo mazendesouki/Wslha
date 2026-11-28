@@ -5,13 +5,10 @@
 // transactions together) since driver-dashboard.astro's wallet card
 // always wants both at once.
 import type { APIRoute } from 'astro';
-import { verifyAccessToken, SB_URL } from '../../../lib/session';
+import { verifyAccessToken, svc } from '../../../lib/session';
 import { cached } from '../../../lib/redis';
 
 export const prerender = false;
-
-const SB_ANON_KEY = 'sb_publishable_PLSnpvCT-sAyUMtymNgTwA_QmL2suw4';
-const SB_H = { apikey: SB_ANON_KEY, Authorization: `Bearer ${SB_ANON_KEY}` };
 
 export const GET: APIRoute = async ({ request, url: reqUrl }) => {
   const auth = request.headers.get('authorization');
@@ -35,13 +32,26 @@ export const GET: APIRoute = async ({ request, url: reqUrl }) => {
   // through to the same two Supabase reads as before when Redis isn't
   // configured yet, or on any cache error — this never becomes the only
   // path to the data.
+  //
+  // Uses the service-role helper (svc), not the public anon/publishable
+  // key: `points`/`point_transactions` have no SELECT grant for
+  // anon/authenticated at all (confirmed via information_schema —
+  // service_role and postgres only), so every request made with the
+  // anon key was failing with a permission error on every single call,
+  // 502-ing before Redis was ever reached. Safe here specifically
+  // because `payload.sub` already came from a verified access token
+  // above — the server, not the client, controls which phone gets
+  // queried, same justification as session.ts's own auth_sessions reads.
+  // Temporary — confirms a genuine cache HIT now that the fetchFailed bug
+  // above (anon key had no SELECT grant) is fixed. Remove once Redis is
+  // confirmed actually connecting end to end.
   let fetchFailed = false;
   let wasCacheMiss = false;
   const body = await cached(`points-summary:${payload.sub}:${limit}`, 20, async () => {
     wasCacheMiss = true;
     const [totalsRes, txRes] = await Promise.all([
-      fetch(`${SB_URL}/rest/v1/points?phone=eq.${phone}&select=total_points`, { headers: SB_H }),
-      fetch(`${SB_URL}/rest/v1/point_transactions?phone=eq.${phone}&select=points,type,created_at&order=created_at.desc&limit=${limit}`, { headers: SB_H }),
+      svc(`points?phone=eq.${phone}&select=total_points`),
+      svc(`point_transactions?phone=eq.${phone}&select=points,type,created_at&order=created_at.desc&limit=${limit}`),
     ]);
     if (!totalsRes.ok || !txRes.ok) {
       fetchFailed = true;
@@ -53,11 +63,7 @@ export const GET: APIRoute = async ({ request, url: reqUrl }) => {
     return { totalPoints, transactions };
   });
 
-  // Temporary — lets a Vercel runtime-log search for "points-summary" show
-  // whether a real request actually reached this route and whether Redis
-  // served it, since this route otherwise logs nothing on success. Remove
-  // once the Upstash setup is confirmed working end to end.
-  console.log(`points-summary: ${wasCacheMiss ? 'cache MISS (fetched from Supabase)' : 'cache HIT (served from Redis)'} for ${payload.sub}`);
+  console.log(`points-summary: ${wasCacheMiss ? 'cache MISS (fetched from Supabase)' : 'cache HIT (served from Redis)'} for ${payload.sub}, fetchFailed=${fetchFailed}`);
 
   if (fetchFailed || body === null) {
     return new Response(JSON.stringify({ error: 'points_fetch_failed' }), { status: 502 });

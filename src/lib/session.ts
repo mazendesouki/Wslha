@@ -26,10 +26,15 @@ const ABSOLUTE_SESSION_DAYS = 30;                // hard ceiling per family
 export const REFRESH_COOKIE_NAME = 'wslha_rt';
 export const REFRESH_COOKIE_PATH = '/api/auth';
 
-// ── Service-role Supabase REST helper — bypasses RLS/grants entirely,
-//    the only thing allowed to touch auth_sessions/security_alerts
-//    (both are `revoke all from anon, authenticated`). ──────────────────
-async function svc(path: string, init: RequestInit = {}): Promise<Response> {
+// ── Service-role Supabase REST helper — bypasses RLS/grants entirely.
+//    Originally written only for auth_sessions/security_alerts (both
+//    `revoke all from anon, authenticated`), but also the right tool for
+//    any other server-only route reading a table with no anon/authenticated
+//    grant — e.g. points/point_transactions (security-50-style
+//    access-token-gated routes already verify the caller server-side via
+//    verifyAccessToken, so there's no RLS-bypass risk in using this here:
+//    the server, not the client, controls which phone is queried). ──────
+export async function svc(path: string, init: RequestInit = {}): Promise<Response> {
   const key = requireEnv('SUPABASE_SERVICE_ROLE_KEY');
   return fetch(`${SB_URL}/rest/v1/${path}`, {
     ...init,
