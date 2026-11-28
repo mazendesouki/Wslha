@@ -39,11 +39,12 @@ async function command(args: (string | number)[]): Promise<unknown> {
       return null;
     }
     const data = await res.json();
-    // Temporary — Upstash's REST API can return HTTP 200 with an
-    // {"error": "..."} body instead of a non-2xx status (e.g. a bad
-    // token), which `data?.result ?? null` was silently treating as an
-    // ordinary cache miss. Remove once Redis is confirmed actually
-    // connecting.
+    // Temporary — no failure branch anywhere in this file has ever fired
+    // despite every GET coming back a miss, even ones under a second
+    // after a presumably-successful SET. Logging the raw response
+    // unconditionally (not just on error) to see actual ground truth.
+    // Remove once Redis is confirmed actually connecting.
+    console.log(`redis: GET raw response: ${JSON.stringify(data).slice(0, 300)}`);
     if (data?.error) {
       console.log(`redis: command returned error: ${JSON.stringify(data.error).slice(0, 200)}`);
       return null;
@@ -84,6 +85,9 @@ export async function cacheSet(key: string, value: unknown, ttlSeconds = 30): Pr
       return;
     }
     const data = await res.json().catch(() => null);
+    // Temporary — see matching comment in command() above. Remove once
+    // Redis is confirmed actually connecting.
+    console.log(`redis: SET raw response: ${JSON.stringify(data).slice(0, 300)}`);
     if (data?.error) {
       console.log(`redis: SET returned error: ${JSON.stringify(data.error).slice(0, 200)}`);
     }
