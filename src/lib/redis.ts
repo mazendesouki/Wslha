@@ -19,16 +19,29 @@ function configured() {
 }
 
 async function command(args: (string | number)[]): Promise<unknown> {
-  if (!configured()) return null;
+  if (!configured()) {
+    // Temporary — every /api/points/summary request has been a cache MISS
+    // even back-to-back within the same second, which a working 20s-TTL
+    // cache can't produce. Logging which branch fires narrows it down to
+    // "env vars never made it into this build" vs. "Upstash itself is
+    // rejecting/failing the request". Remove once Redis is confirmed
+    // actually connecting.
+    console.log('redis: not configured (REST_URL or REST_TOKEN missing at build time)');
+    return null;
+  }
   try {
     const res = await fetch(`${REST_URL}/${args.map((a) => encodeURIComponent(String(a))).join('/')}`, {
       headers: { Authorization: `Bearer ${REST_TOKEN}` },
       signal: AbortSignal.timeout(2000),
     });
-    if (!res.ok) return null;
+    if (!res.ok) {
+      console.log(`redis: command failed, status=${res.status} ${res.statusText}`);
+      return null;
+    }
     const data = await res.json();
     return data?.result ?? null;
-  } catch {
+  } catch (err) {
+    console.log(`redis: command threw: ${err instanceof Error ? err.message : String(err)}`);
     return null;
   }
 }
