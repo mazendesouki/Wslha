@@ -24,6 +24,44 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # Auto-bumps pubspec.yaml's patch version (1.2.5 -> 1.2.6, ...) on
+      # every build on these branches, so version.json's versionName (see
+      # the "Publish APKs" step below, which reads pubspec.yaml fresh)
+      # changes with each release instead of staying fixed until someone
+      # remembers to edit it by hand. buildNumber already auto-increments
+      # via --build-number=github.run_number further down; this does the
+      # same for the human-facing X.Y.Z. Pushed with the default
+      # GITHUB_TOKEN, which (like the "Publish APKs" push below) does NOT
+      # re-trigger this workflow's own `push` listener — GitHub never runs
+      # workflows off GITHUB_TOKEN-authenticated pushes, so this can't loop.
+      - name: Bump patch version in pubspec.yaml
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+          CURRENT=$(grep '^version:' pubspec.yaml | sed 's/version: *//')
+          VERSION_NAME=$(echo "$CURRENT" | cut -d+ -f1)
+          BUILD_SUFFIX=$(echo "$CURRENT" | cut -d+ -f2)
+          IFS='.' read -r MAJOR MINOR PATCH <<< "$VERSION_NAME"
+          NEW_VERSION="$MAJOR.$MINOR.$((PATCH + 1))+$BUILD_SUFFIX"
+          sed -i "s/^version: .*/version: $NEW_VERSION/" pubspec.yaml
+
+          git add pubspec.yaml
+          git commit -m "chore: bump version to $NEW_VERSION [skip ci]"
+
+          # Same race as the "Publish APKs" step below (concurrent builds on
+          # this branch) — retry against the latest remote state instead of
+          # failing outright.
+          for attempt in 1 2 3 4 5; do
+            if git push; then
+              echo "Pushed version bump."
+              break
+            fi
+            echo "Push rejected (attempt $attempt) — rebasing onto remote..."
+            git fetch origin "$GITHUB_REF_NAME"
+            git rebase "origin/$GITHUB_REF_NAME"
+          done
+
       - uses: actions/setup-java@v4
         with:
           java-version: '17'
