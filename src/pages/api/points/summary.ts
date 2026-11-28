@@ -42,13 +42,8 @@ export const GET: APIRoute = async ({ request, url: reqUrl }) => {
   // because `payload.sub` already came from a verified access token
   // above — the server, not the client, controls which phone gets
   // queried, same justification as session.ts's own auth_sessions reads.
-  // Temporary — confirms a genuine cache HIT now that the fetchFailed bug
-  // above (anon key had no SELECT grant) is fixed. Remove once Redis is
-  // confirmed actually connecting end to end.
   let fetchFailed = false;
-  let wasCacheMiss = false;
   const body = await cached(`points-summary:${payload.sub}:${limit}`, 20, async () => {
-    wasCacheMiss = true;
     const [totalsRes, txRes] = await Promise.all([
       svc(`points?phone=eq.${phone}&select=total_points`),
       svc(`point_transactions?phone=eq.${phone}&select=points,type,created_at&order=created_at.desc&limit=${limit}`),
@@ -62,8 +57,6 @@ export const GET: APIRoute = async ({ request, url: reqUrl }) => {
     const totalPoints = Array.isArray(totals) && totals[0] ? totals[0].total_points ?? 0 : 0;
     return { totalPoints, transactions };
   });
-
-  console.log(`points-summary: ${wasCacheMiss ? 'cache MISS (fetched from Supabase)' : 'cache HIT (served from Redis)'} for ${payload.sub}, fetchFailed=${fetchFailed}`);
 
   if (fetchFailed || body === null) {
     return new Response(JSON.stringify({ error: 'points_fetch_failed' }), { status: 502 });

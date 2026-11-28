@@ -19,33 +19,17 @@ function configured() {
 }
 
 async function command(args: (string | number)[]): Promise<unknown> {
-  if (!configured()) {
-    // Temporary — every /api/points/summary request has been a cache MISS
-    // even back-to-back within the same second, which a working 20s-TTL
-    // cache can't produce. Logging which branch fires narrows it down to
-    // "env vars never made it into this build" vs. "Upstash itself is
-    // rejecting/failing the request". Remove once Redis is confirmed
-    // actually connecting.
-    console.log('redis: not configured (REST_URL or REST_TOKEN missing at build time)');
-    return null;
-  }
+  if (!configured()) return null;
   try {
     const res = await fetch(`${REST_URL}/${args.map((a) => encodeURIComponent(String(a))).join('/')}`, {
       headers: { Authorization: `Bearer ${REST_TOKEN}` },
       signal: AbortSignal.timeout(2000),
     });
-    if (!res.ok) {
-      console.log(`redis: command failed, status=${res.status} ${res.statusText}`);
-      return null;
-    }
+    if (!res.ok) return null;
     const data = await res.json();
-    if (data?.error) {
-      console.log(`redis: command returned error: ${JSON.stringify(data.error).slice(0, 200)}`);
-      return null;
-    }
+    if (data?.error) return null;
     return data?.result ?? null;
-  } catch (err) {
-    console.log(`redis: command threw: ${err instanceof Error ? err.message : String(err)}`);
+  } catch {
     return null;
   }
 }
@@ -65,25 +49,11 @@ export async function cacheGet<T>(key: string): Promise<T | null> {
 export async function cacheSet(key: string, value: unknown, ttlSeconds = 30): Promise<void> {
   if (!configured()) return;
   try {
-    const res = await fetch(`${REST_URL}/set/${encodeURIComponent(key)}/${encodeURIComponent(JSON.stringify(value))}?EX=${ttlSeconds}`, {
+    await fetch(`${REST_URL}/set/${encodeURIComponent(key)}/${encodeURIComponent(JSON.stringify(value))}?EX=${ttlSeconds}`, {
       headers: { Authorization: `Bearer ${REST_TOKEN}` },
       signal: AbortSignal.timeout(2000),
     });
-    // Temporary — every GET has come back a clean miss with no error from
-    // `command()` above, which only makes sense if SET is the one quietly
-    // failing. This branch had no logging at all before, so a failing SET
-    // was invisible. Remove once Redis is confirmed actually connecting.
-    if (!res.ok) {
-      const body = await res.text().catch(() => '');
-      console.log(`redis: SET failed, status=${res.status} ${res.statusText} body=${body.slice(0, 200)}`);
-      return;
-    }
-    const data = await res.json().catch(() => null);
-    if (data?.error) {
-      console.log(`redis: SET returned error: ${JSON.stringify(data.error).slice(0, 200)}`);
-    }
-  } catch (err) {
-    console.log(`redis: SET threw: ${err instanceof Error ? err.message : String(err)}`);
+  } catch {
     // Cache is a pure speed optimization — a failed write just means the
     // next read is a genuine cache miss, same as today.
   }
