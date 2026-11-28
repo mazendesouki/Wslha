@@ -46,89 +46,44 @@ jobs:
           # one release behind every single deploy.
           ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_branch || github.sha }}
 
-      - uses: actions/setup-node@v4
-        with:
-          # Astro's SSG build executes page frontmatter server-side, and
-          # driver-apply.astro's import chain (src/data/airports.ts →
-          # src/utils/supabaseClient.ts) creates a full Supabase client
-          # (with Realtime) at module load time. @supabase/realtime-js
-          # needs a native `WebSocket` global to construct its client —
-          # Node 20 doesn't have one and throws synchronously, crashing
-          # `astro build` outright (every deploy on Node 20 has been
-          # failing at this exact spot). Node 22+ has WebSocket built in.
-          node-version: '22'
-          cache: 'npm'
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Pull Vercel environment variables
-        # The real, long-standing bug this step fixes: `npm run build`
-        # below is a plain `astro build` running entirely on this GitHub
-        # Actions runner — it never talks to Vercel, so none of the
-        # project's env vars (SUPABASE_SERVICE_ROLE_KEY, SESSION_JWT_SECRET,
-        # ANTHROPIC_API_KEY, UPSTASH_REDIS_REST_URL/TOKEN, ...) were ever
-        # reaching the build. Astro/Vite statically inlines every
-        # `import.meta.env.X` reference at build time, so whatever each
-        # server secret resolved to on THIS runner (nothing, since none of
-        # these were ever set here) got baked permanently into the
-        # compiled serverless functions — completely disconnected from
-        # whatever is configured in Vercel's dashboard, no matter how many
-        # times a value is corrected there or how many fresh deploys
-        # follow, because the bundle was never looking at Vercel's runtime
-        # environment to begin with. `vercel pull` downloads the actual
-        # Production env vars into a dotenv file the next step sources
-        # before building, same as Vercel's own `vercel build` would do
-        # internally.
-        run: npx vercel pull --yes --environment=production --token "$VERCEL_TOKEN"
-        env:
-          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-
-      - name: Build
-        run: |
-          set -a
-          source .vercel/.env.production.local
-          set +a
-          npm run build
-
-      - name: Patch serverless function runtime (-> nodejs22.x)
-        # The installed @astrojs/vercel adapter (7.8.2) only recognizes
-        # Node 18/20 and falls back to "nodejs18.x" whenever the build runs
-        # on anything else (here: Node 22, required — see the comment
-        # above — so WebSocket exists for @supabase/realtime-js at build
-        # time). Tried patching to "nodejs20.x" first (the newest value the
-        # adapter itself is capable of emitting) since Vercel initially
-        # only rejected 18.x outright — but Vercel has SINCE deprecated
-        # 20.x too ("You are using a custom Runtime that depends on
-        # nodejs20.x, which is discontinued"), confirmed by actually
-        # rerunning the deploy. Both are version numbers the adapter
-        # hardcodes, not something Vercel will keep accepting — write
-        # nodejs22.x directly instead, matching the Node version this
-        # workflow already builds with and currently Vercel's accepted
-        # "Active LTS" runtime.
-        run: |
-          set -e
-          for f in .vercel/output/functions/*/.vc-config.json; do
-            [ -f "$f" ] || continue
-            sed -i 's/"runtime": *"nodejs[0-9]*\.x"/"runtime": "nodejs22.x"/' "$f"
-            echo "Patched $f:"
-            cat "$f"
-          done
-
+      # No local build here anymore (see git history for the old
+      # "Pull Vercel environment variables" / "Build" / "Patch serverless
+      # function runtime" / "--prebuilt" steps this replaced). That whole
+      # approach was built around a bug that's since been fixed upstream
+      # and worked around a problem that no longer exists:
+      #
+      # 1. It existed to pull Production env vars onto this runner because
+      #    `npm run build` (plain `astro build`) never talked to Vercel, so
+      #    Astro/Vite's build-time static inlining of `import.meta.env.X`
+      #    baked in empty values for every server secret. But `vercel pull`
+      #    can only ever fetch non-"Sensitive" env var values — a
+      #    "Sensitive" var is write-only by design, even to its own owner,
+      #    so pulling it always writes a literal "[SENSITIVE]" placeholder
+      #    instead of the real value. Every var that mattered here
+      #    (SUPABASE_SERVICE_ROLE_KEY, SESSION_JWT_SECRET,
+      #    ANTHROPIC_API_KEY, UPSTASH_REDIS_REST_URL/TOKEN) was marked
+      #    Sensitive, so this never actually worked.
+      # 2. The Node-version patch existed because the @astrojs/vercel
+      #    adapter version in use at the time (7.8.2) only recognized Node
+      #    18/20 and wrote "nodejs18.x" into each function's .vc-config.json
+      #    on any other Node version — which Vercel has since stopped
+      #    accepting entirely. The adapter now installed (^11.0.18) detects
+      #    the Node major version it's running under and emits the matching
+      #    runtime natively (confirmed in its source: 20/22/24 all map to a
+      #    real "nodejsNN.x", no fallback needed) — Node 22+ was only ever
+      #    needed at build time so `@supabase/realtime-js` has a native
+      #    `WebSocket` global (driver-apply.astro's import chain constructs
+      #    a Supabase client at module load, at prerender time).
+      #
+      # Letting Vercel build remotely (no --prebuilt) sidesteps both: its
+      # own build infrastructure already runs the project's configured
+      # Node version (currently 24.x — Settings → Node.js Version — newer
+      # than 22, so WebSocket and the adapter's runtime detection both just
+      # work), and it has direct, un-proxied access to every env var
+      # regardless of Sensitive/Config type, because the value is never
+      # read back by anything outside Vercel's own infrastructure.
       - name: Deploy to Vercel
-        # --prebuilt: without it, the CLI ignores our already-built
-        # .vercel/output entirely and re-runs a full build on Vercel's own
-        # remote infrastructure instead — which is what was actually
-        # silently happening here (visible in the deploy logs: "Running
-        # build in Washington, D.C." / "Running 'vercel build'" right
-        # before every failure). That remote rebuild re-generates its own
-        # nodejs18.x runtime from scratch, so the local patch step above
-        # never had any effect — it was patching a file Vercel never
-        # looked at. --prebuilt makes it deploy exactly what we already
-        # built (and just patched) instead.
-        run: npx vercel --prod --prebuilt --token "$VERCEL_TOKEN"
+        run: npx vercel --prod --token "$VERCEL_TOKEN"
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
